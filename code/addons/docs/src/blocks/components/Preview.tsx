@@ -7,7 +7,7 @@ import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 
 import { CopyIcon, MarkupIcon } from '@storybook/icons';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 import { darken } from 'polished';
 import { styled } from 'storybook/theming';
 

@@ -20,6 +20,487 @@ describe('compareArgTypes', () => {
     expect(compareArgTypes(baseline, argTypes({}))).toEqual([]);
   });
 
+  it.each([
+    {
+      input: 'waivedArgs contains the lost key',
+      output: 'passes',
+      baseline: { hidden: { name: 'hidden', type: { name: 'string' } } } as StrictArgTypes,
+      candidate: {} as StrictArgTypes,
+      options: { waivedArgs: new Set(['hidden']) },
+      expectedViolations: [],
+    },
+    {
+      input: 'waivedArgs does not contain the lost key',
+      output: 'lost-arg',
+      baseline: { hidden: { name: 'hidden', type: { name: 'string' } } } as StrictArgTypes,
+      candidate: {} as StrictArgTypes,
+      options: { waivedArgs: new Set(['other']) },
+      expectedViolations: [expect.objectContaining({ arg: 'hidden', kind: 'lost-arg' })],
+    },
+    {
+      input: 'legacy manifest runtime re-keys a same-name slot',
+      output: 'passes',
+      baseline: {
+        label: {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'label-slot': {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime re-keys a same-name slot that lost its description',
+      output: 'lost-description',
+      baseline: {
+        label: {
+          name: 'label',
+          description: 'Label slot.',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'label-slot': {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'lost-description' })],
+    },
+    {
+      input: 'legacy baseline without legacy manifest runtime sees a re-keyed slot',
+      output: 'lost-arg',
+      baseline: {
+        label: {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'label-slot': {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true },
+      expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'lost-arg' })],
+    },
+    {
+      input: 'legacy manifest runtime treats void event type as unresolved',
+      output: 'passes',
+      baseline: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'void' } as never,
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'other', value: 'CustomEvent<{ value: string }>' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy baseline without legacy manifest runtime compares void event type',
+      output: 'type-fidelity',
+      baseline: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'void' } as never,
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'other', value: 'CustomEvent<{ value: string }>' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true },
+      expectedViolations: [expect.objectContaining({ arg: 'my-change', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime resolves a case-insensitive scalar stub',
+      output: 'passes',
+      baseline: {
+        createdAt: {
+          name: 'createdAt',
+          type: { name: 'other', value: 'Date' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        createdAt: {
+          name: 'createdAt',
+          type: { name: 'date' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves nullable scalar text',
+      output: 'passes',
+      baseline: {
+        label: {
+          name: 'label',
+          type: { name: 'other', value: 'string | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        label: {
+          name: 'label',
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves object-like type text',
+      output: 'passes',
+      baseline: {
+        labels: {
+          name: 'labels',
+          type: { name: 'other', value: 'Record<number, string>' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        labels: {
+          name: 'labels',
+          type: { name: 'object', value: {} },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime does not resolve nullable scalar text to object',
+      output: 'type-fidelity',
+      baseline: {
+        label: {
+          name: 'label',
+          type: { name: 'other', value: 'string | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        label: {
+          name: 'label',
+          type: { name: 'object', value: {} },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime does not resolve scalar-plus-literal text to a partial enum',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "boolean | 'auto'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['auto'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime requires literal-union enum members to survive',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['z'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime requires nullable literal-union enum members to survive',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b' | undefined" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime requires nullable scalar text to keep the scalar',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: 'boolean | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'array', value: { name: 'string' } },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime does not resolve nullable number text to an enum',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: 'number | null' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: [1] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime resolves literal-union text to a covering enum',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a', 'b'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves nullable literal-union text to a covering enum',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b' | undefined" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['b', 'a'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves nullable boolean text to boolean',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: 'boolean | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'boolean' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime keeps exact mixed scalar text as other',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "boolean | 'auto'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "boolean | 'auto'" },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime keeps quoted pipes inside literal-union members',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a|b' | 'c'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a|b', 'c'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime does not split quoted pipes into enum members',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a|b' | 'c'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a', 'b', 'c'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime resolves function-text stubs',
+      output: 'passes',
+      baseline: {
+        onSelect: {
+          name: 'onSelect',
+          type: { name: 'other', value: '(value: string) => void' },
+        },
+        onClose: {
+          name: 'onClose',
+          type: { name: 'other', value: 'Function' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        onSelect: {
+          name: 'onSelect',
+          type: { name: 'function' },
+        },
+        onClose: {
+          name: 'onClose',
+          type: { name: 'function' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacyManifestRuntime is set without legacyBaseline',
+      output: 'throws',
+      baseline: { label: { name: 'label', type: { name: 'string' } } } as StrictArgTypes,
+      candidate: {} as StrictArgTypes,
+      options: { legacyManifestRuntime: true },
+      expectedError: 'legacyManifestRuntime may only waive legacy baselines',
+    },
+  ])(
+    'applies web-components legacy waivers: $input => $output',
+    ({ baseline, candidate, options, expectedViolations, expectedError }) => {
+      if (expectedError) {
+        expect(() => compareArgTypes(baseline, candidate, options)).toThrow(expectedError);
+        return;
+      }
+      expect(compareArgTypes(baseline, candidate, options)).toEqual(expectedViolations);
+    }
+  );
+
+  it('keeps legacy manifest stub resolutions scoped to the legacy manifest runtime', () => {
+    const baseline = argTypes({
+      createdAt: {
+        name: 'createdAt',
+        type: { name: 'other', value: 'Date' },
+      },
+      onSelect: {
+        name: 'onSelect',
+        type: { name: 'other', value: '(value: string) => void' },
+      },
+    });
+    const candidate = argTypes({
+      createdAt: {
+        name: 'createdAt',
+        type: { name: 'date' },
+      },
+      onSelect: {
+        name: 'onSelect',
+        type: { name: 'function' },
+      },
+    });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'createdAt', kind: 'type-fidelity' }),
+      expect.objectContaining({ arg: 'onSelect', kind: 'type-fidelity' }),
+    ]);
+  });
+
+  it('does not rescue a lost attribute with a same-named slot', () => {
+    const baseline = argTypes({
+      label: {
+        name: 'label',
+        table: { category: 'attributes' },
+        type: { name: 'string' },
+      },
+    });
+    const candidate = argTypes({
+      'label-slot': {
+        name: 'label',
+        table: { category: 'slots' },
+        type: { name: 'string' },
+      },
+    });
+
+    expect(
+      compareArgTypes(baseline, candidate, {
+        legacyBaseline: true,
+        legacyManifestRuntime: true,
+      })
+    ).toEqual([expect.objectContaining({ arg: 'label', kind: 'lost-arg' })]);
+  });
+
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({
       size: { name: 'size', type: { name: 'string' } },
@@ -75,7 +556,7 @@ describe('compareArgTypes', () => {
 
   it('fails other-to-other when the value changes laterally', () => {
     const baseline = argTypes({
-      data: { name: 'data', type: { name: 'other', value: 'empty-enum' } },
+      data: { name: 'data', type: { name: 'other', value: 'TreeNode' } },
     });
     const candidate = argTypes({
       data: { name: 'data', type: { name: 'other', value: 'something-else' } },
@@ -248,7 +729,10 @@ describe('compareArgTypes', () => {
     const tableOnly = argTypes({
       count: { name: 'count', table: { defaultValue: { summary: '5' } } },
     });
-    const topLevelOnly = argTypes({ count: { name: 'count', defaultValue: 5 } });
+    // Recorded baselines can still carry this field. New code cannot write it.
+    const topLevelOnly = argTypes({
+      count: { name: 'count', defaultValue: 5 } as unknown as StrictArgTypes[string],
+    });
     expect(compareArgTypes(tableOnly, topLevelOnly)).toEqual([]);
     expect(compareArgTypes(topLevelOnly, tableOnly)).toEqual([]);
   });
@@ -454,6 +938,121 @@ describe('compareArgTypes', () => {
       expect(compareArgTypes(baseline, candidate)).toEqual([]);
     }
   });
+
+  it.each([
+    {
+      input: '{ name: "array" } -> { name: "array", value: { name: "string" } }',
+      output: 'passes',
+      baselineType: { name: 'array' } as never,
+      candidateType: { name: 'array', value: { name: 'string' } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "object" } -> { name: "object", value: { label: { name: "string" } } }',
+      output: 'passes',
+      baselineType: { name: 'object' } as never,
+      candidateType: { name: 'object', value: { label: { name: 'string' } } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "enum" } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum' } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "enum", value: {} } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum', value: {} } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "union" } -> { name: "union", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'union' } as never,
+      candidateType: { name: 'union', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "intersection" } -> { name: "intersection", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'intersection' } as never,
+      candidateType: { name: 'intersection', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "tuple" } -> { name: "tuple", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'tuple' } as never,
+      candidateType: { name: 'tuple', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: undefined } -> { name: "boolean" }',
+      output: 'passes',
+      baselineType: { name: undefined } as never,
+      candidateType: { name: 'boolean' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "PanelConfig" } -> { name: "object", value: { title: { name: "string" } } }',
+      output: 'passes',
+      baselineType: { name: 'PanelConfig' } as never,
+      candidateType: { name: 'object', value: { title: { name: 'string' } } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "Item[]" } -> { name: "array", value: { name: "string" } }',
+      output: 'passes',
+      baselineType: { name: 'Item[]' } as never,
+      candidateType: { name: 'array', value: { name: 'string' } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: `{ name: "'primary' | 'secondary' | 'ghost'" } -> populated union`,
+      output: 'passes',
+      baselineType: { name: "'primary' | 'secondary' | 'ghost'" } as never,
+      candidateType: {
+        name: 'union',
+        value: [
+          { name: 'literal', value: 'primary' },
+          { name: 'literal', value: 'secondary' },
+          { name: 'literal', value: 'ghost' },
+        ],
+      } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "other", value: "undefined" } -> { name: "other", value: "TreeNode" }',
+      output: 'passes',
+      baselineType: { name: 'other', value: 'undefined' } as never,
+      candidateType: { name: 'other', value: 'TreeNode' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "other" } -> { name: "string" }',
+      output: 'passes',
+      baselineType: { name: 'other' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "PanelConfig" } -> { name: "string" }',
+      output: 'type-fidelity violation',
+      baselineType: { name: 'PanelConfig' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [expect.objectContaining({ arg: 'data', kind: 'type-fidelity' })],
+    },
+  ])(
+    'compares loose Web Components sbTypes: $input => $output',
+    ({ baselineType, candidateType, expectedViolations }) => {
+      const baseline = argTypes({ data: { name: 'data', type: baselineType } });
+      const candidate = argTypes({ data: { name: 'data', type: candidateType } });
+      expect(compareArgTypes(baseline, candidate)).toEqual(expectedViolations);
+    }
+  );
 
   it('fails when an other stub naming a real type collapses to an unrelated scalar', () => {
     // Half the corpus is other-typed free text that still names something: TreeNode, ButtonSize,

@@ -13,7 +13,11 @@ import {
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
-import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
+import {
+  invokeToolsetMethod,
+  resolveToolsetDescription,
+  type ToolsetCtx,
+} from '../../toolset-definition.ts';
 import { createStoriesToolset, type StoriesToolset } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -55,7 +59,6 @@ const getStatuses = vi.fn();
 const graphStatus = vi.fn();
 const changeDetectionReadiness = vi.fn();
 const storiesForFiles = vi.fn();
-const telemetry = vi.fn();
 const cwd = vi.spyOn(process, 'cwd');
 const moduleGraph = {
   queries: {
@@ -89,11 +92,16 @@ function runPreview(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.preview.handler(v.parse(target.methods.preview.input, { stories }), ctx);
+  return invokeToolsetMethod(
+    target,
+    'preview',
+    v.parse(target.methods.preview.input, { stories }),
+    ctx
+  );
 }
 
 function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
-  return target.methods.changed.handler(v.parse(target.methods.changed.input, {}), ctx);
+  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, {}), ctx);
 }
 
 function runFindByComponent(
@@ -101,7 +109,9 @@ function runFindByComponent(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.findByComponent.handler(
+  return invokeToolsetMethod(
+    target,
+    'findByComponent',
     v.parse(target.methods.findByComponent.input, input),
     ctx
   );
@@ -133,7 +143,6 @@ beforeEach(() => {
     transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
-    telemetry,
   };
   mcpCtx = { ...cliCtx, transport: 'mcp' };
   getIndex.mockResolvedValue(index);
@@ -163,6 +172,7 @@ describe('stories.preview', () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
       stories: [{ title: 'Button', name: 'Primary', previewUrl }],
+      instructions: expect.stringContaining('in your in-app browser now'),
     });
     expect(getIndex).toHaveBeenCalledOnce();
   });
@@ -188,12 +198,13 @@ describe('stories.preview', () => {
   });
 
   it('reports the story counts it resolved', async () => {
-    await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
+    const outcome = await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
 
-    expect(telemetry).toHaveBeenCalledWith('tool:previewStories', {
-      toolset: 'dev',
-      inputStoryCount: 2,
-      outputStoryCount: 2,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'preview',
+      event: 'tool:stories_preview',
+      payload: { inputStoryCount: 2, outputStoryCount: 2 },
     });
   });
 
@@ -202,14 +213,32 @@ describe('stories.preview', () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }]);
       const mcpOutcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toEqual([previewUrl]);
       expect(outcome.markdown).toEqual(mcpOutcome.markdown);
     });
 
-    it('returns one text block per URL for MCP', async () => {
+    it('appends an in-app browser nudge once a URL resolved and reviews do not exist', async () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toEqual([previewUrl]);
+      expect(outcome.markdown).toEqual([
+        previewUrl,
+        "Open the preview URL that best shows the result in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.",
+      ]);
+    });
+
+    it('names no harness-specific browser tool in its description or result', async () => {
+      const description = resolveToolsetDescription(toolset.methods.preview.description, mcpCtx);
+      const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
+
+      for (const harnessTool of [
+        'preview_eval',
+        'preview_start',
+        'Claude_Browser',
+        'browser_navigate',
+        'node_repl',
+      ]) {
+        expect(description).not.toContain(harnessTool);
+        expect(String(outcome.markdown)).not.toContain(harnessTool);
+      }
     });
 
     it('appends a review nudge for MCP once a URL resolved and reviews exist', async () => {
@@ -220,14 +249,22 @@ describe('stories.preview', () => {
         previewUrl,
         'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.',
       ]);
+      expect(outcome.data.instructions).toContain('publish the review with **review-create**');
     });
 
-    it('leaves an all-error result unnudged, since there is nothing to curate', async () => {
-      const withReviews = createToolset({ reviewEnabled: true });
-      const outcome = await runPreview([{ storyId: 'gone--story' }], mcpCtx, withReviews);
+    it.each([true, false])(
+      'leaves an all-error result unnudged, since there is nothing to curate or open (reviews: %s)',
+      async (reviewEnabled) => {
+        const outcome = await runPreview(
+          [{ storyId: 'gone--story' }],
+          mcpCtx,
+          createToolset({ reviewEnabled })
+        );
 
-      expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
-    });
+        expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
+        expect(outcome.data.instructions).toBeUndefined();
+      }
+    );
   });
 });
 
@@ -319,14 +356,13 @@ describe('stories.changed', () => {
   it('reports the per-status counts', async () => {
     markChanged('button--primary', 'status-value:new');
 
-    await runChanged();
+    const outcome = await runChanged();
 
-    expect(telemetry).toHaveBeenCalledWith('tool:getChangedStories', {
-      toolset: 'dev',
-      storyCount: 1,
-      newStoryCount: 1,
-      modifiedStoryCount: 0,
-      affectedStoryCount: 0,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'changed',
+      event: 'tool:stories_changed',
+      payload: { storyCount: 1, newStoryCount: 1, modifiedStoryCount: 0, affectedStoryCount: 0 },
     });
   });
 
@@ -460,14 +496,13 @@ describe('stories.findByComponent', () => {
   });
 
   it('reports how many of the requested components matched', async () => {
-    await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
+    const outcome = await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
 
-    expect(telemetry).toHaveBeenCalledWith('tool:getStoriesByComponent', {
-      toolset: 'dev',
-      componentCount: 2,
-      matchedComponentCount: 1,
-      totalMatchCount: 1,
-      maxDistance: 3,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'find-by-component',
+      event: 'tool:stories_findByComponent',
+      payload: { componentCount: 2, matchedComponentCount: 1, totalMatchCount: 1, maxDistance: 3 },
     });
   });
 
@@ -517,7 +552,8 @@ describe('descriptions', () => {
     expect(resolveToolsetDescription(toolset.methods.preview.description, mcpCtx))
       .toBe(`Use this tool to get one or more Storybook preview URLs.
 Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
-Include each returned preview URL in your final user-facing response so users can open them directly.`);
+Include each returned preview URL in your final user-facing response so users can open them directly.
+Before your final response, open the preview URL that best shows the result in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`);
   });
 
   it('demotes preview to a mid-loop tool when reviews are enabled', () => {

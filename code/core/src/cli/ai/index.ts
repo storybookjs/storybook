@@ -8,6 +8,7 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { getSetupMarkdownOutput } from '../skills/content/setup-prompts/index.ts';
 import { getProjectInfo } from '../skills/project-info.ts';
+import { getSetupSupportError } from '../skills/setup-support.ts';
 import type { AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
@@ -35,17 +36,9 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   }
 
   const { projectInfo } = result;
-
-  if (
-    projectInfo.rendererPackage !== '@storybook/react' ||
-    projectInfo.builderPackage !== '@storybook/builder-vite'
-  ) {
-    logger.log(
-      'AI-assisted setup is currently only available for projects using the React renderer with Vite builder. Detected renderer: ' +
-        projectInfo.rendererPackage +
-        ', builder: ' +
-        projectInfo.builderPackage
-    );
+  const supportError = getSetupSupportError(projectInfo);
+  if (supportError) {
+    logger.error(supportError);
     return;
   }
 

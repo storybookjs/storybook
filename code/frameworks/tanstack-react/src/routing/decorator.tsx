@@ -6,7 +6,6 @@ import {
   createRoute,
   createRouter,
   defaultStringifySearch,
-  interpolatePath,
   RouterProvider,
   type RootRoute,
   type Route,
@@ -20,7 +19,7 @@ import {
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
-import { normalizeFileRoutePath } from './path-utils.ts';
+import { interpolateStoryPath, normalizeFileRoutePath } from './path-utils.ts';
 import type { RouterParameters } from './types.ts';
 import { isRoute } from './utils.ts';
 
@@ -97,10 +96,7 @@ export function createStoryRouter({
     mountPathFor(leaf);
 
   // Interpolate params into the path and append query/search params.
-  let resolvedPath = interpolatePath({
-    path: inferredPath,
-    params: routerParameters?.params ?? {},
-  }).interpolatedPath;
+  let resolvedPath = interpolateStoryPath(inferredPath, routerParameters?.params ?? {});
   const search = routerParameters?.query ? defaultStringifySearch(routerParameters.query) : '';
   if (search) {
     resolvedPath += search;

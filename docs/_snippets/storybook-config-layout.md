@@ -2,15 +2,19 @@
 import { addons } from 'storybook/manager-api';
 
 addons.setConfig({
-  navSize: 300,
-  bottomPanelHeight: 300,
-  rightPanelWidth: 300,
-  panelPosition: 'bottom',
-  enableShortcuts: true,
-  showToolbar: true,
+  layout: {
+    navSize: 300,
+    bottomPanelHeight: 300,
+    rightPanelWidth: 300,
+    panelPosition: 'bottom',
+    showToolbar: true,
+    initialActive: 'sidebar',
+  },
+  ui: {
+    enableShortcuts: true,
+  },
   theme: undefined,
   selectedPanel: undefined,
-  initialActive: 'sidebar',
   layoutCustomisations: {
     showSidebar(state, defaultValue) {
       return state.storyId === 'landing' ? false : defaultValue;
@@ -37,15 +41,19 @@ addons.setConfig({
 import { addons, type State } from 'storybook/manager-api';
 
 addons.setConfig({
-  navSize: 300,
-  bottomPanelHeight: 300,
-  rightPanelWidth: 300,
-  panelPosition: 'bottom',
-  enableShortcuts: true,
-  showToolbar: true,
+  layout: {
+    navSize: 300,
+    bottomPanelHeight: 300,
+    rightPanelWidth: 300,
+    panelPosition: 'bottom',
+    showToolbar: true,
+    initialActive: 'sidebar',
+  },
+  ui: {
+    enableShortcuts: true,
+  },
   theme: undefined,
   selectedPanel: undefined,
-  initialActive: 'sidebar',
   layoutCustomisations: {
     showSidebar(state: State, defaultValue: boolean) {
       return state.storyId === 'landing' ? false : defaultValue;

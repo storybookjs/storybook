@@ -11,19 +11,19 @@ import type {
   ModuleGraphService,
 } from '../../services/module-graph/definition.ts';
 import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
-import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
+import {
+  formatChangedStories,
+  formatFindByComponent,
+  formatPreviewStories,
+  previewInstructions,
+} from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 import { detectUnreachableFiles } from './unreachable-files.ts';
@@ -31,12 +31,7 @@ import { detectUnreachableFiles } from './unreachable-files.ts';
 const previewSuccessSchema = v.object({
   title: v.string(),
   name: v.string(),
-  previewUrl: v.pipe(
-    v.string(),
-    v.description(
-      'Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.'
-    )
-  ),
+  previewUrl: v.pipe(v.string(), v.description('Direct URL to open the story preview.')),
 });
 
 const previewFailureSchema = v.object({
@@ -46,6 +41,10 @@ const previewFailureSchema = v.object({
 
 const previewOutputSchema = v.object({
   stories: v.array(v.union([previewSuccessSchema, previewFailureSchema])),
+  instructions: v.pipe(
+    v.optional(v.string()),
+    v.description('What to do with these preview URLs next. Follow it.')
+  ),
 });
 
 export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
@@ -115,15 +114,13 @@ const findByComponentOutputSchema = v.object({
       ),
     })
   ),
+  maxDistance: v.pipe(
+    v.number(),
+    v.description('The `maxDistance` ceiling this lookup applied, whether passed or defaulted.')
+  ),
 });
 
-/**
- * `maxDistance` echoes the ceiling actually applied so formatters can name it; it is deliberately
- * absent from {@link findByComponentOutputSchema}, which is the published output contract.
- */
-export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema> & {
-  maxDistance: number;
-};
+export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema>;
 
 export type StoryIndexAccess = {
   getIndex: () => Promise<StoryIndex>;
@@ -190,7 +187,8 @@ function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
   if (!reviewEnabled) {
     return `Use this tool to get one or more Storybook preview URLs.
 Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
-Include each returned preview URL in your final user-facing response so users can open them directly.`;
+Include each returned preview URL in your final user-facing response so users can open them directly.
+Before your final response, open the preview URL that best shows the result in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`;
   }
 
   // With reviews available this is strictly a mid-loop tool: no "include the URLs in your final
@@ -216,18 +214,18 @@ function describeFindByComponent(ctx: ToolsetCtx, reviewEnabled: boolean): strin
     ? `files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change`
     : `files you just edited, a feature/domain/topic the user named, or a query like "all consumers of X"`;
   const cascadeGuidance = reviewEnabled
-    ? `For ${ref('review.create')}, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.`
-    : `The distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — use them to decide which stories to preview; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.`;
+    ? `For ${ref('review.create')}, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer.`
+    : `The distance buckets map onto the visual cascade (component → direct importers → page context); use them to pick stories to preview.`;
 
-  return `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to ${handOffTargets} instead of guessing.
+  return `Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to ${handOffTargets} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
-Reach for this whenever you need story IDs, whatever shape the input has: ${inputShapes}. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`${ref('stories.changed')}\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
+Use it whenever you need story IDs: ${inputShapes}. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try ${ref('stories.changed')} first when available; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 
-Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: ${DEFAULT_MAX_DISTANCE}\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. ${cascadeGuidance}
+Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: ${DEFAULT_MAX_DISTANCE} keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. ${cascadeGuidance} Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
 
-Never invent IDs from file names, feature names, or memory; title strings can be overridden by story authors, so only IDs returned by discovery tools resolve. If a component has no matches here, it has no stories yet (say so, don't fabricate).
+Only IDs returned by discovery tools resolve: never derive them from file names, feature names, titles (authors can override them) or memory.
 
-Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
+Needs a dev server builder with change detection (e.g. Vite); otherwise returns a typed error.`;
 }
 
 // Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
@@ -264,7 +262,7 @@ export function createStoriesToolset({
     description: 'Story discovery, change detection, and preview URL generation.',
     methods: {
       preview: {
-        input: v.object({
+        input: v.strictObject({
           stories: v.pipe(
             storyInputArraySchema,
             v.description(
@@ -287,23 +285,31 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
               methodName: 'preview',
             });
           }
-          const data = previewStories({
+          const { stories } = previewStories({
             origin: ctx.origin,
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });
+          const data = {
+            stories,
+            instructions: previewInstructions(stories, ctx, reviewEnabled),
+          };
 
-          await reportToolsetTelemetry(ctx, 'tool:previewStories', {
-            toolset: 'dev',
-            inputStoryCount: input.stories.length,
-            outputStoryCount: data.stories.length,
-          });
-
-          return { ok: true, data, markdown: formatPreviewStories(data, ctx, { reviewEnabled }) };
+          return {
+            ok: true,
+            data,
+            markdown: formatPreviewStories(data),
+            telemetry: {
+              payload: {
+                inputStoryCount: input.stories.length,
+                outputStoryCount: data.stories.length,
+              },
+            },
+          };
         },
       },
       changed: {
-        input: v.object({}),
+        input: v.strictObject({}),
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
@@ -325,17 +331,18 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           if (changeDetection.status !== 'ready') {
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();
-              await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
-                toolset: 'dev',
-                storyCount: 0,
-                newStoryCount: 0,
-                modifiedStoryCount: 0,
-                affectedStoryCount: 0,
-              });
               return {
                 ok: true,
                 data,
                 markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+                telemetry: {
+                  payload: {
+                    storyCount: 0,
+                    newStoryCount: 0,
+                    modifiedStoryCount: 0,
+                    affectedStoryCount: 0,
+                  },
+                },
               };
             }
             throw new OpenServiceModuleGraphUnavailableError({
@@ -355,19 +362,23 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             unreachableFiles: await detectUnreachableFiles({ git, moduleGraph }),
           };
 
-          await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
-            toolset: 'dev',
-            storyCount: data.stories.length,
-            newStoryCount: data.counts.new,
-            modifiedStoryCount: data.counts.modified,
-            affectedStoryCount: data.counts.affected,
-          });
-
-          return { ok: true, data, markdown: formatChangedStories(data, ctx, { reviewEnabled }) };
+          return {
+            ok: true,
+            data,
+            markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+            telemetry: {
+              payload: {
+                storyCount: data.stories.length,
+                newStoryCount: data.counts.new,
+                modifiedStoryCount: data.counts.modified,
+                affectedStoryCount: data.counts.affected,
+              },
+            },
+          };
         },
       },
       findByComponent: {
-        input: v.object({
+        input: v.strictObject({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),
@@ -407,19 +418,23 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
           const unmatchedCount = lookup.results.filter(
             (result) => !result.pathNotFound && result.matches.length === 0
           ).length;
-          await reportToolsetTelemetry(ctx, 'tool:getStoriesByComponent', {
-            toolset: 'dev',
-            componentCount: input.componentPaths.length,
-            matchedComponentCount: input.componentPaths.length - unmatchedCount,
-            totalMatchCount: lookup.results.reduce(
-              (total, result) => total + result.matches.length,
-              0
-            ),
-            maxDistance,
-          });
-
           const data: FindByComponentOutput = { results: lookup.results, maxDistance };
-          return { ok: true, data, markdown: formatFindByComponent(data) };
+          return {
+            ok: true,
+            data,
+            markdown: formatFindByComponent(data),
+            telemetry: {
+              payload: {
+                componentCount: input.componentPaths.length,
+                matchedComponentCount: input.componentPaths.length - unmatchedCount,
+                totalMatchCount: lookup.results.reduce(
+                  (total, result) => total + result.matches.length,
+                  0
+                ),
+                maxDistance,
+              },
+            },
+          };
         },
       },
     },

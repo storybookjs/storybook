@@ -3,13 +3,9 @@ import type { StorybookConfig } from '@storybook/react-vite';
 const config: StorybookConfig = {
   stories: ['../@(stories|src)/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   staticDirs: ['../public'],
-  addons: [
-    '@storybook/addon-a11y',
-    '@storybook/addon-vitest',
-    '@storybook/addon-docs',
-    '@storybook/addon-mcp',
-  ],
+  addons: ['@storybook/addon-a11y', '@storybook/addon-vitest', '@storybook/addon-docs'],
   framework: '@storybook/react-vite',
+  storySorts: [{ order: ['Summary', 'Conversation', 'Build', 'Typecheck', 'Lint', 'Source'] }],
   refs: {
     reshaped: {
       title: 'Reshaped',

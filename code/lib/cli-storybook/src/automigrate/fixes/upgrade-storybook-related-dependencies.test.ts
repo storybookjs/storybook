@@ -1,21 +1,13 @@
-import { readFileSync } from 'node:fs';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages.ts';
+import { checkFix } from '../helpers/fix-test-utils.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 
 vi.mock('../../doctor/getIncompatibleStorybookPackages');
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    readFileSync: vi.fn(),
-  };
-});
 
 const check = async ({
   packageManager,
@@ -26,13 +18,12 @@ const check = async ({
   main?: Partial<StorybookConfig> & Record<string, unknown>;
   storybookVersion?: string;
 }) => {
-  return upgradeStorybookRelatedDependencies.check({
+  return checkFix(upgradeStorybookRelatedDependencies, {
     packageManager: packageManager as any,
     configDir: '',
     mainConfig: mainConfig as any,
     storybookVersion,
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 };
 
@@ -56,8 +47,8 @@ describe('upgrade-storybook-related-dependencies fix', () => {
         hasIncompatibleDependencies: false,
       },
       {
-        packageName: '@storybook/preset-create-react-app',
-        packageVersion: '3.2.0',
+        packageName: '@storybook/addon-a11y',
+        packageVersion: '7.0.0',
         availableUpgrade: '8.0.0',
         hasIncompatibleDependencies: true,
       },
@@ -69,20 +60,6 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       },
     ];
     vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue(analyzedPackages);
-
-    // Mock the package.json content
-    const mockPackageJson = {
-      dependencies: {
-        '@storybook/jest': '0.2.3',
-        '@storybook/preset-create-react-app': '3.2.0',
-      },
-      devDependencies: {
-        '@chromatic-com/storybook': '1.2.9',
-        storybook: '8.0.0',
-      },
-    };
-
-    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockPackageJson));
 
     const mockPackageManager = {
       getAllDependencies: () =>
@@ -114,8 +91,8 @@ describe('upgrade-storybook-related-dependencies fix', () => {
           },
           {
             "afterVersion": "8.0.0",
-            "beforeVersion": "3.2.0",
-            "packageName": "@storybook/preset-create-react-app",
+            "beforeVersion": "7.0.0",
+            "packageName": "@storybook/addon-a11y",
           },
         ],
       }

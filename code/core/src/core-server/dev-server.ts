@@ -126,48 +126,46 @@ export async function storybookDevServer(
   let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
     await Promise.resolve();
 
-  if (!options.ignorePreview) {
-    logger.debug('Starting preview..');
-    previewResult = await previewBuilder
-      .start({
-        startTime: process.hrtime(),
-        options,
-        router: app,
-        server,
-        channel: options.channel,
-      })
-      .catch(async (e: unknown) => {
-        logger.error('Failed to build the preview');
-        process.exitCode = 1;
+  logger.debug('Starting preview..');
+  previewResult = await previewBuilder
+    .start({
+      startTime: process.hrtime(),
+      options,
+      router: app,
+      server,
+      channel: options.channel,
+    })
+    .catch(async (e: unknown) => {
+      logger.error('Failed to build the preview');
+      process.exitCode = 1;
 
-        await disposeChangeDetectionRuntime();
-        await managerBuilder?.bail().catch(() => undefined);
-        // For some reason, even when Webpack fails e.g. wrong main.js config,
-        // the preview may continue to print to stdout, which can affect output
-        // when we catch this error and process those errors (e.g. telemetry)
-        // gets overwritten by preview progress output. Therefore, we should bail the preview too.
-        await previewBuilder?.bail().catch(() => undefined);
+      await disposeChangeDetectionRuntime();
+      await managerBuilder?.bail().catch(() => undefined);
+      // For some reason, even when Webpack fails e.g. wrong main.js config,
+      // the preview may continue to print to stdout, which can affect output
+      // when we catch this error and process those errors (e.g. telemetry)
+      // gets overwritten by preview progress output. Therefore, we should bail the preview too.
+      await previewBuilder?.bail().catch(() => undefined);
 
-        // re-throw the error
-        throw e;
-      });
+      // re-throw the error
+      throw e;
+    });
 
-    let adapter: ChangeDetectionAdapter | undefined;
-    try {
-      adapter = previewBuilder.changeDetectionAdapter?.();
-    } catch (err) {
-      logger.warn('Change detection: adapter initialisation failed');
-      logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
-    }
+  let adapter: ChangeDetectionAdapter | undefined;
+  try {
+    adapter = previewBuilder.changeDetectionAdapter?.();
+  } catch (err) {
+    logger.warn('Change detection: adapter initialisation failed');
+    logger.debug(err instanceof Error ? (err.stack ?? err.message) : String(err));
+  }
 
-    resolveChangeDetectionAdapter(adapter);
+  resolveChangeDetectionAdapter(adapter);
 
-    const isChangeDetectionStatusEnabled = features.changeDetection !== false;
-    if (isChangeDetectionStatusEnabled) {
-      changeDetectionService.start(true);
-    } else {
-      changeDetectionService.start(false);
-    }
+  const isChangeDetectionStatusEnabled = features.changeDetection !== false;
+  if (isChangeDetectionStatusEnabled) {
+    changeDetectionService.start(true);
+  } else {
+    changeDetectionService.start(false);
   }
 
   const listening = new Promise<void>((resolve, reject) => {

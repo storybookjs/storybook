@@ -1,6 +1,5 @@
 {
   "items": {
-    "defaultValue": undefined,
     "description": "Items rendered in order.",
     "name": "items",
     "table": {
@@ -17,7 +16,6 @@
     },
   },
   "selected": {
-    "defaultValue": undefined,
     "description": "Currently selected item.",
     "name": "selected",
     "table": {

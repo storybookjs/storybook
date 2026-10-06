@@ -13,8 +13,8 @@ import { EyeIcon, InfoIcon, PlayHollowIcon, StopAltIcon } from '@storybook/icons
 
 import { store } from '#manager-store';
 import { announce } from '@react-aria/live-announcer';
-import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import {

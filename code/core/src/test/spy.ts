@@ -1,4 +1,4 @@
-import type { Mock, MockInstance } from '@vitest/spy';
+import type { Mock, MockInstance, MockInstance as VitestMockInstance } from '@vitest/spy';
 import {
   type MaybeMocked,
   type MaybeMockedDeep,
@@ -26,8 +26,13 @@ export { isMockFunction, mocks };
  * The automock code generation registers spies here so they can be properly cleared between
  * stories.
  */
-const moduleMockSpies: Set<MockInstance> = ((globalThis as any).__STORYBOOK_MODULE_MOCK_SPIES__ ??=
-  new Set<MockInstance>());
+interface StorybookMockGlobals {
+  __STORYBOOK_MODULE_MOCK_SPIES__?: Set<MockInstance>;
+}
+
+const moduleMockSpies: Set<MockInstance> = ((
+  globalThis as typeof globalThis & StorybookMockGlobals
+).__STORYBOOK_MODULE_MOCK_SPIES__ ??= new Set<MockInstance>());
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
 const listeners = new Set<Listener>();
@@ -37,13 +42,12 @@ export function onMockCall(callback: Listener): () => void {
   return () => void listeners.delete(callback);
 }
 
-// @ts-expect-error Make sure we export the exact same type as @vitest/spy
-export const spyOn: typeof vitestSpyOn = (...args) => {
-  const mock = vitestSpyOn(...(args as Parameters<typeof vitestSpyOn>));
+export const spyOn = ((...args: Parameters<typeof vitestSpyOn>) => {
+  const mock = vitestSpyOn(...args);
   return reactiveMock(mock);
-};
+}) as typeof vitestSpyOn;
 
-type Procedure = (...args: any[]) => any;
+type Procedure = Mock extends Mock<infer T> ? T : never;
 
 export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
 export function fn(implementation?: Procedure) {
@@ -51,18 +55,18 @@ export function fn(implementation?: Procedure) {
   return reactiveMock(mock);
 }
 
-function reactiveMock(mock: MockInstance) {
+function reactiveMock<T extends VitestMockInstance>(mock: T): T {
   const reactive = listenWhenCalled(mock);
   const originalMockImplementation = reactive.mockImplementation.bind(null);
   reactive.mockImplementation = (fn) => listenWhenCalled(originalMockImplementation(fn));
   return reactive;
 }
 
-function listenWhenCalled(mock: MockInstance) {
+function listenWhenCalled<T extends VitestMockInstance>(mock: T): T {
   const state = tinyspy.getInternalState(mock as unknown as SpyInternalImpl);
   const impl = state.impl;
   state.willCall(function (this: unknown, ...args) {
-    listeners.forEach((listener) => listener(mock, args));
+    listeners.forEach((listener) => listener(mock as MockInstance, args));
     return impl?.apply(this, args);
   });
   return mock;
@@ -130,5 +134,5 @@ export function mocked<T>(
 ): MaybePartiallyMockedDeep<T>;
 export function mocked<T>(item: T): MaybeMocked<T>;
 export function mocked<T>(item: T, _options = {}): MaybeMocked<T> {
-  return item as any;
+  return item as MaybeMocked<T>;
 }

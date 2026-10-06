@@ -173,7 +173,14 @@ jobs:
 
       - name: Run all experiments
         id: run_evals
-        run: yarn workspace agent-eval run eval
+        run: |
+          for key in ANTHROPIC_API_KEY OPENAI_API_KEY; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error title=Missing eval secret::$key is required; agent-eval would skip those experiments."
+              exit 1
+            fi
+          done
+          yarn workspace agent-eval run eval
         env:
           EVAL_ONLY: ${{ inputs.evals || '' }}
           EVAL_ALL: ${{ steps.conditions.outputs.all_evals }}

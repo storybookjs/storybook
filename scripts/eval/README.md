@@ -286,9 +286,9 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 
 The eval mirrors the real user flow exactly:
 
-1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`AI_SETUP_PROMPT`) that just says _"Run `npx storybook ai setup` and follow its instructions precisely."_
+1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`AI_SETUP_PROMPT`) that just says _"Run `npx storybook skills setup` and follow its instructions precisely."_
 2. The user pastes that into their AI agent.
-3. The **agent** runs `npx storybook ai setup` itself as a tool call.
+3. The **agent** runs `npx storybook skills setup` itself as a tool call.
 4. The agent reads the resulting project-aware markdown and follows it.
 
 The harness hands steps (1) and (2) to the trial agent as its task. Eval starts at step (3).
@@ -297,19 +297,19 @@ The harness hands steps (1) and (2) to the trial agent as its task. Eval starts 
 
 Prompt variants live in [`code/core/src/cli/skills/content/setup-prompts/`](../../code/core/src/cli/skills/content/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `setup-prompts/index.ts` lists every variant.
 
-The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
+The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook skills setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
 
 ```text
 eval.ts --prompt setup
   → run-trial.ts calls driver.execute({ env: { EVAL_SETUP_PROMPT: 'setup' } })
     → agent spawns with that env
-      → agent's `npx storybook ai setup` tool call inherits EVAL_SETUP_PROMPT
+      → agent's `npx storybook skills setup` tool call inherits EVAL_SETUP_PROMPT
         → CLI's getPrompts() picks the 'setup' variant
 ```
 
 ### Available prompts
 
-- `**pattern-copy-play**` _(default)_ — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook ai setup`.
+- `**pattern-copy-play**` _(default)_ — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook skills setup`.
 - `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 
 ### Adding a new prompt variant

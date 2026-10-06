@@ -42,8 +42,8 @@ function parseMajorVersion(version: string): number | undefined {
   return match ? parseInt(match[1], 10) : undefined;
 }
 
-// Returns a discriminated result instead of throwing so callers (the `ai setup` CLI and
-// `skills setup`) render their own failure message instead of duplicating logging.
+// Returns a discriminated result instead of throwing so callers (such as `skills setup`) render
+// their own failure message instead of duplicating logging.
 export async function getProjectInfo(opts: {
   configDir?: string;
   packageManager?: PackageManagerName;

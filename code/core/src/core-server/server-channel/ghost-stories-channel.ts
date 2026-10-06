@@ -45,7 +45,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           }
 
           // Already ran once for this project — re-run it only when we need fresh
-          // data for a new instance of `ai setup`.
+          // data for a new instance of `skills setup`.
           if (
             lastGhostStoriesRun &&
             lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
@@ -53,7 +53,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          // No session-ID match: `storybook ai setup` runs as a separate CLI
+          // No session-ID match: `storybook skills setup` runs as a separate CLI
           // process, so its sessionId never matches the dev server's. The
           // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
 

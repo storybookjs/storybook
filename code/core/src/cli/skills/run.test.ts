@@ -174,6 +174,20 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
+  it('reports the setup run only when the setup skill itself was requested', async () => {
+    const setup = await runSkillsCommand({ tokens: ['setup'], target: {} }, deps());
+    const all = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(setup.setupRun).toEqual({
+      projectInfo: {
+        rendererPackage: '@storybook/react',
+        builderPackage: '@storybook/builder-vite',
+      },
+      prompt: 'optimized-tests',
+    });
+    expect(all.setupRun).toBeUndefined();
+  });
+
   it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
     'setup accepts renderer %s',
     async (rendererPackage) => {

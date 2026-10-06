@@ -338,7 +338,7 @@ jobs:
           EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
-          EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
+          EVAL_OUTCOME: ${{ steps.check_results.outcome == 'success' && steps.run_evals.outcome || 'failure' }}
         run: |
           summary_file="$(mktemp)"
           node agent-eval/scripts/render-results-summary.mjs > "$summary_file" || true

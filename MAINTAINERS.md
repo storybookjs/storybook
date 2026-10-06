@@ -5,11 +5,11 @@ This document outlines some of the processes that the maintainers should adhere 
 1. Triage with the correct [label](#labels)
 2. If there is a change related to it, ensure it has been published and tested before closing
 
-# Required approval
+# Required Core/DX approval
 
-The `Require PR` ruleset on `next` and `main` requires one approving review before merge. GitHub counts only approvals from accounts with write access, so approvals from outside contributors and bots do not satisfy it. Self-approvals do not count. Approvals are not treated as stale when new commits are pushed.
+PRs must have an **approving review** from at least one active member of the Storybook **Core** or **Developer Experience** GitHub teams before merge. Maintainers (and other teams) do not satisfy this gate. Self-approvals do not count. One Core/DX approval is enough even if other Core/DX members requested changes. Approvals are not treated as stale when new commits are pushed.
 
-Write access is wider than the **Core** and **Developer Experience** teams, so check who approved before merging: a PR should have an approval from Core or DX.
+The gate is the `Core/DX approval` commit status, a required check on `next` and `main`. `.github/workflows/core-dx-approval.yml` reports it as successful once a Core/DX approval exists and reports nothing before that, so an unreviewed PR waits on an expected check instead of showing a failed one. To evaluate a PR by hand, run the `Core/DX Approval` workflow with the PR number.
 
 # Labels
 

@@ -1,0 +1,59 @@
+name: Core/DX Approval
+
+# Reports the `Core/DX approval` commit status once a member of the Core or Developer Experience
+# team has approved the PR. Without such an approval no status is reported, so the required check
+# stays "expected" instead of failing.
+on:
+  # zizmor: ignore[dangerous-triggers]  # default-branch checkout only; the run reads review state from the API, never PR code
+  workflow_run:
+    workflows: ['Core/DX Approval Review Event']
+    types: [completed]
+  # A status belongs to a commit, so a standing approval has to be reported again for a new head.
+  # zizmor: ignore[dangerous-triggers]  # base-branch checkout only; no PR code is checked out or executed
+  pull_request_target:
+    types:
+      - synchronize
+      - reopened
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to evaluate
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch) }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  core-dx-approval:
+    name: Report Core/DX approval
+    if: github.repository_owner == 'storybookjs'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Always the default branch, never PR code: PRs can target branches without this script.
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Report Core/DX approval
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ORG_MEMBERSHIP_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: node .github/scripts/core-dx-approval.ts

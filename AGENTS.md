@@ -104,7 +104,7 @@ Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth 
 - **Body** must contain a `#### Manual testing` heading followed by steps a maintainer can follow. The check bypasses `OWNER` and `MEMBER` authors, but private org membership resolves to `CONTRIBUTOR` for the CI token, so write the section even when you are a member.
 - **For non-release PRs targeting `next`, labels** must satisfy the exactly-one rules in [`scripts/dangerfile.ts`](scripts/dangerfile.ts). The valid change types come from the `pr-log` configuration in [`code/package.json`](code/package.json); the `ci:` and `qa:` label sets are defined in the dangerfile. Check those sources instead of copying their current values into agent guidance. The dangerfile also defines the separate release-PR rule. `other` is listed in the PR template but is not a valid change type for Danger, and `BREAKING CHANGE` is rejected while the dangerfile pins the branch version to minor.
 
-Merging is gated separately from Danger: the `Require PR` ruleset needs one approving review from an account with write access, and that review should come from the `core` or `developer-experience` team. A PR without an approval is not a failing check.
+Merging also needs an approving review from the `core` or `developer-experience` team. That is not a Danger rule: the `Core/DX approval` commit status is reported by `.github/workflows/core-dx-approval.yml` only once such an approval exists, so an unreviewed PR shows no failing check for it.
 
 ## Testing Expectations
 

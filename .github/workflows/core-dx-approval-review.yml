@@ -1,0 +1,20 @@
+name: Core/DX Approval Review Event
+
+# Review events on fork PRs run without secrets or a writable token, so this workflow does nothing
+# itself. Its completion triggers `core-dx-approval.yml`, which runs in the base repository.
+on:
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+      - edited
+
+permissions: {}
+
+jobs:
+  review-event:
+    name: Review event
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - run: 'true'

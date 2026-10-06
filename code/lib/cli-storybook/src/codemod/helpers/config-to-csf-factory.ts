@@ -1,17 +1,35 @@
-import { types as t } from 'storybook/internal/babel';
 import { formatFileContent } from 'storybook/internal/common';
-import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  loadConfig,
+  printConfig,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
+import { removeStatements, setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 import {
   addImportToTop,
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
 } from './csf-factories-utils.ts';
+
+// Inserts members at the start of an object, one per line when the object spans several lines.
+function prependMembers(code: string, object: E.ObjectExpression, members: string[]) {
+  const [first] = object.properties;
+  if (!first) {
+    return { at: object.start + 1, text: ` ${members.join(', ')} ` };
+  }
+  const lineStart = code.lastIndexOf('\n', first.start - 1) + 1;
+  const indent = code.slice(lineStart, first.start);
+  return code.slice(object.start, first.start).includes('\n') && !indent.trim()
+    ? { at: first.start, text: members.map((member) => `${member},\n${indent}`).join('') }
+    : { at: first.start, text: members.map((member) => `${member}, `).join('') };
+}
 
 export async function configToCsfFactory(
   info: FileInfo,
@@ -27,43 +45,43 @@ export async function configToCsfFactory(
   }
 
   const methodName = configType === 'main' ? 'defineMain' : 'definePreview';
-  const programNode = config._ast.program;
+  const editor = config._editorSource;
   const exportDecls = config._exportDecls;
+  const quote = config._quote;
 
-  const defineConfigProps = getConfigProperties(exportDecls, { configType });
+  const defineConfigProps = getConfigProperties(editor, exportDecls, { configType });
   const hasNamedExports = defineConfigProps.length > 0;
 
   // Early return if the code is already transformed (default export is already defineMain/definePreview)
-  const isAlreadyTransformed = programNode.body.some((node) => {
-    if (!t.isExportDefaultDeclaration(node)) return false;
-
-    // Unwrap TS syntax (e.g. `as`, `satisfies`) around the default export expression
-    const declaration =
-      typeof (config as any)._unwrap === 'function'
-        ? (config as any)._unwrap(node.declaration)
-        : node.declaration;
-
+  const isAlreadyTransformed = config._program.body.some((node) => {
+    if (node.type !== 'ExportDefaultDeclaration') {
+      return false;
+    }
+    const declaration = config._unwrap(node.declaration);
     return (
-      t.isCallExpression(declaration) &&
-      t.isIdentifier(declaration.callee) &&
+      declaration?.type === 'CallExpression' &&
+      declaration.callee.type === 'Identifier' &&
       declaration.callee.name === methodName
     );
   });
 
   // Check whether the required framework import (e.g. defineMain from '@storybook/react-vite/node') is already present
   const expectedImportSource = frameworkPackage + (configType === 'main' ? '/node' : '');
-  const hasCorrectImport = programNode.body.some(
-    (node) =>
-      t.isImportDeclaration(node) &&
-      node.importKind !== 'type' &&
-      node.source.value === expectedImportSource &&
-      node.specifiers.some(
-        (spec) =>
-          t.isImportSpecifier(spec) &&
-          t.isIdentifier(spec.imported) &&
-          spec.imported.name === methodName
-      )
-  );
+  const findFrameworkImport = () =>
+    config._program.body.find(
+      (node): node is E.ImportDeclaration =>
+        node.type === 'ImportDeclaration' &&
+        node.importKind !== 'type' &&
+        node.source.value === expectedImportSource
+    );
+  const importsMethod = (node: E.ImportDeclaration | undefined) =>
+    !!node?.specifiers.some(
+      (spec) =>
+        spec.type === 'ImportSpecifier' &&
+        spec.imported.type === 'Identifier' &&
+        spec.imported.name === methodName
+    );
+  const hasCorrectImport = importsMethod(findFrameworkImport());
 
   // For main configs, always return early when already transformed and imports are valid.
   // For preview configs, only return early when there are no named exports to merge.
@@ -74,24 +92,48 @@ export async function configToCsfFactory(
     return info.source;
   }
 
-  function findDeclarationNodeIndex(declarationName: string): number {
-    return programNode.body.findIndex(
-      (n) =>
-        t.isVariableDeclaration(n) &&
-        n.declarations.some((d) => {
-          let declaration = d.init;
-          // unwrap TS type annotations
-          if (t.isTSAsExpression(declaration) || t.isTSSatisfiesExpression(declaration)) {
-            declaration = declaration.expression;
-          }
-          return (
-            t.isIdentifier(d.id) &&
+  // `const <name> = { ... }`, possibly with a type cast around the object.
+  const findObjectDeclaration = (declarationName: string) =>
+    config._program.body.find(
+      (n): n is E.VariableDeclaration =>
+        n.type === 'VariableDeclaration' &&
+        n.declarations.some(
+          (d) =>
+            d.id.type === 'Identifier' &&
             d.id.name === declarationName &&
-            t.isObjectExpression(declaration)
-          );
-        })
+            config._unwrap(d.init)?.type === 'ObjectExpression'
+        )
     );
-  }
+
+  // Wraps the default export in `defineMain`/`definePreview`, moving a const declared config into it.
+  const wrapDefaultExport = (unwrapIdentifier: boolean) => {
+    const exportsObject = config._exportsObject;
+    if (!exportsObject) {
+      return;
+    }
+    const removed = new Set<Node>();
+    for (const node of config._program.body) {
+      if (node.type !== 'ExportDefaultDeclaration') {
+        continue;
+      }
+      const declaration = unwrapIdentifier ? config._unwrap(node.declaration) : node.declaration;
+      if (declaration?.type === 'Identifier') {
+        const declarationNode = findObjectDeclaration(declaration.name);
+        if (!declarationNode) {
+          continue;
+        }
+        removed.add(declarationNode);
+      } else if (declaration?.type !== 'ObjectExpression') {
+        continue;
+      }
+      editor.edits.overwrite(
+        node.declaration.start,
+        node.declaration.end,
+        `${methodName}(${editor.source(exportsObject)})`
+      );
+    }
+    removeStatements(editor, removed);
+  };
 
   if (shouldSkipTransform) {
     // already transformed — skip transformation but still run import fixup below
@@ -109,44 +151,11 @@ export async function configToCsfFactory(
      * Transform into: `export default defineMain({ tags: [], parameters: {} })`
      */
     // when merging named exports with default exports, add the named exports first in the list
-    config._exportsObject.properties = [...defineConfigProps, ...config._exportsObject.properties];
-    programNode.body = removeExportDeclarations(programNode, exportDecls);
-
-    // After merging, ensure the default export is wrapped with defineMain/definePreview
-    const defineConfigCall = t.callExpression(t.identifier(methodName), [config._exportsObject]);
-
-    let exportDefaultNode = null as unknown as t.ExportDefaultDeclaration;
-    let declarationNodeIndex = -1;
-
-    programNode.body.forEach((node) => {
-      // Detect Syntax 1: export default <identifier>
-      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(node.declaration)) {
-        const declarationName = node.declaration.name;
-
-        declarationNodeIndex = findDeclarationNodeIndex(declarationName);
-
-        if (declarationNodeIndex !== -1) {
-          exportDefaultNode = node;
-          // remove the original declaration as it will become a default export
-          const declarationNode = programNode.body[declarationNodeIndex];
-          if (t.isVariableDeclaration(declarationNode)) {
-            const id = declarationNode.declarations[0].id;
-            const variableName = t.isIdentifier(id) && id.name;
-
-            if (variableName) {
-              programNode.body.splice(declarationNodeIndex, 1);
-            }
-          }
-        }
-      } else if (t.isExportDefaultDeclaration(node) && t.isObjectExpression(node.declaration)) {
-        // Detect Syntax 2: export default { ... }
-        exportDefaultNode = node;
-      }
-    });
-
-    if (exportDefaultNode !== null) {
-      exportDefaultNode.declaration = defineConfigCall;
-    }
+    const { at, text } = prependMembers(editor.code, config._exportsObject, defineConfigProps);
+    editor.edits.appendRight(at, text);
+    removeExportDeclarations(editor, exportDecls);
+    config._commit();
+    wrapDefaultExport(false);
   } else if (config._exportsObject) {
     /**
      * Scenario 2: Default exports
@@ -156,59 +165,17 @@ export async function configToCsfFactory(
      *
      * Transform into: `export default defineMain({})`
      */
-    const defineConfigCall = t.callExpression(t.identifier(methodName), [config._exportsObject]);
-
-    let exportDefaultNode = null as any as t.ExportDefaultDeclaration;
-    let declarationNodeIndex = -1;
-
-    programNode.body.forEach((node) => {
-      // Detect Syntax 1
-      const declaration =
-        t.isExportDefaultDeclaration(node) && config._unwrap(node.declaration as t.Node);
-
-      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(declaration)) {
-        const declarationName = declaration.name;
-
-        declarationNodeIndex = findDeclarationNodeIndex(declarationName);
-
-        if (declarationNodeIndex !== -1) {
-          exportDefaultNode = node;
-          // remove the original declaration as it will become a default export
-          const declarationNode = programNode.body[declarationNodeIndex];
-          if (t.isVariableDeclaration(declarationNode)) {
-            const id = declarationNode.declarations[0].id;
-            const variableName = t.isIdentifier(id) && id.name;
-
-            if (variableName) {
-              programNode.body.splice(declarationNodeIndex, 1);
-            }
-          }
-        }
-      } else if (t.isExportDefaultDeclaration(node) && t.isObjectExpression(node.declaration)) {
-        // Detect Syntax 2
-        exportDefaultNode = node;
-      }
-    });
-
-    if (exportDefaultNode !== null) {
-      exportDefaultNode.declaration = defineConfigCall;
-    }
+    wrapDefaultExport(true);
   } else if (hasNamedExports) {
     /**
      * Scenario 3: Named exports export const foo = {}; export bar = '';
      *
      * Transform into: export default defineMain({ foo: {}, bar: '' });
      */
-    // Construct the `define` call
-    const defineConfigCall = t.callExpression(t.identifier(methodName), [
-      t.objectExpression(defineConfigProps),
-    ]);
-
-    // Remove all related named exports
-    programNode.body = removeExportDeclarations(programNode, exportDecls);
-
-    // Add the new export default declaration
-    programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
+    removeExportDeclarations(editor, exportDecls);
+    editor.edits.append(
+      `\nexport default ${methodName}({\n${defineConfigProps.map((prop) => `  ${prop}`).join(',\n')}\n});`
+    );
   } else if (configType === 'preview') {
     /**
      * Scenario 4: No exports (empty file or only side-effect imports)
@@ -222,46 +189,33 @@ export async function configToCsfFactory(
      * This is needed because story files using CSF factories import from preview, so the preview
      * file must have a default export.
      */
-    const defineConfigCall = t.callExpression(t.identifier(methodName), [t.objectExpression([])]);
-    programNode.body.push(t.exportDefaultDeclaration(defineConfigCall));
+    editor.edits.append(
+      `${editor.code && !editor.code.endsWith('\n') ? '\n' : ''}export default ${methodName}({});`
+    );
   }
-
-  const configImport = t.importDeclaration(
-    [t.importSpecifier(t.identifier(methodName), t.identifier(methodName))],
-    t.stringLiteral(frameworkPackage + `${configType === 'main' ? '/node' : ''}`)
-  );
+  config._commit();
 
   // Check whether @storybook/framework import already exists
-  const existingImport = programNode.body.find(
-    (node) =>
-      t.isImportDeclaration(node) &&
-      node.importKind !== 'type' &&
-      node.source.value === configImport.source.value
-  );
-
-  if (existingImport && t.isImportDeclaration(existingImport)) {
-    // If it does, check whether defineMain/definePreview is already imported
-    // and only add it if it's not
-    const hasMethodName = existingImport.specifiers.some(
-      (specifier) =>
-        t.isImportSpecifier(specifier) &&
-        t.isIdentifier(specifier.imported) &&
-        specifier.imported.name === methodName
-    );
-
-    if (!hasMethodName) {
-      existingImport.specifiers.push(
-        t.importSpecifier(t.identifier(methodName), t.identifier(methodName))
-      );
+  const existingImport = findFrameworkImport();
+  if (existingImport) {
+    // If it does, only add defineMain/definePreview if it's not imported yet
+    if (!importsMethod(existingImport)) {
+      setImportSpecifiers(editor, existingImport, existingImport.specifiers, {
+        named: [methodName],
+      });
     }
   } else {
     // if not, add import { defineMain } from '@storybook/framework'
-    addImportToTop(programNode, configImport);
+    addImportToTop(
+      editor,
+      `import { ${methodName} } from ${quote}${expectedImportSource}${quote};`
+    );
   }
+  config._commit();
 
   // Remove type imports – now inferred – from @storybook/* packages
   const disallowList = ['StorybookConfig', 'Preview'];
-  programNode.body = cleanupTypeImports(programNode, disallowList);
+  cleanupTypeImports(editor, disallowList);
 
   const output = printConfig(config).code;
 

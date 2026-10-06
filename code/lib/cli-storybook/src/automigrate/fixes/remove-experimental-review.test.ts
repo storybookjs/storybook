@@ -98,10 +98,7 @@ describe('remove-experimental-review', () => {
         const config: StorybookConfig = {
           stories: ['../src/**/*.stories.@(ts|tsx)'],
           framework: '@storybook/react-vite',
-          features: {
-            changeDetection: true,
-            experimentalTestSyntax: true
-          },
+          features: { changeDetection: true, experimentalTestSyntax: true },
         };
         export default config;"
       `);
@@ -111,14 +108,14 @@ describe('remove-experimental-review', () => {
   it('removes the features object when the flag was its only entry', async () => {
     expect(await migrate(mainWith('features: { experimentalReview: true },')))
       .toMatchInlineSnapshot(`
-      "import type { StorybookConfig } from '@storybook/react-vite';
+        "import type { StorybookConfig } from '@storybook/react-vite';
 
-      const config: StorybookConfig = {
-        stories: ['../src/**/*.stories.@(ts|tsx)'],
-        framework: '@storybook/react-vite'
-      };
-      export default config;"
-    `);
+        const config: StorybookConfig = {
+          stories: ['../src/**/*.stories.@(ts|tsx)'],
+          framework: '@storybook/react-vite',
+        };
+        export default config;"
+      `);
   });
 
   it('fails on a features object with a spread, which it cannot edit', async () => {

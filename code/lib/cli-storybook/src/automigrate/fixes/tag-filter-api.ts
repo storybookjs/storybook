@@ -1,10 +1,4 @@
-import {
-  babelParse,
-  babelPrint,
-  traverse,
-  types as t,
-  type NodePath,
-} from 'storybook/internal/babel';
+import { type ESTree as E, SourceEditor, walk } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
@@ -15,15 +9,15 @@ const tagOptionRenames = {
   excludeFromDocsStories: 'hideFromAutodocs',
 } as const;
 
-const objectKeys = (node: t.ObjectExpression) =>
+const objectKeys = (node: E.ObjectExpression) =>
   node.properties.flatMap((property) => {
-    if (!t.isObjectProperty(property) || property.computed) {
+    if (property.type !== 'Property' || property.computed) {
       return [];
     }
-    if (t.isIdentifier(property.key)) {
+    if (property.key.type === 'Identifier') {
       return [property.key.name];
     }
-    if (t.isStringLiteral(property.key)) {
+    if (property.key.type === 'Literal' && typeof property.key.value === 'string') {
       return [property.key.value];
     }
     return [];
@@ -34,50 +28,39 @@ const setFilterRenames: Record<string, string> = Object.assign(Object.create(nul
   experimental_setFilter: 'setFilter',
 });
 
-const isSetFilterApiReference = (path: NodePath<t.Identifier>) => {
-  const { parent, parentPath } = path;
-  const isMemberProperty =
-    (t.isMemberExpression(parent) || t.isOptionalMemberExpression(parent)) &&
-    !parent.computed &&
-    parent.property === path.node;
-  const isDestructuredApiKey =
-    t.isObjectProperty(parent) &&
-    !parent.computed &&
-    parent.key === path.node &&
-    parentPath.parentPath?.isObjectPattern() === true;
-  return isMemberProperty || isDestructuredApiKey;
-};
-
 const renameSetFilterIdentifiers = (code: string) => {
   if (!code.includes('experimental_setFilter')) {
     return undefined;
   }
-  let ast;
+  let editor;
   try {
-    ast = babelParse(code);
+    editor = new SourceEditor(code);
   } catch {
     return undefined;
   }
-  let changed = false;
-  traverse(ast, {
-    Identifier(path) {
-      if (!isSetFilterApiReference(path)) {
-        return;
+  const keys: E.Node[] = [];
+  walk(editor.program, (node) => {
+    if (node.type === 'MemberExpression' && !node.computed) {
+      keys.push(node.property);
+    }
+    if (node.type === 'ObjectPattern') {
+      for (const property of node.properties) {
+        if (property.type === 'Property' && !property.computed) {
+          keys.push(property.key);
+        }
       }
-      const next = Object.hasOwn(setFilterRenames, path.node.name)
-        ? setFilterRenames[path.node.name]
-        : undefined;
-      if (!next) {
-        return;
-      }
-      path.node.name = next;
-      changed = true;
-    },
+    }
   });
-  if (!changed) {
-    return undefined;
+  for (const key of keys) {
+    const next =
+      key.type === 'Identifier' && Object.hasOwn(setFilterRenames, key.name)
+        ? setFilterRenames[key.name]
+        : undefined;
+    if (next) {
+      editor.edits.overwrite(key.start, key.end, next);
+    }
   }
-  const printed = babelPrint(ast);
+  const printed = editor.toString();
   return printed === code ? undefined : printed;
 };
 
@@ -93,12 +76,12 @@ export const tagFilterApi: Fix = {
       filter: { kind: ['main'], code: /excludeFromSidebar|excludeFromDocsStories/ },
       editConfig: (main) => {
         const tags = main.get(['tags']);
-        if (!tags || !t.isObjectExpression(tags)) {
+        if (tags?.type !== 'ObjectExpression') {
           return;
         }
         for (const tagName of objectKeys(tags)) {
           const option = main.get(['tags', tagName]);
-          if (!option || !t.isObjectExpression(option)) {
+          if (option?.type !== 'ObjectExpression') {
             continue;
           }
           const keys = new Set(objectKeys(option));
@@ -109,9 +92,8 @@ export const tagFilterApi: Fix = {
             if (keys.has(to)) {
               const fromNode = main.get(['tags', tagName, from]);
               const toNode = main.get(['tags', tagName, to]);
-              const fromTrue =
-                !!fromNode && t.isBooleanLiteral(fromNode) && fromNode.value === true;
-              const toTrue = !!toNode && t.isBooleanLiteral(toNode) && toNode.value === true;
+              const fromTrue = fromNode?.type === 'Literal' && fromNode.value === true;
+              const toTrue = toNode?.type === 'Literal' && toNode.value === true;
               if (fromTrue && !toTrue) {
                 main.set(['tags', tagName, to], true);
               }

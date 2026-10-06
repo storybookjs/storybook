@@ -2,17 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { setDelegatedMode } from '../../service-registry.ts';
 import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
-import { registerDocgenService } from './server.ts';
+import { registerDocgenService, subscribeDocgenToModuleGraphChanges } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
-
-beforeEach(() => {
-  // registerDocgenService subscribes to `core/module-graph` and fails hard when it is missing, so
-  // the dependency must be registered first (mirroring the dev-server, where it always is).
-  registerTestModuleGraphService();
-});
 
 afterEach(() => {
   clearRegistry();
@@ -226,6 +219,28 @@ describe('docgen open service', () => {
   });
 
   describe('module graph hot refresh', () => {
+    beforeEach(() => {
+      registerTestModuleGraphService();
+    });
+
+    it('does not re-extract on registration alone', async () => {
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        docgenProvider: provider,
+      });
+      await service.queries.docgen.loaded({ id: 'button' });
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await expect(
+        vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2), { timeout: 200 })
+      ).rejects.toThrow();
+    });
+
     it('refreshes already-extracted components without loading every bumped component', async () => {
       const buttonEntry = makeStoryEntry('button--primary', 'Button');
       const cardEntry = makeStoryEntry('card--primary', 'Card');
@@ -236,10 +251,9 @@ describe('docgen open service', () => {
           path: entry.importPath,
         })
       );
-      const service = registerDocgenService({
-        getIndex: makeGetIndex([buttonEntry, cardEntry]),
-        docgenProvider: provider,
-      });
+      const getIndex = makeGetIndex([buttonEntry, cardEntry]);
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
@@ -266,10 +280,9 @@ describe('docgen open service', () => {
           path: entry.importPath,
         })
       );
-      const service = registerDocgenService({
-        getIndex: makeGetIndex([buttonEntry, cardEntry]),
-        docgenProvider: provider,
-      });
+      const getIndex = makeGetIndex([buttonEntry, cardEntry]);
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
@@ -284,78 +297,6 @@ describe('docgen open service', () => {
           './button.stories.tsx',
         ])
       );
-    });
-  });
-
-  describe('manifestEntries query', () => {
-    const manifestTagged = (entry: IndexEntry): IndexEntry => ({
-      ...entry,
-      tags: [...(entry.tags ?? []), Tag.MANIFEST],
-    });
-
-    it('publishes manifest-tagged component ids in index order and the standalone docs', async () => {
-      const guideEntry: DocsIndexEntry = {
-        id: 'guide--docs',
-        name: 'Guide',
-        title: 'Guide',
-        type: 'docs',
-        importPath: './guide.mdx',
-        storiesImports: [],
-        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
-      };
-      const service = registerDocgenService({
-        getIndex: makeGetIndex([
-          manifestTagged(makeStoryEntry('zebra--primary', 'Zebra')),
-          guideEntry,
-          manifestTagged(makeStoryEntry('alpha--primary', 'Alpha')),
-          manifestTagged(makeStoryEntry('alpha--secondary', 'Alpha')),
-          makeStoryEntry('untagged--primary', 'Untagged'),
-        ]),
-        docgenProvider: async () => undefined,
-      });
-
-      expect(service.queries.manifestEntries.get()).toEqual({ componentIds: [], docs: [] });
-      await expect(service.queries.manifestEntries.loaded()).resolves.toEqual({
-        componentIds: ['zebra', 'alpha'],
-        docs: [{ id: 'guide--docs', name: 'Guide' }],
-      });
-    });
-
-    it('lists an attached docs entry as its component, never as a standalone doc', async () => {
-      const attachedDocs: DocsIndexEntry = {
-        id: 'card--docs',
-        name: 'Docs',
-        title: 'Card',
-        type: 'docs',
-        importPath: './card.mdx',
-        storiesImports: ['./card.stories.tsx'],
-        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
-      };
-      const service = registerDocgenService({
-        getIndex: makeGetIndex([attachedDocs]),
-        docgenProvider: async () => undefined,
-      });
-
-      await expect(service.queries.manifestEntries.loaded()).resolves.toEqual({
-        componentIds: ['card'],
-        docs: [],
-      });
-    });
-  });
-
-  describe('delegated runtime', () => {
-    it('never refreshes on module graph changes, since it never extracts', async () => {
-      setDelegatedMode(true);
-      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
-      registerDocgenService({
-        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        docgenProvider: provider,
-      });
-
-      const moduleGraph = getService('core/module-graph', { internal: true });
-      await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: [] });
-
-      expect(provider).not.toHaveBeenCalled();
     });
   });
 

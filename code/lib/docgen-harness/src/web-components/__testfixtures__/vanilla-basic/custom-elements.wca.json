@@ -1,0 +1,61 @@
+{
+  "version": "experimental",
+  "tags": [
+    {
+      "name": "vanilla-basic",
+      "description": "Plain custom element with attribute-backed properties.",
+      "attributes": [
+        {
+          "name": "label",
+          "description": "Text label.",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "count",
+          "description": "Item count.",
+          "type": "number",
+          "default": "0"
+        },
+        {
+          "name": "disabled",
+          "description": "Disabled state.",
+          "type": "boolean",
+          "default": "false"
+        },
+        {
+          "name": "legacy-label",
+          "description": "Old name for label. @deprecated Use label instead.",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "properties": [
+        {
+          "name": "label",
+          "attribute": "label",
+          "description": "Text label.",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "count",
+          "attribute": "count",
+          "description": "Item count.",
+          "type": "number",
+          "default": "0"
+        },
+        {
+          "name": "disabled",
+          "attribute": "disabled",
+          "description": "Disabled state.",
+          "type": "boolean",
+          "default": "false"
+        }
+      ],
+      "events": [],
+      "slots": [],
+      "cssProperties": []
+    }
+  ]
+}

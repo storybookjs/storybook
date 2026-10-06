@@ -52,7 +52,6 @@ The `enhanceArgTypes`function takes a `StoryContext` (including the story id, pa
 export interface ArgType {
   name?: string;
   description?: string;
-  defaultValue?: any;
   [key: string]: any;
 }
 

@@ -3,21 +3,26 @@
  * services actually registered — see `createLocalDocsAccess`).
  *
  * Two properties make this different from reading the service aggregates directly. Visibility comes
- * from `core/docgen`'s `manifestEntries`, which the server derives from the story index, so the
- * listing matches what core's manifest generator would emit — same `manifest` tag filter, same
- * component selection, same order — instead of whatever happens to have been extracted so far. And
- * single-entry lookups use the per-id queries, so resolving one component never triggers docgen
- * extraction for every component.
+ * from the story index, so the listing matches what core's manifest generator would emit — same
+ * `manifest` tag filter, same component selection, same order — instead of whatever happens to have
+ * been extracted so far. And single-entry lookups use the per-id queries, so resolving one
+ * component never triggers docgen extraction for every component.
  */
 
+import type { StoryIndex } from 'storybook/internal/types';
+
+import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
+import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
 import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
-import type { DocgenService, ManifestEntries } from '../../services/docgen/definition.ts';
+import { Tag } from '../../../constants/tags.ts';
+import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
 import { toShallowManifests, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
+import type { DocsClassification } from './classify-services.ts';
 import {
   adaptCoreComponent,
   adaptCoreDoc,
@@ -42,8 +47,53 @@ type MdxService = {
 };
 
 export type ServiceDocsAccessOptions = {
+  storyIndex: { getIndex: () => Promise<StoryIndex> };
   getService: ToolsetGetService;
 };
+
+/**
+ * Derives the visible set from the story index using core's manifest rules.
+ *
+ * Component ids keep story-index order: the sidebar order is the order a reader expects, and
+ * re-sorting here would silently disagree with every other manifest surface.
+ */
+function classifyIndex(index: StoryIndex): DocsClassification {
+  const entries = Object.values(index.entries).filter(
+    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
+  );
+  const selected = selectComponentEntriesByComponentId(entries);
+
+  const storyBasedIds = new Set<string>();
+  for (const [id, entry] of selected) {
+    if (entry.type === 'story') {
+      storyBasedIds.add(id);
+    }
+  }
+
+  const attachedDocsByComponent = new Map<string, string[]>();
+  const unattachedDocs = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.type !== 'docs') {
+      continue;
+    }
+    if (entry.tags?.includes(Tag.UNATTACHED_MDX)) {
+      unattachedDocs.set(entry.id, entry.name);
+    } else if (entry.tags?.includes(Tag.ATTACHED_MDX)) {
+      const componentId = getComponentIdFromEntry(entry);
+      attachedDocsByComponent.set(componentId, [
+        ...(attachedDocsByComponent.get(componentId) ?? []),
+        entry.id,
+      ]);
+    }
+  }
+
+  return {
+    componentIds: [...selected.keys()],
+    storyBasedIds,
+    unattachedDocs,
+    attachedDocsByComponent,
+  };
+}
 
 /** Optional services resolve to `undefined` rather than throwing when they are not registered. */
 function tryGetService<T>(getService: ToolsetGetService, serviceId: string): T | undefined {
@@ -75,62 +125,71 @@ async function loadOptionalComponentPayload<T>(
   }
 }
 
-export function createServiceDocsAccess({ getService }: ServiceDocsAccessOptions): DocsAccess {
+export function createServiceDocsAccess({
+  storyIndex,
+  getService,
+}: ServiceDocsAccessOptions): DocsAccess {
+  // The index and the services are read on every call. Both cache internally, and re-reading is
+  // what keeps the toolset in lock-step with HMR.
+  const classify = async () => classifyIndex(await storyIndex.getIndex());
   const getDocgen = () => getService<DocgenService>('core/docgen', { internal: true });
   const getStoryDocs = () => getService<StoryDocsService>('core/story-docs', { internal: true });
   const getMdx = () => tryGetService<MdxService>(getService, MDX_SERVICE_ID);
 
   async function listComponents(
-    componentIds: string[],
+    classification: DocsClassification,
     withStoryIds: boolean
   ): Promise<Record<string, ComponentManifestV1>> {
     // Every component must be listed even without a prior extraction, so load rather than read.
     const allDocgen = await getDocgen().queries.docgenForAllComponents.loaded();
 
-    // Per-id loads, so listing without story ids never pays for story-docs extraction.
     const storyDocs = getStoryDocs();
+    const storyBasedIds = withStoryIds
+      ? classification.componentIds.filter((id) => classification.storyBasedIds.has(id))
+      : [];
+    // Per-id loads, so listing without story ids never pays for story-docs extraction.
     const storiesById = new Map(
-      withStoryIds
-        ? await Promise.all(
-            componentIds.map(
-              async (id) =>
-                [
-                  id,
-                  await loadOptionalComponentPayload(storyDocs.queries.storyDocs.loaded({ id })),
-                ] as const
-            )
-          )
-        : []
+      await Promise.all(
+        storyBasedIds.map(
+          async (id) =>
+            [
+              id,
+              await loadOptionalComponentPayload(storyDocs.queries.storyDocs.loaded({ id })),
+            ] as const
+        )
+      )
     );
 
     const components: Record<string, ComponentManifestV1> = {};
-    for (const id of componentIds) {
+    for (const id of classification.componentIds) {
       const payload = allDocgen[id];
       components[id] = {
         id,
         name: payload?.name ?? id,
         ...(payload?.description !== undefined ? { description: payload.description } : {}),
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
-        ...(withStoryIds ? { stories: adaptCoreStories(storiesById.get(id)?.stories) ?? [] } : {}),
+        ...(classification.storyBasedIds.has(id) && withStoryIds
+          ? { stories: adaptCoreStories(storiesById.get(id)?.stories) ?? [] }
+          : {}),
       };
     }
 
     return components;
   }
 
-  async function listDocs(entries: ManifestEntries['docs']): Promise<Record<string, DocV1>> {
-    if (entries.length === 0) {
+  async function listDocs(classification: DocsClassification): Promise<Record<string, DocV1>> {
+    if (classification.unattachedDocs.size === 0) {
       return {};
     }
 
     const allMdx = (await getMdx()?.queries.mdxForAllComponents.loaded()) ?? {};
 
     const docs: Record<string, DocV1> = {};
-    for (const { id, name } of entries) {
+    for (const [docId, name] of classification.unattachedDocs) {
       // The display name comes from the index entry: it exists even when the MDX service does not.
-      const payload = allMdx[id]?.docs?.[id];
-      docs[id] = {
-        id,
+      const payload = allMdx[docId]?.docs?.[docId];
+      docs[docId] = {
+        id: docId,
         name,
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
       };
@@ -139,14 +198,22 @@ export function createServiceDocsAccess({ getService }: ServiceDocsAccessOptions
     return docs;
   }
 
-  async function resolveComponent(id: string): Promise<ResolvedDocsEntry> {
+  async function resolveComponent(
+    id: string,
+    classification: DocsClassification
+  ): Promise<ResolvedDocsEntry> {
     const mdx = getMdx();
-    const [docgenPayload, storyDocsPayload, mdxPayload] = await Promise.all([
+    const [docgenPayload, storyDocsPayload] = await Promise.all([
       loadOptionalComponentPayload(getDocgen().queries.docgen.loaded({ id })),
       loadOptionalComponentPayload(getStoryDocs().queries.storyDocs.loaded({ id })),
-      mdx ? loadOptionalComponentPayload(mdx.queries.mdxForComponent.loaded({ id })) : undefined,
     ]);
-    const docs = selectAttachedDocs(mdxPayload);
+
+    const hasAttachedDocs = (classification.attachedDocsByComponent.get(id)?.length ?? 0) > 0;
+    const mdxPayload =
+      hasAttachedDocs && mdx
+        ? await loadOptionalComponentPayload(mdx.queries.mdxForComponent.loaded({ id }))
+        : undefined;
+    const docs = selectAttachedDocs(classification, id, mdxPayload);
 
     const core: CoreDocgenComponent = {
       ...docgenPayload,
@@ -171,22 +238,22 @@ export function createServiceDocsAccess({ getService }: ServiceDocsAccessOptions
 
   return {
     async list({ withStoryIds }) {
-      const entries = await getDocgen().queries.manifestEntries.loaded();
-      // Sequential on purpose: the docgen fan-out keeps the instance's event loop busy, and a
-      // command dispatched into that is not acknowledged in time.
-      const components = await listComponents(entries.componentIds, withStoryIds);
-      const docs = await listDocs(entries.docs);
+      const classification = await classify();
+      const [components, docs] = await Promise.all([
+        listComponents(classification, withStoryIds),
+        listDocs(classification),
+      ]);
       return toShallowManifests(components, docs);
     },
 
     async resolve(id) {
-      const entries = await getDocgen().queries.manifestEntries.loaded();
+      const classification = await classify();
 
-      if (entries.docs.some((doc) => doc.id === id)) {
+      if (classification.unattachedDocs.has(id)) {
         return resolveStandaloneDoc(id);
       }
-      if (entries.componentIds.includes(id)) {
-        return resolveComponent(id);
+      if (classification.componentIds.includes(id)) {
+        return resolveComponent(id, classification);
       }
       return undefined;
     },

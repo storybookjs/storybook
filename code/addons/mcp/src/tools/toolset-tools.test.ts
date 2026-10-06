@@ -27,22 +27,19 @@ function registerStubStoriesToolset(
       description: 'stub',
       methods: {
         preview: {
-          input: v.object({ id: v.string() }),
+          input: v.strictObject({ id: v.string() }),
           output: v.object({ stories: v.array(v.object({ previewUrl: v.string() })) }),
           title: 'Get story preview URLs',
           description: (ctx) => `describes ${ctx.transport}`,
           handler:
             overrides.handler ??
             (async (input: { id: string }, ctx) => {
-              await ctx.telemetry?.('tool:previewStories', {
-                toolset: 'dev',
-                inputStoryCount: 1,
-              });
               const stories = [{ previewUrl: `${ctx.origin}/?path=/story/${input.id}` }];
               return {
                 ok: true,
                 data: { stories, extraNotInContract: 'internal' },
                 markdown: stories.map((story) => story.previewUrl).join('\n'),
+                telemetry: { payload: { inputStoryCount: 1 } },
               };
             }),
         },
@@ -57,7 +54,7 @@ function makeServer(custom: Record<string, unknown> = {}) {
   } as any;
 }
 
-const previewOptions = { method: 'stories.preview' } as const;
+const previewOptions = { method: 'stories.preview', mcpEventName: 'tool:previewStories' } as const;
 
 describe('toolset-backed MCP tools', () => {
   beforeEach(() => {
@@ -137,7 +134,7 @@ describe('toolset-backed MCP tools', () => {
         description: 'stub',
         methods: {
           changed: {
-            input: v.object({}),
+            input: v.strictObject({}),
             title: 'Get changed stories metadata',
             description: 'changed',
             handler: async () => ({ ok: true, data: { stories: [] }, markdown: 'no changes' }),
@@ -146,7 +143,11 @@ describe('toolset-backed MCP tools', () => {
       }) as any
     );
 
-    const result = await callToolsetMethod(makeServer(), { method: 'stories.changed' }, {});
+    const result = await callToolsetMethod(
+      makeServer(),
+      { method: 'stories.changed', mcpEventName: 'tool:getChangedStories' },
+      {}
+    );
 
     expect(result.content).toEqual([{ type: 'text', text: 'no changes' }]);
     expect(result.structuredContent).toBeUndefined();
@@ -219,18 +220,28 @@ describe('toolset-backed MCP tools', () => {
     expect(vi.mocked(logger.error).mock.calls[0][0]).toContain('boom');
   });
 
-  it('forwards method telemetry with the surface fields the adapter owns', async () => {
+  it('sends the report on the outcome under the legacy event name the addon keeps', async () => {
     registerStubStoriesToolset();
 
     await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
 
-    expect(collectTelemetry).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: 'tool:previewStories',
-        toolset: 'dev',
-        inputStoryCount: 1,
-      })
-    );
+    expect(collectTelemetry).toHaveBeenCalledWith({
+      event: 'tool:previewStories',
+      server: expect.anything(),
+      toolset: 'stories',
+      tool: 'preview',
+      inputStoryCount: 1,
+    });
+  });
+
+  it('emits no telemetry for an outcome without a report', async () => {
+    registerStubStoriesToolset({
+      handler: async () => ({ ok: true, data: { stories: [] }, markdown: '' }),
+    });
+
+    await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
+
+    expect(collectTelemetry).not.toHaveBeenCalled();
   });
 
   it('emits no telemetry when the session disabled it', async () => {

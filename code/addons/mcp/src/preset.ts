@@ -16,6 +16,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
+import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -49,6 +50,7 @@ export const experimental_devServer: PresetPropertyFn<
   const localAccess =
     rawAvailability.docgenServer && refs.length > 0
       ? createLocalDocsAccess({
+          storyIndex: { getIndex: () => getStoryIndex(options) },
           getManifests: () => loadManifests(options.presets),
         })
       : undefined;
@@ -120,7 +122,6 @@ export const experimental_devServer: PresetPropertyFn<
     moduleGraphSupported,
     changeDetectionEnabled,
     reviewEnabled,
-    reviewEnabledForCli,
     docsEnabled,
     docsHasManifests,
     docsFeatureEnabled,
@@ -187,8 +188,7 @@ export const experimental_devServer: PresetPropertyFn<
 
     // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
     // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
-    // graph, `stories-changed` needs the `changeDetection` feature flag, and
-    // `review-create` additionally needs the opt-in `experimentalReview` feature flag —
+    // graph, `stories-changed` and `review-create` need the `changeDetection` feature flag —
     // so each shows its own badge.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
     // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
@@ -198,11 +198,7 @@ export const experimental_devServer: PresetPropertyFn<
           !moduleGraphSupported &&
             `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
           !changeDetectionEnabled &&
-            `<code>stories-changed</code> requires enabling the <code>changeDetection</code> feature flag.`,
-          !reviewEnabled &&
-            (reviewEnabledForCli
-              ? `<code>review-create</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
-              : `<code>review-create</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
+            `<code>stories-changed</code> and <code>review-create</code> require enabling the <code>changeDetection</code> feature flag.`,
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
@@ -217,7 +213,7 @@ export const experimental_devServer: PresetPropertyFn<
         statusWord(isDevEnabled && moduleGraphSupported)
       )
       .replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
-      .replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabledForCli))
+      .replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabled))
       .replace('{{DEV_NOTICE}}', devNotice)
       .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
       .replace('{{DOCS_NOTICE}}', docsNotice)

@@ -4,6 +4,8 @@
  * consumers share this helper, so this is the single place the choice is pinned.
  */
 
+import type { StoryIndex } from 'storybook/internal/types';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createLocalDocsAccess } from './access-local.ts';
@@ -25,7 +27,13 @@ const manifests: RawManifests = {
   },
 };
 
-const createAccess = () => createLocalDocsAccess({ getManifests: async () => manifests });
+const emptyIndex = { v: 5, entries: {} } as StoryIndex;
+
+const createAccess = () =>
+  createLocalDocsAccess({
+    storyIndex: { getIndex: async () => emptyIndex },
+    getManifests: async () => manifests,
+  });
 
 beforeEach(() => {
   getRegisteredServices.mockReturnValue([]);

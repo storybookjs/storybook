@@ -1,21 +1,25 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { deprecate, logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
-import { loadPartialConfig } from '@babel/core';
-import semver from 'semver';
+import { loadPartialConfigAsync } from '@babel/core';
 
+import { findBabelConfigFile } from './babel/babel-config-file.ts';
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
 import TransformFontImports from './font/babel/index.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
 import { isNextVersionGte } from './utils.ts';
+
+// Soft-deprecated in Storybook 11, removed in Storybook 12. `deprecate` warns once per process,
+// so calling it at module scope is safe even when the preset module gets re-evaluated.
+deprecate(
+  '@storybook/nextjs is deprecated and will be removed in Storybook 12. Migrate to @storybook/nextjs-vite — the automigration is available via `storybook upgrade` (accept the fix) or `storybook migrate nextjs-to-nextjs-vite`.'
+);
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
@@ -62,7 +66,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
-  const configPartial = loadPartialConfig({
+  const configPartial = await loadPartialConfigAsync({
     ...baseConfig,
     filename: `${getProjectRoot()}/__fake__.js`,
   });
@@ -118,7 +122,7 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
   // We need to re-apply the default storybook babel override from:
   // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
-  // Because it get lost in the loadPartialConfig call above.
+  // Because it get lost in the loadPartialConfigAsync call above.
   // See https://github.com/storybookjs/storybook/issues/28467
   const shouldRemoveBugfixes =
     globalThis?.FEATURES &&
@@ -155,7 +159,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   // Next.js has been configured (above), and has replaced webpack with its precompiled
   // version.
   const { configureNextFont } = await import('./font/webpack/configureNextFont.ts');
-  const { configureRuntimeNextjsVersionResolution, getNextjsVersion } = await import('./utils.ts');
+  const { configureRuntimeNextjsVersionResolution } = await import('./utils.ts');
   const { configureImports } = await import('./imports/webpack.ts');
   const { configureCss } = await import('./css/webpack.ts');
   const { configureImages } = await import('./images/webpack.ts');
@@ -167,15 +171,10 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureSWCLoader } = await import('./swc/loader.ts');
   const { configureBabelLoader } = await import('./babel/loader.ts');
 
-  const babelRCPath = join(getProjectRoot(), '.babelrc');
-  const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
-  const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
-  const nextjsVersion = getNextjsVersion();
+  const hasBabelConfig = !!findBabelConfigFile(getProjectRoot());
   const isDevelopment = options.configType !== 'PRODUCTION';
 
-  const isNext14orNewer = semver.gte(nextjsVersion, '14.0.0');
-  const useSWC =
-    isNext14orNewer && (nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig);
+  const useSWC = nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig;
 
   configureNextFont(baseConfig, useSWC);
   configureRuntimeNextjsVersionResolution(baseConfig);

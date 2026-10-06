@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { existsSync } from 'node:fs';
+
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { resolve } from 'node:path';
 
 import { Channel } from 'storybook/internal/channels';
 import type { Options, Presets } from 'storybook/internal/types';
@@ -6,8 +10,9 @@ import type { Options, Presets } from 'storybook/internal/types';
 import { loadConfigFromFile } from 'vite';
 
 import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
-import { commonConfig } from './vite-config.ts';
+import { commonConfig, resolveVitePublicDir } from './vite-config.ts';
 
+vi.mock('node:fs', { spy: true });
 vi.mock('vite', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vite')>()),
   loadConfigFromFile: vi.fn(async () => ({})),
@@ -130,5 +135,55 @@ describe('storybookConfigPlugin', () => {
     const config = { server: { fs: { allow: ['/some/path'] } } };
     (allowPlugin.config as Function)(config);
     expect(config.server.fs.allow).toContain('/test/.storybook');
+  });
+});
+
+describe('resolveVitePublicDir', () => {
+  const options: Options = { ...dummyOptions, configDir: '/project/.storybook' };
+  const mockUserConfig = (config: Record<string, unknown>) =>
+    loadConfigFromFileMock.mockResolvedValueOnce({ config, path: '', dependencies: [] });
+
+  const mockExistsSync = async (pathToMock: string, exists: boolean) => {
+    const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
+
+    vi.mocked(existsSync).mockImplementation((path) => {
+      if (path === resolve(pathToMock)) {
+        return exists;
+      }
+
+      return actual.existsSync(path);
+    });
+  };
+
+  afterEach(() => {
+    vi.mocked(existsSync).mockReset();
+  });
+
+  it('defaults to the public directory next to the Storybook config dir', async () => {
+    await mockExistsSync('/project/public', true);
+    mockUserConfig({});
+
+    expect(await resolveVitePublicDir(options, 'build')).toBe(resolve('/project/public'));
+  });
+
+  it('resolves a custom publicDir relative to the project root', async () => {
+    await mockExistsSync('/project/assets/static', true);
+    mockUserConfig({ publicDir: 'assets/static' });
+
+    expect(await resolveVitePublicDir(options, 'build')).toBe(resolve('/project/assets/static'));
+  });
+
+  it('returns undefined when publicDir is disabled', async () => {
+    await mockExistsSync('/project/public', true);
+    mockUserConfig({ publicDir: false });
+
+    expect(await resolveVitePublicDir(options, 'build')).toBeUndefined();
+  });
+
+  it('returns undefined when the public directory does not exist', async () => {
+    await mockExistsSync('/project/public', false);
+    mockUserConfig({});
+
+    expect(await resolveVitePublicDir(options, 'build')).toBeUndefined();
   });
 });

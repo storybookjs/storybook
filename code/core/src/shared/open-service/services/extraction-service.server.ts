@@ -38,22 +38,32 @@ const toExtractionError = (error: unknown): ExtractionError =>
     ? { name: error.name, message: error.message }
     : { name: 'Error', message: String(error) };
 
-export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
+export type RegisterExtractionServiceOptions<
+  TState extends ExtractionServiceState,
+  TQueries extends Queries<TState>,
+  TCommands extends Commands<TState>,
+> = {
   getIndex: () => Promise<StoryIndex>;
-  provider: ExtractionProvider<TPayload>;
+  provider: ExtractionProvider<TState['components'][string]>;
   /**
    * Builds the payload stored for a component whose provider threw during the fan-out.
    *
    * Supplied per service because the payload shapes differ and both are validated against their
    * service's output schema.
    */
-  buildErrorPayload: (input: { id: string; entry: IndexEntry; error: ExtractionError }) => TPayload;
+  buildErrorPayload: (input: {
+    id: string;
+    entry: IndexEntry;
+    error: ExtractionError;
+  }) => TState['components'][string];
   /** Query whose `staticInputs` enumerate the eligible component ids. */
   queryName: keyof TQueries & string;
   /** Command that extracts and stores one component's payload. Keyed against the service's commands. */
   extractCommand: keyof TCommands & string;
   /** Command that extracts every component in the story index. Keyed against the service's commands. */
   extractAllCommand: keyof TCommands & string;
+  // Handlers for the service's commands other than the two extraction ones.
+  commands?: ServiceRegistrationOptions<TState, TQueries, TCommands>['commands'];
 };
 
 /**
@@ -155,7 +165,7 @@ export function registerExtractionService<
   TCommands extends Commands<TState>,
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
-  options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
+  options: RegisterExtractionServiceOptions<TState, TQueries, TCommands>
 ) {
   const { getIndex, provider, buildErrorPayload, queryName, extractCommand, extractAllCommand } =
     options;
@@ -207,6 +217,7 @@ export function registerExtractionService<
       },
     },
     commands: {
+      ...options.commands,
       [extractCommand]: {
         handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
           const payload = await provider({ entry: await resolveEntry(input.id) });

@@ -102,6 +102,11 @@ Query `load` hooks are thin command triggers (the docgen pattern: `load` only aw
 manager. Change-detection scan readiness is the same pattern: `changeDetectionReadiness.load`
 awaits `_waitForChangeDetectionReadiness`.
 
+Closures a toolset receives at registration are not delegated: a `getIndex()` call from a handler
+builds the story index in the caller. Data a handler needs from the index therefore goes through a
+query too. The docs toolset reads `core/docgen`'s `manifestEntries`, whose load awaits
+`_resolveManifestEntries`, so the instance answers from the index it already holds.
+
 See [Load](../../shared/open-service/README.md#load).
 
 ## requiresDevServer and telemetry

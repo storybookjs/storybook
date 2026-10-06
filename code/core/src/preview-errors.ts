@@ -1,5 +1,9 @@
 import { dedent } from 'ts-dedent';
 
+// Re-exported so downstream surfaces consume the shared error contract from this entry instead of
+// re-deriving kind or severity.
+export * from './classified-error.ts';
+
 import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';

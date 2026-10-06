@@ -187,21 +187,13 @@ export const computeStorybookMetadata = async ({
   }
 
   const [
-    { frameworkInfo, rendererPackages },
+    { frameworkInfo, rendererPackages, storybookInfo, usesGlobals },
     { addons, storybookPackages },
-    { storybookInfo, usesGlobals },
     portableStoriesFileCount,
     applicationFileCount,
   ] = await Promise.all([
-    getFrameworkInfo(mainConfig, configDir).then(async (info) => ({
-      frameworkInfo: info,
-      rendererPackages: await resolveRendererPackages(info.renderer),
-    })),
+    resolveStorybookInfo(mainConfig, configDir),
     resolveAddonsAndStorybookPackages(mainConfig, packageJson, allDependencies),
-    getStorybookInfo(configDir).then(async (info) => ({
-      storybookInfo: info,
-      usesGlobals: await previewUsesGlobals(info.previewConfigPath),
-    })),
     getPortableStoriesFileCount(),
     getApplicationFileCount(dirname(packageJsonPath)),
   ]);
@@ -284,11 +276,9 @@ async function resolveAddonsAndStorybookPackages(
     addons[name].version = version || undefined;
   });
 
-  // An addon can resolve to a different package name than the one in main.js, so the Storybook
-  // packages can only be told apart from the addons once the addon versions are in.
   const addonNames = Object.keys(addons);
 
-  // all Storybook deps minus the addons
+  // All Storybook deps minus the addons, including the names the addons resolved to above.
   const storybookPackages = Object.keys(allDependencies)
     .filter((dep) => dep.includes('storybook') && !addonNames.includes(dep))
     .reduce((acc, dep) => {
@@ -311,28 +301,34 @@ async function resolveAddonsAndStorybookPackages(
   return { addons, storybookPackages };
 }
 
-async function resolveRendererPackages(renderer: string | undefined) {
-  return Object.fromEntries(
+// getFrameworkInfo and getStorybookInfo both load the main config, which is not safe to do twice at
+// the same time: for a main config that is not valid ESM it writes and removes one temporary file.
+async function resolveStorybookInfo(mainConfig: StorybookConfig, configDir: string) {
+  const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
+
+  const rendererPackages = Object.fromEntries(
     await Promise.all(
-      getRendererPackages(renderer).map(async (packageName) => {
+      getRendererPackages(frameworkInfo.renderer).map(async (packageName) => {
         const { version } = await getActualPackageVersion(packageName);
         return [packageName, version || 'unknown'];
       })
     )
   );
-}
 
-// Not critical information, and AST parsing of user code can fail, so a parse error yields nothing.
-async function previewUsesGlobals(previewConfigPath: string | undefined) {
-  if (!previewConfigPath) {
-    return undefined;
-  }
+  const storybookInfo = await getStorybookInfo(configDir);
+
+  let usesGlobals: boolean | undefined;
   try {
-    const config = await readConfig(previewConfigPath);
-    return !!(config.getFieldNode(['globals']) || config.getFieldNode(['globalTypes']));
-  } catch {
-    return undefined;
+    const { previewConfigPath: previewConfig } = storybookInfo;
+    if (previewConfig) {
+      const config = await readConfig(previewConfig);
+      usesGlobals = !!(config.getFieldNode(['globals']) || config.getFieldNode(['globalTypes']));
+    }
+  } catch (e) {
+    // gracefully handle error, as it's not critical information and AST parsing can cause trouble
   }
+
+  return { frameworkInfo, rendererPackages, storybookInfo, usesGlobals };
 }
 
 async function getPackageJsonDetails() {

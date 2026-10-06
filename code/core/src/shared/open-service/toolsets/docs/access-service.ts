@@ -3,7 +3,7 @@
  * services actually registered — see `createLocalDocsAccess`).
  *
  * Two properties make this different from reading the service aggregates directly. Visibility comes
- * from `core/docgen`'s `manifestEntries`, which the server derives from the story index, so the
+ * from `core/docgen`'s `resolveManifestEntries`, which the server answers from the story index, so the
  * listing matches what core's manifest generator would emit — same `manifest` tag filter, same
  * component selection, same order — instead of whatever happens to have been extracted so far. And
  * single-entry lookups use the per-id queries, so resolving one component never triggers docgen
@@ -79,9 +79,9 @@ export function createServiceDocsAccess({ getService }: ServiceDocsAccessOptions
   const getDocgen = () => getService<DocgenService>('core/docgen', { internal: true });
   const getStoryDocs = () => getService<StoryDocsService>('core/story-docs', { internal: true });
   const getMdx = () => tryGetService<MdxService>(getService, MDX_SERVICE_ID);
-  // Loaded, not read, on every call: the server re-reads its index, which keeps the toolset in
-  // lock-step with HMR.
-  const loadManifestEntries = () => getDocgen().queries.manifestEntries.loaded();
+  // A command, so an attached caller gets the answer from the instance's index instead of building
+  // one. Asked on every call, which keeps the toolset in lock-step with HMR.
+  const resolveManifestEntries = () => getDocgen().commands.resolveManifestEntries(undefined);
 
   async function listComponents(
     entries: ManifestEntries['components'],
@@ -182,7 +182,7 @@ export function createServiceDocsAccess({ getService }: ServiceDocsAccessOptions
 
   return {
     async list({ withStoryIds }) {
-      const entries = await loadManifestEntries();
+      const entries = await resolveManifestEntries();
       const [components, docs] = await Promise.all([
         listComponents(entries.components, withStoryIds),
         listDocs(entries.docs),
@@ -191,7 +191,7 @@ export function createServiceDocsAccess({ getService }: ServiceDocsAccessOptions
     },
 
     async resolve(id) {
-      const entries = await loadManifestEntries();
+      const entries = await resolveManifestEntries();
 
       if (entries.docs.some((doc) => doc.id === id)) {
         return resolveStandaloneDoc(id);

@@ -218,7 +218,7 @@ describe('docgen open service', () => {
     });
   });
 
-  describe('manifestEntries query', () => {
+  describe('resolveManifestEntries command', () => {
     const attachedDocs = (id: string, title: string, tags: string[]): DocsIndexEntry => ({
       id,
       name: 'Docs',
@@ -230,7 +230,7 @@ describe('docgen open service', () => {
     });
     const tagged = (entry: IndexEntry): IndexEntry => ({ ...entry, tags: [Tag.MANIFEST] });
 
-    it('publishes the manifest-tagged components and standalone docs in index order', async () => {
+    it('returns the manifest-tagged components and standalone docs in index order', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([
           tagged(makeStoryEntry('zebra--primary', 'Zebra')),
@@ -252,7 +252,7 @@ describe('docgen open service', () => {
         docgenProvider: async () => undefined,
       });
 
-      await expect(service.queries.manifestEntries.loaded()).resolves.toEqual({
+      await expect(service.commands.resolveManifestEntries(undefined)).resolves.toEqual({
         components: [
           { id: 'zebra', storyBased: true, attachedDocIds: [] },
           { id: 'alpha', storyBased: true, attachedDocIds: ['alpha--docs'] },
@@ -262,16 +262,16 @@ describe('docgen open service', () => {
       });
     });
 
-    it('reads the index again on every load', async () => {
+    it('reads the index again on every call', async () => {
       const entries = [tagged(makeStoryEntry('button--primary', 'Button'))];
       const service = registerDocgenService({
         getIndex: () => makeGetIndex(entries)(),
         docgenProvider: async () => undefined,
       });
 
-      await service.queries.manifestEntries.loaded();
+      await service.commands.resolveManifestEntries(undefined);
       entries.push(tagged(makeStoryEntry('card--primary', 'Card')));
-      const { components } = await service.queries.manifestEntries.loaded();
+      const { components } = await service.commands.resolveManifestEntries(undefined);
 
       expect(components.map(({ id }) => id)).toEqual(['button', 'card']);
     });

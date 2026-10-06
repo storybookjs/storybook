@@ -103,9 +103,9 @@ manager. Change-detection scan readiness is the same pattern: `changeDetectionRe
 awaits `_waitForChangeDetectionReadiness`.
 
 Closures a toolset receives at registration are not delegated: a `getIndex()` call from a handler
-builds the story index in the caller. Data a handler needs from the index therefore goes through a
-query too. The docs toolset reads `core/docgen`'s `manifestEntries`, whose load awaits
-`_resolveManifestEntries`, so the instance answers from the index it already holds.
+builds the story index in the caller. The docs toolset avoids that by asking `core/docgen`'s
+`resolveManifestEntries` command, which the instance answers from the index it already holds. The
+stories toolset still calls `getIndex()` from its handlers.
 
 See [Load](../../shared/open-service/README.md#load).
 

@@ -62,13 +62,8 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',
     commands: {
-      _resolveManifestEntries: {
-        handler: async (_input, ctx) => {
-          const manifestEntries = selectManifestEntries(await options.getIndex());
-          ctx.self.setState((state) => {
-            state.manifestEntries = manifestEntries;
-          });
-        },
+      resolveManifestEntries: {
+        handler: async () => selectManifestEntries(await options.getIndex()),
       },
     },
   });

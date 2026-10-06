@@ -24,18 +24,14 @@ const manifestEntriesSchema = v.object({
       attachedDocIds: v.array(v.string()),
     })
   ),
-  // Standalone MDX docs.
   docs: v.array(v.object({ id: v.string(), name: v.string() })),
 });
 
-// What the story index publishes to manifests, in index order.
 export type ManifestEntries = v.InferOutput<typeof manifestEntriesSchema>;
 
 type DocgenServiceState = {
   /** Extracted docgen keyed by component id. Populated by the `extractDocgen` command. */
   components: Record<string, DocgenPayload>;
-  // Populated by the `_resolveManifestEntries` command.
-  manifestEntries: ManifestEntries;
 };
 
 const docgenErrorSchema = v.object({
@@ -106,21 +102,8 @@ export const docgenServiceDef = defineService({
   internal: true,
   description:
     'Component documentation (name, description, props, JSDoc tags) keyed by component id.',
-  initialState: {
-    components: {},
-    manifestEntries: { components: [], docs: [] },
-  } as DocgenServiceState,
+  initialState: { components: {} } as DocgenServiceState,
   queries: {
-    manifestEntries: {
-      description:
-        'Returns the components and standalone docs the story index publishes to manifests, in index order.',
-      input: v.void(),
-      output: manifestEntriesSchema,
-      handler: (_input, ctx) => ctx.self.state.manifestEntries,
-      load: async (_input, ctx) => {
-        await ctx.self.commands._resolveManifestEntries(undefined);
-      },
-    },
     docgen: {
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',
       input: docgenInputSchema,
@@ -157,13 +140,11 @@ export const docgenServiceDef = defineService({
       output: v.void(),
       // Handler is supplied at registration time so it can close over the story index.
     },
-    _resolveManifestEntries: {
-      internal: true,
+    resolveManifestEntries: {
       description:
-        'Reads the manifest-tagged story index entries and stores the components and standalone docs they publish.',
+        'Returns the components and standalone docs the story index publishes to manifests, in index order. Stores nothing: the story index is the only copy.',
       input: v.undefined(),
-      output: v.void(),
-      // Handler is supplied at registration time so it can close over the story index.
+      output: manifestEntriesSchema,
     },
   },
 });

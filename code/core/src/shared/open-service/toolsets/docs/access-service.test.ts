@@ -114,8 +114,8 @@ const mdxForComponent = vi.fn();
 
 const services: Record<string, unknown> = {
   'core/docgen': {
+    commands: { resolveManifestEntries: async () => selectManifestEntries(index) },
     queries: {
-      manifestEntries: { loaded: async () => selectManifestEntries(index) },
       docgenForAllComponents: { loaded: docgenForAllComponents },
       docgen: { loaded: docgen },
     },

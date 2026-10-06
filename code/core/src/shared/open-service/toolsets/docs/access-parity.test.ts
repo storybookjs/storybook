@@ -102,8 +102,8 @@ const mdxPayload = {
 function serviceToolset() {
   const services: Record<string, unknown> = {
     'core/docgen': {
+      commands: { resolveManifestEntries: async () => selectManifestEntries(storyIndex) },
       queries: {
-        manifestEntries: { loaded: async () => selectManifestEntries(storyIndex) },
         docgenForAllComponents: { loaded: async () => ({ button: docgenPayload }) },
         docgen: {
           loaded: async ({ id }: { id: string }) => (id === 'button' ? docgenPayload : undefined),
@@ -270,8 +270,10 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
   function devAccess() {
     const services: Record<string, unknown> = {
       'core/docgen': {
+        commands: {
+          resolveManifestEntries: async () => selectManifestEntries(componentlessIndex),
+        },
         queries: {
-          manifestEntries: { loaded: async () => selectManifestEntries(componentlessIndex) },
           docgenForAllComponents: { loaded: async () => ({}) },
           docgen: { loaded: async () => undefined },
         },

@@ -20,16 +20,16 @@ ${ref('docs.list')}             # every component and docs page, with its id
 ${ref('docs.show')} --id <id>   # props and usage examples of one entry
 \`\`\`
 
-Run \`docs list\` once at the start, then \`docs show\` for each component you build on or are asked about. Reuse what exists instead of building a duplicate. Answer props, API and usage questions from these commands, not from source files or \`node_modules\`: a prop that is not documented does not exist. When \`docs list\` shows several sources, add \`--storybookId <id>\`.`;
+Run \`docs list\` once at the start, then \`docs show\` for each component you build on or are asked about. Reuse what exists instead of building a duplicate. Answer props, API and usage questions from these commands, not from source files or \`node_modules\`: a prop that is not documented does not exist. When \`docs list\` groups its entries under sources (\`id: acme\`), pass the source of the entry too: \`--storybookId acme\`.`;
 }
 
 function writeSection(framework: string): string {
   return `## Write the component and its stories
 
-Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. An interactive component also gets a \`play\` function that drives it and asserts the visible result; a callback passed as \`fn()\` must be asserted as called.
+Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; a callback passed as \`fn()\` must be asserted as called.
 
 - Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
-- \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`.
+- \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options.
 - To mock a module, register it in \`.storybook/preview.ts\` with \`sb.mock(import('./api.ts'), { spy: true })\` (a relative path needs its file extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`. Always mock network and other external dependencies.`;
 }
 
@@ -84,7 +84,7 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into two to five collections, from the changed component up to the pages that show it, and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into one to five collections, from the changed component up to the pages that show it, and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, and say that instead.
 
 Then do what the command prints: it gives the review link your answer must end with. Do not list separate story links next to it.`;
 }

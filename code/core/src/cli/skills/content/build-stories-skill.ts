@@ -86,7 +86,7 @@ ${ref('review.create')} --input '{
 
 Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into one to five collections, from the changed component up to the pages that show it, and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, and say that instead.
 
-Then do what the command prints: it gives the review link your answer must end with. Do not list separate story links next to it.`;
+Then do both things the command prints, every time: open the review in the in-app browser with a browser tool, and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }
 
 function previewSection(reviewEnabled: boolean): string {

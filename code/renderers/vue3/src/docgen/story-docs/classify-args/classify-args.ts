@@ -1,5 +1,8 @@
-import { type types as t } from 'storybook/internal/babel';
-import { returnedExpression, unwrapExpression } from 'storybook/internal/csf-tools';
+import {
+  type ESTreeNode as Node,
+  returnedExpression,
+  unwrapExpression,
+} from 'storybook/internal/csf-tools';
 
 import {
   classifyValue,
@@ -37,7 +40,7 @@ export interface FunctionSlotPlan {
 
 export interface ClassifiedPropLikeArg {
   name: string;
-  value: t.Node;
+  value: Node;
   role: Exclude<ArgRole, 'slot'>;
   /** Vue event name bound in the template, present when role is 'event'. */
   eventName?: string;
@@ -46,7 +49,7 @@ export interface ClassifiedPropLikeArg {
 
 export interface ClassifiedSlotArg {
   name: string;
-  value: t.Node;
+  value: Node;
   role: 'slot';
   plan: RenderableValuePlan | FunctionSlotPlan;
 }
@@ -93,7 +96,7 @@ export interface ClassifyArgsResult {
  * Function args matching a declared event render as listeners, and declared function props hoist.
  */
 export function classifyArgs(
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   docgen: VueDocgenArgInfo
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
@@ -123,7 +126,7 @@ export function classifyArgs(
  */
 export function classifyArg(
   name: string,
-  value: t.Node,
+  value: Node,
   docgen: VueDocgenArgInfo
 ): ArgClassification {
   const isSlot = docgen.slots.has(name);

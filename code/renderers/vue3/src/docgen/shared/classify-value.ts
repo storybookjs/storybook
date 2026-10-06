@@ -1,5 +1,11 @@
-import { recast, type types as t } from 'storybook/internal/babel';
-import { unwrapExpression } from 'storybook/internal/csf-tools';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  codeOf,
+  isStringLiteral,
+  unwrapExpression,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 /**
  * How one arg value reaches the generated SFC.
@@ -64,7 +70,7 @@ const UNDEFINED_IDENTIFIER = 'undefined';
 const NO_LOCALS: ReadonlySet<string> = new Set();
 
 /** Classifies one CSF arg value into the single plan both the classifier and the renderer act on. */
-export function classifyValue(node: t.Node): ValuePlan {
+export function classifyValue(node: Node): ValuePlan {
   const value = unwrapExpression(node);
 
   if (isUndefinedIdentifier(value)) {
@@ -83,21 +89,56 @@ export function classifyValue(node: t.Node): ValuePlan {
   return isResolvable(value) ? { kind: 'hoist' } : { kind: 'unrepresentable' };
 }
 
-// A node parsed from the story file reprints as its own source; one this pass built is formatted
-// from the tree instead, so the indentation has to match the snippet it lands in.
-export function printValue(node: t.Node): string {
-  return recast.print(node, { tabWidth: 2 }).code;
+/**
+ * Source of an arg value, with the nesting it had in the story file stripped from its continuation
+ * lines so it reads naturally where the snippet hoists it.
+ */
+export function printValue(node: Node): string {
+  const source = codeOf(node);
+  const lines = source.split('\n');
+  if (lines.length === 1) {
+    return source;
+  }
+
+  // Line breaks inside a template literal are part of its value, so those lines keep every space.
+  const { start } = node as Node & { start: number };
+  const quasis: [number, number][] = [];
+  walk(node, (child) => {
+    if (child.type === 'TemplateElement') {
+      const span = child as Node & { start: number; end: number };
+      quasis.push([span.start - start, span.end - start]);
+    }
+  });
+  let offset = 0;
+  const dedentable = lines.map((line, index) => {
+    const lineStart = offset;
+    offset += line.length + 1;
+    return index > 0 && !quasis.some(([from, to]) => from < lineStart && lineStart <= to);
+  });
+
+  const depth = Math.min(
+    ...lines
+      .filter((line, index) => dedentable[index] && line.trim() !== '')
+      .map((line) => line.search(/\S/))
+  );
+  return Number.isFinite(depth) && depth > 0
+    ? lines
+        .map((line, index) =>
+          dedentable[index] ? line.slice(Math.min(depth, line.search(/\S|$/))) : line
+        )
+        .join('\n')
+    : source;
 }
 
-export function isFunctionExpression<T extends t.Node>(
+export function isFunctionExpression<T extends Node>(
   node: T
-): node is T & (t.ArrowFunctionExpression | t.FunctionExpression) {
+): node is T & (E.ArrowFunctionExpression | E.Function) {
   const unwrapped = unwrapExpression(node);
   return unwrapped.type === 'ArrowFunctionExpression' || unwrapped.type === 'FunctionExpression';
 }
 
 /** `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing. */
-function isUndefinedIdentifier(node: t.Node): boolean {
+function isUndefinedIdentifier(node: Node): boolean {
   const unwrapped = unwrapExpression(node);
   return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
 }
@@ -108,7 +149,7 @@ function isUndefinedIdentifier(node: t.Node): boolean {
  *
  * @example `(value) => value.toUpperCase()` → true; `(value) => formatHelper(value)` → false
  */
-export function isSelfContainedFunction(node: t.Node): boolean {
+export function isSelfContainedFunction(node: Node): boolean {
   const fn = unwrapExpression(node);
   if (fn.type !== 'ArrowFunctionExpression' && fn.type !== 'FunctionExpression') {
     return false;
@@ -119,6 +160,9 @@ export function isSelfContainedFunction(node: t.Node): boolean {
     return false;
   }
 
+  if (!fn.body) {
+    return false;
+  }
   if (fn.body.type !== 'BlockStatement') {
     return isResolvable(fn.body, locals);
   }
@@ -129,7 +173,7 @@ export function isSelfContainedFunction(node: t.Node): boolean {
  * Statement forms a hoisted function body may contain; anything else reports `false` so the arg
  * falls back to the omit-with-warning path.
  */
-function statementIsResolvable(statement: t.Statement, locals: Set<string>): boolean {
+function statementIsResolvable(statement: E.Statement, locals: Set<string>): boolean {
   switch (statement.type) {
     case 'VariableDeclaration':
       return statement.declarations.every(
@@ -151,7 +195,7 @@ function statementIsResolvable(statement: t.Statement, locals: Set<string>): boo
  *
  * @example `({ a, b = 1 }, ...rest)` → adds `a`, `b`, `rest`
  */
-export function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
+export function collectPatternNames(pattern: Node, into: Set<string>): boolean {
   switch (pattern.type) {
     case 'Identifier':
       into.add(pattern.name);
@@ -173,22 +217,18 @@ export function collectPatternNames(pattern: t.Node, into: Set<string>): boolean
   }
 }
 
-function isEmptyString(node: t.Node): boolean {
+function isEmptyString(node: Node): boolean {
   const value = unwrapExpression(node);
-  return value.type === 'StringLiteral' && value.value === '';
+  return isStringLiteral(value) && value.value === '';
 }
 
 /** Values whose printed form is self-contained, so a template expression can carry them directly. */
-function isInlineLiteral(node: t.Node): boolean {
+function isInlineLiteral(node: Node): boolean {
   const value = unwrapExpression(node);
 
   switch (value.type) {
-    case 'StringLiteral':
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-    case 'NullLiteral':
-    case 'BigIntLiteral':
-      return true;
+    case 'Literal':
+      return !('regex' in value && value.regex);
     case 'UnaryExpression':
       return value.operator === '-' && isInlineLiteral(value.argument);
     default:
@@ -204,17 +244,12 @@ function isInlineLiteral(node: t.Node): boolean {
  *
  * @example `new Date('2020-01-01')` → true (`Date` is global); `Sizes.LARGE` → false (`Sizes` is not)
  */
-function isResolvable(node: t.Node, locals: ReadonlySet<string> = NO_LOCALS): boolean {
+function isResolvable(node: Node, locals: ReadonlySet<string> = NO_LOCALS): boolean {
   const value = unwrapExpression(node);
-  const resolves = (child: t.Node): boolean => isResolvable(child, locals);
+  const resolves = (child: Node): boolean => isResolvable(child, locals);
 
   switch (value.type) {
-    case 'StringLiteral':
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-    case 'NullLiteral':
-    case 'BigIntLiteral':
-    case 'RegExpLiteral':
+    case 'Literal':
       return true;
 
     case 'Identifier':
@@ -228,8 +263,8 @@ function isResolvable(node: t.Node, locals: ReadonlySet<string> = NO_LOCALS): bo
 
     case 'ObjectExpression':
       return value.properties.every((property) => {
-        if (property.type !== 'ObjectProperty') {
-          // SpreadElement hides its contents; ObjectMethod bodies can reference anything.
+        if (property.type !== 'Property' || property.method || property.kind !== 'init') {
+          // A spread hides its contents; method and accessor bodies can reference anything.
           return false;
         }
         return (!property.computed || resolves(property.key)) && resolves(property.value);

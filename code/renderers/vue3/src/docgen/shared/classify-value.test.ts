@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
+import { expressionFromSource } from 'storybook/internal/csf-tools';
 
-import { classifyValue, isSelfContainedFunction, type ValuePlan } from './classify-value.ts';
+import {
+  classifyValue,
+  isSelfContainedFunction,
+  printValue,
+  type ValuePlan,
+} from './classify-value.ts';
 
 describe('classifyValue', () => {
   it.each<[input: string, output: ValuePlan['kind']]>([
@@ -82,11 +87,12 @@ describe('isSelfContainedFunction', () => {
   });
 });
 
-function expression(code: string): t.Node {
-  const file = babelParse(`(${code})`);
-  const statement = file.program.body[0];
-  if (!t.isExpressionStatement(statement)) {
-    throw new Error(`Not an expression: ${code}`);
-  }
-  return statement.expression;
-}
+describe('printValue', () => {
+  it('strips story-file nesting from continuation lines but not from template literal lines', () => {
+    expect(printValue(expression('{\n      a: `x\n  y`,\n      b: 1,\n    }'))).toBe(
+      '{\n  a: `x\n  y`,\n  b: 1,\n}'
+    );
+  });
+});
+
+const expression = expressionFromSource;

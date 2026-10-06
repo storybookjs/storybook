@@ -1,9 +1,13 @@
-import { types as t } from 'storybook/internal/babel';
 import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type ImportBinding,
+  codeOf,
+  isStringLiteral,
   keyOf,
   returnedExpression,
   unwrapExpression,
-  type ImportBinding,
+  walk,
 } from 'storybook/internal/csf-tools';
 
 import {
@@ -27,7 +31,7 @@ import {
 
 export interface PrintHInput {
   /** Render-function expression to print as template markup. */
-  node: t.Node;
+  node: Node;
   /** Name of the render function's args parameter. */
   argsParam?: string;
   /** Story component tag the docgen roles describe. */
@@ -77,8 +81,8 @@ type HTag = {
 };
 
 type HArguments = {
-  props?: t.Node;
-  children?: t.Node;
+  props?: Node;
+  children?: Node;
 };
 
 type PrintedProps = {
@@ -149,7 +153,7 @@ export function printH(input: PrintHInput): PrintHResult | undefined {
 
 /** Markup for a zero-argument slot function whose body is a static, args-free `h()` child tree. */
 export function printHFragment(
-  node: t.ArrowFunctionExpression | t.FunctionExpression,
+  node: E.ArrowFunctionExpression | E.Function,
   options: PrintHFragmentOptions
 ): string | undefined {
   return printFragmentFunction(node, {
@@ -161,9 +165,9 @@ export function printHFragment(
 }
 
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
-function printNode(node: t.Node, options: PrintOptions): string | undefined {
+function printNode(node: Node, options: PrintOptions): string | undefined {
   const value = unwrapExpression(node);
-  if (!t.isCallExpression(value) || !t.isIdentifier(value.callee, { name: H_FUNCTION })) {
+  if (!isHCall(value)) {
     return undefined;
   }
 
@@ -215,19 +219,19 @@ function joinChildren(children: string[]): string {
     : children.join('');
 }
 
-function renderTag(node: t.Node | undefined | null, options: PrintOptions): HTag | undefined {
+function renderTag(node: Node | undefined | null, options: PrintOptions): HTag | undefined {
   const tag = node ? unwrapExpression(node) : undefined;
   if (!tag) {
     return undefined;
   }
 
-  if (t.isStringLiteral(tag)) {
+  if (isStringLiteral(tag)) {
     return isComponentName(tag.value)
       ? componentTag(tag.value, options)
       : { name: tag.value, selfClosing: isVoidElement(tag.value), void: isVoidElement(tag.value) };
   }
 
-  return t.isIdentifier(tag) ? componentTag(tag.name, options) : undefined;
+  return tag.type === 'Identifier' ? componentTag(tag.name, options) : undefined;
 }
 
 /**
@@ -249,10 +253,8 @@ function componentTag(name: string, options: PrintOptions): HTag | undefined {
   return { name, selfClosing: true, void: false };
 }
 
-function splitHArguments(
-  args: (t.Node | t.SpreadElement | t.ArgumentPlaceholder)[]
-): HArguments | undefined {
-  if (args.some((arg) => t.isSpreadElement(arg) || t.isArgumentPlaceholder(arg))) {
+function splitHArguments(args: E.Argument[]): HArguments | undefined {
+  if (args.some((arg) => arg.type === 'SpreadElement')) {
     return undefined;
   }
   if (args.length === 0) {
@@ -270,13 +272,22 @@ function splitHArguments(
 }
 
 // h(tag, 'Hi'), h(tag, ['Hi']), h(tag, h('b')) -> the argument is children, not props
-function isChildrenArgument(node: t.Node): boolean {
+function isChildrenArgument(node: Node): boolean {
   const value = unwrapExpression(node);
+  return isStringLiteral(value) || value.type === 'ArrayExpression' || isHCall(value);
+}
+
+function isHCall(node: Node): node is E.CallExpression {
   return (
-    t.isStringLiteral(value) ||
-    t.isArrayExpression(value) ||
-    (t.isCallExpression(value) && t.isIdentifier(value.callee, { name: H_FUNCTION }))
+    node.type === 'CallExpression' &&
+    node.callee.type === 'Identifier' &&
+    node.callee.name === H_FUNCTION
   );
+}
+
+// A plain `key: value` member, not a method or accessor.
+function isValueProperty(node: Node): node is E.ObjectProperty {
+  return node.type === 'Property' && !node.method && node.kind === 'init';
 }
 
 /**
@@ -288,7 +299,7 @@ function isChildrenArgument(node: t.Node): boolean {
  * @example `{ label: 'Hi', ...args }` → `label="Hi" v-bind="args"`
  */
 function printProps(
-  node: t.Node | undefined,
+  node: Node | undefined,
   tag: HTag,
   options: PrintOptions
 ): PrintedProps | undefined {
@@ -297,13 +308,13 @@ function printProps(
   }
 
   const value = unwrapExpression(node);
-  if (t.isNullLiteral(value)) {
+  if (value.type === 'Literal' && value.raw === 'null') {
     return { attributes: [], slotChildren: [] };
   }
   if (isArgsIdentifier(value, options.argsParam)) {
     return { attributes: [ARGS_BINDING], slotChildren: [] };
   }
-  if (!t.isObjectExpression(value)) {
+  if (value.type !== 'ObjectExpression') {
     return undefined;
   }
 
@@ -314,14 +325,14 @@ function printProps(
   const slotChildren: string[] = [];
 
   for (const property of value.properties) {
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       if (!isArgsIdentifier(property.argument, options.argsParam)) {
         return undefined;
       }
       attributes.push(ARGS_BINDING);
       continue;
     }
-    if (!t.isObjectProperty(property)) {
+    if (!isValueProperty(property)) {
       return undefined;
     }
 
@@ -388,7 +399,7 @@ function printSlotArgContent(arg: ClassifiedSlotArg, options: PrintOptions): str
 
 /** Fragments print args-free: their content belongs to components the story does not describe. */
 function printFragmentFunction(
-  node: t.ArrowFunctionExpression | t.FunctionExpression,
+  node: E.ArrowFunctionExpression | E.Function,
   options: Omit<PrintOptions, 'argsParam' | 'componentName'>
 ): string | undefined {
   if (node.params.length > 0) {
@@ -409,33 +420,33 @@ function printFragmentFunction(
 }
 
 // h(tag, { header: () => h('span') }) -> named slots; h(tag, 'Hi') -> one child
-function printChildren(node: t.Node | undefined, options: PrintOptions): string[] | undefined {
+function printChildren(node: Node | undefined, options: PrintOptions): string[] | undefined {
   if (!node) {
     return [];
   }
 
   const value = unwrapExpression(node);
-  return t.isObjectExpression(value)
+  return value.type === 'ObjectExpression'
     ? printSlotsObject(value, options)
     : printChildValue(value, options);
 }
 
 // 'Hi', h('b', 'Hi'), args.label, or ['a', h('b', 'c')] -> one child per rendered vnode
-function printChildValue(node: t.Node, options: PrintOptions): string[] | undefined {
+function printChildValue(node: Node, options: PrintOptions): string[] | undefined {
   const value = unwrapExpression(node);
 
-  if (t.isCallExpression(value)) {
-    if (!t.isIdentifier(value.callee, { name: H_FUNCTION })) {
+  if (value.type === 'CallExpression') {
+    if (!isHCall(value)) {
       return undefined;
     }
     const child = printNode(value, options);
     return child === undefined ? undefined : [child];
   }
 
-  if (t.isArrayExpression(value)) {
+  if (value.type === 'ArrayExpression') {
     const children: string[] = [];
     for (const element of value.elements) {
-      if (!element || t.isSpreadElement(element)) {
+      if (!element || element.type === 'SpreadElement') {
         return undefined;
       }
       const rendered = printChildValue(element, options);
@@ -461,11 +472,11 @@ function printChildValue(node: t.Node, options: PrintOptions): string[] | undefi
 }
 
 // { header: () => h('span', 'Hi') } -> <template #header><span>Hi</span></template>
-function printSlotsObject(value: t.ObjectExpression, options: PrintOptions): string[] | undefined {
+function printSlotsObject(value: E.ObjectExpression, options: PrintOptions): string[] | undefined {
   const slots: string[] = [];
 
   for (const property of value.properties) {
-    if (!t.isObjectProperty(property)) {
+    if (!isValueProperty(property)) {
       return undefined;
     }
 
@@ -501,7 +512,7 @@ function argsExpressionAttribute(name: string, expression: string): string {
  *
  * @example (param `a`) `a.count + 1` → `args.count + 1`; `a.label + suffix` → undefined
  */
-function printedArgsExpression(node: t.Node, argsParam: string): string | undefined {
+function printedArgsExpression(node: Node, argsParam: string): string | undefined {
   if (!isPrintableArgsExpression(node, argsParam)) {
     return undefined;
   }
@@ -509,69 +520,65 @@ function printedArgsExpression(node: t.Node, argsParam: string): string | undefi
     return printValue(node);
   }
 
-  const renamed = t.cloneNode(node, true, true);
-  renameIdentifier(renamed, argsParam);
-  return printValue(renamed);
+  const source = codeOf(node);
+  const start = (node as Node & { start: number }).start;
+  let renamed = '';
+  let cursor = 0;
+  for (const { identifier, shorthand } of identifierReferences(node, argsParam)) {
+    renamed += source.slice(cursor, identifier.start - start);
+    renamed += shorthand ? `${argsParam}: ${ARGS_NAME}` : ARGS_NAME;
+    cursor = identifier.end - start;
+  }
+  return renamed + source.slice(cursor);
 }
 
 /**
  * Expression shapes that survive printing into a template attribute or interpolation and
  * re-parsing by the engine, with the args parameter as the only free reference.
  */
-function isPrintableArgsExpression(node: t.Node, argsParam: string): boolean {
+function isPrintableArgsExpression(node: Node, argsParam: string): boolean {
   const value = unwrapExpression(node);
-  const valid = (child: t.Node): boolean => isPrintableArgsExpression(child, argsParam);
+  const valid = (child: Node): boolean => isPrintableArgsExpression(child, argsParam);
 
   switch (value.type) {
-    case 'StringLiteral':
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-    case 'NullLiteral':
-    case 'BigIntLiteral':
-      return true;
+    case 'Literal':
+      return !('regex' in value && value.regex);
 
     case 'Identifier':
       return value.name === argsParam;
 
     case 'TemplateLiteral':
-      return value.expressions.every(
-        (expression) => t.isExpression(expression) && valid(expression)
-      );
+      return value.expressions.every(valid);
 
     case 'ArrayExpression':
-      return value.elements.every(
-        (element) => element !== null && !t.isSpreadElement(element) && valid(element)
-      );
+      return value.elements.every((element) => element !== null && valid(element));
 
     case 'ObjectExpression':
       return value.properties.every(
         (property) =>
-          t.isObjectProperty(property) &&
+          isValueProperty(property) &&
           (!property.computed || valid(property.key)) &&
           valid(property.value)
       );
 
+    // Only an optional member chain; an optional call is not printable.
+    case 'ChainExpression':
+      return value.expression.type === 'MemberExpression' && valid(value.expression);
+
     case 'MemberExpression':
-    case 'OptionalMemberExpression':
       return (
         valid(value.object) &&
-        (value.computed ? valid(value.property) : t.isIdentifier(value.property))
+        (value.computed ? valid(value.property) : value.property.type === 'Identifier')
       );
 
     case 'CallExpression':
     case 'NewExpression':
-      return (
-        t.isExpression(value.callee) &&
-        valid(value.callee) &&
-        value.arguments.every((argument) => t.isExpression(argument) && valid(argument))
-      );
+      return valid(value.callee) && value.arguments.every(valid);
 
     case 'UnaryExpression':
       return value.operator !== 'delete' && valid(value.argument);
 
     case 'BinaryExpression':
-      return t.isExpression(value.left) && valid(value.left) && valid(value.right);
-
     case 'LogicalExpression':
       return valid(value.left) && valid(value.right);
 
@@ -584,63 +591,45 @@ function isPrintableArgsExpression(node: t.Node, argsParam: string): boolean {
 }
 
 /** Whether the expression reads the identifier anywhere outside member properties and object keys. */
-function referencesIdentifier(node: t.Node, name: string): boolean {
-  if (t.isIdentifier(node, { name })) {
-    return true;
-  }
-
-  for (const key of t.VISITOR_KEYS[node.type] ?? []) {
-    if (skipsReferencePosition(node, key)) {
-      continue;
-    }
-    const child = node[key as keyof typeof node];
-    if (Array.isArray(child)) {
-      if (child.some((entry) => t.isNode(entry) && referencesIdentifier(entry, name))) {
-        return true;
-      }
-    } else if (t.isNode(child) && referencesIdentifier(child, name)) {
-      return true;
-    }
-  }
-
-  return false;
+function referencesIdentifier(node: Node, name: string): boolean {
+  return identifierReferences(node, name).length > 0;
 }
 
-function renameIdentifier(node: t.Node, from: string): void {
-  if (t.isIdentifier(node, { name: from })) {
-    node.name = ARGS_NAME;
-    return;
-  }
-
-  for (const key of t.VISITOR_KEYS[node.type] ?? []) {
-    if (skipsReferencePosition(node, key)) {
-      continue;
+/** Reads of an identifier in source order, flagging the ones written as a shorthand property. */
+function identifierReferences(
+  root: Node,
+  name: string
+): { identifier: E.IdentifierReference & { start: number; end: number }; shorthand: boolean }[] {
+  const byStart = new Map<
+    number,
+    { identifier: E.IdentifierReference & { start: number; end: number }; shorthand: boolean }
+  >();
+  walk(root, (node, parent) => {
+    if (node.type !== 'Identifier' || node.name !== name) {
+      return;
     }
-    const child = node[key as keyof typeof node];
-    if (Array.isArray(child)) {
-      child.forEach((entry) => {
-        if (t.isNode(entry)) {
-          renameIdentifier(entry, from);
-        }
-      });
-    } else if (t.isNode(child)) {
-      renameIdentifier(child, from);
+    // args.label -> 'label' and { label: 1 } -> 'label' are name positions, not references
+    if (parent?.type === 'MemberExpression' && parent.property === node && !parent.computed) {
+      return;
     }
-  }
+    if (
+      parent?.type === 'Property' &&
+      parent.key === node &&
+      !parent.computed &&
+      !parent.shorthand
+    ) {
+      return;
+    }
+    const identifier = node as E.IdentifierReference & { start: number; end: number };
+    byStart.set(identifier.start, {
+      identifier,
+      shorthand: parent?.type === 'Property' && parent.shorthand,
+    });
+  });
+  return [...byStart.values()].sort((a, b) => a.identifier.start - b.identifier.start);
 }
 
-// args.label -> 'label' and { label: 1 } -> 'label' are name positions, not references
-function skipsReferencePosition(node: t.Node, key: string): boolean {
-  if ((t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) && key === 'property') {
-    return !node.computed;
-  }
-  if (t.isObjectProperty(node) && key === 'key') {
-    return !node.computed;
-  }
-  return false;
-}
-
-function isArgsIdentifier(node: t.Node, argsParam: string | undefined): boolean {
+function isArgsIdentifier(node: Node, argsParam: string | undefined): boolean {
   const value = unwrapExpression(node);
-  return Boolean(argsParam && t.isIdentifier(value, { name: argsParam }));
+  return Boolean(argsParam && value.type === 'Identifier' && value.name === argsParam);
 }

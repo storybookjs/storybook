@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { recast } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
+import type { Node } from '../estree/ast.ts';
+import { textOf } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
 import { resolveRenderFunction } from './render.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
 
@@ -12,17 +13,25 @@ import { normalizeStoryDeclaration } from './normalize-story.ts';
 const resolveStoryRender = (code: string) => {
   const source = `export default { title: 'T' };\n${dedent(code)}`;
   const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
-  const declaration = csf._storyDeclarationPath['A'];
-  const normalized = normalizeStoryDeclaration(declaration);
+  editor = csf._editor;
+  const normalized = normalizeStoryDeclaration(csf._storyExports['A'], csf._editor);
 
   return resolveRenderFunction(
-    normalized.type === 'config' ? normalized.path : undefined,
-    declaration
+    normalized.type === 'config' ? normalized.node : undefined,
+    csf._editor
   );
 };
 
+let editor: SourceEditor;
+
+// A method's function prints with its key, as the method it was written as.
+const printed = (node: Node) => {
+  const parent = editor.parentOf(node);
+  return textOf(parent?.type === 'Property' && parent.method ? parent : node);
+};
+
 const printedBody = (resolution: ReturnType<typeof resolveStoryRender>) =>
-  resolution.kind === 'resolved' ? recast.print(resolution.path.node).code : undefined;
+  resolution.kind === 'resolved' ? printed(resolution.node) : undefined;
 
 describe('resolveRenderFunction', () => {
   it('reports a story with no render property as missing', () => {
@@ -108,7 +117,7 @@ describe('resolveRenderFunction', () => {
     expect(resolution.kind).toBe('unresolved');
     expect(
       resolution.kind === 'unresolved' && resolution.shadowedRender
-        ? recast.print(resolution.shadowedRender.node).code
+        ? printed(resolution.shadowedRender)
         : undefined
     ).toBe('() => 1');
   });

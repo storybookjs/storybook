@@ -1,103 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { babelParseFile, loadCsf } from '../CsfFile.ts';
-import type { RenderFunctionPath } from './render.ts';
+import { loadCsf } from '../CsfFile.ts';
+import { type E, type Node, expressionFromSource, textOf } from '../estree/ast.ts';
 import {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
   keyOf,
-  metaObjectPath,
+  metaObject,
   resolveIdentifierInit,
   returnedExpression,
-  returnedExpressionPath,
   unwrapExpression,
 } from './utils.ts';
 
 const parse = (code: string) => {
-  return loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
+  const csf = loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
+  csf._editor.parentOf(csf._program);
+  return csf;
 };
 
-const storyInitializer = (initializer: string): t.Node => {
-  let found: t.Expression | null | undefined;
-  babelParseFile({ code: `const A = ${initializer};` }).path.traverse({
-    VariableDeclarator(path) {
-      if (t.isIdentifier(path.node.id, { name: 'A' })) {
-        found = path.node.init;
-        path.stop();
-      }
-    },
-  });
+const printed = (node: Node) => textOf(node);
 
+// The function a test file declares under the name `render`.
+const renderFunction = (code: string): Node => {
+  const csf = parse(code);
+  const found = resolveIdentifierInit(csf._program, 'render');
   if (!found) {
-    throw new Error('Expected declaration to have an initializer');
+    throw new Error('Expected a render function');
   }
-  return found;
-};
-
-// Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
-const printed = (node: t.Node) => recast.print(node).code.replace(/\r\n/g, '\n');
-
-const storyBindIdentifier = (code: string) => {
-  const storyPath = parse(code)._storyDeclarationPath['A'];
-
-  if (!storyPath.isVariableDeclarator()) {
-    throw new Error('Expected story declaration to be a variable declarator');
-  }
-
-  const init = storyPath.get('init');
-  if (!init.isCallExpression()) {
-    throw new Error('Expected story initializer to be a call expression');
-  }
-
-  const callee = init.get('callee');
-  if (!callee.isMemberExpression()) {
-    throw new Error('Expected story initializer callee to be a member expression');
-  }
-
-  const object = callee.get('object');
-  if (!object.isIdentifier()) {
-    throw new Error('Expected bind callee object to be an identifier');
-  }
-
-  return {
-    identifier: object,
-    storyPath,
-  };
-};
-
-const renderFunctionPath = (code: string): RenderFunctionPath => {
-  let found: RenderFunctionPath | undefined;
-
-  parse(code)._file.path.traverse({
-    FunctionDeclaration(path) {
-      if (path.node.id?.name === 'render') {
-        found = path;
-        path.stop();
-      }
-    },
-    VariableDeclarator(path) {
-      const id = path.get('id');
-      const init = path.get('init');
-
-      if (
-        id.isIdentifier({ name: 'render' }) &&
-        (init.isArrowFunctionExpression() || init.isFunctionExpression())
-      ) {
-        found = init;
-        path.stop();
-      }
-    },
-  });
-
-  if (!found) {
-    throw new Error('Expected a render function path');
-  }
-
   return found;
 };
 
@@ -111,35 +43,18 @@ describe('isCanonicalCsf2BindCall', () => {
         "Template['bind']({})",
         'Template[bind]({})',
         'makeStory({})',
-      ].map((initializer) => [initializer, isCanonicalCsf2BindCall(storyInitializer(initializer))])
-    ).toMatchInlineSnapshot(`
-      [
-        [
-          "Template.bind()",
-          true,
-        ],
-        [
-          "Template.bind({})",
-          true,
-        ],
-        [
-          "Template.bind({ role: 'button' })",
-          false,
-        ],
-        [
-          "Template['bind']({})",
-          false,
-        ],
-        [
-          "Template[bind]({})",
-          false,
-        ],
-        [
-          "makeStory({})",
-          false,
-        ],
-      ]
-    `);
+      ].map((initializer) => [
+        initializer,
+        isCanonicalCsf2BindCall(expressionFromSource(initializer)),
+      ])
+    ).toEqual([
+      ['Template.bind()', true],
+      ['Template.bind({})', true],
+      ["Template.bind({ role: 'button' })", false],
+      ["Template['bind']({})", false],
+      ['Template[bind]({})', false],
+      ['makeStory({})', false],
+    ]);
   });
 });
 
@@ -159,63 +74,25 @@ describe('isCsfFactoryCall', () => {
         "schema.type('string').story({})",
         'makeStory({})',
         'Template.bind({})',
-      ].map((initializer) => [initializer, isCsfFactoryCall(storyInitializer(initializer))])
-    ).toMatchInlineSnapshot(`
-      [
-        [
-          "meta.story({})",
-          true,
-        ],
-        [
-          "meta.type<{ args: { icon: string } }>().story({})",
-          true,
-        ],
-        [
-          "meta.type<A>().type<B>().story({})",
-          true,
-        ],
-        [
-          "Base.extend({})",
-          true,
-        ],
-        [
-          "meta['story']({})",
-          false,
-        ],
-        [
-          "meta[story]({})",
-          false,
-        ],
-        [
-          "getMeta().story({})",
-          false,
-        ],
-        [
-          "getMeta().type<A>().story({})",
-          false,
-        ],
-        [
-          "meta['type']<A>().story({})",
-          false,
-        ],
-        [
-          "schema.type('string').story({})",
-          false,
-        ],
-        [
-          "makeStory({})",
-          false,
-        ],
-        [
-          "Template.bind({})",
-          false,
-        ],
-      ]
-    `);
+      ].map((initializer) => [initializer, isCsfFactoryCall(expressionFromSource(initializer))])
+    ).toEqual([
+      ['meta.story({})', true],
+      ['meta.type<{ args: { icon: string } }>().story({})', true],
+      ['meta.type<A>().type<B>().story({})', true],
+      ['Base.extend({})', true],
+      ["meta['story']({})", false],
+      ['meta[story]({})', false],
+      ['getMeta().story({})', false],
+      ['getMeta().type<A>().story({})', false],
+      ["meta['type']<A>().story({})", false],
+      ["schema.type('string').story({})", false],
+      ['makeStory({})', false],
+      ['Template.bind({})', false],
+    ]);
   });
 
   it('reads the receiver through meta.type<>()', () => {
-    const call = storyInitializer('meta.type<A>().type<B>().story({})');
+    const call = expressionFromSource('meta.type<A>().type<B>().story({})');
 
     expect(isCsfFactoryCall(call) && csfFactoryReceiver(call).name).toBe('meta');
   });
@@ -223,7 +100,7 @@ describe('isCsfFactoryCall', () => {
 
 describe('keyOf', () => {
   it('returns literal object member keys and skips dynamic keys', () => {
-    const meta = metaObjectPath(
+    const meta = metaObject(
       parse(dedent`
         const computed = 'dynamic';
         const spread = {};
@@ -241,8 +118,8 @@ describe('keyOf', () => {
       `)
     );
 
-    const keys = meta?.node.properties.map((property) =>
-      t.isSpreadElement(property) ? null : keyOf(property)
+    const keys = meta?.properties.map((property) =>
+      property.type === 'SpreadElement' ? null : keyOf(property)
     );
 
     expect(keys).toEqual([
@@ -260,44 +137,30 @@ describe('keyOf', () => {
 });
 
 describe('unwrapExpression', () => {
-  const typeAnnotation = t.tsTypeReference(t.identifier('Story'));
-
-  it('unwraps TypeScript expression wrappers and parentheses', () => {
-    const value = t.objectExpression([]);
-
-    expect(unwrapExpression(t.tsAsExpression(value, typeAnnotation))).toBe(value);
-    expect(unwrapExpression(t.tsSatisfiesExpression(value, typeAnnotation))).toBe(value);
-    expect(unwrapExpression(t.tsNonNullExpression(value))).toBe(value);
-    expect(unwrapExpression(t.tsTypeAssertion(typeAnnotation, value))).toBe(value);
-    expect(unwrapExpression(t.parenthesizedExpression(value))).toBe(value);
-  });
-
-  it('unwraps nested TypeScript expression wrappers', () => {
-    const value = t.objectExpression([]);
-    const wrapped = t.tsSatisfiesExpression(
-      t.tsNonNullExpression(t.tsAsExpression(value, typeAnnotation)),
-      typeAnnotation
-    );
-
-    expect(unwrapExpression(wrapped)).toBe(value);
-  });
+  it.each(['{} as Story', '{} satisfies Story', '{}!', '({})', '(({} as Story)!) satisfies Story'])(
+    'unwraps %s',
+    (code) => {
+      const wrapped = expressionFromSource(code);
+      expect(unwrapExpression(wrapped).type).toBe('ObjectExpression');
+    }
+  );
 
   it('returns other nodes untouched', () => {
-    const value = t.stringLiteral('Save');
+    const value = expressionFromSource("'Save'");
 
     expect(unwrapExpression(value)).toBe(value);
   });
 });
 
 describe('returnedExpression', () => {
-  const cases = [
+  it.each([
     {
       code: dedent`
         export default { title: 'Button' };
         const render = () => ({ label: 'Save' });
         export const A = {};
       `,
-      expected: "({\n  label: 'Save'\n})",
+      expected: "{ label: 'Save' }",
       name: 'concise arrow body',
     },
     {
@@ -334,106 +197,57 @@ describe('returnedExpression', () => {
       expected: undefined,
       name: 'no-return block',
     },
-  ];
-
-  it.each(cases)('resolves $name', ({ code, expected }) => {
-    const returned = returnedExpression(renderFunctionPath(code).node);
+  ])('resolves $name', ({ code, expected }) => {
+    const returned = returnedExpression(renderFunction(code));
 
     expect(returned ? printed(returned) : undefined).toBe(expected);
   });
 
-  it.each(cases)('resolves $name as a path', ({ code, expected }) => {
-    const returned = returnedExpressionPath(renderFunctionPath(code));
-
-    expect(returned ? printed(returned.node) : undefined).toBe(expected);
-  });
-
   it('resolves an object method body, which `setup()` uses', () => {
-    const [method] = t.objectExpression([
-      t.objectMethod(
-        'method',
-        t.identifier('setup'),
-        [],
-        t.blockStatement([t.returnStatement(t.stringLiteral('Save'))])
-      ),
-    ]).properties;
+    const object = expressionFromSource(`{ setup() { return 'Save'; } }`) as E.ObjectExpression;
 
-    expect(printed(returnedExpression(method)!)).toBe(`"Save"`);
+    expect(printed(returnedExpression(object.properties[0])!)).toBe(`'Save'`);
   });
 });
 
 describe('resolveIdentifierInit', () => {
-  it('resolves local function declarations', () => {
-    const { identifier, storyPath } = storyBindIdentifier(dedent`
-      export default { title: 'Button' };
-      function Template(args) {
-        return args;
-      }
-      export const A = Template.bind({});
-    `);
+  it.each([
+    ['local', 'function Template(args) {\n  return args;\n}'],
+    ['exported', 'export function Template(args) {\n  return args;\n}'],
+  ])('resolves %s function declarations', (_, declaration) => {
+    const csf = parse(
+      `export default { title: 'Button' };\n${declaration}\nexport const A = Template.bind({});`
+    );
 
-    const resolved = resolveIdentifierInit(storyPath, identifier);
+    const resolved = resolveIdentifierInit(csf._program, 'Template');
 
-    expect(resolved?.isFunctionDeclaration()).toBe(true);
-    expect(printed(resolved!.node)).toMatchInlineSnapshot(`
-      "function Template(args) {
-        return args;
-      }"
-    `);
+    expect(resolved?.type).toBe('FunctionDeclaration');
+    expect(printed(resolved!)).toBe('function Template(args) {\n  return args;\n}');
   });
 
-  it('resolves exported function declarations', () => {
-    const { identifier, storyPath } = storyBindIdentifier(dedent`
+  it.each(['const', 'export const'])('resolves %s arrow initializers', (keyword) => {
+    const csf = parse(dedent`
       export default { title: 'Button' };
-      export function Template(args) {
-        return args;
-      }
+      ${keyword} Template = (args) => args;
       export const A = Template.bind({});
     `);
 
-    const resolved = resolveIdentifierInit(storyPath, identifier);
-
-    expect(resolved?.isFunctionDeclaration()).toBe(true);
-    expect(printed(resolved!.node)).toMatchInlineSnapshot(`
-      "function Template(args) {
-        return args;
-      }"
-    `);
-  });
-
-  it('resolves local and exported const arrow initializers', () => {
-    const local = storyBindIdentifier(dedent`
-      export default { title: 'Button' };
-      const Template = (args) => args;
-      export const A = Template.bind({});
-    `);
-    const exported = storyBindIdentifier(dedent`
-      export default { title: 'Button' };
-      export const Template = (args) => args;
-      export const A = Template.bind({});
-    `);
-
-    expect(printed(resolveIdentifierInit(local.storyPath, local.identifier)!.node)).toBe(
-      '(args) => args'
-    );
-    expect(printed(resolveIdentifierInit(exported.storyPath, exported.identifier)!.node)).toBe(
-      '(args) => args'
-    );
+    expect(printed(resolveIdentifierInit(csf._program, 'Template')!)).toBe('(args) => args');
   });
 
   it('returns null for unknown identifiers', () => {
-    const { identifier, storyPath } = storyBindIdentifier(dedent`
+    const csf = parse(dedent`
       export default { title: 'Button' };
       export const A = Template.bind({});
     `);
 
-    expect(resolveIdentifierInit(storyPath, identifier)).toBeNull();
+    expect(resolveIdentifierInit(csf._program, 'Template')).toBeNull();
   });
 });
 
-describe('metaObjectPath', () => {
-  it('returns the object expression path for a parsed CSF meta', () => {
-    const meta = metaObjectPath(
+describe('metaObject', () => {
+  it('returns the object expression for a parsed CSF meta', () => {
+    const meta = metaObject(
       parse(dedent`
         export default {
           title: 'Button',
@@ -442,18 +256,11 @@ describe('metaObjectPath', () => {
       `)
     );
 
-    expect(meta?.isObjectExpression()).toBe(true);
-    expect(printed(meta!.node)).toMatchInlineSnapshot(`
-      "{
-          title: 'Button',
-          args: { label: 'Save' }
-      }"
-    `);
+    expect(meta?.type).toBe('ObjectExpression');
+    expect(printed(meta!)).toBe("{\n  title: 'Button',\n  args: { label: 'Save' },\n}");
   });
 
-  // A parsed CSF file always has a meta object (parse() throws otherwise), so the
-  // undefined branch is only reachable before parse() has collected a meta node.
-  it('returns undefined when no meta node has been collected yet', () => {
+  it('returns undefined before parse() has collected a meta node', () => {
     const csf = loadCsf(
       dedent`
         const title = 'Button';
@@ -462,6 +269,6 @@ describe('metaObjectPath', () => {
       { makeTitle: (title) => title ?? 'title' }
     );
 
-    expect(metaObjectPath(csf)).toBeUndefined();
+    expect(metaObject(csf)).toBeUndefined();
   });
 });

@@ -1,20 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
 import { collectImportBindings, importedName, isTypeSpecifier } from './imports.ts';
 
 const programPath = (code: string) => {
-  return loadCsf(code, { makeTitle: (title) => title ?? 'title' })._file.path;
+  return loadCsf(code, { makeTitle: (title) => title ?? 'title' })._program;
 };
 
 const importSpecifiers = (code: string) => {
-  const declaration = programPath(code).node.body.find((node) => t.isImportDeclaration(node));
+  const declaration = programPath(code).body.find((node) => node.type === 'ImportDeclaration');
 
-  if (!t.isImportDeclaration(declaration)) {
+  if (declaration?.type !== 'ImportDeclaration') {
     throw new Error('Expected import declaration');
   }
 
@@ -85,7 +83,10 @@ describe('importedName', () => {
       import { Button, 'a-b' as ab } from './button';
     `);
 
-    if (!t.isImportSpecifier(identifierSpecifier) || !t.isImportSpecifier(stringSpecifier)) {
+    if (
+      identifierSpecifier.type !== 'ImportSpecifier' ||
+      stringSpecifier.type !== 'ImportSpecifier'
+    ) {
       throw new Error('Expected named import specifiers');
     }
 

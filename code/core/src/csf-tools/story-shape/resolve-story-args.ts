@@ -1,9 +1,8 @@
 // The one choreography every renderer's snippet generator shares: resolve the meta's members once,
 // resolve each story's binding, merge their args, and read every value through to something that
 // means the same where the snippet lands.
-import { types as t } from 'storybook/internal/babel';
-
 import type { CsfFile } from '../CsfFile.ts';
+import type { Node } from '../estree/ast.ts';
 import { type ImportRef } from './import-statements.ts';
 import { resolveArgValue } from './resolve-arg-value.ts';
 import {
@@ -19,7 +18,7 @@ import {
 /** Everything reading one story's args statically produced. */
 export interface ResolvedStoryArgs {
   /** Meta args merged under story args, keyed by arg name, every value read through. */
-  args: Record<string, t.Node>;
+  args: Record<string, Node>;
   /** Imports the arg values need beyond the component, from values that kept a name. */
   imports: ImportRef[];
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
@@ -46,17 +45,18 @@ export function createStoryArgsResolver(
   csf: CsfFile,
   references?: StoryReferences
 ): StoryArgsResolver {
+  // Index the story file so its nodes print as written wherever a resolution carries them.
+  csf._editor.parentOf(csf._program);
   const ctx: ReferenceContext = {
-    program: csf._file.path,
-    filePath: csf._file.opts.filename ?? '',
+    editor: csf._editor,
+    filePath: csf._options.fileName ?? '',
     ...references,
   };
 
-  const metaNode = csf._metaNode;
-  const metaMembers =
-    metaNode && t.isObjectExpression(metaNode)
-      ? resolveObjectMembers(metaNode, ctx)
-      : { properties: {}, shadowed: [], unresolved: [] };
+  const metaNode = csf._metaNodeIsSynthetic ? undefined : csf._metaNode;
+  const metaMembers = metaNode
+    ? resolveObjectMembers(metaNode, ctx)
+    : { properties: {}, shadowed: [], unresolved: [] };
   const metaArgs = resolveArgsRecord(metaMembers.properties.args, ctx);
 
   return {
@@ -67,11 +67,15 @@ export function createStoryArgsResolver(
       const storyMembers = resolveBindingMembers(ctx, localName) ?? {
         properties: {},
         shadowed: [],
-        unresolved: [sourceOf(csf._storyStatements[storyExport] ?? t.identifier(storyExport))],
+        unresolved: [
+          csf._storyStatements[storyExport]
+            ? sourceOf(csf._storyStatements[storyExport])
+            : storyExport,
+        ],
       };
       const storyArgs = resolveArgsRecord(storyMembers.properties.args, ctx);
 
-      const args: Record<string, t.Node> = {};
+      const args: Record<string, Node> = {};
       const imports: ImportRef[] = [];
       const unresolved = [
         ...metaMembers.unresolved,

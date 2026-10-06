@@ -1,16 +1,16 @@
 // Reads an arg value written as a name through to the definition it refers to, and reports what
 // printing the result still depends on.
-import { type NodePath, traverse, types as t } from 'storybook/internal/babel';
-
+import { type E, type Node, expressionFromSource, parseModule } from '../estree/ast.ts';
+import { analyzeScopes } from '../estree/scope.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
-import { type ReferenceContext, resolveArgsRecord } from './resolve-members.ts';
-import { unwrapExpression } from './utils.ts';
+import { type ReferenceContext, codeOf, resolveArgsRecord } from './resolve-members.ts';
+import { keyOf, unwrapExpression } from './utils.ts';
 
 /** An arg value read through to the definition it names, and what printing it still depends on. */
 export interface ResolvedArgValue {
   /** Node to print in place of what was written. */
-  node: t.Node;
+  node: Node;
   /** Imports the printed node needs to resolve where the snippet lands. */
   imports: ImportRef[];
   /** Source text of every name the printed node depends on that no import can supply. */
@@ -25,14 +25,14 @@ export interface ResolvedArgValue {
  * import that makes it resolve. Names a larger expression reaches for are reported the same way,
  * except that a locally declared one can only be named, not substituted into the expression.
  */
-export const resolveArgValue = (node: t.Node, ctx: ReferenceContext): ResolvedArgValue => {
+export const resolveArgValue = (node: Node, ctx: ReferenceContext): ResolvedArgValue => {
   const unresolved: string[] = [];
   const resolved = inlineSpreads(
     followValue(unwrapExpression(node), ctx, new Set()),
     ctx,
     unresolved
   );
-  const bindings = importBindingsOf(ctx.program);
+  const bindings = importBindingsOf(ctx.editor.program);
   const imports: ImportRef[] = [];
 
   for (const name of freeNames(resolved)) {
@@ -46,7 +46,7 @@ export const resolveArgValue = (node: t.Node, ctx: ReferenceContext): ResolvedAr
       });
       continue;
     }
-    if (ctx.program.scope.getBinding(name)) {
+    if (ctx.editor.scopes.program.bindings.has(name)) {
       unresolved.push(name);
     }
   }
@@ -60,15 +60,15 @@ export const resolveArgValue = (node: t.Node, ctx: ReferenceContext): ResolvedAr
  * This is the bar a value copied out of another module has to clear, since the names that module
  * declares and imports mean nothing where the snippet lands.
  */
-export const isSelfContained = (node: t.Node): boolean => freeNames(node).size === 0;
+export const isSelfContained = (node: Node): boolean => freeNames(node).size === 0;
 
-const importBindings = new WeakMap<t.Node, Map<string, ImportBinding>>();
+const importBindings = new WeakMap<E.Program, Map<string, ImportBinding>>();
 
-const importBindingsOf = (program: NodePath<t.Program>): Map<string, ImportBinding> => {
-  let bindings = importBindings.get(program.node);
+const importBindingsOf = (program: E.Program): Map<string, ImportBinding> => {
+  let bindings = importBindings.get(program);
   if (bindings === undefined) {
     bindings = collectImportBindings(program);
-    importBindings.set(program.node, bindings);
+    importBindings.set(program, bindings);
   }
   return bindings;
 };
@@ -79,28 +79,32 @@ const importBindingsOf = (program: NodePath<t.Program>): Map<string, ImportBindi
  * A spread this pass cannot read leaves its object exactly as written: printing part of it would
  * claim the value is something it is not, where printing the source at least shows the story.
  */
-const inlineSpreads = (node: t.Node, ctx: ReferenceContext, unresolved: string[]): t.Node => {
+const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]): Node => {
   // A value with nothing to pull in is returned as it was parsed, so it keeps the story's own
   // formatting rather than being reprinted from a rebuilt tree.
   if (!hasNamedSpread(node)) {
     return node;
   }
 
-  if (t.isArrayExpression(node)) {
-    return t.arrayExpression(
-      node.elements.map((element) =>
-        element && t.isExpression(element)
-          ? (inlineSpreads(element, ctx, unresolved) as t.Expression)
-          : element
-      )
+  if (node.type === 'ArrayExpression') {
+    return rebuilt(
+      `[${node.elements
+        .map((element) =>
+          element === null
+            ? ''
+            : element.type === 'SpreadElement'
+              ? codeOf(element)
+              : codeOf(inlineSpreads(element, ctx, unresolved))
+        )
+        .join(', ')}]`
     );
   }
 
-  if (!t.isObjectExpression(node)) {
+  if (node.type !== 'ObjectExpression') {
     return node;
   }
-  if (!node.properties.some((property) => t.isSpreadElement(property))) {
-    return objectFrom(node.properties, ctx, unresolved) ?? node;
+  if (!node.properties.some((property) => property.type === 'SpreadElement')) {
+    return objectFrom(node.properties as E.ObjectProperty[], ctx, unresolved) ?? node;
   }
 
   const members = resolveArgsRecord(node, ctx);
@@ -110,17 +114,15 @@ const inlineSpreads = (node: t.Node, ctx: ReferenceContext, unresolved: string[]
   }
   return (
     objectFrom(
-      Object.entries(members.properties).map(([key, value]) =>
-        t.objectProperty(
-          t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key),
-          value as t.Expression
-        )
-      ),
+      Object.entries(members.properties).map(([key, value]) => ({ key, value })),
       ctx,
       unresolved
     ) ?? node
   );
 };
+
+// A node built from rewritten source; its parts print as written there.
+const rebuilt = (code: string): Node => unwrapExpression(expressionFromSource(code));
 
 /**
  * Whether a value spreads something it names rather than something written out on the spot.
@@ -128,95 +130,164 @@ const inlineSpreads = (node: t.Node, ctx: ReferenceContext, unresolved: string[]
  * Only a named spread is worth writing out: `{ ...{ a: 1 }, b: 2 }` already says what it holds, so
  * rewriting it would reprint the story's own source for no gain.
  */
-const hasNamedSpread = (node: t.Node): boolean => {
-  if (t.isArrayExpression(node)) {
+const hasNamedSpread = (node: Node): boolean => {
+  if (node.type === 'ArrayExpression') {
     return node.elements.some(
-      (element) => element !== null && t.isExpression(element) && hasNamedSpread(element)
+      (element) => element !== null && element.type !== 'SpreadElement' && hasNamedSpread(element)
     );
   }
   return (
-    t.isObjectExpression(node) &&
+    node.type === 'ObjectExpression' &&
     node.properties.some((property) =>
-      t.isSpreadElement(property)
-        ? !t.isObjectExpression(unwrapExpression(property.argument))
-        : t.isObjectProperty(property) &&
-          t.isExpression(property.value) &&
-          hasNamedSpread(property.value)
+      property.type === 'SpreadElement'
+        ? unwrapExpression(property.argument).type !== 'ObjectExpression'
+        : !property.method && property.kind === 'init' && hasNamedSpread(property.value)
     )
   );
 };
 
+const isValidIdentifier = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
+
 /** An object literal with every member value's own spreads written out, when they all can be. */
 const objectFrom = (
-  properties: t.ObjectExpression['properties'],
+  properties: (E.ObjectProperty | { key: string; value: Node })[],
   ctx: ReferenceContext,
   unresolved: string[]
-): t.ObjectExpression | undefined => {
-  const rebuilt: t.ObjectExpression['properties'] = [];
+): Node | undefined => {
+  const members: string[] = [];
   for (const property of properties) {
-    if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
-      return undefined;
+    let key: string;
+    let original: Node;
+    if ('type' in property) {
+      if (property.method || property.kind !== 'init') {
+        return undefined;
+      }
+      const name = keyOf(property);
+      key = property.computed
+        ? `[${codeOf(property.key)}]`
+        : name !== null && isValidIdentifier(name)
+          ? name
+          : codeOf(property.key);
+      original = property.value;
+    } else {
+      if (property.value.type === 'Property') {
+        return undefined;
+      }
+      key = isValidIdentifier(property.key) ? property.key : JSON.stringify(property.key);
+      original = property.value;
     }
-    const value = inlineSpreads(property.value, ctx, unresolved) as t.Expression;
+    const value = inlineSpreads(original, ctx, unresolved);
     // A shorthand prints its key and nothing else, so it may only stay shorthand while its value is
     // still the one the key stands for.
-    rebuilt.push(
-      t.objectProperty(
-        property.key,
-        value,
-        property.computed,
-        property.shorthand && value === property.value
-      )
-    );
+    const shorthand = 'type' in property && property.shorthand && value === property.value;
+    members.push(shorthand ? key : `${key}: ${codeOf(value)}`);
   }
-  return t.objectExpression(rebuilt);
+  // A rebuilt object is laid out one member per line, as the printer it replaces wrote it.
+  return rebuilt(
+    members.length === 0
+      ? '{}'
+      : `{\n${members.map((member) => `  ${member.replaceAll('\n', '\n  ')}`).join(',\n')}\n}`
+  );
 };
 
 /** Reads a bare name through to the value it was declared with, as far as the chain goes. */
-const followValue = (node: t.Node, ctx: ReferenceContext, seen: Set<string>): t.Node => {
-  if (!t.isIdentifier(node) || seen.has(node.name)) {
+const followValue = (node: Node, ctx: ReferenceContext, seen: Set<string>): Node => {
+  if (node.type !== 'Identifier' || seen.has(node.name)) {
     return node;
   }
-  const binding = ctx.program.scope.getBinding(node.name);
+  const binding = ctx.editor.scopes.program.bindings.get(node.name);
   if (
     !binding ||
-    binding.kind === 'module' ||
+    binding.kind === 'import' ||
     !binding.constant ||
-    !t.isVariableDeclarator(binding.path.node) ||
-    !binding.path.node.init
+    binding.node.type !== 'VariableDeclarator' ||
+    !binding.node.init
   ) {
     return node;
   }
   seen.add(node.name);
-  return followValue(unwrapExpression(binding.path.node.init), ctx, seen);
+  return followValue(unwrapExpression(binding.node.init), ctx, seen);
 };
 
 /**
- * Names an expression reaches for from outside itself. ES globals count as resolved, since they
+ * Names an expression reaches for from outside itself. ES builtins count as resolved, since they
  * mean the same wherever the snippet lands.
  */
-const freeNames = (node: t.Node): Set<string> => {
-  const expression = t.isExpression(node)
-    ? node
-    : t.isObjectMethod(node)
-      ? t.objectExpression([node])
-      : undefined;
-  if (expression === undefined) {
-    throw new Error(`Cannot read the names a ${node.type} depends on: it is not an expression`);
+const freeNames = (node: Node): Set<string> => {
+  if (node.type === 'Property') {
+    return unboundNames(`({ ${codeOf(node)} })`);
   }
-
-  // The clone keeps this traversal from binding scope information to nodes the story file's own
-  // program still owns.
-  const wrapped = t.file(
-    t.program([t.expressionStatement(t.cloneNode(expression, true) as t.Expression)])
-  );
-  const names = new Set<string>();
-  traverse(wrapped, {
-    ReferencedIdentifier(path) {
-      if (!path.scope.hasBinding(path.node.name)) {
-        names.add(path.node.name);
-      }
-    },
-  });
-  return names;
+  return unboundNames(`(${codeOf(node)})`);
 };
+
+// Names every scope has, as Babel's `scope.hasBinding` counts them, so they never need an import.
+const ES_BUILTINS = new Set([
+  'AggregateError',
+  'Array',
+  'ArrayBuffer',
+  'Atomics',
+  'BigInt',
+  'BigInt64Array',
+  'BigUint64Array',
+  'Boolean',
+  'DataView',
+  'Date',
+  'Error',
+  'EvalError',
+  'FinalizationRegistry',
+  'Float16Array',
+  'Float32Array',
+  'Float64Array',
+  'Function',
+  'Infinity',
+  'Int16Array',
+  'Int32Array',
+  'Int8Array',
+  'Intl',
+  'Iterator',
+  'JSON',
+  'Map',
+  'Math',
+  'NaN',
+  'Number',
+  'Object',
+  'Promise',
+  'Proxy',
+  'RangeError',
+  'ReferenceError',
+  'Reflect',
+  'RegExp',
+  'Set',
+  'SharedArrayBuffer',
+  'String',
+  'Symbol',
+  'SyntaxError',
+  'TypeError',
+  'Uint16Array',
+  'Uint32Array',
+  'Uint8Array',
+  'Uint8ClampedArray',
+  'URIError',
+  'WeakMap',
+  'WeakRef',
+  'WeakSet',
+  'arguments',
+  'decodeURI',
+  'decodeURIComponent',
+  'encodeURI',
+  'encodeURIComponent',
+  'escape',
+  'eval',
+  'globalThis',
+  'isFinite',
+  'isNaN',
+  'parseFloat',
+  'parseInt',
+  'undefined',
+  'unescape',
+]);
+
+const unboundNames = (code: string) =>
+  new Set(
+    [...analyzeScopes(parseModule(code).program).unbound].filter((name) => !ES_BUILTINS.has(name))
+  );

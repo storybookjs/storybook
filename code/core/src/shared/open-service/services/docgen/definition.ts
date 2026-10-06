@@ -15,19 +15,24 @@ const argTypesSchema = v.custom<StrictArgTypes>(
   (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 );
 
-const manifestEntriesSchema = v.object({
+export type ManifestEntries = {
+  components: Array<{
+    id: string;
+    // False when only attached docs represent the component.
+    storyBased: boolean;
+    attachedDocIds: string[];
+  }>;
+  docs: Array<{ id: string; name: string }>;
+};
+
+// Annotated so the service's declaration carries the named type instead of the expanded schema,
+// which the bundled `.d.ts` would otherwise repeat for every reference to the service.
+const manifestEntriesSchema: v.GenericSchema<ManifestEntries> = v.object({
   components: v.array(
-    v.object({
-      id: v.string(),
-      // False when only attached docs represent the component.
-      storyBased: v.boolean(),
-      attachedDocIds: v.array(v.string()),
-    })
+    v.object({ id: v.string(), storyBased: v.boolean(), attachedDocIds: v.array(v.string()) })
   ),
   docs: v.array(v.object({ id: v.string(), name: v.string() })),
 });
-
-export type ManifestEntries = v.InferOutput<typeof manifestEntriesSchema>;
 
 type DocgenServiceState = {
   /** Extracted docgen keyed by component id. Populated by the `extractDocgen` command. */

@@ -19,6 +19,7 @@ import * as walk from 'empathic/walk';
 
 import type { ArgTypes } from '../../csf/index.ts';
 import { loadConfig, printConfig } from '../../csf-tools/index.ts';
+import { isReactNativeStorybookPath } from '../../shared/constants/config-folder.ts';
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
@@ -90,12 +91,13 @@ export async function getNewStoryFile(
 
   let storyFileContent = '';
   if (useCsfFactory) {
-    // Calculate relative path from story file to preview config if needed
-    // Only use relative path if package.json doesn't have an imports map
+    // Metro aliases `#.storybook/preview` to the native preview, so stories keep that specifier.
     let previewImportPath: string | undefined;
     if (previewConfigPath) {
-      const hasImportsMap = await checkForImportsMap(options.configDir);
-      if (!hasImportsMap) {
+      const usesSubpathPreviewImport =
+        isReactNativeStorybookPath(previewConfigPath) ||
+        (await checkForImportsMap(options.configDir));
+      if (!usesSubpathPreviewImport) {
         const storyFilePath = join(getProjectRoot(), dir);
         const relPath = relative(storyFilePath, previewConfigPath);
         const pathWithoutExt = relPath.replace(/\.(ts|js|mts|cts|tsx|jsx)$/, '');

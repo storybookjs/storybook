@@ -278,4 +278,45 @@ describe('get-new-story-file', () => {
     `);
     expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.tsx'));
   });
+
+  it('keeps #.storybook/preview when creating a CSF factory story for React Native', async () => {
+    const configDir = join(__dirname, '.rnstorybook');
+    const previewConfigPath = join(configDir, 'preview.tsx');
+
+    vi.mocked(findConfigFile).mockReturnValue(
+      previewConfigPath as unknown as ReturnType<typeof findConfigFile>
+    );
+    vi.mocked(isCsfFactoryPreview).mockReturnValue(true);
+    vi.mocked(walk.up).mockReturnValue([configDir] as unknown as ReturnType<typeof walk.up>);
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(readFile).mockImplementation(async (path) => {
+      const p = path.toString();
+      if (p === previewConfigPath) {
+        return 'export default {};';
+      }
+      return '';
+    });
+
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: 'src/components/Page.tsx',
+        componentExportName: 'Page',
+        componentIsDefaultExport: false,
+        componentExportCount: 1,
+      },
+      {
+        configDir,
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/react-native');
+            }
+          },
+        },
+      } as unknown as Options
+    );
+
+    expect(storyFileContent).toContain('import preview from "#.storybook/preview";');
+    expect(storyFileContent).not.toContain('.rnstorybook/preview');
+  });
 });

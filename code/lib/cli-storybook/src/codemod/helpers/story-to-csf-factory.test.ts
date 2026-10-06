@@ -468,6 +468,31 @@ describe('stories codemod', () => {
       }
     });
 
+    it('keeps #.storybook/preview when the native preview lives in .rnstorybook', async () => {
+      await expect(
+        formatFileContent(
+          'src/Button.stories.tsx',
+          await storyToCsfFactory(
+            {
+              source: dedent`
+                export default {};
+                export const A = {};
+              `,
+              path: 'src/Button.stories.tsx',
+            },
+            {
+              previewConfigPath: '/project/.rnstorybook/preview.tsx',
+              useSubPathImports: false,
+            }
+          )
+        )
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        const meta = preview.meta({});
+        export const A = meta.story();
+      `);
+    });
+
     it('converts CSF1 into CSF4 with render', async () => {
       await expect(
         transform(dedent`

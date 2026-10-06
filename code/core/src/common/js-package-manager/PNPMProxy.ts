@@ -129,6 +129,11 @@ export class PNPMProxy extends JsPackageManager {
     return `pnpm exec ${args.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    const allowBuild = this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN) ? '--allow-build=esbuild ' : '';
+    return `pnpm ${allowBuild}dlx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,

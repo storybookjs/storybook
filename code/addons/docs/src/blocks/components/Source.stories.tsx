@@ -4,9 +4,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Source, SourceError } from './Source';
 
-const meta: Meta<typeof Source> = {
+const meta = {
   component: Source,
-};
+} satisfies Meta<typeof Source>;
 
 export default meta;
 

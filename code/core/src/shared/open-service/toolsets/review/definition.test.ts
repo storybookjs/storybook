@@ -80,6 +80,7 @@ describe('review.create', () => {
       reviewUrl,
       collectionCount: 1,
       storyCount: 1,
+      instructions: expect.stringContaining(`Open ${reviewUrl} in your in-app browser now.`),
     });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/review', { internal: true });
@@ -206,7 +207,7 @@ This usually means the IDs were inferred from file paths or naming conventions r
         .toBe(`Review applied: 1 collection, 1 story. Storybook is already running at http://localhost:6006 — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
-1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
+1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
 2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`);
     });
   });
@@ -218,8 +219,8 @@ Two things you must do now, both of them:
         mcpCtx
       );
 
-      expect(description).toContain('Start from `stories-changed`');
-      expect(description).toContain('fall back to `stories-find-by-component`');
+      expect(description).toContain('Start from stories-changed;');
+      expect(description).toContain('fall back to stories-find-by-component if');
     });
 
     it('names the discovery tools as CLI commands', () => {
@@ -228,8 +229,26 @@ Two things you must do now, both of them:
         cliCtx
       );
 
-      expect(description).toContain('Start from `npx storybook tools stories changed`');
-      expect(description).toContain('fall back to `npx storybook tools stories find-by-component`');
+      expect(description).toContain('Start from npx storybook tools stories changed;');
+      expect(description).toContain(
+        'fall back to npx storybook tools stories find-by-component if'
+      );
     });
+  });
+
+  it('names no harness-specific browser tool in its description or result', async () => {
+    const description = resolveToolsetDescription(reviewToolset.methods.create.description, mcpCtx);
+    const outcome = await createReview({}, mcpCtx);
+
+    for (const harnessTool of [
+      'preview_eval',
+      'preview_start',
+      'Claude_Browser',
+      'browser_navigate',
+      'node_repl',
+    ]) {
+      expect(description).not.toContain(harnessTool);
+      expect(outcome.markdown).not.toContain(harnessTool);
+    }
   });
 });

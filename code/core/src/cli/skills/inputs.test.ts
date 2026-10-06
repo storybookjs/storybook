@@ -45,6 +45,23 @@ describe('resolveSkillInputs', () => {
     expect(inputs.renderer).toBe('@storybook/react');
   });
 
+  it.each([
+    ['/repo/node_modules/@storybook/vue3-vite', '@storybook/vue3-vite', '@storybook/vue3'],
+    [
+      'C:\\repo\\node_modules\\@storybook\\angular-vite',
+      '@storybook/angular-vite',
+      '@storybook/angular',
+    ],
+    [
+      '/repo/node_modules/.pnpm/@storybook+react-vite@11.0.0',
+      '@storybook/react-vite',
+      '@storybook/react',
+    ],
+  ])('normalizes absolute framework preset %s', async (name, framework, renderer) => {
+    const inputs = await resolveSkillInputs(createMockOptions({ framework: { name } }));
+    expect(inputs).toMatchObject({ framework, renderer });
+  });
+
   it('leaves renderer undefined for an unmapped framework', async () => {
     const options = createMockOptions({ framework: '@storybook/some-unmapped-framework' });
 

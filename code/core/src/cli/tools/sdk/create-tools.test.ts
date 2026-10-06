@@ -32,33 +32,33 @@ const echo = defineToolset({
     ok: {
       title: 'Echo the input',
       description: 'Echo the input back.',
-      input: v.object({ value: v.string() }),
+      input: v.strictObject({ value: v.string() }),
       output: v.object({ value: v.string() }),
       handler: async (input) => ({ ok: true as const, data: input, markdown: input.value }),
     },
     bad: {
       title: 'Report bad news',
       description: 'Report bad news without throwing.',
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({ ok: false as const, data: { reason: 'nope' }, markdown: 'nope' }),
     },
     live: {
       title: 'Need a dev server',
       description: 'Needs a running Storybook.',
-      input: v.object({}),
+      input: v.strictObject({}),
       requiresDevServer: true,
       handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
     },
     sibling: {
       title: 'Point at a sibling',
       description: (ctx) => `See ${getToolName(ctx)('echo.ok')}.`,
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
     },
     counted: {
       title: 'Report a count',
       description: 'Reports usage, then succeeds.',
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({
         ok: true as const,
         data: {},
@@ -69,7 +69,7 @@ const echo = defineToolset({
     slow: {
       title: 'Delay',
       description: 'Resolves after a tick unless aborted.',
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => {
         await new Promise((resolve) => setTimeout(resolve, 50));
         return { ok: true as const, data: { ran: true }, markdown: 'ran' };
@@ -569,7 +569,7 @@ describe('createTools', () => {
               ping: {
                 title: 'Ping',
                 description: 'ping',
-                input: v.object({}),
+                input: v.strictObject({}),
                 handler: async (_input, ctx) => ({
                   ok: true as const,
                   data: { origin: ctx.origin },
@@ -768,7 +768,7 @@ describe('call', () => {
         never: {
           title: 'Hang',
           description: 'hang',
-          input: v.object({}),
+          input: v.strictObject({}),
           handler: () => new Promise<AnyToolsetOutcome>(() => {}),
         },
       },

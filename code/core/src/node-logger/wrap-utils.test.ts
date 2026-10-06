@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -25,14 +27,8 @@ vi.mock('execa', () => ({
   execaSync: vi.fn(),
 }));
 
-// Helper function to strip ANSI codes for length calculation
-function stripAnsi(str: string): string {
-  return str.replace(/\u001b\[[0-9;]*m/g, '');
-}
-
-// Helper function to get visible length
 function getVisibleLength(str: string): number {
-  return stripAnsi(str).length;
+  return stripVTControlCharacters(str).length;
 }
 
 const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
@@ -155,8 +151,8 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset code
 
       // Text content should be preserved
-      expect(stripAnsi(result)).toContain('This is red text');
-      expect(stripAnsi(result)).toContain('normal text');
+      expect(stripVTControlCharacters(result)).toContain('This is red text');
+      expect(stripVTControlCharacters(result)).toContain('normal text');
 
       // Should wrap into multiple lines
       expect(result.split('\n').length).toBeGreaterThan(1);
@@ -238,7 +234,7 @@ describe('wrap-utils', () => {
 
       // Should still work without label
       expect(typeof result).toBe('string');
-      expect(stripAnsi(result)).toContain('Hint without label');
+      expect(stripVTControlCharacters(result)).toContain('Hint without label');
 
       // If wrapped, should still have proper structure
       if (result.includes('\n')) {
@@ -257,7 +253,7 @@ describe('wrap-utils', () => {
       // Should still produce reasonable output
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
-      expect(stripAnsi(result)).toContain('Test hint text');
+      expect(stripVTControlCharacters(result)).toContain('Test hint text');
     });
 
     it('should handle empty hint text', () => {
@@ -284,13 +280,13 @@ describe('wrap-utils', () => {
       const lines = result.split('\n');
 
       // Find the line with the checkmark
-      const checkmarkLine = lines.find((line) => stripAnsi(line).includes('✔'));
+      const checkmarkLine = lines.find((line) => stripVTControlCharacters(line).includes('✔'));
       expect(checkmarkLine).toBeDefined();
 
       // The checkmark should be followed by "Success" on the same line if width allows
       if (checkmarkLine && getVisibleLength(checkmarkLine) <= 32) {
         // 40 - 8 = 32
-        expect(stripAnsi(checkmarkLine)).toMatch(/✔\s+Success/);
+        expect(stripVTControlCharacters(checkmarkLine)).toMatch(/✔\s+Success/);
       }
     });
 
@@ -305,9 +301,9 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset (multiple instances)
 
       // Should preserve content
-      expect(stripAnsi(result)).toContain('✔');
-      expect(stripAnsi(result)).toContain('Bold text');
-      expect(stripAnsi(result)).toContain('normal text');
+      expect(stripVTControlCharacters(result)).toContain('✔');
+      expect(stripVTControlCharacters(result)).toContain('Bold text');
+      expect(stripVTControlCharacters(result)).toContain('normal text');
 
       // Line length constraints should be respected
       const lines = result.split('\n');
@@ -327,8 +323,8 @@ describe('wrap-utils', () => {
       expect(result).toMatch(/\u001b\[0m/); // Reset
 
       // Content should be intact
-      expect(stripAnsi(result)).toContain('Multiple codes');
-      expect(stripAnsi(result)).toContain('normal text continues');
+      expect(stripVTControlCharacters(result)).toContain('Multiple codes');
+      expect(stripVTControlCharacters(result)).toContain('normal text continues');
     });
 
     it('should properly handle reset codes and color state', () => {
@@ -345,7 +341,7 @@ describe('wrap-utils', () => {
       expect(resetMatches!.length).toBeGreaterThanOrEqual(2);
 
       // Content order should be preserved
-      const cleanResult = stripAnsi(result);
+      const cleanResult = stripVTControlCharacters(result);
       expect(cleanResult.indexOf('Red')).toBeLessThan(cleanResult.indexOf('normal'));
       expect(cleanResult.indexOf('normal')).toBeLessThan(cleanResult.indexOf('Green'));
     });

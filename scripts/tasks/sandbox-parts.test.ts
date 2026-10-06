@@ -4,7 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { vol } from 'memfs';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
+import { isStringLiteral, parseModule, walk } from '../../code/core/src/csf-tools/estree/ast.ts';
 import type { PassedOptionValues, TemplateDetails } from '../task.ts';
 import { extendPreview } from './sandbox-parts.ts';
 
@@ -29,34 +29,36 @@ const reactViteTemplate = {
 function mockedModules(source: string) {
   const mocks: { module: string; spy: boolean }[] = [];
 
-  traverse(babelParse(source), {
-    CallExpression({ node }) {
-      const isSbMock =
-        t.isMemberExpression(node.callee) &&
-        t.isIdentifier(node.callee.object, { name: 'sb' }) &&
-        t.isIdentifier(node.callee.property, { name: 'mock' });
+  walk(parseModule(source).program, (node) => {
+    const isSbMock =
+      node.type === 'CallExpression' &&
+      node.callee.type === 'MemberExpression' &&
+      node.callee.object.type === 'Identifier' &&
+      node.callee.object.name === 'sb' &&
+      node.callee.property.type === 'Identifier' &&
+      node.callee.property.name === 'mock';
 
-      if (!isSbMock) {
-        return;
-      }
+    if (!isSbMock) {
+      return;
+    }
 
-      const [target, options] = node.arguments;
-      // `sb.mock('./path')` for local files, `sb.mock(import('pkg'))` for packages.
-      const specifier =
-        t.isCallExpression(target) && t.isImport(target.callee) ? target.arguments[0] : target;
+    const [target, options] = node.arguments;
+    // `sb.mock('./path')` for local files, `sb.mock(import('pkg'))` for packages.
+    const specifier = target?.type === 'ImportExpression' ? target.source : target;
 
-      mocks.push({
-        module: t.isStringLiteral(specifier) ? specifier.value : `<unresolved>`,
-        spy:
-          t.isObjectExpression(options) &&
-          options.properties.some(
-            (property) =>
-              t.isObjectProperty(property) &&
-              t.isIdentifier(property.key, { name: 'spy' }) &&
-              t.isBooleanLiteral(property.value, { value: true })
-          ),
-      });
-    },
+    mocks.push({
+      module: isStringLiteral(specifier) ? specifier.value : `<unresolved>`,
+      spy:
+        options?.type === 'ObjectExpression' &&
+        options.properties.some(
+          (property) =>
+            property.type === 'Property' &&
+            property.key.type === 'Identifier' &&
+            property.key.name === 'spy' &&
+            property.value.type === 'Literal' &&
+            property.value.value === true
+        ),
+    });
   });
 
   return mocks;

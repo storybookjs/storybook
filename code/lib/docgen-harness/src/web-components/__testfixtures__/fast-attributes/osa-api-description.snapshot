@@ -1,0 +1,43 @@
+## Attributes
+
+```
+export type FastAttributesAttributes = {
+  /** Visible label. */
+  label?: string = 'Go';
+  /** Button size. */
+  size?: 'small' | 'large' = 'small';
+  /** Disables the button (boolean attribute). */
+  disabled?: boolean = false;
+  /** Upper bound for the counter; attribute name differs from the field. */
+  'max-count'?: number = 3; // property: maxCount
+}
+```
+
+## Properties
+
+```
+export type FastAttributesProperties = {
+  /** Property only, never reflected. */
+  items?: string[] = [];
+  /** Current click count. */
+  count?: number = 0;
+}
+```
+
+## Events
+
+```
+export type FastAttributesEvents = {
+  /** Emitted after every click with the new count. */
+  'fast-count-change': CustomEvent<number>;
+}
+```
+
+## Methods
+
+```
+export type FastAttributesMethods = {
+  /** Increments the counter and fires `fast-count-change`. */
+  increment(): void;
+}
+```

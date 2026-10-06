@@ -17,8 +17,8 @@ import {
 describe('writing stories for an existing AlertBanner', () => {
   const review = isReviewEnabled();
 
-  test('runs story tests after the change and finishes with them passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['alertbanner'] });
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['alertbanner'] });
   });
 
   describe.runIf(review)('when review is enabled', () => {

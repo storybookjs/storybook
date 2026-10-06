@@ -72,7 +72,7 @@ test.describe('Change Detection', () => {
         newStoryPath,
         [
           '<script module>',
-          "  import { defineMeta } from '@storybook/addon-svelte-csf';",
+          "  import { defineMeta } from '@storybook/svelte-vite';",
           "  import Button from './Button.svelte';",
           "  import { fn } from 'storybook/test';",
           '',

@@ -352,7 +352,7 @@ export async function runFixes({
     };
 
     logger.step(`${getTitle()}: ${picocolors.cyan(f.id)}`);
-    logger.logBox(f.prompt());
+    logger.logBox(f.prompt(result));
 
     let runAnswer: { fix: boolean } | undefined;
 

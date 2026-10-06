@@ -788,9 +788,9 @@ function upsertProject(db: DatabaseSync, project: Project) {
       project_dir = excluded.project_dir
   `).run(project.githubSlug, project.name, project.branch, project.projectDir ?? null);
 
-  const row = db.prepare('SELECT id FROM projects WHERE github_slug = ?').get(project.githubSlug) as
-    | { id?: unknown }
-    | undefined;
+  const row = db
+    .prepare('SELECT id FROM projects WHERE github_slug = ?')
+    .get(project.githubSlug) as { id?: unknown } | undefined;
 
   return getRequiredInteger(row?.id, `projects.id for ${project.githubSlug}`);
 }

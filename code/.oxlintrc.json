@@ -1,6 +1,11 @@
 {
   "$schema": "../node_modules/oxlint/configuration_schema.json",
   "extends": ["../.oxlintrc.json"],
+  "settings": {
+    "react": {
+      "version": "18.2.0"
+    }
+  },
   "jsPlugins": [
     { "name": "local-rules", "specifier": "../scripts/eslint-plugin-local-rules/index.js" },
     "eslint-plugin-storybook",
@@ -15,6 +20,7 @@
     "ember-output",
     "**/__testfixtures__",
     "**/__mockdata__",
+    "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
     "core/src/core-server/utils/__search-files-tests__",

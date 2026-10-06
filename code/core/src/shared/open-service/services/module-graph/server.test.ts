@@ -282,6 +282,22 @@ describe('module-graph open service', () => {
       expect(runtime.queries.graphRevision.get(undefined)).toBe(2);
     });
 
+    it('keeps the newest in-graph change time, even when an older edit is reported later', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./a.stories.tsx'],
+        changedAt: 2_000,
+      });
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./b.stories.tsx'],
+        changedAt: 1_000,
+      });
+      await runtime.commands._applyGraphUpdate({ bumpedStoryFiles: [], changedAt: 3_000 });
+
+      expect(runtime.queries.graphChangedAt.get(undefined)).toBe(2_000);
+    });
+
     it('advances file activity but not graph revision for an out-of-graph change', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands._applyGraphSnapshot({

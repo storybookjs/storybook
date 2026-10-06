@@ -227,9 +227,12 @@ describe('prop extraction', () => {
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
           status: {
+            // Named enums serialize as the literal-union name; sbType still recovers
+            // `{ name: 'enum', value: [...] }` from it via convert().
             type: {
-              name: 'enum',
-              value: [{ value: '"active"' }, { value: '"inactive"' }, { value: '"pending"' }],
+              name: '"active" | "inactive" | "pending"',
+              detail:
+                "Status {\n  Active = 'active'\n  Inactive = 'inactive'\n  Pending = 'pending'\n}",
             },
           },
         },

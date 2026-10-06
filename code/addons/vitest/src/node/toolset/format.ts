@@ -108,7 +108,7 @@ function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): str
 - ${passingStories.map((status) => status.storyId).join('\n- ')}`;
 }
 
-const DOM_DUMP_HEADING = /(\n*^Ignored nodes: comments, [^\n]*\n)/m;
+const DOM_DUMP_HEADING = /^(Ignored nodes: comments, [^\n]*\n)/m;
 const MATCHING_ELEMENTS_HEADING = 'Here are the matching elements:';
 const LIST_HEADING = /^Here are the (?:matching elements|\w+ roles):\n/m;
 const LIST_LIMIT = 2000;
@@ -120,8 +120,9 @@ function domDumpLength(text: string): number | undefined {
   if (text.startsWith('...', DOM_DUMP_LIMIT) && (text.length === end || text[end] === '\n')) {
     return end;
   }
-  // Text content is HTML-escaped, so only the root element can close at the start of a line.
-  return /^<([\w-]+)(?: \/>|[\s\S]*?\n(?:<\/\1|\/)>)(?=\n|$)/.exec(text)?.[0].length;
+  // Text content is HTML-escaped (attribute values are not), so only the root element can close at
+  // the start of a line.
+  return /^<([^\s/>]+)(?: \/>|[\s\S]*?\n(?:<\/\1|\/)>)(?:\.\.\.)?(?=\n|$)/.exec(text)?.[0].length;
 }
 
 function withCappedList(text: string): string {
@@ -134,8 +135,7 @@ function withCappedList(text: string): string {
   return `${kept}\n\n  (${text.length - kept.length} more characters omitted)`;
 }
 
-// Testing Library appends the whole rendered container to a failed query, which buries the message
-// and the stack. A dump that cannot be delimited exactly is left in place.
+// A dump that cannot be delimited exactly is left in place.
 function withoutDomDumps(description: string): string {
   const [head, ...parts] = description.split(DOM_DUMP_HEADING);
   let done = '';
@@ -148,21 +148,23 @@ function withoutDomDumps(description: string): string {
     const length = domDumpLength(text);
 
     if (length === undefined) {
+      listingMatches ||= pending.trimEnd().endsWith(MATCHING_ELEMENTS_HEADING);
       done += pending + heading;
       pending = text;
-      listingMatches = false;
       continue;
     }
 
     const rest = text.slice(length);
-    if (listingMatches || pending.endsWith(MATCHING_ELEMENTS_HEADING)) {
-      pending += `\n\n${text.slice(0, length)}`;
-      listingMatches = rest === '';
+    let kept = pending.trimEnd();
+    if (listingMatches || kept.endsWith(MATCHING_ELEMENTS_HEADING)) {
+      kept += `\n\n${text.slice(0, length)}`;
+      listingMatches = rest.trim() === '';
       if (listingMatches) {
+        pending = kept;
         continue;
       }
     }
-    done += withCappedList(pending);
+    done += withCappedList(kept);
     pending = rest;
   }
 
@@ -174,7 +176,7 @@ function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
     (status) =>
       `### ${status.storyId}
 
-${status.description ? withoutDomDumps(status.description) : 'No failure details available.'}`
+${withoutDomDumps(status.description || 'No failure details available.')}`
   );
 
   return `## Failing Stories
@@ -253,11 +255,11 @@ function formatUnhandledErrorsSection(errors: UnhandledError[]): string {
     (unhandledError) =>
       `### ${unhandledError.name || 'Unknown Error'}
 
-**Error message**: ${unhandledError.message || 'No message available'}
+**Error message**: ${withoutDomDumps(unhandledError.message || 'No message available')}
 **Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}
 **Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}
 **Stack trace**:
-${unhandledError.stack || 'No stack trace available'}`
+${withoutDomDumps(unhandledError.stack || 'No stack trace available')}`
   );
 
   return `## Unhandled Errors

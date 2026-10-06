@@ -361,7 +361,7 @@ Unable to find an element with the text: Unlocked.
     at play (file:///C:/workspace/stories/Alert.stories.tsx:80:12)`);
       });
 
-      it('drops a dump that Testing Library truncated', async () => {
+      it('drops a dump that Testing Library truncated, before or after its closing tag', async () => {
         const truncated = `<div>\n  Loading...\n    at render (/workspace/src/Alert.tsx:12:7)\n${'  <hr />\n'.repeat(1000)}`;
 
         vi.mocked(runStoryTests).mockResolvedValue(
@@ -372,7 +372,7 @@ ${truncated.slice(0, 7000)}...
     at getByRole (/workspace/stories/Alert.stories.tsx:77:54)
 ${roles}
 
-${dump}
+${dump}...
     at getByRole (/workspace/stories/Alert.stories.tsx:90:10)`)
         );
 
@@ -424,6 +424,36 @@ Here are the matching elements:
     at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
       });
 
+      it('keeps the matching elements that follow one it cannot delimit', async () => {
+        const description = `Found multiple elements with the role "button"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<button>
+  Edi...
+
+Ignored nodes: comments, script, style
+<button />
+
+(If this is intentional, then use the \`*AllBy*\` variant of the query).`;
+
+        vi.mocked(runStoryTests).mockResolvedValue(
+          failing(`${description}
+
+${dump}
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`)
+        );
+
+        expect((await runForMcp()).markdown).toContain(`<button>
+  Edi...
+
+<button />
+
+(If this is intentional, then use the \`*AllBy*\` variant of the query).
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
+      });
+
       it('caps a long list of accessible roles', async () => {
         const intro = `Unable to find an accessible element with the role "status"
 
@@ -448,6 +478,33 @@ ${intro}${row.repeat(83).trimEnd()}
 
   (2808 more characters omitted)
     at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
+      });
+
+      it('drops the dump from an unhandled error', async () => {
+        vi.mocked(runStoryTests).mockResolvedValue(
+          completed({
+            unhandledErrors: [
+              {
+                name: 'TestingLibraryElementError',
+                message: `${roles}\n\n${dump}`,
+                stack: `Error: ${roles}\n\n${dump}\n    at play (http://localhost:63315/stories/Alert.stories.tsx:9:12)`,
+                VITEST_TEST_PATH: '/workspace/stories/Alert.stories.tsx',
+                VITEST_TEST_NAME: 'Error',
+              },
+            ],
+          })
+        );
+
+        expect((await runForMcp()).markdown).toBe(`## Unhandled Errors
+
+### TestingLibraryElementError
+
+**Error message**: ${roles}
+**Path**: /workspace/stories/Alert.stories.tsx
+**Test name**: Error
+**Stack trace**:
+Error: ${roles}
+    at play (http://localhost:63315/stories/Alert.stories.tsx:9:12)`);
       });
 
       it('keeps a dump it cannot delimit', async () => {

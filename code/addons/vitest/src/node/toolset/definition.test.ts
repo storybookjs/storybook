@@ -507,6 +507,14 @@ Error: ${roles}
     at play (http://localhost:63315/stories/Alert.stories.tsx:9:12)`);
       });
 
+      it('reports an unhandled error whose message is not a string', async () => {
+        vi.mocked(runStoryTests).mockResolvedValue(
+          completed({ unhandledErrors: [{ name: 'Error', message: { code: 1 } }] })
+        );
+
+        expect((await runForMcp()).markdown).toContain('**Error message**: [object Object]');
+      });
+
       it('keeps a dump it cannot delimit', async () => {
         const description = `${roles}
 

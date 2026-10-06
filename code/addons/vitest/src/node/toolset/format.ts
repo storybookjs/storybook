@@ -168,7 +168,7 @@ function withoutDomDumps(description: string): string {
     pending = rest;
   }
 
-  return done + pending;
+  return done + (listingMatches ? withCappedList(pending) : pending);
 }
 
 function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
@@ -255,11 +255,11 @@ function formatUnhandledErrorsSection(errors: UnhandledError[]): string {
     (unhandledError) =>
       `### ${unhandledError.name || 'Unknown Error'}
 
-**Error message**: ${withoutDomDumps(unhandledError.message || 'No message available')}
+**Error message**: ${withoutDomDumps(String(unhandledError.message || 'No message available'))}
 **Path**: ${unhandledError.VITEST_TEST_PATH || 'No path available'}
 **Test name**: ${unhandledError.VITEST_TEST_NAME || 'No test name available'}
 **Stack trace**:
-${withoutDomDumps(unhandledError.stack || 'No stack trace available')}`
+${withoutDomDumps(String(unhandledError.stack || 'No stack trace available'))}`
   );
 
   return `## Unhandled Errors

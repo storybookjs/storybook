@@ -92,11 +92,10 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       context,
     };
     const event: PendingEvent = { body, retryDelay: options.retryDelay };
-    const request = postEvent(event, { keepProcessAlive: false })
+    inFlight.set(body.eventId, event);
+    postEvent(event, { keepProcessAlive: false })
       .catch(() => {})
       .finally(() => inFlight.delete(body.eventId));
-
-    inFlight.set(body.eventId, event);
 
     await saveToCache(eventType, body);
   } catch (err) {
@@ -114,9 +113,15 @@ export function handOffPendingEvents() {
   inFlight.clear();
   const file = join(os.tmpdir(), `storybook-telemetry-${nanoid()}.json`);
   try {
-    writeFileSync(file, JSON.stringify(events));
+    // The temp directory is shared between users on Linux: only the owner may read the events,
+    // and an existing path, such as a planted symlink, is never written through.
+    writeFileSync(file, JSON.stringify(events), { mode: 0o600, flag: 'wx' });
     const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/detached-flush'));
     spawn(process.execPath, [script, file], {
+      // A process inside the project directory would block deleting it on Windows.
+      cwd: os.tmpdir(),
+      // With an inherited --inspect-brk the process would wait for a debugger forever.
+      env: { ...process.env, NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/--inspect\S*/g, '') },
       detached: true,
       stdio: 'ignore',
       windowsHide: true,

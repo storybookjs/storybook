@@ -20,6 +20,7 @@ const TELEMETRY_URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.
 const request = TELEMETRY_URL.startsWith('https:') ? httpsRequest : httpRequest;
 
 const TIMEOUT = 30_000;
+const CONNECT_TIMEOUT = 500;
 const MAX_ATTEMPTS = 4;
 const RETRYABLE_STATUSES = new Set([503, 504]);
 
@@ -63,7 +64,15 @@ function post(payload: string, signal: AbortSignal, keepProcessAlive: boolean): 
       }
     );
     if (!keepProcessAlive) {
-      outgoing.on('socket', (socket) => socket.unref());
+      outgoing.on('socket', (socket) => {
+        socket.unref();
+        if (socket.connecting) {
+          // Unlike a pending response, a pending connect holds the process open even on an
+          // unref'd socket.
+          const deadline = setTimeout(() => outgoing.destroy(), CONNECT_TIMEOUT).unref();
+          socket.once('connect', () => clearTimeout(deadline));
+        }
+      });
     }
     outgoing.on('error', reject);
     outgoing.end(payload);

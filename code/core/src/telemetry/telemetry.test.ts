@@ -34,6 +34,7 @@ beforeEach(() => {
 afterEach(() => {
   handOffPendingEvents();
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
 });
 
 const writtenEvents = () =>
@@ -96,7 +97,29 @@ it('hands events without a response to a detached process on exit, once', async 
   const [command, args, options] = vi.mocked(spawn).mock.calls[0];
   expect(command).toBe(process.execPath);
   expect(args).toEqual([expect.stringMatching(/detached-flush/), writtenEvents()[0][0]]);
-  expect(options).toMatchObject({ detached: true, stdio: 'ignore' });
+  expect(options).toMatchObject({ detached: true, stdio: 'ignore', cwd: os.tmpdir() });
+});
+
+it('writes the handed-off events to a file only its owner can read', async () => {
+  postMock.mockImplementation(neverResponds);
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+
+  handOffPendingEvents();
+
+  const [[file]] = writtenEvents();
+  expect(vol.statSync(file).mode & 0o777).toBe(0o600);
+  expect(vi.mocked(fs.writeFileSync).mock.calls[0][2]).toMatchObject({ flag: 'wx' });
+});
+
+it('starts the detached process without the debugger flags of this one', async () => {
+  vi.stubEnv('NODE_OPTIONS', '--inspect-brk=0 --max-old-space-size=4096 --inspect');
+  postMock.mockImplementation(neverResponds);
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+
+  handOffPendingEvents();
+
+  const [, , options] = vi.mocked(spawn).mock.calls[0];
+  expect(options.env?.NODE_OPTIONS?.trim()).toBe('--max-old-space-size=4096');
 });
 
 it('hands off nothing when every response has arrived', async () => {

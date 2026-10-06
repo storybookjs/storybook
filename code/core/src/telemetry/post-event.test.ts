@@ -95,7 +95,7 @@ it('unrefs the socket while the request is in flight, unless it may keep the pro
   expect(await inFlight(true)).toBe(0);
 });
 
-const postFromChildProcess = (keepProcessAlive: boolean, retryDelay: number) => {
+const postFromChildProcess = (keepProcessAlive: boolean, retryDelay: number, env = process.env) => {
   const script = fileURLToPath(new URL('./post-event.ts', import.meta.url));
   const child = spawn(
     process.execPath,
@@ -105,7 +105,7 @@ const postFromChildProcess = (keepProcessAlive: boolean, retryDelay: number) => 
       `import { postEvent } from ${JSON.stringify(script)};
        postEvent(${JSON.stringify({ ...event, retryDelay })}, { keepProcessAlive: ${keepProcessAlive} });`,
     ],
-    { env: process.env, stdio: 'ignore' }
+    { env, stdio: 'ignore' }
   );
   return new Promise<number | null>((resolve) => child.on('exit', resolve));
 };
@@ -125,3 +125,14 @@ it('lets the process exit during the retry back-off otherwise', async () => {
 
   expect(received).toBe(1);
 });
+
+it('lets the process exit when the endpoint does not accept the connection', async () => {
+  // 10.255.255.1 is not routable: where the network drops the packets instead of rejecting them,
+  // the connect stays pending until the 30 second timeout.
+  const env = { ...process.env, STORYBOOK_TELEMETRY_URL: 'http://10.255.255.1:81/event-log' };
+  const start = Date.now();
+
+  expect(await postFromChildProcess(false, 60_000, env)).toBe(0);
+
+  expect(Date.now() - start).toBeLessThan(10_000);
+}, 20_000);

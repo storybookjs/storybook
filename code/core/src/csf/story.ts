@@ -273,6 +273,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   extends
     Omit<StoryContextForEnhancers<TRenderer, TArgs>, 'argTypes'>,
     Required<StoryContextUpdate<TArgs>> {
+  argTypes?: unknown;
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];

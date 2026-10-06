@@ -5,7 +5,7 @@ import type {
   InputType,
   Renderer,
   SBType,
-  StoryContext,
+  StoryContextForRender,
 } from 'storybook/internal/types';
 
 import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
@@ -203,7 +203,7 @@ export const UNTARGETED = 'UNTARGETED';
 export function groupArgsByTarget<TArgs extends Args = Args>({
   args,
   argTypes,
-}: Pick<StoryContext<Renderer, TArgs>, 'args' | 'argTypes'>) {
+}: Pick<StoryContextForRender<Renderer, TArgs>, 'args' | 'argTypes'>) {
   const groupedArgs: Record<string, Partial<TArgs>> = {};
   (Object.entries(args) as [keyof TArgs, any][]).forEach(([name, value]) => {
     const { target = UNTARGETED } = (argTypes[name] || {}) as { target?: string };
@@ -215,7 +215,7 @@ export function groupArgsByTarget<TArgs extends Args = Args>({
 }
 
 export function noTargetArgs<TArgs extends Args = Args>(
-  context: Pick<StoryContext<Renderer, TArgs>, 'args' | 'argTypes'>
+  context: Pick<StoryContextForRender<Renderer, TArgs>, 'args' | 'argTypes'>
 ) {
   return groupArgsByTarget(context)[UNTARGETED];
 }

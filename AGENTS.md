@@ -97,7 +97,7 @@ yarn storybook:vitest
 ## Pull Request Requirements
 
 The `Danger` status check validates PR metadata, not the diff.
-It reads only the title, body, and labels, and it executes `scripts/dangerfile.ts` from the base branch, so nothing committed inside a PR can change that PR's own Danger result.
+It reads only the title, body, labels, and target branch, and it executes `scripts/dangerfile.ts` from the base branch, so nothing committed inside a PR can change that PR's own Danger result.
 Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth token)" node_modules/.bin/danger pr <pr-url> --dangerfile scripts/dangerfile.ts`.
 
 - **Title** must match `Area: Summary`, with both parts starting with a capital letter, for example `CSF: Add conservative story mutation API`. Conventional-commit titles such as `fix(csf-tools): add ...` fail the check, even though commit messages in this repo do use that form.

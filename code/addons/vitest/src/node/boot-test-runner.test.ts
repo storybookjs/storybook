@@ -152,10 +152,42 @@ describe('bootTestRunner', () => {
           STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(['/project/.storybook/preview.ts']),
         },
         extendEnv: true,
+        buffer: { ipc: false },
       },
     });
     message({ type: 'ready' });
     await promise;
+  });
+
+  it('delivers child messages without retaining them in Execa output', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+
+    const { options } = vi.mocked(executeNodeCommand).mock.calls[0][0];
+    const { executeNodeCommand: executeRealNodeCommand } = await vi.importActual<
+      typeof import('storybook/internal/common')
+    >('storybook/internal/common');
+    vi.useRealTimers();
+
+    const subprocess = executeRealNodeCommand({
+      scriptPath: '--eval',
+      args: [
+        `process.send({ type: 'report', run: 1 });
+         process.send({ type: 'report', run: 2 }, () => process.disconnect());`,
+      ],
+      options,
+    });
+    const received: unknown[] = [];
+    subprocess.on('message', (event) => received.push(event));
+
+    const result = await subprocess;
+    expect(received).toEqual([
+      { type: 'report', run: 1 },
+      { type: 'report', run: 2 },
+    ]);
+    expect(result.ipcOutput).toEqual([]);
   });
 
   it('should log stdout and stderr', async () => {

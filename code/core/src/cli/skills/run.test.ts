@@ -27,9 +27,7 @@ const deps = () => ({
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
     renderer: '@storybook/react',
-    changeDetectionEnabled: true,
     moduleGraphSupported: true,
-    reviewEnabled: true,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,

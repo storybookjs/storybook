@@ -71,7 +71,6 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
@@ -252,7 +251,6 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   argTypeTargetsV7: true,
   babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
-  changeDetection: true,
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
@@ -398,7 +396,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   });
 
   const features = await options.presets.apply('features');
-  const reviewEnabled = isReviewFeatureEnabled(features);
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
   // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
@@ -415,17 +412,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       changeStatuses: {
         getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
       },
-      reviewEnabled,
     })
   );
 
-  if (reviewEnabled) {
-    registerReviewService({
-      getIndex,
-    });
-    devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
-    registerToolset(reviewToolset);
-  }
+  registerReviewService({
+    getIndex,
+  });
+  devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
+  registerToolset(reviewToolset);
 
   if (features?.experimentalDocgenServer) {
     const [docgenDescriptors, storyDocsProvider] = await Promise.all([

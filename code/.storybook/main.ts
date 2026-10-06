@@ -157,7 +157,6 @@ const config = defineMain({
   },
   core: {
     disableTelemetry: true,
-    changeDetection: true,
   },
   features: {
     developmentModeForBuild: true,
@@ -166,7 +165,6 @@ const config = defineMain({
     // STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER so hot-update e2e covers the open-service path.
     experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
     experimentalReactComponentMeta: true,
-    changeDetection: true,
     experimentalSearchDocsHeadings: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],

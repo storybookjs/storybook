@@ -44,15 +44,9 @@ export async function buildStorybookAiMetadata(
     toolsets: options.toolsets ?? {},
   });
   const toolsets = addonOptions.toolsets;
-  const features = (await options.presets.apply('features', {})) as
-    | { changeDetection?: boolean }
-    | undefined;
   const devEnabled = toolsets?.dev ?? true;
   const moduleGraphSupported = await isModuleGraphSupportedByBuilder(options);
-  const availability = await getToolAvailability(options, {
-    features,
-    moduleGraphSupported,
-  });
+  const availability = await getToolAvailability(options, { moduleGraphSupported });
   const testSupported = (toolsets?.test ?? true) && availability.testSupported;
   const docsToolsetEnabled = toolsets?.docs ?? true;
   const multiSource = docsToolsetEnabled
@@ -75,9 +69,6 @@ export async function buildStorybookAiMetadata(
         devEnabled,
         testSupported,
         docsEnabled,
-        changeDetectionEnabled: availability.changeDetectionEnabled,
-        moduleGraphSupported: availability.moduleGraphSupported,
-        reviewEnabled: availability.reviewEnabled,
       })
     ),
     tools: mergeToolDescriptors(

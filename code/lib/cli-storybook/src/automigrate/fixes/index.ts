@@ -10,6 +10,7 @@ import { eslintPlugin } from './eslint-plugin.ts';
 import { enableExperimentalDocgenServer } from './experimental-features.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
+import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
@@ -44,6 +45,7 @@ export const allFixes: Fix[] = [
   sidebarFilters,
   csfNextMockedArgs,
   removeExperimentalReview,
+  removeChangeDetectionFlag,
   enableExperimentalDocgenServer,
   skills,
 ];

@@ -21,15 +21,10 @@ vi.mock('./addon-a11y.ts', () => ({ isAddonA11yEnabled: vi.fn() }));
 vi.mock('../../shared/open-service/server.ts', () => ({ getService: vi.fn() }));
 vi.mock('../../shared/utils/module.ts', () => ({ importModule: vi.fn() }));
 
-function createOptions({ features }: { features?: Record<string, unknown> } = {}): Options {
+function createOptions(): Options {
   return {
     presets: {
-      apply: vi.fn(async (key: string, defaultValue?: unknown) => {
-        if (key === 'features') {
-          return features ?? {};
-        }
-        return defaultValue;
-      }),
+      apply: vi.fn(async (_key: string, defaultValue?: unknown) => defaultValue),
     },
   } as unknown as Options;
 }
@@ -59,15 +54,10 @@ describe('getToolAvailability', () => {
     vi.mocked(isAddonVitestEnabled).mockResolvedValue(true);
     vi.mocked(isAddonA11yEnabled).mockResolvedValue(true);
 
-    const result = await getToolAvailability(
-      createOptions({ features: { changeDetection: true } }),
-      { moduleGraphSupported: true }
-    );
+    const result = await getToolAvailability(createOptions(), { moduleGraphSupported: true });
 
     expect(result).toEqual({
       moduleGraphSupported: true,
-      changeDetectionEnabled: true,
-      reviewEnabled: true,
       docsEnabled: true,
       docsEnabledForCli: true,
       docsHasManifests: true,
@@ -113,30 +103,11 @@ describe('getToolAvailability', () => {
     expect(result.moduleGraphSupported).toBe(true);
     expect(getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
   });
-
-  it('turns review off together with change detection', async () => {
-    const result = await getToolAvailability(
-      createOptions({ features: { changeDetection: false } })
-    );
-
-    expect(result.changeDetectionEnabled).toBe(false);
-    expect(result.reviewEnabled).toBe(false);
-  });
-
-  it('reads pre-resolved features instead of the features preset', async () => {
-    const options = createOptions({ features: { changeDetection: false } });
-
-    const result = await getToolAvailability(options, { features: { changeDetection: true } });
-
-    expect(result.reviewEnabled).toBe(true);
-  });
 });
 
 describe('getEffectiveToolAvailability', () => {
   const base: ToolAvailability = {
     moduleGraphSupported: false,
-    changeDetectionEnabled: false,
-    reviewEnabled: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,

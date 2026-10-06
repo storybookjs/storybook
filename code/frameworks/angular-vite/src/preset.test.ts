@@ -637,8 +637,8 @@ describe('features', () => {
   });
 
   it('keeps other framework and core feature defaults', async () => {
-    expect(await applyFeatures({ changeDetection: true }, {})).toMatchObject({
-      changeDetection: true,
+    expect(await applyFeatures({ controls: true }, {})).toMatchObject({
+      controls: true,
       componentsManifest: true,
       experimentalDocgenServer: true,
     });

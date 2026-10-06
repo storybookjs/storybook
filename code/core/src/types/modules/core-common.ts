@@ -667,12 +667,6 @@ export interface StorybookFeatures {
    * @experimental This feature is in early development and may change significantly in future releases.
    */
   experimentalDocgenServer?: boolean;
-
-  /**
-   * Enable change detection. Agentic review depends on it, so `false` also turns review off.
-   * @default true
-   */
-  changeDetection?: boolean;
 }
 
 export interface StorybookConfigRaw {

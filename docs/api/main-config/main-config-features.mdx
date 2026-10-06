@@ -16,7 +16,6 @@ Type:
   argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
-  changeDetection?: boolean;
   componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
@@ -45,7 +44,6 @@ Type:
   argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
-  changeDetection?: boolean;
   componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
@@ -71,7 +69,6 @@ Type:
   argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
-  changeDetection?: boolean;
   componentsManifest?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
@@ -97,7 +94,6 @@ Type:
   argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
-  changeDetection?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
   highlight?: boolean;
@@ -165,22 +161,6 @@ Type: `boolean`
 Default: `true`
 
 Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
-
-## `changeDetection`
-
-Type: `boolean`
-
-Default: `true`
-
-Enable [change detection](../../configure/user-interface/change-detection.mdx). When enabled, Storybook monitors your git working tree and the builder's module graph to show which stories are new, modified, or related to code changes. Changed stories are displayed with status icons in the sidebar.
-
-[Agentic review](../../ai/agentic-review.mdx) builds on change detection, so disabling this feature also disables review.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="main-config-features-change-detection.md" />
-
-{/* prettier-ignore-end */}
 
 <If renderer={['react','angular','vue']}>
 

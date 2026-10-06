@@ -335,20 +335,17 @@ describe('buildStorybookAiMetadata', () => {
   it('matches live tools/list when the module graph service is unavailable', async () => {
     vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(false);
     vi.mocked(getToolAvailability).mockResolvedValue(
-      createAvailability({ moduleGraphSupported: false, changeDetectionEnabled: false })
+      createAvailability({ moduleGraphSupported: false })
     );
     const options = createOptions({
       builder: '@storybook/builder-vite',
-      features: { changeDetection: false, componentsManifest: true },
+      features: { componentsManifest: true },
       toolsets: { dev: true, docs: false, test: false },
     });
 
     const metadata = await buildStorybookAiMetadata(options);
     const liveTools = await listRegisteredTools(options, {
-      availability: createAvailability({
-        moduleGraphSupported: false,
-        changeDetectionEnabled: false,
-      }),
+      availability: createAvailability({ moduleGraphSupported: false }),
       toolsets: { dev: true, docs: false, test: false },
     });
 
@@ -361,22 +358,11 @@ describe('buildStorybookAiMetadata', () => {
     expect(simplifyTools(metadata.tools)).toEqual(simplifyTools(liveTools));
   });
 
-  it('offers review in the metadata when change detection is on', async () => {
+  it('offers review in the metadata', async () => {
     const metadata = await buildStorybookAiMetadata(createOptions());
 
     expect(metadata.tools.map((tool) => tool.name)).toContain(DISPLAY_REVIEW_TOOL_NAME);
     expect(metadata.instructions).toContain(DISPLAY_REVIEW_TOOL_NAME);
-  });
-
-  it('leaves review out of the metadata when change detection is off', async () => {
-    vi.mocked(getToolAvailability).mockResolvedValue(
-      createAvailability({ reviewEnabled: false, changeDetectionEnabled: false })
-    );
-
-    const metadata = await buildStorybookAiMetadata(createOptions());
-
-    expect(metadata.tools.map((tool) => tool.name)).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
-    expect(metadata.instructions).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
   });
 
   it('uses builder support instead of the live module-graph service for metadata', async () => {
@@ -420,7 +406,7 @@ function getFetchUrl(input: RequestInfo | URL): string {
 
 function createOptions({
   builder = '@storybook/builder-vite',
-  features = { changeDetection: true, componentsManifest: true },
+  features = { componentsManifest: true },
   framework = '@storybook/react-vite',
   refs = {},
   toolsets = { dev: true, docs: true, test: true },
@@ -477,14 +463,6 @@ describe('tool availability variants', () => {
       .map((tool: { name: string }) => tool.name)
       .sort();
 
-  it('offers no review tool when review is off', async () => {
-    const withReview = await names({});
-    const withoutReview = await names({ reviewEnabled: false, changeDetectionEnabled: false });
-
-    expect(withReview).toContain(DISPLAY_REVIEW_TOOL_NAME);
-    expect(withoutReview).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
-  });
-
   it('offers no test tool when addon-vitest is absent', async () => {
     expect(await names({ testSupported: false })).not.toContain(RUN_STORY_TESTS_TOOL_NAME);
   });
@@ -508,8 +486,6 @@ describe('tool availability variants', () => {
 function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvailability {
   return {
     moduleGraphSupported: true,
-    changeDetectionEnabled: true,
-    reviewEnabled: true,
     docsEnabled: true,
     docsEnabledForCli: true,
     docsHasManifests: true,

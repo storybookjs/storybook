@@ -2,8 +2,6 @@ import React from 'react';
 
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { MemoryRouter } from 'storybook/internal/router';
@@ -117,11 +115,6 @@ const meta = {
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
     sessionStorage.clear();
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: true };
-    return () => {
-      global.FEATURES = features;
-    };
   },
 } satisfies Meta<typeof ShowChangesButton>;
 
@@ -286,28 +279,6 @@ export const HiddenWhenReviewActive: Story = {
 export const HiddenWhenZeroCounts: Story = {
   beforeEach: () => {
     internal_fullStatusStore.unset();
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.queryByRole('switch')).toBeNull();
-  },
-};
-
-/** Feature flag off: nothing to show. */
-export const HiddenWhenFeatureOff: Story = {
-  parameters: {
-    contextOptions: {
-      storyIds: ['s1'],
-    },
-  },
-  beforeEach: () => {
-    const cleanup = setChangeStatuses({ s1: 'status-value:new' });
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: false };
-    return () => {
-      global.FEATURES = features;
-      cleanup();
-    };
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

@@ -108,12 +108,7 @@ describe('experimental_devServer', () => {
       ...mockOptions,
       channel,
       presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'features') {
-            return Promise.resolve({ changeDetection: true });
-          }
-          return Promise.resolve(undefined);
-        }),
+        apply: vi.fn(() => Promise.resolve(undefined)),
       },
     } as unknown as Options;
 
@@ -360,8 +355,6 @@ describe('experimental_devServer', () => {
     // false }, no other presets) would resolve for real; only `moduleGraphSupported` is forced.
     vi.mocked(getToolAvailability).mockResolvedValueOnce({
       moduleGraphSupported: true,
-      changeDetectionEnabled: false,
-      reviewEnabled: false,
       docsEnabled: false,
       docsEnabledForCli: false,
       docsHasManifests: false,

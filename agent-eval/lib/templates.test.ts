@@ -90,9 +90,6 @@ describe('Codex AGENTS.md instructions', () => {
         devEnabled: true,
         testSupported: true,
         docsEnabled: true,
-        changeDetectionEnabled: true,
-        moduleGraphSupported: true,
-        reviewEnabled: true,
       }).trim()
     );
   });

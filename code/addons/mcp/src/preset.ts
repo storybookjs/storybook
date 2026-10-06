@@ -120,8 +120,6 @@ export const experimental_devServer: PresetPropertyFn<
   // claim a tool is available when it isn't (and vice versa).
   const {
     moduleGraphSupported,
-    changeDetectionEnabled,
-    reviewEnabled,
     docsEnabled,
     docsHasManifests,
     docsFeatureEnabled,
@@ -186,19 +184,14 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
-    // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
-    // graph, `stories-changed` and `review-create` need the `changeDetection` feature flag —
-    // so each shows its own badge.
+    // `stories-find-by-component` also needs the dependency graph, so it shows its own badge.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
-    // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
+    // disabled regardless of its own gate, so explain that instead of the per-tool reason.
     const devNoticeLines = !isDevEnabled
       ? [`The <code>dev</code> toolset is disabled via addon options.`]
       : [
           !moduleGraphSupported &&
             `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
-          !changeDetectionEnabled &&
-            `<code>stories-changed</code> and <code>review-create</code> require enabling the <code>changeDetection</code> feature flag.`,
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
@@ -212,8 +205,6 @@ export const experimental_devServer: PresetPropertyFn<
         '{{STORIES_BY_COMPONENT_STATUS}}',
         statusWord(isDevEnabled && moduleGraphSupported)
       )
-      .replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
-      .replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabled))
       .replace('{{DEV_NOTICE}}', devNotice)
       .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
       .replace('{{DOCS_NOTICE}}', docsNotice)

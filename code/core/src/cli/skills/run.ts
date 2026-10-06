@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
@@ -157,7 +159,11 @@ async function serveSetup(
   configDir: string,
   deps: SkillsRunDeps
 ): Promise<{ markdown: string; run: SetupRun }> {
-  const probed = await deps.getProjectInfo({ configDir });
+  // The project probe derives the project directory from the config dir, which only survives
+  // `--config-dir .` while the path is still relative; the prompt also prints it verbatim.
+  const probed = await deps.getProjectInfo({
+    configDir: relative(process.cwd(), configDir) || '.',
+  });
   if (!probed.ok) {
     throw new SkillsError(probed.message);
   }

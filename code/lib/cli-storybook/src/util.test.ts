@@ -26,8 +26,9 @@ describe('findStorybookProjects', () => {
       'node_modules/@nx/storybook/files/project-files/.storybook/main.ts': 'export default {};',
     });
 
-    expect(await findStorybookProjects(root)).toEqual([
-      join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
-    ]);
+    // globby returns posix-separated paths even on Windows
+    expect(
+      (await findStorybookProjects(root)).map((projectPath) => projectPath.replace(/\\/g, '/'))
+    ).toEqual([join(root, 'packages/ui/.storybook').replace(/\\/g, '/')]);
   });
 });

@@ -22,7 +22,7 @@ export function initAIAnalyticsChannel(
   options: Options,
   getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
 ) {
-  /** Send analytics about the ai setup workflow when requested*/
+  /** Send analytics about the `skills setup` workflow when requested*/
   channel.on(AI_SETUP_ANALYTICS_REQUEST, async () => {
     const stats: {
       fileCount?: number;

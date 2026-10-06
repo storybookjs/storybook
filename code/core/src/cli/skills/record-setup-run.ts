@@ -20,7 +20,6 @@ export async function recordSetupRun({ projectInfo, prompt }: SetupRun): Promise
 
   await telemetry('ai-setup', {
     cliOptions: {
-      configDir: projectInfo.configDir,
       packageManager: projectInfo.packageManager.type,
       prompt,
     },

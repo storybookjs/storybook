@@ -25,7 +25,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
     } = {};
 
     // Initialize contextual data; if ghost stories are triggered to assess the
-    // quality of an ai setup workflow, inject the runId for the ai setup session.
+    // quality of a `skills setup` workflow, inject the runId for that setup session.
     const aiSetupRunId = await getAiSetupRunId(options.configDir);
 
     try {
@@ -38,7 +38,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
           const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
 
-          // We only want to run ghost stories immediately after init or ai setup.
+          // We only want to run ghost stories immediately after init or `skills setup`.
           const lastRelevantEvent = lastAISetup ?? lastInit;
           if (!lastRelevantEvent) {
             throw new SkipGhostStoriesTelemetry();

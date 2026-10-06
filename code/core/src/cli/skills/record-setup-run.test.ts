@@ -14,7 +14,7 @@ const projectInfo = {
   framework: '@storybook/react-vite',
   rendererPackage: '@storybook/react',
   builderPackage: '@storybook/builder-vite',
-  configDir: '.storybook',
+  configDir: resolve('.storybook'),
   language: 'ts',
   packageManager: JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.NPM }),
 } as ProjectInfo;
@@ -38,7 +38,7 @@ it('persists a project-scoped flag and reports the setup session under the same 
     configDir: resolve('.storybook'),
   });
   expect(telemetry).toHaveBeenCalledWith('ai-setup', {
-    cliOptions: { configDir: '.storybook', packageManager: 'npm', prompt: 'optimized-tests' },
+    cliOptions: { packageManager: 'npm', prompt: 'optimized-tests' },
     project: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',

@@ -291,13 +291,17 @@ Run `storybook skills --help` to list the available skills.
 
 Options include:
 
-| Option                          | Description                                                                                                                                              |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`, `--help`                  | Output usage information and the list of skills.<br />`storybook skills --help`                                                                          |
-| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills setup --cwd packages/ui`                                                               |
-| `-c`, `--config-dir <dir-name>` | Storybook configuration directory.<br />`storybook skills setup -c .storybook`                                                                           |
-| `--all`                         | Print every skill in full.<br />`storybook skills --all`                                                                                                 |
-| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook skills setup --disable-telemetry` |
+| Option                          | Description                                                                                                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-h`, `--help`                  | Output usage information and the list of skills.<br />`storybook skills --help`                                                                                                                        |
+| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills setup --cwd packages/ui`                                                                                                             |
+| `-c`, `--config-dir <dir-name>` | Storybook configuration directory.<br />`storybook skills setup -c .storybook`                                                                                                                         |
+| `--all`                         | Print every skill in full.<br />`storybook skills --all`                                                                                                                                               |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook skills setup --disable-telemetry`                                               |
+| `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook skills setup --enable-crash-reports` |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook skills setup --debug`                                                                                                                |
+| `--loglevel <level>`            | Controls level of logging.<br />Available options: `trace`, `debug`, `info` (default), `warn`, `error`, `silent`.<br />`storybook skills setup --loglevel warn`                                        |
+| `--logfile [path]`              | Write debug logs to a file.<br />`storybook skills setup --logfile ./sb.log`                                                                                                                           |
 
 #### `skills setup`
 

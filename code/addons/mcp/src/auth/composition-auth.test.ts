@@ -201,6 +201,27 @@ describe('CompositionAuth', () => {
       );
     });
 
+    it('only rewrites a leading ./ in the manifest path, leaving inner ./ sequences intact', async () => {
+      const auth = new CompositionAuth();
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('{"anything":"goes"}'),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const provider = auth.createManifestProvider('http://localhost:6006');
+      const request = new Request('http://localhost:6006/mcp');
+      const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+
+      await provider(request, '/services/a./b.json', source);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://remote.example.com/services/a./b.json',
+        expect.any(Object)
+      );
+    });
+
     it('extracts token from request headers for auth-required sources', async () => {
       const auth = new CompositionAuth();
 
@@ -805,7 +826,7 @@ describe('CompositionAuth', () => {
       expect(auth.requiresAuth).toBe(false);
       expect(auth.authUrls).toHaveLength(0);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to check auth for composed ref "Down Service"')
+        expect.stringContaining('Skipping composed ref "Down Service"')
       );
     });
 

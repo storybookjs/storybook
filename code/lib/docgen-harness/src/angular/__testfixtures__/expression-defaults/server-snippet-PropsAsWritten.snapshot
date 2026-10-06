@@ -4,12 +4,7 @@ import { ExpressionDefaultsComponent } from './expression-defaults.component.ts'
 @Component({
   selector: 'app-demo',
   imports: [ExpressionDefaultsComponent],
-  template: `
-    <sb-expression-defaults
-        [rows]="8"
-        [timeoutMs]="1000"
-        (saved)="saved($event)">
-    </sb-expression-defaults>`,
+  template: `<sb-expression-defaults [rows]="8" [timeoutMs]="1000" (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}

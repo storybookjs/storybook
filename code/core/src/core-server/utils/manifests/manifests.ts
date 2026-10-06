@@ -62,10 +62,17 @@ function mergeServicePayloads(
   return Object.fromEntries(
     componentIds.flatMap((id) => {
       const docgen = docgenPayloads[id];
+      const storyDocs = storyDocsPayloads[id];
       if (!docgen) {
-        return [];
+        // A componentless component (its story file names no `meta.component`, so no docgen
+        // provider claims it) still has stories to show. Without a stub row here it would disappear
+        // from components.html while still appearing in components.json, so the HTML debugger would
+        // contradict the index it exists to explain.
+        return storyDocs
+          ? [[id, mergeManifestPayloads(createDocsOnlyDocgenPayload(id), storyDocs)] as const]
+          : [];
       }
-      return [[id, mergeManifestPayloads(docgen, storyDocsPayloads[id])] as const];
+      return [[id, mergeManifestPayloads(docgen, storyDocs)] as const];
     })
   );
 }

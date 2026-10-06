@@ -2,8 +2,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { resolve as resolvePath } from 'pathe';
 
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
 import type { StoriesGitAccess } from './definition.ts';
+import type { ModuleGraphAccess } from './resolve-component-stories.ts';
 
 const SOURCE_EXT_RE = /\.(?:tsx?|jsx?|mjs|cjs)$/i;
 
@@ -30,7 +30,7 @@ export async function detectUnreachableFiles({
   maxFiles = DEFAULT_MAX_FILES,
 }: {
   git: StoriesGitAccess;
-  moduleGraph: ModuleGraphService;
+  moduleGraph: ModuleGraphAccess;
   maxFiles?: number;
 }): Promise<string[]> {
   const status = await moduleGraph.queries.status.loaded(undefined);

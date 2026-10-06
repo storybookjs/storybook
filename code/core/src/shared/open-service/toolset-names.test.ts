@@ -28,6 +28,7 @@ describe('toolset method names', () => {
     expect(getToolName({ transport: 'cli' })('docs.showStory')).toBe(
       'npx storybook tools docs show-story'
     );
+    expect(getToolName({ transport: 'sdk' })('docs.showStory')).toBe('docs.showStory');
   });
 
   it('rejects malformed method ids instead of truncating', () => {

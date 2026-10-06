@@ -1,0 +1,20 @@
+{
+  "id": "render-setup-h",
+  "name": "SetupRenderButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-render-setup-h--primary": {
+      "description": undefined,
+      "id": "forms-render-setup-h--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import SetupRenderButton from './SetupRenderButton.vue';
+</script>
+
+<template>
+  <SetupRenderButton label="Click me" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

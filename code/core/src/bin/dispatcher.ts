@@ -1,17 +1,14 @@
 #!/usr/bin/env node
+import Module from 'node:module';
 import { pathToFileURL } from 'node:url';
 
-import {
-  JsPackageManagerFactory,
-  executeNodeCommand,
-  getRemotePackageRunnerArgs,
-} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
+import { getProcessAncestry } from '../common/utils/process-ancestry.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
@@ -26,8 +23,7 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  * - Init is routed to the create-storybook package via the detected package manager
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli the same way
  */
-const [major, minor, patch] = process.versions.node.split('.').map(Number);
-if (!isNodeVersionSupported(major, minor, patch)) {
+if (!isNodeVersionSupported(process.versions.node)) {
   logger.error(
     dedent`To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.
     You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
@@ -36,13 +32,29 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
+  Module.enableCompileCache();
+
   const args = process.argv.slice(2);
+
+  if (args[0] === 'ai' || (args[0] === 'tools' && !args.includes('--no-attach'))) {
+    process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
+  }
 
   if (['dev', 'build', 'index', 'ai', 'tools', 'skills'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;
   }
+
+  // Only the external-CLI routes below need the package-manager machinery; importing it lazily
+  // keeps the (hot) core route above from evaluating that dependency-heavy part of `common`.
+  const {
+    JsPackageManagerFactory,
+    executeNodeCommand,
+    getPkgPrNewPackageSpecifier,
+    getRemotePackageRunnerArgs,
+    resolveStorybookVersionSpecifier,
+  } = await import('storybook/internal/common');
 
   const targetCli =
     args[0] === 'init'
@@ -54,6 +66,20 @@ async function run() {
           pkg: '@storybook/cli',
           args,
         } as const);
+
+  let storybookVersionSpecifier: string | undefined;
+  try {
+    storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
+  } catch {
+    storybookVersionSpecifier = resolveStorybookVersionSpecifier([]);
+  }
+  if (storybookVersionSpecifier) {
+    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
+  }
+
+  const dispatchedVersion =
+    getPkgPrNewPackageSpecifier(targetCli.pkg, storybookVersionSpecifier) ??
+    versions[targetCli.pkg];
 
   try {
     const { default: targetCliPackageJson } = await import(`${targetCli.pkg}/package.json`, {
@@ -81,7 +107,7 @@ async function run() {
     args: getRemotePackageRunnerArgs(
       packageManager.type,
       targetCli.pkg,
-      versions[targetCli.pkg],
+      dispatchedVersion,
       targetCli.args
     ),
     useRemotePkg: true,

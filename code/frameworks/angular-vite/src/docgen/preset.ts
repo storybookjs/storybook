@@ -9,7 +9,6 @@ import type {
 
 import { fileURLToPath } from 'node:url';
 
-import { resolveCompodocConfig } from '../compodoc-config.ts';
 import { resolvePropsTable } from '../props-table.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 
@@ -20,12 +19,12 @@ export const experimental_docgenProvider = async (
 ): Promise<DocgenProviderDescriptor[]> => {
   const features = await options?.presets?.apply('features', {});
 
-  // `framework.options.compodoc: false` reads as "no Angular docgen", not "no Compodoc binary":
-  // it is what `storybook init` and the angular-to-angular-vite automigration write on the user's
-  // behalf, so honouring it here is what keeps that opt-out meaning the same thing after the
-  // provider changes underneath it. Decided once, statically: no descriptor means no worker module
-  // to import and no per-component branch to evaluate.
-  if (!features?.experimentalDocgenServer || !(await resolveCompodocConfig(options)).enabled) {
+  // `framework.options.compodoc` is not consulted: it switches the Compodoc run, and no Compodoc
+  // runs here. Reading it would drop the props table for everyone carrying `compodoc: false`, which
+  // is what `storybook init` and the angular-to-angular-vite automigration write on the user's
+  // behalf. Decided once, statically: no descriptor means no worker module to import and no
+  // per-component branch to evaluate.
+  if (!features?.experimentalDocgenServer) {
     return existing;
   }
 

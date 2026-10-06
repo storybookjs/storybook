@@ -18,11 +18,6 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./internal/setup-file.browser.3'],
-        entryPoint: './src/vitest-plugin/setup-file.browser.3.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./internal/setup-file.browser.4'],
         entryPoint: './src/vitest-plugin/setup-file.browser.4.ts',
         dts: false,

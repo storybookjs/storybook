@@ -1,7 +1,7 @@
 import type { NodePath, types as t } from 'storybook/internal/babel';
 
 import { extractDescription } from '../enrichCsf.ts';
-import { extractJSDocInfo } from '../jsdoc.ts';
+import { extractComponentDescription, extractJSDocInfo } from '../jsdoc.ts';
 
 /**
  * JSDoc tags on the docblock of the statement a path belongs to.
@@ -21,12 +21,11 @@ export function extractStoryJSDocInfo(storyStatement?: t.Node): {
   description?: string;
   summary?: string;
 } {
-  const jsdocComment = extractDescription(storyStatement);
-  const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-  const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+  // A story docblock resolves exactly like a `meta` one; only the tag map is component-specific.
+  const { description, summary } = extractComponentDescription(
+    extractDescription(storyStatement) || undefined,
+    undefined
+  );
 
-  return {
-    description: finalDescription?.trim(),
-    summary: tags.summary?.[0],
-  };
+  return { description, summary };
 }

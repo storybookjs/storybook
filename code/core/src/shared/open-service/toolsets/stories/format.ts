@@ -19,46 +19,29 @@ function previewReviewNudge(ctx: ToolsetCtx): string {
   return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
 }
 
+const PREVIEW_BROWSER_NUDGE =
+  "Open the preview URL that best shows the result in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.";
+
+export function previewInstructions(
+  stories: PreviewStoriesOutput['stories'],
+  ctx: ToolsetCtx,
+  reviewEnabled: boolean
+): string | undefined {
+  // An all-error result has nothing to curate or open, so the nudges only apply once a URL resolved.
+  if (!stories.some((story) => 'previewUrl' in story)) {
+    return undefined;
+  }
+  return reviewEnabled ? previewReviewNudge(ctx) : PREVIEW_BROWSER_NUDGE;
+}
+
 /**
  * Splits a preview result into the text blocks a consumer shows.
  *
- * MCP renders one block per URL, so this returns the blocks; {@link formatPreviewStories} joins
- * them for consumers that want a single string.
+ * MCP renders one block per URL; the CLI adapter joins the blocks into one document.
  */
-export function formatPreviewStoryBlocks(
-  { stories }: PreviewStoriesOutput,
-  ctx: ToolsetCtx,
-  { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
-): string[] {
-  if (ctx.transport !== 'mcp') {
-    return [
-      '# Story previews',
-      ...stories.map((story) =>
-        'error' in story
-          ? `- Error: ${story.error}`
-          : `- ${story.title} - ${story.name}\n  ${story.previewUrl}`
-      ),
-    ];
-  }
-
+export function formatPreviewStories({ stories, instructions }: PreviewStoriesOutput): string[] {
   const blocks = stories.map((story) => ('error' in story ? story.error : story.previewUrl));
-
-  // An all-error result has nothing to curate, so the nudge only applies once a URL resolved.
-  if (reviewEnabled && stories.some((story) => 'previewUrl' in story)) {
-    blocks.push(previewReviewNudge(ctx));
-  }
-
-  return blocks;
-}
-
-export function formatPreviewStories(
-  data: PreviewStoriesOutput,
-  ctx: ToolsetCtx,
-  options: { reviewEnabled?: boolean } = {}
-): string | string[] {
-  const blocks = formatPreviewStoryBlocks(data, ctx, options);
-  // MCP renders one text block per URL; the CLI list reads better as one joined document.
-  return ctx.transport === 'mcp' ? blocks : blocks.join('\n');
+  return instructions ? [...blocks, instructions] : blocks;
 }
 
 const BANNER_INLINE_LIMIT = 3;
@@ -107,21 +90,6 @@ export function formatChangedStories(
   ctx: ToolsetCtx,
   { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
 ): string {
-  if (ctx.transport !== 'mcp') {
-    const lines = [
-      '# Changed stories',
-      `New: ${counts.new}, modified: ${counts.modified}, affected: ${counts.affected}`,
-      ...stories.map(
-        (story) =>
-          `- [${story.statusValue.replace('status-value:', '')}] ${story.title} - ${story.name}`
-      ),
-    ];
-    if (unreachableFiles.length > 0) {
-      lines.push('', '## Unreachable files', ...unreachableFiles.map((file) => `- ${file}`));
-    }
-    return lines.join('\n');
-  }
-
   if (stories.length === 0) {
     return `No new, modified, or related stories detected.${formatUnreachableHint(unreachableFiles, ctx)}`;
   }
@@ -221,18 +189,7 @@ export function serializeComponentSection(
   return lines.join('\n');
 }
 
-export function formatFindByComponent(
-  { results, maxDistance }: FindByComponentOutput,
-  ctx: ToolsetCtx
-): string {
-  if (ctx.transport !== 'mcp') {
-    const lines = ['# Stories by component'];
-    for (const result of results) {
-      lines.push(`## ${result.componentPath}`, serializeComponentSection(result, maxDistance));
-    }
-    return lines.join('\n');
-  }
-
+export function formatFindByComponent({ results, maxDistance }: FindByComponentOutput): string {
   return results.length === 0
     ? 'No component paths provided.'
     : results.map((result) => serializeComponentSection(result, maxDistance)).join('\n\n');

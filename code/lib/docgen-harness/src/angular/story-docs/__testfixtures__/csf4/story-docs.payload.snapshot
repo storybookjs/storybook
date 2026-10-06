@@ -13,7 +13,7 @@ import { CsfFourComponent } from './csf4.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfFourComponent],
-  template: `<sb-csf4 [label]="'Base'" (saved)="saved($event)"></sb-csf4>`,
+  template: `<sb-csf4 [label]="'Base'" (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}
@@ -29,7 +29,7 @@ import { CsfFourComponent } from './csf4.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfFourComponent],
-  template: `<sb-csf4 [label]="'Save'" (saved)="saved($event)"></sb-csf4>`,
+  template: `<sb-csf4 [label]="'Save'" (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}

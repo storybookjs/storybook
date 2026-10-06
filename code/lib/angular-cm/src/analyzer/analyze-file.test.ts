@@ -20,7 +20,13 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import type { AngularClassMeta, Directive, Method, Property } from '../types.ts';
+import type {
+  AngularClassMeta,
+  Directive,
+  Method,
+  Property,
+  PropertyInitializer,
+} from '../types.ts';
 import {
   ENTRY,
   analyzeFiles,
@@ -29,6 +35,14 @@ import {
   componentIn,
   names,
 } from './__testutils__/inline-source.ts';
+
+type LiteralInitializer = Extract<PropertyInitializer, { kind: 'literal' }>;
+
+const literal = (
+  text: string,
+  literalKind: LiteralInitializer['literalKind']
+): LiteralInitializer => ({ kind: 'literal', literalKind, text });
+const expression = (text: string) => ({ kind: 'expression', text });
 
 describe('which classes a file yields', () => {
   it('buckets each class by its Angular decorator, and files an undecorated one under `classes`', () => {
@@ -198,13 +212,13 @@ describe('@Input and @Output', () => {
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
       optional: false,
-      defaultValue: "'Badge'",
+      initializer: literal("'Badge'", 'string'),
       rawdescription: 'The text shown on the badge.',
     });
     // Outputs keep their constructor call as written; the consumer turns it into an action.
     expect(byName(component.outputsClass, 'clicked')).toMatchObject({
       type: 'EventEmitter',
-      defaultValue: 'new EventEmitter<string>()',
+      initializer: expression('new EventEmitter<string>()'),
     });
   });
 
@@ -220,7 +234,7 @@ describe('@Input and @Output', () => {
 
     const count = byName(component.inputsClass, 'count');
     expect(count).toMatchObject({ type: 'number', optional: true });
-    expect(count.defaultValue).toBeUndefined();
+    expect(count.initializer).toBeUndefined();
     // `required` tracks the `@Input({ required })` option, which this input does not use.
     expect(count.required).toBeUndefined();
   });
@@ -264,7 +278,7 @@ describe('@Input and @Output', () => {
     });
     expect(byName(component.propertiesClass, 'innerVolume')).toMatchObject({
       type: 'number',
-      defaultValue: '5',
+      initializer: literal('5', 'number'),
     });
   });
 });
@@ -290,19 +304,19 @@ describe('signal inputs and outputs', () => {
     // `input.required()` takes no value, so there is nothing to report as a default.
     const count = byName(component.inputsClass, 'count');
     expect(count).toMatchObject({ type: 'number', required: true, optional: false });
-    expect(count.defaultValue).toBeUndefined();
+    expect(count.initializer).toBeUndefined();
 
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
       required: false,
-      defaultValue: "''",
+      initializer: literal("''", 'string'),
       rawdescription: 'Visible caption next to the control.',
     });
-    // The type comes from the value argument even when a transform widens what may be assigned.
+    // booleanAttribute accepts `unknown`, which no control can offer, so the read type stands in.
     expect(byName(component.inputsClass, 'disabled')).toMatchObject({
       type: 'boolean',
       required: false,
-      defaultValue: 'false',
+      initializer: literal('false', 'boolean'),
     });
 
     expect(byName(component.outputsClass, 'toggled')).toMatchObject({
@@ -324,7 +338,7 @@ describe('signal inputs and outputs', () => {
     expect(names(component.inputsClass)).toEqual(['increment']);
     expect(byName(component.inputsClass, 'increment')).toMatchObject({
       type: 'number',
-      defaultValue: '1',
+      initializer: literal('1', 'number'),
     });
   });
 
@@ -347,7 +361,7 @@ describe('signal inputs and outputs', () => {
       expect(byName(bucket, 'value')).toMatchObject({
         type: 'string',
         required: false,
-        defaultValue: "'start'",
+        initializer: literal("'start'", 'string'),
         rawdescription: 'Current text value of the field.',
       });
       expect(byName(bucket, 'checked')).toMatchObject({ type: 'boolean', required: true });
@@ -368,7 +382,7 @@ describe('how a member is typed', () => {
 
     expect(byName(component.inputsClass, 'size')).toMatchObject({
       type: '"small" | "large"',
-      defaultValue: "'small'",
+      initializer: literal("'small'", 'string'),
     });
   });
 
@@ -403,11 +417,11 @@ describe('how a member is typed', () => {
     const component = meta.components[0] as AngularClassMeta & Directive;
     expect(byName(component.inputsClass, 'tone')).toMatchObject({
       type: 'ToneOption',
-      defaultValue: "'info'",
+      initializer: literal("'info'", 'string'),
     });
     expect(byName(component.inputsClass, 'kind')).toMatchObject({
       type: 'ButtonKind',
-      defaultValue: 'ButtonKind.Primary',
+      initializer: literal('ButtonKind.Primary', 'enum'),
     });
 
     expect(meta.miscellaneous.typealiases).toEqual([
@@ -440,7 +454,7 @@ describe('how a member is typed', () => {
 
     expect(byName(component.inputsClass, 'items')).toMatchObject({
       type: 'T[]',
-      defaultValue: '[]',
+      initializer: literal('[]', 'composite'),
     });
     expect(byName(component.inputsClass, 'selected')).toMatchObject({ type: 'T', optional: true });
   });
@@ -460,11 +474,11 @@ describe('how a member is typed', () => {
     // The default keeps its source text; only a real checker can call these `number`.
     expect(byName(component.inputsClass, 'rows')).toMatchObject({
       type: 'number',
-      defaultValue: 'Math.max(1, 3)',
+      initializer: expression('Math.max(1, 3)'),
     });
     expect(byName(component.inputsClass, 'timeoutMs')).toMatchObject({
       type: 'number',
-      defaultValue: '5 * 60 * 1000',
+      initializer: expression('5 * 60 * 1000'),
     });
   });
 });
@@ -539,10 +553,57 @@ describe('JSDoc', () => {
 
     const accent = byName(component.inputsClass, 'accent');
     // An accessor or an optional input has no initializer, so the tag is the only default carrier.
-    expect(accent.defaultValue).toBeUndefined();
+    expect(accent.initializer).toBeUndefined();
     expect(accent.jsdoctags).toEqual([
       { tagName: { text: 'default', escapedText: 'default' }, comment: "'steelblue'" },
     ]);
+  });
+
+  it('keeps Markdown on undecorated tag lines without changing @see URLs', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-chip', template: '' })
+      export class ChipComponent {
+        /**
+         * @deprecated
+        Use \`label\` instead.
+
+        **Note:** This alias will be removed.
+         * @see https://example.com/docs/chip-label
+         */
+        @Input() text = '';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'text').jsdoctags).toEqual([
+      {
+        tagName: { text: 'deprecated', escapedText: 'deprecated' },
+        comment: 'Use `label` instead.\n\n**Note:** This alias will be removed.',
+      },
+      {
+        tagName: { text: 'see', escapedText: 'see' },
+        comment: 'https://example.com/docs/chip-label',
+      },
+    ]);
+  });
+
+  it('preserves repeated decorated and undecorated asterisk lines independently', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-chip', template: '' })
+      export class ChipComponent {
+        /**
+         * @deprecated
+         * *one
+        **one
+         */
+        @Input() text = '';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'text').jsdoctags?.[0].comment).toBe('*one\n**one');
   });
 });
 
@@ -575,12 +636,12 @@ describe('inheritance', () => {
     expect(names(component.inputsClass)).toEqual(['dismissible', 'heading']);
     expect(byName(component.inputsClass, 'dismissible')).toMatchObject({
       type: 'boolean',
-      defaultValue: 'false',
+      initializer: literal('false', 'boolean'),
       rawdescription: 'Whether the alert shows a close button.',
     });
     expect(byName(component.outputsClass, 'dismissed')).toMatchObject({
       type: 'EventEmitter',
-      defaultValue: 'new EventEmitter<void>()',
+      initializer: expression('new EventEmitter<void>()'),
     });
   });
 
@@ -645,7 +706,7 @@ describe('members that are not inputs or outputs', () => {
     ]);
     expect(byName(component.propertiesClass, 'currentPage')).toMatchObject({
       type: 'number',
-      defaultValue: '1',
+      initializer: literal('1', 'number'),
     });
     expect(names(component.methodsClass)).toEqual(['nextPage']);
     expect(byName(component.methodsClass, 'nextPage')).toMatchObject({
@@ -666,7 +727,7 @@ describe('members that are not inputs or outputs', () => {
     });
     expect(byName(component.propertiesClass, 'isActive')).toMatchObject({
       type: 'boolean',
-      defaultValue: 'false',
+      initializer: literal('false', 'boolean'),
       decorators: [{ name: 'HostBinding' }],
     });
   });

@@ -53,6 +53,7 @@ export enum Category {
   FRAMEWORK_VUE3_WEBPACK5 = 'FRAMEWORK_VUE3-WEBPACK5',
   FRAMEWORK_WEB_COMPONENTS_VITE = 'FRAMEWORK_WEB-COMPONENTS-VITE',
   FRAMEWORK_WEB_COMPONENTS_WEBPACK5 = 'FRAMEWORK_WEB-COMPONENTS-WEBPACK5',
+  RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
 }
 
 export class NxProjectDetectedError extends StorybookError {
@@ -287,12 +288,49 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
 }
 
 export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
     super({
       name: 'OpenServiceRemoteCommandUnhandledError',
       category: Category.CORE_COMMON,
       code: 15,
-      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+      message: data.delegated
+        ? `The Storybook this runtime is attached to did not acknowledge remote command "${data.serviceId}.${data.commandName}" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
+    });
+  }
+}
+
+export class OpenServiceAsyncRecipeError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceAsyncRecipeError',
+      category: Category.CORE_COMMON,
+      code: 31,
+      message:
+        'setState recipes must be synchronous. A write after an await would change state without authoring a sync entry. Split the command into one setState per synchronous step.',
+    });
+  }
+}
+
+export class OpenServiceCyclicStateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceCyclicStateError',
+      category: Category.CORE_COMMON,
+      code: 32,
+      message:
+        'Service state must be JSON-serializable, but the value is cyclic or nested more than 256 levels deep. Store an id and look the value up in a query instead of a reference.',
     });
   }
 }
@@ -573,6 +611,47 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
   }
 }
 
+export class AngularUnresolvedStyleError extends StorybookError {
+  constructor(public data: { stylePath: string; workspaceRoot: string; extensions: string[] }) {
+    super({
+      name: 'AngularUnresolvedStyleError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: dedent`
+        Cannot resolve the stylesheet '${data.stylePath}' from the Angular workspace root '${data.workspaceRoot}'.
+
+        No file matches it there, with or without a ${data.extensions.join(', ')} extension.
+
+        Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
+    });
+  }
+}
+
+export class AngularMissingStylePreprocessorError extends StorybookError {
+  constructor(public data: { stylePath: string; install: string; alternative?: string }) {
+    super({
+      name: 'AngularMissingStylePreprocessorError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 3,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: [
+        dedent`
+          Cannot compile '${data.stylePath}': the '${data.install}' package is not installed where Vite can load it.
+
+          Add it to your project:
+
+            npm install --save-dev ${data.install}
+
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
+        data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+    });
+  }
+}
+
 export class CriticalPresetLoadError extends StorybookError {
   constructor(
     public data: {
@@ -769,6 +848,20 @@ export class NoFreePortError extends StorybookError {
   }
 }
 
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
+    });
+  }
+}
+
 export class GenerateNewProjectOnInitError extends StorybookError {
   constructor(
     public data: { error: unknown | Error; packageManager: string; projectType: string }
@@ -841,18 +934,6 @@ export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError
       code: 4,
       documentation: '',
       message: 'The prerequisite check for the Vitest addon failed.',
-    });
-  }
-}
-
-export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
-  constructor(public data: { error: unknown | Error }) {
-    super({
-      name: 'AddonVitestPostinstallFailedAddonA11yError',
-      message: "The @storybook/addon-a11y couldn't be set up for the Vitest addon",
-      category: Category.CLI_INIT,
-      isHandledError: true,
-      code: 6,
     });
   }
 }
@@ -1216,21 +1297,6 @@ export class NuxtModuleAddFailedError extends StorybookError {
       cause: data.cause,
       message: dedent`
         Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
-
-        ${formatExecaFailureDetails(data)}`,
-    });
-  }
-}
-
-export class AutomigrateAddonA11yTestError extends StorybookError {
-  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
-    super({
-      name: 'AutomigrateAddonA11yTestError',
-      category: Category.CLI_AUTOMIGRATE,
-      code: 3,
-      cause: data.cause,
-      message: dedent`
-        Failed while running the addon-a11y-addon-test automigration.
 
         ${formatExecaFailureDetails(data)}`,
     });

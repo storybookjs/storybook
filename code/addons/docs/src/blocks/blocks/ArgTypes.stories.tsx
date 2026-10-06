@@ -3,9 +3,14 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { expect } from 'storybook/test';
+
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
 import { ArgTypes } from './ArgTypes';
+
+/** Stands in for a component that documentation names but no story file declares. */
+const NeverStoried = () => null;
 
 const meta = {
   title: 'Blocks/ArgTypes',
@@ -51,6 +56,24 @@ export const OfUndefined: Story = {
   },
   parameters: { chromatic: { disableSnapshot: true } },
   tags: ['!test'],
+};
+
+/**
+ * With the docgen server on, argTypes come from the service keyed by component id, and a component
+ * no story file declares has no id to look up. The table says so instead of rendering nothing.
+ */
+export const OfComponentWithoutAStory: Story = {
+  args: {
+    of: NeverStoried,
+  },
+  beforeEach: async () => {
+    // The block only consults the docgen service behind this feature, which is off by default here.
+    const previousFeatures = globalThis.FEATURES;
+    globalThis.FEATURES = { ...previousFeatures, experimentalDocgenServer: true };
+    return () => {
+      globalThis.FEATURES = previousFeatures;
+    };
+  },
 };
 
 export const OfStoryUnattached: Story = {
@@ -124,6 +147,9 @@ export const SubcomponentsOfMeta: Story = {
   },
   play: async ({ canvas, step }) => {
     await findSubcomponentTabs(canvas, step);
+    await step('should label the main tab with the component source name', async () => {
+      await expect(await canvas.findByRole('tab', { name: 'ArgTypesParameters' })).toBeVisible();
+    });
   },
 };
 

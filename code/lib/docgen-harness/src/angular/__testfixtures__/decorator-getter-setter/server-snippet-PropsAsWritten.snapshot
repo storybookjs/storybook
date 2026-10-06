@@ -4,6 +4,6 @@ import { DecoratorGetterSetterComponent } from './decorator-getter-setter.compon
 @Component({
   selector: 'app-demo',
   imports: [DecoratorGetterSetterComponent],
-  template: `<sb-decorator-getter-setter [volume]="7"></sb-decorator-getter-setter>`,
+  template: `<sb-decorator-getter-setter [volume]="7" />`,
 })
 export class DemoComponent {}

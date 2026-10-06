@@ -75,33 +75,6 @@ describe('buildStorybookAiMetadata', () => {
     expect(result).toEqual(liveResult);
   });
 
-  // Regression guard: the metadata-local-tool call sources `reviewEnabled` from the mocked
-  // `getToolAvailability` seam (via the `availability.reviewEnabled` override threaded through
-  // `tool-registry.ts`'s `getLocalTool`), while `buildStorybookStoryInstructions`'s adapter falls
-  // back to the real (unmocked) `resolveSkillInputs` whenever that override is absent. Tune the
-  // fixture so the two would DISAGREE if the override were ever dropped — real presets say review
-  // is off (`experimentalReview: false`), but the mocked availability says it's on — so this only
-  // passes when the override is genuinely driving the result, not merely coinciding with a fallback
-  // that happens to compute the same value.
-  it('drives the local tool instructions from the resolved availability override, not a coincidental real-probe fallback', async () => {
-    vi.mocked(getToolAvailability).mockResolvedValue(
-      createAvailability({ reviewEnabled: true, reviewEnabledForCli: true })
-    );
-    const options = createOptions({
-      features: { changeDetection: true, componentsManifest: true, experimentalReview: false },
-    });
-
-    const metadata = await buildStorybookAiMetadata(options);
-    const result = await metadata.localTools[GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME]?.call();
-    const text = result?.content[0]?.text as string;
-
-    // If the override were dropped, this would fall through to the real `resolveSkillInputs`
-    // fallback, which — given `experimentalReview: false` above — resolves review OFF and would
-    // render the preview-URL variant instead.
-    expect(text).toContain('## 👀 Review your changes');
-    expect(text).not.toContain('include every returned preview URL');
-  });
-
   it('respects disabled addon toolsets', async () => {
     const metadata = await buildStorybookAiMetadata(
       createOptions({
@@ -388,27 +361,22 @@ describe('buildStorybookAiMetadata', () => {
     expect(simplifyTools(metadata.tools)).toEqual(simplifyTools(liveTools));
   });
 
-  it('defaults review on for the CLI channel when experimentalReview is unset', async () => {
-    // What getReviewStatus (inside core's getToolAvailability) returns when changeDetection is on
-    // and experimentalReview is neither true nor false.
-    vi.mocked(getToolAvailability).mockResolvedValue(
-      createAvailability({ reviewEnabled: false, reviewEnabledForCli: true })
-    );
-
+  it('offers review in the metadata when change detection is on', async () => {
     const metadata = await buildStorybookAiMetadata(createOptions());
 
     expect(metadata.tools.map((tool) => tool.name)).toContain(DISPLAY_REVIEW_TOOL_NAME);
     expect(metadata.instructions).toContain(DISPLAY_REVIEW_TOOL_NAME);
   });
 
-  it('keeps review off everywhere when experimentalReview is explicitly false', async () => {
+  it('leaves review out of the metadata when change detection is off', async () => {
     vi.mocked(getToolAvailability).mockResolvedValue(
-      createAvailability({ reviewEnabled: false, reviewEnabledForCli: false })
+      createAvailability({ reviewEnabled: false, changeDetectionEnabled: false })
     );
 
     const metadata = await buildStorybookAiMetadata(createOptions());
 
     expect(metadata.tools.map((tool) => tool.name)).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
+    expect(metadata.instructions).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
   });
 
   it('uses builder support instead of the live module-graph service for metadata', async () => {
@@ -452,12 +420,7 @@ function getFetchUrl(input: RequestInfo | URL): string {
 
 function createOptions({
   builder = '@storybook/builder-vite',
-  // `experimentalReview: true` so that the real (core-internal) `resolveSkillInputs` fallback used
-  // by `buildStorybookStoryInstructions` when no per-request `reviewEnabled` context is set agrees
-  // with the default mocked `getToolAvailability` result (`createAvailability()`, reviewEnabled:
-  // true) — both computation paths must resolve review the same way for the metadata/live parity
-  // tests below to hold.
-  features = { changeDetection: true, componentsManifest: true, experimentalReview: true },
+  features = { changeDetection: true, componentsManifest: true },
   framework = '@storybook/react-vite',
   refs = {},
   toolsets = { dev: true, docs: true, test: true },
@@ -547,8 +510,8 @@ function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvai
     moduleGraphSupported: true,
     changeDetectionEnabled: true,
     reviewEnabled: true,
-    reviewEnabledForCli: true,
     docsEnabled: true,
+    docsEnabledForCli: true,
     docsHasManifests: true,
     docsFeatureEnabled: true,
     testSupported: true,

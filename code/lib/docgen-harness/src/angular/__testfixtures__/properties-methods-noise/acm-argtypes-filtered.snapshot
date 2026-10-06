@@ -8,7 +8,6 @@
         "summary": "compact",
       },
       "type": {
-        "required": true,
         "summary": "string",
       },
     },
@@ -25,7 +24,6 @@
         "summary": "",
       },
       "type": {
-        "required": true,
         "summary": "string",
       },
     },

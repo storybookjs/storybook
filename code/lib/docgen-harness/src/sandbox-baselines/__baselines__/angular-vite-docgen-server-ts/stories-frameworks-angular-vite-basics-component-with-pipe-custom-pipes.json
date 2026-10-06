@@ -6,12 +6,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },
       "type": {
         "name": "other",
+        "required": true,
         "value": "empty-enum"
       }
     }

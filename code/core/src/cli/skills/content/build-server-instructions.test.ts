@@ -104,11 +104,6 @@ describe('buildServerInstructions', () => {
       changeDetectionEnabled: true,
     });
 
-    // The released 0.6.0 dev section plus the shared-code trigger fixes
-    // ("anything that changes how the UI looks", preview the consumers'
-    // stories) — with `experimentalReview` off (the default) users get the
-    // proven pre-review workflow, while the review-flavored text is
-    // iterated on behind the flag.
     expect(instructions).toMatchInlineSnapshot(`
       "Follow these workflows when working with UI and/or Storybook.
 
@@ -184,7 +179,7 @@ describe('buildServerInstructions', () => {
     expect(instructions).not.toContain('call **stories-preview** to retrieve preview URLs');
   });
 
-  it('keeps the default (review off) instructions under the 2,048-char client truncation limit', () => {
+  it('keeps the review-off instructions under the 2,048-char client truncation limit', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: true,
@@ -194,8 +189,6 @@ describe('buildServerInstructions', () => {
       reviewEnabled: false,
     });
 
-    // Some MCP clients truncate server instructions at 2,048 characters; the
-    // default instruction set must always fit so nothing gets cut off.
     expect(instructions.length).toBeLessThanOrEqual(2048);
   });
 
@@ -285,7 +278,7 @@ describe('buildServerInstructions', () => {
       expect(instructions).not.toContain('stories-changed');
     });
 
-    it('renders the write-story skill cross-reference as a `storybook skills get` command', () => {
+    it('renders the write-story skill cross-reference as a `storybook skills` command', () => {
       const instructions = buildServerInstructions({
         transport: 'cli',
         devEnabled: true,
@@ -293,9 +286,28 @@ describe('buildServerInstructions', () => {
         docsEnabled: false,
       });
 
-      expect(instructions).toContain('npx storybook skills get write-story');
+      expect(instructions).toContain('npx storybook skills write-story');
       expect(instructions).not.toContain('get-storybook-story-instructions');
     });
+
+    it.each([true, false])(
+      'points at the story instructions in the same document when they are inline (review %s)',
+      (reviewEnabled) => {
+        const instructions = buildServerInstructions({
+          transport: 'cli',
+          devEnabled: true,
+          testSupported: false,
+          docsEnabled: false,
+          reviewEnabled,
+          storyInstructionsInline: true,
+        });
+
+        expect(instructions).toContain(
+          '- Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.'
+        );
+        expect(instructions).not.toContain('npx storybook skills write-story');
+      }
+    );
 
     it('renders review, preview, and discovery references as CLI commands', () => {
       const instructions = buildServerInstructions({

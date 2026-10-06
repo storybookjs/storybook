@@ -12,7 +12,7 @@ const toolset = defineToolset({
     getHTTPFrame: {
       title: 'Inspect an HTTP frame',
       description: `HTTP frame utilities
-Use this detailed second line only in the full reference.`,
+This second line shows in the toolset and tool help, not in the overview.`,
       input: v.object({}),
       handler: async () => ({ ok: true, data: {}, markdown: '' }),
     },
@@ -41,7 +41,7 @@ const ctx: ToolsetCtx = {
 };
 
 describe('tools help rendering', () => {
-  it('renders the complete root help from toolset contracts', () => {
+  it('renders the root help as an overview, without the arguments of any tool', () => {
     expect(renderToolsHelp('/repo/.storybook', [toolset], ctx)).toMatchInlineSnapshot(`
       "Usage: npx storybook tools [options] [toolset] [tool] [args...]
 
@@ -50,39 +50,22 @@ describe('tools help rendering', () => {
       Options:
         --cwd <path>                 Project directory of the target Storybook
         -c, --config-dir <dir-name>  Storybook config directory of the target Storybook
+        -p, --port <number>          Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed
+        --attach                     Require attaching to a running Storybook; gate failures are errors instead of a local fallback
+        --no-attach                  Load the project configuration without attaching
         --input <object>             Raw JSON object with the tool arguments (escape hatch for complex values)
         --json                       Print the tool's structured result data as JSON instead of markdown
         -o, --output <path>          Write the result to a file instead of stdout
-        -h, --help                   Show every tool of the target Storybook, or one tool with its arguments
+        -h, --help                   List the tools of the target Storybook, or show one tool with its arguments
 
       Commands:
         example get-http-frame  Inspect an HTTP frame  [local]
         example preview         Preview an example  [requires running Storybook]
 
-      [local] tools run in this process, without a running Storybook.
+      [local] tools run without a running Storybook.
       [requires running Storybook] tools need a running Storybook dev server; start it first.
       Individual \`--key value\` flags override entries of \`--input\`.
-
-      Tool reference — every command in full (\`npx storybook tools <toolset> <tool> --help\` shows one alone):
-
-      example — Example tools.
-
-        example get-http-frame  [local]
-
-          HTTP frame utilities
-          Use this detailed second line only in the full reference.
-
-          Arguments: none.
-
-        example preview  [requires running Storybook]
-
-          Preview one example.
-
-          Arguments:
-          - \`--id\` (string, required): Example identifier
-
-          Output:
-          - \`url\` (string, required): Preview URL"
+      Run \`npx storybook tools <toolset> <tool> --help\` for the description, arguments and \`--json\` output of one tool."
     `);
   });
 
@@ -95,7 +78,7 @@ describe('tools help rendering', () => {
         example get-http-frame  [local]
 
           HTTP frame utilities
-          Use this detailed second line only in the full reference.
+          This second line shows in the toolset and tool help, not in the overview.
 
           Arguments: none.
 
@@ -106,7 +89,7 @@ describe('tools help rendering', () => {
           Arguments:
           - \`--id\` (string, required): Example identifier
 
-          Output:
+          Output (\`--json\`):
           - \`url\` (string, required): Preview URL"
     `);
   });
@@ -123,7 +106,7 @@ describe('tools help rendering', () => {
       Arguments:
       - \`--id\` (string, required): Example identifier
 
-      Output:
+      Output (\`--json\`):
       - \`url\` (string, required): Preview URL"
     `);
   });

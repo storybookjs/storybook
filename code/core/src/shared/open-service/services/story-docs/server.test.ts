@@ -3,12 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
-import { registerStoryDocsService } from './server.ts';
+import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
-
-beforeEach(() => {
-  registerTestModuleGraphService();
-});
 
 afterEach(() => {
   clearRegistry();
@@ -64,22 +60,24 @@ describe('story-docs open service', () => {
   });
 
   describe('module graph hot refresh', () => {
+    beforeEach(() => {
+      registerTestModuleGraphService();
+    });
+
     // Snippets come from the story file's own source. Already-extracted components must re-extract
     // when their story file changes so snippets stay fresh after the edit.
     it('re-extracts already-extracted components when their story file changes', async () => {
       const entry = makeStoryEntry('button--primary', 'Button');
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
-      const service = registerStoryDocsService({
-        getIndex: makeGetIndex([entry]),
-        storyDocsProvider: provider,
-      });
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
 
       await service.queries.storyDocs.loaded({ id: 'button' });
       expect(provider).toHaveBeenCalledTimes(1);
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 
@@ -88,14 +86,12 @@ describe('story-docs open service', () => {
 
     it('does not re-extract components that were never extracted', async () => {
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
-      registerStoryDocsService({
-        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
-        storyDocsProvider: provider,
-      });
+      const getIndex = makeGetIndex([makeStoryEntry('button--primary', 'Button')]);
+      registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 

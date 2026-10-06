@@ -1,9 +1,8 @@
-import { resolve } from 'node:path';
-
 import {
   CLAUDE_AGENT_NAME,
   CLAUDE_PREVIEW_AGENT_NAME,
 } from '../../../shared/constants/agent-provenance.ts';
+import { projectPathsEqual } from './project-path.ts';
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 
 export type ResolveResult =
@@ -34,7 +33,7 @@ export type ResolveTarget = {
    * config must not win over the flag.
    */
   configDirExplicit?: boolean;
-  /** Port of the target Storybook, to address one specific instance among the matches. */
+  /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
   /** The invoking agent (std-env name), used to pick among competing matches. */
   agent?: string;
@@ -44,8 +43,9 @@ export type ResolveTarget = {
  * Pick the Storybook instance that matches the target project. With an explicit `--config-dir`
  * (`configDirExplicit`), only records whose recorded `configDir` equals `target.configDir` match.
  * Otherwise a record matches when its recorded `cwd` equals `target.cwd` OR its recorded
- * `configDir` equals the defaulted `target.configDir`. All comparisons are exact-normalized with
- * no longest-prefix or fallback behaviour (milestone 2 of storybookjs/storybook#34826). The
+ * `configDir` equals the defaulted `target.configDir`. All comparisons use resolved paths
+ * (case-insensitive on Windows, byte-exact on POSIX) with no longest-prefix or fallback
+ * behaviour (milestone 2 of storybookjs/storybook#34826). The
  * configDir key exists for monorepos (storybookjs/storybook#35359): a dev server started at the
  * repo root with `-c packages/ui/.storybook` must be found by a CLI run from `packages/ui`, and
  * vice versa. Records from older Storybooks carry no `configDir` and can only match by cwd — so
@@ -53,10 +53,11 @@ export type ResolveTarget = {
  * `--cwd` instead.
  *
  * When `target.port` is supplied (e.g. an agent that launched Storybook on a known port and wants
- * to address that exact instance), it further constrains the project matches: an instance must
- * match BOTH the project and the port. If the project matches but no instance there is on the
- * port, a `port-mismatch` intercept is returned with the project's instances as candidates so
- * callers can surface the running ports.
+ * to address that exact instance), the port alone is the address: records match on port across
+ * all projects, and the record supplies the project the caller would otherwise pass as
+ * `--cwd`/`--config-dir` (see {@link selectInstances}). If no instance is on the port, a
+ * `port-mismatch` intercept is returned with the running instances as candidates so callers can
+ * surface the running ports.
  *
  * If at least one record matches, dispatch based on the selected instance's `mcp.status`:
  *
@@ -75,39 +76,25 @@ export function resolveInstance(
   records: StorybookInstanceRecord[],
   target: ResolveTarget
 ): ResolveResult {
-  const { port: targetPort, agent: currentAgent } = target;
-  const normalisedCwd = resolve(target.cwd);
-  const normalisedConfigDir = target.configDir && resolve(target.configDir);
-  const matchesConfigDir = (r: StorybookInstanceRecord) =>
-    normalisedConfigDir != null &&
-    r.configDir != null &&
-    resolve(r.configDir) === normalisedConfigDir;
-  const projectMatches = target.configDirExplicit
-    ? records.filter(matchesConfigDir)
-    : records.filter((r) => resolve(r.cwd) === normalisedCwd || matchesConfigDir(r));
-  const matches =
-    targetPort == null ? projectMatches : projectMatches.filter((r) => r.port === targetPort);
-
-  if (matches.length === 0) {
-    // The project matched, but no instance there is on the requested port: a distinct,
-    // more actionable failure than "nothing is running here".
-    if (targetPort != null && projectMatches.length > 0) {
-      return {
-        kind: 'intercept',
-        reason: 'port-mismatch',
-        records: projectMatches,
-        matches: [],
-      };
-    }
+  const selection = selectInstances(records, target);
+  if (selection.kind === 'port-mismatch') {
+    return {
+      kind: 'intercept',
+      reason: 'port-mismatch',
+      records: selection.candidates,
+      matches: [],
+    };
+  }
+  if (selection.kind === 'no-instance') {
     return {
       kind: 'intercept',
       reason: 'no-instance',
-      records,
+      records: selection.records,
       matches: [],
     };
   }
 
-  const sortedMatches = selectCompetingBucket(matches, targetPort, currentAgent);
+  const sortedMatches = selection.matches;
   const selected = sortedMatches.find((r) => r.mcp.status === 'ready') ?? sortedMatches[0];
 
   switch (selected.mcp.status) {
@@ -146,15 +133,86 @@ export function resolveInstance(
   }
 }
 
-function selectCompetingBucket(
-  matches: StorybookInstanceRecord[],
-  targetPort: number | undefined,
-  currentAgent: string | undefined
-) {
+export type InstanceSelection =
+  | {
+      kind: 'match';
+      /** The competing bucket, best first: the selected agent bucket, most recently started first. */
+      matches: StorybookInstanceRecord[];
+    }
+  | { kind: 'no-instance'; records: StorybookInstanceRecord[] }
+  | {
+      kind: 'port-mismatch';
+      port: number;
+      /** The instances the port was matched against, so callers can list the running ports. */
+      candidates: StorybookInstanceRecord[];
+    };
+
+/**
+ * The selection half of {@link resolveInstance}: instance matching, ordering, and the port
+ * targeting dimension. MCP status plays no role — the attach path consumes this directly because
+ * attaching over the channel works without `@storybook/addon-mcp`.
+ *
+ * An explicit port is a complete address on its own: one process owns a port, and its record
+ * already carries the project (cwd, config dir) the caller would otherwise supply. So with
+ * `target.port`, records match on port across all projects — the caller's cwd plays no role — and
+ * an explicit `--config-dir` still restricts the candidates, keeping its precise-intent contract.
+ * No instance on the port → `port-mismatch` with the candidates, so callers can list what runs
+ * (`no-instance` when nothing is running at all).
+ */
+export function selectInstances(
+  records: StorybookInstanceRecord[],
+  target: ResolveTarget
+): InstanceSelection {
+  const { port: targetPort, agent: currentAgent } = target;
+
   if (targetPort != null) {
-    return [...matches].sort(byMostRecentlyStarted);
+    const candidates = target.configDirExplicit
+      ? records.filter((record) => matchesTargetConfigDir(record, target))
+      : records;
+    const matches = candidates.filter((record) => record.port === targetPort);
+    if (matches.length === 0) {
+      return candidates.length > 0
+        ? { kind: 'port-mismatch', port: targetPort, candidates }
+        : { kind: 'no-instance', records };
+    }
+    return { kind: 'match', matches: [...matches].sort(byMostRecentlyStarted) };
   }
 
+  const projectMatches = listProjectMatches(records, target);
+  if (projectMatches.length === 0) {
+    return { kind: 'no-instance', records };
+  }
+  return { kind: 'match', matches: selectCompetingBucket(projectMatches, currentAgent) };
+}
+
+/** Records whose cwd or configDir matches the target project, ignoring MCP status. */
+export function listProjectMatches(
+  records: StorybookInstanceRecord[],
+  target: Pick<ResolveTarget, 'cwd' | 'configDir' | 'configDirExplicit'>
+): StorybookInstanceRecord[] {
+  return target.configDirExplicit
+    ? records.filter((record) => matchesTargetConfigDir(record, target))
+    : records.filter(
+        (record) =>
+          projectPathsEqual(record.cwd, target.cwd) || matchesTargetConfigDir(record, target)
+      );
+}
+
+function matchesTargetConfigDir(
+  record: StorybookInstanceRecord,
+  target: Pick<ResolveTarget, 'configDir'>
+): boolean {
+  return (
+    target.configDir != null &&
+    record.configDir != null &&
+    projectPathsEqual(record.configDir, target.configDir)
+  );
+}
+
+function selectCompetingBucket(
+  matches: StorybookInstanceRecord[],
+  currentAgent: string | undefined
+) {
   // std-env reports Claude CLI as `claude`; preview-launched Storybooks record `claude-preview`.
   const agentBuckets =
     currentAgent === CLAUDE_AGENT_NAME

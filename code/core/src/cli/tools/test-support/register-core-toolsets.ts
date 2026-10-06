@@ -53,7 +53,6 @@ export function registerCoreToolsetsForTest({
         getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
       },
       changeStatuses: { getAll: () => ({}) },
-      getChangeDetectionReadiness: async () => ({ status: 'ready' as const }),
       reviewEnabled,
     })
   );

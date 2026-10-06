@@ -31,7 +31,7 @@ const CWD_DESCRIPTION = 'Project directory of the target Storybook; place before
 const CONFIG_DIR_DESCRIPTION =
   'Storybook config directory of the target Storybook; place before the command name';
 const PORT_DESCRIPTION =
-  'Port of the target Storybook for runtime commands; place before the command name';
+  'Port of a running Storybook; runtime commands target that instance directly. Place before the command name';
 
 type AiPassthroughOptions = {
   cwd?: string;

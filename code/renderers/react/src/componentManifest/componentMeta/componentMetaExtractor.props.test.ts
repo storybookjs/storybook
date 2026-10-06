@@ -360,6 +360,40 @@ describe('prop extraction', () => {
         },
       });
     });
+
+    it('merges same-named prop types across union members', async () => {
+      const entry = await extract(
+        'Component',
+        dedent`
+          import React from 'react';
+          interface BaseProps { variant?: 'a' | 'b' }
+          interface VariantAProps extends BaseProps {
+            variant?: 'a';
+            valueA?: string;
+            valueB?: never;
+          }
+          interface VariantBProps extends BaseProps {
+            variant: 'b';
+            valueA?: never;
+            valueB: string;
+          }
+          type Props = VariantAProps | VariantBProps;
+          export const Component: React.FC<Props> = (props) => <div />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        props: {
+          variant: {
+            required: false,
+            type: {
+              name: 'enum',
+              value: [{ value: '"a"' }, { value: '"b"' }],
+            },
+          },
+        },
+      });
+    });
   });
 
   describe('utility types', () => {

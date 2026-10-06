@@ -1,6 +1,6 @@
 import type * as ts from 'typescript';
 
-import type { AnalyzerContext } from './context.ts';
+import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 
 export interface DecoratorInfo {
   name: string;
@@ -14,19 +14,34 @@ export interface DecoratorInfo {
  * projects whose `@angular/core` types are unreachable.
  */
 export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): boolean => {
-  const { checker, ts } = ctx;
-  const symbol = checker.getSymbolAtLocation(node);
+  const symbol = resolvedSymbol(ctx, node);
   if (!symbol) {
     return true;
   }
-  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const declarations = target.declarations;
+  const declarations = symbol.declarations;
   if (!declarations?.length) {
     return true;
   }
   return declarations.some((declaration) =>
     declaration.getSourceFile().fileName.includes('@angular/core')
   );
+};
+
+// Angular matches decorators by imported symbol, including aliases re-exported through barrels.
+const importedName = (
+  ctx: AnalyzerContext,
+  target: ts.Identifier | ts.PropertyAccessExpression
+): string => {
+  const symbol = resolvedSymbol(ctx, target);
+  if (symbol?.declarations?.length) {
+    return symbol.name;
+  }
+  if (ctx.ts.isIdentifier(target)) {
+    const local = ctx.checker.getSymbolAtLocation(target);
+    const specifier = local?.declarations?.find(ctx.ts.isImportSpecifier);
+    return specifier?.propertyName?.text ?? target.text;
+  }
+  return target.name.text;
 };
 
 export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInfo[] => {
@@ -44,10 +59,9 @@ export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInf
     if (!isAngularCoreOrUnresolved(ctx, target)) {
       continue;
     }
-    const name = ts.isIdentifier(target)
-      ? target.text
-      : ts.isPropertyAccessExpression(target)
-        ? target.name.text
+    const name =
+      ts.isIdentifier(target) || ts.isPropertyAccessExpression(target)
+        ? importedName(ctx, target)
         : target.getText();
     decorators.push({ name, call });
   }
@@ -124,6 +138,7 @@ interface InputDecoratorConfig {
   alias?: string;
   // The actual boolean value of `@Input({ required })`, not merely whether the key is present.
   required?: boolean;
+  transform?: ts.Expression;
 }
 
 export const parseInputDecoratorConfig = (
@@ -140,9 +155,11 @@ export const parseInputDecoratorConfig = (
   }
   const alias = stringOption(ctx, options, 'alias');
   const required = booleanOption(ctx, options, 'required');
+  const transform = objectProperty(ctx, options, 'transform');
   return {
     ...(alias === undefined ? {} : { alias }),
     ...(required === undefined ? {} : { required }),
+    ...(transform === undefined ? {} : { transform }),
   };
 };
 

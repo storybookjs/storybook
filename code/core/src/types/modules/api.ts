@@ -84,7 +84,6 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showNav: boolean;
   showPanel: boolean;
-  showTabs: boolean;
   showToolbar: boolean;
   /**
    * Whether the mobile navigation drawer is open. Below the mobile breakpoint the sidebar is a
@@ -113,7 +112,24 @@ export interface API_SidebarOptions<API = any> {
   showRoots?: boolean;
   filters?: Record<string, API_FilterFunction>;
   collapsedRoots?: string[];
-  renderLabel?: (item: API_HashEntry, api: API) => any;
+  renderAriaLabel?: (
+    item: API_HashEntry,
+    api: API,
+    // Optional so pre-existing consumers that invoke these callbacks with two arguments
+    // keep compiling; Storybook itself always passes the context.
+    context?: {
+      isMobile: boolean;
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => string;
+  renderLabel?: (
+    item: API_HashEntry,
+    api: API,
+    context?: {
+      isMobile: boolean;
+      location: 'sidebar' | 'bottom-bar';
+    }
+  ) => any;
 }
 
 interface OnClearOptions {

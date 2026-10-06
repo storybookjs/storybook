@@ -1,3 +1,5 @@
-import { sourceDecorator } from './docs/sourceDecorator.ts';
+import { sourceDecorator } from './docgen/story-docs/source-decorator/sourceDecorator.ts';
 
-export const decorators = [sourceDecorator];
+const isDocgenServerEnabled = (globalThis as any).FEATURES?.experimentalDocgenServer;
+
+export const decorators = isDocgenServerEnabled ? [] : [sourceDecorator];

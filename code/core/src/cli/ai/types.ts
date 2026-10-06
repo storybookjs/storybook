@@ -15,6 +15,5 @@ export interface AiSetupOptions {
   runId: string;
 }
 
-// `ProjectInfo` now lives in `cli/skills/project-info.ts` (shared with the future `skills get setup`
-// CLI command); re-exported here so existing `cli/ai` importers (e.g. `cli/ai/mcp/`) keep compiling.
+// Re-exported so `cli/ai/mcp/` importers keep compiling.
 export type { ProjectInfo } from '../skills/project-info.ts';

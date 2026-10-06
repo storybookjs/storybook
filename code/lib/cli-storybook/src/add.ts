@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
@@ -171,7 +173,9 @@ export async function add(
   );
 
   if (shouldAddToMain) {
-    logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
+    logger.log(
+      `Adding '${addon}' to the "addons" field in ${relative(process.cwd(), mainConfigPath)}`
+    );
 
     await setupAddonInConfig({
       addonName,

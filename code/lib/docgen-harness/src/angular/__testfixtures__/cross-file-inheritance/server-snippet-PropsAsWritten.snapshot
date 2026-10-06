@@ -8,8 +8,8 @@ import { CrossFileInheritanceComponent } from './cross-file-inheritance.componen
     <sb-cross-file-inheritance
         [heading]="'Storage almost full'"
         [dismissible]="true"
-        (dismissed)="dismissed($event)">
-    </sb-cross-file-inheritance>`,
+        (dismissed)="dismissed($event)"
+    />`,
 })
 export class DemoComponent {
   dismissed(event: unknown) {}

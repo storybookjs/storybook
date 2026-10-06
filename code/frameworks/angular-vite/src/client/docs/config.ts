@@ -7,15 +7,15 @@ import { sourceDecorator } from './sourceDecorator';
 // the TypeScript host component that renders the story; without it they show the template the
 // runtime source decorator builds. Read at module scope because the preview's <head> assigns
 // `FEATURES` from a blocking script, before any preview module evaluates.
-const language = globalThis.FEATURES?.experimentalDocgenServer ? 'ts' : 'html';
+const useStaticServiceSnippets = globalThis.FEATURES?.experimentalDocgenServer === true;
 
 export const parameters: Parameters = {
   docs: {
     source: {
       type: SourceType.DYNAMIC,
-      language,
+      language: useStaticServiceSnippets ? 'ts' : 'html',
     },
   },
 };
 
-export const decorators: DecoratorFunction[] = [sourceDecorator];
+export const decorators: DecoratorFunction[] = useStaticServiceSnippets ? [] : [sourceDecorator];

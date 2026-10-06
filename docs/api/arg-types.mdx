@@ -18,13 +18,14 @@ If you are using the Storybook [docs](../writing-docs/index.mdx) addon, then Sto
 
 To do so, Storybook uses various static analysis tools depending on your framework.
 
-| Framework     | Static analysis tool                                                                                                                                    |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| React         | [react-docgen](https://github.com/reactjs/react-docgen) (default) or [react-docgen-typescript](https://github.com/styleguidist/react-docgen-typescript) |
-| Vue           | [vue-docgen-api](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api)                                                 |
-| Angular       | [compodoc](https://compodoc.app/)                                                                                                                       |
-| WebComponents | [custom-element.json](https://github.com/webcomponents/custom-elements-json)                                                                            |
-| Ember         | [YUI doc](https://github.com/ember-learn/ember-cli-addon-docs-yuidoc#documenting-components)                                                            |
+| Framework         | Static analysis tool                                                                                                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| React             | [react-docgen](https://github.com/reactjs/react-docgen) (default) or [react-docgen-typescript](https://github.com/styleguidist/react-docgen-typescript)                                          |
+| Vue               | [vue-docgen-api](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api)                                                                                          |
+| Angular (Vite)    | Your TypeScript sources, read on the Storybook server ([details](../get-started/frameworks/angular-vite.mdx#component-documentation)), or [compodoc](https://compodoc.app/) if you turn that off |
+| Angular (Webpack) | [compodoc](https://compodoc.app/)                                                                                                                                                                |
+| WebComponents     | [custom-element.json](https://github.com/webcomponents/custom-elements-json)                                                                                                                     |
+| Ember             | [YUI doc](https://github.com/ember-learn/ember-cli-addon-docs-yuidoc#documenting-components)                                                                                                     |
 
 The data structure of `argTypes` is designed to match the output of the these tools. Properties specified manually will override what is inferred.
 
@@ -366,13 +367,3 @@ Specifies the semantic type of the argType. When an argType is [inferred](#autom
 If you only need to specify the documented type, you should use [`table.type`](#tabletype), instead.
 
 <CodeSnippets path="arg-types-type.md" />
-
-### `defaultValue`
-
-(⛔️ **Deprecated**)
-
-Type: `any`
-
-Define the default value of the argType. Deprecated in favor of defining the [`arg`](../writing-stories/args.mdx) value directly.
-
-<CodeSnippets path="arg-types-default-value.md" />

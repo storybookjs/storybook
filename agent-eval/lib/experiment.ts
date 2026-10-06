@@ -1,10 +1,15 @@
+import { execFile } from 'node:child_process';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
 import { collectTranscriptUsage } from './usage.ts';
 
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
 // one per workflow behavior branch. This is the set that always runs on CI.
 const CORE_STORYBOOK_EVALS = [
-  '801-create-component-no-launch-config',
+  '801-create-accessible-component',
   '802-create-component',
   '803-edit-component',
   '804-write-story-for-existing-component',
@@ -28,37 +33,20 @@ const LIFECYCLE_STORYBOOK_EVALS = [
   '823-setup-outdated-storybook',
 ] as const;
 
-// The 9xx line: ports from the old /eval system, written for the MCP-only
-// workflow of the published stable release. They only run under
-// EVAL_STORYBOOK_LATEST=1 (or via EVAL_ONLY).
+// The 9xx line: MCP-only ports from the old /eval system that still cover
+// unique tool shapes or fixtures the 8xx line does not (async mocks, story
+// drift, a11y:false, preview-by-path/id, vitest CLI, etc.). Twins of 8xx
+// scenarios (901/902/905/907/911 MCP) and duplicate prompt shapes were
+// removed. They only run under EVAL_STORYBOOK_LATEST=1 (or via EVAL_ONLY).
 const PORTED_WORKFLOW_STORYBOOK_EVALS = [
-  '901-create-component-atom-reshaped-concise',
-  '901-create-component-atom-reshaped-detailed',
-  '901-create-component-atom-reshaped-explicit-stories',
-  '902-create-component-composite-reshaped-concise',
-  '902-create-component-composite-reshaped-detailed',
-  '902-create-component-composite-reshaped-explicit-stories',
-  '903-create-component-async-fetch-reshaped-concise',
-  '903-create-component-async-fetch-reshaped-detailed',
   '903-create-component-async-fetch-reshaped-explicit-stories',
-  '904-create-component-async-module-reshaped-concise',
-  '904-create-component-async-module-reshaped-detailed',
   '904-create-component-async-module-reshaped-explicit-stories',
-  '905-existing-component-write-story-reshaped-concise',
-  '905-existing-component-write-story-reshaped-detailed',
-  '906-existing-component-edit-story-reshaped-concise',
   '906-existing-component-edit-story-reshaped-detailed',
-  '907-existing-component-change-component-reshaped-concise',
-  '907-existing-component-change-component-reshaped-detailed',
-  '907-existing-component-change-component-reshaped-explicit-stories',
   '908-run-story-tests',
   '909-run-tests-after-component-creation',
-  '910-run-tests-without-a11y-concise',
   '910-run-tests-without-a11y-explicit',
-  '911-fix-failing-tests',
   '911-fix-failing-tests-vitest-cli',
   '912-fix-a11y-violations',
-  '912-fix-a11y-violations-explicit',
   '913-run-all-tests-final-verification',
   '914-preview-story-by-path',
   '915-preview-story-by-id',
@@ -115,12 +103,15 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
   if (process.env.EVAL_EXTRA_EVALS === '1') {
     return STORYBOOK_LATEST
       ? { core: [...PORTED_WORKFLOW_STORYBOOK_EVALS], lifecycle: [] }
-      : { core: [...CORE_STORYBOOK_EVALS], lifecycle: [...LIFECYCLE_STORYBOOK_EVALS] };
+      : {
+          core: [...CORE_STORYBOOK_EVALS],
+          lifecycle: [...LIFECYCLE_STORYBOOK_EVALS],
+        };
   }
 
   return STORYBOOK_LATEST
-    ? { core: ['901-create-component-atom-reshaped-concise'], lifecycle: [] }
-    : { core: ['801-create-component-no-launch-config'], lifecycle: [] };
+    ? { core: ['908-run-story-tests'], lifecycle: [] }
+    : { core: ['801-create-accessible-component'], lifecycle: [] };
 }
 
 const ACTIVE_EVALS = resolveActiveEvals();
@@ -136,36 +127,43 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   ? []
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
-// Non-default model tiers run zero evals unless EVAL_EXTRA_MODELS=1, so
-// labeled CI runs only pay for the default-model experiments.
-export const EXTRA_MODEL_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const execFileAsync = promisify(execFile);
+let checkoutRevision: Promise<{ commit: string; dirty: boolean }> | undefined;
 
-export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];
+function readCheckoutRevision(): Promise<{ commit: string; dirty: boolean }> {
+  checkoutRevision ??= Promise.all([
+    execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT }),
+    execFileAsync('git', ['status', '--porcelain'], { cwd: REPO_ROOT }),
+  ]).then(([head, status]) => ({
+    commit: head.stdout.trim(),
+    dirty: status.stdout.trim() !== '',
+  }));
+  return checkoutRevision;
+}
 
-function attachUsageMetadata({ runData }: RunCompleteContext) {
-  if (!runData.transcript) {
-    return;
-  }
-
-  const usage = collectTranscriptUsage(runData.transcript, runData.result.observedModel);
-
-  if (!usage) {
-    return;
-  }
+async function attachRunMetadata({ runData }: RunCompleteContext) {
+  const usage = runData.transcript
+    ? collectTranscriptUsage(runData.transcript, runData.result.observedModel)
+    : undefined;
+  // Recording the commit is bookkeeping; a git failure must not fail the eval itself.
+  const checkout = await readCheckoutRevision().catch(() => undefined);
 
   return {
     ...runData,
     result: {
       ...runData.result,
-      metadata: { ...runData.result.metadata, usage },
+      metadata: {
+        ...runData.result.metadata,
+        ...(checkout ? { checkout } : {}),
+        ...(usage ? { usage } : {}),
+      },
     },
   };
 }
 
 export const DEFAULT_EXPERIMENT_CONFIG = {
-  onRunComplete: attachUsageMetadata,
+  onRunComplete: attachRunMetadata,
   // Keep runs at 1: the runner starts all attempts in parallel (earlyExit only
   // aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
   runs: 1,
@@ -173,6 +171,9 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // The runner default of 600s is too tight for opus-high on the plugin
   // path: passing runs have taken up to 458s (2026-07-03 CI runs).
   timeout: 900,
+  // "auto" is recommended and uploads results to Vercel, making it easier to share
+  // with the team. Switch to "docker" to run evals on your local machine, e.g. for
+  // throwaway experiments, or in case of Vercel outage or payment issue.
   sandbox: 'auto',
   copyFiles: 'all',
   // Post-run script checks stay disabled: they fail on sandbox environment

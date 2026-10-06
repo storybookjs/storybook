@@ -79,22 +79,16 @@ export async function buildStaticFiles(): Promise<StaticStore> {
 
       buildTasks.push(
         (async () => {
-          const inputsRuntime = createServiceRuntime(
-            service,
-            { registryApi: serviceRegistryApi },
-            structuredClone(service.initialState)
-          );
+          const inputsRuntime = createServiceRuntime(service, { registryApi: serviceRegistryApi });
           const inputs = await staticInputs(inputsRuntime.loadCtxForStatic);
 
           return Promise.all(
             inputs.map(async (input) => {
               // Build every static input from a clean initial state so the serialized output mirrors
               // the one path this task is responsible for.
-              const buildRuntime = createServiceRuntime(
-                service,
-                { registryApi: serviceRegistryApi },
-                structuredClone(service.initialState)
-              );
+              const buildRuntime = createServiceRuntime(service, {
+                registryApi: serviceRegistryApi,
+              });
               const validatedInput = await validateSchema(query.input, input, {
                 kind: 'query',
                 serviceId: service.id,

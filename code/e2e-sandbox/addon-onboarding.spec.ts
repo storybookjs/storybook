@@ -46,7 +46,6 @@ test.describe('addon-onboarding', () => {
     `Skipping ${templateName}, whose onboarding coverage is carried by vue3-vite/default-ts.`
   );
   test('the onboarding flow', async ({ page }) => {
-    // eslint-disable-next-line playwright/no-conditional-in-test
     if (process.env.CI) {
       await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
       await clearChecklistCache();

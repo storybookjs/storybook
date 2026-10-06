@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { cache, JsPackageManagerFactory, PackageManagerName } from 'storybook/internal/common';
+import { cache, PackageManagerName } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -16,7 +16,7 @@ const projectInfo = {
   builderPackage: '@storybook/builder-vite',
   configDir: resolve('.storybook'),
   language: 'ts',
-  packageManager: JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.NPM }),
+  packageManager: { type: PackageManagerName.NPM },
 } as ProjectInfo;
 
 beforeEach(() => {

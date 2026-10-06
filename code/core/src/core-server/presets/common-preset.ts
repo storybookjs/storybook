@@ -20,7 +20,6 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import {
-  CHANGE_DETECTION_STATUS_TYPE_ID,
   type CoreConfig,
   type DocgenProviderDescriptor,
   type Indexer,
@@ -55,7 +54,7 @@ import { reviewToolset } from '../../shared/open-service/toolsets/review/definit
 import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
-import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { getSyncedStatuses } from '../stores/status.ts';
 import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
 import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
@@ -412,9 +411,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getRepoRoot: () => gitDiffProvider.getRepoRoot(),
         getChangedFiles: () => gitDiffProvider.getChangedFiles(),
       },
-      changeStatuses: {
-        getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
-      },
+      changeStatuses: { getAll: getSyncedStatuses },
       reviewEnabled,
     })
   );

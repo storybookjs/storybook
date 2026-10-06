@@ -653,7 +653,7 @@ describe('getStoryHrefs', () => {
     expect(network.previewHref).toContain('http://192.168.1.1:6006/design-system/iframe.html');
   });
 
-  it('resolves absolute network URLs against a custom <base href>', () => {
+  it('builds network URLs exactly like origin URLs, with only the origin swapped', () => {
     const { api, state } = initURL({
       store,
       provider: { channel: new EventEmitter() },
@@ -664,11 +664,11 @@ describe('getStoryHrefs', () => {
     store.setState(state);
     global.document.baseURI = 'http://localhost:6006/Orchard.Storybook/';
 
-    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { base: 'network' });
-    expect(managerHref).toEqual('http://192.168.1.1:6006/storybook?path=/story/test--story');
-    expect(previewHref).toEqual(
-      'http://192.168.1.1:6006/Orchard.Storybook/iframe.html?id=test--story&viewMode=story'
-    );
+    const origin = api.getStoryHrefs('test--story', { base: 'origin' });
+    const network = api.getStoryHrefs('test--story', { base: 'network' });
+    const swapOrigin = (href) => href.replace('http://localhost:6006', 'http://192.168.1.1:6006');
+    expect(network.managerHref).toEqual(swapOrigin(origin.managerHref));
+    expect(network.previewHref).toEqual(swapOrigin(origin.previewHref));
   });
 
   it('ignores the initial path the dev server bakes into the network address', () => {

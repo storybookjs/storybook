@@ -26,7 +26,7 @@ Run \`docs list\` once at the start, then \`docs show\` for each component you b
 function writeSection(framework: string): string {
   return `## Write the component and its stories
 
-Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; a callback passed as \`fn()\` must be asserted as called.
+Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; a callback passed as \`fn()\` must be asserted as called. The rules below are for the stories you write; do not rewrite existing stories only to match them.
 
 - Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
 - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options.

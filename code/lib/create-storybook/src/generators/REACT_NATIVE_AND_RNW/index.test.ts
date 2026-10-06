@@ -16,6 +16,7 @@ describe('REACT_NATIVE_AND_RNW generator', () => {
 
   beforeEach(() => {
     vi.mocked(reactNativeGenerator.configure).mockResolvedValue({
+      storybookConfigFolder: '.rnstorybook',
       skipGenerator: true,
       shouldRunDev: false,
       storybookCommand: null,

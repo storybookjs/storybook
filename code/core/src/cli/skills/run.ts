@@ -101,9 +101,7 @@ export async function runSkillsCommand(
     return { output: '', errorOutput: intent.message, exitCode: 1 };
   }
   try {
-    // `stories` covers writing stories itself, so `--all` leaves out the longer `write-story` text.
-    const ids =
-      intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
+    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
     const docs = await serveSkills(ids, resolveStorybookConfigDir(input.target), deps);
     return {
       output: docs.join('\n\n---\n\n'),

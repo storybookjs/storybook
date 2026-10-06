@@ -18,15 +18,16 @@ function docsSection(): string {
 \`\`\`sh
 ${ref('docs.list')}             # every component and docs page, with its id
 ${ref('docs.show')} --id <id>   # props and usage examples of one entry
+${ref('docs.showStory')} --storyId <id>   # the code of a story that docs show only lists
 \`\`\`
 
-Run \`docs list\` once at the start, then \`docs show\` for each component you build on or are asked about. Reuse what exists instead of building a duplicate. Answer props, API and usage questions from these commands, not from source files or \`node_modules\`: a prop that is not documented does not exist. When \`docs list\` groups its entries under sources (\`id: acme\`), pass the source of the entry too: \`--storybookId acme\`.`;
+Run \`docs list\` once at the start, then \`docs show\` for each component you build on or are asked about. Reuse what exists instead of building a duplicate. Answer props, API and usage questions from these commands and never invent a prop. Read source files or \`node_modules\` only when the commands return nothing relevant. When \`docs list\` groups its entries under sources (\`id: acme\`), pass the source of the entry to both commands that show it: \`--storybookId acme\`.`;
 }
 
 function writeSection(framework: string): string {
   return `## Write the component and its stories
 
-Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; a callback passed as \`fn()\` must be asserted as called. The rules below are for the stories you write; do not rewrite existing stories only to match them.
+Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
 
 - Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
 - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options.
@@ -40,7 +41,7 @@ function testSection(a11yEnabled: boolean): string {
   return `## Test
 
 \`\`\`sh
-${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # leave out --stories to run every story
+${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids: see "Find the stories"; leave out --stories to run every story
 \`\`\`
 
 Run this after every change, instead of a \`package.json\` test script. Use focused runs while iterating and one full run before you finish. Fix failures and rerun; never finish with failing tests.${a11y}`;
@@ -60,18 +61,28 @@ function discoverSection(inputs: StoriesSkillInputs): string {
 This project has no command that lists story ids. Select a story by its file and export instead: \`--stories '[{"absoluteStoryPath":"/abs/path/Button.stories.tsx","exportName":"Primary"}]'\`.`;
   }
   const before = inputs.reviewEnabled ? 'before every review' : 'before you share links';
-  const fallback = inputs.moduleGraphSupported
-    ? inputs.changeDetectionEnabled
-      ? ' When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file (design token, theme, util, hook), which has no stories of its own, pass the components that use it.'
-      : ' A shared file (design token, theme, util, hook) has no stories of its own: pass the components that use it to \`find-by-component\`.'
-    : '';
+  const sharedFile = '(design token, theme, util, hook)';
+  const fallback = !inputs.moduleGraphSupported
+    ? []
+    : [
+        inputs.changeDetectionEnabled
+          ? `When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file ${sharedFile}, which has no stories of its own, pass the components that use it.`
+          : `A shared file ${sharedFile} has no stories of its own: pass the components that use it to \`find-by-component\`.`,
+        'When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
+      ];
+  const guidance = [
+    `Run one of these ${before}, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects.`,
+    'Story ids come only from these commands. Never build one from a file name, a title or memory.',
+    ...fallback,
+    'When none of them finds a story for a component, it has no stories yet: say so, or write them.',
+  ].join(' ');
   return `## Find the stories
 
 \`\`\`sh
 ${commands.join('\n')}
 \`\`\`
 
-Run one of these ${before}, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects. Story ids come only from these commands. Never build one from a file name, a title or memory.${fallback} When none of them finds a story for a component, it has no stories yet: say so, or write them.`;
+${guidance}`;
 }
 
 function reviewSection(): string {
@@ -89,7 +100,7 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
 
 Then do both things the command prints, every time: open the review in the in-app browser with a browser tool, and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }
@@ -103,7 +114,7 @@ ${ref('stories.preview')} --stories '[{"storyId":"<id>"}]'   # direct links to s
 
 ${usage}
 
-Only for a look at one story while you iterate, or when the user asks for a direct link. It does not replace the review.`
+Only for a look at one story while you iterate, or when the user asks for a direct link. It does not replace the review, unless \`review create\` keeps failing after you fixed what it reported: then share these links and say why.`
     : `## Finish with links
 
 ${usage}

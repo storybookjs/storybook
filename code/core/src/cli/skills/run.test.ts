@@ -160,10 +160,12 @@ describe('runSkillsCommand', () => {
     expect(stories.output.length).toBeLessThan(6000);
   });
 
-  it('--all prints the stories workflow once', async () => {
+  it('--all prints each skill once', async () => {
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
 
     expect(result.output.split('# Storybook workflow')).toHaveLength(2);
+    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
+    expect(result.output.split('# Storybook Setup')).toHaveLength(2);
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

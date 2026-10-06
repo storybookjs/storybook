@@ -56,6 +56,21 @@ describe('detectInlineScriptWrites', () => {
       expect(detectInlineScriptWrites(command)).toEqual({ hasWrite: false, paths: [] });
     });
 
+    it('finds a write in a heredoc with an escaped delimiter', () => {
+      const command = `python3 - <<\\EOF\nopen('src/a.ts','w').write('x')\nEOF`;
+      expect(detectInlineScriptWrites(command)).toEqual({ hasWrite: true, paths: ['src/a.ts'] });
+    });
+
+    it('finds a write in a -c script passed through a heredoc substitution', () => {
+      const command = `python3 -c "$(cat <<'EOF'\nopen('src/a.ts','w').write('x')\nEOF\n)"`;
+      expect(detectInlineScriptWrites(command)).toEqual({ hasWrite: true, paths: ['src/a.ts'] });
+    });
+
+    it('scans a stdin script that receives positional arguments', () => {
+      const command = `python3 - "$f" <<'EOF'\nopen('src/a.ts','w').write('x')\nEOF`;
+      expect(detectInlineScriptWrites(command)).toEqual({ hasWrite: true, paths: ['src/a.ts'] });
+    });
+
     it('ignores a heredoc that feeds data into a script file', () => {
       // `python3 script.py <<'EOF'` runs script.py; the body is stdin data,
       // and write-looking text inside it must not count as an edit.

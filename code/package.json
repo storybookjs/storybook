@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.3",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -107,7 +107,7 @@
     "http-server": "^14.1.1",
     "knip": "^6.38.0",
     "mock-require": "^3.0.3",
-    "oxlint": "1.72.0",
+    "oxlint": "1.85.0",
     "prettier": "^3.7.1",
     "process": "^0.11.10",
     "react": "^18.2.0",
@@ -125,9 +125,6 @@
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^4.1.6",
     "wait-on": "^8.0.3"
-  },
-  "devDependencies": {
-    "oxfmt": "^0.41.0"
   },
   "dependenciesMeta": {
     "ejs": {

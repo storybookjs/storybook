@@ -172,6 +172,7 @@ describe('stories.preview', () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
       stories: [{ title: 'Button', name: 'Primary', previewUrl }],
+      instructions: expect.stringContaining('in your in-app browser now'),
     });
     expect(getIndex).toHaveBeenCalledOnce();
   });
@@ -248,6 +249,7 @@ describe('stories.preview', () => {
         previewUrl,
         'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.',
       ]);
+      expect(outcome.data.instructions).toContain('publish the review with **review-create**');
     });
 
     it.each([true, false])(
@@ -260,6 +262,7 @@ describe('stories.preview', () => {
         );
 
         expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
+        expect(outcome.data.instructions).toBeUndefined();
       }
     );
   });

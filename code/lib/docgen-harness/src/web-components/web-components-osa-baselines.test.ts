@@ -14,7 +14,8 @@ import {
   DEFAULT_TYPE_PROPERTY,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
-import { isPublicField } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/map-arg-types.ts';
+import { eventActionName } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/event-action-name.ts';
+import { isPublicField } from '../../../../renderers/web-components/src/docgen/component-docgen/manifest/members.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
@@ -86,11 +87,11 @@ const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: str
   return provider({ entry });
 };
 
-const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {
+const payloadSnapshotSlice = (payload: WebComponentsDocgenPayload | undefined) => {
   if (!payload) {
     return payload;
   }
-  const { argTypes: _argTypes, ...rest } = payload;
+  const { argTypes: _argTypes, apiDescription: _apiDescription, ...rest } = payload;
   return rest;
 };
 
@@ -123,6 +124,15 @@ const hiddenMemberNames = (payload: WebComponentsDocgenPayload): ReadonlySet<str
     }
   }
   return hiddenFieldNames;
+};
+
+const legacyWaivedArgs = (payload: WebComponentsDocgenPayload): ReadonlySet<string> => {
+  const waivedArgs = new Set(hiddenMemberNames(payload));
+  // The server path has no `on<Name>` twin because server argTypes never reach the preview's action enhancer; events bind from `<name>-event` args.
+  for (const event of payload.customElementsManifest?.declaration?.events ?? []) {
+    waivedArgs.add(eventActionName(event.name));
+  }
+  return waivedArgs;
 };
 
 describe('hiddenMemberNames', () => {
@@ -190,7 +200,7 @@ describe('web-components server-side docgen baselines', () => {
         | undefined;
 
       expect(payload, `${fixtureCase}: no OSA payload recorded`).toBeDefined();
-      expect(JSON.stringify(withoutArgTypes(payload))).not.toContain(testDir);
+      expect(JSON.stringify(payloadSnapshotSlice(payload))).not.toContain(testDir);
       const argTypes = payload?.argTypes;
       expect(argTypes, `${fixtureCase}: no OSA argTypes recorded`).toBeDefined();
 
@@ -216,19 +226,22 @@ describe('web-components server-side docgen baselines', () => {
               label: `${fixtureCase}/${variant.legacyArgTypes}`,
               legacyBaseline: true,
               legacyManifestRuntime: true,
-              waivedArgs: hiddenMemberNames(payload!),
+              waivedArgs: legacyWaivedArgs(payload!),
             },
           ],
         });
       }
 
-      await expect(withoutArgTypes(payload)).toMatchFileSnapshot(
+      await expect(payloadSnapshotSlice(payload)).toMatchFileSnapshot(
         join(testDir, `${osaPrefix}payload.snapshot`)
       );
 
       if (index === 0) {
         await expect(payload?.description ?? '').toMatchFileSnapshot(
           join(testDir, 'osa-description.snapshot')
+        );
+        await expect(payload?.apiDescription ?? '').toMatchFileSnapshot(
+          join(testDir, 'osa-api-description.snapshot')
         );
       }
     }

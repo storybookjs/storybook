@@ -11,8 +11,6 @@ interface ExperimentalFeatureFixOptions {
   introducedIn: string;
   link: string;
   prompt: string;
-  // The flag is inert when this feature is explicitly disabled.
-  requires?: keyof StorybookFeatures;
   isSupported?: (mainConfig: StorybookConfigRaw) => boolean;
 }
 
@@ -22,7 +20,6 @@ export const createExperimentalFeatureFix = ({
   introducedIn,
   link,
   prompt,
-  requires,
   isSupported,
 }: ExperimentalFeatureFixOptions): Fix => ({
   id,
@@ -47,25 +44,12 @@ export const createExperimentalFeatureFix = ({
     if (mainConfig.features?.[name] !== undefined) {
       return null;
     }
-    if (requires && mainConfig.features?.[requires] === false) {
-      return null;
-    }
     return {};
   },
 
   transform: () => [
     { filter: { kind: ['main'] }, editConfig: (main) => main.set(['features', name], true) },
   ],
-});
-
-export const enableExperimentalReview = createExperimentalFeatureFix({
-  id: 'enable-experimental-review',
-  name: 'experimentalReview',
-  introducedIn: '10.5.0',
-  requires: 'changeDetection',
-  link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentalreview',
-  prompt:
-    'Enable experimentalReview to offer the agentic review workflow to all MCP clients, not just the storybook ai CLI.',
 });
 
 export const enableExperimentalDocgenServer = createExperimentalFeatureFix({
@@ -82,7 +66,6 @@ export const enableExperimentalDocgenServer = createExperimentalFeatureFix({
 });
 
 const FEATURE_FLAG_FIXES = {
-  experimentalReview: enableExperimentalReview,
   experimentalDocgenServer: enableExperimentalDocgenServer,
 } satisfies Partial<Record<keyof StorybookFeatures, Fix>>;
 

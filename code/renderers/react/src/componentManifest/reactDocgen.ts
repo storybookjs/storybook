@@ -1,13 +1,12 @@
 import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
 import {
   findTsconfigPathForPath,
   getTsconfigPathsBaseDir,
   supportedExtensions,
 } from 'storybook/internal/common';
-import { extractJSDocInfo } from 'storybook/internal/csf-tools';
+import { extractJSDocInfo, parseModule } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import {
@@ -103,20 +102,21 @@ export const parseWithReactDocgen = cached(
 
 const getExportPaths = cached(
   (code: string, filePath: string) => {
-    let ast;
+    let program;
     try {
-      ast = babelParse(code);
+      program = parseModule(code, filePath).program;
     } catch {
       return [];
     }
 
     const basedir = dirname(filePath);
-    const body = ast.program.body;
-    return body
+    return program.body
       .flatMap((statement) =>
-        t.isExportAllDeclaration(statement)
+        statement.type === 'ExportAllDeclaration'
           ? [statement.source.value]
-          : t.isExportNamedDeclaration(statement) && !!statement.source && !statement.declaration
+          : statement.type === 'ExportNamedDeclaration' &&
+              !!statement.source &&
+              !statement.declaration
             ? [statement.source.value]
             : []
       )

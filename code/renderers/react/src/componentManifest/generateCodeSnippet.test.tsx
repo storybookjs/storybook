@@ -1,6 +1,5 @@
 import { expect, test } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
@@ -11,10 +10,10 @@ function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
 
   const snippets = Object.keys(csf._storyExports).map(
-    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').node
+    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').code
   );
 
-  return recast.print(t.program(snippets)).code;
+  return snippets.join('\n');
 }
 
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
@@ -24,7 +23,7 @@ function generateResolved(code: string) {
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      snippet: recast.print(snippet.node).code,
+      snippet: snippet.code,
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };
@@ -106,14 +105,7 @@ test('Edge case identifier we can not find', () => {
     export const Default = someImportOrWhatever;
   `);
   expect(() => generateExample(input)).toThrowErrorMatchingInlineSnapshot(
-    `
-    [SyntaxError: Expected story to be csf factory, function or an object expression
-      11 |
-      12 |
-    > 13 |     export const Default = someImportOrWhatever;
-         |                            ^^^^^^^^^^^^^^^^^^^^
-      14 |   ]
-  `
+    `[SyntaxError: Expected story to be csf factory, function or an object expression (13:27)]`
   );
 });
 
@@ -186,14 +178,9 @@ test('Object', () => {
       }
     };
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const ObjectArgs = () => <Button
-        string="string"
-        number={1}
-        object={{ an: 'object'}}
-        complexObject={{...{a: 1}, an: 'object'}}
-        array={[1,2,3]}>Click me</Button>;"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectArgs = () => <Button string="string" number={1} object={{ an: 'object'}} complexObject={{...{a: 1}, an: 'object'}} array={[1,2,3]}>Click me</Button>;"`
+  );
 });
 
 test('CSF1', () => {
@@ -250,11 +237,9 @@ test('render: Template (identifier referencing local function declaration)', () 
     function Template(args) { return <Button {...args} label="String"></Button> }
     export const Interactive: Story = { render: Template }
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "function Interactive() {
-        return <Button label="String">Click me</Button>;
-    }"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"function Interactive() { return <Button label="String">Click me</Button> }"`
+  );
 });
 
 test('render: Template (identifier referencing unresolvable function)', () => {
@@ -429,11 +414,7 @@ test('CustomRenderBlockBody only', async () => {
     };`
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `
-    "const CustomRenderBlockBody = () => {
-        return <Button foo="bar">Render</Button>;
-    };"
-  `
+    `"const CustomRenderBlockBody = () => { return <Button foo="bar">Render</Button> };"`
   );
 });
 
@@ -476,15 +457,9 @@ test('ObjectInvalidAttr only', async () => {
       args: { '1x': 'a', 'bad key': 'b', '@foo': 'c', '-dash': 'd' }
     };`
   );
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const ObjectInvalidAttr = () => <Button
-        {...{
-            "1x": 'a',
-            "bad key": 'b',
-            "@foo": 'c',
-            "-dash": 'd'
-        }}>Click me</Button>;"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectInvalidAttr = () => <Button {...{ "1x": 'a', "bad key": 'b', "@foo": 'c', "-dash": 'd' }}>Click me</Button>;"`
+  );
 });
 
 test('Inline nested args in child element (string)', () => {
@@ -554,11 +529,11 @@ test('Deeply nested prop replacement (string)', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedProp = () => <Button>
-        <Level1>
-            <Level2>
-                <Leaf val="bar" />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Level2>
+          <Leaf val="bar" />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -582,11 +557,11 @@ test('Deeply nested prop replacement (boolean)', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedBoolean = () => <Button>
-        <Level1>
-            <Level2>
-                <Leaf active />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Level2>
+          <Leaf active />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -607,9 +582,9 @@ test('Deeply nested children expression', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedChildren = () => <Button>
-        <Level1>
-            <Level2>Click me</Level2>
-        </Level1>
+      <Level1>
+        <Level2>Click me</Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -634,12 +609,12 @@ test('Deeply nested multiple replacements', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedMultiple = () => <Button>
-        <Level1>
-            <Leaf1 a="x" />
-            <Level2>
-                <Leaf2 b="y" />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Leaf1 a="x" />
+        <Level2>
+          <Leaf2 b="y" />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -664,12 +639,12 @@ test('Deeply nested multiple replacements and using args spread', () => {
   expect(generateExample(input)).toMatchInlineSnapshot(
     `
     "const DeepNestedMultiple = () => <Button a="x" b="y">
-        <Level1>
-            <Leaf1 a="x" />
-            <Level2>
-                <Leaf2 b="y" />
-            </Level2>
-        </Level1>
+      <Level1>
+        <Leaf1 a="x" />
+        <Level2>
+          <Leaf2 b="y" />
+        </Level2>
+      </Level1>
     </Button>;"
   `
   );
@@ -689,8 +664,8 @@ test('top level args injection and spreading in different places', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const MultipleSpreads = () => <div count={0}>
-        <Button disabled={false} count={0} empty="">Click me</Button>
-        <Button disabled={false} count={0} empty="">Click me</Button>
+      <Button disabled={false} count={0} empty="">Click me</Button>
+      <Button disabled={false} count={0} empty="">Click me</Button>
     </div>;"
   `);
 });
@@ -707,11 +682,11 @@ test('allow top level export functions', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "function Usage() {
-        return (
-            <div style={{ padding: 40 }}>
-                <Button>Click me</Button>
-            </div>
-        );
+      return (
+        <div style={{ padding: 40 }}>
+          <Button>Click me</Button>
+        </div>
+      );
     }"
   `);
 });
@@ -726,7 +701,7 @@ test('render method shorthand resolves like a render function', () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const Default = () => {
-        return <Button>method body</Button>;
+      return <Button>method body</Button>;
     };"
   `);
 });
@@ -847,7 +822,7 @@ test('args assigned to a function-declaration story are inlined', () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "function Usage() {
-        return <Button label="assigned">Click me</Button>;
+      return <Button label="assigned">Click me</Button>;
     }"
   `);
 });
@@ -881,7 +856,7 @@ test('a body still reading args after a partial inline keeps the parameter', () 
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "function Usage(args) {
-        return <Button label="assigned" title={args.notAnArg}>Click me</Button>;
+      return <Button label="assigned" title={args.notAnArg}>Click me</Button>;
     }"
   `);
 });
@@ -892,14 +867,14 @@ test('an arg value keeps a shorthand property shorthand', () => {
     const base = { size: 'md' };
     export const Shorthand: Story = { args: { cfg: { dep, nested: { ...base } } } };
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const Shorthand = () => <Button
-        cfg={{
-            dep,
-
-            nested: {
-                size: 'md'
-            }
-        }}>Click me</Button>;"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const Shorthand = () => <Button cfg={{
+      dep,
+      nested: {
+        size: 'md'
+      }
+    }}>Click me</Button>;"
+  `
+  );
 });

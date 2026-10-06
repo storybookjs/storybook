@@ -1,4 +1,3 @@
-import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import { getPrettier } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 import type { PresetPropertyFn } from 'storybook/internal/types';
@@ -18,10 +17,10 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
         return;
       }
       const { format } = await getPrettier();
-      let node;
+      let code;
       let snippet;
       try {
-        node = getCodeSnippet(csfSource, key, csfSource._meta?.component).node;
+        code = getCodeSnippet(csfSource, key, csfSource._meta?.component).code;
       } catch (e) {
         if (!(e instanceof Error)) {
           return;
@@ -31,8 +30,8 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
 
       try {
         // TODO read the user config
-        if (!snippet && node) {
-          snippet = await format(recast.print(node).code, {
+        if (!snippet && code) {
+          snippet = await format(code, {
             filepath: join(process.cwd(), 'component.tsx'),
           });
         }
@@ -47,22 +46,6 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
         return;
       }
 
-      // e.g. Story.input.parameters
-      const originalParameters = t.memberExpression(
-        csf._metaIsFactory
-          ? t.memberExpression(t.identifier(key), t.identifier('input'))
-          : t.identifier(key),
-        t.identifier('parameters')
-      );
-
-      // e.g. Story.input.parameters?.docs
-      const docsParameter = t.optionalMemberExpression(
-        originalParameters,
-        t.identifier('docs'),
-        false,
-        true
-      );
-
       // For example:
       // Story.input.parameters = {
       //   ...Story.input.parameters,
@@ -74,37 +57,9 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
       //     }
       //   }
       // };
-
-      csf._ast.program.body.push(
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            originalParameters,
-            t.objectExpression([
-              t.spreadElement(originalParameters),
-              t.objectProperty(
-                t.identifier('docs'),
-                t.objectExpression([
-                  t.spreadElement(docsParameter),
-                  t.objectProperty(
-                    t.identifier('source'),
-                    t.objectExpression([
-                      t.objectProperty(t.identifier('code'), t.stringLiteral(snippet)),
-                      t.spreadElement(
-                        t.optionalMemberExpression(
-                          docsParameter,
-                          t.identifier('source'),
-                          false,
-                          true
-                        )
-                      ),
-                    ])
-                  ),
-                ])
-              ),
-            ])
-          )
-        )
+      const parameters = `${key}${csf._metaIsFactory ? '.input' : ''}.parameters`;
+      csf._appendStatement(
+        `${parameters} = { ...${parameters}, docs: { ...${parameters}?.docs, source: { code: ${JSON.stringify(snippet)}, ...${parameters}?.docs?.source } } };`
       );
     });
     await Promise.all(promises);

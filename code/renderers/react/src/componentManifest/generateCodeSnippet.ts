@@ -1,28 +1,35 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
 import {
-  createStoryArgsResolver,
   type CsfFile,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type FunctionNode,
   type ImportRef,
-  metaObjectPath,
-  normalizeStoryDeclaration,
-  type ReferenceContext,
   type RenderResolution,
-  resolveRenderFunction,
   type StoryArgsResolver,
+  codeOf,
+  createStoryArgsResolver,
+  isStringLiteral,
+  metaObject,
+  normalizeStoryDeclaration,
+  parseModule,
+  resolveRenderFunction,
+  storyShapeError,
+  walk,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
 
 function renderFunctionOf(resolution: RenderResolution) {
   if (resolution.kind === 'resolved') {
-    return resolution.path;
+    return resolution.node;
   }
   return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
 }
 
 /** A story's snippet, and what showing it as a complete example still depends on. */
 export interface CodeSnippet {
-  node: t.VariableDeclaration | t.FunctionDeclaration;
+  /** Source of a `const` or `function` declaration named after the story. */
+  code: string;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
@@ -37,43 +44,56 @@ export function getCodeSnippet(
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
   return {
-    node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
+    code: buildSnippet(csf, storyName, componentName, args, resolver),
     imports,
     unresolved,
   };
 }
 
-function buildSnippetNode(
+type Args = Record<string, Node>;
+
+/** A text replacement over the story file's source; an insertion has `start === end`. */
+interface Edit {
+  start: number;
+  end: number;
+  text: string;
+}
+
+function buildSnippet(
   csf: CsfFile,
   storyName: string,
   componentName: string | undefined,
-  merged: Record<string, t.Node>,
-  ctx: ReferenceContext
-): t.VariableDeclaration | t.FunctionDeclaration {
-  const storyDeclaration = csf._storyDeclarationPath[storyName];
+  merged: Args,
+  resolver: StoryArgsResolver
+): string {
+  const editor = csf._editor;
+  const storyDeclaration = csf._storyExports[storyName];
 
   if (!storyDeclaration) {
     const message = 'Expected story to be a function or variable declaration';
-    throw csf._storyPaths[storyName]?.buildCodeFrameError(message) ?? message;
+    const statement = csf._program.body.find(
+      (node) =>
+        node.type === 'ExportNamedDeclaration' &&
+        node.specifiers.some(
+          (specifier) =>
+            (specifier.exported.type === 'Identifier'
+              ? specifier.exported.name
+              : specifier.exported.value) === storyName
+        )
+    );
+    throw statement ? storyShapeError(message, statement, editor) : message;
   }
 
-  const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
+  const normalizedStory = normalizeStoryDeclaration(storyDeclaration, editor);
 
   // Find a function (explicit story fn or render())
-  let storyFn:
-    | NodePath<
-        t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
-      >
-    | undefined;
+  let storyFn: FunctionNode | undefined =
+    normalizedStory.type === 'fn' ? normalizedStory.node : undefined;
 
-  if (normalizedStory.type === 'fn') {
-    storyFn = normalizedStory.path;
-  }
+  const storyConfig = normalizedStory.type === 'config' ? normalizedStory.node : undefined;
 
-  const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
-
-  const metaRender = resolveRenderFunction(metaObjectPath(csf), storyDeclaration, ctx);
-  const storyRender = resolveRenderFunction(storyConfigPath, storyDeclaration, ctx);
+  const metaRender = resolveRenderFunction(metaObject(csf), editor, resolver.ctx);
+  const storyRender = resolveRenderFunction(storyConfig, editor, resolver.ctx);
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
@@ -85,133 +105,115 @@ function buildSnippetNode(
       (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
 
-  // For no-function fallback
-  const entries = Object.entries(merged).filter(([k]) => k !== 'children');
-  const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
-  const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
-  const injectedAttrs = validEntries.map(([k, v]) => toAttr(k, v)).filter((a) => a != null);
-
-  // If we have a function, transform returned JSX
   if (storyFn) {
-    const fn = storyFn.node;
-
-    if (t.isArrowFunctionExpression(fn) && (t.isJSXElement(fn.body) || t.isJSXFragment(fn.body))) {
-      const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
-      const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
-      if (spreadRes.changed || inlineRes.changed) {
-        const newFn = t.arrowFunctionExpression(
-          remainingParams(fn, inlineRes.node),
-          inlineRes.node,
-          fn.async
-        );
-        return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyName), newFn),
-        ]);
-      }
-    }
-
-    const stmts =
-      t.isFunctionDeclaration(fn) || t.isObjectMethod(fn)
-        ? fn.body.body
-        : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
-          ? fn.body.body
-          : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
-            ? fn.body.body
-            : undefined;
-
-    if (stmts) {
-      let changed = false;
-      const newBody = stmts.map((stmt) => {
-        if (
-          t.isReturnStatement(stmt) &&
-          stmt.argument &&
-          (t.isJSXElement(stmt.argument) || t.isJSXFragment(stmt.argument))
-        ) {
-          const spreadRes = transformArgsSpreadsInJsx(stmt.argument, merged);
-          const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
-          if (spreadRes.changed || inlineRes.changed) {
-            changed = true;
-            return t.returnStatement(inlineRes.node);
-          }
-        }
-        return stmt;
-      });
-
-      if (changed) {
-        const body = t.blockStatement(newBody);
-        const params = remainingParams(fn, body);
-        return t.isFunctionDeclaration(fn)
-          ? t.functionDeclaration(t.identifier(storyName), params, body, fn.generator, fn.async)
-          : t.variableDeclaration('const', [
-              t.variableDeclarator(
-                t.identifier(storyName),
-                t.arrowFunctionExpression(params, body, fn.async)
-              ),
-            ]);
-      }
-    }
-
-    return t.isFunctionDeclaration(fn)
-      ? t.functionDeclaration(t.identifier(storyName), fn.params, fn.body, fn.generator, fn.async)
-      : t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier(storyName),
-            t.isObjectMethod(fn) ? t.arrowFunctionExpression(fn.params, fn.body, fn.async) : fn
-          ),
-        ]);
+    return functionSnippet(
+      editor.code,
+      storyName,
+      storyFn,
+      isMethod(editor.parentOf(storyFn)),
+      merged
+    );
   }
 
   // No function: synthesize `<Component {...attrs}/>`
   invariant(componentName, 'Could not generate snippet without component name.');
-  const invalidSpread = buildInvalidSpread(invalidEntries);
-  const name = t.jsxIdentifier(componentName);
-  const openingElAttrs = invalidSpread ? [...injectedAttrs, invalidSpread] : injectedAttrs;
-
+  const attrs = injectedAttributes(merged, new Set());
   const children = toJsxChildren(merged.children);
-  const selfClosing = children.length === 0;
-  const arrow = t.arrowFunctionExpression(
-    [],
-    t.jsxElement(
-      t.jsxOpeningElement(name, openingElAttrs, selfClosing),
-      selfClosing ? null : t.jsxClosingElement(name),
-      children,
-      selfClosing
-    )
-  );
-
-  return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
+  const opening = [componentName, ...attrs].join(' ');
+  const element = children ? `<${opening}>${children}</${componentName}>` : `<${opening} />`;
+  return `const ${storyName} = () => ${element};`;
 }
 
-type StoryFunction =
-  | t.ArrowFunctionExpression
-  | t.FunctionExpression
-  | t.FunctionDeclaration
-  | t.ObjectMethod;
+const isMethod = (parent: Node | null) =>
+  parent?.type === 'Property' && (parent.method || parent.kind !== 'init');
+
+/** The story function renamed to the story, with the args it reads inlined into its JSX. */
+function functionSnippet(
+  code: string,
+  storyName: string,
+  fn: FunctionNode,
+  method: boolean,
+  merged: Args
+): string {
+  const asyncPrefix = fn.async ? 'async ' : '';
+  const params = fn.params.length
+    ? code.slice(fn.params[0].start, fn.params[fn.params.length - 1].end)
+    : '';
+  const edits: Edit[] = [];
+
+  if (fn.type === 'ArrowFunctionExpression' && isJsx(fn.body)) {
+    if (rewriteJsx(code, fn.body, merged, edits)) {
+      const body = printRange(code, fn.body, edits);
+      const kept = readsArgs(`(${body});`) ? params : '';
+      return `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
+    }
+  } else if (fn.body?.type === 'BlockStatement') {
+    let changed = false;
+    for (const statement of fn.body.body) {
+      if (statement.type === 'ReturnStatement' && isJsx(statement.argument)) {
+        changed = rewriteJsx(code, statement.argument, merged, edits) || changed;
+      }
+    }
+    if (changed) {
+      const body = printRange(code, fn.body, edits);
+      const kept = readsArgs(`function f() ${body}`) ? params : '';
+      return fn.type === 'FunctionDeclaration'
+        ? `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${kept}) ${body}`
+        : `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
+    }
+  }
+
+  if (fn.type === 'FunctionDeclaration' && fn.body) {
+    return `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, [])}`;
+  }
+  if (method && fn.body) {
+    return `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, [])};`;
+  }
+  return `const ${storyName} = ${printRange(code, fn, [])};`;
+}
+
+const isJsx = (node: Node | null | undefined): node is E.JSXElement | E.JSXFragment =>
+  node?.type === 'JSXElement' || node?.type === 'JSXFragment';
 
 /**
- * Parameters the rewritten story function still needs.
- *
- * Inlining the args removes the reason the story took an `args` parameter, so the snippet drops it
- * - unless something the rewrite could not inline still reads from it, which would leave the
- * snippet naming a binding it no longer declares.
+ * A node's source with `edits` applied, its continuation lines dedented by the indentation of the
+ * line it starts on so the snippet does not carry the story file's nesting.
  */
-function remainingParams(fn: StoryFunction, body: t.Node): StoryFunction['params'] {
-  return readsArgs(body) ? fn.params : [];
+function printRange(code: string, range: { start: number; end: number }, edits: Edit[]): string {
+  let text = '';
+  let cursor = range.start;
+  for (const edit of [...edits].sort((a, b) => a.start - b.start || a.end - b.end)) {
+    text += code.slice(cursor, edit.start) + edit.text;
+    cursor = edit.end;
+  }
+  text += code.slice(cursor, range.end);
+
+  const lineStart = code.lastIndexOf('\n', range.start - 1) + 1;
+  const indent = /^[ \t]*/.exec(code.slice(lineStart))?.[0] ?? '';
+  return indent
+    ? text
+        .split('\n')
+        .map((line, index) =>
+          index > 0 && line.startsWith(indent) ? line.slice(indent.length) : line
+        )
+        .join('\n')
+    : text;
 }
 
-function readsArgs(node: t.Node): boolean {
+/** Whether code still reads the `args` parameter, so the snippet has to keep declaring it. */
+function readsArgs(source: string): boolean {
   // A key or a member name spelled `args` names a property, not the parameter.
-  const named = new Set<t.Node>();
+  const named = new Set<Node>();
   let reads = false;
 
-  t.traverseFast(node, (current) => {
-    if (t.isMemberExpression(current) && !current.computed) {
+  walk(parseModule(source).program, (current) => {
+    if (current.type === 'MemberExpression' && !current.computed) {
       named.add(current.property);
     }
-    if ((t.isObjectProperty(current) || t.isObjectMethod(current)) && !current.computed) {
+    if (current.type === 'Property' && !current.computed && !current.shorthand) {
       named.add(current.key);
     }
-    if (t.isIdentifier(current) && current.name === 'args' && !named.has(current)) {
+    if (current.type === 'Identifier' && current.name === 'args' && !named.has(current)) {
       reads = true;
     }
   });
@@ -219,244 +221,141 @@ function readsArgs(node: t.Node): boolean {
   return reads;
 }
 
-/** Build a spread `{...{k: v}}` for props that aren't valid JSX attributes. */
-function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpreadAttribute | null {
-  if (entries.length === 0) {
-    return null;
-  }
-  const objectProps = entries.map(([k, v]) =>
-    t.objectProperty(t.stringLiteral(k), t.isExpression(v) ? v : t.identifier('undefined'))
-  );
-  return t.jsxSpreadAttribute(t.objectExpression(objectProps));
-}
-
 const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
 
-const toAttr = (key: string, value: t.Node) => {
-  if (t.isBooleanLiteral(value)) {
-    return value.value
-      ? t.jsxAttribute(t.jsxIdentifier(key), null)
-      : t.jsxAttribute(t.jsxIdentifier(key), t.jsxExpressionContainer(value));
+const toAttr = (key: string, value: Node) => {
+  if (value.type === 'Literal' && typeof value.value === 'boolean') {
+    return value.value ? key : `${key}={false}`;
   }
-
-  if (t.isStringLiteral(value)) {
-    return t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(value.value));
+  if (isStringLiteral(value) && !value.value.includes('"')) {
+    return `${key}="${value.value}"`;
   }
-
-  if (t.isExpression(value)) {
-    return t.jsxAttribute(t.jsxIdentifier(key), t.jsxExpressionContainer(value));
-  }
-  return null;
+  return `${key}={${codeOf(value)}}`;
 };
 
-const toJsxChildren = (node: t.Node | null | undefined) =>
+/** Attributes for every arg not already set by name, with invalid names collected in a spread. */
+function injectedAttributes(merged: Args, existing: ReadonlySet<string>): string[] {
+  const entries = Object.entries(merged).filter(
+    ([k, v]) => v != null && k !== 'children' && !existing.has(k)
+  );
+  const attrs = entries.filter(([k]) => isValidJsxAttrName(k)).map(([k, v]) => toAttr(k, v));
+  const invalid = entries.filter(([k]) => !isValidJsxAttrName(k));
+  if (invalid.length > 0) {
+    const members = invalid.map(([k, v]) => `${JSON.stringify(k)}: ${codeOf(v)}`);
+    attrs.push(`{...{ ${members.join(', ')} }}`);
+  }
+  return attrs;
+}
+
+const toJsxChildren = (node: Node | null | undefined) =>
   !node
-    ? []
-    : t.isStringLiteral(node)
-      ? [t.jsxText(node.value)]
-      : t.isJSXElement(node) || t.isJSXFragment(node)
-        ? [node]
-        : t.isExpression(node)
-          ? [t.jsxExpressionContainer(node)]
-          : [];
+    ? ''
+    : isStringLiteral(node)
+      ? node.value
+      : isJsx(node)
+        ? codeOf(node)
+        : `{${codeOf(node)}}`;
 
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */
-function getArgsMemberKey(expr: t.Node) {
-  if (t.isMemberExpression(expr) && t.isIdentifier(expr.object) && expr.object.name === 'args') {
-    if (t.isIdentifier(expr.property) && !expr.computed) {
-      return expr.property.name;
-    }
-
-    if (t.isStringLiteral(expr.property) && expr.computed) {
-      return expr.property.value;
-    }
-  }
+function getArgsMemberKey(expr: Node) {
+  const member = expr.type === 'ChainExpression' ? expr.expression : expr;
   if (
-    t.isOptionalMemberExpression?.(expr) &&
-    t.isIdentifier(expr.object) &&
-    expr.object.name === 'args'
+    member.type !== 'MemberExpression' ||
+    member.object.type !== 'Identifier' ||
+    member.object.name !== 'args'
   ) {
-    const prop = expr.property;
-
-    if (t.isIdentifier(prop) && !expr.computed) {
-      return prop.name;
-    }
-
-    if (t.isStringLiteral(prop) && expr.computed) {
-      return prop.value;
-    }
+    return null;
+  }
+  if (member.property.type === 'Identifier' && !member.computed) {
+    return member.property.name;
+  }
+  if (isStringLiteral(member.property) && member.computed) {
+    return member.property.value;
   }
   return null;
 }
 
-/** Inline `args.foo` -> actual literal/expression in attributes/children (recursively). */
-function inlineArgsInJsx(
-  node: t.JSXElement | t.JSXFragment,
-  merged: Record<string, t.Node>
-): { node: t.JSXElement | t.JSXFragment; changed: boolean } {
+/**
+ * Record the edits that expand `{...args}` into attributes (and children, when the element has
+ * none) and inline `args.foo` reads, recursively. Returns whether anything changed.
+ */
+function rewriteJsx(
+  code: string,
+  node: E.JSXElement | E.JSXFragment,
+  merged: Args,
+  edits: Edit[]
+): boolean {
   let changed = false;
 
-  if (t.isJSXElement(node)) {
-    const opening = node.openingElement;
-
-    const newAttrs = opening.attributes.flatMap<t.JSXAttribute | t.JSXSpreadAttribute>((a) => {
-      if (!t.isJSXAttribute(a)) {
-        return [a];
-      }
-      const name = t.isJSXIdentifier(a.name) ? a.name.name : null;
-
-      if (!(name && a.value && t.isJSXExpressionContainer(a.value))) {
-        return [a];
-      }
-
-      const key = getArgsMemberKey(a.value.expression);
-
-      if (!(key && key in merged)) {
-        return [a];
-      }
-
-      const repl = toAttr(name, merged[key]);
-      changed = true;
-      return repl ? [repl] : [];
-    });
-
-    const newChildren = node.children.flatMap<
-      t.JSXText | t.JSXExpressionContainer | t.JSXSpreadChild | t.JSXElement | t.JSXFragment
-    >((c) => {
-      if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-        const res = inlineArgsInJsx(c, merged);
-        changed ||= res.changed;
-        return [res.node];
-      }
-      if (t.isJSXExpressionContainer(c)) {
-        const key = getArgsMemberKey(c.expression);
-        if (key === 'children' && merged.children) {
-          changed = true;
-          return toJsxChildren(merged.children);
-        }
-      }
-      return [c];
-    });
-
-    const selfClosing = opening.selfClosing && newChildren.length === 0;
-    return {
-      node: t.jsxElement(
-        t.jsxOpeningElement(opening.name, newAttrs, selfClosing),
-        selfClosing ? null : (node.closingElement ?? t.jsxClosingElement(opening.name)),
-        newChildren,
-        selfClosing
-      ),
-      changed,
-    };
-  }
-
-  const fragChildren = node.children.flatMap((c): (typeof c)[] => {
-    if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-      const res = inlineArgsInJsx(c, merged);
-      changed ||= res.changed;
-      return [res.node];
-    }
-    if (t.isJSXExpressionContainer(c)) {
-      const key = getArgsMemberKey(c.expression);
-      if (key === 'children' && 'children' in merged) {
-        changed = true;
-        return toJsxChildren(merged.children);
-      }
-    }
-    return [c];
-  });
-
-  return { node: t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren), changed };
-}
-
-/** Expand `{...args}` into concrete attributes/children (recursively). */
-function transformArgsSpreadsInJsx(
-  node: t.JSXElement | t.JSXFragment,
-  merged: Record<string, t.Node>
-): { node: t.JSXElement | t.JSXFragment; changed: boolean } {
-  let changed = false;
-
-  const makeInjectedPieces = (
-    existing: ReadonlySet<string>
-  ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
-    const entries = Object.entries(merged).filter(([k, v]) => v != null && k !== 'children');
-    const validEntries = entries.filter(([k]) => isValidJsxAttrName(k));
-    const invalidEntries = entries.filter(([k]) => !isValidJsxAttrName(k));
-
-    const injectedAttrs = validEntries
-      .map(([k, v]) => toAttr(k, v))
-      .filter((a): a is t.JSXAttribute => Boolean(a))
-      .filter((a) => t.isJSXIdentifier(a.name) && !existing.has(a.name.name));
-
-    const invalidSpread = buildInvalidSpread(invalidEntries.filter(([k]) => !existing.has(k)));
-    return invalidSpread ? [...injectedAttrs, invalidSpread] : injectedAttrs;
-  };
-
-  if (t.isJSXElement(node)) {
+  if (node.type === 'JSXElement') {
     const opening = node.openingElement;
     const attrs = opening.attributes;
+    const isArgsSpread = (a: Node) =>
+      a.type === 'JSXSpreadAttribute' &&
+      a.argument.type === 'Identifier' &&
+      a.argument.name === 'args';
+    const firstSpread = attrs.findIndex(isArgsSpread);
+    const tagEnd = (opening.typeArguments ?? opening.name).end;
 
-    const isArgsSpread = (a: t.JSXAttribute | t.JSXSpreadAttribute) =>
-      t.isJSXSpreadAttribute(a) && t.isIdentifier(a.argument) && a.argument.name === 'args';
+    if (firstSpread !== -1) {
+      changed = true;
+      const existing = new Set(
+        attrs.flatMap((a) =>
+          a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier' ? [a.name.name] : []
+        )
+      );
+      const pieces = injectedAttributes(merged, existing).join(' ');
+      attrs.forEach((a, index) => {
+        if (!isArgsSpread(a)) {
+          return;
+        }
+        if (index === firstSpread && pieces) {
+          edits.push({ start: a.start, end: a.end, text: pieces });
+        } else {
+          edits.push({ start: index > 0 ? attrs[index - 1].end : tagEnd, end: a.end, text: '' });
+        }
+      });
 
-    const sawArgsSpread = attrs.some(isArgsSpread);
-    const firstIdx = attrs.findIndex(isArgsSpread);
-    const nonArgsAttrs = attrs.filter((a) => !isArgsSpread(a));
-    const insertionIndex = sawArgsSpread
-      ? attrs.slice(0, firstIdx).filter((a) => !isArgsSpread(a)).length
-      : 0;
-
-    const newAttrs = sawArgsSpread
-      ? (() => {
-          const existing = new Set(
-            nonArgsAttrs
-              .filter((a): a is t.JSXAttribute => t.isJSXAttribute(a))
-              .flatMap((a) => (t.isJSXIdentifier(a.name) ? [a.name.name] : []))
-          );
-          const pieces = makeInjectedPieces(existing);
-          changed = true;
-          return [
-            ...nonArgsAttrs.slice(0, insertionIndex),
-            ...pieces,
-            ...nonArgsAttrs.slice(insertionIndex),
-          ];
-        })()
-      : nonArgsAttrs;
-
-    const newChildren = node.children.flatMap((c): (typeof c)[] => {
-      if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-        const res = transformArgsSpreadsInJsx(c, merged);
-        changed ||= res.changed;
-        return [res.node];
+      if (node.children.length === 0 && merged.children) {
+        const children = toJsxChildren(merged.children);
+        if (opening.selfClosing) {
+          const name = code.slice(opening.name.start, opening.name.end);
+          const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
+          edits.push({ start: lastEnd, end: opening.end, text: `>${children}</${name}>` });
+        } else {
+          edits.push({ start: opening.end, end: opening.end, text: children });
+        }
       }
-      return [c];
-    });
+    }
 
-    const children =
-      sawArgsSpread && newChildren.length === 0 && merged.children
-        ? ((changed = true), toJsxChildren(merged.children))
-        : newChildren;
-
-    const selfClosing = children.length === 0;
-    return {
-      node: t.jsxElement(
-        t.jsxOpeningElement(opening.name, newAttrs, selfClosing),
-        selfClosing ? null : (node.closingElement ?? t.jsxClosingElement(opening.name)),
-        children,
-        selfClosing
-      ),
-      changed,
-    };
+    for (const a of attrs) {
+      if (
+        a.type !== 'JSXAttribute' ||
+        a.name.type !== 'JSXIdentifier' ||
+        a.value?.type !== 'JSXExpressionContainer'
+      ) {
+        continue;
+      }
+      const key = getArgsMemberKey(a.value.expression);
+      if (key && key in merged) {
+        edits.push({ start: a.start, end: a.end, text: toAttr(a.name.name, merged[key]) });
+        changed = true;
+      }
+    }
   }
 
-  const fragChildren = node.children.flatMap((c): (typeof c)[] => {
-    if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-      const res = transformArgsSpreadsInJsx(c, merged);
-      changed ||= res.changed;
-      return [res.node];
+  for (const child of node.children) {
+    if (isJsx(child)) {
+      changed = rewriteJsx(code, child, merged, edits) || changed;
+    } else if (
+      child.type === 'JSXExpressionContainer' &&
+      getArgsMemberKey(child.expression) === 'children' &&
+      merged.children
+    ) {
+      edits.push({ start: child.start, end: child.end, text: toJsxChildren(merged.children) });
+      changed = true;
     }
-    return [c];
-  });
+  }
 
-  return { node: t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren), changed };
+  return changed;
 }

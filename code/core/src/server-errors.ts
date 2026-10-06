@@ -538,21 +538,6 @@ export class WebpackInvocationError extends StorybookError {
   }
 }
 
-export class WebpackMissingPreviewTemplateError extends StorybookError {
-  constructor() {
-    super({
-      name: 'WebpackMissingPreviewTemplateError',
-      category: Category.BUILDER_WEBPACK5,
-      code: 4,
-      message: dedent`
-        Storybook's Webpack5 builder requires a template to be specified.
-        Somehow you've ended up with a falsy value for the template option.
-
-        Please file an issue at https://github.com/storybookjs/storybook with a reproduction.`,
-    });
-  }
-}
-
 function removeAnsiEscapeCodes(input = '') {
   return input.replace(/\u001B\[[0-9;]*m/g, '');
 }
@@ -585,6 +570,21 @@ export class WebpackCompilationError extends StorybookError {
         There were problems when compiling your code with Webpack.
         Run Storybook with --debug-webpack for more information.
       `,
+    });
+  }
+}
+
+export class WebpackMissingPreviewTemplateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'WebpackMissingPreviewTemplateError',
+      category: Category.BUILDER_WEBPACK5,
+      code: 4,
+      message: dedent`
+        Storybook's Webpack5 builder requires a template to be specified.
+        Somehow you've ended up with a falsy value for the template option.
+
+        Please file an issue at https://github.com/storybookjs/storybook with a reproduction.`,
     });
   }
 }

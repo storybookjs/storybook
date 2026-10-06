@@ -19,14 +19,10 @@ async function loader(this: LoaderContext, content: string, map: any) {
     // The file can be gone by now, e.g. when it is deleted while a rebuild is running
     const sourceCode = await readFile(id, 'utf-8');
     const makeTitle = (userTitle: string) => userTitle || 'default';
-    const csf = loadCsf(content, { makeTitle }).parse();
+    const csf = loadCsf(content, { makeTitle, fileName: id }).parse();
     const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
     await enrichCsf(csf, csfSource, options);
-    const formattedCsf = formatCsf(
-      csf,
-      { sourceMaps: true, inputSourceMap: map, sourceFileName: id },
-      content
-    );
+    const formattedCsf = formatCsf(csf, { sourceMaps: true });
 
     if (typeof formattedCsf === 'string') {
       return callback(null, formattedCsf, map);

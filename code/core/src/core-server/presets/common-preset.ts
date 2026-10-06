@@ -56,6 +56,7 @@ import { createStoriesToolset } from '../../shared/open-service/toolsets/stories
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
 import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
@@ -491,7 +492,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   );
 };
 
-export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
+  app,
+  options
+) => {
+  await applyServicesPresetOnce(options.presets);
   for (const subscribe of devServerSubscriptions.splice(0)) {
     subscribe();
   }

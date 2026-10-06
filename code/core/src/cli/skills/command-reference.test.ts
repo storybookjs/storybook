@@ -17,7 +17,7 @@ const catalogEntry = (id: string, descriptions: Record<string, string>) =>
       methods: Object.fromEntries(
         Object.entries(descriptions).map(([name, description]) => [
           name,
-          { title: name, description, input: v.object({}), handler },
+          { title: name, description, input: v.strictObject({}), handler },
         ])
       ),
     }),

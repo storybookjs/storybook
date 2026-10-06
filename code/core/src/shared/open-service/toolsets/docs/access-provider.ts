@@ -81,7 +81,7 @@ async function defaultManifestProvider(
 }
 
 // For a composition assembled at boot rather than per request (the docs toolset core registers
-// for the tools CLI): no request, no credentials, so a private source lands in its own error section.
+// for the tools CLI): no request, no credentials, so a private source points at its own MCP.
 export const sourceUrlManifestProvider: ManifestProvider = async (_request, path, source) => {
   if (!source?.url) {
     throw new ManifestGetError('The local source has no URL to fetch manifests from.');
@@ -92,6 +92,9 @@ export const sourceUrlManifestProvider: ManifestProvider = async (_request, path
   const response = await fetch(manifestUrl, {
     signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS),
   });
+  if (response.status === 401) {
+    throw new RequiresOwnMcpError({ ...source, url: source.url });
+  }
   return readManifestText(response, manifestUrl);
 };
 

@@ -2,7 +2,6 @@
 export default [
   '@chromatic-com/storybook',
   '@storybook/addon-designs',
-  '@storybook/addon-svelte-csf',
   '@storybook/addon-coverage',
   '@storybook/addon-webpack5-compiler-babel',
   '@storybook/addon-webpack5-compiler-swc',

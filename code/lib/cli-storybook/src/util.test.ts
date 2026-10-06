@@ -26,6 +26,8 @@ describe('findStorybookProjects', () => {
       'node_modules/@nx/storybook/files/project-files/.storybook/main.ts': 'export default {};',
     });
 
-    expect(await findStorybookProjects(root)).toEqual([join(root, 'packages/ui/.storybook')]);
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
+    ]);
   });
 });

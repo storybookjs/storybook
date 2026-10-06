@@ -186,23 +186,9 @@ export const computeStorybookMetadata = async ({
     metadata.typescriptOptions = mainConfig.typescript;
   }
 
-  const addons = collectAddons(mainConfig, packageJson);
-  const addonNames = Object.keys(addons);
-
-  // all Storybook deps minus the addons
-  const storybookPackages = Object.keys(allDependencies)
-    .filter((dep) => dep.includes('storybook') && !addonNames.includes(dep))
-    .reduce((acc, dep) => {
-      return {
-        ...acc,
-        [dep]: { version: undefined },
-      };
-    }, {}) as Record<string, Dependency>;
-
   const [
     { frameworkInfo, rendererPackages },
-    addonVersions,
-    storybookPackageVersions,
+    { addons, storybookPackages },
     { storybookInfo, usesGlobals },
     portableStoriesFileCount,
     applicationFileCount,
@@ -211,8 +197,7 @@ export const computeStorybookMetadata = async ({
       frameworkInfo: info,
       rendererPackages: await resolveRendererPackages(info.renderer),
     })),
-    getActualPackageVersions(addons),
-    getActualPackageVersions(storybookPackages),
+    resolveAddonsAndStorybookPackages(mainConfig, packageJson, allDependencies),
     getStorybookInfo(configDir).then(async (info) => ({
       storybookInfo: info,
       usesGlobals: await previewUsesGlobals(info.previewConfigPath),
@@ -232,23 +217,6 @@ export const computeStorybookMetadata = async ({
   if (typeof mainConfig.features === 'object') {
     metadata.features = mainConfig.features;
   }
-
-  addonVersions.forEach(({ name, version }) => {
-    addons[name] = addons[name] || {
-      name,
-      version,
-    };
-    addons[name].version = version || undefined;
-  });
-
-  storybookPackageVersions.forEach(({ name, version }) => {
-    storybookPackages[name] = storybookPackages[name] || {
-      name,
-      version,
-    };
-
-    storybookPackages[name].version = version || undefined;
-  });
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
@@ -271,20 +239,31 @@ export const computeStorybookMetadata = async ({
   };
 };
 
-function collectAddons(
+async function resolveAddonsAndStorybookPackages(
   mainConfig: StorybookConfig,
-  packageJson: PackageJson
-): Record<string, StorybookAddon> {
+  packageJson: PackageJson,
+  allDependencies: Record<string, string | undefined>
+) {
   const addons: Record<string, StorybookAddon> = {};
-  for (const addon of mainConfig.addons ?? []) {
-    if (typeof addon === 'string') {
-      addons[sanitizeAddonName(addon)] = { options: undefined, version: undefined };
-    } else {
-      addons[sanitizeAddonName(addon.name)] = {
-        options: addon.name.includes('addon-essentials') ? addon.options : undefined,
+  if (mainConfig.addons) {
+    mainConfig.addons.forEach((addon) => {
+      let addonName;
+      let options;
+
+      if (typeof addon === 'string') {
+        addonName = sanitizeAddonName(addon);
+      } else {
+        if (addon.name.includes('addon-essentials')) {
+          options = addon.options;
+        }
+        addonName = sanitizeAddonName(addon.name);
+      }
+
+      addons[addonName] = {
+        options,
         version: undefined,
       };
-    }
+    });
   }
 
   const chromaticVersionSpecifier = getChromaticVersionSpecifier(packageJson);
@@ -295,7 +274,41 @@ function collectAddons(
       options: undefined,
     };
   }
-  return addons;
+
+  const addonVersions = await getActualPackageVersions(addons);
+  addonVersions.forEach(({ name, version }) => {
+    addons[name] = addons[name] || {
+      name,
+      version,
+    };
+    addons[name].version = version || undefined;
+  });
+
+  // An addon can resolve to a different package name than the one in main.js, so the Storybook
+  // packages can only be told apart from the addons once the addon versions are in.
+  const addonNames = Object.keys(addons);
+
+  // all Storybook deps minus the addons
+  const storybookPackages = Object.keys(allDependencies)
+    .filter((dep) => dep.includes('storybook') && !addonNames.includes(dep))
+    .reduce((acc, dep) => {
+      return {
+        ...acc,
+        [dep]: { version: undefined },
+      };
+    }, {}) as Record<string, Dependency>;
+
+  const storybookPackageVersions = await getActualPackageVersions(storybookPackages);
+  storybookPackageVersions.forEach(({ name, version }) => {
+    storybookPackages[name] = storybookPackages[name] || {
+      name,
+      version,
+    };
+
+    storybookPackages[name].version = version || undefined;
+  });
+
+  return { addons, storybookPackages };
 }
 
 async function resolveRendererPackages(renderer: string | undefined) {

@@ -447,6 +447,33 @@ describe('storybook-metadata', () => {
       `);
     });
 
+    it('should not list an addon as a storybook package when it resolves to another package name', async () => {
+      vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+        name: name === 'aliased-addon' ? 'storybook-addon-real' : name,
+        version: 'x.x.x',
+      }));
+
+      const result = await computeStorybookMetadata({
+        packageJson: {
+          ...packageJsonMock,
+          devDependencies: {
+            '@storybook/react': 'x.y.z',
+            'aliased-addon': 'npm:storybook-addon-real@x.y.z',
+            'storybook-addon-real': 'x.y.z',
+          },
+        } as PackageJson,
+        configDir: '.storybook',
+        packageJsonPath,
+        mainConfig: {
+          ...mainJsMock,
+          addons: ['aliased-addon'],
+        },
+      });
+
+      expect(Object.keys(result.addons ?? {})).toEqual(['aliased-addon', 'storybook-addon-real']);
+      expect(Object.keys(result.storybookPackages ?? {})).toEqual(['@storybook/react']);
+    });
+
     it('should return user specified features', async () => {
       const features = {};
 

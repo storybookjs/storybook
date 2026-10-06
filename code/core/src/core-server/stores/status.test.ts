@@ -53,6 +53,20 @@ describe('getSyncedStatuses', () => {
     await rejection;
   });
 
+  it('syncs again on the next read after a timeout', async () => {
+    vi.useFakeTimers();
+    const channel = new Channel({ async: true });
+    const attachedTools = await loadRealm(channel, { attached: true });
+    const timedOut = expect(attachedTools.getSyncedStatuses()).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(1000);
+    await timedOut;
+    vi.useRealTimers();
+    const devServer = await loadRealm(channel, { attached: false });
+    devServer.getStatusStoreByTypeId(modified.typeId).set([modified]);
+
+    await expect(attachedTools.getSyncedStatuses()).resolves.toEqual(modifiedStatuses);
+  });
+
   it('returns the statuses of a leader', async () => {
     const devServer = await loadRealm(new Channel({}), { attached: false });
     devServer.getStatusStoreByTypeId(modified.typeId).set([modified]);

@@ -197,13 +197,11 @@ export const experimental_devServer: PresetPropertyFn<
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
       : '';
 
-    const statusWord = (enabled: boolean) => (enabled ? 'enabled' : 'disabled');
-
     const html = htmlTemplate
       .replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
       .replaceAll(
         '{{STORIES_BY_COMPONENT_STATUS}}',
-        statusWord(isDevEnabled && moduleGraphSupported)
+        isDevEnabled && moduleGraphSupported ? 'enabled' : 'disabled'
       )
       .replace('{{DEV_NOTICE}}', devNotice)
       .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')

@@ -139,7 +139,7 @@ const fiveNewThreeModified = () =>
 const twoStoriesBeforeEach = () =>
   setChangeStatuses({ s1: 'status-value:new', s2: 'status-value:modified' });
 
-/** Feature flag on, 5 new stories, 3 modified. No filters active. */
+/** 5 new stories, 3 modified. No filters active. */
 export const Idle: Story = {
   parameters: {
     contextOptions: {
@@ -275,7 +275,7 @@ export const HiddenWhenReviewActive: Story = {
   },
 };
 
-/** Feature flag on, but no statuses in the store: nothing to show. */
+/** No statuses in the store: nothing to show. */
 export const HiddenWhenZeroCounts: Story = {
   beforeEach: () => {
     internal_fullStatusStore.unset();

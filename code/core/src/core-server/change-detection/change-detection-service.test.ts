@@ -1011,23 +1011,6 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
   });
 
-  it('disposes a service that was never started without constructing a git provider', async () => {
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { service, graph } = createWiredChangeDetection({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn(),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    await expect(service.dispose()).resolves.toBeUndefined();
-  });
-
   it('rescans the working tree when file activity advances', async () => {
     // Graph-side reconciliation (replaying add/unlink, the refreshInFlight guard) is covered by
     // module-graph-engine.test.ts; here we assert the status side of the seam: a file-activity

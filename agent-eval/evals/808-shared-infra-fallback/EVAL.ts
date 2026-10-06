@@ -24,7 +24,7 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   // Seen in three local runs on 2026-07-03. Re-enable when the workflow
   // reliably reaches Codex at turn start.
   const evalContext = getEvalContext();
-  const codexMcpReviewGap = evalContext.agent === 'codex' && evalContext.integration === 'mcp';
+  const codexMcpGap = evalContext.agent === 'codex' && evalContext.integration === 'mcp';
 
   // The fallback assertions only count if the token change was actually done.
   test('changes the accent color token', () => {
@@ -33,14 +33,14 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test.skipIf(codexMcpReviewGap)(
+  test.skipIf(codexMcpGap)(
     'runs story tests after the change and finishes with them passing',
     async () => {
       await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
     }
   );
 
-  describe.skipIf(codexMcpReviewGap)('reviewing the visual token change', () => {
+  describe.skipIf(codexMcpGap)('reviewing the visual token change', () => {
     test('publishes a display review for the visual token change', () => {
       expectDisplayReviewForVisualChange();
     });

@@ -1,6 +1,6 @@
 /**
  * Generates a markdown reference of everything an agent sees from the Storybook
- * AI surface: MCP server instructions and tool definitions (with review on and off),
+ * AI surface: MCP server instructions and tool definitions,
  * the plugin skills, and the `storybook ai` CLI help output.
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
@@ -291,7 +291,7 @@ async function renderCliSection(): Promise<string> {
   const sections = [
     '## `storybook ai` CLI (`STORYBOOK_FEATURE_AI_CLI=1`)',
     '',
-    'Captured against `test-storybooks/mcp` (review enabled in its `.storybook` config). The top-level help embeds the same server instructions the MCP server serves.',
+    'Captured against `test-storybooks/mcp`. The top-level help embeds the same server instructions the MCP server serves.',
     '',
     '### `npx storybook ai --help`',
     '',

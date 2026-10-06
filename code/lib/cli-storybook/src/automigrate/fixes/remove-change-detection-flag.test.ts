@@ -75,6 +75,12 @@ describe('remove-change-detection-flag', () => {
     expect(await check(mainWith('features: { experimentalTestSyntax: true },'))).toBeNull();
   });
 
+  it('does not apply when the flag is only mentioned in a comment', async () => {
+    const source = mainWith('// changeDetection is gone\n  features: { ...sharedFeatures },');
+
+    expect(await check(source)).toBeNull();
+  });
+
   it.each(['11.0.0-alpha.1', '11.0.0', '11.1.0'])('applies on Storybook %s', async (version) => {
     expect(await check(mainWith('features: { changeDetection: true },'), version)).not.toBeNull();
   });

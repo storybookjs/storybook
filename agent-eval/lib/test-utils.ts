@@ -1003,24 +1003,11 @@ const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
 // example to check that Storybook runs) does not qualify, while a re-publish
 // updates the already open review page in place.
 export function expectReviewOpenedInBrowser(): void {
-  expectOpenedInBrowserAfter({
-    workflowName: 'review-create',
-    target: 'the review page',
-    isTargetUrl: (url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url),
-  });
-}
-
-function expectOpenedInBrowserAfter(options: {
-  workflowName: string;
-  target: string;
-  isTargetUrl: (url: string) => boolean;
-}): void {
-  const { workflowName, target, isTargetUrl } = options;
-  const steps = getBrowserStepsAroundWorkflowCalls(workflowName);
+  const steps = getBrowserStepsAroundWorkflowCalls('review-create');
   const workflowCall = steps.indexOf(WORKFLOW_CALLED);
   if (workflowCall === -1) {
     expect.fail(
-      `Expected a successful ${workflowName} call before the in-app browser check, but the transcript holds none.`
+      'Expected a successful review-create call before the in-app browser check, but the transcript holds none.'
     );
   }
   const navigations = steps
@@ -1029,11 +1016,11 @@ function expectOpenedInBrowserAfter(options: {
 
   expect(
     navigations.length,
-    `Expected the agent to open a URL in the in-app browser after ${workflowName} (a navigate / preview_start call, or a Codex goto), but the transcript holds no such browser navigation. Every experiment must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).`
+    `Expected the agent to open a URL in the in-app browser after review-create (a navigate / preview_start call, or a Codex goto), but the transcript holds no such browser navigation. Every experiment must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).`
   ).toBeGreaterThan(0);
   expect(
-    navigations.some(isTargetUrl),
-    `Expected an in-app browser navigation to ${target} on the local dev server after ${workflowName}. Navigated to:\n${navigations.join('\n')}`
+    navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
+    `Expected an in-app browser navigation to the review page on the local dev server after review-create. Navigated to:\n${navigations.join('\n')}`
   ).toBe(true);
 }
 

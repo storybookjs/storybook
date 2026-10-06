@@ -721,6 +721,42 @@ describe('expectReviewOpenedInBrowser', () => {
     expect(() => expectReviewOpenedInBrowser()).not.toThrow();
   });
 
+  test('passes on a Claude browser_batch that navigates to the review page', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            { name: 'navigate', input: { url: 'http://localhost:6006/?path=/review/' } },
+            { name: 'computer', input: { action: 'screenshot' } },
+          ],
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            {
+              name: 'mcp__Browser__navigate',
+              input: { url: 'http://localhost:6006/?path=/review/' },
+            },
+          ],
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
   test('passes on a Claude preview_start to the review page on 127.0.0.1 without a slash', () => {
     mockSandbox({
       agent: 'claude-code',

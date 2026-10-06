@@ -12,7 +12,7 @@ export const removeChangeDetectionFlag: Fix = {
 
   transform: () => [
     {
-      filter: { kind: ['main'], code: /\bchangeDetection\b/ },
+      filter: { kind: ['main'], code: /\bchangeDetection['"]?\s*:/ },
       editConfig: (main) => main.remove(['features', 'changeDetection']),
     },
   ],

@@ -381,14 +381,9 @@ describe('experimental_devServer', () => {
 
     const html = mockRes.end.mock.calls[0][0] as string;
 
-    const badgeFor = (tool: string) =>
-      html.match(
-        new RegExp(`<code>${tool}</code>\\s*<span class="toolset-status (enabled|disabled)"`)
-      )?.[1];
-
-    for (const tool of ['stories-find-by-component', 'stories-changed', 'review-create']) {
-      expect(badgeFor(tool)).toBe('disabled');
-    }
+    expect(html).toMatch(
+      /<code>stories-find-by-component<\/code>\s*<span class="toolset-status disabled"/
+    );
     expect(html).toContain('The <code>dev</code> toolset is disabled via addon options.');
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });

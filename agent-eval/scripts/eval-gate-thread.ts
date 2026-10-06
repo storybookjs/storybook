@@ -28,7 +28,7 @@ const THREADS_QUERY = `query($owner: String!, $repo: String!, $pr: Int!, $endCur
     pullRequest(number: $pr) {
       reviewThreads(first: 100, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
-        nodes { id isResolved comments(first: 1) { nodes { databaseId body } } }
+        nodes { id isResolved comments(first: 1) { nodes { databaseId body author { login } } } }
       }
     }
   }
@@ -42,7 +42,9 @@ interface ThreadsPage {
           nodes: {
             id: string;
             isResolved: boolean;
-            comments: { nodes: { databaseId: number; body: string }[] };
+            comments: {
+              nodes: { databaseId: number; body: string; author: { login: string } | null }[];
+            };
           }[];
         };
       };
@@ -110,7 +112,11 @@ function locateThread(): GateThread | null {
   ]);
   const thread = pages
     .flatMap((page) => page.data.repository.pullRequest.reviewThreads.nodes)
-    .find((node) => node.comments.nodes[0]?.body.includes(MARKER));
+    .find(
+      (node) =>
+        node.comments.nodes[0]?.author?.login === 'github-actions' &&
+        node.comments.nodes[0].body.startsWith(MARKER)
+    );
   if (!thread) {
     return null;
   }

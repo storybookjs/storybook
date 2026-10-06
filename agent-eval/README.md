@@ -122,13 +122,6 @@ the documentation tooling) regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
-Review mode follows the installed Storybook. On the checkout, review is
-available on every surface, so the plugin and MCP experiments both run — and
-assert — the review workflow (review-create published, review section in the
-final response). The stable release that `EVAL_STORYBOOK_LATEST=1` installs
-offers review to the plugins only, so MCP experiments run review-off there
-(stories-preview links, no review-create) until Storybook 11 is `latest`.
-
 Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):

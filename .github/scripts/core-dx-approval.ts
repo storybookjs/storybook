@@ -48,24 +48,6 @@ export async function syncApprovalStatus(
   repository: string,
   pullRequest: PullRequest
 ): Promise<ApprovalOutcome> {
-  const [owner, repo] = repository.split('/');
-  const reviews = await getLatestOpinionatedReviews(github.graphql, {
-    owner,
-    repo,
-    number: pullRequest.number,
-  });
-  const author = pullRequest.user.login.toLowerCase();
-  const approvers = reviews.flatMap((review) =>
-    review.state === 'APPROVED' && review.authorLogin.toLowerCase() !== author
-      ? [review.authorLogin]
-      : []
-  );
-  const trustedApprovers = (
-    await Promise.all(
-      approvers.map(async (login) => ((await github.isTrustedReviewer(login)) ? [login] : []))
-    )
-  ).flat();
-
   const currentState = await findCurrentState(github, repository, pullRequest.head.sha);
   const postStatus = (state: 'success' | 'pending', description: string) =>
     github.rest(`/repos/${repository}/statuses/${pullRequest.head.sha}`, {
@@ -73,6 +55,16 @@ export async function syncApprovalStatus(
       state,
       description,
     });
+
+  let trustedApprovers: string[];
+  try {
+    trustedApprovers = await findTrustedApprovers(github, repository, pullRequest);
+  } catch (error) {
+    if (currentState === 'success') {
+      await postStatus('pending', 'Could not verify the approval, re-run the Core/DX Approval job');
+    }
+    throw error;
+  }
 
   if (trustedApprovers.length > 0) {
     if (currentState !== 'success') {
@@ -89,16 +81,53 @@ export async function syncApprovalStatus(
   return 'unchanged';
 }
 
+async function findTrustedApprovers(
+  github: GitHub,
+  repository: string,
+  pullRequest: PullRequest
+): Promise<string[]> {
+  const [owner, repo] = repository.split('/');
+  const reviews = await getLatestOpinionatedReviews(github.graphql, {
+    owner,
+    repo,
+    number: pullRequest.number,
+  });
+  const author = pullRequest.user.login.toLowerCase();
+  const approvers = reviews.flatMap((review) =>
+    review.state === 'APPROVED' && review.authorLogin.toLowerCase() !== author
+      ? [review.authorLogin]
+      : []
+  );
+  const trusted = await Promise.all(
+    approvers.map(async (login) => ((await github.isTrustedReviewer(login)) ? [login] : []))
+  );
+  return trusted.flat();
+}
+
+export type Target =
+  | { number: string }
+  | { headOwner: string; headBranch: string }
+  | { allApproved: true };
+
 export async function findPullRequests(
   github: GitHub,
   repository: string,
-  target: { number: string } | { headOwner: string; headBranch: string }
+  target: Target
 ): Promise<PullRequest[]> {
   if ('number' in target) {
     return [await github.rest<PullRequest>(`/repos/${repository}/pulls/${Number(target.number)}`)];
   }
-  const head = encodeURIComponent(`${target.headOwner}:${target.headBranch}`);
-  return github.rest<PullRequest[]>(`/repos/${repository}/pulls?state=open&head=${head}`);
+  if ('headOwner' in target) {
+    const head = encodeURIComponent(`${target.headOwner}:${target.headBranch}`);
+    return github.rest<PullRequest[]>(`/repos/${repository}/pulls?state=open&head=${head}`);
+  }
+  const query = encodeURIComponent(`repo:${repository} is:pr is:open review:approved`);
+  const { items } = await github.rest<{ items: { number: number }[] }>(
+    `/search/issues?q=${query}&per_page=100`
+  );
+  return Promise.all(
+    items.map(({ number }) => github.rest<PullRequest>(`/repos/${repository}/pulls/${number}`))
+  );
 }
 
 function createGitHub(token: string, membershipToken: string): GitHub {
@@ -145,9 +174,11 @@ function requireEnv(name: string): string {
 async function main(): Promise<void> {
   const repository = requireEnv('REPOSITORY');
   const github = createGitHub(requireEnv('GITHUB_TOKEN'), requireEnv('ORG_MEMBERSHIP_TOKEN'));
-  const target = process.env.PR_NUMBER
+  const target: Target = process.env.PR_NUMBER
     ? { number: process.env.PR_NUMBER }
-    : { headOwner: requireEnv('HEAD_OWNER'), headBranch: requireEnv('HEAD_BRANCH') };
+    : process.env.HEAD_BRANCH
+      ? { headOwner: requireEnv('HEAD_OWNER'), headBranch: process.env.HEAD_BRANCH }
+      : { allApproved: true };
 
   for (const pullRequest of await findPullRequests(github, repository, target)) {
     const outcome = await syncApprovalStatus(github, repository, pullRequest);

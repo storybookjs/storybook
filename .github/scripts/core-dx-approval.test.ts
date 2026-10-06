@@ -126,6 +126,23 @@ test('propagates a failing team membership lookup instead of approving', async (
   assert.deepEqual(posted, []);
 });
 
+test('downgrades a success status to pending when the approval cannot be verified', async () => {
+  const { github, posted } = createGitHub({
+    reviews: [{ login: 'maintainer', state: 'APPROVED' }],
+    trusted: [],
+    currentState: 'success',
+  });
+  github.isTrustedReviewer = async () => {
+    throw new Error('membership lookup failed');
+  };
+
+  await assert.rejects(syncApprovalStatus(github, REPOSITORY, PULL_REQUEST));
+  assert.deepEqual(
+    posted.map(({ state }) => state),
+    ['pending']
+  );
+});
+
 test('looks up fork pull requests by head owner and branch', async () => {
   const { github, requested } = createGitHub({ reviews: [], trusted: [] });
 

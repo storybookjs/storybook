@@ -14,15 +14,19 @@ on:
     types:
       - synchronize
       - reopened
+  # Review runs on fork PRs from first-time contributors wait for "Approve and run" and PRs to
+  # branches without the review workflow never start one, so approved PRs are also swept.
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       pr_number:
-        description: Pull request number to evaluate
-        required: true
+        description: Pull request number to evaluate (empty evaluates every approved open PR)
+        required: false
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch) }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.event.workflow_run.head_branch && format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch) || 'sweep' }}
   cancel-in-progress: false
 
 permissions: {}

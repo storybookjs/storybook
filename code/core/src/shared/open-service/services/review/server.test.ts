@@ -137,8 +137,7 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
     expect(getIndex).toHaveBeenCalledOnce();
 
-    now = 12_000;
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 2_000 });
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
@@ -226,20 +225,20 @@ describe('registerReviewService', () => {
     expect(service.queries.pending.get(undefined)).toBeNull();
   });
 
-  it('does not mark the review stale inside the grace window', async () => {
+  it('ignores changes made before publishing that the module graph reports after it', async () => {
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    now = 5_000;
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 900 });
+    await service.commands.markStale({ changedAt: 1_000 });
 
-    expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
+    expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
   });
 
   it('ignores markStale when no review is active', async () => {
     const service = registerReviewService({ getIndex });
 
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 2_000 });
 
     expect(service.queries.current.get(undefined)).toBeNull();
   });
@@ -276,17 +275,32 @@ describe('registerReviewService', () => {
     await service.commands.setReview(review);
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
 
-    now = 12_000;
-    await service.commands.markStale(undefined);
+    await service.commands.markStale({ changedAt: 2_000 });
     expect(service.queries.bannerKind.get(undefined)).toBe('stale');
 
-    now = 13_000;
     await service.commands.setReview({ ...review, title: 'Updated review' });
     expect(service.queries.bannerKind.get(undefined)).toBe('pending-update');
 
     // The promoted review is fresh, so accepting supersedes the stale warning.
     await service.commands.acceptPending(undefined);
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
+  });
+
+  it('marks a pending review stale only on changes made after it was published', async () => {
+    const service = registerReviewService({ getIndex });
+    await service.commands.setReview(review);
+    now = 2_000;
+    await service.commands.setReview({ ...review, title: 'Updated review' });
+
+    await service.commands.markStale({ changedAt: 1_500 });
+    expect(service.queries.current.get(undefined)?.stale).toBe(true);
+    expect(service.queries.pending.get(undefined)?.stale).toBeUndefined();
+
+    await service.commands.markStale({ changedAt: 3_000 });
+    expect(service.queries.pending.get(undefined)?.stale).toBe(true);
+
+    await service.commands.acceptPending(undefined);
+    expect(service.queries.bannerKind.get(undefined)).toBe('stale');
   });
 
   it('does not subscribe to module-graph changes on registration', async () => {

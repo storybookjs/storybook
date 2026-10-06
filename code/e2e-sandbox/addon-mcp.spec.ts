@@ -288,6 +288,9 @@ test.describe('addon-mcp', () => {
         expect(response.result).toHaveProperty('tools');
         // At least dev and docs tools should be present (4 total)
         expect(response.result.tools.length).toBeGreaterThanOrEqual(4);
+        expect(response.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+          'review-create'
+        );
       });
     });
 
@@ -317,7 +320,7 @@ test.describe('addon-mcp', () => {
             },
             {
               type: 'text',
-              text: expect.stringContaining('in-app browser'),
+              text: expect.stringContaining('review-create'),
             },
           ],
           structuredContent: {
@@ -328,7 +331,7 @@ test.describe('addon-mcp', () => {
                 title: 'Example/Button',
               },
             ],
-            instructions: expect.stringContaining('in-app browser'),
+            instructions: expect.stringContaining('review-create'),
           },
         });
       });

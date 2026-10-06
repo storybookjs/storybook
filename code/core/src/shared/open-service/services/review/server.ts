@@ -46,9 +46,9 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
         },
       },
       markStale: {
-        handler: async (_input, ctx) => {
+        handler: async (change, ctx) => {
           ctx.self.setState((state) => {
-            applyMarkStale(state, Date.now());
+            applyMarkStale(state, change);
           });
         },
       },
@@ -66,9 +66,9 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
 export function subscribeReviewToModuleGraphChanges(): void {
   const review = getService<ReviewService>('core/review', { internal: true });
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
-  moduleGraph.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
-    if (revision !== undefined && revision > 0) {
-      void review.commands.markStale(undefined);
+  moduleGraph.queries.graphChangedAt.subscribe(undefined, ({ data: changedAt }) => {
+    if (changedAt !== undefined) {
+      void review.commands.markStale({ changedAt });
     }
   });
 }

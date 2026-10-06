@@ -10,6 +10,11 @@ export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';
 
 export { experimental_vueDocgenEngine } from './docgen/engine.ts';
 
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

@@ -20,6 +20,7 @@
     "ember-output",
     "**/__testfixtures__",
     "**/__mockdata__",
+    "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
     "core/src/core-server/utils/__search-files-tests__",

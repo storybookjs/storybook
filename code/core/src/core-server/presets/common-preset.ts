@@ -56,6 +56,7 @@ import { createStoriesToolset } from '../../shared/open-service/toolsets/stories
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
 import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
@@ -70,7 +71,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { isReviewExplicitlyEnabled, isReviewFeatureEnabled } from '../../shared/review/features.ts';
+import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
@@ -255,10 +256,6 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
-  // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling
-  // (`@storybook/addon-mcp`) enables review for the `storybook ai` CLI channel unless the user
-  // explicitly sets `false`, so an explicit default would be indistinguishable from a user
-  // opt-out in the merged preset. See `isReviewFeatureEnabled` in `shared/review/features.ts`.
   highlight: true,
   interactions: true,
   measure: true,
@@ -401,6 +398,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   });
 
   const features = await options.presets.apply('features');
+  const reviewEnabled = isReviewFeatureEnabled(features);
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
   // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
@@ -417,15 +415,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       changeStatuses: {
         getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
       },
-      // The explicit opt-in gate, not `isReviewFeatureEnabled`: with the flag unset the review
-      // infrastructure below still registers (the `storybook ai` CLI channel enables the tool per
-      // request), but direct MCP clients never see `review-create`, so the stories prose must
-      // not point at it.
-      reviewEnabled: isReviewExplicitlyEnabled(features),
+      reviewEnabled,
     })
   );
 
-  if (isReviewFeatureEnabled(features)) {
+  if (reviewEnabled) {
     registerReviewService({
       getIndex,
     });
@@ -497,7 +491,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   );
 };
 
-export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
+  app,
+  options
+) => {
+  await applyServicesPresetOnce(options.presets);
   for (const subscribe of devServerSubscriptions.splice(0)) {
     subscribe();
   }

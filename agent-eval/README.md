@@ -125,24 +125,18 @@ the documentation tooling) regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
-Review mode follows the integration. The plugin experiments always run — and
+Review mode follows the installed Storybook. On the checkout, review is
+available on every surface, so the plugin and MCP experiments both run — and
 assert — the review workflow (review-create published, review section in the
-final response), because review is on by default for the `storybook tools` CLI
-channel the plugins use. The MCP experiments run review-off by default
-(stories-preview links, no review-create), matching direct MCP clients where
-the `experimentalReview` feature flag is opt-in. Set `EVAL_REVIEW=1` to enable
-the flag in every sandbox Storybook and flip the MCP assertions to the review
-workflow too:
+final response). The stable release that `EVAL_STORYBOOK_LATEST=1` installs
+offers review to the plugins only, so MCP experiments run review-off there
+(stories-preview links, no review-create) until Storybook 11 is `latest`.
 
-```bash
-EVAL_REVIEW=1 yarn eval
-```
-
-In CI, the `ci:extra-evals`, `ci:storybook-latest`, and `ci:review` PR labels
-set the matching flag on labeled `ci:eval` runs, and manual `workflow_dispatch`
-runs of the `Agent eval` workflow can enable them through the `extra_evals`,
-`storybook_latest`, and `review` inputs, or target specific evals through the
-`eval_only` input. All of these are human-triggered spend decisions; agents
+In CI, the `ci:extra-evals` and `ci:storybook-latest` PR labels set the matching
+flag on labeled `ci:eval` runs, and manual `workflow_dispatch` runs of the
+`Agent eval` workflow can enable them through the `extra_evals` and
+`storybook_latest` inputs, or target specific evals through the `eval_only`
+input. All of these are human-triggered spend decisions; agents
 never apply the labels or dispatch the workflow.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
@@ -157,7 +151,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (the review-on text with `EVAL_REVIEW=1`, none with `EVAL_STORYBOOK_LATEST=1`).
+- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Known Failures

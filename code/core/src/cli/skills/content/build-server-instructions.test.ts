@@ -97,7 +97,7 @@ describe('buildServerInstructions', () => {
     `);
   });
 
-  it('ends visual work in preview URLs when review is disabled', () => {
+  it('builds a coherent instruction set when review is disabled', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: true,
@@ -114,7 +114,7 @@ describe('buildServerInstructions', () => {
       ## UI Building and Story Writing Workflow
 
       - Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
-      - After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-find-by-component** with the files you touched. Then call **stories-preview** for them, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.
+      - After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-find-by-component** with the files you touched. Then call **stories-preview** for the most relevant ones, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.
       - Include every returned preview URL in your final response.
       - Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.
 
@@ -135,28 +135,47 @@ describe('buildServerInstructions', () => {
     `);
   });
 
-  it.each([
-    { changeDetectionEnabled: true, moduleGraphSupported: true },
-    { changeDetectionEnabled: true, moduleGraphSupported: false },
-    { changeDetectionEnabled: false, moduleGraphSupported: true },
-    { changeDetectionEnabled: false, moduleGraphSupported: false },
-  ])(
-    'names only registered tools and stays under the limit when review is disabled (%o)',
-    (flags) => {
+  it.each(
+    [true, false].flatMap((reviewEnabled) =>
+      [true, false].flatMap((changeDetectionEnabled) =>
+        [true, false].map((moduleGraphSupported) => ({
+          reviewEnabled,
+          changeDetectionEnabled,
+          moduleGraphSupported,
+        }))
+      )
+    )
+  )('names only registered tools (%o)', (flags) => {
+    const instructions = buildServerInstructions({
+      transport: 'mcp',
+      devEnabled: true,
+      testSupported: true,
+      docsEnabled: true,
+      ...flags,
+    });
+
+    expect(instructions.includes('review-create')).toBe(flags.reviewEnabled);
+    expect(instructions.includes('stories-changed')).toBe(flags.changeDetectionEnabled);
+    expect(instructions.includes('stories-find-by-component')).toBe(flags.moduleGraphSupported);
+  });
+
+  it.each([true, false])(
+    'ends in preview URLs and stays under the limit when review is disabled (module graph %s)',
+    (moduleGraphSupported) => {
       const instructions = buildServerInstructions({
         transport: 'mcp',
         devEnabled: true,
         testSupported: true,
         docsEnabled: true,
+        changeDetectionEnabled: false,
+        moduleGraphSupported,
         reviewEnabled: false,
-        ...flags,
       });
 
       expect(instructions.length).toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
-      expect(instructions).not.toContain('review-create');
-      expect(instructions.includes('stories-changed')).toBe(flags.changeDetectionEnabled);
-      expect(instructions.includes('stories-find-by-component')).toBe(flags.moduleGraphSupported);
-      expect(instructions).toContain('call **stories-preview** for them, no exceptions');
+      expect(instructions).toContain(
+        'call **stories-preview** for the most relevant ones, no exceptions'
+      );
       expect(instructions).toContain(
         '- Include every returned preview URL in your final response.'
       );
@@ -174,12 +193,10 @@ describe('buildServerInstructions', () => {
       reviewEnabled: true,
     });
 
-    // With review enabled the after-change step must not end in
-    // stories-preview — discovery feeds review-create instead.
     expect(instructions).toContain(
       '- After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-find-by-component** with the files you touched.\n'
     );
-    expect(instructions).not.toContain('call **stories-preview** for them');
+    expect(instructions).not.toContain('call **stories-preview** for');
     expect(instructions).toContain('**stories-preview** is only for mid-loop iteration');
   });
 
@@ -197,8 +214,7 @@ describe('buildServerInstructions', () => {
     expect(instructions).toContain(
       '- After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — identify the affected stories.\n'
     );
-    expect(instructions).not.toContain('call **stories-preview** for them');
-    expect(instructions).not.toContain('stories-find-by-component');
+    expect(instructions).not.toContain('call **stories-preview** for');
   });
 
   it('builds a coherent instruction set for docs only', () => {

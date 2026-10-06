@@ -75,14 +75,11 @@ export function buildServerInstructions({
       : options.moduleGraphSupported
         ? `${afterEditing} call **${ref('stories.findByComponent')}** with the files you touched.`
         : `${afterEditing} identify the affected stories.`;
-    // With review on, review-create is the terminal step for visual work, so
-    // discovery feeds the review instead of ending in preview URLs — a
-    // competing "call stories-preview after every change" instruction reads
-    // as an alternative ending and agents take it (observed on the Codex MCP
-    // path: change done, preview links shared, review never published).
+    // With review on, discovery feeds review-create: a stories-preview step here reads as an
+    // alternative ending and agents take it.
     const previewStoriesStep = reviewEnabled
       ? discoverStoriesStep
-      : `${discoverStoriesStep} Then call **${ref('stories.preview')}** for them, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.`;
+      : `${discoverStoriesStep} Then call **${ref('stories.preview')}** for the most relevant ones, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.`;
     // Terse pointer only: the full link-presentation rule reaches the agent
     // through the get-storybook-story-instructions output (getFinalLinksGuidance)
     // and the review-create and stories-preview tool results, which are
@@ -120,7 +117,7 @@ export function buildServerInstructions({
     sections.push(
       testInstructions
         .replaceAll('{{RUN_STORY_TESTS}}', ref('test.run'))
-        // The review workflow leaves no room for this line under the 2,048-char client truncation limit.
+        // With the review workflow, this line would not fit under the 2,048 chars MCP clients keep.
         .replace(
           '{{FOCUSED_RUNS_STEP}}',
           reviewEnabled

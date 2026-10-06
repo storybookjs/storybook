@@ -279,6 +279,196 @@ describe('test API', () => {
 Expected button text to be "Secondary"`);
     });
 
+    describe('Testing Library failures', () => {
+      const failing = (description: string) =>
+        completed({
+          componentTestCount: { success: 0, error: 1 },
+          componentTestStatuses: [componentTest('alert--error', 'status-value:error', description)],
+        });
+
+      const roles = `Unable to find an accessible element with the role "status"
+
+Here are the accessible roles:
+
+  alert:
+
+  Name "":
+  <div
+    role="alert"
+  />
+
+  --------------------------------------------------`;
+
+      const dump = `Ignored nodes: comments, script, style
+<div>
+  <div
+    role="alert"
+  >
+    Locked at 10:30:00
+  </div>
+  <pre>
+    Error: boom
+    at render (/workspace/src/Alert.tsx:12:7)
+&lt;/div&gt;
+  </pre>
+</div>`;
+
+      it('drops the document dump of a failed query', async () => {
+        vi.mocked(runStoryTests).mockResolvedValue(
+          failing(`${roles}
+
+${dump}
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`)
+        );
+
+        expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+${roles}
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
+      });
+
+      it('drops every dump when a story reports several errors', async () => {
+        vi.mocked(runStoryTests).mockResolvedValue(
+          failing(`Unable to find role="status"
+
+${dump}
+
+${dump}
+    at play (C:\\workspace\\stories\\Alert.stories.tsx:77:54)
+${roles}
+
+Ignored nodes: comments, script, style
+<body />
+Unable to find an element with the text: Unlocked.
+
+Ignored nodes: comments, script, style
+<div
+  id="root"
+/>
+    at play (file:///C:/workspace/stories/Alert.stories.tsx:80:12)`)
+        );
+
+        expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+Unable to find role="status"
+    at play (C:\\workspace\\stories\\Alert.stories.tsx:77:54)
+${roles}
+Unable to find an element with the text: Unlocked.
+    at play (file:///C:/workspace/stories/Alert.stories.tsx:80:12)`);
+      });
+
+      it('drops a dump that Testing Library truncated', async () => {
+        const truncated = `<div>\n  Loading...\n    at render (/workspace/src/Alert.tsx:12:7)\n${'  <hr />\n'.repeat(1000)}`;
+
+        vi.mocked(runStoryTests).mockResolvedValue(
+          failing(`${roles}
+
+Ignored nodes: comments, script, style
+${truncated.slice(0, 7000)}...
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)
+${roles}
+
+${dump}
+    at getByRole (/workspace/stories/Alert.stories.tsx:90:10)`)
+        );
+
+        expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+${roles}
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)
+${roles}
+    at getByRole (/workspace/stories/Alert.stories.tsx:90:10)`);
+      });
+
+      it('keeps the matching elements when a query finds several', async () => {
+        vi.mocked(runStoryTests).mockResolvedValue(
+          failing(`Found multiple elements with the role "button"
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<button>
+  Edit
+</button>
+
+Ignored nodes: comments, script, style
+<button />
+
+(If this is intentional, then use the \`*AllBy*\` variant of the query).
+
+${dump}
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`)
+        );
+
+        expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+Found multiple elements with the role "button"
+
+Here are the matching elements:
+
+<button>
+  Edit
+</button>
+
+<button />
+
+(If this is intentional, then use the \`*AllBy*\` variant of the query).
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
+      });
+
+      it('caps a long list of accessible roles', async () => {
+        const intro = `Unable to find an accessible element with the role "status"
+
+Here are the accessible roles:
+`;
+        const row = `
+  Name "Row":
+  <tr />
+`;
+
+        vi.mocked(runStoryTests).mockResolvedValue(
+          failing(`${intro}${row.repeat(200)}
+${dump}
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`)
+        );
+
+        expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+${intro}${row.repeat(83).trimEnd()}
+
+  (2808 more characters omitted)
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
+      });
+
+      it('keeps a dump it cannot delimit', async () => {
+        const description = `${roles}
+
+Ignored nodes: comments, script, style
+<div>
+  <div
+    role="ale...
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`;
+
+        vi.mocked(runStoryTests).mockResolvedValue(failing(description));
+
+        expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+${description}`);
+      });
+    });
+
     it('reports accessibility violations with inspect links built from the origin', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({

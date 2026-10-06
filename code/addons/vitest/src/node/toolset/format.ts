@@ -108,12 +108,73 @@ function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): str
 - ${passingStories.map((status) => status.storyId).join('\n- ')}`;
 }
 
+const DOM_DUMP_HEADING = /(\n*^Ignored nodes: comments, [^\n]*\n)/m;
+const MATCHING_ELEMENTS_HEADING = 'Here are the matching elements:';
+const LIST_HEADING = /^Here are the (?:matching elements|\w+ roles):\n/m;
+const LIST_LIMIT = 2000;
+// Testing Library cuts a printed element off after this many characters and appends `...`.
+const DOM_DUMP_LIMIT = 7000;
+
+function domDumpLength(text: string): number | undefined {
+  const end = DOM_DUMP_LIMIT + 3;
+  if (text.startsWith('...', DOM_DUMP_LIMIT) && (text.length === end || text[end] === '\n')) {
+    return end;
+  }
+  // Text content is HTML-escaped, so only the root element can close at the start of a line.
+  return /^<([\w-]+)(?: \/>|[\s\S]*?\n(?:<\/\1|\/)>)(?=\n|$)/.exec(text)?.[0].length;
+}
+
+function withCappedList(text: string): string {
+  const heading = LIST_HEADING.exec(text);
+  const listStart = heading ? heading.index + heading[0].length : text.length;
+  if (text.length - listStart <= LIST_LIMIT) {
+    return text;
+  }
+  const kept = text.slice(0, text.lastIndexOf('\n', listStart + LIST_LIMIT)).trimEnd();
+  return `${kept}\n\n  (${text.length - kept.length} more characters omitted)`;
+}
+
+// Testing Library appends the whole rendered container to a failed query, which buries the message
+// and the stack. A dump that cannot be delimited exactly is left in place.
+function withoutDomDumps(description: string): string {
+  const [head, ...parts] = description.split(DOM_DUMP_HEADING);
+  let done = '';
+  let pending = head;
+  let listingMatches = false;
+
+  for (let i = 0; i < parts.length; i += 2) {
+    const heading = parts[i];
+    const text = parts[i + 1];
+    const length = domDumpLength(text);
+
+    if (length === undefined) {
+      done += pending + heading;
+      pending = text;
+      listingMatches = false;
+      continue;
+    }
+
+    const rest = text.slice(length);
+    if (listingMatches || pending.endsWith(MATCHING_ELEMENTS_HEADING)) {
+      pending += `\n\n${text.slice(0, length)}`;
+      listingMatches = rest === '';
+      if (listingMatches) {
+        continue;
+      }
+    }
+    done += withCappedList(pending);
+    pending = rest;
+  }
+
+  return done + pending;
+}
+
 function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
   const entries = statuses.map(
     (status) =>
       `### ${status.storyId}
 
-${status.description || 'No failure details available.'}`
+${status.description ? withoutDomDumps(status.description) : 'No failure details available.'}`
   );
 
   return `## Failing Stories

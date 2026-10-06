@@ -1,6 +1,8 @@
 import { createStatusStore } from '../../shared/status-store/index.ts';
-import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store/index.ts';
-import type { StatusesByStoryIdAndTypeId } from '../../shared/status-store/index.ts';
+import {
+  type StatusesByStoryIdAndTypeId,
+  UNIVERSAL_STATUS_STORE_OPTIONS,
+} from '../../shared/status-store/index.ts';
 import { UniversalStore } from '../../shared/universal-store/index.ts';
 import { getOrRecreateStore } from './server-store-leadership.ts';
 

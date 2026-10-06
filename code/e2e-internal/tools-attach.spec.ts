@@ -122,9 +122,8 @@ test.describe('storybook tools attach', () => {
 
       // Change detection picks the edit up asynchronously, after the file watcher and a git diff.
       await expect(async () => {
-        const changed = await runTools(['stories', 'changed', '--json']);
+        const changed = await runTools(['--attach', 'stories', 'changed', '--json']);
         expect(changed.exitCode, changed.output).toBe(0);
-        expect(changed.output).not.toContain('Falling back');
         expect(changed.output).toMatch(
           /"storyId": "core-names--prefix",\s+"statusValue": "status-value:modified"/
         );

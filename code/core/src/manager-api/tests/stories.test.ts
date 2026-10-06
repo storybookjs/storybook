@@ -17,6 +17,7 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { logger } from 'storybook/internal/client-logger';
 import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -1464,7 +1465,7 @@ describe('stories API', () => {
     });
   });
   describe('SET_CONFIG', () => {
-    it('applies config sidebar filters to an index that was already set', async () => {
+    it('ignores sidebar.filters when config arrives after the index', async () => {
       const moduleArgs = createMockModuleArgs({
         initialState: {
           tagPresets: {},
@@ -1503,7 +1504,6 @@ describe('stories API', () => {
 
       expect(Object.keys(store.getState().filteredIndex!)).toContain('b--1');
 
-      // Now the addon config with sidebar filters lands
       provider.getConfig.mockReturnValue({
         sidebar: { filters: { pattern: (item: any) => item.id.startsWith('a') } },
       });
@@ -1511,17 +1511,18 @@ describe('stories API', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       const { filteredIndex } = store.getState();
-      expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
+      expect(Object.keys(filteredIndex!)).toContain('a--1');
+      expect(Object.keys(filteredIndex!)).toContain('b--1');
     });
   });
-  describe('experimental_setFilters', () => {
+  describe('setFilters', () => {
     it('applies multiple filters in a single call', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilters({
+      await api.setFilters({
         one: (item: any) => !item.id.startsWith('b'),
         two: (item: any) => !item.id.startsWith('custom'),
       });
@@ -1544,17 +1545,17 @@ describe('stories API', () => {
       provider.channel.on(SET_FILTER, listener);
 
       // Without an index, nothing is emitted (the filters only take effect later)
-      await api.experimental_setFilters({ one: () => true });
+      await api.setFilters({ one: () => true });
       expect(listener).not.toHaveBeenCalled();
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilters({ one: () => true, two: () => true });
+      await api.setFilters({ one: () => true, two: () => true });
       expect(listener).toHaveBeenCalledTimes(2);
       expect(listener).toHaveBeenCalledWith({ id: 'one' });
       expect(listener).toHaveBeenCalledWith({ id: 'two' });
     });
   });
-  describe('experimental_setFilter', () => {
+  describe('setFilter', () => {
     it('is included in the initial state', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { state, api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -1583,7 +1584,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      await api.experimental_setFilter('myCustomFilter', () => true);
+      await api.setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({
@@ -1600,7 +1601,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
+      await api.setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       const { filteredIndex } = store.getState();
 
@@ -1616,6 +1617,7 @@ describe('stories API', () => {
             "importPath": "./a.ts",
             "name": "a",
             "parent": undefined,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "tags": [],
             "type": "component",
@@ -1627,6 +1629,7 @@ describe('stories API', () => {
             "name": "1",
             "parent": "a",
             "prepared": false,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "subtype": "story",
             "tags": [],
@@ -1640,6 +1643,7 @@ describe('stories API', () => {
             "name": "2",
             "parent": "a",
             "prepared": false,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "subtype": "story",
             "tags": [],
@@ -1657,7 +1661,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter(
+      await api.setFilter(
         'myCustomFilter',
         (item) =>
           item.statuses !== undefined &&
@@ -1699,6 +1703,7 @@ describe('stories API', () => {
             "importPath": "./a.ts",
             "name": "a",
             "parent": undefined,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "tags": [],
             "type": "component",
@@ -1710,6 +1715,7 @@ describe('stories API', () => {
             "name": "1",
             "parent": "a",
             "prepared": false,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "subtype": "story",
             "tags": [],
@@ -1726,7 +1732,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
+      await api.setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       await api.setIndex({ v: 5, entries: navigationEntries });
 
@@ -1744,6 +1750,7 @@ describe('stories API', () => {
             "importPath": "./a.ts",
             "name": "a",
             "parent": undefined,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "tags": [],
             "type": "component",
@@ -1755,6 +1762,7 @@ describe('stories API', () => {
             "name": "1",
             "parent": "a",
             "prepared": false,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "subtype": "story",
             "tags": [],
@@ -1768,6 +1776,7 @@ describe('stories API', () => {
             "name": "2",
             "parent": "a",
             "prepared": false,
+            "renderAriaLabel": undefined,
             "renderLabel": undefined,
             "subtype": "story",
             "tags": [],
@@ -2004,7 +2013,7 @@ describe('stories API', () => {
     });
   });
 
-  describe('computeStatusFilterFn (via experimental_setFilter)', () => {
+  describe('computeStatusFilterFn (via setFilter)', () => {
     it('passes through all stories when both included and excluded are empty', async () => {
       vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
@@ -2051,6 +2060,230 @@ describe('stories API', () => {
         expect(Object.keys(filteredIndex!)).toContain('a--1');
         expect(Object.keys(filteredIndex!)).not.toContain('a--2');
       });
+    });
+
+    it('re-applies active filters on status changes without re-registering the status filter', async () => {
+      vi.mock('../stores/status');
+      fullStatusStore.unset();
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.addStatusFilters(['status-value:error'], false);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).toHaveLength(0);
+      });
+
+      const setFilterSpy = vi.spyOn(api, 'setFilter');
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'a--1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+
+      await vi.waitFor(() => {
+        const { filteredIndex } = store.getState();
+        expect(Object.keys(filteredIndex!)).toContain('a--1');
+        expect(Object.keys(filteredIndex!)).not.toContain('a--2');
+      });
+      expect(setFilterSpy).not.toHaveBeenCalled();
+    });
+
+    it('a stream of status updates triggers a bounded number of index rebuilds', async () => {
+      vi.mock('../stores/status');
+      vi.useFakeTimers();
+      try {
+        fullStatusStore.unset();
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+        await api.setIndex({ v: 5, entries: navigationEntries });
+
+        const setIndexSpy = vi.spyOn(api, 'setIndex');
+        const setFilterSpy = vi.spyOn(api, 'setFilter');
+
+        const BURST = 50;
+        for (let i = 0; i < BURST; i += 1) {
+          fullStatusStore.set([
+            {
+              typeId: 'addon-id',
+              storyId: i % 2 === 0 ? 'a--1' : 'a--2',
+              value: i === BURST - 1 ? 'status-value:error' : 'status-value:pending',
+              title: 'title',
+              description: `update ${i}`,
+            },
+          ]);
+        }
+
+        await vi.advanceTimersByTimeAsync(500);
+
+        const rebuilds = setIndexSpy.mock.calls.length;
+        expect(rebuilds).toBeGreaterThanOrEqual(1);
+        expect(rebuilds).toBeLessThanOrEqual(4);
+        expect(setFilterSpy).not.toHaveBeenCalled();
+        expect(fullStatusStore.getAll()['a--2']?.['addon-id']?.value).toBe('status-value:error');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('applies the last status update after a burst (trailing edge of the throttle)', async () => {
+      vi.mock('../stores/status');
+      vi.useFakeTimers();
+      try {
+        fullStatusStore.unset();
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+        const { store } = moduleArgs;
+
+        await api.setIndex({ v: 5, entries: navigationEntries });
+        await api.addStatusFilters(['status-value:error'], false);
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--1',
+            value: 'status-value:error',
+            title: 'title',
+            description: 'desc',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(Object.keys(store.getState().filteredIndex!)).toContain('a--1');
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--2',
+            value: 'status-value:error',
+            title: 'title',
+            description: 'desc',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(500);
+        expect(Object.keys(store.getState().filteredIndex!)).toContain('a--2');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not overlap status-driven index rebuilds when a rebuild outlasts the throttle', async () => {
+      vi.mock('../stores/status');
+      vi.useFakeTimers();
+      try {
+        fullStatusStore.unset();
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+        await api.setIndex({ v: 5, entries: navigationEntries });
+
+        let releaseFirst: () => void = () => {};
+        let concurrent = 0;
+        let maxConcurrent = 0;
+        let setIndexCalls = 0;
+        vi.spyOn(api, 'setIndex').mockImplementation(async () => {
+          setIndexCalls += 1;
+          concurrent += 1;
+          maxConcurrent = Math.max(maxConcurrent, concurrent);
+          if (setIndexCalls === 1) {
+            await new Promise<void>((resolve) => {
+              releaseFirst = resolve;
+            });
+          }
+          concurrent -= 1;
+        });
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--1',
+            value: 'status-value:pending',
+            title: 'title',
+            description: 'first',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(setIndexCalls).toBe(1);
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--2',
+            value: 'status-value:error',
+            title: 'title',
+            description: 'queued',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(500);
+        expect(setIndexCalls).toBe(1);
+        expect(maxConcurrent).toBe(1);
+
+        releaseFirst();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(setIndexCalls).toBe(2);
+        expect(maxConcurrent).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps rebuilding the status-filtered index after a rebuild rejection', async () => {
+      vi.mock('../stores/status');
+      vi.useFakeTimers();
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      try {
+        fullStatusStore.unset();
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+        await api.setIndex({ v: 5, entries: navigationEntries });
+
+        let setIndexCalls = 0;
+        vi.spyOn(api, 'setIndex').mockImplementation(async () => {
+          setIndexCalls += 1;
+          if (setIndexCalls === 1) {
+            throw new Error('rebuild failed');
+          }
+        });
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--1',
+            value: 'status-value:pending',
+            title: 'title',
+            description: 'first',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(setIndexCalls).toBe(1);
+        expect(warn).toHaveBeenCalledWith(
+          'Failed to rebuild story index after status change:',
+          expect.any(Error)
+        );
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--2',
+            value: 'status-value:error',
+            title: 'title',
+            description: 'retry',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(500);
+        expect(setIndexCalls).toBe(2);
+      } finally {
+        warn.mockRestore();
+        vi.useRealTimers();
+      }
     });
 
     it('applies exclude logic: story with excluded status is hidden', async () => {
@@ -2146,7 +2379,7 @@ describe('stories API', () => {
     /**
      * Whilst the two of the built-in filters (status and tag) have easy ways to determine
      * whether or not they are active, no other filters do - in particular, user-provided filters
-     * from experimental_setFilter.
+     * from setFilter.
      *
      * As such, the filtered index is now used if it is present, regardless of the heuristics that
      * could be used to determine if the status/tag filters are active.

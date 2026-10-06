@@ -43,7 +43,7 @@ type Options = {
   dryRun?: boolean;
 };
 
-const validateOptions = (args: unknown[], options: { [key: string]: any }): options is Options => {
+const validateOptions = (args: unknown[], options: unknown): options is Options => {
   optionsSchema.parse(options);
   if (args.length !== 1 || !semver.valid(args[0] as string)) {
     console.error(

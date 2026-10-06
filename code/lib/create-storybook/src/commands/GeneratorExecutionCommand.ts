@@ -113,7 +113,6 @@ export class GeneratorExecutionCommand {
       renderer: frameworkInfo.renderer,
       storybookVersionSpecifier: options.storybookVersionSpecifier,
       linkable: !!options.linkable,
-      pnp: !!options.usePnp,
       yes: !!options.yes,
       projectType,
       features: selectedFeatures,

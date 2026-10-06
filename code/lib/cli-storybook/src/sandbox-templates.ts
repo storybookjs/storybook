@@ -1,5 +1,5 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
+import { type StorybookConfigRaw } from 'storybook/internal/types';
 
 import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';
@@ -10,8 +10,6 @@ export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;
 
 export type SkippableTask =
   | 'smoke-test'
-  | 'test-runner'
-  | 'test-runner-dev'
   | 'vitest-integration'
   | 'chromatic'
   | 'e2e-tests'
@@ -83,6 +81,11 @@ export type Template = {
    */
   inDevelopment?: boolean;
   /**
+   * Some sandboxes have partial or total incompatibilities when running with linked dependencies.
+   * Set this flag to use --no-link by default (but still support --link for local testing).
+   */
+  preferNoLink?: boolean;
+  /**
    * Some sandboxes might need extra modifications in the initialized Storybook, such as extend
    * main.js, for setting specific feature flags.
    */
@@ -118,7 +121,9 @@ export type Template = {
    *
    * The gate is enforced transitively, so this has to name the whole family of
    * packages published in lockstep with the prerelease, not just the direct
-   * dependency. Stable templates should leave this unset.
+   * dependency. Stable templates should leave this unset, unless a dependency
+   * must adopt a compatibility release as soon as a peer it tracks clears the
+   * gate.
    */
   minAgeGateExemptions?: string[];
   /** Additional options to pass to the initiate command when initializing Storybook. */
@@ -142,64 +147,6 @@ type BaseTemplates = Template & {
 };
 
 export const baseTemplates = {
-  'cra/default-js': {
-    name: 'Create React App Latest (Webpack | JavaScript)',
-    script: `
-      npx create-react-app {{beforeDir}} && cd {{beforeDir}} && \
-      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
-    `,
-    expected: {
-      // TODO: change this to @storybook/cra once that package is created
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: (config) => {
-        const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
-        return {
-          features: {
-            experimentalTestSyntax: true,
-          },
-          stories: stories?.map((s) => {
-            if (typeof s === 'string') {
-              return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
-            } else {
-              return s;
-            }
-          }),
-        };
-      },
-    },
-  },
-  'cra/default-ts': {
-    name: 'Create React App Latest (Webpack | TypeScript)',
-    script: `
-      npx create-react-app {{beforeDir}} --template typescript && cd {{beforeDir}} && \
-      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
-    `,
-    // Re-enable once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'bench', 'vitest-integration'],
-    expected: {
-      // TODO: change this to @storybook/cra once that package is created
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-  },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
@@ -362,7 +309,8 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types'],
+      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -416,26 +364,6 @@ export const baseTemplates = {
   'react-webpack/18-ts': {
     name: 'React Latest (Webpack | TypeScript)',
     script: 'npx create-webpack5-react {{beforeDir}}',
-    expected: {
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        swc: { swcrc: false },
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
-  'react-webpack/17-ts': {
-    name: 'React v17 (Webpack | TypeScript)',
-    script: 'npx create-webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -611,7 +539,7 @@ export const baseTemplates = {
         },
       },
     },
-    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    skipTasks: ['bench', 'chromatic'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
@@ -722,6 +650,7 @@ export const baseTemplates = {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    preferNoLink: true,
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
@@ -751,16 +680,13 @@ export const baseTemplates = {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
       // See `angular-vite/default-ts` for why Compodoc is listed here.
-      extraDependencies: [
-        '@angular/forms@^21.2.0',
-        '@angular/animations@^21.2.0',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^21.2.0', '@compodoc/compodoc'],
       useCsfFactory: true,
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -774,18 +700,13 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
-      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms. Match the `^22` major
+      // `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       // `@compodoc/compodoc` is no longer installed by `storybook init` for the Vite builder, but
       // the sandbox harness prepends its own `docs:json` Compodoc pass to every Angular sandbox
       // (see `sandbox-parts.ts`), so the sandboxes still have to carry the binary themselves.
-      extraDependencies: [
-        '@angular/forms@^22',
-        '@angular/animations@^22',
-        'typescript@^6',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^22', 'typescript@^6', '@compodoc/compodoc'],
       useCsfFactory: true,
       // `@storybook/angular-vite` turns the docgen server on by default, so guarding the browser
       // docgen path is now an explicit opt-out rather than the absence of a flag.
@@ -798,6 +719,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -838,6 +760,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -846,9 +769,8 @@ export const baseTemplates = {
     // This sandbox exists to guard the docgen baselines, and it differs from
     // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
     // execution are already covered there on every run, so repeating them here would double the
-    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
-    // latter swaps in a test-runner job rather than dropping one.
-    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    // Angular cost for no extra signal.
+    skipTasks: ['bench', 'chromatic'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {
@@ -897,6 +819,7 @@ export const baseTemplates = {
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -910,6 +833,7 @@ export const baseTemplates = {
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -917,6 +841,23 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['preact-render-to-string'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
+  'preact-vite/prerelease-ts': {
+    name: 'Preact Prerelease (Vite | TypeScript)',
+    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts`,
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string', 'preact@beta'],
+      resolutions: {
+        preact: 'npm:preact@beta',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -1089,14 +1030,7 @@ const benchTemplates = {
       skipTemplateStories: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'chromatic',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
   },
   'bench/react-webpack-18-ts': {
@@ -1107,14 +1041,7 @@ const benchTemplates = {
       skipTemplateStories: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'chromatic',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
   },
   'bench/react-vite-default-ts-nodocs': {
     ...baseTemplates['react-vite/default-ts'],
@@ -1125,14 +1052,7 @@ const benchTemplates = {
       disableDocs: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'chromatic',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
   },
   'bench/react-vite-default-ts-test-build': {
@@ -1144,13 +1064,7 @@ const benchTemplates = {
       testBuild: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
     typeCheck: false,
   },
   'bench/react-webpack-18-ts-test-build': {
@@ -1162,13 +1076,7 @@ const benchTemplates = {
       testBuild: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
   },
 } satisfies Record<string, Template & { isInternal: true }>;
 
@@ -1179,8 +1087,6 @@ export const allTemplates: Record<TemplateKey, Template> = {
 };
 
 export const normal: TemplateKey[] = [
-  // TODO: Add this back once we resolve the React 19 issues
-  // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'angular-vite/default-ts',
@@ -1213,7 +1119,6 @@ export const normal: TemplateKey[] = [
 export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
-  'react-webpack/17-ts',
   'nextjs/15-ts',
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',
@@ -1225,8 +1130,6 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
-  // TODO: Add this back once we resolve the React 19 issues
-  // 'cra/default-js',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
@@ -1236,6 +1139,9 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
+  // Disabled for cost-saving reasons, enable when we see signs that Preact 11 is about to release.
+  // After release, replace the default-js config with this one and delete this one.
+  // 'preact-vite/prerelease-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
@@ -1251,22 +1157,16 @@ export const templatesByCadence = { normal, merged, daily };
 const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
-// read without running the sandbox generator. Listed by name so a new function-form template throws
-// below instead of silently dropping out of docgen baseline coverage.
-const UNREADABLE_MAIN_CONFIG_TEMPLATES = new Set<string>(['cra/default-js']);
-
+// read without running the sandbox generator. A new function-form template throws below instead of
+// silently dropping out of docgen baseline coverage.
 const enablesDocgenServer = (key: string, template: Template): boolean => {
   const { mainConfig } = template.modifications ?? {};
   if (typeof mainConfig === 'function') {
-    if (!UNREADABLE_MAIN_CONFIG_TEMPLATES.has(key)) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error(
-        `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
-          `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen ` +
-          `baseline coverage, or add the key to UNREADABLE_MAIN_CONFIG_TEMPLATES to stay out of it.`
-      );
-    }
-    return false;
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
+        `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen baseline coverage.`
+    );
   }
   const features = mainConfig?.features;
   return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);

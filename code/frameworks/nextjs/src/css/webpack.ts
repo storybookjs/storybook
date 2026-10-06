@@ -1,14 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
 import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve.js';
 import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent.js';
-import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
-
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
 
 // This tries to follow nextjs's css config, please refer to this file for more info:
 // https://github.com/vercel/next.js/blob/canary/packages/next/build/webpack-config.ts
@@ -34,6 +29,8 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
               modules: {
                 auto: true,
                 getLocalIdent: getCssModuleLocalIdent,
+                namedExport: false,
+                exportLocalsConvention: 'as-is',
               },
             },
           },
@@ -54,7 +51,12 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
         options: {
           importLoaders: 3,
           ...getImportAndUrlCssLoaderOptions(nextConfig),
-          modules: { auto: true, getLocalIdent: getCssModuleLocalIdent },
+          modules: {
+            auto: true,
+            getLocalIdent: getCssModuleLocalIdent,
+            namedExport: false,
+            exportLocalsConvention: 'as-is',
+          },
         },
       },
       fileURLToPath(import.meta.resolve('postcss-loader')),
@@ -72,27 +74,14 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
   });
 };
 
-/**
- * Webpack v4-v6 api https://webpack.js.org/loaders/css-loader/#url
- * https://webpack.js.org/loaders/css-loader/#import
- *
- * Webpack v3 api https://webpack-3.cdn.bcebos.com/loaders/css-loader/#url
- * https://webpack-3.cdn.bcebos.com/loaders/css-loader/#import
- */
-const getImportAndUrlCssLoaderOptions = (nextConfig: NextConfig) =>
-  isCssLoaderV6()
-    ? {
-        url: {
-          filter: getUrlResolver(nextConfig),
-        },
-        import: {
-          filter: getImportResolver(nextConfig),
-        },
-      }
-    : {
-        url: getUrlResolver(nextConfig),
-        import: getImportResolver(nextConfig),
-      };
+const getImportAndUrlCssLoaderOptions = (nextConfig: NextConfig) => ({
+  url: {
+    filter: getUrlResolver(nextConfig),
+  },
+  import: {
+    filter: getImportResolver(nextConfig),
+  },
+});
 
 const getUrlResolver = (nextConfig: NextConfig) => (url: string, resourcePath: string) =>
   cssFileResolve(url, resourcePath, nextConfig.experimental?.urlImports);
@@ -105,18 +94,3 @@ const getImportResolver =
       resourcePath,
       nextConfig.experimental?.urlImports
     );
-
-const isCssLoaderV6 = () => {
-  try {
-    const cssLoaderVersion = JSON.parse(
-      readFileSync(join(resolvePackageDir('css-loader'), 'package.json'), 'utf8')
-    ).version;
-    return semver.gte(cssLoaderVersion, '6.0.0');
-  } catch {
-    /**
-     * Css-loader isn't a resolvable dependency thus storybook webpack 5 manager will resolve to use
-     * its version which is v5
-     */
-    return false;
-  }
-};

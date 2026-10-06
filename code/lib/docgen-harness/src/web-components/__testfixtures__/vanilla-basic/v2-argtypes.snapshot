@@ -1,0 +1,70 @@
+{
+  "count": {
+    "description": undefined,
+    "name": "count",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+  "disabled": {
+    "description": undefined,
+    "name": "disabled",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+  "label": {
+    "description": undefined,
+    "name": "label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+  "legacy-label": {
+    "description": "Old name for label. @deprecated Use label instead.",
+    "name": "legacy-label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

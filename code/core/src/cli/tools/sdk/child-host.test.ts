@@ -17,10 +17,7 @@ describe('runChildHost', () => {
     async (
       _ref: string,
       _input?: Record<string, unknown>,
-      options?: {
-        signal?: AbortSignal;
-        telemetry?: (event: string, payload: Record<string, unknown>) => Promise<void>;
-      }
+      options?: { signal?: AbortSignal }
     ): Promise<AnyToolsetOutcome> => {
       if (options?.signal?.aborted) {
         throw new Error('aborted');
@@ -169,11 +166,14 @@ describe('runChildHost', () => {
     exit.mockRestore();
   });
 
-  it('forwards method telemetry over IPC keyed by the call id', async () => {
-    call.mockImplementation(async (_ref, _input, options) => {
-      await options?.telemetry?.('tool:listAllDocumentation', { toolset: 'docs' });
-      return { ok: true, data: { ran: true }, markdown: 'ok' };
-    });
+  it('sends the outcome, report included, as the call result', async () => {
+    const outcome = {
+      ok: true as const,
+      data: { ran: true },
+      markdown: 'ok',
+      telemetry: { payload: { componentCount: 3 } },
+    };
+    call.mockResolvedValue(outcome);
     await runChildHost({
       send,
       subscribe: (handler) => {
@@ -186,15 +186,7 @@ describe('runChildHost', () => {
 
     handlers[0]({ type: 'call', id: 'call-7', ref: 'docs.list', input: {} });
     await vi.waitFor(() =>
-      expect(send).toHaveBeenCalledWith({
-        type: 'telemetry',
-        id: 'call-7',
-        event: 'tool:listAllDocumentation',
-        payload: { toolset: 'docs' },
-      })
-    );
-    await vi.waitFor(() =>
-      expect(send).toHaveBeenCalledWith(expect.objectContaining({ type: 'result', id: 'call-7' }))
+      expect(send).toHaveBeenCalledWith({ type: 'result', id: 'call-7', value: outcome })
     );
   });
 

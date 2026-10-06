@@ -54,4 +54,4 @@ jobs:
           else
             numbers=$(gh api -X GET search/issues -f q="repo:$GITHUB_REPOSITORY is:pr is:open review:approved" -F per_page=100 --jq '.items[].number')
           fi
-          node .github/scripts/core-dx-approval.ts $numbers
+          node scripts/core-dx-approval.ts $numbers

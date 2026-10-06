@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isMemberOfAnyTeam } from '../../scripts/utils/github/teams.ts';
+import { isMemberOfAnyTeam } from './utils/github/teams.ts';
 
 const STATUS_CONTEXT = 'Core/DX approval';
 const TRUSTED_TEAMS = { org: 'storybookjs', slugs: ['core', 'developer-experience'] } as const;

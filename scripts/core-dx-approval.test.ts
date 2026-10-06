@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import { expect, test } from 'vitest';
 
 import { syncStatus, type PullRequest, type Status } from './core-dx-approval.ts';
 
@@ -27,28 +26,28 @@ async function postedStates(
 
 test('reports success when a Core or DX member approved', async () => {
   const pr = pullRequest({ maintainer: 'APPROVED', 'core-member': 'APPROVED' });
-  assert.deepEqual(await postedStates(pr), ['success']);
+  expect(await postedStates(pr)).toEqual(['success']);
 });
 
 test('reports nothing when only writers outside Core and DX approved', async () => {
-  assert.deepEqual(await postedStates(pullRequest({ maintainer: 'APPROVED' })), []);
+  expect(await postedStates(pullRequest({ maintainer: 'APPROVED' }))).toEqual([]);
 });
 
 test('ignores an approval by the pull request author', async () => {
   const pr = pullRequest({ author: 'APPROVED' });
-  assert.deepEqual(await postedStates(pr, async () => true), []);
+  expect(await postedStates(pr, async () => true)).toEqual([]);
 });
 
 test('ignores a Core or DX member whose latest review requests changes', async () => {
-  assert.deepEqual(await postedStates(pullRequest({ 'core-member': 'CHANGES_REQUESTED' })), []);
+  expect(await postedStates(pullRequest({ 'core-member': 'CHANGES_REQUESTED' }))).toEqual([]);
 });
 
 test('does not repeat a success that is already reported', async () => {
-  assert.deepEqual(await postedStates(pullRequest({ 'core-member': 'APPROVED' }, 'SUCCESS')), []);
+  expect(await postedStates(pullRequest({ 'core-member': 'APPROVED' }, 'SUCCESS'))).toEqual([]);
 });
 
 test('downgrades a reported success when the approval no longer stands', async () => {
-  assert.deepEqual(await postedStates(pullRequest({}, 'SUCCESS')), ['pending']);
+  expect(await postedStates(pullRequest({}, 'SUCCESS'))).toEqual(['pending']);
 });
 
 const failingLookup = async () => {
@@ -57,11 +56,11 @@ const failingLookup = async () => {
 
 test('reports nothing and fails when team membership cannot be verified', async () => {
   const pr = pullRequest({ 'core-member': 'APPROVED' });
-  assert.deepEqual(await postedStates(pr, failingLookup), []);
-  await assert.rejects(syncStatus(pr, failingLookup, () => {}));
+  expect(await postedStates(pr, failingLookup)).toEqual([]);
+  await expect(syncStatus(pr, failingLookup, () => {})).rejects.toThrow();
 });
 
 test('downgrades a reported success when team membership cannot be verified', async () => {
   const pr = pullRequest({ 'core-member': 'APPROVED' }, 'SUCCESS');
-  assert.deepEqual(await postedStates(pr, failingLookup), ['pending']);
+  expect(await postedStates(pr, failingLookup)).toEqual(['pending']);
 });

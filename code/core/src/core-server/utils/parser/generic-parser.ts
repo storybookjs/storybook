@@ -1,4 +1,4 @@
-import { parser, types as t } from 'storybook/internal/babel';
+import { parseSync } from 'oxc-parser';
 
 import type { Parser, ParserResult } from './types.ts';
 
@@ -11,104 +11,45 @@ export class GenericParser implements Parser {
    * @returns The exports of the file
    */
   async parse(content: string): Promise<ParserResult> {
-    const ast = parser.parse(content, {
-      allowImportExportEverywhere: true,
-      allowAwaitOutsideFunction: true,
-      allowNewTargetOutsideFunction: true,
-      allowReturnOutsideFunction: true,
-      allowUndeclaredExports: true,
-      plugins: [
-        // Language features
-        'typescript',
-        'jsx',
-        // Latest ECMAScript features
-        'asyncGenerators',
-        'bigInt',
-        'classProperties',
-        'classPrivateProperties',
-        'classPrivateMethods',
-        'classStaticBlock',
-        'dynamicImport',
-        'exportNamespaceFrom',
-        'logicalAssignment',
-        'moduleStringNames',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'privateIn',
-        'regexpUnicodeSets',
-        'topLevelAwait',
-        // ECMAScript proposals
-        'asyncDoExpressions',
-        'decimal',
-        'decorators',
-        'decoratorAutoAccessors',
-        'deferredImportEvaluation',
-        'destructuringPrivate',
-        'doExpressions',
-        'explicitResourceManagement',
-        'exportDefaultFrom',
-        'functionBind',
-        'functionSent',
-        'importAttributes',
-        'importReflection',
-        'moduleBlocks',
-        'partialApplication',
-        'recordAndTuple',
-        'sourcePhaseImports',
-        'throwExpressions',
-      ],
-    });
+    // `.tsx` with unambiguous source type is the most permissive grammar, so any module parses.
+    const { program, errors } = parseSync('file.tsx', content, { sourceType: 'unambiguous' });
+    if (errors.some((error) => error.severity === 'Error')) {
+      throw new SyntaxError(errors[0].message);
+    }
 
     const exports: ParserResult['exports'] = [];
 
-    ast.program.body.forEach(function traverse(node) {
-      if (t.isExportNamedDeclaration(node)) {
-        // Handles function declarations: `export function a() {}`
-        if (t.isFunctionDeclaration(node.declaration) && t.isIdentifier(node.declaration.id)) {
-          exports.push({
-            name: node.declaration.id.name,
-            default: false,
-          });
-        }
-        // Handles class declarations: `export class A {}`
-        if (t.isClassDeclaration(node.declaration) && t.isIdentifier(node.declaration.id)) {
-          exports.push({
-            name: node.declaration.id.name,
-            default: false,
-          });
+    for (const node of program.body) {
+      if (node.type === 'ExportNamedDeclaration') {
+        const { declaration } = node;
+        // Handles function and class declarations: `export function a() {}`, `export class A {}`
+        if (
+          (declaration?.type === 'FunctionDeclaration' ||
+            declaration?.type === 'ClassDeclaration') &&
+          declaration.id
+        ) {
+          exports.push({ name: declaration.id.name, default: false });
         }
         // Handles export specifiers: `export { a }`
-        if (node.declaration === null && node.specifiers.length > 0) {
-          node.specifiers.forEach((specifier) => {
-            if (t.isExportSpecifier(specifier) && t.isIdentifier(specifier.exported)) {
-              exports.push({
-                name: specifier.exported.name,
-                default: false,
-              });
+        if (declaration === null) {
+          for (const specifier of node.specifiers) {
+            if (specifier.exported.type === 'Identifier') {
+              exports.push({ name: specifier.exported.name, default: false });
             }
-          });
+          }
         }
-        if (t.isVariableDeclaration(node.declaration)) {
-          node.declaration.declarations.forEach((declaration) => {
-            // Handle variable declarators: `export const a = 1;`
-            if (t.isVariableDeclarator(declaration) && t.isIdentifier(declaration.id)) {
-              exports.push({
-                name: declaration.id.name,
-                default: false,
-              });
+        // Handle variable declarators: `export const a = 1;`
+        if (declaration?.type === 'VariableDeclaration') {
+          for (const declarator of declaration.declarations) {
+            if (declarator.id.type === 'Identifier') {
+              exports.push({ name: declarator.id.name, default: false });
             }
-          });
+          }
         }
-      } else if (t.isExportDefaultDeclaration(node)) {
-        exports.push({
-          name: 'default',
-          default: true,
-        });
+      } else if (node.type === 'ExportDefaultDeclaration') {
+        exports.push({ name: 'default', default: true });
       }
-    });
+    }
 
     return { exports };
   }

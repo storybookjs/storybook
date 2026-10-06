@@ -304,10 +304,12 @@ describe('configureEslintPlugin', () => {
       const [, content] = vi.mocked(writeFile).mock.calls[0];
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-        import storybook from "eslint-plugin-storybook";
-
+        import storybook from 'eslint-plugin-storybook';
         import somePlugin from 'some-plugin';
-        export default [somePlugin, ...storybook.configs["flat/recommended"]];"
+        export default [
+          somePlugin,
+          ...storybook.configs["flat/recommended"],
+        ]"
       `);
     });
 
@@ -332,8 +334,7 @@ describe('configureEslintPlugin', () => {
       const [, content] = vi.mocked(writeFile).mock.calls[0];
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-        import storybook from "eslint-plugin-storybook";
-
+        import storybook from 'eslint-plugin-storybook';
         import somePlugin from 'some-plugin';
         import tseslint from 'typescript-eslint';
         export default tseslint.config(somePlugin, storybook.configs["flat/recommended"]);"
@@ -364,9 +365,11 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
         import storybook from "eslint-plugin-storybook";
-
         import eslint from "@eslint/js";
-        const options = [eslint.configs.recommended, ...storybook.configs["flat/recommended"]]
+        const options = [
+          eslint.configs.recommended,
+          ...storybook.configs["flat/recommended"],
+        ]
 
         export default options;"
       `);
@@ -395,9 +398,11 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
         import storybook from "eslint-plugin-storybook";
-
         import eslint from "@eslint/js";
-        const options = [eslint.configs.recommended, ...storybook.configs["flat/recommended"]] as Config
+        const options = [
+          eslint.configs.recommended,
+          ...storybook.configs["flat/recommended"],
+        ] as Config
 
         export default options;"
       `);
@@ -424,9 +429,11 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
         import storybook from "eslint-plugin-storybook";
-
         import eslint from "@eslint/js";
-        export default [eslint.configs.recommended, ...storybook.configs["flat/recommended"]] satisfies Config;"
+        export default [
+          eslint.configs.recommended,
+          ...storybook.configs["flat/recommended"],
+        ] satisfies Config;"
       `);
     });
 
@@ -463,17 +470,21 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
         import storybook from "eslint-plugin-storybook";
-
         import { defineConfig, globalIgnores } from "eslint/config";
         import nextVitals from "eslint-config-next/core-web-vitals";
         import nextTs from "eslint-config-next/typescript";
 
-        const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
-          ".next/**",
-          "out/**",
-          "build/**",
-          "next-env.d.ts",
-        ]), ...storybook.configs["flat/recommended"]]);
+        const eslintConfig = defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+          ...storybook.configs["flat/recommended"],
+        ]);
 
         export default eslintConfig;"
       `);
@@ -510,17 +521,21 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
         import storybook from "eslint-plugin-storybook";
-
         import { defineConfig, globalIgnores } from "eslint/config";
         import nextVitals from "eslint-config-next/core-web-vitals";
         import nextTs from "eslint-config-next/typescript";
 
-        export default defineConfig([...nextVitals, ...nextTs, globalIgnores([
-          ".next/**",
-          "out/**",
-          "build/**",
-          "next-env.d.ts",
-        ]), ...storybook.configs["flat/recommended"]]);"
+        export default defineConfig([
+          ...nextVitals,
+          ...nextTs,
+          globalIgnores([
+            ".next/**",
+            "out/**",
+            "build/**",
+            "next-env.d.ts",
+          ]),
+          ...storybook.configs["flat/recommended"],
+        ]);"
       `);
     });
 
@@ -548,9 +563,8 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
         import storybook from "eslint-plugin-storybook";
-
         import { defineConfig } from "some-other-config-lib";
-        
+
         const eslintConfig = defineConfig([
           { rules: { "no-console": "error" } },
         ]);
@@ -577,8 +591,7 @@ describe('configureEslintPlugin', () => {
       const [, content] = vi.mocked(writeFile).mock.calls[0];
       expect(content).toMatchInlineSnapshot(`
         "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-        import storybook from "eslint-plugin-storybook";
-
+        import storybook from 'eslint-plugin-storybook';
         import someCustomConfig from 'my-eslint-config';
         export default someCustomConfig({}, [{}]);"
       `);

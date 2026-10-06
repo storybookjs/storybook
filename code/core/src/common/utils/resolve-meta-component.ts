@@ -1,6 +1,6 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
+import type { E, Node } from '../../csf-tools/estree/ast.ts';
 import { parseReferenceModule } from '../../csf-tools/story-shape/reference-context.ts';
 import { isSelfContained } from '../../csf-tools/story-shape/resolve-arg-value.ts';
 import {
@@ -39,9 +39,9 @@ export interface MetaComponentResolverOptions {
 }
 
 /** Peels the type-level wrappers off a component expression, as in `Comp<Props>` or `Comp as any`. */
-const unwrapComponentExpression = (node: t.Node): t.Node => {
+const unwrapComponentExpression = (node: Node): Node => {
   const unwrapped = unwrapExpression(node);
-  return t.isTSInstantiationExpression(unwrapped)
+  return unwrapped.type === 'TSInstantiationExpression'
     ? unwrapComponentExpression(unwrapped.expression)
     : unwrapped;
 };
@@ -73,7 +73,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
   };
 
   const fromIdentifier = (module: ReferenceModule, localName: string): MetaComponentResolution => {
-    const binding = findImport(module.program, localName);
+    const binding = findImport(module.editor.program, localName);
     // A namespace object is not a class, so naming one as the component documents nothing.
     if (binding.kind === 'unsupported' || binding.kind === 'namespace') {
       return { reason: 'no-component-import' };
@@ -99,21 +99,23 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       return { reason: 'no-meta-component' };
     }
 
-    const storyModule: ReferenceModule = { program: csf._file.path, filePath: storyPath };
+    // Index the story file so the nodes resolution carries print as written.
+    csf._editor.parentOf(csf._program);
+    const storyModule: ReferenceModule = { editor: csf._editor, filePath: storyPath };
     const expression = unwrapComponentExpression(node);
-    if (t.isIdentifier(expression)) {
+    if (expression.type === 'Identifier') {
       return fromIdentifier(storyModule, expression.name);
     }
 
     // `ns.Button`, where `ns` is a namespace import, is `import { Button } from …` written another
     // way, so it resolves the same.
     if (
-      t.isMemberExpression(expression) &&
+      expression.type === 'MemberExpression' &&
       !expression.computed &&
-      t.isIdentifier(expression.object) &&
-      t.isIdentifier(expression.property)
+      expression.object.type === 'Identifier' &&
+      expression.property.type === 'Identifier'
     ) {
-      const namespace = findImport(csf._file.path, expression.object.name);
+      const namespace = findImport(csf._program, expression.object.name);
       if (namespace.kind === 'namespace') {
         const exportName = expression.property.name;
         return {
@@ -133,13 +135,13 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       {
         ...storyModule,
         resolveModule,
-        externalize: (n: t.Node) => (isSelfContained(n) ? n : undefined),
+        externalize: (n: Node) => (isSelfContained(n) ? n : undefined),
       },
       expression
     );
     if (referenced) {
       const value = unwrapComponentExpression(referenced.node);
-      if (t.isIdentifier(value)) {
+      if (value.type === 'Identifier') {
         return fromIdentifier(referenced.ctx, value.name);
       }
     }
@@ -154,28 +156,28 @@ type ImportBinding =
   | { kind: 'local' }
   | { kind: 'unsupported' };
 
-function findImport(program: NodePath<t.Program>, localName: string): ImportBinding {
-  for (const statement of program.get('body')) {
-    if (!statement.isImportDeclaration()) {
+function findImport(program: E.Program, localName: string): ImportBinding {
+  for (const statement of program.body) {
+    if (statement.type !== 'ImportDeclaration') {
       continue;
     }
 
-    for (const specifier of statement.node.specifiers) {
+    for (const specifier of statement.specifiers) {
       if (specifier.local.name !== localName) {
         continue;
       }
 
       // A type-only import binds nothing documentable, but the name is still imported rather than
       // declared here.
-      if (statement.node.importKind === 'type') {
+      if (statement.importKind === 'type') {
         return { kind: 'unsupported' };
       }
 
-      const importId = statement.node.source.value;
-      if (t.isImportNamespaceSpecifier(specifier)) {
+      const importId = statement.source.value;
+      if (specifier.type === 'ImportNamespaceSpecifier') {
         return { kind: 'namespace', importId };
       }
-      if (t.isImportDefaultSpecifier(specifier)) {
+      if (specifier.type === 'ImportDefaultSpecifier') {
         return { kind: 'import', importId, exportName: 'default' };
       }
       if (specifier.importKind === 'type') {
@@ -184,9 +186,10 @@ function findImport(program: NodePath<t.Program>, localName: string): ImportBind
       return {
         kind: 'import',
         importId,
-        exportName: t.isIdentifier(specifier.imported)
-          ? specifier.imported.name
-          : specifier.imported.value,
+        exportName:
+          specifier.imported.type === 'Identifier'
+            ? specifier.imported.name
+            : (specifier.imported as E.StringLiteral).value,
       };
     }
   }

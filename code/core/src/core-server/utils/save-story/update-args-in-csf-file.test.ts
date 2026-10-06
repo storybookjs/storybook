@@ -35,7 +35,7 @@ describe('success', () => {
     const nodes = names.map((name) => CSF.getStoryExport(name));
 
     nodes.forEach((node) => {
-      updateArgsInCsfFile(node, newArgs);
+      updateArgsInCsfFile(parsed, node, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -104,7 +104,7 @@ describe('success', () => {
     const nodes = names.map((name) => CSF.getStoryExport(name));
 
     for (const node of nodes) {
-      await expect(() => updateArgsInCsfFile(node, newArgs)).rejects.toThrowError();
+      await expect(() => updateArgsInCsfFile(parsed, node, newArgs)).rejects.toThrowError();
     }
   });
   test('CSF Variances', async () => {
@@ -120,7 +120,7 @@ describe('success', () => {
     const nodes = names.map((name) => CSF.getStoryExport(name));
 
     nodes.forEach((node) => {
-      updateArgsInCsfFile(node, newArgs);
+      updateArgsInCsfFile(parsed, node, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -149,9 +149,8 @@ describe('success', () => {
       + 
         
         export const EmptyWithComment = {
+          // this is a useless comment, to test that it is preserved
         
-      -   // this is a useless comment, to test that it is preserved
-      - 
       +   args: {
       +     bordered: true,
       +     initial: "test1",
@@ -175,7 +174,6 @@ describe('success', () => {
       +     bordered: true,
       +     initial: "test1",
       +   },
-      + 
       + 
           render: (args) => <MyComponent {...args} />,
         } satisfies Story;
@@ -246,7 +244,7 @@ describe('success', () => {
     const nodes = names.map((name) => CSF.getStoryExport(name));
 
     nodes.forEach((node) => {
-      updateArgsInCsfFile(node, newArgs);
+      updateArgsInCsfFile(parsed, node, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -310,7 +308,7 @@ describe('success', () => {
       if (node === undefined) {
         return;
       }
-      updateArgsInCsfFile(node, newArgs);
+      updateArgsInCsfFile(parsed, node, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -368,7 +366,7 @@ describe('success', () => {
       if (node === undefined) {
         return;
       }
-      updateArgsInCsfFile(node, newArgs);
+      updateArgsInCsfFile(parsed, node, newArgs);
     });
 
     const after = await format(printCsf(parsed).code, {
@@ -426,11 +424,9 @@ describe('success', () => {
       +     myFunction: () => {},
       +     myNull: null,
       +     myNumber: 41,
-      + 
       +     myObject: {
       +       FOO: "BAR",
       +     },
-      + 
       +     myString: "FOO",
       +     myUndefined: undefined,
       +   },

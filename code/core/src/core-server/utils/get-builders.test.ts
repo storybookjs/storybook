@@ -30,7 +30,9 @@ describe('getPreviewBuilder', () => {
 
     await getPreviewBuilder(dir);
 
-    expect(vi.mocked(importModule)).toHaveBeenCalledWith(join(dir, 'dist', 'index.js'));
+    expect(vi.mocked(importModule)).toHaveBeenCalledWith(
+      join(dir, 'dist', 'index.js').replace(/\\/g, '/')
+    );
   });
 
   it('imports any other builder reference as given', async () => {

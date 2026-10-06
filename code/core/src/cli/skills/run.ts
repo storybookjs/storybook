@@ -3,7 +3,7 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { renderCommandReference } from './command-reference.ts';
-import { buildServerInstructions } from './content/build-server-instructions.ts';
+import { buildStoriesSkill } from './content/build-stories-skill.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
@@ -195,31 +195,31 @@ function withCommandReference(
   toolsets: ToolsetCatalogEntry[]
 ): string {
   const text = assemble(id, inputs);
+  if (id === 'stories') {
+    return text;
+  }
   const reference = renderCommandReference(text, toolsets);
   return reference ? `${text.trimEnd()}\n\n${reference}` : text;
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
-  const { reviewEnabled } = inputs;
   if (id === 'stories') {
-    const workflow = buildServerInstructions({
-      transport: 'cli',
-      devEnabled: true,
-      testSupported: inputs.testSupported,
+    return buildStoriesSkill({
+      framework: inputs.framework,
       docsEnabled: inputs.docsEnabledForCli,
+      testSupported: inputs.testSupported,
+      a11yEnabled: inputs.a11yEnabled,
       changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
-      reviewEnabled,
-      storyInstructionsInline: true,
+      reviewEnabled: inputs.reviewEnabled,
     });
-    return `${workflow}\n\n${assemble('write-story', inputs)}`;
   }
   return buildStoryInstructions({
     transport: 'cli',
     framework: inputs.framework,
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled,
+    reviewEnabled: inputs.reviewEnabled,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     docsEnabled: inputs.docsEnabledForCli,

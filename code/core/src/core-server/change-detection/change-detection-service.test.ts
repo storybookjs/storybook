@@ -1011,7 +1011,7 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call gitDiffProvider.dispose() when the provider was never constructed by the service', async () => {
+  it('disposes a service that was never started without constructing a git provider', async () => {
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
       environment: 'server',

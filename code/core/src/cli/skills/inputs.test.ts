@@ -15,9 +15,6 @@ function createMockOptions({
         if (key === 'framework') {
           return framework;
         }
-        if (key === 'features') {
-          return {};
-        }
         return defaultValue;
       }),
     },

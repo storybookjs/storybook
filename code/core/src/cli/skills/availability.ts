@@ -101,9 +101,10 @@ export async function isModuleGraphSupportedByBuilder(
  * registered (and how the landing page badges it).
  *
  * Every dynamic gate lives here — the dependency graph, the component manifest
- * (docs), addon-vitest (test) and the accessibility sub-feature — so the MCP server (which registers the tools) and
- * the browser landing page (which shows enabled/disabled badges) can never drift
- * apart. Add new gates here rather than computing them ad-hoc at a call site.
+ * (docs), addon-vitest (test) and the accessibility sub-feature — so the MCP
+ * server (which registers the tools) and the browser landing page (which shows
+ * enabled/disabled badges) can never drift apart. Add new gates here rather
+ * than computing them ad-hoc at a call site.
  */
 export async function getToolAvailability(
   options: Options,

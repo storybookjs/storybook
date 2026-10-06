@@ -28,11 +28,8 @@ export function buildStoryInstructions({
   const ref = getToolName({ transport });
   const resolvedRenderer = renderer ?? frameworkToRendererMap[framework] ?? framework;
 
-  // Mirrors the workflow in build-server-instructions.ts: discovery feeds the
-  // review, not the preview list. This tool is billed as the source of truth
-  // for story work, so the two channels must state the same workflow — when
-  // this line routed discovery into previews, agents constructed story IDs
-  // from file names and published reviews with zero discovery calls.
+  // Must state the same workflow as build-server-instructions.ts; when it routed discovery into
+  // previews, agents fabricated story IDs.
   const storyLinkingWorkflow = `After changing any component or story, call \`${ref('stories.changed')}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as ${ref('stories.findByComponent')} for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **${ref('review.create')}** when the change is visually observable; use \`${ref('stories.preview')}\` only while iterating on a specific story.`;
   const changedStoryFallbackLinkGuidance = `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${ref('stories.preview')}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`;
 

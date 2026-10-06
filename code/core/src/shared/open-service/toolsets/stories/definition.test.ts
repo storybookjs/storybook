@@ -357,7 +357,7 @@ describe('stories.changed', () => {
         'Detected 1 changed story (1 new, 0 modified, 0 related).'
       );
       expect(outcome.markdown).toBe(
-        String(mcpOutcome.markdown).replace('review-create', 'npx storybook tools review create')
+        String(mcpOutcome.markdown).replaceAll('review-create', 'npx storybook tools review create')
       );
     });
 

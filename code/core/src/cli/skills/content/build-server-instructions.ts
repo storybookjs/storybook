@@ -52,11 +52,8 @@ export function buildServerInstructions({
   ];
 
   if (options.devEnabled) {
-    // review-create is the terminal step for visual work, so the after-change
-    // step feeds the review instead of ending in preview URLs — a competing
-    // "call stories-preview after every change" instruction reads as an
-    // alternative ending and agents take it (observed on the Codex MCP path:
-    // change done, preview links shared, review never published).
+    // The after-change step must not end in stories-preview: agents treat that as an alternative
+    // ending and skip review-create.
     const previewStoriesStep = `After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **${ref('stories.changed')}** to discover the affected stories.`;
     // Terse pointer only: the full link-presentation rule reaches the agent
     // through the get-storybook-story-instructions output (getFinalLinksGuidance)

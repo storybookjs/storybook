@@ -1192,7 +1192,7 @@ A typed main config that still sets the flag fails type-checking until it is rem
 ### `changeDetection` feature flag removed
 
 The `features.changeDetection` flag is removed, and Storybook no longer reads it.
-[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents always get the `stories-changed` and `review-create` tools.
+[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools whenever the `dev` toolset is on.
 If you had `changeDetection: false`, change detection and agentic review are now on for your project.
 
 The flag existed as an escape hatch while change detection was new.

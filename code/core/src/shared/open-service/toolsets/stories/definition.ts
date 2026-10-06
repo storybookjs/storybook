@@ -177,10 +177,8 @@ function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): bool
 }
 
 function describePreview(ctx: ToolsetCtx): string {
-  // Strictly a mid-loop tool: no "include the URLs in your final response" default (that sanctioned
-  // preview links as the ending of visual work) and no hedging about the review tool's availability
-  // (a hedged "when available" let an agent that wrongly believed the tool was missing treat raw
-  // links as a sanctioned fallback).
+  // No "include the URLs in your final response" and no "when available" hedge: both let agents
+  // end visual work at preview links.
   return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
 Do not end visual work or browse requests with these links — publish a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
 }

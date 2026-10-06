@@ -37,7 +37,7 @@ async function run() {
       defaultValue: boolean;
       suffix: string;
       value?: unknown;
-      location?: string;
+      location: string;
     }
   > = packages
     .map((pkg) => {
@@ -51,13 +51,12 @@ async function run() {
         defaultValue: false,
       };
     })
-    .reduce(
-      (acc, next) => {
-        acc[next.name] = next;
-        return acc;
-      },
-      {} as Record<string, { name: string; defaultValue: boolean; suffix: string }>
-    );
+    .reduce<
+      Record<string, { name: string; defaultValue: boolean; suffix: string; location: string }>
+    >((acc, next) => {
+      acc[next.name] = next;
+      return acc;
+    }, {});
 
   const main = program
     .version('5.0.0')
@@ -125,16 +124,16 @@ async function run() {
   if (!selection.length) {
     selection = await prompts(
       [
-        watchMode === undefined && {
-          type: 'toggle',
+        {
+          type: watchMode === undefined && 'toggle',
           name: 'watch',
           message: 'Start in watch mode',
           initial: false,
           active: 'yes',
           inactive: 'no',
         },
-        prodMode === undefined && {
-          type: 'toggle',
+        {
+          type: prodMode === undefined && 'toggle',
           name: 'prod',
           message: 'Start in production mode',
           initial: false,

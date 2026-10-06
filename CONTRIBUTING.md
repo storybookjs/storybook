@@ -58,6 +58,17 @@ You can use any version manager to install the correct version of Node.js. We re
 
 3. If you're a Windows user, you'll need to enable Windows Subsystem for Linux (WSL). You can follow the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
 
+### Editor setup
+
+CI type-checks the monorepo with TypeScript 7 (`yarn task check` and the `*.test-d.ts` type tests). The workspace `typescript` package stays on TypeScript 6, because some tooling still needs its compiler API, so VS Code uses TypeScript 6 by default and can occasionally report different errors than CI.
+
+To use the TypeScript 7 language server in VS Code instead (optional):
+
+1. Install the [TypeScript 7 extension](https://marketplace.visualstudio.com/items?itemName=TypeScriptTeam.native-preview) (`TypeScriptTeam.native-preview`). When it first activates, it sets `"js/ts.experimental.useTsgo": true` in your user settings.
+2. Switch back and forth with the **TypeScript: Enable TypeScript 7 Language Server** and **TypeScript: Disable TypeScript 7 Language Server** commands.
+
+The Vue and Svelte extensions still rely on TypeScript 6 plugins. While TypeScript 7 is on, TypeScript features inside `.vue` files and types of `.svelte` imports in `.ts` files are unavailable, so disable it when working on the Vue or Svelte packages.
+
 ### Running the local development environment
 
 - All commands should be run in a terminal with administrator privileges in Windows environments.
@@ -136,8 +147,7 @@ Here's a highlight of notable directories and files:
 │   ├── ember-cli
 │   ├── external-docs
 │   ├── portable-stories-kitchen-sink
-│   ├── server-kitchen-sink
-│   └── standalone-preview
+│   └── server-kitchen-sink
 └── yarn.lock
 ```
 
@@ -228,7 +238,7 @@ When a particular sandbox is failing, it's preferred to debug locally, but if th
 Inside of here you can edit the filter-function:
 https://github.com/storybookjs/storybook/blob/3d49093954243d4d520774243866de840f298bf4/scripts/ci/main.ts#L70-L88
 
-In fact you can filter on any job you wish, only running `test-runner`, `e2e`, `vite`-sandboxes, etc.
+In fact you can filter on any job you wish, only running `vitest`, `e2e`, `vite`-sandboxes, etc.
 
 ## Troubleshooting 
 

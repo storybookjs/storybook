@@ -1,4 +1,5 @@
 import type { Options } from '../../types/index.ts';
+import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
 
 import {
   getToolAvailability,
@@ -22,7 +23,8 @@ export async function resolveSkillInputs(
     getToolAvailability(options, opts),
     options.presets.apply('framework'),
   ]);
-  const framework =
-    typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '');
+  const framework = extractFrameworkPackageName(
+    typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
+  );
   return { ...availability, framework, renderer: frameworkToRendererMap[framework] };
 }

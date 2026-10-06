@@ -71,7 +71,6 @@ describe('multi-project automigrations', () => {
     storybookVersion: '8.0.0',
     beforeVersion: '7.0.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 
   describe('collectAutomigrationsAcrossProjects', () => {
@@ -234,6 +233,8 @@ describe('multi-project automigrations', () => {
     });
 
     it('should exclude opt-in non-auto automigrations when yes option is true', async () => {
+      const { logger } = await import('storybook/internal/node-logger');
+      const logSpy = vi.spyOn(logger, 'log');
       const project1 = createMockProject('/project1/.storybook');
       const defaultFix = createMockFix('default-fix');
       const optInFix = createMockFix(
@@ -253,6 +254,11 @@ describe('multi-project automigrations', () => {
       const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
 
       expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix']);
+      expect(logSpy).toHaveBeenCalledWith('Running these detected automigrations:');
+      expect(logSpy).toHaveBeenCalledWith(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):'
+      );
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('opt-in-fix'));
     });
 
     it('should keep opt-in automigrations that declare promptType auto when yes option is true', async () => {

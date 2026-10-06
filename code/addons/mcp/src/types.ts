@@ -89,14 +89,6 @@ export type AddonContext = DocsServingContext & {
   toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
 
   /**
-   * Effective review gate for the current request: the explicit
-   * `experimentalReview` feature flag, or the CLI default when the request
-   * carries the trusted local-client header (`storybook ai` / the plugins).
-   * Gates the `review-create` tool and the instruction variant.
-   */
-  reviewEnabled?: boolean;
-
-  /**
    * Whether this request came through the `storybook ai` CLI channel (marked by
    * {@link STORYBOOK_MCP_PROXY_HEADER}) rather than from a direct MCP client. Telemetry reports it
    * as the `transport` field.

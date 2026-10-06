@@ -63,10 +63,7 @@ const createVitest = mockCreateVitest;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockStore.setState(() => ({
-    ...storeOptions.initialState,
-    index: mockIndex,
-  }));
+  mockStore.setState(() => storeOptions.initialState);
   vitest.projects = [{}];
   vitest.config.coverage.enabled = false;
   createVitest.mockResolvedValue(vitest);
@@ -133,16 +130,13 @@ const mockIndex = {
   },
 } as StoryIndex;
 
-const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
-  {
-    ...storeOptions,
-    initialState: {
-      ...storeOptions.initialState,
-      index: mockIndex,
-    },
-  },
-  vi
-);
+const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(storeOptions, vi);
+const startWithIndex = async () => {
+  const testManager = await TestManager.start(options);
+  testManager.storyIndex = mockIndex;
+  return testManager;
+};
+
 const mockComponentTestStatusStore: StatusStoreByTypeId = {
   set: vi.fn(),
   getAll: vi.fn(),
@@ -196,6 +190,7 @@ const options: TestManagerOptions = {
   storybookOptions: {
     configDir: '.storybook',
   } as Options,
+  previewAnnotations: [],
 };
 
 describe('TestManager', () => {
@@ -214,7 +209,7 @@ describe('TestManager', () => {
   });
 
   it('TestManager.start should start vitest and resolve when ready', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     expect(testManager).toBeInstanceOf(TestManager);
     expect(createVitest).toHaveBeenCalled();
@@ -222,7 +217,7 @@ describe('TestManager', () => {
 
   it('should handle run request', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
 
     await testManager.handleTriggerRunEvent({
@@ -241,7 +236,7 @@ describe('TestManager', () => {
 
   it('should provide merged config override before running tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -283,7 +278,7 @@ describe('TestManager', () => {
       },
     ] as any;
 
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -311,7 +306,7 @@ describe('TestManager', () => {
   });
 
   it('should persist all reports on TEST_RUN_COMPLETED without writing them into currentRun', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -364,7 +359,7 @@ describe('TestManager', () => {
   });
 
   it('keeps per-flush synced state bounded and materializes full results at run end', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -426,7 +421,7 @@ describe('TestManager', () => {
   });
 
   it('should describe failures with the source-mapped frames rather than the raw browser stack', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const failedResult = {
       state: 'failed',
       errors: [
@@ -467,7 +462,7 @@ describe('TestManager', () => {
 
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -482,7 +477,7 @@ describe('TestManager', () => {
 
   it('should trigger a single story render test', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -497,7 +492,7 @@ describe('TestManager', () => {
 
   it('should trigger a single story test', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -514,7 +509,7 @@ describe('TestManager', () => {
 
   it('should trigger all tests of a story', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -528,7 +523,7 @@ describe('TestManager', () => {
 
   it('should trigger only selected stories in the same file', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -552,7 +547,7 @@ describe('TestManager', () => {
 
   it('should trigger only selected stories across multiple files', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
 
     await testManager.handleTriggerRunEvent({
       type: 'TRIGGER_RUN',
@@ -575,7 +570,7 @@ describe('TestManager', () => {
   });
 
   it('should ignore non-requested same-name story results after run', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -610,7 +605,7 @@ describe('TestManager', () => {
   });
 
   it('should keep child test results when parent story is requested', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     const passedResult = {
       state: 'passed',
       errors: [],
@@ -638,7 +633,7 @@ describe('TestManager', () => {
   });
 
   it('should restart Vitest before a test run if coverage is enabled', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
     createVitest.mockClear();
 
@@ -664,7 +659,7 @@ describe('TestManager', () => {
   });
 
   it('should not restart with coverage enabled Vitest before a focused test run', async () => {
-    const testManager = await TestManager.start(options);
+    const testManager = await startWithIndex();
     expect(createVitest).toHaveBeenCalledTimes(1);
     createVitest.mockClear();
 

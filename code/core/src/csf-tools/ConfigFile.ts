@@ -30,17 +30,20 @@ export interface CallArgumentsOptions {
   moduleNames: Iterable<string>;
 }
 
+// Only logged: a mutation of such an export fails with a diagnostic of its own.
 const getCsfParsingErrorMessage = ({
+  fileName,
   expectedType,
   foundType,
   node,
 }: {
+  fileName: string | undefined;
   expectedType: string;
   foundType: string | undefined;
   node: any | undefined;
 }) => {
   return dedent`
-      CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
+      CSF Parsing error in ${fileName ?? 'a config file'}: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
     `;
 };
 
@@ -419,8 +422,9 @@ export class ConfigFile implements CsfObject {
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);
           } else {
-            logger.warn(
+            logger.debug(
               getCsfParsingErrorMessage({
+                fileName: self.fileName,
                 expectedType: 'ObjectExpression',
                 foundType: decl?.type,
                 node: decl || node.declaration,
@@ -486,8 +490,9 @@ export class ConfigFile implements CsfObject {
               }
             });
           } else {
-            logger.warn(
+            logger.debug(
               getCsfParsingErrorMessage({
+                fileName: self.fileName,
                 expectedType: 'VariableDeclaration',
                 foundType: node.declaration?.type,
                 node: node.declaration,
@@ -520,8 +525,9 @@ export class ConfigFile implements CsfObject {
                   }
                 });
               } else {
-                logger.warn(
+                logger.debug(
                   getCsfParsingErrorMessage({
+                    fileName: self.fileName,
                     expectedType: 'ObjectExpression',
                     foundType: exportObject?.type,
                     node: exportObject,

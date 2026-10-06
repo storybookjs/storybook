@@ -5,8 +5,15 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
 export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
+// Consumed by external framework packages like storybook-vue3-rsbuild.
+export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';
 
 export { experimental_vueDocgenEngine } from './docgen/engine.ts';
+
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],

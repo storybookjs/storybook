@@ -59,7 +59,6 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string | null;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
-  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -216,6 +215,9 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       cwd,
       dot: true,
       gitignore: true,
+      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
+      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      ignore: ['**/node_modules/**'],
       absolute: true,
       onlyDirectories: true,
       followSymbolicLinks: false,
@@ -309,7 +311,6 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-      hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
@@ -378,7 +379,6 @@ const processProject = async ({
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
-      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));
@@ -768,13 +768,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(
-      ...globbySync(matchers, {
-        gitignore: true,
-        absolute: true,
-        cwd: directory,
-      })
-    );
+    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
+    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
+    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;

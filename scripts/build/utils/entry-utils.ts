@@ -39,7 +39,7 @@ export type BuildEntries = {
    * API instead of the TypeScript 7 native compiler for packages where the
    * native emit misbehaves.
    */
-  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown';
   /**
    * The map of extra outputs to be added to the package.json's exports
    *
@@ -106,11 +106,6 @@ export const getExternal = async (cwd: string) => {
   const typesExternal = [
     ...runtimeExternalInclude,
     'ast-types',
-    // react-syntax-highlighter ships no type declarations and TS 6.0 no longer falls back to
-    // @types/react-syntax-highlighter for its deep ESM entrypoints. Keep it out of the d.ts
-    // bundle so rollup-plugin-dts doesn't walk its (CJS) source (which fails on refractor/core
-    // and exhausts the heap). It stays bundled in the JS output, like ast-types.
-    'react-syntax-highlighter',
     // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
     // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
     // external lets treeshaking drop the import when the kept types don't use it.

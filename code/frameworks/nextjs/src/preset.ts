@@ -1,6 +1,4 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -8,8 +6,9 @@ import { deprecate, logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
-import { loadPartialConfig } from '@babel/core';
+import { loadPartialConfigAsync } from '@babel/core';
 
+import { findBabelConfigFile } from './babel/babel-config-file.ts';
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
 import TransformFontImports from './font/babel/index.ts';
@@ -67,7 +66,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
-  const configPartial = loadPartialConfig({
+  const configPartial = await loadPartialConfigAsync({
     ...baseConfig,
     filename: `${getProjectRoot()}/__fake__.js`,
   });
@@ -123,7 +122,7 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
 
   // We need to re-apply the default storybook babel override from:
   // https://github.com/storybookjs/storybook/blob/next/code/core/src/core-server/presets/common-preset.ts
-  // Because it get lost in the loadPartialConfig call above.
+  // Because it get lost in the loadPartialConfigAsync call above.
   // See https://github.com/storybookjs/storybook/issues/28467
   const shouldRemoveBugfixes =
     globalThis?.FEATURES &&
@@ -172,9 +171,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureSWCLoader } = await import('./swc/loader.ts');
   const { configureBabelLoader } = await import('./babel/loader.ts');
 
-  const babelRCPath = join(getProjectRoot(), '.babelrc');
-  const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
-  const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
+  const hasBabelConfig = !!findBabelConfigFile(getProjectRoot());
   const isDevelopment = options.configType !== 'PRODUCTION';
 
   const useSWC = nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig;

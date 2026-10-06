@@ -118,6 +118,9 @@ export const SubcomponentsOfStory: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     await findSubcomponentTabs(canvas, step);
+    await step('should label the main tab with the component source name', async () => {
+      await expect(await canvas.findByRole('tab', { name: 'ControlsParameters' })).toBeVisible();
+    });
   },
 };
 

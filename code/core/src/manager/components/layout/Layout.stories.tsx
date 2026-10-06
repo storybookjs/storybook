@@ -120,7 +120,6 @@ const meta = {
     slotPanel: <MockPanel />,
     slotPages: <MockPage />,
     setManagerLayoutState: fn(),
-    hasTab: false,
   },
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },

@@ -145,6 +145,12 @@ describe('PNPM Proxy', () => {
             })
           );
         });
+
+        it('should print --allow-build=esbuild before dlx', () => {
+          expect(pnpmProxy.getRemoteRunCommand(['create-storybook@10.5.5', '-y'])).toBe(
+            'pnpm --allow-build=esbuild dlx create-storybook@10.5.5 -y'
+          );
+        });
       });
 
       describe('on pnpm < 10.2', () => {
@@ -166,6 +172,12 @@ describe('PNPM Proxy', () => {
               command: 'pnpm',
               args: ['dlx', 'create-storybook@10.5.5', '-y'],
             })
+          );
+        });
+
+        it('should not print --allow-build on dlx', () => {
+          expect(pnpmProxy.getRemoteRunCommand(['create-storybook@10.5.5', '-y'])).toBe(
+            'pnpm dlx create-storybook@10.5.5 -y'
           );
         });
       });

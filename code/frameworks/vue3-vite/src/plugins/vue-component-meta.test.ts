@@ -444,4 +444,47 @@ describe('vue-component-meta plugin', () => {
       expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.vue');
     });
   });
+
+  describe('tsx and jsx ids', () => {
+    it('should inject __docgenInfo carrying slot metadata for a typed .tsx component', async () => {
+      // A .tsx component declares slots via `slots: Object as SlotsType<...>`; the metadata
+      // comes from the checker, not the module text, so the transform must not short-circuit
+      // on the file extension. Recorded shape matches what vue-component-meta emits there.
+      const src = `import { defineComponent } from 'vue';\nexport const Card = defineComponent({});\n`;
+      const id = '/project/src/components/Card.tsx';
+
+      mockChecker.getExportNames.mockReturnValue(['Card']);
+      mockChecker.getComponentMeta.mockImplementation(() => ({
+        ...makeComponentMeta(),
+        slots: [
+          {
+            name: 'default',
+            type: '[] | [{ content: string; } | undefined]',
+            description: 'The content rendered inside the card.',
+            tags: [],
+          },
+        ],
+      }));
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('Card.__docgenInfo');
+      expect(result!.code).toContain(
+        '"slots":[{"name":"default","type":"[] | [{ content: string; } | undefined]"'
+      );
+    });
+
+    it('should inject __docgenInfo for a .jsx component', async () => {
+      const src = `export const Card = {};\n`;
+      const id = '/project/src/components/Card.jsx';
+
+      mockChecker.getExportNames.mockReturnValue(['Card']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('Card.__docgenInfo');
+    });
+  });
 });

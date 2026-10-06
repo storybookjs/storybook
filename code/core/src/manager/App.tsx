@@ -34,10 +34,9 @@ type Props = {
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];
   setManagerLayoutState: ComponentProps<typeof Layout>['setManagerLayoutState'];
   pages: Addon_PageType[];
-  hasTab: boolean;
 };
 
-export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
+export const App = ({ managerLayoutState, setManagerLayoutState, pages }: Props) => {
   const { setMobileAboutOpen } = useLayout();
 
   /**
@@ -80,7 +79,6 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
 
   const layout = (
     <Layout
-      hasTab={hasTab}
       managerLayoutState={managerLayoutState}
       setManagerLayoutState={setManagerLayoutState}
       slotOverlay={isReviewEnabled ? <ReviewPersistentLayer /> : undefined}

@@ -2968,6 +2968,25 @@ describe('CsfFile', () => {
                 moduleMock: false
         `);
       });
+
+      it('story typed with meta.type<>()', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = meta.type<{ args: { icon: string } }>().story({ name: 'Typed' })
+            export const C = meta.type<{ args: { icon: string } }>().type<{ args: { size: number } }>().story()
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed.stories).toMatchObject([
+          { id: 'default-title--a', name: 'A', __stats: { factory: true } },
+          { id: 'default-title--b', name: 'Typed', __stats: { factory: true } },
+          { id: 'default-title--c', name: 'C', __stats: { factory: true } },
+        ]);
+      });
     });
     describe('errors', () => {
       it('multiple meta variables', () => {

@@ -5,6 +5,7 @@ import {
   type ArgsStoryFn,
   type RenderContext,
   type StoryContext,
+  type StoryContextForRender,
 } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
@@ -121,7 +122,7 @@ export async function renderToCanvas(
 }
 
 /** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
+function getSlots(props: Args, context: StoryContextForRender<VueRenderer, Args>) {
   const { argTypes } = context;
   const slots = Object.entries(props)
     .filter(([key]) => argTypes[key]?.table?.category === 'slots')

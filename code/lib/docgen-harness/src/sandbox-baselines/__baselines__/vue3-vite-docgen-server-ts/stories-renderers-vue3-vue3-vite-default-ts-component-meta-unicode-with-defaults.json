@@ -1,9 +1,6 @@
 {
   "argTypes": {
     "icon": {
-      "defaultValue": {
-        "summary": "\"🚀\""
-      },
       "description": "Decorative icon.",
       "name": "icon",
       "table": {
@@ -21,9 +18,6 @@
       }
     },
     "label": {
-      "defaultValue": {
-        "summary": "\"こんにちは\""
-      },
       "description": "Greeting label.",
       "name": "label",
       "table": {
@@ -41,9 +35,6 @@
       }
     },
     "size": {
-      "defaultValue": {
-        "summary": "\"大きい\""
-      },
       "description": "Size label.",
       "name": "size",
       "table": {

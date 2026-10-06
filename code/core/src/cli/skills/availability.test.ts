@@ -14,9 +14,7 @@ import {
   type ToolAvailability,
 } from './availability.ts';
 import { getManifestStatus } from './manifest-status.ts';
-import { getReviewStatus } from './review-status.ts';
 
-vi.mock('./review-status.ts', () => ({ getReviewStatus: vi.fn() }));
 vi.mock('./manifest-status.ts', () => ({ getManifestStatus: vi.fn() }));
 vi.mock('./addon-vitest.ts', () => ({ isAddonVitestEnabled: vi.fn() }));
 vi.mock('./addon-a11y.ts', () => ({ isAddonA11yEnabled: vi.fn() }));
@@ -37,11 +35,6 @@ function createOptions({ features }: { features?: Record<string, unknown> } = {}
 }
 
 beforeEach(() => {
-  vi.mocked(getReviewStatus).mockResolvedValue({
-    available: false,
-    availableForCli: false,
-    hasFeatureFlag: false,
-  });
   vi.mocked(getManifestStatus).mockResolvedValue({
     available: false,
     hasManifests: false,
@@ -57,11 +50,6 @@ beforeEach(() => {
 
 describe('getToolAvailability', () => {
   it('composes availability from every probe', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: true,
-      availableForCli: true,
-      hasFeatureFlag: true,
-    });
     vi.mocked(getManifestStatus).mockResolvedValue({
       available: true,
       hasManifests: true,
@@ -80,7 +68,6 @@ describe('getToolAvailability', () => {
       moduleGraphSupported: true,
       changeDetectionEnabled: true,
       reviewEnabled: true,
-      reviewEnabledForCli: true,
       docsEnabled: true,
       docsEnabledForCli: true,
       docsHasManifests: true,
@@ -127,12 +114,21 @@ describe('getToolAvailability', () => {
     expect(getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
   });
 
-  it('reuses pre-resolved features instead of re-applying the preset for review status', async () => {
+  it('turns review off together with change detection', async () => {
+    const result = await getToolAvailability(
+      createOptions({ features: { changeDetection: false } })
+    );
+
+    expect(result.changeDetectionEnabled).toBe(false);
+    expect(result.reviewEnabled).toBe(false);
+  });
+
+  it('reads pre-resolved features instead of the features preset', async () => {
     const options = createOptions({ features: { changeDetection: false } });
 
-    await getToolAvailability(options, { features: { changeDetection: true } });
+    const result = await getToolAvailability(options, { features: { changeDetection: true } });
 
-    expect(getReviewStatus).toHaveBeenCalledWith(options, { features: { changeDetection: true } });
+    expect(result.reviewEnabled).toBe(true);
   });
 });
 
@@ -141,7 +137,6 @@ describe('getEffectiveToolAvailability', () => {
     moduleGraphSupported: false,
     changeDetectionEnabled: false,
     reviewEnabled: false,
-    reviewEnabledForCli: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,

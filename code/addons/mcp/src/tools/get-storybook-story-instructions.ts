@@ -13,11 +13,6 @@ type BuildStorybookStoryInstructionsOptions = {
   addonVitestAvailable?: boolean;
   /** Whether the documentation tools (`docs-list`, etc.) are registered. */
   docsEnabled?: boolean;
-  /**
-   * Per-channel review gate override (per-request context on the MCP path, the
-   * CLI default on the metadata path). Defaults to the explicit feature-flag gate.
-   */
-  reviewEnabled?: boolean;
 };
 
 export async function addGetUIBuildingInstructionsTool(
@@ -64,7 +59,6 @@ export async function addGetUIBuildingInstructionsTool(
           a11yEnabled: server.ctx.custom?.a11yEnabled,
           addonVitestAvailable,
           docsEnabled,
-          reviewEnabled: server.ctx.custom?.reviewEnabled,
         });
 
         return {
@@ -135,7 +129,7 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
  * Thin adapter over the shared `buildStoryInstructions` content builder: resolves this
  * Storybook's framework/renderer and availability probes through `resolveSkillInputs` (the same
  * path the skills CLI uses), then renders the MCP-flavored prose. Optional overrides
- * (`reviewEnabled`, toolset gates, `addonVitestAvailable`, `docsEnabled`, `a11yEnabled`) take
+ * (toolset gates, `addonVitestAvailable`, `docsEnabled`, `a11yEnabled`) take
  * priority when provided; omitted fields fall back to the probe so callers cannot silently get
  * the wrong prose by leaving a field off.
  */
@@ -146,7 +140,6 @@ export async function buildStorybookStoryInstructions(
     a11yEnabled,
     addonVitestAvailable,
     docsEnabled,
-    reviewEnabled: reviewEnabledOverride,
   }: BuildStorybookStoryInstructionsOptions = {}
 ): Promise<string> {
   const inputs = await resolveSkillInputs(options);
@@ -156,7 +149,7 @@ export async function buildStorybookStoryInstructions(
     framework: inputs.framework,
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled: reviewEnabledOverride ?? inputs.reviewEnabled,
+    reviewEnabled: inputs.reviewEnabled,
     testSupported: (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
     a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
     docsEnabled: (toolsets?.docs ?? true) && (docsEnabled ?? inputs.docsEnabled),

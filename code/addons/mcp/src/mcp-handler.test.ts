@@ -555,13 +555,13 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('stories-changed');
   });
 
-  it('registers review-create when the experimentalReview and changeDetection feature flags are on', async () => {
+  it('registers review-create when the changeDetection feature flag is on', async () => {
     const mockOptions = createMockOptions({
       port: 6010,
       presets: {
         apply: vi.fn(async (key: string, defaultValue?: any) => {
           if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: true };
+          if (key === 'features') return { changeDetection: true };
           return defaultValue;
         }),
       },
@@ -571,48 +571,13 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('review-create');
   });
 
-  it('does not list review-create for direct MCP clients when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6013,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6013);
-    expect(toolNames).toContain('stories-changed');
-    expect(toolNames).not.toContain('review-create');
-  });
-
-  it('lists review-create for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6014,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6014, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).toContain('review-create');
-  });
-
-  it('does not list review-create for CLI requests when experimentalReview is explicitly false', async () => {
+  it('does not list review-create, not even for storybook ai CLI requests, when changeDetection is off', async () => {
     const mockOptions = createMockOptions({
       port: 6015,
       presets: {
         apply: vi.fn(async (key: string, defaultValue?: any) => {
           if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: false };
+          if (key === 'features') return { changeDetection: false };
           return defaultValue;
         }),
       },

@@ -1,3 +1,5 @@
+import { stripVTControlCharacters } from 'node:util';
+
 import { S_BAR } from '@clack/prompts';
 import { cyan, dim, reset } from 'picocolors';
 import wrapAnsi from 'wrap-ansi';
@@ -15,18 +17,11 @@ function getTerminalWidth(): number {
   }
 }
 
-// ANSI regex pattern to match ANSI escape codes and OSC 8 hyperlink sequences
-const ANSI_REGEX = /\u001b\[[0-9;]*m|\u001b\]8;;[^\u0007]*\u0007|\u001b\]8;;\u0007/g;
-
 // URL regex pattern to match URLs
 const URL_REGEX = /(https?:\/\/[^\s\u0000-\u001F\u007F]+)/g;
 
-function stripAnsi(str: string): string {
-  return str.replace(ANSI_REGEX, '');
-}
-
 function getVisibleLength(str: string): number {
-  return stripAnsi(str).length;
+  return stripVTControlCharacters(str).length;
 }
 
 function getEnvFromTerminal(key: string): string {

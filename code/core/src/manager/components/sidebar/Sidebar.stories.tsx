@@ -68,8 +68,8 @@ const managerContext: any = (
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
-    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
-    experimental_setFilters: fn().mockName('api::experimental_setFilters'),
+    setFilter: fn().mockName('api::setFilter'),
+    setFilters: fn().mockName('api::setFilters'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
     getIsNavShown: () => true,
     getUrlState: () => ({

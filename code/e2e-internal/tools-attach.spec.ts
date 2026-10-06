@@ -79,6 +79,8 @@ test.describe('storybook tools attach', () => {
       !runsAgainstDevServer,
       'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
+    // Five CLI runs, and both docs calls extract every component manifest (~25s each on CI).
+    test.slow();
     const list = await runTools(['docs', 'list']);
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');

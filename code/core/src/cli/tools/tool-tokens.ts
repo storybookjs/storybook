@@ -234,6 +234,6 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   { flags: '-o, --output <path>', description: 'Write the result to a file instead of stdout' },
   {
     flags: '-h, --help',
-    description: 'Show every tool of the target Storybook, or one tool with its arguments',
+    description: 'List the tools of the target Storybook, or show one tool with its arguments',
   },
 ];

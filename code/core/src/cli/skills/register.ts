@@ -4,7 +4,10 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
+import { getService } from '../../shared/open-service/server.ts';
+import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import { toCatalogEntry } from '../tools/sdk/catalog.ts';
 import type { CommandFailureHandler } from '../tools/register.ts';
 import { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { resolveSkillInputs } from './inputs.ts';
@@ -84,6 +87,13 @@ function defaultDeps(): SkillsRunDeps {
     resolveSkillInputs,
     getProjectInfo,
     getSetupMarkdown: getSetupMarkdownOutput,
+    describeToolsets: () =>
+      getRegisteredToolsets().map((toolset) =>
+        toCatalogEntry(toolset, {
+          transport: 'cli',
+          getService: (serviceId, options) => getService(serviceId as never, options),
+        })
+      ),
   };
 }
 

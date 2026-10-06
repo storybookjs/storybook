@@ -36,7 +36,7 @@ export const getActualPackageJson = async (
     return undefined;
   }
   try {
-    // Node's JSON module loader strips a byte-order mark before parsing; JSON.parse does not.
+    // npm accepts a package.json that starts with a byte-order mark; JSON.parse does not.
     return JSON.parse((await readFile(resolvedPackageJsonPath, 'utf8')).replace(/^\uFEFF/, ''));
   } catch {
     return undefined;

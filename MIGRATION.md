@@ -1196,7 +1196,6 @@ The `features.changeDetection` flag is removed, and Storybook no longer reads it
 If you had `changeDetection: false`, change detection and agentic review are now on for your project.
 
 The flag existed as an escape hatch while change detection was new.
-Storybook now starts change detection only after the first story renders, to keep startup fast.
 If change detection makes your Storybook slower, please [open an issue](https://github.com/storybookjs/storybook/issues/new/choose) so we can fix it.
 
 The `remove-change-detection-flag` automigration deletes the flag from your main config, whether it is `true` or `false`.

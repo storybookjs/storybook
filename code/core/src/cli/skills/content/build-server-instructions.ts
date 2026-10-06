@@ -1,6 +1,6 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import devInstructions from './instructions/dev-instructions.md';
-import reviewDocsInstructions from './instructions/review-docs-instructions.md';
+import docsInstructions from './instructions/docs-instructions.md';
 import testInstructions from './instructions/test-instructions.md';
 import type { SkillTransport } from './skill-refs.ts';
 import { getSkillRef } from './skill-refs.ts';
@@ -88,7 +88,7 @@ export function buildServerInstructions({
 
   if (options.docsEnabled) {
     sections.push(
-      reviewDocsInstructions
+      docsInstructions
         .replaceAll('{{DOCS_LIST}}', ref('docs.list'))
         .replaceAll('{{DOCS_SHOW}}', ref('docs.show'))
         .trim()

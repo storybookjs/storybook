@@ -238,11 +238,16 @@ function result() {
       )
     );
 
+  const summaryFile = values['summary-file'];
+  const summary =
+    summaryFile && existsSync(summaryFile) ? readFileSync(summaryFile, 'utf8').trim() : '';
+  const details = summary ? [summary] : resultLinks();
+
   if (values.outcome !== 'success') {
     writeBody(
       gateBody(
         `Status: evals did not pass for head \`${short(sha)}\` (outcome: \`${values.outcome || 'unknown'}\`)`,
-        ...resultLinks(),
+        ...details,
         '',
         RERUN_HINT
       )
@@ -262,12 +267,7 @@ function result() {
     return;
   }
 
-  const summaryFile = values['summary-file'];
-  const summary =
-    summaryFile && existsSync(summaryFile) ? readFileSync(summaryFile, 'utf8').trim() : '';
-  writeBody(
-    gateBody(`Status: passed for head \`${short(sha)}\``, ...(summary ? [summary] : resultLinks()))
-  );
+  writeBody(gateBody(`Status: passed for head \`${short(sha)}\``, ...details));
 
   if (
     !attempt(() => setThreadResolved(thread.threadId, true), 'Resolving the gate thread failed.')

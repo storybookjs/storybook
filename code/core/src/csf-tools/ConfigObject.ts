@@ -1,412 +1,502 @@
-import { type NodePath, traverse, types as t } from 'storybook/internal/babel';
-
 import type { ConfigFile } from './ConfigFile.ts';
-import { type CsfMutationDiagnostic, type CsfObject, createCsfObject } from './CsfObject.ts';
-import { pathForNode } from './story-shape/index.ts';
+import {
+  type CsfMutationDiagnostic,
+  type CsfObject,
+  type CsfObjectHost,
+  type MemberInsert,
+  type ObjectRoot,
+  createCsfObject,
+  literalRoot,
+  valueSource,
+} from './CsfObject.ts';
+import {
+  type E,
+  type Node,
+  type Property,
+  isIdentifier,
+  isStringLiteral,
+  locationOf,
+  staticKey,
+  walk,
+} from './estree/ast.ts';
+import {
+  type List,
+  type SourceEditor,
+  appendStatement,
+  printKey,
+  printString,
+  removeFromList,
+  removeStatement,
+} from './estree/editor.ts';
+import { generateUid } from './estree/scope.ts';
 
-type NamedExport = {
-  declaration: NodePath<t.VariableDeclarator | t.FunctionDeclaration>;
-  specifier?: NodePath<t.ExportSpecifier>;
-};
+type Span = { start: number; end: number };
 
-const isConfigFactory = (callee: NodePath): boolean => {
-  if (!callee.isIdentifier()) {
+const isConfigFactory = (editor: SourceEditor, callee: Node): boolean => {
+  if (callee.type !== 'Identifier') {
     return false;
   }
-  const binding = callee.scope.getBinding(callee.node.name);
-  const name = binding?.path.isImportSpecifier()
-    ? binding.path.node.imported
-    : !binding
-      ? callee.node
-      : undefined;
+  const binding = editor.scopes.bindingOf(callee);
+  const name =
+    binding?.node.type === 'ImportSpecifier'
+      ? binding.node.imported
+      : !binding
+        ? callee
+        : undefined;
   return (
-    t.isIdentifier(name) && ['defineMain', 'definePreview', 'defineConfig'].includes(name.name)
+    name?.type === 'Identifier' &&
+    ['defineMain', 'definePreview', 'defineConfig'].includes(name.name)
   );
 };
 
-const isExportReference = (reference: NodePath): boolean => {
-  const parent = reference.parentPath;
-  if (!parent) {
-    return false;
-  }
-  if (
-    parent.isTSAsExpression() ||
-    parent.isTSSatisfiesExpression() ||
-    parent.isTSNonNullExpression()
-  ) {
-    return isExportReference(parent);
-  }
-  return (
-    reference.isExportNamedDeclaration() ||
-    parent.isExportDefaultDeclaration() ||
-    parent.isExportSpecifier() ||
-    (parent.isAssignmentExpression() &&
-      t.isMemberExpression(parent.node.left) &&
-      t.isIdentifier(parent.node.left.object, { name: 'module' }) &&
-      t.isIdentifier(parent.node.left.property, { name: 'exports' }))
-  );
+const isModuleExports = (node: Node) =>
+  node.type === 'MemberExpression' &&
+  isIdentifier(node.object, 'module') &&
+  (isIdentifier(node.property, 'exports') || isStringLiteral(node.property)) &&
+  (node.property.type === 'Identifier' || (node.property as E.StringLiteral).value === 'exports');
+
+const TS_WRAPPERS = new Set(['TSAsExpression', 'TSSatisfiesExpression', 'TSNonNullExpression']);
+
+const isValidIdentifier = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
+
+// `custom-field` → `customField`, the way Babel derives uid names.
+const toIdentifier = (name: string) =>
+  name
+    .replace(/[^\w$]+(.)?/g, (_, next: string | undefined) => (next ? next.toUpperCase() : ''))
+    .replace(/^\d/, '_$&') || '_';
+
+type NamedEntry = {
+  name: string;
+  declaration: E.VariableDeclarator | E.Function;
+  // The `const`/`let` statement owning a declarator, or the function itself.
+  statement: Node;
+  // `export const x` / `export function x` statement, when the declaration is exported directly.
+  exportStatement?: E.ExportNamedDeclaration;
+  specifier?: { statement: E.ExportNamedDeclaration; specifier: E.ExportSpecifier };
 };
+
+type Rejection = { ok: false; diagnostic: CsfMutationDiagnostic };
+
+export const locateConfigRoot = (
+  config: ConfigFile
+): { ok: true; root: ObjectRoot } | Rejection => {
+  const editor = config._editorSource;
+  const { program } = editor;
+  const reject = (
+    node: Node | Span | undefined,
+    code: CsfMutationDiagnostic['code'],
+    message: string
+  ): Rejection => ({
+    ok: false,
+    diagnostic: {
+      code,
+      target: { kind: 'config' },
+      path: [],
+      message,
+      ...(node && node !== program
+        ? { loc: locationOf(editor.code, (node as Span).start, (node as Span).end) }
+        : {}),
+    },
+  });
+
+  const parents = new Map<Node, Node | null>();
+  const assignments: E.AssignmentExpression[] = [];
+  walk(program, (node, parent) => {
+    parents.set(node, parent);
+    if (
+      node.type === 'AssignmentExpression' &&
+      node.left.type === 'MemberExpression' &&
+      (isModuleExports(node.left) || isIdentifier(node.left.object, 'exports'))
+    ) {
+      assignments.push(node);
+    }
+  });
+  const ancestors = (node: Node) => {
+    const result: Node[] = [];
+    for (let parent = parents.get(node); parent; parent = parents.get(parent)) {
+      result.push(parent);
+    }
+    return result;
+  };
+  const isStatement = (node: Node) =>
+    node.type.endsWith('Statement') || node.type.endsWith('Declaration');
+
+  const isExportReference = (reference: Node): boolean => {
+    if (
+      reference.type === 'ExportNamedDeclaration' ||
+      reference.type === 'ExportDefaultDeclaration'
+    ) {
+      return true;
+    }
+    let parent = parents.get(reference);
+    while (parent && TS_WRAPPERS.has(parent.type)) {
+      parent = parents.get(parent);
+    }
+    return (
+      parent?.type === 'ExportDefaultDeclaration' ||
+      parent?.type === 'ExportSpecifier' ||
+      (parent?.type === 'AssignmentExpression' && isModuleExports(parent.left))
+    );
+  };
+
+  const root = config._exportsObject;
+  if (root) {
+    const chain = ancestors(root);
+    const declaration = chain.find(
+      (node): node is E.VariableDeclarator => node.type === 'VariableDeclarator'
+    );
+    if (Object.values(config._exportDecls).some((exported) => exported !== declaration)) {
+      return reject(
+        root,
+        'ambiguous-binding',
+        'Cannot mutate mixed default and named config exports'
+      );
+    }
+    for (const parent of chain) {
+      if (parent.type !== 'CallExpression') {
+        continue;
+      }
+      const { callee } = parent;
+      const typeChain =
+        callee.type === 'MemberExpression' &&
+        !callee.computed &&
+        isIdentifier(callee.property, 'type') &&
+        parent.arguments.length === 0;
+      if (!typeChain && !(isConfigFactory(editor, callee) && parent.arguments.length === 1)) {
+        return reject(
+          parent,
+          'unsupported-initializer',
+          'Cannot mutate an arbitrary config factory call'
+        );
+      }
+    }
+    const statementIndex = chain.findIndex(isStatement);
+    const statement = chain[statementIndex];
+    if (
+      statement?.type === 'ExpressionStatement' &&
+      (statement.expression.type !== 'AssignmentExpression' ||
+        !isModuleExports(statement.expression.left) ||
+        statement.expression.left.type !== 'MemberExpression' ||
+        statement.expression.left.property.type !== 'Identifier')
+    ) {
+      return reject(
+        root,
+        'ambiguous-binding',
+        'Cannot mutate a config that is not directly exported'
+      );
+    }
+    const statementParent = chain[statementIndex + 1];
+    if (statementParent?.type !== 'Program' && statementParent?.type !== 'ExportNamedDeclaration') {
+      return reject(
+        root,
+        'unsupported-initializer',
+        'Cannot mutate a config declared inside a function or conditional'
+      );
+    }
+    if (declaration?.id.type === 'Identifier') {
+      const binding = editor.scopes.bindingOf(declaration.id);
+      if (
+        !binding?.constant ||
+        binding.references.length !== 1 ||
+        !binding.references.every(isExportReference)
+      ) {
+        return reject(
+          declaration,
+          'ambiguous-binding',
+          'Cannot mutate a shared or reassigned config binding'
+        );
+      }
+    }
+    if (
+      assignments.length > 1 ||
+      assignments.some((assignment) => {
+        const [statementNode, statementParentNode] = ancestors(assignment);
+        return (
+          editor.scopes.program.bindings.has('module') ||
+          (assignment.left.type === 'MemberExpression' && assignment.left.computed) ||
+          statementNode?.type !== 'ExpressionStatement' ||
+          statementParentNode?.type !== 'Program'
+        );
+      })
+    ) {
+      return reject(
+        root,
+        'ambiguous-binding',
+        'Cannot mutate conditional, repeated, or shadowed module.exports'
+      );
+    }
+    return { ok: true, root: literalRoot(editor, root) };
+  }
+
+  if (config.hasDefaultExport || assignments.length > 0) {
+    return reject(
+      program,
+      'unsupported-initializer',
+      'Cannot mutate a config without a static object initializer'
+    );
+  }
+
+  for (const statement of program.body) {
+    if (statement.type === 'ExportNamedDeclaration' && statement.exportKind === 'type') {
+      continue;
+    }
+    if (
+      statement.type === 'ExportAllDeclaration' ||
+      (statement.type === 'ExportNamedDeclaration' && statement.source)
+    ) {
+      return reject(
+        statement,
+        'unsupported-initializer',
+        'Cannot mutate re-exported config fields'
+      );
+    }
+    if (statement.type === 'ExportNamedDeclaration') {
+      for (const specifier of statement.specifiers) {
+        if (specifier.exportKind === 'type') {
+          continue;
+        }
+        const name = exportedName(specifier.exported);
+        if (!Object.hasOwn(config._exportDecls, name)) {
+          return reject(
+            specifier,
+            'unsupported-initializer',
+            `Cannot mutate the unresolved ${name} export`
+          );
+        }
+      }
+    }
+  }
+
+  const entries: NamedEntry[] = [];
+  const seen = new Set<Node>();
+  for (const [name, declaration] of Object.entries(config._exportDecls)) {
+    if (declaration.id?.type !== 'Identifier') {
+      return reject(
+        declaration,
+        'unsupported-initializer',
+        `Cannot mutate the ${name} export without an expression initializer`
+      );
+    }
+    const binding = editor.scopes.bindingOf(declaration.id);
+    if (
+      !binding?.constant ||
+      seen.has(declaration) ||
+      !binding.references.every(isExportReference)
+    ) {
+      return reject(
+        declaration,
+        'ambiguous-binding',
+        `Cannot mutate the shared or reassigned ${name} export`
+      );
+    }
+    seen.add(declaration);
+    if (declaration.type === 'VariableDeclarator' && !declaration.init) {
+      return reject(
+        declaration,
+        'unsupported-initializer',
+        `Cannot mutate the ${name} export without an expression initializer`
+      );
+    }
+    const reference = binding.references.find(
+      (candidate) => parents.get(candidate)?.type === 'ExportSpecifier'
+    );
+    const specifier = reference && (parents.get(reference) as E.ExportSpecifier);
+    const owner = parents.get(declaration)!;
+    const exportStatement = [owner, parents.get(owner)].find(
+      (node): node is E.ExportNamedDeclaration => node?.type === 'ExportNamedDeclaration'
+    );
+    entries.push({
+      name,
+      declaration,
+      statement: declaration.type === 'VariableDeclarator' ? owner : declaration,
+      exportStatement,
+      specifier: specifier
+        ? { specifier, statement: parents.get(specifier) as E.ExportNamedDeclaration }
+        : undefined,
+    });
+  }
+
+  return { ok: true, root: namedExportsRoot(editor, entries) };
+};
+
+const exportedName = (node: E.ModuleExportName) =>
+  node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
+
+// A config made of named exports, edited as if it were one object literal.
+const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRoot => {
+  const quote = editor.quote;
+  const byProperty = new Map<Property, NamedEntry>();
+  const properties = entries.map((entry) => {
+    const value = (
+      entry.declaration.type === 'VariableDeclarator' ? entry.declaration.init : entry.declaration
+    ) as E.Expression;
+    const property = {
+      type: 'Property',
+      kind: 'init',
+      method: false,
+      shorthand: false,
+      computed: false,
+      key: {
+        type: 'Literal',
+        value: entry.name,
+        raw: printString(entry.name, quote),
+        start: 0,
+        end: 0,
+      },
+      value,
+      start: entry.declaration.start,
+      end: entry.declaration.end,
+    } as unknown as Property;
+    byProperty.set(property, entry);
+    return property;
+  });
+
+  const declare = (members: MemberInsert[]) => {
+    const names = editor.scopes.names;
+    for (const { key, value } of members) {
+      if (isValidIdentifier(key) && !editor.scopes.program.bindings.has(key) && !names.has(key)) {
+        names.add(key);
+        appendStatement(editor, `export const ${key} = ${value};`);
+      } else {
+        const id = generateUid(editor.scopes, toIdentifier(key));
+        const exported = isValidIdentifier(key) ? key : printString(key, quote);
+        appendStatement(editor, `const ${id} = ${value};\nexport { ${id} as ${exported} };`);
+      }
+    }
+  };
+
+  const removeEntry = (entry: NamedEntry) => {
+    if (entry.specifier) {
+      const { statement, specifier } = entry.specifier;
+      if (statement.specifiers.length === 1) {
+        removeStatement(editor, statement);
+      } else {
+        removeFromList(editor, specifierList(editor, statement), [specifier]);
+      }
+      return;
+    }
+    if (entry.declaration.type === 'VariableDeclarator') {
+      const statement = entry.statement as E.VariableDeclaration;
+      if (statement.declarations.length > 1) {
+        const list: List = {
+          open: statement.start + statement.kind.length,
+          close: statement.declarations.at(-1)!.end,
+          items: statement.declarations,
+        };
+        removeFromList(editor, list, [entry.declaration]);
+        return;
+      }
+    }
+    removeStatement(editor, entry.exportStatement ?? entry.statement);
+  };
+
+  const entryOf = (member: Property) => {
+    const entry = byProperty.get(member);
+    if (!entry) {
+      throw new Error('CsfObject: unknown named export member');
+    }
+    return entry;
+  };
+
+  return {
+    properties,
+    detached: true,
+    append: declare,
+    prepend: declare,
+    remove: (members) => members.forEach((member) => removeEntry(entryOf(member))),
+    replaceValue: (member, text) => {
+      const { declaration } = entryOf(member);
+      if (declaration.type === 'VariableDeclarator') {
+        editor.edits.overwrite(declaration.init!.start, declaration.init!.end, text);
+        return;
+      }
+      const id = declaration.id!.name;
+      const fn = /^(async\s+)?function\s*(\*)?\s*([\w$]*)\s*(?=[(<])/.exec(text);
+      if (fn && (!fn[3] || fn[3] === id)) {
+        // Keep `export function name() {}` when the replacement is a compatible function.
+        const prefix = `${fn[1] ? 'async ' : ''}function${fn[2] ? '*' : ''} ${id}`;
+        editor.edits.overwrite(
+          declaration.start,
+          declaration.end,
+          prefix + text.slice(fn[0].length)
+        );
+        return;
+      }
+      editor.edits.overwrite(declaration.start, declaration.end, `const ${id} = ${text};`);
+    },
+    rename: (member, key) => {
+      const entry = entryOf(member);
+      const name = key;
+      if (entry.specifier) {
+        const exported = entry.specifier.specifier.exported;
+        editor.edits.overwrite(
+          exported.start,
+          exported.end,
+          isValidIdentifier(name) ? name : printString(name, quote)
+        );
+        return;
+      }
+      const id = entry.declaration.id as E.BindingIdentifier;
+      if (
+        isValidIdentifier(name) &&
+        (id.name === name || !editor.scopes.program.bindings.has(name))
+      ) {
+        editor.edits.overwrite(id.start, id.end, name);
+        return;
+      }
+      removeEntry(entry);
+      declare([{ key: name, value: valueSource(editor, member), text: '' }]);
+    },
+    group: (members, key) => {
+      members.forEach((member) => removeEntry(entryOf(member)));
+      const inner = members
+        .map((member) => `${printKey(entryOf(member).name, quote)}: ${valueSource(editor, member)}`)
+        .join(', ');
+      declare([{ key, value: `{ ${inner} }`, text: '' }]);
+    },
+    take: (member, key) => {
+      const value = valueSource(editor, member);
+      return { key, value, text: `${printKey(key, quote)}: ${value}` };
+    },
+  };
+};
+
+const specifierList = (
+  editor: SourceEditor,
+  statement: E.ExportNamedDeclaration | E.ImportDeclaration
+): List => {
+  const open = editor.code.indexOf('{', statement.start) + 1;
+  const close = editor.code.indexOf('}', open);
+  return {
+    open,
+    close,
+    items: statement.specifiers.filter(
+      (specifier) =>
+        specifier.type !== 'ImportDefaultSpecifier' && specifier.type !== 'ImportNamespaceSpecifier'
+    ),
+  };
+};
+
+export { specifierList };
 
 export function createConfigObject(
   config: ConfigFile,
   report: (diagnostic: CsfMutationDiagnostic) => void,
   markChanged: () => void
 ): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
-  let result: { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } = {
-    ok: false,
-    diagnostic: {
-      code: 'unsupported-initializer',
-      target: { kind: 'config' },
-      path: [],
-      message: 'Cannot find a mutable config root',
+  const located = locateConfigRoot(config);
+  if (located.ok === false) {
+    return located;
+  }
+  const host: CsfObjectHost = {
+    editor: config._editorSource,
+    root: () => {
+      const current = locateConfigRoot(config);
+      return current.ok ? current.root : undefined;
     },
+    commit: () => config._commit(),
   };
-  const reject = (node: t.Node, code: CsfMutationDiagnostic['code'], message: string) => {
-    result = {
-      ok: false,
-      diagnostic: {
-        code,
-        target: { kind: 'config' },
-        path: [],
-        message,
-        ...(node.loc ? { loc: node.loc } : {}),
-      },
-    };
-  };
-
-  traverse(config._ast, {
-    Program(program) {
-      program.stop();
-      const assignments: NodePath<t.AssignmentExpression>[] = [];
-      program.traverse({
-        AssignmentExpression(path) {
-          const { left } = path.node;
-          if (
-            t.isMemberExpression(left) &&
-            ((t.isIdentifier(left.object, { name: 'module' }) &&
-              (t.isIdentifier(left.property, { name: 'exports' }) ||
-                t.isStringLiteral(left.property, { value: 'exports' }))) ||
-              t.isIdentifier(left.object, { name: 'exports' }))
-          ) {
-            assignments.push(path);
-          }
-        },
-      });
-      const root = pathForNode(program, config._exportsObject);
-      if (root) {
-        const declaration = root.findParent((parent) => parent.isVariableDeclarator());
-        if (Object.values(config._exportDecls).some((exported) => exported !== declaration?.node)) {
-          reject(
-            root.node,
-            'ambiguous-binding',
-            'Cannot mutate mixed default and named config exports'
-          );
-          return;
-        }
-        for (
-          let parent: NodePath | null = root.parentPath;
-          parent && !parent.isProgram();
-          parent = parent.parentPath
-        ) {
-          if (!parent.isCallExpression()) {
-            continue;
-          }
-          const callee = parent.get('callee');
-          const typeChain =
-            callee.isMemberExpression() &&
-            !callee.node.computed &&
-            t.isIdentifier(callee.node.property, { name: 'type' }) &&
-            parent.node.arguments.length === 0;
-          if (!typeChain && !(isConfigFactory(callee) && parent.node.arguments.length === 1)) {
-            reject(
-              parent.node,
-              'unsupported-initializer',
-              'Cannot mutate an arbitrary config factory call'
-            );
-            return;
-          }
-        }
-        const statement = root.getStatementParent();
-        if (
-          statement?.isExpressionStatement() &&
-          (!t.isAssignmentExpression(statement.node.expression) ||
-            !t.isMemberExpression(statement.node.expression.left) ||
-            !t.isIdentifier(statement.node.expression.left.object, { name: 'module' }) ||
-            !t.isIdentifier(statement.node.expression.left.property, { name: 'exports' }))
-        ) {
-          reject(
-            root.node,
-            'ambiguous-binding',
-            'Cannot mutate a config that is not directly exported'
-          );
-          return;
-        }
-        if (
-          !statement?.parentPath.isProgram() &&
-          !statement?.parentPath.isExportNamedDeclaration()
-        ) {
-          reject(
-            root.node,
-            'unsupported-initializer',
-            'Cannot mutate a config declared inside a function or conditional'
-          );
-          return;
-        }
-        if (declaration?.isVariableDeclarator() && t.isIdentifier(declaration.node.id)) {
-          const binding = declaration.scope.getBinding(declaration.node.id.name);
-          if (
-            !binding?.constant ||
-            binding.referencePaths.length !== 1 ||
-            !binding.referencePaths.every(isExportReference)
-          ) {
-            reject(
-              declaration.node,
-              'ambiguous-binding',
-              'Cannot mutate a shared or reassigned config binding'
-            );
-            return;
-          }
-        }
-        if (
-          assignments.length > 1 ||
-          assignments.some(
-            (assignment) =>
-              assignment.scope.hasBinding('module') ||
-              (t.isMemberExpression(assignment.node.left) && assignment.node.left.computed) ||
-              !assignment.parentPath.parentPath?.isProgram()
-          )
-        ) {
-          reject(
-            root.node,
-            'ambiguous-binding',
-            'Cannot mutate conditional, repeated, or shadowed module.exports'
-          );
-          return;
-        }
-        result = {
-          ok: true,
-          object: createCsfObject({ kind: 'config' }, root, [], report, markChanged),
-        };
-        return;
-      }
-
-      if (config.hasDefaultExport || assignments.length > 0) {
-        reject(
-          config._ast.program,
-          'unsupported-initializer',
-          'Cannot mutate a config without a static object initializer'
-        );
-        return;
-      }
-
-      const named = new Map<t.ObjectProperty, NamedExport>();
-      const virtualRoot = t.objectExpression([]);
-      const seen = new Set<t.Node>();
-      for (const statement of program.get('body')) {
-        if (statement.isExportNamedDeclaration() && statement.node.exportKind === 'type') {
-          continue;
-        }
-        if (
-          statement.isExportAllDeclaration() ||
-          (statement.isExportNamedDeclaration() && statement.node.source)
-        ) {
-          reject(
-            statement.node,
-            'unsupported-initializer',
-            'Cannot mutate re-exported config fields'
-          );
-          return;
-        }
-        if (statement.isExportNamedDeclaration()) {
-          for (const specifier of statement.get('specifiers')) {
-            if (!specifier.isExportSpecifier() || specifier.node.exportKind === 'type') {
-              continue;
-            }
-            const name = t.isIdentifier(specifier.node.exported)
-              ? specifier.node.exported.name
-              : specifier.node.exported.value;
-            if (!Object.hasOwn(config._exportDecls, name)) {
-              reject(
-                specifier.node,
-                'unsupported-initializer',
-                `Cannot mutate the unresolved ${name} export`
-              );
-              return;
-            }
-          }
-        }
-      }
-
-      for (const [name, node] of Object.entries(config._exportDecls)) {
-        const declaration = pathForNode(program, node);
-        if (
-          !(declaration?.isVariableDeclarator() || declaration?.isFunctionDeclaration()) ||
-          !t.isIdentifier(declaration.node.id)
-        ) {
-          reject(
-            node,
-            'unsupported-initializer',
-            `Cannot mutate the ${name} export without an expression initializer`
-          );
-          return;
-        }
-        const binding = declaration.scope.getBinding(declaration.node.id.name);
-        if (
-          !binding?.constant ||
-          seen.has(node) ||
-          !binding.referencePaths.every(isExportReference)
-        ) {
-          reject(
-            node,
-            'ambiguous-binding',
-            `Cannot mutate the shared or reassigned ${name} export`
-          );
-          return;
-        }
-        seen.add(node);
-        const reference = binding.referencePaths.find((path) =>
-          path.parentPath?.isExportSpecifier()
-        );
-        const specifier = reference?.parentPath;
-        const value = declaration.isFunctionDeclaration()
-          ? t.toExpression(t.cloneNode(declaration.node))
-          : declaration.node.init;
-        if (!t.isExpression(value)) {
-          reject(
-            node,
-            'unsupported-initializer',
-            `Cannot mutate the ${name} export without an expression initializer`
-          );
-          return;
-        }
-        const property = t.objectProperty(t.stringLiteral(name), value);
-        virtualRoot.properties.push(property);
-        named.set(property, {
-          declaration,
-          ...(specifier?.isExportSpecifier() ? { specifier } : {}),
-        });
-      }
-
-      const syncExports = () => {
-        for (const [property, entry] of named) {
-          if (!virtualRoot.properties.includes(property)) {
-            if (entry.specifier) {
-              entry.specifier.remove();
-            } else {
-              entry.declaration.remove();
-            }
-            named.delete(property);
-          }
-        }
-        for (const property of virtualRoot.properties) {
-          if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
-            continue;
-          }
-          const name = t.isIdentifier(property.key)
-            ? property.key.name
-            : t.isStringLiteral(property.key)
-              ? property.key.value
-              : undefined;
-          if (name === undefined) {
-            continue;
-          }
-          const entry = named.get(property);
-          if (entry) {
-            if (entry.declaration.isFunctionDeclaration()) {
-              if (
-                t.isFunctionExpression(property.value) &&
-                (!property.value.id || property.value.id.name === entry.declaration.node.id?.name)
-              ) {
-                const { params, body, async, generator, returnType, typeParameters } =
-                  property.value;
-                Object.assign(entry.declaration.node, {
-                  params,
-                  body,
-                  async,
-                  generator,
-                  returnType,
-                  typeParameters,
-                });
-              } else {
-                const id = entry.declaration.node.id;
-                if (!id) {
-                  continue;
-                }
-                const variable = t.variableDeclarator(id, property.value);
-                entry.declaration.replaceWith(t.variableDeclaration('const', [variable]));
-                const path = pathForNode(program, variable);
-                if (path) {
-                  entry.declaration = path;
-                }
-              }
-            } else if (entry.declaration.isVariableDeclarator()) {
-              entry.declaration.node.init = property.value;
-            }
-            if (entry.specifier) {
-              entry.specifier.node.exported = t.isValidIdentifier(name)
-                ? t.identifier(name)
-                : t.stringLiteral(name);
-              continue;
-            }
-            if (
-              t.isValidIdentifier(name) &&
-              (t.isIdentifier(entry.declaration.node.id, { name }) ||
-                !program.scope.hasBinding(name))
-            ) {
-              entry.declaration.node.id = t.identifier(name);
-              continue;
-            }
-            entry.declaration.remove();
-          }
-          const id =
-            t.isValidIdentifier(name) && !program.scope.hasBinding(name)
-              ? t.identifier(name)
-              : program.scope.generateUidIdentifier(name);
-          const declaration = t.variableDeclarator(id, property.value);
-          const variable = t.variableDeclaration('const', [declaration]);
-          if (id.name === name) {
-            program.pushContainer('body', t.exportNamedDeclaration(variable));
-          } else {
-            const specifier = t.exportSpecifier(
-              id,
-              t.isValidIdentifier(name) ? t.identifier(name) : t.stringLiteral(name)
-            );
-            program.pushContainer('body', [variable, t.exportNamedDeclaration(null, [specifier])]);
-          }
-          const declarationPath = pathForNode(program, declaration);
-          if (declarationPath) {
-            const specifierPath = program
-              .get('body')
-              .flatMap((statement) =>
-                statement.isExportNamedDeclaration() ? statement.get('specifiers') : []
-              )
-              .find((specifier) => specifier.isExportSpecifier() && specifier.node.local === id);
-            named.set(property, {
-              declaration: declarationPath,
-              ...(specifierPath?.isExportSpecifier() ? { specifier: specifierPath } : {}),
-            });
-          }
-        }
-        program.scope.crawl();
-        markChanged();
-      };
-
-      result = {
-        ok: true,
-        object: createCsfObject(
-          { kind: 'config' },
-          {
-            node: virtualRoot,
-            detached: true,
-            scope: program.scope,
-            buildCodeFrameError: program.buildCodeFrameError.bind(program),
-          },
-          [],
-          report,
-          syncExports
-        ),
-      };
-    },
-  });
-  return result;
+  return { ok: true, object: createCsfObject({ kind: 'config' }, host, [], report, markChanged) };
 }
+
+export { staticKey };

@@ -182,7 +182,7 @@ if (format === 'slack') {
   const headline =
     evalOutcome === 'success' && allPassed
       ? `:white_check_mark: Agent eval on \`${branch}\` passed`
-      : evalOutcome === 'success'
+      : evals.length > 0 && !allPassed
         ? `:warning: Agent eval on \`${branch}\` finished with failures`
         : `:x: Agent eval on \`${branch}\` failed`;
 

@@ -87,7 +87,7 @@ describe('builder docgen deprecation', () => {
       await pluginNames(docgen);
       expect(vi.mocked(deprecate).mock.calls.map(([message]) => message)).toMatchInlineSnapshot(`
         [
-          "Builder docgen (the \`docgen\` option of \`@storybook/vue3-vite\`, with \`vue-docgen-api\` or \`vue-component-meta\`) is deprecated and will be removed in Storybook 12. It runs because \`features.docgenServer\` is off. Remove \`docgenServer: false\` from your \`.storybook/main.ts\` to use server-side docgen.",
+          "Builder docgen (the \`docgen\` option of \`@storybook/vue3-vite\`, with \`vue-docgen-api\` or \`vue-component-meta\`) is deprecated and will be removed in Storybook 12. It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.",
         ]
       `);
     }

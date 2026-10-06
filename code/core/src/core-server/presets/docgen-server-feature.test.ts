@@ -35,6 +35,12 @@ describe('features.docgenServer', () => {
     expect(await resolveDocgenServer([docgenProvider])).toBe(true);
   });
 
+  it('is disabled when the provider preset reports it cannot run', async () => {
+    expect(
+      await resolveDocgenServer([{ ...docgenProvider, isDocgenProviderEnabled: () => false }])
+    ).toBe(false);
+  });
+
   it('is disabled when no preset declares a docgen provider', async () => {
     expect(await resolveDocgenServer([])).toBe(false);
   });

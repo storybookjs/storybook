@@ -177,12 +177,10 @@ TODO: state we use reach/router customized to query params
 
 ### Story Order
 
-Stories are sorted in the order in which they were imported. This can be overridden by adding storySort to the Parameters for the stories in `.storybook/preview.js`:
+Stories are sorted in the order in which they were imported. This can be overridden with `storySorts` in `.storybook/main.js`:
 
 ```js
-addParameters({
-  options: {
-    storySort: (a, b) => a[1].id.localeCompare(b[1].id),
-  },
-});
+export default {
+  storySorts: [(a, b) => a.id.localeCompare(b.id)],
+};
 ```

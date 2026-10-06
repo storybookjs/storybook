@@ -153,7 +153,7 @@ export type RouteTreeOverrides = Partial<{
 
 export interface RouterParameters<
   TRoute = undefined,
-  Path extends TRoute extends AnyRoute ? keyof RoutesByPath<TRoute> : RegisteredFullPath =
+  Path extends (TRoute extends AnyRoute ? keyof RoutesByPath<TRoute> : RegisteredFullPath) =
     TRoute extends AnyRoute ? keyof RoutesByPath<TRoute> : keyof FileRoutesByPath,
 > {
   route?: StoryRouteOptions<TRoute>;

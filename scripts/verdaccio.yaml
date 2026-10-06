@@ -137,10 +137,6 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/addon-svelte-csf':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/create-svelte-with-args':
     access: $all
     publish: $all

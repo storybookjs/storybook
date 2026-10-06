@@ -30,6 +30,11 @@ export { experimental_docgenProvider } from './docgen/preset.ts';
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

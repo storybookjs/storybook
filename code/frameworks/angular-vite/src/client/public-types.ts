@@ -100,9 +100,9 @@ type TransformOutputSignalType<T> = {
 type TransformModelSignalType<T> = {
   [K in keyof T]: T[K] extends ModelSignal<infer E> ? E : T[K];
 } & {
-  [K in keyof T as T[K] extends ModelSignal<infer _E>
-    ? `${K & string}Change`
-    : never]: T[K] extends ModelSignal<infer E> ? (e: E) => void : never;
+  [
+    K in keyof T as T[K] extends ModelSignal<infer _E> ? `${K & string}Change` : never
+  ]: T[K] extends ModelSignal<infer E> ? (e: E) => void : never;
 };
 
 type TransformEventType<T> = {

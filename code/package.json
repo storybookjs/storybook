@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.3",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -105,9 +105,9 @@
     "esbuild-loader": "^4.3.0",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
-    "knip": "^5.70.2",
+    "knip": "^6.38.0",
     "mock-require": "^3.0.3",
-    "oxlint": "1.72.0",
+    "oxlint": "1.85.0",
     "prettier": "^3.7.1",
     "process": "^0.11.10",
     "react": "^18.2.0",
@@ -119,14 +119,12 @@
     "storybook-addon-pseudo-states": "workspace:*",
     "ts-dedent": "^2.0.0",
     "typescript": "^6.0.3",
+    "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^4.1.6",
     "wait-on": "^8.0.3"
-  },
-  "devDependencies": {
-    "oxfmt": "^0.41.0"
   },
   "dependenciesMeta": {
     "ejs": {

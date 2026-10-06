@@ -1,4 +1,8 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+import type {
+  PartialStoryFn,
+  PlayFunctionContext,
+  StoryContextForRender,
+} from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -8,7 +12,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   // Compose all the argTypes into `object`, so the pre component only needs a single prop
   decorators: [
-    (storyFn: PartialStoryFn, context: StoryContext) =>
+    (storyFn: PartialStoryFn, context: StoryContextForRender) =>
       storyFn({ args: { object: { ...context.argTypes } } }),
   ],
   argTypes: {
@@ -64,5 +68,12 @@ export const ArgTypeInference = {
       d: { type: { name: 'object', value: { a: { name: 'string' } } } },
       e: { type: { name: 'array', value: { name: 'string' } } },
     });
+  },
+};
+
+export const HiddenFromPlay = {
+  play: async (context: PlayFunctionContext<any>) => {
+    expect('argTypes' in context).toBe(false);
+    expect(() => context.argTypes).toThrow(/no longer part of the story context/);
   },
 };

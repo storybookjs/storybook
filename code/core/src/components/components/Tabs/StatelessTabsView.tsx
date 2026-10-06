@@ -1,7 +1,7 @@
 import type { FC, ReactNode } from 'react';
 import React from 'react';
 
-import { Tabs } from 'react-aria-components/patched-dist/Tabs';
+import { Tabs } from 'react-aria-components/Tabs';
 import { styled } from 'storybook/theming';
 
 import { Bar } from '../Bar/Bar.tsx';

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Renderer, StoryContext } from 'storybook/internal/types';
+import type { Renderer, StoryContextForRender } from 'storybook/internal/types';
 
 import { defaultDecorateStory } from './decorators.ts';
 
-function makeContext(input: Record<string, any> = {}): StoryContext<Renderer> {
+function makeContext(input: Record<string, any> = {}): StoryContextForRender<Renderer> {
   return {
     id: 'id',
     kind: 'kind',
@@ -12,7 +12,7 @@ function makeContext(input: Record<string, any> = {}): StoryContext<Renderer> {
     viewMode: 'story',
     parameters: {},
     ...input,
-  } as StoryContext<Renderer>;
+  } as StoryContextForRender<Renderer>;
 }
 
 describe('client-api.decorators', () => {
@@ -34,7 +34,7 @@ describe('client-api.decorators', () => {
   });
 
   it('passes context through to sub decorators', () => {
-    const contexts: StoryContext[] = [];
+    const contexts: StoryContextForRender[] = [];
     const decorators = [
       // @ts-expect-error (not defined)
       (s, c) => contexts.push(c) && s({ args: { k: 1 } }),
@@ -51,7 +51,7 @@ describe('client-api.decorators', () => {
   });
 
   it('passes context through to sub decorators additively', () => {
-    const contexts: StoryContext[] = [];
+    const contexts: StoryContextForRender[] = [];
     const decorators = [
       // @ts-expect-error (not defined)
       (s, c) => contexts.push(c) && s({ args: { a: 1 } }),
@@ -92,7 +92,7 @@ describe('client-api.decorators', () => {
   // both story functions would receive {story: 2}. The assumption here is that we'll never render
   // the same story twice at the same time.
   it('does not interleave contexts if two decorated stories are call simultaneously', async () => {
-    const contexts: StoryContext[] = [];
+    const contexts: StoryContextForRender[] = [];
     let resolve: (value?: unknown) => void = () => {};
     const fence = new Promise((r) => {
       resolve = r;
@@ -119,7 +119,7 @@ describe('client-api.decorators', () => {
   });
 
   it('DOES NOT merge core metadata or pass through core metadata keys in context', () => {
-    const contexts: StoryContext[] = [];
+    const contexts: StoryContextForRender[] = [];
     const decorators = [
       // @ts-expect-error (not defined)
       (s, c) =>

@@ -1,0 +1,3 @@
+<Modal id="modal-content-only" open>
+  <p>Only content</p>
+</Modal>

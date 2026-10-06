@@ -1482,6 +1482,19 @@ describe('transformer', () => {
       `);
     });
 
+    it('should error when the factory meta configuration is not an object literal', async () => {
+      const code = `
+        import { config } from '#.storybook/preview';
+        import sharedMeta from './shared-meta';
+        const meta = config.meta(sharedMeta);
+        export const Primary = meta.story({});
+      `;
+
+      await expect(transform({ code })).rejects.toThrow(
+        /could not detect the meta \(default export\) object/
+      );
+    });
+
     it('should warn when on unsupported story formats', async () => {
       const code = `
         export default {}

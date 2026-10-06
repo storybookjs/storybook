@@ -18,7 +18,6 @@ import { CLI_COLORS, deprecate, logger, prompt } from 'storybook/internal/node-l
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { detectAgent, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { global } from '@storybook/global';
 
 import { join, relative, resolve } from 'pathe';
@@ -26,7 +25,6 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import Channel from '../channels/index.ts';
-import { detectPnp } from '../cli/detect.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import { storybookDevServer } from './dev-server.ts';
 import { getWsToken } from './presets/wsToken.ts';
@@ -146,26 +144,13 @@ export async function buildDevStandalone(
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
 
-  // TODO: Remove in SB11
-  options.pnp = await detectPnp();
-  if (options.pnp) {
-    deprecate(dedent`
-      As of Storybook 10.0, PnP is deprecated.
-      If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode.
-
-      In future versions, PnP compatibility will be removed.
-    `);
-  }
-
   const config = await loadMainConfig(options);
   const { core, framework } = config;
 
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
+  validateFrameworkName(frameworkName);
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
   }
@@ -296,7 +281,6 @@ export async function buildDevStandalone(
   const features = await presets.apply('features');
   global.FEATURES = features;
 
-  await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 
   const fullOptions: Options = {

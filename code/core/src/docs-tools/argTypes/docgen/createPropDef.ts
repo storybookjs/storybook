@@ -88,12 +88,10 @@ function applyJsDocResult(propDef: PropDef, jsDocParsingResult?: JsDocParsingRes
 
     const value = {
       ...extractedTags,
-      params: extractedTags?.params?.map(
-        (x): JsDocParam => ({
-          name: x.getPrettyName(),
-          description: x.description,
-        })
-      ),
+      params: extractedTags?.params?.map((x): JsDocParam => ({
+        name: x.getPrettyName(),
+        description: x.description,
+      })),
     };
 
     if (Object.values(value).filter(Boolean).length > 0) {

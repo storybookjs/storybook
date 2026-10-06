@@ -14,9 +14,6 @@
     },
   },
   "size": {
-    "defaultValue": {
-      "summary": ""medium"",
-    },
     "description": "Control size, an imported literal-union alias.",
     "name": "size",
     "table": {
@@ -39,9 +36,6 @@
     },
   },
   "variant": {
-    "defaultValue": {
-      "summary": ""primary"",
-    },
     "description": "Visual variant, an imported literal-union alias.",
     "name": "variant",
     "table": {

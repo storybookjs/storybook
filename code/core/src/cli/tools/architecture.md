@@ -109,9 +109,12 @@ See [Load](../../shared/open-service/README.md#load).
 In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance. In attached mode
 those methods run in the caller. `stories.preview` reads origin from the instance record.
 
-The CLI fires a `tools-command` invocation event after a run. The payload includes `attachMode`.
-Per-method toolset telemetry (`ctx.telemetry`) fires in the caller when the CLI passes a sink into
-`tools.call`. Command-level side effects and their telemetry run on the instance.
+The CLI and the SDK fire one `tools-command` record per invocation after a run; help lookups are
+excluded so they cannot skew success rates. The record is the handler's usage report — `toolset`
+and `tool` in CLI spelling, the generated `event` (`tool:docs_list`), and its payload, all returned
+on the outcome by `invokeToolsetMethod` — plus `success`, `outcome`, `duration`, and the attach fields
+(`attachMode` among them). A child host's report rides inside the outcome that already crosses
+IPC. Command-level side effects run on the instance.
 
 ## SDK
 
@@ -133,8 +136,8 @@ consumer amortizes config load across many calls on the live synced runtime.
    respawn → `EnvironmentMismatchError`.
 3. **Connect.** Node WebSocket to `record.url` + `/storybook-server-channel?token=…`, no
    Origin. `UniversalStore.__prepare(channel, follower)`.
-4. **Register.** Load config from `record.configDir`. Set delegated mode. `services:sync-start`
-   pulls snapshots and patches from the server.
+4. **Register.** Load config from `record.configDir`. Set delegated mode. `services:sync-request`
+   pulls a snapshot from the server; later writes arrive as `services:entry` patches.
 5. **Execute.** Toolset handler runs caller-side (`ctx.transport = 'cli'`). Queries read synced
    state. `.loaded()` warms via delegated commands. Every command goes over the channel.
 6. **Render + close.** `ToolsetOutcome` through markdown / `--json`; `ok` drives the exit code.

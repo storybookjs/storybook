@@ -72,7 +72,7 @@ test.describe('Change Detection', () => {
         newStoryPath,
         [
           '<script module>',
-          "  import { defineMeta } from '@storybook/addon-svelte-csf';",
+          "  import { defineMeta } from '@storybook/svelte-vite';",
           "  import Button from './Button.svelte';",
           "  import { fn } from 'storybook/test';",
           '',
@@ -143,6 +143,12 @@ test.describe('Change Detection', () => {
 
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
+
+      await expect(
+        page.getByRole('switch', {
+          name: /^Show (new|modified|new and modified) stories since last commit$/,
+        })
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
 
       // Branch-level "Modified" change-detection icon is gated on the modified
       // status filter being active. Activate it via the FilterPanel.

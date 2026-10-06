@@ -4,7 +4,6 @@ import { MemoryRouter } from 'storybook/internal/router';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
@@ -80,14 +79,13 @@ class ReactProvider extends Provider {
       api.selectStory('example-button--primary', undefined, { viewMode: 'story' });
     });
 
-    this.channel.on(CHANNEL_WS_DISCONNECT, (ev) => {
-      const TIMEOUT_CODE = 3008;
+    this.channel.on(CHANNEL_WS_DISCONNECT, () => {
       this.wsDisconnected = true;
 
       api.addNotification({
         id: WS_DISCONNECTED_NOTIFICATION_ID,
         content: {
-          headline: ev.code === TIMEOUT_CODE ? 'Server timed out' : 'Connection lost',
+          headline: 'Connection lost',
           subHeadline: 'Please restart your Storybook server and reload the page',
         },
         icon: <FailedIcon color={color.negative} />,
@@ -110,8 +108,6 @@ const meta = preview.meta({
     },
   },
   beforeEach: () => {
-    global.PREVIEW_URL = 'about:blank';
-
     addons.setChannel(channel);
     channel.emit(CHANNEL_CREATED);
 
@@ -180,13 +176,7 @@ export const FullScreen = meta.story({
 
 export const ConnectionLost = meta.story({
   play: async () => {
-    channel.emit(CHANNEL_WS_DISCONNECT, { code: 3007 });
-  },
-});
-
-export const ServerTimedOut = meta.story({
-  play: async () => {
-    channel.emit(CHANNEL_WS_DISCONNECT, { code: 3008 });
+    channel.emit(CHANNEL_WS_DISCONNECT, { code: 1006 });
   },
 });
 

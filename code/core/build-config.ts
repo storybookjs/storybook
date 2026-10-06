@@ -59,7 +59,6 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        // Spawned detached on process exit to finish delivering pending telemetry events.
         exportEntries: ['./internal/telemetry/detached-flush'],
         entryPoint: './src/telemetry/detached-flush.ts',
         dts: false,

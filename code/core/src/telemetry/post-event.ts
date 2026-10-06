@@ -10,8 +10,7 @@ export type PendingEvent = {
 };
 
 export type PostOptions = {
-  // Only the detached child holds the process open for a response; the parent hands its
-  // unfinished requests to that child on exit.
+  // Only the detached child may hold the process open for a response.
   keepProcessAlive: boolean;
   signal?: AbortSignal;
 };
@@ -23,6 +22,9 @@ const TIMEOUT = 30_000;
 const CONNECT_TIMEOUT = 500;
 const MAX_ATTEMPTS = 4;
 const RETRYABLE_STATUSES = new Set([503, 504]);
+
+// Thrown without a retry: the event is left for the detached process, which may wait longer.
+export class ConnectTimeoutError extends Error {}
 
 export async function postEvent(
   { body, retryDelay = 1000 }: PendingEvent,
@@ -37,7 +39,7 @@ export async function postEvent(
         return;
       }
     } catch (error) {
-      if (signal.aborted || lastAttempt) {
+      if (signal.aborted || lastAttempt || error instanceof ConnectTimeoutError) {
         throw error;
       }
     }
@@ -69,7 +71,10 @@ function post(payload: string, signal: AbortSignal, keepProcessAlive: boolean): 
         if (socket.connecting) {
           // Unlike a pending response, a pending connect holds the process open even on an
           // unref'd socket.
-          const deadline = setTimeout(() => outgoing.destroy(), CONNECT_TIMEOUT).unref();
+          const deadline = setTimeout(
+            () => outgoing.destroy(new ConnectTimeoutError()),
+            CONNECT_TIMEOUT
+          ).unref();
           socket.once('connect', () => clearTimeout(deadline));
         }
       });

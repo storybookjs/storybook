@@ -1,5 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
@@ -8,6 +11,8 @@ import { postEvent } from './post-event.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('./post-event.ts', () => ({ postEvent: vi.fn(async () => {}) }));
+
+const file = join(tmpdir(), 'storybook-telemetry-abc_-123.json');
 
 beforeEach(async () => {
   vol.reset();
@@ -19,34 +24,43 @@ beforeEach(async () => {
 
 it('posts every event in the file and removes the file', async () => {
   const events = [{ body: { eventId: 'a' } }, { body: { eventId: 'b' }, retryDelay: 5 }];
-  vol.fromJSON({ '/project/events.json': JSON.stringify(events) });
+  vol.fromJSON({ [file]: JSON.stringify(events) });
 
-  await flushEventsFile('/project/events.json');
+  await flushEventsFile(file);
 
   expect(vi.mocked(postEvent).mock.calls.map(([event]) => event)).toEqual(events);
   expect(vi.mocked(postEvent).mock.calls[0][1]).toMatchObject({ keepProcessAlive: true });
-  expect(vol.toJSON()).toEqual({ '/project': null });
+  expect(vol.existsSync(file)).toBe(false);
 });
 
 it('keeps delivering the others when one post fails', async () => {
   vi.mocked(postEvent).mockRejectedValueOnce(new Error('network'));
   vol.fromJSON({
-    '/project/events.json': JSON.stringify([
-      { body: { eventId: 'a' } },
-      { body: { eventId: 'b' } },
-    ]),
+    [file]: JSON.stringify([{ body: { eventId: 'a' } }, { body: { eventId: 'b' } }]),
   });
 
-  await expect(flushEventsFile('/project/events.json')).resolves.toBeUndefined();
+  await expect(flushEventsFile(file)).resolves.toBeUndefined();
 
   expect(postEvent).toHaveBeenCalledTimes(2);
 });
 
 it('removes a file it cannot parse', async () => {
-  vol.fromJSON({ '/project/events.json': '[{"body":' });
+  vol.fromJSON({ [file]: '[{"body":' });
 
-  await expect(flushEventsFile('/project/events.json')).rejects.toThrow();
+  await expect(flushEventsFile(file)).rejects.toThrow();
 
-  expect(vol.toJSON()).toEqual({ '/project': null });
+  expect(vol.existsSync(file)).toBe(false);
   expect(postEvent).not.toHaveBeenCalled();
 });
+
+it.each([join(tmpdir(), 'package.json'), '/project/storybook-telemetry-abc.json'])(
+  'leaves %s alone, which is not a hand-over file',
+  async (other) => {
+    vol.fromJSON({ [other]: '[]' });
+
+    await flushEventsFile(other);
+
+    expect(vol.existsSync(other)).toBe(true);
+    expect(postEvent).not.toHaveBeenCalled();
+  }
+);

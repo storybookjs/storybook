@@ -14,7 +14,7 @@ import { importMetaResolve, resolvePackageDir } from '../shared/utils/module.ts'
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
-import { type PendingEvent, postEvent } from './post-event.ts';
+import { ConnectTimeoutError, type PendingEvent, postEvent } from './post-event.ts';
 import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
@@ -93,9 +93,10 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
     };
     const event: PendingEvent = { body, retryDelay: options.retryDelay };
     inFlight.set(body.eventId, event);
-    postEvent(event, { keepProcessAlive: false })
-      .catch(() => {})
-      .finally(() => inFlight.delete(body.eventId));
+    postEvent(event, { keepProcessAlive: false }).then(
+      () => inFlight.delete(body.eventId),
+      (error) => error instanceof ConnectTimeoutError || inFlight.delete(body.eventId)
+    );
 
     await saveToCache(eventType, body);
   } catch (err) {
@@ -117,16 +118,23 @@ export function handOffPendingEvents() {
     // and an existing path, such as a planted symlink, is never written through.
     writeFileSync(file, JSON.stringify(events), { mode: 0o600, flag: 'wx' });
     const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/detached-flush'));
-    spawn(process.execPath, [script, file], {
-      // A process inside the project directory would block deleting it on Windows.
-      cwd: os.tmpdir(),
+    const child = spawn(process.execPath, [script, file], {
       // With an inherited --inspect-brk the process would wait for a debugger forever.
       env: { ...process.env, NODE_OPTIONS: process.env.NODE_OPTIONS?.replace(/--inspect\S*/g, '') },
       detached: true,
       stdio: 'ignore',
       windowsHide: true,
-    }).unref();
+    });
+    // A spawn that fails reports it after this process is gone, but sets no pid right away.
+    if (child.pid === undefined) {
+      rmSync(file, { force: true });
+    }
+    child.unref();
   } catch {
-    rmSync(file, { force: true });
+    try {
+      rmSync(file, { force: true });
+    } catch {
+      //
+    }
   }
 }

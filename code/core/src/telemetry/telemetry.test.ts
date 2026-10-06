@@ -7,16 +7,19 @@ import * as os from 'node:os';
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
-import { postEvent } from './post-event.ts';
+import { ConnectTimeoutError, postEvent } from './post-event.ts';
 import { handOffPendingEvents, sendTelemetry } from './telemetry.ts';
 
-vi.mock('./post-event.ts', () => ({ postEvent: vi.fn(async () => {}) }));
+vi.mock('./post-event.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./post-event.ts')>()),
+  postEvent: vi.fn(async () => {}),
+}));
 vi.mock('./event-cache.ts', () => ({ set: vi.fn() }));
 vi.mock('./session-id.ts', () => ({ getSessionId: vi.fn(() => 'session-id') }));
 vi.mock('node:fs', { spy: true });
 vi.mock('node:child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:child_process')>()),
-  spawn: vi.fn(() => ({ unref: vi.fn() })),
+  spawn: vi.fn(() => ({ pid: 1, unref: vi.fn() })),
 }));
 
 const postMock = vi.mocked(postEvent);
@@ -97,7 +100,7 @@ it('hands events without a response to a detached process on exit, once', async 
   const [command, args, options] = vi.mocked(spawn).mock.calls[0];
   expect(command).toBe(process.execPath);
   expect(args).toEqual([expect.stringMatching(/detached-flush/), writtenEvents()[0][0]]);
-  expect(options).toMatchObject({ detached: true, stdio: 'ignore', cwd: os.tmpdir() });
+  expect(options).toMatchObject({ detached: true, stdio: 'ignore' });
 });
 
 it('writes the handed-off events to a file only its owner can read', async () => {
@@ -122,6 +125,26 @@ it('starts the detached process without the debugger flags of this one', async (
   expect(options.env?.NODE_OPTIONS?.trim()).toBe('--max-old-space-size=4096');
 });
 
+it('hands off an event this process gave up connecting for', async () => {
+  postMock.mockRejectedValue(new ConnectTimeoutError());
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  handOffPendingEvents();
+
+  expect(writtenEvents()).toHaveLength(1);
+});
+
+it('drops an event that failed for any other reason', async () => {
+  postMock.mockRejectedValue(new Error('network'));
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  handOffPendingEvents();
+
+  expect(writtenEvents()).toEqual([]);
+});
+
 it('hands off nothing when every response has arrived', async () => {
   await sendTelemetry({ eventType: 'dev', payload: {} });
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -134,9 +157,7 @@ it('hands off nothing when every response has arrived', async () => {
 
 it('removes the file again when the detached process cannot be started', async () => {
   postMock.mockImplementation(neverResponds);
-  vi.mocked(spawn).mockImplementationOnce(() => {
-    throw new Error('EACCES');
-  });
+  vi.mocked(spawn).mockImplementationOnce(() => ({ pid: undefined, unref: vi.fn() }) as any);
   await sendTelemetry({ eventType: 'dev', payload: {} });
 
   handOffPendingEvents();

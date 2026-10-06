@@ -3,7 +3,6 @@ import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { spawn } from 'node:child_process';
 import { type Server, createServer } from 'node:http';
 import { Socket } from 'node:net';
-import { fileURLToPath } from 'node:url';
 
 import type { postEvent as PostEvent } from './post-event.ts';
 
@@ -96,14 +95,14 @@ it('unrefs the socket while the request is in flight, unless it may keep the pro
 });
 
 const postFromChildProcess = (keepProcessAlive: boolean, retryDelay: number, env = process.env) => {
-  const script = fileURLToPath(new URL('./post-event.ts', import.meta.url));
+  const script = new URL('./post-event.ts', import.meta.url).href;
   const child = spawn(
     process.execPath,
     [
       '--input-type=module',
       '-e',
       `import { postEvent } from ${JSON.stringify(script)};
-       postEvent(${JSON.stringify({ ...event, retryDelay })}, { keepProcessAlive: ${keepProcessAlive} });`,
+       postEvent(${JSON.stringify({ ...event, retryDelay })}, { keepProcessAlive: ${keepProcessAlive} }).catch(() => {});`,
     ],
     { env, stdio: 'ignore' }
   );

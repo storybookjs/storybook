@@ -92,7 +92,7 @@ jobs:
         run: |
           pr="$PR_NUMBER_INPUT"
           if [[ -z "$pr" && "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REF_NAME" --json number --jq '.[0].number // empty')"
+            pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REF_NAME" --json number,isCrossRepository --jq '[.[] | select(.isCrossRepository | not)][0].number // empty')"
           fi
           if [[ -z "$pr" ]]; then
             echo "pr_number=" >> "$GITHUB_OUTPUT"

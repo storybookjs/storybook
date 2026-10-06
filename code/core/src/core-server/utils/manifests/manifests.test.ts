@@ -11,7 +11,6 @@ import type { Polka } from 'polka';
 
 import { defineService } from '../../../shared/open-service/index.ts';
 import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
-import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
@@ -388,7 +387,6 @@ describe('manifests', () => {
         },
       }));
 
-      registerTestModuleGraphService();
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         docgenProvider,
@@ -496,7 +494,6 @@ describe('manifests', () => {
         stories: { 'billboard--default': { id: 'billboard--default', name: 'Default' } },
       }));
 
-      registerTestModuleGraphService();
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         docgenProvider: vi.fn<DocgenProvider>(async () => undefined),
@@ -998,7 +995,6 @@ describe('manifests', () => {
           },
         };
 
-        registerTestModuleGraphService();
         registerDocgenService({
           getIndex: () => mockGenerator.getIndex(),
           docgenProvider: async () => ({

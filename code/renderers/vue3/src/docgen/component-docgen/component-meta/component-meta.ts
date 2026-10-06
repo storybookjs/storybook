@@ -396,6 +396,14 @@ function removeLeakedEventHandlerProp(meta: ComponentMeta, eventName: string): v
 /**
  * Whether the SFC template declares slots that the extracted meta misses, entirely or by
  * description. Reading the source keeps `parseMulti` away from the common slot-less component.
+ *
+ * The vue-docgen-api fallback cannot parse script blocks, so this template-text repair is
+ * .vue-only. TSX/JSX components are covered by the type-driven extraction itself:
+ * vue-component-meta reads the explicit `slots: Object as SlotsType<...>` option on
+ * `defineComponent` (Vue 3.3+), including JSDoc descriptions on its members — the same channel
+ * the checker uses for props. Runtime slot consumption (`useSlots()`, context slots) is
+ * invisible to every static extractor, so untyped TSX slots correctly stay out of the docgen;
+ * typing the slots is the only way to declare them there.
  */
 function hasTemplateSlotGap(
   filename: string,

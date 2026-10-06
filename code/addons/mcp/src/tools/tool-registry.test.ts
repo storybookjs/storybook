@@ -55,7 +55,6 @@ function availabilityWith(overrides: Partial<ToolAvailability> = {}): ToolAvaila
     moduleGraphSupported: false,
     changeDetectionEnabled: false,
     reviewEnabled: false,
-    reviewEnabledForCli: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,

@@ -49,7 +49,7 @@ vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(findConfigFile).mockReturnValue(undefined);
+  vi.mocked(findConfigFile).mockReturnValue(null);
   vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
   vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(mergeConfig).mockImplementation(
@@ -89,7 +89,7 @@ const optionsWith = (
         return key === 'features' ? featureFlags : fallback;
       },
     },
-  }) as unknown as StandaloneOptions;
+  }) as unknown as Parameters<typeof viteFinal>[1];
 
 function runConfig(stylePreprocessorOptions: Record<string, unknown> | undefined) {
   const options = {
@@ -629,12 +629,16 @@ describe('viteFinal tsconfig path resolution', () => {
 describe('features', () => {
   const applyFeatures = features as (existing: unknown, options: unknown) => Promise<any>;
 
-  it('turns the docgen server on by default', async () => {
-    expect(await applyFeatures({}, {})).toMatchObject({ experimentalDocgenServer: true });
+  it('turns the docgen server and component manifests on by default', async () => {
+    expect(await applyFeatures({}, {})).toMatchObject({
+      componentsManifest: true,
+      experimentalDocgenServer: true,
+    });
   });
 
   it('keeps other framework and core feature defaults', async () => {
-    expect(await applyFeatures({ componentsManifest: true }, {})).toMatchObject({
+    expect(await applyFeatures({ changeDetection: true }, {})).toMatchObject({
+      changeDetection: true,
       componentsManifest: true,
       experimentalDocgenServer: true,
     });

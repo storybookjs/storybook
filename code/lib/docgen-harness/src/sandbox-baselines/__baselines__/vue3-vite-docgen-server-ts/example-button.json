@@ -46,9 +46,6 @@
       }
     },
     "primary": {
-      "defaultValue": {
-        "summary": "false"
-      },
       "description": "primary or secondary button",
       "name": "primary",
       "table": {

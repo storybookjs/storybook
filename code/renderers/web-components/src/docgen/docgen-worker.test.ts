@@ -1,7 +1,7 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,7 @@ beforeEach(() => {
   vol.reset();
   vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
   vi.mocked(readFile).mockImplementation(memfs.promises.readFile as typeof readFile);
+  vi.mocked(stat).mockImplementation(memfs.promises.stat as typeof stat);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
   vi.mocked(logger.warn).mockImplementation(() => {});
 });
@@ -38,7 +39,9 @@ const entry: IndexEntry = {
 describe('createDocgenProvider', () => {
   it('passes through and warns once when no manifest is configured', async () => {
     const next = vi.fn(async () => ({ id: 'downstream' }));
-    const provider = createDocgenProvider({ manifestPaths: [] })(next as never);
+    const provider = createDocgenProvider({ manifestPaths: [], typeProperty: 'parsedType' })(
+      next as never
+    );
 
     await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
     await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
@@ -52,13 +55,20 @@ describe('createDocgenProvider', () => {
   it('loads manifests once and merges its payload over downstream', async () => {
     vol.fromNestedJSON({
       '/workspace/custom-elements.json': JSON.stringify({
-        modules: [{ declarations: [{ name: 'XCard', tagName: 'x-card' }] }],
+        modules: [
+          {
+            declarations: [
+              { name: 'XCard', kind: 'class', customElement: true, tagName: 'x-card' },
+            ],
+          },
+        ],
       }),
       '/workspace/input.stories.ts': "export default { title: 'Fixture', component: 'x-card' };",
     });
     const next = vi.fn(async () => ({ id: 'downstream' }));
     const provider = createDocgenProvider({
       manifestPaths: ['/workspace/custom-elements.json'],
+      typeProperty: 'parsedType',
     })(next as never);
 
     await expect(provider({ entry })).resolves.toMatchObject({

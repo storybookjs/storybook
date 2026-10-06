@@ -8,6 +8,7 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
 import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
 
 import { color } from 'storybook/theming';
@@ -48,12 +49,13 @@ const BUILT_IN_FILTER_DEFS: Array<{
 ];
 
 export function useTagFilterEntries(indexJson: StoryIndex) {
+  const tagOptions = global.TAGS_OPTIONS;
   return useMemo(() => {
     const entries = Object.values(indexJson.entries);
 
     const userTagsCounts = entries.reduce<Record<Tag, number>>((acc, entry) => {
       entry.tags?.forEach((tag: Tag) => {
-        if (!BUILT_IN_TAGS.has(tag)) {
+        if (!BUILT_IN_TAGS.has(tag) && !tagOptions?.[tag]?.hideFromFilterPanel) {
           acc[tag] = (acc[tag] || 0) + 1;
         }
       });
@@ -80,7 +82,7 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
     }));
 
     return { builtInEntries, tagEntries };
-  }, [indexJson.entries]);
+  }, [indexJson.entries, tagOptions]);
 }
 
 export function useStatusFilterEntries(allStatuses: StatusesByStoryIdAndTypeId) {

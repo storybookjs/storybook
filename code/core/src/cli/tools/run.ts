@@ -16,6 +16,7 @@ import {
   type ToolsClientInfo,
   type ToolsHostKind,
   type ToolsMode,
+  type ToolsetJsonSchema,
 } from './sdk/index.ts';
 import {
   discoverRunningInstance,
@@ -318,13 +319,14 @@ async function dispatchTools(
   if (parsed.help) {
     return result({
       exitCode: 0,
-      output: renderMethodHelpFromCatalog(entry, method),
+      output: renderMethodHelpFromCatalog(method),
       outcome: { kind: 'help' },
     });
   }
 
   const { methodName } = parseToolsetMethodId(method.ref);
-  const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
+  const toolPath = `${entry.id} ${toCliMethodName(methodName)}`;
+  const commandPath = `npx storybook tools ${toolPath}`;
 
   if (tools.mode === 'local' && method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
@@ -352,7 +354,7 @@ async function dispatchTools(
     if (isInvalidInputError(error)) {
       return result({
         exitCode: 1,
-        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        output: formatValidationIssues(toolPath, error.data.issues ?? [], method.input),
         outcome: { kind: 'intercept', reason: 'invalid-arguments' },
       });
     }
@@ -430,18 +432,39 @@ type ValidationIssues = ReadonlyArray<{
   path?: ReadonlyArray<PropertyKey | { key?: unknown }>;
 }>;
 
-function formatValidationIssues(commandPath: string, issues: ValidationIssues): string {
+const TARGET_OPTIONS = ['cwd', 'config-dir', 'port'];
+
+function formatValidationIssues(
+  toolPath: string,
+  issues: ValidationIssues,
+  input: ToolsetJsonSchema | undefined
+): string {
+  const commandPath = `npx storybook tools ${toolPath}`;
+  const declaredKeys = input?.properties
+    ? Object.keys(input.properties as Record<string, unknown>)
+    : undefined;
+  let hasUnknownKey = false;
   const lines = issues.map((issue) => {
-    const path = issue.path
-      ?.map((segment) =>
+    const segments =
+      issue.path?.map((segment) =>
         typeof segment === 'object' && segment !== null ? String(segment.key) : String(segment)
-      )
-      .join('.');
+      ) ?? [];
+    const [key] = segments;
+    if (declaredKeys && segments.length === 1 && !declaredKeys.includes(key)) {
+      hasUnknownKey = true;
+      return TARGET_OPTIONS.includes(key)
+        ? `- Unknown flag \`--${key}\`. It selects the target Storybook, so it goes before the toolset name: \`npx storybook tools --${key} <value> ${toolPath}\`.`
+        : `- Unknown flag \`--${key}\`.`;
+    }
+    const path = segments.join('.');
     return path ? `- \`${path}\`: ${issue.message}` : `- ${issue.message}`;
   });
+  const validFlags = !declaredKeys?.length
+    ? 'This tool takes no arguments.'
+    : `Valid flags: ${declaredKeys.map((key) => `\`--${key}\``).join(', ')}.`;
   return `Invalid arguments for \`${commandPath}\`:
 
 ${lines.join('\n')}
-
+${hasUnknownKey ? `\n${validFlags}\n` : ''}
 Run \`${commandPath} --help\` for the expected arguments.`;
 }

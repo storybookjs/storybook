@@ -52,6 +52,29 @@ describe('dependenciesVersions blocker', () => {
     vi.mocked(getVitePlusVersions).mockImplementation(async () => null);
   });
 
+  test.each(['10.0.0', '10.7.1', '10.7.3'])(
+    'blocks Preact %s before upgrading',
+    async (version) => {
+      const result = await blocker.check(
+        createCheckOptions(createPackageManager({ preact: version }))
+      );
+
+      expect(result).toEqual({
+        packageName: 'preact',
+        installedVersion: version,
+        minimumVersion: '10.8.0',
+      });
+    }
+  );
+
+  test.each(['10.8.0', '10.29.8', '11.0.0-rc.2'])('accepts Preact %s', async (version) => {
+    const result = await blocker.check(
+      createCheckOptions(createPackageManager({ preact: version }))
+    );
+
+    expect(result).toBe(false);
+  });
+
   test('blocks on Next.js 14 with a message linking the migration guide', async () => {
     const packageManager = createPackageManager({ next: '14.1.0' });
 

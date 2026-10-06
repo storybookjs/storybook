@@ -9,6 +9,7 @@ import type {
   Renderer,
   SBScalarType,
   StoryContext,
+  StoryContextForRender,
 } from 'storybook/internal/types';
 
 import type { UserEventObject } from 'storybook/test';
@@ -47,8 +48,8 @@ export function prepareStory<TRenderer extends Renderer>(
 // Extra fields that must be added to the story context after enhancers
 const addExtraContext = (
   context: PreparedStory & Pick<StoryContext, 'args' | 'globals'>
-): StoryContext => {
-  const extraContext: StoryContext = {
+): StoryContextForRender => {
+  const extraContext: StoryContextForRender = {
     ...context,
     hooks: new HooksContext(),
     viewMode: 'story' as const,
@@ -61,7 +62,7 @@ const addExtraContext = (
     abortSignal: new AbortController().signal,
     canvasElement: {},
     step: vi.fn(),
-    context: null! as StoryContext,
+    context: null! as StoryContextForRender,
     canvas: null!,
     userEvent: {} as UserEventObject,
     globalTypes: {},

@@ -7,7 +7,7 @@ import {
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
+import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
 
 import {
   HooksContext,
@@ -65,7 +65,7 @@ beforeEach(() => {
 const decorateStory = applyHooks(defaultDecorateStory);
 
 const run = (storyFn: any, decorators: DecoratorFunction[] = [], context = {}) =>
-  decorateStory(storyFn, decorators)({ ...context, hooks } as StoryContext);
+  decorateStory(storyFn, decorators)({ ...context, hooks } as StoryContextForRender);
 
 describe('Preview hooks', () => {
   describe('useEffect', () => {

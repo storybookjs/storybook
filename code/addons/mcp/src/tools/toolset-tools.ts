@@ -84,12 +84,7 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
-/**
- * Narrows outcome data to the published output contract.
- *
- * Outcomes may carry more data than the contract declares (the rendered Markdown needs it); only
- * the declared shape reaches `structuredContent`.
- */
+/** Narrows outcome data to the published output contract. */
 async function toStructuredContent(
   outputSchema: StandardSchemaV1 | undefined,
   data: unknown

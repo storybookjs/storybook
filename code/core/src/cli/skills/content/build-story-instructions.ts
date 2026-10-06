@@ -64,8 +64,14 @@ export function buildStoryInstructions({
 This Storybook exposes component documentation tools. Before creating or changing any UI, call **${ref('docs.list')}** once to see what the design system already provides — build on existing components instead of hand-rolling duplicates — then call **${ref('docs.show')}** with the \`id\` of each component you build on or get asked about, for its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **${ref('docs.list')}** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't — and answer props/usage questions from these tools too. Never assume or invent props.`;
 
   let uiInstructions = storyInstructionsTemplate
-    .replace('{{FRAMEWORK}}', framework)
-    .replace('{{RENDERER}}', resolvedRenderer)
+    .replaceAll('{{FRAMEWORK}}', framework)
+    .replaceAll('{{RENDERER}}', resolvedRenderer)
+    .replace(
+      '{{RENDERER_REQUIREMENTS}}',
+      resolvedRenderer === '@storybook/react-native'
+        ? '- React Native uses `.rnstorybook` directory'
+        : ''
+    )
     .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsEnabled ? docsWorkflowGuidance : '')
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
     .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport, reviewEnabled))

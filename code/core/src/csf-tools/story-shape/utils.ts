@@ -7,6 +7,10 @@ type StaticIdentifierMemberCall = t.CallExpression & {
   callee: t.MemberExpression & { object: t.Identifier; property: t.Identifier };
 };
 
+type CsfFactoryCall = t.CallExpression & {
+  callee: t.MemberExpression & { property: t.Identifier };
+};
+
 /** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
 export const unwrapExpression = (node: t.Node): t.Node =>
   t.isTSAsExpression(node) ||
@@ -28,13 +32,27 @@ export const isCanonicalCsf2BindCall = (node: t.Node): node is StaticIdentifierM
       t.isObjectExpression(node.arguments[0]) &&
       node.arguments[0].properties.length === 0));
 
-export const isCsfFactoryCall = (node: t.Node): node is StaticIdentifierMemberCall =>
+/** Receiver of a `.type<T>()` chain, which returns its receiver: `meta` for `meta.type<T>()`. */
+export const withoutTypeCalls = (object: t.Node): t.Node =>
+  t.isCallExpression(object) &&
+  object.arguments.length === 0 &&
+  t.isMemberExpression(object.callee) &&
+  !object.callee.computed &&
+  t.isIdentifier(object.callee.property, { name: 'type' })
+    ? withoutTypeCalls(object.callee.object)
+    : object;
+
+export const isCsfFactoryCall = (node: t.Node): node is CsfFactoryCall =>
   t.isCallExpression(node) &&
   t.isMemberExpression(node.callee) &&
   !node.callee.computed &&
-  t.isIdentifier(node.callee.object) &&
+  t.isIdentifier(withoutTypeCalls(node.callee.object)) &&
   t.isIdentifier(node.callee.property) &&
   (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
+
+/** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
+export const csfFactoryReceiver = (node: CsfFactoryCall): t.Identifier =>
+  withoutTypeCalls(node.callee.object) as t.Identifier;
 
 /**
  * Static key of an object member, or `null` when it is computed from something else.

@@ -311,6 +311,30 @@ export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
   }
 }
 
+export class OpenServiceAsyncRecipeError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceAsyncRecipeError',
+      category: Category.CORE_COMMON,
+      code: 31,
+      message:
+        'setState recipes must be synchronous. A write after an await would change state without authoring a sync entry. Split the command into one setState per synchronous step.',
+    });
+  }
+}
+
+export class OpenServiceCyclicStateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceCyclicStateError',
+      category: Category.CORE_COMMON,
+      code: 32,
+      message:
+        'Service state must be JSON-serializable, but the value is cyclic or nested more than 256 levels deep. Store an id and look the value up in a query instead of a reference.',
+    });
+  }
+}
+
 export class OpenServiceOperationNameCollisionError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; operationName: string }) {
     super({
@@ -914,18 +938,6 @@ export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError
   }
 }
 
-export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
-  constructor(public data: { error: unknown | Error }) {
-    super({
-      name: 'AddonVitestPostinstallFailedAddonA11yError',
-      message: "The @storybook/addon-a11y couldn't be set up for the Vitest addon",
-      category: Category.CLI_INIT,
-      isHandledError: true,
-      code: 6,
-    });
-  }
-}
-
 export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
   constructor(public data: { filePath: string }) {
     super({
@@ -1285,21 +1297,6 @@ export class NuxtModuleAddFailedError extends StorybookError {
       cause: data.cause,
       message: dedent`
         Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
-
-        ${formatExecaFailureDetails(data)}`,
-    });
-  }
-}
-
-export class AutomigrateAddonA11yTestError extends StorybookError {
-  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
-    super({
-      name: 'AutomigrateAddonA11yTestError',
-      category: Category.CLI_AUTOMIGRATE,
-      code: 3,
-      cause: data.cause,
-      message: dedent`
-        Failed while running the addon-a11y-addon-test automigration.
 
         ${formatExecaFailureDetails(data)}`,
     });

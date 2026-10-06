@@ -6,7 +6,7 @@ import { findOutdatedPackage } from './utils.ts';
 const minimalVersionsMap = {
   '@angular/core': '21.0.0',
   next: '15.0.0',
-  preact: '10.0.0',
+  preact: '10.8.0',
   react: '18.0.0',
   'react-dom': '18.0.0',
   svelte: '5.0.0',
@@ -25,8 +25,8 @@ export const blocker = createBlocker({
       packageManager,
     });
 
-    // React experimental/canary builds (0.0.0*) ship react-dom/client and are treated as
-    // React 18+ by the react-dom-shim, so their version string must not block the upgrade.
+    // React experimental/canary builds use 0.0.0 versions even though they provide the supported
+    // modern root API, so their version string must not block the upgrade.
     if (
       outdated &&
       (outdated.packageName === 'react' || outdated.packageName === 'react-dom') &&

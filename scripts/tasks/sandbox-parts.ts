@@ -239,7 +239,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
 
 export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, debug }) => {
   const cwd = sandboxDir;
-  await installYarn2({ cwd, dryRun, debug });
+  await installYarn2({ cwd, dryRun, debug, key });
 
   if (link) {
     await executeCLIStep(steps.link, {
@@ -473,7 +473,7 @@ function addStoriesEntry(
   mainConfig: ConfigFile,
   path: string,
   disableDocs: boolean,
-  skipMocking: boolean
+  skipMocking: boolean | undefined
 ) {
   const stories = mainConfig.getValue(['stories']) as string[];
 
@@ -513,7 +513,7 @@ async function linkPackageStories(
     cwd: string;
     linkInDir?: string;
     disableDocs: boolean;
-    skipMocking: boolean;
+    skipMocking?: boolean;
   },
   variant?: string
 ) {

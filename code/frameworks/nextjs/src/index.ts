@@ -16,10 +16,11 @@ export * from './portable-stories.ts';
 export function definePreview<Addons extends PreviewAddon<never>[]>(
   preview: { addons?: Addons } & ProjectAnnotations<ReactTypes & NextJsTypes & InferTypes<Addons>>
 ): NextPreview<InferTypes<Addons>> {
-  // @ts-expect-error hard
   return __definePreview({
     ...preview,
-    addons: [nextPreview, ...(preview.addons ?? [])],
+    addons: [nextPreview, ...(preview.addons ?? [])] as PreviewAddon<
+      NextJsTypes & InferTypes<Addons>
+    >[],
   });
 }
 

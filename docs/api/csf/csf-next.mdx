@@ -137,20 +137,18 @@ Alternatively, you can [configure an alias in your builder](../../writing-storie
 
 #### `preview.type.meta`
 
-By default, `preview.meta` will infer the type of your component's props automatically. However, if you need to extend or modify the inferred types, you can use the `preview.type` function to specify custom types.
+By default, `preview.meta` will infer the type of your component's props automatically. However, if you need to extend or modify the inferred types, you can use the `preview.type` function to specify custom types. The props of the component are still inferred, so the type only has to hold the args that you add.
 
 This example is for React, but the same API applies to all supported renderers.
 
 ```tsx title="Button.stories.ts|tsx"
-import * as React from 'react';
-
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
+type CustomArgs = { customProp: string };
 
-const meta = preview.type<{ args: CustomProps }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Button,
   // 👇 Correct types
   render: ({ customProp, ...args }) => (
@@ -167,6 +165,8 @@ export const Primary = meta.story({
   },
 });
 ```
+
+Every key in the `args` of `preview.meta` must be an arg of your stories: a prop of the component, an arg of its typed `render` function, an arg used by one of its decorators, or an arg declared with `preview.type`. The values are checked against those types, so literal values like `variant: 'primary'` need no `as const`.
 
 For more information on typing your stories, refer to the [writing stories in TypeScript guide](../../writing-stories/typescript.mdx).
 
@@ -186,6 +186,41 @@ export const Primary = meta.story({
   },
 });
 ```
+
+#### `meta.type.story`
+
+Stories take their types from the meta. When a single story needs something the other stories of the file don't have, such as an extra arg read by its `render` function, you can use the `meta.type` function to add it for that story only.
+
+This example is for React, but the same API applies to all supported renderers.
+
+```tsx title="Button.stories.ts|tsx"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+import { Icon } from './Icon';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: { label: 'Button' },
+});
+
+export const WithIcon = meta.type<{ args: { icon: string } }>().story({
+  // 👇 `icon` is typed, and required, in this story only
+  args: { label: 'Button', icon: 'star' },
+  render: ({ icon, ...args }) => (
+    <>
+      <Icon name={icon} /> <Button {...args} />
+    </>
+  ),
+});
+```
+
+`meta.type` accepts the same type argument as [`preview.type`](#previewtypemeta), and the two can be combined.
+
+An arg you add must be set in that story, unless you declare it as optional (`meta.type<{ args: { icon?: string } }>()`). Args that the meta already sets stay optional, except the ones you redeclare in `meta.type`: the story must set those again, because the meta's value was not checked against the new type.
 
 #### `<Story>.extend`
 
@@ -449,6 +484,44 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 - };
 ```
 
+A type that also holds the props of the component, like the one above, keeps working in React and Vue.
+
+In Angular and Web Components, leave the component class out of the type and only pass your custom args, such as `preview.type<{ args: { customProp: string } }>()`. The args of the component are already inferred, all of them optional. A type that you pass to `preview.type` is used as it is, so a component class would make every one of its members a required arg.
+
+Types passed to `preview.type` apply to every story of the file. If only one story needs the custom args, keep the meta as it is and type that story with the [`meta.type.story`](#metatypestory) pattern instead. Unlike with `StoryObj`, a required arg of that type must then be set in the story.
+
+```diff title="Button.stories.js|ts"
++ const meta = preview.meta({
+- const meta = {
+    component: Button,
++ });
+- } satisfies Meta<typeof Button>;
+- export default meta;
+
++ export const WithCustomProp = meta.type<{ args: { customProp: string } }>().story({
+- export const WithCustomProp: StoryObj<CustomProps> = {
+    args: { customProp: 'Hello, world!' },
++ });
+- };
+```
+
+</details>
+
+<details>
+<summary>Mock functions in args</summary>
+
+Args in `play`, `beforeEach`, and other functions are typed as your component declares them, so an arg set to `fn()` is not typed as a mock. Wrap it in `mocked()` from `storybook/test` to use the mock API. The automigrations do this for you: `csf-factories` when converting CSF 3 stories, and `csf-next-mocked-args` for stories already written in CSF Next.
+
+```diff title="EventForm.stories.js|ts"
+- import { fn } from 'storybook/test';
++ import { fn, mocked } from 'storybook/test';
+
+  beforeEach: async ({ args }) => {
+-   args.getUsers.mockResolvedValue(users);
++   mocked(args.getUsers).mockResolvedValue(users);
+  },
+```
+
 </details>
 
 **3.1 Reusing story properties**
@@ -561,7 +634,7 @@ While using CSF Next, you can still use the older formats, as long as they are n
 
 ### How do I use custom arg types with this format?
 
-The [`preview.type`](#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types.
+The [`preview.type`](#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types. To specify them for a single story, use the [`meta.type`](#metatypestory) function.
 
 ### Will this format work with MDX docs pages?
 

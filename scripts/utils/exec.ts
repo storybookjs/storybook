@@ -50,7 +50,7 @@ export const exec = async (
       }
     }
   } catch (err) {
-    if (!(typeof err === 'object' && 'killed' in err && err.killed)) {
+    if (!(typeof err === 'object' && err !== null && 'killed' in err && err.killed)) {
       logger.error(picocolors.red(`An error occurred while executing: \`${command}\``));
       logger.log(`${errorMessage}\n`);
     }

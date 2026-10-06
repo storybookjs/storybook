@@ -91,7 +91,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 const SERVICE_IMPORT = "import { EmptyExample } from './EmptyExample';";
 const SERVICE_SNIPPET = '<EmptyExample something="from-service" />';
 
-const meta: Meta<typeof Source> = {
+const meta = {
   component: Source,
   parameters: {
     layout: 'fullscreen',
@@ -122,7 +122,7 @@ const meta: Meta<typeof Source> = {
       </SourceContext.Provider>
     ),
   ],
-};
+} satisfies Meta<typeof Source>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 

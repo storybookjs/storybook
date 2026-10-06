@@ -10,8 +10,8 @@ import {
   generateTrialId,
   loadPrompt,
   listPrompts,
-  formatTable,
   formatHelp,
+  formatTable,
 } from './utils.ts';
 
 describe('formatDuration', () => {

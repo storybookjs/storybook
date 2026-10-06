@@ -1,3 +1,8 @@
+## 11.0.0-alpha.3
+
+- Skills: Stop requiring addon-mcp - [#36559](https://github.com/storybookjs/storybook/pull/36559), thanks @kasperpeulen!
+- Tools: Use strict input schemas so CLI and MCP reject unknown arguments - [#36601](https://github.com/storybookjs/storybook/pull/36601), thanks @kasperpeulen!
+
 ## 11.0.0-alpha.2
 
 - Addon Docs: Keep the dev server running when a story file is deleted during a rebuild - [#36579](https://github.com/storybookjs/storybook/pull/36579), thanks @valentinpalkovic!

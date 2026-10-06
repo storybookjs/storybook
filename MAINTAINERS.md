@@ -9,7 +9,7 @@ This document outlines some of the processes that the maintainers should adhere 
 
 PRs must have an **approving review** from at least one active member of the Storybook **Core** or **Developer Experience** GitHub teams before merge. Maintainers (and other teams) do not satisfy this gate. Self-approvals do not count. One Core/DX approval is enough even if other Core/DX members requested changes. Approvals are not treated as stale when new commits are pushed.
 
-The gate is the `Core/DX approval` commit status, which blocks merges into `next` and `main` once it is a required check in the `Require status check` ruleset. It turns green within about a minute of a Core/DX approval and is absent before that, so an unreviewed PR waits on an expected check instead of showing a failed one. If it does not appear, run the `Core/DX Approval` workflow, which also runs every 30 minutes.
+The gate is the `Core/DX approval` commit status, which blocks merges into `next` and `main` once it is a required check in the `Require status check` ruleset. It turns green within about a minute of a Core/DX approval and is absent before that, so an unreviewed PR waits on an expected check instead of showing a failed one. If it does not appear, run the `Core/DX Approval` workflow by hand; it evaluates every approved open PR.
 
 # Labels
 

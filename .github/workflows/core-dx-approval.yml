@@ -12,10 +12,7 @@ on:
   # zizmor: ignore[dangerous-triggers]  # default-branch checkout only; no PR code is checked out or executed
   pull_request_target:
     types: [synchronize, reopened]
-  # Catches approvals whose review run never completes: fork PRs from first-time contributors
-  # wait for "Approve and run", and branches without the review workflow never start one.
-  schedule:
-    - cron: '*/30 * * * *'
+  # Evaluates every approved open PR, for when the check is first made required or an event is missed.
   workflow_dispatch:
 
 permissions: {}
@@ -44,14 +41,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           ORG_MEMBERSHIP_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          # A review run on a fork PR carries no PR number and no usable head repository, only the SHA.
+          FILTER: ${{ github.event.workflow_run.head_sha && format('sha:{0}', github.event.workflow_run.head_sha) || 'review:approved' }}
         run: |
-          if [ -n "$PR_NUMBER" ]; then
-            numbers="$PR_NUMBER"
-          elif [ -n "$HEAD_BRANCH" ]; then
-            numbers=$(gh api -X GET "repos/$GITHUB_REPOSITORY/pulls" -f state=open -f head="$HEAD_OWNER:$HEAD_BRANCH" --jq '.[].number')
-          else
-            numbers=$(gh api -X GET search/issues -f q="repo:$GITHUB_REPOSITORY is:pr is:open review:approved" -F per_page=100 --jq '.items[].number')
-          fi
+          numbers=${PR_NUMBER:-$(gh api -X GET search/issues -f q="repo:$GITHUB_REPOSITORY is:pr is:open $FILTER" -F per_page=100 --jq '.items[].number')}
           node scripts/core-dx-approval.ts $numbers

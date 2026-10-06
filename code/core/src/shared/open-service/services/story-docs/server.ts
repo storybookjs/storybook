@@ -40,7 +40,7 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): StoryDoc | und
 function withStoriesFromEveryFile(provider: StoryDocsProvider) {
   return async ({ entry, storyEntries }: ExtractionInput) => {
     const fileEntries = [
-      ...new Map(storyEntries.map((story) => [story.importPath, story])).values(),
+      ...new Map(storyEntries.map((storyEntry) => [storyEntry.importPath, storyEntry])).values(),
     ];
     if (fileEntries.length < 2) {
       return provider({ entry });
@@ -49,15 +49,15 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider) {
     const results = await Promise.allSettled(
       fileEntries.map((fileEntry) => provider({ entry: fileEntry }))
     );
-    const resultByFile = new Map(
+    const resultByFile = Object.fromEntries(
       fileEntries.map((fileEntry, index) => [fileEntry.importPath, results[index]])
     );
 
-    const selected = resultByFile.get(entry.importPath);
-    if (selected?.status === 'rejected') {
+    const selected = resultByFile[entry.importPath];
+    if (selected.status === 'rejected') {
       throw selected.reason;
     }
-    if (!selected?.value) {
+    if (!selected.value) {
       return undefined;
     }
 
@@ -67,7 +67,7 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider) {
       ...component,
       stories: Object.fromEntries(
         storyEntries.flatMap((storyEntry) => {
-          const story = storyDocFromFile(storyEntry, resultByFile.get(storyEntry.importPath)!);
+          const story = storyDocFromFile(storyEntry, resultByFile[storyEntry.importPath]);
           return story ? [[storyEntry.id, story]] : [];
         })
       ),

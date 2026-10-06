@@ -7,6 +7,7 @@ import type { SetupRun } from './run.ts';
 
 export async function recordSetupRun({ projectInfo, prompt }: SetupRun): Promise<void> {
   const runId = Math.random().toString(36);
+  const configDir = resolve(projectInfo.configDir);
 
   // The dev server's checklist reads this flag, and it must work with telemetry disabled, so it
   // lives in the regular cache rather than the telemetry event cache.
@@ -14,7 +15,7 @@ export async function recordSetupRun({ projectInfo, prompt }: SetupRun): Promise
     .set('ai-setup-ran', {
       timestamp: Date.now(),
       runId,
-      configDir: resolve(projectInfo.configDir),
+      configDir,
     })
     .catch(() => {});
 
@@ -33,6 +34,6 @@ export async function recordSetupRun({ projectInfo, prompt }: SetupRun): Promise
       },
       runId,
     },
-    { configDir: projectInfo.configDir }
+    { configDir }
   );
 }

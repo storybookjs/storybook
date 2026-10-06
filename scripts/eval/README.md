@@ -286,7 +286,7 @@ To benchmark a new app, register it in the harness and sync baselines. Follow th
 
 The eval mirrors the real user flow exactly:
 
-1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`AI_SETUP_PROMPT`) that just says _"Run `npx storybook skills setup` and follow its instructions precisely."_
+1. A real user copies the "Set up Storybook with AI" prompt from the Storybook UI — a one-line nudge (`getAiSetupPrompt`) that just says _"Run `npx storybook skills setup` and follow its instructions precisely."_
 2. The user pastes that into their AI agent.
 3. The **agent** runs `npx storybook skills setup` itself as a tool call.
 4. The agent reads the resulting project-aware markdown and follows it.

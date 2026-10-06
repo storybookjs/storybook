@@ -2,7 +2,7 @@
  * Prompt variant: `pattern-copy-play`
  *
  * - Created: 2026-04-22 (eval iteration 2)
- * - Status: former default — available only to the eval harness, which sets
+ * - Status: available only to the eval harness, which sets
  *   `EVAL_SETUP_PROMPT=pattern-copy-play`.
  * - Reference eval results:
  *   https://github.com/search?q=is:pr label:"prompt:pattern-copy-play" org:storybook-tmp&type=pullrequests

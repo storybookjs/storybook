@@ -49,7 +49,7 @@ it('persists a project-scoped flag and reports the setup session under the same 
       },
       runId: (flag as { runId: string }).runId,
     },
-    { configDir: '.storybook' }
+    { configDir: resolve('.storybook') }
   );
 });
 

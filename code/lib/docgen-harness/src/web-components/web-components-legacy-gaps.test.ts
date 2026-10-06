@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, test, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/client-logger';
+import { logger, once } from 'storybook/internal/client-logger';
 
 import { extractArgTypes } from '../../../../renderers/web-components/src/docs/custom-elements.ts';
 import { setCustomElementsManifest } from '../../../../renderers/web-components/src/framework-api.ts';
@@ -76,6 +76,7 @@ const readManifest = (fileName: string): ManifestWithSchemaVersion =>
 afterEach(() => {
   vi.restoreAllMocks();
   setCustomElementsManifest(undefined);
+  once.clear();
 });
 
 test('every baseline referenced by a red marker exists', () => {
@@ -130,12 +131,19 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     expect(Object.keys(argTypes)).toEqual(expect.arrayContaining(['base-label', 'mixed-active']));
   });
 
-  gapTest('the WCA experimental shape triggers a deprecation warning', async () => {
-    // Legacy: the shape is accepted silently.
+  test('the WCA experimental shape triggers a deprecation warning', async () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     setCustomElementsManifest(readManifest('custom-elements.wca.json'));
+    once.clear();
     extractArgTypes('lit-basic-attributes');
-    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i));
+    expect(warn.mock.calls).toEqual([
+      [
+        'setCustomElementsManifest() is deprecated: The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.experimentalDocgenServer instead.',
+      ],
+      [
+        'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.',
+      ],
+    ]);
     setCustomElementsManifest(undefined);
   });
 });

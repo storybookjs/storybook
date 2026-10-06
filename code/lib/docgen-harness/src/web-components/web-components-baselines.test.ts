@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/types';
+import { logger, once } from 'storybook/internal/client-logger';
 
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import {
@@ -31,14 +32,30 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 
 // The unprefixed custom-elements.json is the analyzer's 1.0.0 capture; these are hand-written shapes recorded under a prefix.
 const MANIFEST_VARIANTS = ['v2', 'wca', 'unflattened'] as const;
+const EXPECTED_DEPRECATIONS = new Set([
+  'setCustomElementsManifest() is deprecated: The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.experimentalDocgenServer instead.',
+  'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.',
+]);
 
 const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort();
 
-afterEach(() => {
+beforeEach((): void => {
+  const warn = logger.warn;
+  vi.spyOn(logger, 'warn').mockImplementation((message: string, ...rest: unknown[]): void => {
+    if (EXPECTED_DEPRECATIONS.has(message)) {
+      return;
+    }
+    warn(message, ...rest);
+  });
+});
+
+afterEach((): void => {
   setCustomElementsManifest(undefined);
+  vi.restoreAllMocks();
+  once.clear();
   vi.unstubAllGlobals();
 });
 

@@ -1,4 +1,4 @@
-import { logger } from 'storybook/internal/client-logger';
+import { deprecate, logger } from 'storybook/internal/client-logger';
 
 import { getCustomElements, isValidComponent, isValidMetaData } from '..';
 import type { CustomElementsItem } from './custom-elements-manifest-types.ts';
@@ -30,6 +30,9 @@ interface Module {
 interface Declaration {
   tagName: string;
 }
+
+const WCA_MANIFEST_DEPRECATION =
+  'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.';
 
 const getMetaDataExperimental = (tagName: string, customElements: CustomElements) => {
   if (!isValidComponent(tagName) || !isValidMetaData(customElements)) {
@@ -66,6 +69,7 @@ const getMetaDataV1 = (tagName: string, customElements: CustomElements) => {
 
 const getMetaData = (tagName: string, manifest: any) => {
   if (manifest?.version === 'experimental') {
+    deprecate(WCA_MANIFEST_DEPRECATION);
     return getMetaDataExperimental(tagName, manifest);
   }
   return getMetaDataV1(tagName, manifest);

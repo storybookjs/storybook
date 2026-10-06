@@ -15,13 +15,6 @@ const preview: Preview = {
     ),
   ],
   loaders: [mswLoader],
-  parameters: {
-    options: {
-      storySort: {
-        order: ['Summary', 'Conversation', 'Build', 'Typecheck', 'Lint', 'Source'],
-      },
-    },
-  },
 };
 
 export default preview;

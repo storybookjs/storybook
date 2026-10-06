@@ -119,6 +119,10 @@ export class Yarn2Proxy extends JsPackageManager {
     return `yarn exec ${args.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    return `yarn dlx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,

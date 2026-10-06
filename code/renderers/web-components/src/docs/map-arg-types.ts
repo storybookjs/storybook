@@ -4,6 +4,7 @@ import type {
   CustomElementsItem,
   CustomElementsItemGroups,
 } from './custom-elements-manifest-types.ts';
+import { eventActionName } from '../docgen/component-docgen/arg-types/event-action-name.ts';
 
 type TableDefaultSummary = NonNullable<
   NonNullable<StrictInputType['table']>['defaultValue']
@@ -49,7 +50,7 @@ function mapItem(item: CustomElementsItem, category: string): StrictInputType {
     name: item.name,
     required: false,
     description: item.description,
-    // The runtime writes the manifest's type text as the sbType name; mapping it to real SBTypes is PR B.
+    // The legacy runtime keeps manifest type text as the sbType name; server docgen maps real SBTypes.
     type: { name: typeName } as StrictInputType['type'],
     table: {
       category,
@@ -64,13 +65,7 @@ function mapItem(item: CustomElementsItem, category: string): StrictInputType {
 }
 
 function mapEvent(item: CustomElementsItem): StrictInputType[] {
-  let name = item.name
-    .replace(/(-|_|:|\.|\s)+(.)?/g, (_match, _separator, chr: string) => {
-      return chr ? chr.toUpperCase() : '';
-    })
-    .replace(/^([A-Z])/, (match) => match.toLowerCase());
-
-  name = `on${name.charAt(0).toUpperCase() + name.slice(1)}`;
+  const name = eventActionName(item.name);
 
   return [{ name, action: { name: item.name }, table: { disable: true } }, mapItem(item, 'events')];
 }

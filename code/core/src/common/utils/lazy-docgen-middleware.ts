@@ -8,6 +8,12 @@ import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from './select-co
 
 export interface LazyDocgenMiddlewareOptions<TManager> {
   /**
+   * Story file paths this middleware extracts from; any other path passes through.
+   * Defaults to CSF story files, so a renderer with its own story format (e.g. `.stories.svelte`)
+   * must widen it.
+   */
+  storyFileTest?: RegExp;
+  /**
    * Builds the renderer's extraction manager.
    * Called once, lazily, on the first eligible request and memoized for the worker's lifetime.
    * Return `undefined` to permanently pass through to the rest of the chain.
@@ -21,6 +27,7 @@ export interface LazyDocgenMiddlewareOptions<TManager> {
 }
 
 export function createLazyDocgenMiddleware<TManager>({
+  storyFileTest = STORY_FILE_TEST_REGEXP,
   createManager,
   extract,
 }: LazyDocgenMiddlewareOptions<TManager>): DocgenMiddleware {
@@ -30,7 +37,7 @@ export function createLazyDocgenMiddleware<TManager>({
   return (nextDocgen: DocgenProvider): DocgenProvider =>
     async (input) => {
       const storyImportPath = getStoryImportPathFromEntry(input.entry);
-      if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
+      if (!storyImportPath || !storyFileTest.test(storyImportPath)) {
         return nextDocgen(input);
       }
 

@@ -3,7 +3,7 @@
     defineMeta,
     type Args,
     type StoryContext,
-  } from '@storybook/addon-svelte-csf';
+  } from '@storybook/svelte';
 
   import GradioButton from './GradioButton.svelte';
 

@@ -156,6 +156,9 @@ export abstract class JsPackageManager {
   /** Returns the command to run the binary of a local package */
   abstract getPackageCommand(args: string[]): string;
 
+  /** Returns the command to run the binary of a remote package, as `runPackageCommand` does with `useRemotePkg` */
+  abstract getRemoteRunCommand(args: string[]): string;
+
   /** Get the package.json file for a given module. */
   abstract getModulePackageJSON(packageName: string, cwd?: string): Promise<PackageJson | null>;
 

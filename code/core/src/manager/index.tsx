@@ -76,7 +76,6 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
                       ...state.layout,
                       viewMode: state.viewMode,
                     }}
-                    hasTab={!!api.getQueryParam('tab')}
                     setManagerLayoutState={setManagerLayoutState}
                   />
                 </LayoutProvider>

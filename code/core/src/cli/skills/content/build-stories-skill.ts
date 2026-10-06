@@ -66,7 +66,7 @@ function discoverSection(inputs: StoriesSkillInputs): string {
 ${commands.join('\n')}
 \`\`\`
 
-Story ids come only from these commands. Never build one from a file name, a title or memory.${sharedFiles} When nothing is found, the component has no stories yet: say so, or write them.`;
+Run one of these before every review, also when a test run already listed the stories you wrote: they add the stories of other components that your change affects. Story ids come only from these commands. Never build one from a file name, a title or memory.${sharedFiles} When nothing is found, the component has no stories yet: say so, or write them.`;
 }
 
 function reviewSection(): string {

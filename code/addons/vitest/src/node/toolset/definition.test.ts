@@ -279,6 +279,60 @@ describe('test API', () => {
 Expected button text to be "Secondary"`);
     });
 
+    it('drops the document dump Testing Library appends to a failed query', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 0, error: 1 },
+          componentTestStatuses: [
+            componentTest(
+              'alert--error',
+              'status-value:error',
+              `Unable to find an accessible element with the role "status"
+
+Here are the accessible roles:
+
+  alert:
+
+  Name "":
+  <div
+    role="alert"
+  />
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+<div>
+  <div
+    role="alert"
+  >
+    Locked at 10:30:00
+  </div>
+</div>
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`
+            ),
+          ],
+        })
+      );
+
+      expect((await runForMcp()).markdown).toBe(`## Failing Stories
+
+### alert--error
+
+Unable to find an accessible element with the role "status"
+
+Here are the accessible roles:
+
+  alert:
+
+  Name "":
+  <div
+    role="alert"
+  />
+
+  --------------------------------------------------
+    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
+    });
+
     it('reports accessibility violations with inspect links built from the origin', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({

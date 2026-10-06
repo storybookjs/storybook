@@ -108,12 +108,23 @@ function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): str
 - ${passingStories.map((status) => status.storyId).join('\n- ')}`;
 }
 
+/**
+ * Testing Library appends the whole rendered document to a failed query. The message and the list
+ * of accessible roles above it already say what went wrong, so the dump only costs context.
+ */
+function withoutDomDump(description: string): string {
+  return description.replace(
+    /\n*Ignored nodes: comments, script, style\n[\s\S]*?(?=\n\s+at [^\n]*:\d+:\d+\)?(?:\n|$)|$)/,
+    ''
+  );
+}
+
 function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
   const entries = statuses.map(
     (status) =>
       `### ${status.storyId}
 
-${status.description || 'No failure details available.'}`
+${status.description ? withoutDomDump(status.description) : 'No failure details available.'}`
   );
 
   return `## Failing Stories

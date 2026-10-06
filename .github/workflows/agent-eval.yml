@@ -36,7 +36,7 @@ concurrency:
   # cancels the running eval. Other label changes also trigger this workflow, and GitHub applies
   # the concurrency group before the job `if` can skip the run.
   # The run ID suffix gives that run its own group, so it cannot cancel the running eval.
-  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ ((github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:')) || (github.event.action == 'unlabeled' && github.event.label.name != 'agent-eval:eval')) && format('-{0}', github.run_id) || '' }}
+  group: agent-eval-${{ github.workflow }}-${{ inputs.pr_number || github.event.pull_request.number || github.ref }}${{ ((github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:')) || (github.event.action == 'unlabeled' && github.event.label.name != 'agent-eval:eval')) && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 env:

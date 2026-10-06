@@ -1,6 +1,6 @@
 import { findConfigFile } from 'storybook/internal/common';
 import {
-  babelParser,
+  parseModuleAst,
   extractMockCalls,
   findMockRedirect,
   getAutomockCode,
@@ -551,7 +551,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
       try {
         const calls = extractMockCalls(
           { previewConfigPath, configDir: options.configDir },
-          babelParser,
+          parseModuleAst,
           (viteConfig as any).root ?? process.cwd(),
           findMockRedirect
         );
@@ -604,7 +604,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           return null;
         }
         try {
-          const automocked = getAutomockCode(code, a.spy, babelParser as any);
+          const automocked = getAutomockCode(code, a.spy, parseModuleAst as any);
           return {
             code: automocked.toString(),
             map: automocked.generateMap(),

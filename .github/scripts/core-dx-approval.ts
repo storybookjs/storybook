@@ -180,9 +180,18 @@ async function main(): Promise<void> {
       ? { headOwner: requireEnv('HEAD_OWNER'), headBranch: process.env.HEAD_BRANCH }
       : { allApproved: true };
 
+  const failed: number[] = [];
   for (const pullRequest of await findPullRequests(github, repository, target)) {
-    const outcome = await syncApprovalStatus(github, repository, pullRequest);
-    console.log(`PR #${pullRequest.number} (${pullRequest.head.sha}): ${outcome}`);
+    try {
+      const outcome = await syncApprovalStatus(github, repository, pullRequest);
+      console.log(`PR #${pullRequest.number} (${pullRequest.head.sha}): ${outcome}`);
+    } catch (error) {
+      failed.push(pullRequest.number);
+      console.error(`PR #${pullRequest.number} (${pullRequest.head.sha}): ${String(error)}`);
+    }
+  }
+  if (failed.length > 0) {
+    throw new Error(`Could not evaluate PR ${failed.map((number) => `#${number}`).join(', ')}`);
   }
 }
 

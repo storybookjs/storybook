@@ -31,7 +31,7 @@ Each trial follows this lifecycle:
 All commands run from the repo root.
 
 ```sh
-# Prompt variant is required. Example: pattern-copy-play (the CLI default)
+# Prompt variant is required. Example: pattern-copy-play
 node scripts/eval/eval.ts -p mealdrop --prompt pattern-copy-play
 
 # Specific agent
@@ -297,7 +297,7 @@ The harness hands steps (1) and (2) to the trial agent as its task. Eval starts 
 
 Prompt variants live in [`code/core/src/cli/skills/content/setup-prompts/`](../../code/core/src/cli/skills/content/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `setup-prompts/index.ts` lists every variant.
 
-The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook skills setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
+The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook skills setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`optimized-tests`).
 
 ```text
 eval.ts --prompt setup
@@ -309,7 +309,8 @@ eval.ts --prompt setup
 
 ### Available prompts
 
-- `**pattern-copy-play**` _(default)_ — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. This is the only prompt users ever see when they run `npx storybook skills setup`.
+- `**optimized-tests**` _(default)_ — the only prompt users ever see when they run `npx storybook skills setup`.
+- `**pattern-copy-play**` — analyze the codebase, copy real usage patterns, configure preview with providers and MSW mocks, write ~10 story files with play functions, verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 - `**setup**` — structured step-by-step: analyze, configure preview, write 9 stories (3 simple / 3 medium / 3 complex), verify each with Vitest. Available only to the eval harness for A/B comparison against the default.
 
 ### Adding a new prompt variant

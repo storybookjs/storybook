@@ -180,3 +180,24 @@ Enables or disables automatic documentation generation for component properties.
 #### When to disable docgen
 
 Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).
+
+## Defining stories with Svelte CSF
+
+
+Story files use the `.stories.svelte` extension. The `defineMeta` function is called in `<script module>` and returns a `Story` component. `render` has no effect; pass `args` or children instead.
+
+
+<CodeSnippet language="svelte" title="src/stories/MyComponent.stories.svelte">
+{\`
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import MyComponent from './MyComponent.svelte';
+  const { Story } = defineMeta({
+    title: 'Path/To/MyComponent',
+    component: MyComponent,
+  });
+</script>
+
+<Story name="Primary" args={{ primary: true }} />
+\`}
+</CodeSnippet>

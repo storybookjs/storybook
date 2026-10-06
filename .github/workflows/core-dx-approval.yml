@@ -9,25 +9,14 @@ on:
     workflows: ['Core/DX Approval Review Event']
     types: [completed]
   # A status belongs to a commit, so a standing approval has to be reported again for a new head.
-  # zizmor: ignore[dangerous-triggers]  # base-branch checkout only; no PR code is checked out or executed
+  # zizmor: ignore[dangerous-triggers]  # default-branch checkout only; no PR code is checked out or executed
   pull_request_target:
-    types:
-      - synchronize
-      - reopened
-  # Review runs on fork PRs from first-time contributors wait for "Approve and run" and PRs to
-  # branches without the review workflow never start one, so approved PRs are also swept.
+    types: [synchronize, reopened]
+  # Catches approvals whose review run never completes: fork PRs from first-time contributors
+  # wait for "Approve and run", and branches without the review workflow never start one.
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
-    inputs:
-      pr_number:
-        description: Pull request number to evaluate (empty evaluates every approved open PR)
-        required: false
-        type: string
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.event.workflow_run.head_branch && format('{0}:{1}', github.event.workflow_run.head_repository.owner.login, github.event.workflow_run.head_branch) || 'sweep' }}
-  cancel-in-progress: false
 
 permissions: {}
 
@@ -43,21 +32,26 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          # Always the default branch, never PR code: PRs can target branches without this script.
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
 
       - name: Report Core/DX approval
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           ORG_MEMBERSHIP_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-        run: node .github/scripts/core-dx-approval.ts
+        run: |
+          if [ -n "$PR_NUMBER" ]; then
+            numbers="$PR_NUMBER"
+          elif [ -n "$HEAD_BRANCH" ]; then
+            numbers=$(gh api -X GET "repos/$GITHUB_REPOSITORY/pulls" -f state=open -f head="$HEAD_OWNER:$HEAD_BRANCH" --jq '.[].number')
+          else
+            numbers=$(gh api -X GET search/issues -f q="repo:$GITHUB_REPOSITORY is:pr is:open review:approved" -F per_page=100 --jq '.items[].number')
+          fi
+          node .github/scripts/core-dx-approval.ts $numbers

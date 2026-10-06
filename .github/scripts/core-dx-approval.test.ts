@@ -1,153 +1,67 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {
-  findPullRequests,
-  STATUS_CONTEXT,
-  syncApprovalStatus,
-  type GitHub,
-} from './core-dx-approval.ts';
+import { syncStatus, type PullRequest, type Status } from './core-dx-approval.ts';
 
-const REPOSITORY = 'storybookjs/storybook';
-const PULL_REQUEST = { number: 1, user: { login: 'Author' }, head: { sha: 'abc123' } };
-
-function createGitHub(options: {
-  reviews: { login: string; state: 'APPROVED' | 'CHANGES_REQUESTED' }[];
-  trusted: string[];
-  currentState?: string;
-}) {
-  const posted: { state: string; context: string }[] = [];
-  const requested: string[] = [];
-  const github: GitHub = {
-    rest: async <Response>(path: string, body?: unknown) => {
-      requested.push(path);
-      if (body) {
-        posted.push(body as { state: string; context: string });
-        return {} as Response;
-      }
-      return {
-        statuses: options.currentState
-          ? [{ context: STATUS_CONTEXT, state: options.currentState }]
-          : [{ context: 'Danger', state: 'success' }],
-      } as Response;
+function pullRequest(reviews: Record<string, string>, reportedState?: string): PullRequest {
+  return {
+    author: { login: 'Author' },
+    headRefOid: 'abc123',
+    latestOpinionatedReviews: {
+      nodes: Object.entries(reviews).map(([login, state]) => ({ state, author: { login } })),
     },
-    graphql: async <Response>() =>
-      ({
-        repository: {
-          pullRequest: {
-            latestOpinionatedReviews: {
-              nodes: options.reviews.map(({ login, state }) => ({ author: { login }, state })),
-            },
-          },
-        },
-      }) as Response,
-    isTrustedReviewer: async (login) => options.trusted.includes(login),
+    commits: {
+      nodes: [{ commit: { status: reportedState ? { context: { state: reportedState } } : null } }],
+    },
   };
-  return { github, posted, requested };
 }
 
-test('posts success when a Core or DX member approved', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [
-      { login: 'maintainer', state: 'APPROVED' },
-      { login: 'core-member', state: 'APPROVED' },
-    ],
-    trusted: ['core-member'],
-  });
+async function postedStates(
+  pr: PullRequest,
+  isTrusted: (login: string) => Promise<boolean> = async (login) => login.startsWith('core')
+): Promise<string[]> {
+  const posted: Status[] = [];
+  await syncStatus(pr, isTrusted, (status) => posted.push(status)).catch(() => {});
+  return posted.map(({ state }) => state);
+}
 
-  assert.equal(await syncApprovalStatus(github, REPOSITORY, PULL_REQUEST), 'approved');
-  assert.deepEqual(
-    posted.map(({ state, context }) => ({ state, context })),
-    [{ state: 'success', context: STATUS_CONTEXT }]
-  );
+test('reports success when a Core or DX member approved', async () => {
+  const pr = pullRequest({ maintainer: 'APPROVED', 'core-member': 'APPROVED' });
+  assert.deepEqual(await postedStates(pr), ['success']);
 });
 
-test('posts nothing when only writers outside Core and DX approved', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [{ login: 'maintainer', state: 'APPROVED' }],
-    trusted: [],
-  });
-
-  assert.equal(await syncApprovalStatus(github, REPOSITORY, PULL_REQUEST), 'unchanged');
-  assert.deepEqual(posted, []);
+test('reports nothing when only writers outside Core and DX approved', async () => {
+  assert.deepEqual(await postedStates(pullRequest({ maintainer: 'APPROVED' })), []);
 });
 
 test('ignores an approval by the pull request author', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [{ login: 'author', state: 'APPROVED' }],
-    trusted: ['author'],
-  });
-
-  assert.equal(await syncApprovalStatus(github, REPOSITORY, PULL_REQUEST), 'unchanged');
-  assert.deepEqual(posted, []);
+  const pr = pullRequest({ author: 'APPROVED' });
+  assert.deepEqual(await postedStates(pr, async () => true), []);
 });
 
-test('ignores a trusted reviewer whose latest review requests changes', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [{ login: 'core-member', state: 'CHANGES_REQUESTED' }],
-    trusted: ['core-member'],
-  });
-
-  assert.equal(await syncApprovalStatus(github, REPOSITORY, PULL_REQUEST), 'unchanged');
-  assert.deepEqual(posted, []);
+test('ignores a Core or DX member whose latest review requests changes', async () => {
+  assert.deepEqual(await postedStates(pullRequest({ 'core-member': 'CHANGES_REQUESTED' })), []);
 });
 
-test('downgrades a success status to pending when the approval no longer stands', async () => {
-  const { github, posted } = createGitHub({ reviews: [], trusted: [], currentState: 'success' });
-
-  assert.equal(await syncApprovalStatus(github, REPOSITORY, PULL_REQUEST), 'revoked');
-  assert.deepEqual(
-    posted.map(({ state }) => state),
-    ['pending']
-  );
+test('does not repeat a success that is already reported', async () => {
+  assert.deepEqual(await postedStates(pullRequest({ 'core-member': 'APPROVED' }, 'SUCCESS')), []);
 });
 
-test('does not repost a success status that is already set', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [{ login: 'core-member', state: 'APPROVED' }],
-    trusted: ['core-member'],
-    currentState: 'success',
-  });
-
-  assert.equal(await syncApprovalStatus(github, REPOSITORY, PULL_REQUEST), 'approved');
-  assert.deepEqual(posted, []);
+test('downgrades a reported success when the approval no longer stands', async () => {
+  assert.deepEqual(await postedStates(pullRequest({}, 'SUCCESS')), ['pending']);
 });
 
-test('propagates a failing team membership lookup instead of approving', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [{ login: 'core-member', state: 'APPROVED' }],
-    trusted: [],
-  });
-  github.isTrustedReviewer = async () => {
-    throw new Error('membership lookup failed');
-  };
+const failingLookup = async () => {
+  throw new Error('membership lookup failed');
+};
 
-  await assert.rejects(syncApprovalStatus(github, REPOSITORY, PULL_REQUEST));
-  assert.deepEqual(posted, []);
+test('reports nothing and fails when team membership cannot be verified', async () => {
+  const pr = pullRequest({ 'core-member': 'APPROVED' });
+  assert.deepEqual(await postedStates(pr, failingLookup), []);
+  await assert.rejects(syncStatus(pr, failingLookup, () => {}));
 });
 
-test('downgrades a success status to pending when the approval cannot be verified', async () => {
-  const { github, posted } = createGitHub({
-    reviews: [{ login: 'maintainer', state: 'APPROVED' }],
-    trusted: [],
-    currentState: 'success',
-  });
-  github.isTrustedReviewer = async () => {
-    throw new Error('membership lookup failed');
-  };
-
-  await assert.rejects(syncApprovalStatus(github, REPOSITORY, PULL_REQUEST));
-  assert.deepEqual(
-    posted.map(({ state }) => state),
-    ['pending']
-  );
-});
-
-test('looks up fork pull requests by head owner and branch', async () => {
-  const { github, requested } = createGitHub({ reviews: [], trusted: [] });
-
-  await findPullRequests(github, REPOSITORY, { headOwner: 'fork-owner', headBranch: 'fix/a b' });
-  assert.deepEqual(requested, [
-    '/repos/storybookjs/storybook/pulls?state=open&head=fork-owner%3Afix%2Fa%20b',
-  ]);
+test('downgrades a reported success when team membership cannot be verified', async () => {
+  const pr = pullRequest({ 'core-member': 'APPROVED' }, 'SUCCESS');
+  assert.deepEqual(await postedStates(pr, failingLookup), ['pending']);
 });

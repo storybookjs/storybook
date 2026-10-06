@@ -2,12 +2,7 @@
 
 exports[`upgrade-deprecated-types > typescript > upgrade imports with conflicting local names 1`] = `
 SyntaxError: This codemod does not support local imports that are called the same as a storybook import.
-Rename this local import and try again.
-> 1 |  import { ComponentMeta as Meta, ComponentStory as StoryFn } from '@storybook/react';
-    |           ^^^^^^^^^^^^^^^^^^^^^
-  2 |  import { Cat } from './Cat';
-  3 |    
-  4 |  const meta = { title: 'Cat', component: Cat } satisfies Meta<typeof Cat>
+Rename this local import and try again. (1:10)
 `;
 
 exports[`upgrade-deprecated-types > typescript > upgrade imports with local names 1`] = `

@@ -6,11 +6,8 @@ export const blocker = createBlocker({
   id: 'minimumNode22',
   async check() {
     const nodeVersion = process.versions.node;
-    if (nodeVersion) {
-      const [major, minor, patch] = nodeVersion.split('.').map(Number);
-      if (!isNodeVersionSupported(major, minor, patch)) {
-        return { nodeVersion };
-      }
+    if (nodeVersion && !isNodeVersionSupported(nodeVersion)) {
+      return { nodeVersion };
     }
     return false;
   },

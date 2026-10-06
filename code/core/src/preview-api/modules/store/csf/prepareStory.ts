@@ -14,7 +14,7 @@ import type {
   Renderer,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForLoaders,
+  StoryContextForRender,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -101,7 +101,7 @@ export function prepareStory<TRenderer extends Renderer>(
     }
   };
 
-  const undecoratedStoryFn = (context: StoryContext<TRenderer>) =>
+  const undecoratedStoryFn = (context: StoryContextForRender<TRenderer>) =>
     context.originalStoryFn(context.args, context);
 
   // Currently it is only possible to set these globally
@@ -122,7 +122,7 @@ export function prepareStory<TRenderer extends Renderer>(
     projectAnnotations.render;
 
   const decoratedStoryFn = applyHooks<TRenderer>(applyDecorators)(undecoratedStoryFn, decorators);
-  const unboundStoryFn = (context: StoryContext<TRenderer>) => decoratedStoryFn(context);
+  const unboundStoryFn = (context: StoryContextForRender<TRenderer>) => decoratedStoryFn(context);
 
   const playFunction = storyAnnotations?.play ?? componentAnnotations?.play;
 
@@ -303,14 +303,14 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 // eg. reactive proxies set by frameworks like SolidJS or Vue
 export function prepareContext<
   TRenderer extends Renderer,
-  TContext extends Pick<StoryContextForLoaders<TRenderer>, 'args' | 'argTypes' | 'globals'>,
+  TContext extends Pick<StoryContextForRender<TRenderer>, 'args' | 'argTypes' | 'globals'>,
 >(
   context: TContext
-): TContext & Pick<StoryContextForLoaders<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
+): TContext & Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
   const { args: unmappedArgs } = context;
 
   let targetedContext: TContext &
-    Pick<StoryContextForLoaders<TRenderer>, 'allArgs' | 'argsByTarget'> = {
+    Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget'> = {
     ...context,
     allArgs: undefined,
     argsByTarget: undefined,

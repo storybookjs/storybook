@@ -17,6 +17,10 @@ const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead?:
   /**
    * @see https://developers.openai.com/api/docs/pricing
    */
+  'gpt-6.1-sol': { input: 2, output: 10, cacheRead: 0.1 },
+  /**
+   * @see https://developers.openai.com/api/docs/pricing
+   */
   'gpt-6-sol': { input: 2, output: 10 },
   /**
    * @see https://developers.openai.com/api/docs/pricing

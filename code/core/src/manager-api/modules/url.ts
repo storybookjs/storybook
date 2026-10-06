@@ -57,9 +57,18 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
     .join(';');
 };
 
-const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }): string => {
-  const resolved = new URL('iframe.html', baseUrl);
-  return absolute ? resolved.href : `${resolved.pathname}${resolved.search}${resolved.hash}`;
+// The preview lives wherever the document's base URI puts `iframe.html`, which differs from the
+// router pathname when the manager page sets a custom <base href>. The network variant keeps that
+// path and only swaps in the dev server's network origin.
+const resolveIframeUrl = (
+  documentBase: string,
+  { base, networkAddress }: { base?: 'origin' | 'network'; networkAddress: string }
+): string => {
+  const resolved = new URL('iframe.html', documentBase);
+  if (base === 'network') {
+    return new URL(resolved.pathname, networkAddress).href;
+  }
+  return base === 'origin' ? resolved.href : resolved.pathname;
 };
 
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
@@ -270,12 +279,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const originAddress = global.window.location.origin + pathname;
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
-        base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
-      const previewBaseUrl =
-        base === 'network' ? networkAddress : global.document?.baseURI || originAddress;
+        base === 'origin'
+          ? originAddress
+          : base === 'network'
+            ? new URL(pathname, networkAddress).href
+            : pathname;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
+        : resolveIframeUrl(global.document?.baseURI || originAddress, { base, networkAddress });
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

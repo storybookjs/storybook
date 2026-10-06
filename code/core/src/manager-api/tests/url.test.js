@@ -330,6 +330,7 @@ describe('getStoryHrefs', () => {
 
   beforeEach(() => {
     global.document.baseURI = 'http://localhost:6006/';
+    global.STORYBOOK_NETWORK_ADDRESS = 'http://192.168.1.1:6006/';
   });
 
   it('returns manager and preview URLs for a story', () => {
@@ -648,7 +649,84 @@ describe('getStoryHrefs', () => {
     expect(origin.previewHref).toContain('http://localhost:6006/design-system/iframe.html');
 
     const network = api.getStoryHrefs('test--story', { base: 'network' });
-    expect(network.previewHref).toContain('http://192.168.1.1:6006/iframe.html');
+    expect(network.managerHref).toContain('http://192.168.1.1:6006/design-system/?path=');
+    expect(network.previewHref).toContain('http://192.168.1.1:6006/design-system/iframe.html');
+  });
+
+  it('resolves absolute network URLs against a custom <base href>', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/storybook', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/Orchard.Storybook/';
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { base: 'network' });
+    expect(managerHref).toEqual('http://192.168.1.1:6006/storybook?path=/story/test--story');
+    expect(previewHref).toEqual(
+      'http://192.168.1.1:6006/Orchard.Storybook/iframe.html?id=test--story&viewMode=story'
+    );
+  });
+
+  it('ignores the initial path the dev server bakes into the network address', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    // `storybook dev --initial-path /docs/intro--docs` produces this address.
+    global.STORYBOOK_NETWORK_ADDRESS = 'http://192.168.1.1:6006/?path=/docs/intro--docs';
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { base: 'network' });
+    expect(managerHref).toEqual('http://192.168.1.1:6006/?path=/story/test--story');
+    expect(previewHref).toEqual(
+      'http://192.168.1.1:6006/iframe.html?id=test--story&viewMode=story'
+    );
+  });
+
+  it('falls back to the page origin for network URLs in a built Storybook', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/design-system/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/design-system/';
+    global.STORYBOOK_NETWORK_ADDRESS = undefined;
+
+    const network = api.getStoryHrefs('test--story', { base: 'network' });
+    expect(network).toEqual(api.getStoryHrefs('test--story', { base: 'origin' }));
+    expect(network.previewHref).toEqual(
+      'http://localhost:6006/design-system/iframe.html?id=test--story&viewMode=story'
+    );
+  });
+
+  it('drops the page query and hash carried by the document base URI', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?path=/story/test--story' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    // Without a <base> element, baseURI is the full document URL.
+    global.document.baseURI = 'http://localhost:6006/?path=/story/test--story#anchor';
+
+    expect(api.getStoryHrefs('test--story').previewHref).toEqual(
+      '/iframe.html?id=test--story&viewMode=story'
+    );
+    expect(api.getStoryHrefs('test--story', { base: 'origin' }).previewHref).toEqual(
+      'http://localhost:6006/iframe.html?id=test--story&viewMode=story'
+    );
   });
 
   it('resolves absolute origin URLs against a custom <base href> (#34259)', () => {

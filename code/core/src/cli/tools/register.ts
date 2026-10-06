@@ -180,10 +180,10 @@ function pickCliOptions(options: ToolsPassthroughOptions): CLIOptions {
 }
 
 /**
- * Fire the `tools-command` event, once per executed tool. The handler's own report, returned on its outcome, is merged
- * into the same record. Help lookups are excluded so they cannot skew success rates. Unexpected
- * failures additionally go through the standard sanitized error path; `failure` outcomes (the
- * tool ran and reported bad news) do not.
+ * Fire the `tools-command` event, once per executed tool. The handler's own report, returned on
+ * its outcome, is merged into the same record. Help lookups are excluded so they cannot skew
+ * success rates. Unexpected failures additionally go through the standard sanitized error path;
+ * `failure` outcomes (the tool ran and reported bad news) do not.
  */
 async function reportToolsCommandTelemetry(
   run: {

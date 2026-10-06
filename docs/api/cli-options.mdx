@@ -294,7 +294,7 @@ Options include:
 | Option                          | Description                                                                                                                                                                                            |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `-h`, `--help`                  | Output usage information and the list of skills.<br />`storybook skills --help`                                                                                                                        |
-| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills setup --cwd packages/ui`                                                                                                             |
+| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills stories --cwd packages/ui`                                                                                                           |
 | `-c`, `--config-dir <dir-name>` | Storybook configuration directory.<br />`storybook skills setup -c .storybook`                                                                                                                         |
 | `--all`                         | Print every skill in full.<br />`storybook skills --all`                                                                                                                                               |
 | `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook skills setup --disable-telemetry`                                               |
@@ -316,6 +316,8 @@ Generates a detailed, project-aware Markdown prompt that instructs an AI agent t
 ```shell
 storybook skills setup [options]
 ```
+
+Run it from the directory where you start Storybook, so the running Storybook can tell that setup ran and complete the "Set up with AI" checklist item.
 
 The generated prompt is printed to stdout. To hand it to an agent that doesn't have shell access, redirect it to a file, for example `storybook skills setup > storybook-setup.md`.
 

@@ -4,7 +4,6 @@ import {
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
-import { withTelemetry } from '../core-server/withTelemetry.ts';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 

@@ -53,10 +53,6 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
             throw new SkipGhostStoriesTelemetry();
           }
 
-          // No session-ID match: `storybook skills setup` runs as a separate CLI
-          // process, so its sessionId never matches the dev server's. The
-          // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
-
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');
           const hasVitestAddon =

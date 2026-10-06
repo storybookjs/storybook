@@ -103,7 +103,7 @@ describe('a broken tool definition', () => {
     expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('test-run'));
   });
 
-  it('is dropped from the tool metadata instead of failing the build', () => {
+  it('is dropped from the tool metadata instead of throwing', () => {
     const metadata = getAddonToolMetadata(context);
     const names = metadata.map((tool) => tool.name);
 

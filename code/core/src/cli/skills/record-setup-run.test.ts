@@ -14,7 +14,7 @@ const projectInfo = {
   framework: '@storybook/react-vite',
   rendererPackage: '@storybook/react',
   builderPackage: '@storybook/builder-vite',
-  configDir: resolve('.storybook'),
+  configDir: '.storybook',
   language: 'ts',
   packageManager: { type: PackageManagerName.NPM },
 } as ProjectInfo;
@@ -37,16 +37,20 @@ it('persists a project-scoped flag and reports the setup session under the same 
     runId: expect.any(String),
     configDir: resolve('.storybook'),
   });
-  expect(telemetry).toHaveBeenCalledWith('ai-setup', {
-    cliOptions: { packageManager: 'npm', prompt: 'optimized-tests' },
-    project: {
-      framework: '@storybook/react-vite',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-vite',
-      language: 'ts',
+  expect(telemetry).toHaveBeenCalledWith(
+    'ai-setup',
+    {
+      cliOptions: { packageManager: 'npm', prompt: 'optimized-tests' },
+      project: {
+        framework: '@storybook/react-vite',
+        renderer: '@storybook/react',
+        builder: '@storybook/builder-vite',
+        language: 'ts',
+      },
+      runId: (flag as { runId: string }).runId,
     },
-    runId: (flag as { runId: string }).runId,
-  });
+    { configDir: '.storybook' }
+  );
 });
 
 it('still reports the setup session when the flag cannot be written', async () => {
@@ -54,5 +58,5 @@ it('still reports the setup session when the flag cannot be written', async () =
 
   await recordSetupRun({ projectInfo, prompt: 'optimized-tests' });
 
-  expect(telemetry).toHaveBeenCalledWith('ai-setup', expect.anything());
+  expect(telemetry).toHaveBeenCalledWith('ai-setup', expect.anything(), expect.anything());
 });

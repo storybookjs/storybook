@@ -188,8 +188,13 @@ merge while a conversation is unresolved.
 | Evals passed                                        | Resolved, with the results summary                         |
 | Evals passed, but new commits were pushed meanwhile | Open, with the result marked stale                         |
 | New commits pushed after that                       | Reopened: "evals required for new head `<sha>`"            |
+| `agent-eval:eval` removed                           | Resolved: "not required"                                   |
 
-The thread reopens on every push, also when someone resolved it by hand.
+The thread reopens on every push while `agent-eval:eval` is present, also when
+someone resolved it by hand.
+
+Removing `agent-eval:eval` opts the PR out of evals: the workflow cancels a
+running eval and resolves the gate thread, with a note on who removed the label.
 
 To run evals again, for example after a push or a failure, remove and re-add
 the `agent-eval:eval` label. You can also run the workflow with

@@ -11,6 +11,7 @@ on:
       - reopened
       - synchronize
       - labeled
+      - unlabeled
   workflow_dispatch:
     inputs:
       pr_number:
@@ -31,11 +32,11 @@ on:
         default: false
 
 concurrency:
-  # One run per PR at a time. A push or an `agent-eval:` label cancels the running eval, because its
-  # result would not cover the new head or scope. Any other label (e.g. `qa:needed`) also triggers
-  # this workflow, and GitHub applies the concurrency group before the job `if` can skip the run.
+  # One run per PR at a time. A push, adding an `agent-eval:` label, or removing `agent-eval:eval`
+  # cancels the running eval. Other label changes also trigger this workflow, and GitHub applies
+  # the concurrency group before the job `if` can skip the run.
   # The run ID suffix gives that run its own group, so it cannot cancel the running eval.
-  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:') && format('-{0}', github.run_id) || '' }}
+  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ ((github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:')) || (github.event.action == 'unlabeled' && github.event.label.name != 'agent-eval:eval')) && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 env:
@@ -51,7 +52,7 @@ jobs:
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
-        github.event.action != 'synchronize' &&
+        contains(fromJSON('["opened","reopened","labeled"]'), github.event.action) &&
         (github.event.action != 'labeled' || startsWith(github.event.label.name, 'agent-eval:')) &&
         !github.event.pull_request.head.repo.fork &&
         contains(github.event.pull_request.labels.*.name, 'agent-eval:eval'))
@@ -359,12 +360,13 @@ jobs:
   # the head. Pushes do not auto-reopen resolved review threads, so explicitly
   # reopen the gate thread without rerunning evals.
   reopen-eval-gate:
-    name: Reopen eval gate thread on new commits
+    name: Reopen or resolve the eval gate thread
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.action == 'synchronize' &&
       !github.event.pull_request.head.repo.fork &&
-      contains(github.event.pull_request.labels.*.name, 'agent-eval:eval')
+      ((github.event.action == 'synchronize' &&
+        contains(github.event.pull_request.labels.*.name, 'agent-eval:eval')) ||
+        (github.event.action == 'unlabeled' && github.event.label.name == 'agent-eval:eval'))
     runs-on: ubuntu-latest
     permissions:
       # unresolveReviewThread needs contents: write + pull-requests: write.
@@ -385,8 +387,19 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Reopen the eval gate thread for the new head
+        if: ${{ github.event.action == 'synchronize' }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           NEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node agent-eval/scripts/eval-gate-thread.ts reopen --pr "$PR_NUMBER" --sha "$NEW_HEAD_SHA"
+
+      - name: Resolve the eval gate thread after opting out
+        if: ${{ github.event.action == 'unlabeled' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          node agent-eval/scripts/eval-gate-thread.ts opt-out
+          --pr "$PR_NUMBER" --sha "$HEAD_SHA" --actor "$GITHUB_ACTOR"

@@ -66,6 +66,7 @@ const { positionals, values } = parseArgs({
     scope: { type: 'string' },
     outcome: { type: 'string' },
     'summary-file': { type: 'string' },
+    actor: { type: 'string' },
   },
 });
 const [command] = positionals;
@@ -304,9 +305,28 @@ function reopen() {
   }
 }
 
-const commands: Record<string, () => void> = { ensure, result, reopen };
+function optOut() {
+  const thread = locateThread();
+  if (!thread) {
+    console.log(`No gate thread on PR #${pr}, so there is nothing to resolve.`);
+    return;
+  }
+  updateComment(
+    thread.commentId,
+    gateBody(
+      `Status: not required. \`agent-eval:eval\` was removed by ${values.actor || 'someone'}`,
+      'Add the `agent-eval:eval` label again to run evals for this PR.'
+    )
+  );
+  if (!thread.isResolved) {
+    setThreadResolved(thread.threadId, true);
+  }
+}
+
+const commands: Record<string, () => void> = { ensure, result, reopen, 'opt-out': optOut };
 const run =
-  commands[command ?? ''] ?? fail('Usage: eval-gate-thread.ts <ensure|result|reopen> [options]');
+  commands[command ?? ''] ??
+  fail('Usage: eval-gate-thread.ts <ensure|result|reopen|opt-out> [options]');
 try {
   run();
 } catch (error) {

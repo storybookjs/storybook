@@ -1,7 +1,4 @@
-import type {
-  AnyToolsetOutcome,
-  ToolsetTelemetry,
-} from '../../../shared/open-service/toolset-definition.ts';
+import type { InvokedToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
 import type { ToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import type { ToolsAttachGateReason } from './errors.ts';
 import type { ToolsetJsonSchema } from './json-schema.ts';
@@ -101,7 +98,6 @@ export type ToolsCallOptions = {
   signal?: AbortSignal;
   /** Overrides the host's Storybook origin for this call. */
   origin?: string;
-  telemetry?: ToolsetTelemetry;
 };
 
 type ToolsBase = {
@@ -111,7 +107,7 @@ type ToolsBase = {
   requestedMode: ToolsMode;
   /** `in-process` unless this host is a project-local child. */
   host: ToolsHostKind;
-  /** Set when `auto` mode could not attach and loaded the project configuration instead. */
+  /** Set when `auto` mode could not attach for an unexpected reason and loaded locally instead. */
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
@@ -133,7 +129,7 @@ type ToolsBase = {
     ref: string,
     input?: Record<string, unknown>,
     options?: ToolsCallOptions
-  ): Promise<AnyToolsetOutcome>;
+  ): Promise<InvokedToolsetOutcome>;
   close(): Promise<void>;
 };
 

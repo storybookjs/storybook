@@ -5,24 +5,35 @@ import { composeStory } from './portable-stories.ts';
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  document.head.querySelectorAll('style').forEach((style) => style.remove());
 });
 
-it('restores animations when afterEach throws', async () => {
+it('removes animation listeners when afterEach throws', async () => {
+  const canvasElement = document.createElement('div');
+  const getAnimations = vi.fn(() => []);
+  vi.stubGlobal('document', {
+    createElement: document.createElement.bind(document),
+    querySelectorAll: document.querySelectorAll.bind(document),
+    getAnimations,
+  });
   vi.stubGlobal('__vitest_browser__', true);
+  const error = new Error('afterEach failed');
 
   const story = composeStory(
     { render: () => {} },
     {},
     {
       afterEach: async () => {
-        throw new Error('afterEach failed');
+        expect(getAnimations).toHaveBeenCalledOnce();
+        throw error;
       },
       mount: (context) => async () => context.canvas,
     }
   );
 
-  await expect(story.run()).rejects.toThrow('afterEach failed');
+  await expect(story.run({ canvasElement })).rejects.toBe(error);
 
-  expect(document.head.textContent).not.toContain('animation-play-state: paused');
+  dispatchEvent(new Event('animationstart'));
+  dispatchEvent(new Event('transitionrun'));
+
+  expect(getAnimations).toHaveBeenCalledOnce();
 });

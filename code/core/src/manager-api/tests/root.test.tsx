@@ -57,7 +57,7 @@ describe('ManagerProvider', () => {
     let api: API | undefined;
     let latestState: State | undefined;
 
-    // Simulate an addon that calls experimental_setFilter synchronously from its register callback.
+    // Simulate an addon that calls setFilter synchronously from its register callback.
     // handleAPI runs in the constructor, before the component mounts.
     const provider = {
       channel: mockChannel(),
@@ -65,7 +65,7 @@ describe('ManagerProvider', () => {
       getElements: () => ({}),
       handleAPI: (a: API) => {
         api = a;
-        a.experimental_setFilter('addon-filter', (item) => !item.id.includes('hidden'));
+        a.setFilter('addon-filter', (item) => !item.id.includes('hidden'));
       },
     };
 

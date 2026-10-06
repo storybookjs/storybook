@@ -3,13 +3,17 @@ import * as v from 'valibot';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
-import { OpenServiceRemoteCommandUnhandledError } from '../../server-errors.ts';
+import {
+  OpenServiceRemoteCommandConfigDriftError,
+  OpenServiceRemoteCommandUnhandledError,
+} from '../../server-errors.ts';
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import {
   SERVICE_COMMAND_ACK,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
-  SERVICE_PATCHES,
+  SERVICE_COMMAND_UNHANDLED,
+  SERVICE_ENTRY,
   type CommandInvokePayload,
 } from './service-channel.ts';
 import { defineService } from './service-definition.ts';
@@ -139,19 +143,19 @@ describe('delegated command dispatch', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: mutableRecordLookupServiceDef.id,
       callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
-    channel.emitExternal(SERVICE_PATCHES, {
+    channel.emitExternal(SERVICE_ENTRY, {
       serviceId: mutableRecordLookupServiceDef.id,
-      state: { a: { k: 'v' } },
-      version: 1,
-      clientId: 'peer',
+      stamp: { seq: 1, runtimeId: 'peer', counter: 1 },
+      command: 'assignRecordField',
+      patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: mutableRecordLookupServiceDef.id,
       callId,
       result: undefined,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBeUndefined();
@@ -178,17 +182,40 @@ describe('delegated command dispatch', () => {
       commandName: 'assignRecordField',
       input: { entryId: 'a', fieldKey: 'k', fieldValue: 'v' },
       callId: 'call-1',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
 
     expect(emittedCalls(channel, SERVICE_COMMAND_ACK)).toHaveLength(0);
     expect(emittedCalls(channel, SERVICE_COMMAND_RESULT)).toHaveLength(0);
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toHaveLength(0);
     expect(handlerSpy).not.toHaveBeenCalled();
   });
 
-  it('rejects with restart guidance when no peer acknowledges the invoke', async () => {
+  it('rejects with config-drift guidance when the peer reports the command unhandled', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    setDelegatedMode(true);
+    const service = registerService(locallyImplementedServiceDef);
+
+    const promise = service.commands.doThing({ value: 'hi' });
+
+    const { callId } = emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0][1] as CommandInvokePayload;
+    channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
+      serviceId: locallyImplementedServiceDef.id,
+      callId,
+    });
+
+    const error = await promise.catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(OpenServiceRemoteCommandConfigDriftError);
+    expect((error as Error).message).toBe(
+      'The Storybook this runtime is attached to reported it has no handler for remote command "internal-fixture/delegated-local-implementation.doThing". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.'
+    );
+  });
+
+  it('rejects with an unacknowledged-command error when no peer acknowledges the invoke', async () => {
     vi.useFakeTimers();
 
     const channel = createTestChannel();
@@ -203,7 +230,7 @@ describe('delegated command dispatch', () => {
     const error = await failure;
     expect(error).toBeInstanceOf(OpenServiceRemoteCommandUnhandledError);
     expect((error as Error).message).toBe(
-      'No runtime acknowledged remote command "internal-fixture/delegated-local-implementation.doThing"; this runtime delegates every command to the Storybook it is attached to, and that Storybook was started with a different configuration. Restart it so the command\'s handler is available.'
+      'The Storybook this runtime is attached to did not acknowledge remote command "internal-fixture/delegated-local-implementation.doThing" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.'
     );
   });
 
@@ -254,19 +281,19 @@ describe('delegated thin loads', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: thinLoadServiceDef.id,
       callId: invoke.callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
-    channel.emitExternal(SERVICE_PATCHES, {
+    channel.emitExternal(SERVICE_ENTRY, {
       serviceId: thinLoadServiceDef.id,
-      state: { components: { button: 'extracted-on-peer' } },
-      version: 1,
-      clientId: 'peer',
+      stamp: { seq: 1, runtimeId: 'peer', counter: 1 },
+      command: 'extractDocgen',
+      patch: [{ op: 'add', path: '/components/button', value: 'extracted-on-peer' }],
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: thinLoadServiceDef.id,
       callId: invoke.callId,
       result: 'extracted-on-peer',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('extracted-on-peer');

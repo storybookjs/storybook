@@ -2,10 +2,12 @@ import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
 import {
-  experimental_UniversalStore,
+  internal_UniversalStore,
   experimental_getStatusStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
+
+import type { PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
@@ -13,13 +15,14 @@ import {
   ADDON_ID,
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
+  STORY_INDEX_CHANNEL_EVENT_NAME,
   storeOptions,
 } from '../constants.ts';
 import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types.ts';
 import { TestManager } from './test-manager.ts';
 
 // Destructure the imported functions for easier access
-const UniversalStore = experimental_UniversalStore;
+const UniversalStore = internal_UniversalStore;
 const getStatusStore = experimental_getStatusStore;
 const getTestProviderStore = experimental_getTestProviderStore;
 
@@ -39,7 +42,7 @@ const channel: Channel = new Channel({
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
 
-new TestManager({
+const testManager = new TestManager({
   store,
   componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
   a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
@@ -51,6 +54,13 @@ new TestManager({
     configDir: process.env.STORYBOOK_CONFIG_DIR || '',
   } as any,
   configLoader: process.env.STORYBOOK_CONFIG_LOADER as BuilderOptions['configLoader'],
+  previewAnnotations: JSON.parse(
+    process.env.STORYBOOK_PREVIEW_ANNOTATIONS || '[]'
+  ) as PreviewAnnotation[],
+});
+
+channel.on(STORY_INDEX_CHANNEL_EVENT_NAME, (index: StoryIndex) => {
+  testManager.storyIndex = index;
 });
 
 const exit = (code = 0) => {

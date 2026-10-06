@@ -49,22 +49,19 @@ export class AttachUnavailableError extends StorybookError {
 }
 
 /**
- * The `storybook` binary resolved for this process does not belong to the Storybook project the
- * SDK was pointed at, and auto-spawning a matching child host was declined.
+ * The instance record cannot prove which `storybook` installation the running Storybook is, or
+ * the installations differ and spawning a child host from the recorded one is not allowed
+ * (`autoSpawn: false`, or this process is already a child host). `reason` is the whole message
+ * and names the recovery.
  */
 export class EnvironmentMismatchError extends StorybookError {
-  constructor(
-    public data: {
-      instanceCwd: string;
-      resolvedBinPath: string;
-      reason: string;
-    }
-  ) {
+  constructor(public data: { reason: string }) {
     super({
       name: 'EnvironmentMismatchError',
       category: Category.CLI,
       code: 5,
-      message: `${data.reason} The Storybook project at ${data.instanceCwd} does not own the \`storybook\` binary resolved at ${data.resolvedBinPath}.`,
+      message: data.reason,
+      agentFacing: true,
     });
   }
 }

@@ -13,7 +13,7 @@ export type FinalizationCommandOptions = {
   showAgentFollowUp: boolean;
   /** When true, show the "paste this prompt to your AI agent" instructions */
   showAiInstructions: boolean;
-  /** Package-manager-aware `storybook skills get setup` command shown to agents */
+  /** Package-manager-aware `storybook skills setup` command shown to agents */
   setupSkillCommand: string;
 };
 

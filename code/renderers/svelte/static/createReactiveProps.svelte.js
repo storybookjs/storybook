@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Turns an object into reactive props in Svelte 5. Needs to be in a separate .svelte.js file to
  * ensure Svelte compiles it. As proposed in

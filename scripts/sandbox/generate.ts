@@ -269,22 +269,20 @@ const runGenerators = async (
 
           // We do the creation inside a temp dir to avoid yarn container problems
           createBaseDir = await temporaryDirectory();
-          if (!script.includes('pnp')) {
-            try {
-              await setupYarn({ cwd: createBaseDir });
-            } catch (error) {
-              const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
-              if (isCI) {
-                ghActions.error(dedent`${message}
-                  ${formatCommandError(error)}`);
-              } else {
-                console.error(message);
-                console.error(error);
-              }
-              throw new Error(message, {
-                cause: error,
-              });
+          try {
+            await setupYarn({ cwd: createBaseDir });
+          } catch (error) {
+            const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
+            if (isCI) {
+              ghActions.error(dedent`${message}
+                ${formatCommandError(error)}`);
+            } else {
+              console.error(message);
+              console.error(error);
             }
+            throw new Error(message, {
+              cause: error,
+            });
           }
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);

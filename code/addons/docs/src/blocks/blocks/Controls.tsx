@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useContext } from 'react';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 
 import type { Args, Globals, Renderer, StrictArgTypes } from 'storybook/internal/csf';
 import type { DocsContextProps, ModuleExports, PreparedStory } from 'storybook/internal/types';
@@ -165,7 +165,7 @@ const LegacyControls: FC<ControlsStoryProps> = ({ story, context, ...props }) =>
 };
 
 const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...props }) => {
-  const { parameters, argTypes, component } = story;
+  const { parameters, argTypes } = story;
   const filterProps = getControlsFilterProps(story, props);
   const interactiveState = useControlsInteractiveState(story, context);
   const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
@@ -186,7 +186,7 @@ const DocgenServiceControls: FC<ControlsStoryProps> = ({ story, context, ...prop
 
   return (
     <ControlsTables
-      mainName={getComponentName(component) ?? serviceRows.serviceComponentName}
+      mainName={serviceRows.serviceComponentName}
       mainRows={serviceRows.mainRows}
       subcomponentRows={serviceRows.subcomponentRows}
       {...filterProps}

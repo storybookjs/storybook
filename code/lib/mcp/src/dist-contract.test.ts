@@ -60,7 +60,7 @@ function markdownLinkTargets(markdown: string): string[] {
  * The budget stepped up when this package moved from shipping its own docs tools to bundling
  * Storybook's shared docs toolset — the engine it used to duplicate now arrives from core.
  */
-const SIZE_BUDGET_BYTES = 80_000;
+const SIZE_BUDGET_BYTES = 85_000;
 
 /**
  * The declarations are bundled from per-file emit and tree-shaken (~39 KB today). When they were

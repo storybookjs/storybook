@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
-import { SERVICE_PATCHES } from '../../service-channel.ts';
+import { entryEmits } from '../../fixtures.ts';
 import { getService } from '../../service-registry.ts';
 import { clearRegistry } from '../../server.ts';
 import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
@@ -280,6 +280,22 @@ describe('module-graph open service', () => {
         storyFiles: ['./a.stories.tsx'],
       });
       expect(runtime.queries.graphRevision.get(undefined)).toBe(2);
+    });
+
+    it('keeps the newest in-graph change time, even when an older edit is reported later', async () => {
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./a.stories.tsx'],
+        changedAt: 2_000,
+      });
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./b.stories.tsx'],
+        changedAt: 1_000,
+      });
+      await runtime.commands._applyGraphUpdate({ bumpedStoryFiles: [], changedAt: 3_000 });
+
+      expect(runtime.queries.graphChangedAt.get(undefined)).toBe(2_000);
     });
 
     it('advances file activity but not graph revision for an out-of-graph change', async () => {
@@ -615,6 +631,87 @@ describe('module-graph open service', () => {
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
     });
 
+    it('returns serialized change-detection readiness from the injected getter', async () => {
+      const getChangeDetectionReadiness = vi.fn(async () => ({
+        status: 'unavailable' as const,
+        reason: 'disabled',
+      }));
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness,
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'disabled',
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'disabled',
+      });
+      expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
+    });
+
+    it('forwards an optional error on unavailable change-detection readiness', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'unavailable' as const,
+          reason: 'vite warmup failed',
+          error: new Error('warmup failed'),
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+    });
+
+    it('loads change-detection readiness through the query load hook', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({ status: 'ready' as const }),
+      });
+
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'pending',
+      });
+      await expect(runtime.queries.changeDetectionReadiness.loaded(undefined)).resolves.toEqual({
+        status: 'ready',
+      });
+    });
+
+    it('serializes a change-detection error readiness result', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'error',
+          error: { message: 'scan blew up' },
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'error',
+        error: { message: 'scan blew up' },
+      });
+    });
+
     it('settles the graph as unavailable when getAdapter rejects', async () => {
       const getAdapter = vi.fn(async () => {
         throw new Error('preview builder missing');
@@ -723,12 +820,6 @@ describe('module-graph open service', () => {
       return { storyFiles, fatIndex, fatIndexBytes: JSON.stringify(fatIndex).length };
     }
 
-    function servicePatches(channel: ReturnType<typeof createTestChannel>) {
-      return channel.emit.mock.calls
-        .filter(([event]) => event === SERVICE_PATCHES)
-        .map(([, payload]) => payload as { serviceId: string; state: Record<string, unknown> });
-    }
-
     it('broadcasts only the slim hot snapshot on a bump-only update', async () => {
       const channel = createTestChannel();
       installTestChannel(channel);
@@ -742,10 +833,10 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/story-0.stories.ts'],
       });
 
-      const patches = servicePatches(channel);
-      expect(patches.map((p) => p.serviceId)).toEqual(['core/module-graph']);
-      expect(patches[0].state).not.toHaveProperty('storiesByFile');
-      expect(JSON.stringify(patches[0].state).length).toBeLessThan(fatIndexBytes / 20);
+      const entries = entryEmits(channel);
+      expect(entries.map((entry) => entry.serviceId)).toEqual(['core/module-graph']);
+      expect(entries[0].patch.some((op) => op.path === '/storiesByFile')).toBe(false);
+      expect(JSON.stringify(entries[0].patch).length).toBeLessThan(fatIndexBytes / 20);
       expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
       expect(
         moduleGraphIndex().queries.storiesForFiles.get({ files: ['./src/file-0.ts'] })
@@ -770,14 +861,16 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/story-0.stories.ts'],
       });
 
-      const patches = servicePatches(channel);
-      expect(patches.map((p) => p.serviceId)).toEqual([
+      const entries = entryEmits(channel);
+      expect(entries.map((entry) => entry.serviceId)).toEqual([
         'core/module-graph-index',
         'core/module-graph',
       ]);
-      expect(patches[0].state).toHaveProperty('storiesByFile');
-      expect(patches[0].state.storiesByFile).toEqual(nextIndex);
-      expect(patches[1].state).not.toHaveProperty('storiesByFile');
+      const indexOp = entries[0].patch.find((op) => op.path === '/storiesByFile');
+      expect(indexOp).toEqual(
+        expect.objectContaining({ path: '/storiesByFile', value: nextIndex })
+      );
+      expect(entries[1].patch.some((op) => op.path === '/storiesByFile')).toBe(false);
       expect(
         moduleGraphIndex().queries.storiesForFiles.get({ files: ['./src/file-new.ts'] })
       ).toEqual([[{ storyFile: './src/story-0.stories.ts', depth: 2 }]]);

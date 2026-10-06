@@ -47,6 +47,38 @@ const moduleGraphStatusSchema = v.variant('value', [
 
 const noInputSchema = v.undefined();
 
+const changeDetectionReadinessSchema = v.variant('status', [
+  v.object({
+    status: v.literal('pending'),
+  }),
+  v.object({
+    status: v.literal('ready'),
+  }),
+  v.object({
+    status: v.literal('unavailable'),
+    reason: v.pipe(
+      v.string(),
+      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+    ),
+    error: v.optional(
+      v.object({
+        message: v.pipe(
+          v.string(),
+          v.description('Optional diagnostic from the provider that marked scanning unavailable.')
+        ),
+      })
+    ),
+  }),
+  v.object({
+    status: v.literal('error'),
+    error: v.object({
+      message: v.pipe(v.string(), v.description('Human-readable scan failure message.')),
+    }),
+  }),
+]);
+
+export type ChangeDetectionReadinessResult = v.InferOutput<typeof changeDetectionReadinessSchema>;
+
 export type { ModuleGraphServiceState } from './types.ts';
 
 export const moduleGraphServiceDef = defineService({
@@ -58,9 +90,11 @@ export const moduleGraphServiceDef = defineService({
     workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
+    graphChangedAt: 0,
     fileActivityRevision: 0,
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
+    changeDetectionReadiness: { status: 'pending' },
   } as ModuleGraphServiceState,
   queries: {
     status: {
@@ -72,6 +106,16 @@ export const moduleGraphServiceDef = defineService({
         await ctx.self.commands._waitForSettledEngine(undefined);
       },
       handler: (_input, ctx) => ctx.self.state.status,
+    },
+    changeDetectionReadiness: {
+      description:
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._waitForChangeDetectionReadiness(undefined);
+      },
+      handler: (_input, ctx) => ctx.self.state.changeDetectionReadiness,
     },
     graphRevision: {
       description:
@@ -108,6 +152,13 @@ export const moduleGraphServiceDef = defineService({
         }
         return max;
       },
+    },
+    graphChangedAt: {
+      description:
+        "Newest time (unix ms) a file change that advanced `graphRevision` was made, 0 before the first one. Dated by the file's modification time where possible, so a builder that reports an edit late cannot make it look newer than it is.",
+      input: noInputSchema,
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.graphChangedAt,
     },
     fileActivityRevision: {
       description:
@@ -207,12 +258,18 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
+        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision, advances `graphChangedAt`, and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
       input: v.object({
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
           v.description(
             'Story files whose graph changed, using story-index-style relative paths. Each listed file has its version incremented.'
+          )
+        ),
+        changedAt: v.optional(
+          v.pipe(
+            v.number(),
+            v.description('When (unix ms) the change was made. Defaults to now when unknown.')
           )
         ),
       }),
@@ -228,6 +285,7 @@ export const moduleGraphServiceDef = defineService({
             return;
           }
           state.graphRevision += 1;
+          state.graphChangedAt = Math.max(state.graphChangedAt, input.changedAt ?? Date.now());
           state.latestChangedStoryFiles = input.bumpedStoryFiles;
           for (const storyFile of input.bumpedStoryFiles) {
             state.storyChangeRevisions[storyFile] = state.graphRevision;
@@ -253,6 +311,13 @@ export const moduleGraphServiceDef = defineService({
         'Starts the engine if needed and waits until its current build or patch cycle has finished. Handler is supplied at server registration.',
       input: noInputSchema,
       output: v.void(),
+    },
+    _waitForChangeDetectionReadiness: {
+      internal: true,
+      description:
+        'Waits until change-detection scan readiness is published on the process that owns the scanner.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
     },
   },
 });

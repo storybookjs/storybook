@@ -1,6 +1,7 @@
 import type {
   Addon_Comparator,
   Addon_StorySortParameter,
+  Addon_StorySortObjectParameter,
   Addon_StorySortParameterV7,
   IndexEntry,
   IndexEntryLegacy,
@@ -13,19 +14,42 @@ import { dedent } from 'ts-dedent';
 
 import { storySort } from './storySort.ts';
 
+const toComparator = (storySortParameter: Addon_StorySortParameterV7): Addon_Comparator<any> =>
+  typeof storySortParameter === 'function'
+    ? storySortParameter
+    : storySort(
+        Array.isArray(storySortParameter)
+          ? { order: storySortParameter }
+          : (storySortParameter as Addon_StorySortObjectParameter)
+      );
+
+// Each sorter breaks the ties of the ones before it.
+export const combineStorySorts = (
+  storySorts: Addon_StorySortParameterV7[]
+): Addon_StorySortParameterV7 | undefined => {
+  if (storySorts.length <= 1) {
+    return storySorts[0];
+  }
+  const comparators = storySorts.map(toComparator);
+  return (a: IndexEntry, b: IndexEntry) => {
+    for (const comparator of comparators) {
+      // A comparator that returns nothing (or `false`) considers the stories equal, as in Array.sort.
+      const result = Number(comparator(a, b)) || 0;
+      if (result !== 0) {
+        return result;
+      }
+    }
+    return 0;
+  };
+};
+
 const sortStoriesCommon = (
   stories: IndexEntry[],
-  storySortParameter: Addon_StorySortParameterV7,
+  storySortParameter: Addon_StorySortParameterV7 | undefined,
   fileNameOrder: Path[]
 ) => {
   if (storySortParameter) {
-    let sortFn: Addon_Comparator<any>;
-    if (typeof storySortParameter === 'function') {
-      sortFn = storySortParameter;
-    } else {
-      sortFn = storySort(storySortParameter);
-    }
-    stories.sort(sortFn as (a: IndexEntry, b: IndexEntry) => number);
+    stories.sort(toComparator(storySortParameter) as (a: IndexEntry, b: IndexEntry) => number);
   } else {
     stories.sort(
       (s1, s2) => fileNameOrder.indexOf(s1.importPath) - fileNameOrder.indexOf(s2.importPath)
@@ -36,7 +60,7 @@ const sortStoriesCommon = (
 
 export const sortStoriesV7 = (
   stories: IndexEntry[],
-  storySortParameter: Addon_StorySortParameterV7,
+  storySortParameter: Addon_StorySortParameterV7 | undefined,
   fileNameOrder: Path[]
 ) => {
   try {

@@ -28,7 +28,7 @@ export default {
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
     ),
   ],
-} as Meta<typeof TestDiscrepancyMessage>;
+} satisfies Meta<typeof TestDiscrepancyMessage>;
 
 export const BrowserPassedCliFailed: Story = {
   args: {

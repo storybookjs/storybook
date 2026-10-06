@@ -125,7 +125,7 @@ describe('runSkillsCommand', () => {
     });
 
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-    expect(stories.output).toContain('Documentation Workflow');
+    expect(stories.output).toContain('npx storybook tools docs show --id <id>');
 
     const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
     expect(writeStory.output).toContain('npx storybook tools docs list');
@@ -134,7 +134,7 @@ describe('runSkillsCommand', () => {
   it('omits the docs workflow when the CLI docs gate is off', async () => {
     const d = deps();
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-    expect(stories.output).not.toContain('Documentation Workflow');
+    expect(stories.output).not.toContain('npx storybook tools docs');
   });
 
   it('write-story assembles CLI-transport story instructions', async () => {
@@ -145,25 +145,25 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('npx storybook tools stories changed');
   });
 
-  it('stories carries the write-story text and ends with a reference of the tools it names', async () => {
+  it('stories teaches each command inline, without a command reference', async () => {
     const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabledForCli: true,
+      a11yEnabled: true,
+    });
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-    const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
 
-    expect(stories.output).toContain(writeStory.output.split('# Command reference')[0]);
-    expect(describedTools(stories.output)).toEqual([
-      'stories preview',
-      'stories changed',
-      'stories find-by-component',
-      'review create',
-      'test run',
-    ]);
+    expect(describedTools(stories.output)).toEqual([]);
+    expect(stories.output).toContain("npx storybook tools test run --stories '[{");
+    expect(stories.output).toContain("npx storybook tools review create --input '{");
+    expect(stories.output.length).toBeLessThan(6000);
   });
 
-  it('--all prints the write-story text once', async () => {
+  it('--all prints the stories workflow once', async () => {
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
 
-    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
+    expect(result.output.split('# Storybook workflow')).toHaveLength(2);
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

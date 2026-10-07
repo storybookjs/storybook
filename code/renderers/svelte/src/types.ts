@@ -23,6 +23,8 @@ export interface SvelteRenderer<
   ) => Promise<Canvas>;
 }
 
+export interface SvelteTypes extends SvelteRenderer {}
+
 export interface SvelteStoryResult<
   Props extends Record<string, any> = any,
   Exports extends Record<string, any> = any,

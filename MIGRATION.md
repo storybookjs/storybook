@@ -607,17 +607,17 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 
 ### Icons component removed
 
-The deprecated `Icons` and `Symbol` components are removed from `@storybook/components`. Render the icon you need directly from `@storybook/icons` (see [#29159](https://github.com/storybookjs/storybook/issues/29159)):
+The deprecated `Icons` and `Symbols` components are removed from `@storybook/components`. The exports had already been dropped from `storybook/internal/components` in 9.0 (commit `b681c7d`), so if you are still referencing them you are on 8.x or earlier. Render the icon you need directly from `@storybook/icons` — each icon name maps to a component of the same name (see [#29159](https://github.com/storybookjs/storybook/issues/29159)):
 
 ```diff
--import { Icons } from 'storybook/internal/components';
+-import { Icons } from '@storybook/components';
 +import { HeartIcon } from '@storybook/icons';
 
 -<Icons icon="heart" />
 +<HeartIcon />
 ```
 
-String icon names in `globalTypes` toolbar menus no longer render. Menu labels fall back to the selected item's `title` or `value`, so give every toolbar menu a `title`:
+String icon names in `globalTypes` toolbar menus no longer render. Toolbar menu items still fall back to their `value` when they have no `title`, but the toolbar itself does not: a toolbar configured without a `title` (previously covered by the string `icon`) renders without a visible label and logs a `console.warn`. Give every toolbar menu a `title`:
 
 ```diff
 myAddon: {

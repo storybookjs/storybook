@@ -11,8 +11,6 @@ import * as EVENTS_MANAGER_ERRORS from 'storybook/internal/manager-errors';
 import * as ROUTER from 'storybook/internal/router';
 import * as TYPES from 'storybook/internal/types';
 
-import * as ICONS from '@storybook/icons';
-
 import * as MANAGER_API from 'storybook/manager-api';
 import * as TEST from 'storybook/test';
 import * as THEMING from 'storybook/theming';
@@ -26,7 +24,6 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'react-dom': REACT_DOM,
   'react-dom/client': REACT_DOM_CLIENT,
   'react-aria/FocusScope': REACT_ARIA_FOCUS_SCOPE,
-  '@storybook/icons': ICONS,
 
   'storybook/manager-api': MANAGER_API,
 

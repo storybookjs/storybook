@@ -1,40 +1,23 @@
+import { describe, expectTypeOf, it } from 'vitest';
+
 import type {
   AfterEach,
   BeforeEach,
   DecoratorFunction,
   LoaderFunction,
   PlayFunction,
-  StoryContextUpdate,
+  StrictArgTypes,
 } from './story.ts';
 
-const loader: LoaderFunction = (context) => {
-  // @ts-expect-error lifecycle argTypes cannot be assigned to application values
-  const invalid: number = context.argTypes;
-  void invalid;
-  // @ts-expect-error argTypes are unavailable during lifecycle hooks
-  return Object.keys(context.argTypes);
-};
+describe('argTypes on the story context', () => {
+  it('is unknown in lifecycle hooks', () => {
+    expectTypeOf<Parameters<LoaderFunction>[0]['argTypes']>().toEqualTypeOf<unknown>();
+    expectTypeOf<Parameters<BeforeEach>[0]['argTypes']>().toEqualTypeOf<unknown>();
+    expectTypeOf<Parameters<PlayFunction>[0]['argTypes']>().toEqualTypeOf<unknown>();
+    expectTypeOf<Parameters<AfterEach>[0]['argTypes']>().toEqualTypeOf<unknown>();
+  });
 
-const beforeEach: BeforeEach = (context) => {
-  // @ts-expect-error argTypes are unavailable during lifecycle hooks
-  void Object.keys(context.argTypes);
-};
-
-const play: PlayFunction = (context) => {
-  // @ts-expect-error argTypes are unavailable during lifecycle hooks
-  void Object.keys(context.argTypes);
-};
-
-const afterEach: AfterEach = (context) => {
-  // @ts-expect-error argTypes are unavailable during lifecycle hooks
-  void Object.keys(context.argTypes);
-};
-
-const decorator: DecoratorFunction = (story, context) => {
-  Object.keys(context.argTypes);
-  return story(context);
-};
-
-const update: StoryContextUpdate = { custom: 'value' };
-
-void [loader, beforeEach, play, afterEach, decorator, update];
+  it('is resolved in decorators', () => {
+    expectTypeOf<Parameters<DecoratorFunction>[1]['argTypes']>().toEqualTypeOf<StrictArgTypes>();
+  });
+});

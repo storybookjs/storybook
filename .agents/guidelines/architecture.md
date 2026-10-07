@@ -117,5 +117,4 @@ the fields to change and provide migration-specific error guidance.
 - `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
 - Pure content lives in `code/core/src/cli/skills/content/` and is exported through
   `storybook/internal/skills`; addon-mcp consumes the same builders.
-- Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
-  `core-server`. Lint rules enforce both boundaries.
+- Keep `cli/skills/content/**` independent of `core-server`. A lint rule enforces the boundary.

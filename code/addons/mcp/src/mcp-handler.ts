@@ -13,7 +13,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
-import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
+import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
@@ -143,7 +143,6 @@ export const mcpServerHandler = async ({
     options,
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
-    cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
     origin: origin!,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,

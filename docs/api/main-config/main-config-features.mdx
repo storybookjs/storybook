@@ -303,27 +303,6 @@ To use the legacy builder-based docgen path, turn the server off:
 
 <CodeSnippets path="main-config-features-docgen-server.md" />
 
-### Migrating from Storybook 10
-
-The Storybook 11 automigration renames an explicit `experimentalDocgenServer` option to `docgenServer` and keeps its value:
-
-```diff title=".storybook/main.ts"
- import type { StorybookConfig } from '@storybook/react-vite';
-
- const config: StorybookConfig = {
-   framework: '@storybook/react-vite',
-   features: {
--    experimentalDocgenServer: false,
-+    docgenServer: false,
-   },
- };
-
- export default config;
-```
-
-If both options are present, the automigration keeps `docgenServer`.
-Storybook 11 no longer reads `experimentalDocgenServer`.
-
 Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
 There is no translation for `reactDocgenTypescriptOptions`, including `propFilter`, or for a custom Vue docgen `tsconfig`.
 Set `docgenServer: false` if your project depends on those settings.

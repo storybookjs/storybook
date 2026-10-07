@@ -181,22 +181,6 @@ Generation is controlled by the [`compodoc`](#compodoc) and [`compodocArgs`](#co
 
 `npx storybook automigrate` removes the setup that no longer does anything: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` call and the imports that fed it, the same two options on your `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency. It skips any project that sets `docgenServer: false`.
 
-If your Storybook 10 configuration uses `experimentalDocgenServer: false`, the Storybook 11 automigration makes this change:
-
-```diff title=".storybook/main.ts"
- import type { StorybookConfig } from '@storybook/angular-vite';
-
- const config: StorybookConfig = {
-   framework: '@storybook/angular-vite',
-   features: {
--    experimentalDocgenServer: false,
-+    docgenServer: false,
-   },
- };
-
- export default config;
-```
-
 If you only set `compodoc: false`, the server remains on; `compodoc` controls the legacy engine and is not a server opt-out.
 
 If you keep the wiring instead of running the automigration, nothing breaks:

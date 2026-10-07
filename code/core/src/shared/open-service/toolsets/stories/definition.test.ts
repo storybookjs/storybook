@@ -299,6 +299,13 @@ describe('stories.changed', () => {
     expect(getStatuses).not.toHaveBeenCalled();
   });
 
+  it('rejects when the statuses cannot be read rather than reporting zero changes', async () => {
+    const unsynced = new Error('status store did not sync');
+    getStatuses.mockRejectedValue(unsynced);
+
+    await expect(runChanged()).rejects.toBe(unsynced);
+  });
+
   it('degrades to "no changes detected" when git is unusable, as the pre-toolset tool did', async () => {
     getChangedFiles.mockRejectedValue(new Error('not a git repository'));
     getRepoRoot.mockRejectedValue(new Error('not a git repository'));

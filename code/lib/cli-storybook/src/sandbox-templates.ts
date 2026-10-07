@@ -531,7 +531,7 @@ export const baseTemplates = {
       storiesVariant: 'vue3-vite-default-ts',
       mainConfig: {
         features: {
-          experimentalDocgenServer: true,
+          docgenServer: true,
           componentsManifest: true,
         },
       },
@@ -709,7 +709,7 @@ export const baseTemplates = {
       // docgen path is now an explicit opt-out rather than the absence of a flag.
       mainConfig: {
         features: {
-          experimentalDocgenServer: false,
+          docgenServer: false,
         },
       },
     },
@@ -749,7 +749,7 @@ export const baseTemplates = {
       // `docgenServerTemplates`.
       mainConfig: {
         features: {
-          experimentalDocgenServer: true,
+          docgenServer: true,
           componentsManifest: true,
         },
       },
@@ -823,7 +823,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      // create-vite still scaffolds Preact 10.
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
+      resolutions: {
+        preact: 'npm:preact@^11',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -837,23 +841,10 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-  },
-  'preact-vite/prerelease-ts': {
-    name: 'Preact Prerelease (Vite | TypeScript)',
-    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts`,
-    preferNoLink: true,
-    expected: {
-      framework: '@storybook/preact-vite',
-      renderer: '@storybook/preact',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      extraDependencies: ['preact-render-to-string', 'preact@beta'],
+      // create-vite still scaffolds Preact 10.
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
       resolutions: {
-        preact: 'npm:preact@beta',
+        preact: 'npm:preact@^11',
       },
     },
     skipTasks: ['e2e-tests', 'bench'],
@@ -1136,9 +1127,6 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
-  // Disabled for cost-saving reasons, enable when we see signs that Preact 11 is about to release.
-  // After release, replace the default-js config with this one and delete this one.
-  // 'preact-vite/prerelease-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
@@ -1149,9 +1137,9 @@ export const daily: TemplateKey[] = [
 
 export const templatesByCadence = { normal, merged, daily };
 
-// Both are required: without `componentsManifest`, `experimentalDocgenServer` writes nothing to disk
+// Both are required: without `componentsManifest`, `docgenServer` writes nothing to disk
 // for the recorded baselines to read.
-const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
+const DOCGEN_SERVER_FEATURES = ['docgenServer', 'componentsManifest'] as const;
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
 // read without running the sandbox generator. A new function-form template throws below instead of

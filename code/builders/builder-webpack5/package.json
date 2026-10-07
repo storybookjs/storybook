@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-webpack5",
-  "version": "11.0.0-alpha.3",
+  "version": "11.0.0-alpha.4",
   "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
     "storybook",
@@ -64,8 +64,8 @@
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.17",
     "ts-dedent": "^2.0.0",
-    "webpack": "5",
-    "webpack-dev-middleware": "^6.1.2",
+    "webpack": "^5.101.0",
+    "webpack-dev-middleware": "^8.3.0",
     "webpack-hot-middleware": "^2.25.1",
     "webpack-virtual-modules": "^0.6.0"
   },

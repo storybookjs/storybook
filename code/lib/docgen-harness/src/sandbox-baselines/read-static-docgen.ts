@@ -80,7 +80,7 @@ export function readStaticDocgen({
     throw new Error(
       `No docgen snapshots at ${docgenDir}.\n` +
         `Build the sandbox first, and check that its main config enables both ` +
-        `features.experimentalDocgenServer and features.componentsManifest.`,
+        `features.docgenServer and features.componentsManifest.`,
       { cause }
     );
   }

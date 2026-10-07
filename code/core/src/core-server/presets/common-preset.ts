@@ -245,7 +245,7 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 const babelPresetEnvMajor = getBabelPresetEnvMajor();
 
-export const features: PresetProperty<'features'> = async (existing) => ({
+export const features: PresetProperty<'features'> = async (existing, options) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
@@ -254,6 +254,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
+  docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),
   highlight: true,
   interactions: true,
   measure: true,
@@ -421,7 +422,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
   registerToolset(reviewToolset);
 
-  if (features?.experimentalDocgenServer) {
+  if (features?.docgenServer) {
     const [docgenDescriptors, storyDocsProvider] = await Promise.all([
       options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
       options.presets.apply<StoryDocsProvider>(

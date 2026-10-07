@@ -90,6 +90,13 @@ describe('getProcessAncestry', () => {
     expect(getProcessAncestry(9999)).toEqual([]);
   });
 
+  it('stops without warning on a self-referencing process on posix', () => {
+    platformMock.mockReturnValue('linux');
+    execSyncMock.mockReturnValue(' 5  5 looping-process \n');
+
+    expect(getProcessAncestry(5)).toEqual([{ pid: 5, ppid: 5, command: 'looping-process' }]);
+  });
+
   it('stops without warning on cycles in the process tree', () => {
     platformMock.mockReturnValue('win32');
     execSyncMock.mockImplementation((command: string) =>

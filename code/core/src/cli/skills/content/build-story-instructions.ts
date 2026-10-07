@@ -34,8 +34,7 @@ export function buildStoryInstructions({
 
   // Mirrors the review-aware rewrite in build-server-instructions.ts:
   // discovery feeds the review, not the preview list. Plugin-path agents do
-  // see those server instructions (`storybook ai --help` embeds them as its
-  // "# Storybook workflow instructions" section), but this tool is billed as
+  // see those server instructions (the `stories` skill embeds them), but this tool is billed as
   // the source of truth for story work and this line still routed discovery
   // into previews — a contradiction agents resolved by constructing story
   // IDs from file names and publishing reviews with zero discovery calls.

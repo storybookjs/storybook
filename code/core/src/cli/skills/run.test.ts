@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
@@ -174,6 +176,20 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
+  it('reports the setup run only when the setup skill itself was requested', async () => {
+    const setup = await runSkillsCommand({ tokens: ['setup'], target: {} }, deps());
+    const all = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(setup.setupRun).toEqual({
+      projectInfo: {
+        rendererPackage: '@storybook/react',
+        builderPackage: '@storybook/builder-vite',
+      },
+      prompt: 'optimized-tests',
+    });
+    expect(all.setupRun).toBeUndefined();
+  });
+
   it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
     'setup accepts renderer %s',
     async (rendererPackage) => {
@@ -262,8 +278,14 @@ describe('runSkillsCommand', () => {
     const target = { cwd: '/some/other/project', configDir: 'custom-storybook' };
     await runSkillsCommand({ tokens: ['setup'], target }, d);
     expect(d.getProjectInfo).toHaveBeenCalledWith({
-      configDir: resolveStorybookConfigDir(target),
+      configDir: relative(process.cwd(), resolveStorybookConfigDir(target)),
     });
+  });
+
+  it('setup probes `--config-dir .` as the project directory itself', async () => {
+    const d = deps();
+    await runSkillsCommand({ tokens: ['setup'], target: { configDir: '.' } }, d);
+    expect(d.getProjectInfo).toHaveBeenCalledWith({ configDir: '.' });
   });
 
   it('reports a clean one-line message when loading the target Storybook fails, no stack trace', async () => {

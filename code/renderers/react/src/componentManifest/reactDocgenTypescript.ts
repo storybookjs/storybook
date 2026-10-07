@@ -20,7 +20,8 @@ type ReactDocgenTypescriptRuntime = typeof import('react-docgen-typescript');
 let typeScriptPromise: Promise<TypeScriptRuntime> | undefined;
 let reactDocgenTypescriptPromise: Promise<ReactDocgenTypescriptRuntime> | undefined;
 
-const loadTypeScript = () => (typeScriptPromise ??= import('typescript'));
+const loadTypeScript = () =>
+  (typeScriptPromise ??= import('typescript').then((ts) => ts.default ?? ts));
 
 const loadReactDocgenTypescript = () =>
   (reactDocgenTypescriptPromise ??= import('react-docgen-typescript'));

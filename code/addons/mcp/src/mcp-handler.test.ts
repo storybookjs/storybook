@@ -239,15 +239,14 @@ describe('mcpServerHandler', () => {
   async function getRegisteredToolNames(
     mockOptions: any,
     port: number,
-    handlerOptions: { sources?: any[]; headers?: Record<string, string> } = {}
+    handlerOptions: { sources?: any[] } = {}
   ): Promise<string[]> {
     const host = `localhost:${port}`;
     const addonOptions = { toolsets: { dev: true, docs: true } };
-    const { headers: extraHeaders = {}, ...restHandlerOptions } = handlerOptions;
 
     const initReq = createMockIncomingMessage({
       method: 'POST',
-      headers: { 'content-type': 'application/json', host, ...extraHeaders },
+      headers: { 'content-type': 'application/json', host },
       body: createMCPInitializeRequest(),
     });
     const { response: initResponse } = createMockServerResponse();
@@ -257,12 +256,12 @@ describe('mcpServerHandler', () => {
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
-      ...restHandlerOptions,
+      ...handlerOptions,
     });
 
     const listReq = createMockIncomingMessage({
       method: 'POST',
-      headers: { 'content-type': 'application/json', host, ...extraHeaders },
+      headers: { 'content-type': 'application/json', host },
       body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
     });
     const { response: listResponse, getResponseData } = createMockServerResponse();
@@ -272,7 +271,7 @@ describe('mcpServerHandler', () => {
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
-      ...restHandlerOptions,
+      ...handlerOptions,
     });
 
     const { body } = getResponseData();
@@ -392,7 +391,9 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '**CRITICAL: Never hallucinate component properties!**'
     );
-    expect(parsedResponse.result.instructions).toContain('## Multi-Source Requests');
+    expect(parsedResponse.result.instructions).toContain(
+      'scope multi-source requests with `storybookId`'
+    );
     expect(parsedResponse.result.instructions).not.toContain(
       '## UI Building and Story Writing Workflow'
     );
@@ -571,7 +572,7 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('review-create');
   });
 
-  it('does not list review-create, not even for storybook ai CLI requests, when changeDetection is off', async () => {
+  it('does not list review-create when changeDetection is off', async () => {
     const mockOptions = createMockOptions({
       port: 6015,
       presets: {
@@ -583,9 +584,7 @@ describe('mcpServerHandler', () => {
       },
     });
 
-    const toolNames = await getRegisteredToolNames(mockOptions, 6015, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
+    const toolNames = await getRegisteredToolNames(mockOptions, 6015);
     expect(toolNames).not.toContain('review-create');
   });
 });

@@ -26,18 +26,16 @@ import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`.
+export const isDocgenProviderEnabled = true;
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 
-// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
-// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
-// Component manifests need that server path, so they default on with it. A user's `main.ts` merges
-// over these, so `features: { experimentalDocgenServer: false }` or `componentsManifest: false` opts out.
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
   componentsManifest: true,
-  experimentalDocgenServer: true,
 });
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -116,12 +114,14 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
     'features',
     {}
   );
-  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+  const docgenServer = !!resolvedFeatures?.docgenServer;
+  // Test builds turn `docgenServer` off to skip docgen entirely, not to fall back to Compodoc.
+  const skipDocgen = !!options.build?.test?.disableDocgen;
 
   // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
   // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled && !docgenServer) {
+  if (compodocConfig.enabled && !docgenServer && !skipDocgen) {
     await ensureCompodocDocumentation({
       compodocArgs: compodocConfig.compodocArgs,
       tsconfig: compodocConfig.tsconfig,
@@ -131,13 +131,15 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
   }
 
   const propsTable = resolvePropsTable(frameworkOptions, resolvedFeatures);
-  warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  if (!skipDocgen) {
+    warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  }
 
-  if (resolvedFeatures?.componentsManifest && !docgenServer) {
+  if (resolvedFeatures?.componentsManifest && !docgenServer && !skipDocgen) {
     logger.warn(
-      `The \`componentsManifest\` feature needs the \`experimentalDocgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
+      `The \`componentsManifest\` feature needs the \`docgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
         `and MCP clients get no component API from it. ` +
-        `Turn the docgen server on with \`features: { experimentalDocgenServer: true }\` in your \`main.ts\`.`
+        `Turn the docgen server on with \`features: { docgenServer: true }\` in your \`main.ts\`.`
     );
   }
 
@@ -231,7 +233,9 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
-      ...(docgenServer && options.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
+      ...((docgenServer || skipDocgen) && options.configDir
+        ? [compodocJsonStubPlugin(options.configDir)]
+        : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({

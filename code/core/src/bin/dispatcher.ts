@@ -36,6 +36,16 @@ async function run() {
 
   const args = process.argv.slice(2);
 
+  // Agents that learned `storybook ai setup` from Storybook 10 docs keep calling it, and the generic
+  // "Did you mean add?" fallback would steer them to the wrong command. Remove in Storybook 12.
+  if (args[0] === 'ai') {
+    logger.error(
+      dedent`The \`storybook ai\` command was removed in Storybook 11.
+      Run \`npx storybook skills setup\` instead of \`storybook ai setup\`, and \`npx storybook tools\` for the other \`ai\` subcommands.`
+    );
+    process.exit(1);
+  }
+
   if (args[0] === 'tools' && !args.includes('--no-attach')) {
     process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
   }

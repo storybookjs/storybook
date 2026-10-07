@@ -956,7 +956,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      // create-vite still scaffolds Preact 10.
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
+      resolutions: {
+        preact: 'npm:preact@^11',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -969,7 +973,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      // create-vite still scaffolds Preact 10.
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
+      resolutions: {
+        preact: 'npm:preact@^11',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },

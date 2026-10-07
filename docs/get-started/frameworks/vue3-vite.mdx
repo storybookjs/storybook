@@ -71,7 +71,7 @@ setup((app) => {
 
 <Callout variant="info">
 
-Storybook 11 uses server-side docgen with `vue-component-meta` by default. If your Storybook 10 configuration explicitly selects a `docgen` engine, disables docgen, or provides a custom `tsconfig`, Storybook 11 preserves that choice by keeping the server off. This compatibility behavior will be removed in Storybook 12.
+Storybook 11 reads Vue component props on the server by default. To keep the Storybook 10 bundler-based `docgen` setup, set `features.docgenServer: false`. That old setup will be removed in Storybook 12.
 
 </Callout>
 

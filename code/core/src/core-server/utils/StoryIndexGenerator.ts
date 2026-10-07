@@ -897,10 +897,32 @@ export class StoryIndexGenerator {
             t.isArrayExpression(tagsNode),
             'Preview tags must be a static array of strings'
           );
-          projectTags = tagsNode.elements.map((tag) => {
-            invariant(t.isStringLiteral(tag), 'Preview tags must be a static array of strings');
-            return tag.value;
-          });
+          const declarations = projectAnnotations._ast.program.body.flatMap((statement) =>
+            t.isVariableDeclaration(statement)
+              ? statement.declarations
+              : t.isExportNamedDeclaration(statement) &&
+                  t.isVariableDeclaration(statement.declaration)
+                ? statement.declaration.declarations
+                : []
+          );
+          const resolveTags = (array: t.ArrayExpression, visited = new Set<string>()): Tag[] =>
+            array.elements.flatMap((tag) => {
+              if (t.isSpreadElement(tag) && t.isIdentifier(tag.argument)) {
+                const name = tag.argument.name;
+                invariant(!visited.has(name), 'Preview tags must be a static array of strings');
+                const value = declarations.find((declaration) =>
+                  t.isIdentifier(declaration.id, { name })
+                )?.init;
+                invariant(
+                  t.isArrayExpression(value),
+                  'Preview tags must be a static array of strings'
+                );
+                return resolveTags(value, new Set([...visited, name]));
+              }
+              invariant(t.isStringLiteral(tag), 'Preview tags must be a static array of strings');
+              return [tag.value];
+            });
+          projectTags = resolveTags(tagsNode);
         }
       } catch (err) {
         once.warn(dedent`

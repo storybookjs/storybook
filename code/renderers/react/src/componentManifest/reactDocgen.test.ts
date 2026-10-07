@@ -48,6 +48,23 @@ test('matches a default import by component name when reexports contain multiple
   expect(match?.actualName).toBe('Button');
 });
 
+test('matches a unique default export when its local name matches another component', async () => {
+  const match = getMatchingDocgen(
+    [
+      { actualName: 'Alias', displayName: 'Alias', exportName: 'Alias' },
+      { actualName: 'Button', displayName: 'Button', exportName: 'default' },
+    ] as unknown as Parameters<typeof getMatchingDocgen>[0],
+    {
+      componentName: 'Alias',
+      importName: 'default',
+      localImportName: 'Alias',
+      isPackage: false,
+    }
+  );
+
+  expect(match?.actualName).toBe('Button');
+});
+
 describe('parseWithReactDocgen exportName coverage', () => {
   test('inline default export function declaration', async () => {
     const code = dedent /* tsx */ `

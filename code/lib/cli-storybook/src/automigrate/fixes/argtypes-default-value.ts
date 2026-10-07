@@ -18,7 +18,7 @@ const argName = (property: t.ObjectProperty): string | undefined => {
 const strip = (object: CsfObject, program: t.Program) => {
   const argTypes = object.get(['argTypes']);
   if (t.isIdentifier(argTypes)) {
-    const sharedArgTypes = program.body
+    let sharedArgTypes = program.body
       .flatMap((statement) =>
         t.isVariableDeclaration(statement)
           ? statement.declarations
@@ -27,6 +27,9 @@ const strip = (object: CsfObject, program: t.Program) => {
             : []
       )
       .find((declaration) => t.isIdentifier(declaration.id, { name: argTypes.name }))?.init;
+    while (t.isTSAsExpression(sharedArgTypes) || t.isTSSatisfiesExpression(sharedArgTypes)) {
+      sharedArgTypes = sharedArgTypes.expression;
+    }
     if (
       t.isObjectExpression(sharedArgTypes) &&
       sharedArgTypes.properties.some(

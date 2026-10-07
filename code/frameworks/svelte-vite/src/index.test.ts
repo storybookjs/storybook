@@ -9,3 +9,7 @@ it('exports Svelte CSF, so stories files can import it from the framework', () =
   expectTypeOf<framework.Args>().toEqualTypeOf<renderer.Args>();
   expectTypeOf<framework.StoryContext>().toEqualTypeOf<renderer.StoryContext>();
 });
+
+it('exports definePreview, so the preview file can import it from the framework', () => {
+  expectTypeOf<typeof framework.definePreview>().toEqualTypeOf<typeof renderer.__definePreview>();
+});

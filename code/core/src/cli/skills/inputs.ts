@@ -1,5 +1,9 @@
+import { relative } from 'node:path';
+
 import type { Options } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
+import { findConfigFile } from '../../common/utils/get-storybook-info.ts';
+import { isCsfFactoryPreview, readConfig } from '../../csf-tools/ConfigFile.ts';
 
 import {
   getToolAvailability,
@@ -8,7 +12,36 @@ import {
 } from './availability.ts';
 import { frameworkToRendererMap } from './content/framework-renderer.ts';
 
-export type SkillInputs = ToolAvailability & { framework: string; renderer?: string };
+export type SkillInputs = ToolAvailability & {
+  framework: string;
+  renderer?: string;
+  /** The preview file imports `definePreview`, the entry point of CSF Factories. */
+  csfFactories: boolean;
+  /** Path of the preview file relative to the working directory; a default name when there is none. */
+  previewFile: string;
+  typescript: boolean;
+};
+
+const isTypeScriptFile = (path: string) => /\.[cm]?tsx?$/.test(path);
+
+async function resolvePreview(configDir = '.storybook') {
+  const previewPath = findConfigFile('preview', configDir);
+  const typescript = isTypeScriptFile(previewPath ?? findConfigFile('main', configDir) ?? '');
+  const path = previewPath ?? `${configDir}/preview.${typescript ? 'ts' : 'js'}`;
+  let csfFactories = false;
+  if (previewPath) {
+    try {
+      csfFactories = isCsfFactoryPreview(await readConfig(previewPath));
+    } catch {
+      // An unparsable preview is treated as a non-factory one.
+    }
+  }
+  return {
+    csfFactories,
+    previewFile: relative(process.cwd(), path).replaceAll('\\', '/') || path,
+    typescript,
+  };
+}
 
 /**
  * The one probing path for skill-content assembly: everything the pure builders need, resolved
@@ -19,12 +52,13 @@ export async function resolveSkillInputs(
   options: Options,
   opts: GetToolAvailabilityOptions = {}
 ): Promise<SkillInputs> {
-  const [availability, frameworkPreset] = await Promise.all([
+  const [availability, frameworkPreset, preview] = await Promise.all([
     getToolAvailability(options, opts),
     options.presets.apply('framework'),
+    resolvePreview(options.configDir),
   ]);
   const framework = extractFrameworkPackageName(
     typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
   );
-  return { ...availability, framework, renderer: frameworkToRendererMap[framework] };
+  return { ...availability, ...preview, framework, renderer: frameworkToRendererMap[framework] };
 }

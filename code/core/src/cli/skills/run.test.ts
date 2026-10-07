@@ -27,6 +27,9 @@ const deps = () => ({
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
     renderer: '@storybook/react',
+    csfFactories: false,
+    previewFile: '.storybook/preview.ts',
+    typescript: true,
     changeDetectionEnabled: true,
     moduleGraphSupported: true,
     reviewEnabled: true,
@@ -157,7 +160,7 @@ describe('runSkillsCommand', () => {
     expect(describedTools(stories.output)).toEqual([]);
     expect(stories.output).toContain("npx storybook tools test run --stories '[{");
     expect(stories.output).toContain("npx storybook tools review create --input '{");
-    expect(stories.output.length).toBeLessThan(6000);
+    expect(stories.output.length).toBeLessThan(10000);
   });
 
   it('--all prints each skill once', async () => {

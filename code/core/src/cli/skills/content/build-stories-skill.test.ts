@@ -4,6 +4,10 @@ import { buildStoriesSkill, type StoriesSkillInputs } from './build-stories-skil
 
 const everything: StoriesSkillInputs = {
   framework: '@storybook/react-vite',
+  renderer: '@storybook/react',
+  csfFactories: false,
+  previewFile: '.storybook/preview.ts',
+  typescript: true,
   docsEnabled: true,
   testSupported: true,
   a11yEnabled: true,
@@ -35,11 +39,53 @@ describe('buildStoriesSkill', () => {
     expect(text).not.toMatch(/\breview/i);
   });
 
-  it('leaves out testing when the project cannot run story tests', () => {
+  it('says that stories are untested when the project cannot run story tests', () => {
     const text = buildStoriesSkill({ ...everything, testSupported: false, a11yEnabled: false });
 
+    expect(text).toContain('cannot run story tests');
     expect(text).not.toContain('test run');
-    expect(text).not.toContain('accessibility');
+    expect(text).not.toContain('accessibility violations');
+  });
+
+  it('teaches CSF Factories when the preview file uses definePreview', () => {
+    const text = buildStoriesSkill({
+      ...everything,
+      csfFactories: true,
+      previewFile: '.storybook/preview.tsx',
+    });
+
+    expect(text).toContain('preview.meta({');
+    expect(text).toContain('meta.story({');
+    expect(text).not.toContain('satisfies Meta');
+    expect(text).toContain('register it once in `.storybook/preview.tsx`');
+  });
+
+  it('teaches CSF 3 with the framework types otherwise', () => {
+    const text = buildStoriesSkill({ ...everything, framework: '@storybook/vue3-vite' });
+
+    expect(text).toContain("import type { Meta, StoryObj } from '@storybook/vue3-vite';");
+    expect(text).not.toContain('preview.meta({');
+  });
+
+  it('leaves the types out in a JavaScript project', () => {
+    const text = buildStoriesSkill({
+      ...everything,
+      typescript: false,
+      previewFile: '.storybook/preview.js',
+    });
+
+    expect(text).toContain('export default { component: Button');
+    expect(text).not.toContain('StoryObj');
+  });
+
+  it('points a Svelte project at its Svelte CSF files', () => {
+    const text = buildStoriesSkill({
+      ...everything,
+      framework: '@storybook/sveltekit',
+      renderer: '@storybook/svelte',
+    });
+
+    expect(text).toContain('*.stories.svelte');
   });
 
   it('selects stories by file and export when no command lists story ids', () => {

@@ -19,7 +19,7 @@ async function getEmbedUrl() {
     [dispatcher, 'tools', 'stories', 'embed', '--stories', JSON.stringify([{ storyId: STORY_ID }])],
     { env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' }, timeout: 60_000 }
   );
-  const embedUrl = stdout.split('\n').find((line) => line.includes('/embed/'));
+  const embedUrl = stdout.split('\n').find((line) => line.includes('.localhost'));
   if (!embedUrl) {
     throw new Error(`\`stories embed\` printed no embed URL:\n${stdout}`);
   }
@@ -27,7 +27,7 @@ async function getEmbedUrl() {
 }
 
 test.describe('story embeds in a sandboxed frame', () => {
-  test.skip(!runsAgainstDevServer, 'The embed path only exists on the dev server.');
+  test.skip(!runsAgainstDevServer, 'Only the dev server serves an embed origin.');
   test.setTimeout(90_000);
 
   let host: Server;
@@ -60,7 +60,7 @@ test.describe('story embeds in a sandboxed frame', () => {
     const story = page.frameLocator('iframe');
     await expect(story.locator('#storybook-root')).toContainText('Default');
 
-    const frame = page.frame({ url: /\/embed\// })!;
+    const frame = page.frame({ url: /\.localhost/ })!;
     expect(
       await frame.evaluate(() => {
         localStorage.setItem('embed', 'local');
@@ -85,8 +85,9 @@ test.describe('story embeds in a sandboxed frame', () => {
   });
 
   test('keeps the story blank through its normal URL', async ({ page }) => {
-    const { origin } = new URL(await getEmbedUrl());
-    frameSrc = `${origin}/iframe.html?id=${STORY_ID}&viewMode=story`;
+    const normalUrl = new URL(await getEmbedUrl());
+    normalUrl.hostname = 'localhost';
+    frameSrc = normalUrl.href;
     const blocked = page.waitForEvent('console', (message) =>
       message.text().includes('blocked by CORS policy')
     );

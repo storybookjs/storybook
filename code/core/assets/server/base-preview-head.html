@@ -493,7 +493,7 @@
   }
 </script>
 <script>
-  /* globals window, document, location, XMLHttpRequest, Request, URL */
+  /* globals window, document */
   // A sandboxed frame without `allow-same-origin` throws on any storage access, which would crash
   // every story whose code touches it. Storage that lasts for the page keeps those stories working.
   {
@@ -535,35 +535,6 @@
       void document.cookie;
     } catch {
       Object.defineProperty(document, 'cookie', { get: () => '', set() {}, configurable: true });
-    }
-  }
-
-  // Under the dev server's embed base, only URLs below it are readable. Imports stay below it
-  // through the import map; `fetch` and XHR requests to the dev server are moved below it here.
-  // The path is the one signal both builders share: core cannot add to webpack's HTML per request.
-  {
-    const [embedBase] = /^\/embed\/[^/]+\//.exec(location.pathname) ?? [];
-    const rebase = (input) => {
-      // A built Storybook can be hosted under a path that looks like an embed base. Checked per
-      // call because webpack assigns CONFIG_TYPE in the body, after this script has run.
-      if (window.CONFIG_TYPE !== 'DEVELOPMENT') {
-        return input;
-      }
-      const isRequest = input instanceof Request;
-      const url = new URL(isRequest ? input.url : String(input), location.href);
-      if (url.host !== location.host || url.pathname.startsWith(embedBase)) {
-        return input;
-      }
-      url.pathname = embedBase + url.pathname.slice(1);
-      return isRequest ? new Request(url.href, input) : url.href;
-    };
-    if (embedBase) {
-      const { fetch } = window;
-      window.fetch = (input, init) => fetch(rebase(input), init);
-      const { open } = XMLHttpRequest.prototype;
-      XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-        return open.call(this, method, rebase(url), ...rest);
-      };
     }
   }
 </script>

@@ -357,10 +357,10 @@ export class OpenServiceMissingOriginError extends StorybookError {
   }
 }
 
-export class OpenServiceMissingEmbedBaseError extends StorybookError {
+export class OpenServiceMissingEmbedOriginError extends StorybookError {
   constructor() {
     super({
-      name: 'OpenServiceMissingEmbedBaseError',
+      name: 'OpenServiceMissingEmbedOriginError',
       category: Category.CORE_COMMON,
       code: 33,
       message:

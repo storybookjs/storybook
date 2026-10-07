@@ -67,11 +67,11 @@ export type RuntimeInstanceRecord = {
   /** Token authenticating clients against this instance's WebSocket channel. */
   token?: string;
   /**
-   * Base URL that serves the preview to sandboxed (opaque-origin) frames, e.g.
-   * `${embedBaseUrl}/iframe.html?id=…`. Holding it grants read access to everything the dev server
-   * serves.
+   * Origin that serves the preview to sandboxed (opaque-origin) frames, e.g.
+   * `${embedOrigin}/iframe.html?id=…`. Its hostname is a secret: holding it grants read access to
+   * everything the dev server serves.
    */
-  embedBaseUrl?: string;
+  embedOrigin?: string;
   agent?: string;
   storybookVersion: string;
   /**
@@ -145,7 +145,7 @@ export function createRuntimeInstanceRecord({
   agent,
   configDir,
   cwd = process.cwd(),
-  embedBase,
+  embedOrigin,
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
   now = new Date(),
@@ -159,7 +159,7 @@ export function createRuntimeInstanceRecord({
   agent?: string;
   configDir?: string;
   cwd?: string;
-  embedBase?: string;
+  embedOrigin?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   now?: Date;
@@ -181,7 +181,7 @@ export function createRuntimeInstanceRecord({
     url: storybookBaseUrl,
     port,
     ...(token ? { token } : {}),
-    ...(embedBase ? { embedBaseUrl: storybookBaseUrl + embedBase.replace(/\/$/, '') } : {}),
+    ...(embedOrigin ? { embedOrigin } : {}),
     ...(agent ? { agent } : {}),
     storybookVersion,
     ...(storybookPath ? { storybookPath } : {}),
@@ -395,7 +395,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   agent = detectRuntimeInstanceAgent(),
   configDir,
   cwd,
-  embedBase,
+  embedOrigin,
   mcp,
   pid,
   port,
@@ -408,7 +408,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   agent?: string;
   configDir?: string;
   cwd?: string;
-  embedBase?: string;
+  embedOrigin?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
   port: number;
@@ -422,7 +422,7 @@ export async function writeStorybookRuntimeInstanceRecord({
     agent,
     configDir,
     cwd,
-    embedBase,
+    embedOrigin,
     mcp,
     pid,
     port,

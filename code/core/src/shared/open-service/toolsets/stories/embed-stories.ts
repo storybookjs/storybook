@@ -5,13 +5,13 @@ import { findStoryIds } from './find-story-ids.ts';
 import { type StoryInput, storyQueryParams } from './story-input.ts';
 
 export type EmbedStoriesParams = {
-  embedBaseUrl: string;
+  embedOrigin: string;
   index: StoryIndex;
   stories: StoryInput[];
 };
 
 export function embedStories({
-  embedBaseUrl,
+  embedOrigin,
   index,
   stories,
 }: EmbedStoriesParams): EmbedStoriesOutput {
@@ -22,7 +22,7 @@ export function embedStories({
         : {
             title: story.entry.title,
             name: story.entry.name,
-            embedUrl: `${embedBaseUrl}/iframe.html?id=${story.entry.id}&viewMode=story${storyQueryParams(story.input)}`,
+            embedUrl: `${embedOrigin}/iframe.html?id=${story.entry.id}&viewMode=story${storyQueryParams(story.input)}`,
           }
     ),
   };

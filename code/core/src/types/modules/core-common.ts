@@ -285,9 +285,6 @@ export type Options = LoadOptions &
   BuilderOptions & { build?: TestBuildConfig };
 
 // A minimal version of Polka's interface to avoid exposing internal implementation details
-/** A request the dev server received under its embed base, the secret `/embed/<token>/` path. */
-export type EmbedRequest = IncomingMessage & { embedBase?: string };
-
 export type Middleware<T extends IncomingMessage = IncomingMessage> = (
   req: T & IncomingMessage,
   res: ServerResponse,

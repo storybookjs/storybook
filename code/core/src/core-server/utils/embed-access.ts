@@ -1,29 +1,23 @@
 import { randomUUID } from 'node:crypto';
-import type { Server } from 'node:http';
 
-import type { EmbedRequest } from '../../types/index.ts';
+import type { Middleware } from '../../types/index.ts';
 import { isValidToken } from './validate-token.ts';
 
-const EMBED_PATH = /^\/embed\/([^/?]+)(\/.*)$/;
+// Browsers and operating systems resolve every `*.localhost` name to loopback, so an unguessable
+// subdomain is a secret that every request of the preview carries without changing its URLs.
+export const createEmbedHostname = () => `sb-${randomUUID()}.localhost`;
 
 // A sandboxed frame loads modules as CORS requests with `Origin: null`, which any website can
-// send, so only URLs under the unguessable embed base are made readable to it.
-export function attachEmbedAccess(server: Server, token: string = randomUUID()) {
-  const embedBase = `/embed/${token}/`;
-  // Polka matches routes before running middleware, so the base is stripped ahead of it.
-  server.prependListener('request', (req: EmbedRequest, res) => {
+// send, so only requests to the unguessable hostname are made readable to it.
+export function getEmbedAccessMiddleware(embedHostname: string): Middleware {
+  return (req, res, next) => {
     // Reads only: a preflight answered here would open routes like the MCP endpoint to the frame.
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      return;
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+    const hostname = req.headers.host?.replace(/:\d+$/, '') ?? null;
+    if (isRead && isValidToken(hostname, embedHostname)) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Referrer-Policy', 'no-referrer');
     }
-    const [, requestToken, path] = EMBED_PATH.exec(req.url ?? '') ?? [];
-    if (!isValidToken(requestToken ?? null, token)) {
-      return;
-    }
-    req.url = path;
-    req.embedBase = embedBase;
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Referrer-Policy', 'no-referrer');
-  });
-  return embedBase;
+    next();
+  };
 }

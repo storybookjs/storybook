@@ -3,7 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import * as v from 'valibot';
 
 import {
-  OpenServiceMissingEmbedBaseError,
+  OpenServiceMissingEmbedOriginError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -333,11 +333,11 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
 Unlike preview URLs, these also load inside sandboxed frames.
 Each URL carries a secret that grants read access to this Storybook's dev server: put it only in content shown to the user, never send it to an external service.`,
         handler: async (input, ctx): Promise<ToolsetOutcome<EmbedStoriesOutput, never>> => {
-          if (!ctx.embedBaseUrl) {
-            throw new OpenServiceMissingEmbedBaseError();
+          if (!ctx.embedOrigin) {
+            throw new OpenServiceMissingEmbedOriginError();
           }
           const data = embedStories({
-            embedBaseUrl: ctx.embedBaseUrl,
+            embedOrigin: ctx.embedOrigin,
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });

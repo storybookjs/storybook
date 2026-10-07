@@ -63,7 +63,7 @@ set). `--json` keeps only the tool result.
 `--cwd`, `--config-dir`, and `--port` belong **before** the toolset name (after it, they are tool arguments). `--attach` / `--no-attach` cannot
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record, `stories.embed` reads
-`embedBaseUrl`).
+`embedOrigin`).
 
 Tool arguments are `--key value` flags spelled exactly like the input schema keys (camelCase, e.g.
 `--storybookId`); there are no kebab-case aliases. Toolset inputs are `v.strictObject`, so a flag

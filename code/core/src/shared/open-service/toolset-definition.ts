@@ -22,8 +22,8 @@ export type ToolsetCtx = {
    * without a live Storybook.
    */
   origin?: string;
-  /** Base URL that serves the preview to sandboxed frames. Holding it grants read access. */
-  embedBaseUrl?: string;
+  /** Origin that serves the preview to sandboxed frames. Holding it grants read access. */
+  embedOrigin?: string;
   getService: ToolsetGetService;
 };
 

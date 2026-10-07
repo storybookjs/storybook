@@ -14,6 +14,7 @@ import { ChangeDetectionService } from './change-detection/change-detection-serv
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
+import { getEmbedAccessMiddleware } from './utils/embed-access.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
@@ -29,7 +30,8 @@ import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export async function storybookDevServer(
   options: Options,
-  server: Awaited<ReturnType<typeof getServer>>
+  server: Awaited<ReturnType<typeof getServer>>,
+  embedHostname: string
 ) {
   const core = await options.presets.apply('core');
 
@@ -74,6 +76,7 @@ export async function storybookDevServer(
     })
   );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
+  app.use(getEmbedAccessMiddleware(embedHostname));
   app.use(getCachingMiddleware());
 
   registerIndexJsonRoute({

@@ -36,8 +36,8 @@ export const StorybookInstanceRecordSchema = v.object({
    * written by older Storybooks lack it.
    */
   token: v.optional(v.string()),
-  /** Base URL that serves the preview to sandboxed frames. A secret, like `token`. */
-  embedBaseUrl: v.optional(v.string()),
+  /** Origin that serves the preview to sandboxed frames. A secret, like `token`. */
+  embedOrigin: v.optional(v.string()),
   agent: v.optional(v.string()),
   storybookVersion: v.optional(v.string()),
   /**

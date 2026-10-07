@@ -11,7 +11,7 @@ const record: StorybookInstanceRecord = {
   url: 'http://localhost:6006',
   port: 6006,
   token: 'channel-secret',
-  embedBaseUrl: 'http://localhost:6006/embed/embed-secret',
+  embedOrigin: 'http://sb-embed-secret.localhost:6006',
   mcp: { status: 'ready' },
 };
 

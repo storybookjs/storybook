@@ -43,6 +43,7 @@
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
+  - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
@@ -1229,6 +1230,16 @@ You can also run it with `storybook automigrate remove-change-detection-flag`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
 It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
 A typed main config that still sets the flag fails type-checking until it is removed.
+
+### `storybook ai` command removed
+
+The `storybook ai` command is removed. Run `npx storybook skills setup` instead of `npx storybook ai setup`. It prints the same project-aware setup instructions. Running `storybook ai` now prints this replacement and exits with code 1.
+
+When `skills setup` cannot produce the instructions (for example because it finds no Storybook configuration), it prints the reason to stderr and exits with code 1. `ai setup` exited with code 0 in that case.
+
+`skills setup` always prints to stdout, so replace `--output <path>` with a shell redirect, for example `npx storybook skills setup > storybook-setup.md`. It detects the package manager itself and has no `--package-manager` option.
+
+The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI_CLI` environment variable are removed as well. Use `npx storybook tools` instead, and run `npx storybook tools --help` to list the available tools.
 
 ### `--preview-url` and `--force-build-preview` removed
 

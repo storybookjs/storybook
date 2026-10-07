@@ -97,7 +97,7 @@ describe('buildStoryInstructions link guidance', () => {
 
     // The story-linking workflow must route discovery into the review, not
     // the preview list, and forbid hand-constructed story IDs — matching
-    // the server instructions that `storybook ai --help` also embeds.
+    // the server instructions.
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
     expect(instructions).toContain('Feed the discovered IDs into **review-create**');

@@ -15,7 +15,6 @@ import { resolveCompositionSources } from './auth/resolve-composition-sources.ts
 import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
@@ -218,13 +217,6 @@ export const experimental_devServer: PresetPropertyFn<
     res.end(html);
   });
   return app;
-};
-
-export const experimental_storybookAi = async (
-  existingMetadata: StorybookAiMetadata | undefined,
-  options: Parameters<typeof buildStorybookAiMetadata>[0]
-): Promise<StorybookAiMetadata> => {
-  return buildStorybookAiMetadata(options, existingMetadata);
 };
 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {

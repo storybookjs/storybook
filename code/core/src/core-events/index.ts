@@ -91,7 +91,7 @@ enum events {
   // Story discovery and testing flow
   GHOST_STORIES_REQUEST = 'ghostStoriesRequest',
   GHOST_STORIES_RESPONSE = 'ghostStoriesResponse',
-  // AI analytics - ai setup command
+  // AI analytics - skills setup command
   AI_SETUP_ANALYTICS_RESPONSE = 'aiSetupAnalyticsResponse',
   AI_SETUP_ANALYTICS_REQUEST = 'aiSetupAnalyticsRequest',
   // Open a file in the code editor

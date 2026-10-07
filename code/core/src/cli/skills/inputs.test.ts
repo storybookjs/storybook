@@ -67,8 +67,8 @@ describe('resolveSkillInputs', () => {
   });
 
   it('spreads the resolved tool availability onto the result', async () => {
-    const inputs = await resolveSkillInputs(createMockOptions(), { moduleGraphSupported: true });
+    const inputs = await resolveSkillInputs(createMockOptions());
 
-    expect(inputs.moduleGraphSupported).toBe(true);
+    expect(inputs.moduleGraphSupported).toBe(false);
   });
 });

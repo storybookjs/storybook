@@ -1,6 +1,5 @@
 import { getService } from '../../shared/open-service/server.ts';
-import { importModule } from '../../shared/utils/module.ts';
-import type { Builder, CoreConfig, Options } from '../../types/index.ts';
+import type { Options } from '../../types/index.ts';
 
 import { isAddonA11yEnabled } from './addon-a11y.ts';
 import { isAddonVitestEnabled } from './addon-vitest.ts';
@@ -31,20 +30,10 @@ export interface ToolAvailability {
   docgenServer: boolean;
 }
 
-export interface GetToolAvailabilityOptions {
-  /**
-   * Pre-resolved module-graph support. The live MCP server should omit this so it
-   * probes the registered open service. Serverless metadata can pass a builder-level
-   * capability check because no dev-server service exists in that process.
-   */
-  moduleGraphSupported?: boolean | undefined;
-}
-
 /**
  * Composed Storybooks with component manifests can back docs tools even when the
  * local Storybook has no component manifest. Use this before feeding
- * availability into the shared tool registry so live MCP registration and
- * serverless AI metadata make the same docs-tool decision.
+ * availability into the shared tool registry.
  */
 export function getEffectiveToolAvailability(
   availability: ToolAvailability,
@@ -78,24 +67,6 @@ export async function isModuleGraphSupported(): Promise<boolean> {
   }
 }
 
-export async function isModuleGraphSupportedByBuilder(
-  options: Pick<Options, 'presets'>
-): Promise<boolean> {
-  const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
-  const builder = core?.builder;
-  const builderName = typeof builder === 'string' ? builder : builder?.name;
-  if (!builderName) {
-    return false;
-  }
-
-  try {
-    const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
-    return typeof previewBuilder.changeDetectionAdapter === 'function';
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Single source of truth for the runtime gates that decide whether each tool is
  * registered (and how the landing page badges it).
@@ -106,13 +77,10 @@ export async function isModuleGraphSupportedByBuilder(
  * enabled/disabled badges) can never drift apart. Add new gates here rather
  * than computing them ad-hoc at a call site.
  */
-export async function getToolAvailability(
-  options: Options,
-  { moduleGraphSupported: moduleGraphSupportedOverride }: GetToolAvailabilityOptions = {}
-): Promise<ToolAvailability> {
+export async function getToolAvailability(options: Options): Promise<ToolAvailability> {
   const [moduleGraphSupported, manifestStatus, addonVitestEnabled, a11yEnabled] = await Promise.all(
     [
-      moduleGraphSupportedOverride ?? isModuleGraphSupported(),
+      isModuleGraphSupported(),
       getManifestStatus(options),
       isAddonVitestEnabled(options),
       isAddonA11yEnabled(options),

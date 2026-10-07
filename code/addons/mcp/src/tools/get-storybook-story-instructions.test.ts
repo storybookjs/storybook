@@ -288,7 +288,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     // The story-linking workflow must route discovery into the review, not
     // the preview list, and forbid hand-constructed story IDs — matching
-    // the server instructions that `storybook ai --help` also embeds.
+    // the server instructions.
     // While this line contradicted them, agents were observed publishing
     // reviews with IDs derived from file names and no discovery call.
     expect(instructions).toContain('Story IDs must come from that call');

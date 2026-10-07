@@ -1,7 +1,7 @@
 /**
  * Generates a markdown reference of everything an agent sees from the Storybook
  * AI surface: MCP server instructions and tool definitions,
- * the plugin skills, and the `storybook ai` CLI help output.
+ * and the plugin skills.
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
  *
@@ -9,22 +9,17 @@
  *
  * Defaults to writing <repo-root>/tools-api.md (gitignored).
  */
-import { execFile } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { ToolAvailability } from 'storybook/internal/core-server';
 import { registerCoreToolsetsForTest } from '../src/test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata, type ToolMetadata } from '../src/tools/tool-registry.ts';
 
-const execFileAsync = promisify(execFile);
-
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const outputPath = path.resolve(repoRoot, process.argv[2] ?? 'tools-api.md');
-const internalStorybookDir = path.join(repoRoot, 'test-storybooks/mcp');
 
 const adapter = new ValibotJsonSchemaAdapter();
 
@@ -51,6 +46,7 @@ const instructions = () =>
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,
+    moduleGraphSupported: true,
   });
 
 async function toJsonSchema(schema: unknown): Promise<Record<string, unknown>> {
@@ -264,51 +260,6 @@ async function renderSkills(): Promise<string> {
   return sections.join('\n');
 }
 
-function stripAnsi(text: string): string {
-  return text.replace(/\[[0-9;]*m/g, '');
-}
-
-async function runCliHelp(args: string[]): Promise<string> {
-  try {
-    const { stdout, stderr } = await execFileAsync('npx', ['storybook', 'ai', ...args, '--help'], {
-      cwd: internalStorybookDir,
-      env: { ...process.env, STORYBOOK_FEATURE_AI_CLI: '1' },
-      maxBuffer: 10 * 1024 * 1024,
-    });
-    return stripAnsi([stdout, stderr].filter(Boolean).join('\n'));
-  } catch (error) {
-    return `(command failed)\n${stripAnsi(String(error))}`;
-  }
-}
-
-async function renderCliSection(): Promise<string> {
-  const toolNames = toolMetadata().map((t) => t.name);
-  const commands = ['setup', ...toolNames];
-  const [topLevel, ...commandHelps] = await Promise.all([
-    runCliHelp([]),
-    ...commands.map((command) => runCliHelp([command])),
-  ]);
-  const sections = [
-    '## `storybook ai` CLI (`STORYBOOK_FEATURE_AI_CLI=1`)',
-    '',
-    'Captured against `test-storybooks/mcp`. The top-level help embeds the same server instructions the MCP server serves.',
-    '',
-    '### `npx storybook ai --help`',
-    '',
-    fence(topLevel),
-    '',
-  ];
-  commands.forEach((command, index) => {
-    sections.push(
-      `### \`npx storybook ai ${command} --help\``,
-      '',
-      fence(commandHelps[index]!),
-      ''
-    );
-  });
-  return sections.join('\n');
-}
-
 const generatedAt = new Date().toISOString().slice(0, 10);
 const document = [
   '# Storybook MCP / AI tools API',
@@ -322,7 +273,6 @@ const document = [
   '',
   await renderServerSection(),
   await renderSkills(),
-  await renderCliSection(),
 ].join('\n');
 
 await fs.writeFile(outputPath, wrapMarkdown(document));

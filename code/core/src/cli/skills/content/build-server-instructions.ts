@@ -10,6 +10,8 @@ export type ServerInstructionsInputs = {
   devEnabled: boolean;
   testSupported: boolean;
   docsEnabled: boolean;
+  /** `stories-find-by-component` is registered, so the workflow can point at it. */
+  moduleGraphSupported: boolean;
   /** The story instructions follow in the same document, so the workflow points at them there. */
   storyInstructionsInline?: boolean;
 };
@@ -68,12 +70,17 @@ export function buildServerInstructions({
             ? INLINE_STORY_INSTRUCTIONS_STEP
             : `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
         )
-        .replaceAll('{{GET_STORIES_BY_COMPONENT}}', ref('stories.findByComponent'))
         .replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
         .replace('{{FINAL_LINKS_STEP}}', finalLinksStep)
         .replace(
           '{{DISPLAY_REVIEW_STEP}}',
           `\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **${ref('review.create')}** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.`
+        )
+        .replace(
+          '{{FIND_BY_COMPONENT_STEP}}',
+          options.moduleGraphSupported
+            ? ` **${ref('stories.findByComponent')}** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.`
+            : ''
         )
         .trim()
     );

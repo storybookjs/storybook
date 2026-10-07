@@ -15,13 +15,20 @@ describe('buildServerInstructions', () => {
     const bools = [true, false] as const;
     for (const devEnabled of bools)
       for (const testSupported of bools)
-        for (const docsEnabled of bools) {
-          const options = { transport: 'mcp' as const, devEnabled, testSupported, docsEnabled };
-          const length = buildServerInstructions(options).length;
-          expect
-            .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
-            .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
-        }
+        for (const docsEnabled of bools)
+          for (const moduleGraphSupported of bools) {
+            const options = {
+              transport: 'mcp' as const,
+              devEnabled,
+              testSupported,
+              docsEnabled,
+              moduleGraphSupported,
+            };
+            const length = buildServerInstructions(options).length;
+            expect
+              .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
+              .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
+          }
   });
 
   it('builds a coherent instruction set when all toolsets are enabled', () => {
@@ -30,6 +37,7 @@ describe('buildServerInstructions', () => {
       devEnabled: true,
       testSupported: true,
       docsEnabled: true,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -65,6 +73,7 @@ describe('buildServerInstructions', () => {
       devEnabled: true,
       testSupported: false,
       docsEnabled: false,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -80,12 +89,28 @@ describe('buildServerInstructions', () => {
     `);
   });
 
+  it.each([true, false])(
+    'names stories-find-by-component only when it is registered (%s)',
+    (moduleGraphSupported) => {
+      const instructions = buildServerInstructions({
+        transport: 'mcp',
+        devEnabled: true,
+        testSupported: true,
+        docsEnabled: true,
+        moduleGraphSupported,
+      });
+
+      expect(instructions.includes('stories-find-by-component')).toBe(moduleGraphSupported);
+    }
+  );
+
   it('builds a coherent instruction set for docs only', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: false,
       testSupported: false,
       docsEnabled: true,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -108,6 +133,7 @@ describe('buildServerInstructions', () => {
       devEnabled: false,
       testSupported: true,
       docsEnabled: false,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -126,6 +152,7 @@ describe('buildServerInstructions', () => {
       devEnabled: false,
       testSupported: false,
       docsEnabled: false,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toBe('');
@@ -138,6 +165,7 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('**npx storybook tools stories changed**');
@@ -150,6 +178,7 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('npx storybook skills write-story');
@@ -162,6 +191,7 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
+        moduleGraphSupported: true,
         storyInstructionsInline: true,
       });
 
@@ -177,6 +207,7 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('**npx storybook tools stories find-by-component**');
@@ -193,6 +224,7 @@ describe('buildServerInstructions', () => {
         devEnabled: false,
         testSupported: false,
         docsEnabled: true,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('npx storybook tools docs list');

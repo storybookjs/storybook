@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { cpus } from 'node:os';
 import { join } from 'node:path';
@@ -105,20 +105,21 @@ export function processTree(processes: ProcStatus[], rootPid: number): ProcStatu
 export function summarizePhase(
   samples: MemorySample[],
   phase: MemoryPhase,
-  updates = samples.filter((sample) => sample.phase === phase).length - 1
+  settledSamples = samples.filter((sample) => sample.phase === phase)
 ): MemoryPhaseResult {
   const phaseSamples = samples.filter((sample) => sample.phase === phase);
   const rss = phaseSamples.map((sample) => sample.processTreeRssBytes / MB);
+  const settledRss = settledSamples.map((sample) => sample.processTreeRssBytes / MB);
   const peakProcessTreeRssMb = Math.max(...rss, 0);
-  const settledProcessTreeRssMb = rss.at(-1) ?? 0;
+  const settledProcessTreeRssMb = settledRss.at(-1) ?? 0;
   const result: MemoryPhaseResult = {
     peakProcessTreeRssMb,
     settledProcessTreeRssMb,
     sampleCount: rss.length,
   };
-  if (phase === 'devHmr' && rss.length > 1 && updates > 0) {
-    result.growthMb = settledProcessTreeRssMb - rss[0];
-    result.slopeMbPerEdit = result.growthMb / updates;
+  if (phase === 'devHmr' && settledRss.length > 1) {
+    result.growthMb = settledProcessTreeRssMb - settledRss[0];
+    result.slopeMbPerEdit = result.growthMb / (settledRss.length - 1);
   }
   return result;
 }
@@ -133,9 +134,8 @@ class ProcessTreeSampler {
 
   constructor(private readonly intervalMs: number) {}
 
-  setRoot(pid: number) {
+  setRoot(pid: number | undefined) {
     this.rootPid = pid;
-    void this.sample();
   }
 
   setPhase(phase: MemoryPhase) {
@@ -154,6 +154,18 @@ class ProcessTreeSampler {
       await new Promise((resolve) => setTimeout(resolve, 1));
     }
     return this.samples;
+  }
+
+  async capture() {
+    while (this.sampling) {
+      await new Promise((resolve) => setTimeout(resolve, 1));
+    }
+    await this.sample();
+    const sample = this.samples.at(-1);
+    if (!sample) {
+      throw new Error('The process-tree sampler did not capture a sample.');
+    }
+    return sample;
   }
 
   private async sample() {
@@ -198,28 +210,81 @@ async function waitForFirstStory(url: string) {
     const page = await browser.newPage();
     await page.goto(`${url}?path=/story/example-button--primary`);
     await page.waitForSelector('#example-button--primary', { state: 'attached', timeout: 40_000 });
-    return { browser, page };
+    await page.waitForFunction(() => {
+      const preview = document.querySelector<HTMLIFrameElement>('iframe#storybook-preview-iframe');
+      return preview?.contentDocument?.readyState === 'complete';
+    });
+    const previewFrame = page.frame({ url: /iframe\.html(?:\?|$)/ });
+    if (!previewFrame) {
+      throw new Error('The Storybook preview iframe was not available.');
+    }
+    await previewFrame.getByText('Button', { exact: true }).waitFor({ state: 'visible' });
+    return { browser, previewFrame };
   } catch (error) {
     await browser.close();
     throw error;
   }
 }
 
-async function startDev(command: string, cwd: string, sampler: ProcessTreeSampler) {
+function startDev(command: string, cwd: string, sampler: ProcessTreeSampler) {
   const child = spawn(command, { cwd, shell: true, detached: process.platform !== 'win32' });
+  const exit = new Promise<number | null>((resolve, reject) => {
+    child.once('error', reject);
+    child.once('exit', resolve);
+  });
   sampler.setRoot(child.pid!);
-  child.once('error', (error) => console.error(error));
-  return () => {
-    try {
-      if (process.platform !== 'win32' && child.pid) {
-        process.kill(-child.pid, 'SIGTERM');
-      } else {
-        child.kill('SIGTERM');
+  return {
+    exit,
+    async stop() {
+      terminate(child);
+      if (await waitForExit(exit, 10_000)) {
+        return;
       }
-    } catch {
-      return;
-    }
+      terminate(child, 'SIGKILL');
+      await exit;
+    },
   };
+}
+
+async function waitForExit(exit: Promise<number | null>, timeoutMs: number) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      exit.then(() => true),
+      new Promise<false>((resolve) => {
+        timeout = setTimeout(() => resolve(false), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+function terminate(child: ChildProcess, signal: NodeJS.Signals = 'SIGTERM') {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return;
+  }
+  try {
+    if (process.platform !== 'win32' && child.pid) {
+      process.kill(-child.pid, signal);
+    } else {
+      child.kill(signal);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
+      throw error;
+    }
+  }
+}
+
+function updateStoryLabel(source: string, label: string) {
+  const updated = source.replace(/label:\s*'Button'/, `label: '${label}'`);
+  if (updated === source) {
+    throw new Error('The HMR fixture no longer contains the expected Button story label.');
+  }
+  return updated;
 }
 
 export async function runMemoryBenchmark({
@@ -242,30 +307,41 @@ export async function runMemoryBenchmark({
   }
   const sampler = new ProcessTreeSampler(samplingIntervalMs);
   sampler.start();
-  const devStop = await startDev(`yarn storybook --ci --port ${port}`, cwd, sampler);
+  const dev = startDev(`yarn storybook --ci --port ${port}`, cwd, sampler);
+  const hmrSettledSamples: MemorySample[] = [];
   try {
-    await waitFor(`http://127.0.0.1:${port}/iframe.html`, 200_000);
-    const { browser, page } = await waitForFirstStory(`http://127.0.0.1:${port}`);
-    sampler.setPhase('devHmr');
-    const original = await readFile(hmrFile, 'utf8');
+    await Promise.race([
+      waitFor(`http://127.0.0.1:${port}/iframe.html`, 200_000),
+      dev.exit.then((exitCode) => {
+        throw new Error(`storybook dev exited before it became ready (${exitCode})`);
+      }),
+    ]);
+    const { browser, previewFrame } = await waitForFirstStory(`http://127.0.0.1:${port}`);
     try {
-      for (let edit = 1; edit <= hmrEdits; edit++) {
-        await writeFile(hmrFile, `${original}\n// memory-benchmark-edit-${edit}\n`);
-        await waitFor(`http://127.0.0.1:${port}/iframe.html`, 30_000);
-        await page.waitForSelector('#example-button--primary', { state: 'attached', timeout: 30_000 });
-        await new Promise((resolve) => setTimeout(resolve, samplingIntervalMs * 2));
+      sampler.setPhase('devHmr');
+      const original = await readFile(hmrFile, 'utf8');
+      try {
+        hmrSettledSamples.push(await sampler.capture());
+        for (let edit = 1; edit <= hmrEdits; edit++) {
+          const label = `Memory benchmark edit ${edit}`;
+          await writeFile(hmrFile, updateStoryLabel(original, label));
+          await previewFrame.getByText(label, { exact: true }).waitFor({ state: 'visible' });
+          hmrSettledSamples.push(await sampler.capture());
+        }
+      } finally {
+        await writeFile(hmrFile, original);
       }
     } finally {
-      await writeFile(hmrFile, original);
       await browser.close();
     }
   } finally {
-    devStop();
+    await dev.stop();
   }
 
-  sampler.setPhase('build');
+  sampler.setRoot(undefined);
   const build = spawn('yarn build-storybook --quiet', { cwd, shell: true, detached: true });
   sampler.setRoot(build.pid!);
+  sampler.setPhase('build');
   let exitCode: number | null = null;
   let samples: MemorySample[] = [];
   try {
@@ -295,7 +371,7 @@ export async function runMemoryBenchmark({
     scenario,
     phases: {
       devStartup: summarizePhase(samples, 'devStartup'),
-      devHmr: summarizePhase(samples, 'devHmr', hmrEdits),
+      devHmr: summarizePhase(samples, 'devHmr', hmrSettledSamples),
       build: summarizePhase(samples, 'build'),
     },
     samples,

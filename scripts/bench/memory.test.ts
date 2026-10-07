@@ -24,12 +24,27 @@ describe('summarizePhase', () => {
       { elapsedMs: 0, phase: 'devHmr', processTreeRssBytes: 10 * 1024 * 1024, processes: [] },
       { elapsedMs: 1, phase: 'devHmr', processTreeRssBytes: 16 * 1024 * 1024, processes: [] },
     ];
-    expect(summarizePhase(samples, 'devHmr')).toEqual({
+    expect(summarizePhase(samples, 'devHmr', samples)).toEqual({
       peakProcessTreeRssMb: 16,
       settledProcessTreeRssMb: 16,
       growthMb: 6,
       slopeMbPerEdit: 6,
       sampleCount: 2,
+    });
+  });
+
+  it('uses post-HMR samples for growth without losing the transient peak', () => {
+    const samples: MemorySample[] = [
+      { elapsedMs: 0, phase: 'devHmr', processTreeRssBytes: 10 * 1024 * 1024, processes: [] },
+      { elapsedMs: 1, phase: 'devHmr', processTreeRssBytes: 100 * 1024 * 1024, processes: [] },
+      { elapsedMs: 2, phase: 'devHmr', processTreeRssBytes: 12 * 1024 * 1024, processes: [] },
+    ];
+    expect(summarizePhase(samples, 'devHmr', [samples[0], samples[2]])).toEqual({
+      peakProcessTreeRssMb: 100,
+      settledProcessTreeRssMb: 12,
+      growthMb: 2,
+      slopeMbPerEdit: 2,
+      sampleCount: 3,
     });
   });
 });

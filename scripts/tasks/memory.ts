@@ -5,7 +5,7 @@ import { runMemoryBenchmark } from '../bench/memory.ts';
 import type { Task } from '../task.ts';
 import { prepareSandbox } from '../prepare-sandbox.ts';
 
-const HMR_FILE = 'src/stories/Button.tsx';
+const HMR_FILE = 'src/stories/Button.stories.ts';
 
 export const memory: Task = {
   description: 'Measure Storybook dev, HMR, and build memory in a sandbox',

@@ -363,12 +363,12 @@ function createToolsHost(args: {
   close?: () => void;
   disconnected?: Promise<never>;
 }): Tools {
-  const { mode, host, requestedMode, runtime, clientInfo, storybook } = args;
+  const { mode, host, requestedMode, runtime, clientInfo, storybook, embedOrigin } = args;
   const baseCtx: ToolsetCtx = {
     transport: transportFor(clientInfo.kind),
     getService: runtime.getService,
     ...(storybook.url ? { origin: storybook.url } : {}),
-    ...(args.embedOrigin ? { embedOrigin: args.embedOrigin } : {}),
+    ...(embedOrigin ? { embedOrigin } : {}),
   };
   let closed = false;
 

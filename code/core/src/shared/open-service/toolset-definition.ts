@@ -22,7 +22,7 @@ export type ToolsetCtx = {
    * without a live Storybook.
    */
   origin?: string;
-  /** Origin that serves the preview to sandboxed frames. Holding it grants read access. */
+  /** Origin that serves the preview to sandboxed frames. A secret, like `token`. */
   embedOrigin?: string;
   getService: ToolsetGetService;
 };

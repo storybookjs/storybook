@@ -27,7 +27,7 @@ import {
 } from './format.ts';
 import { findStoryIds } from './find-story-ids.ts';
 import { previewStories } from './preview-stories.ts';
-import { storyInputArraySchema, storyInputSchema, storyQueryParams } from './story-input.ts';
+import { storyInputArraySchema, storyInputSchema, storyQuerySuffix } from './story-input.ts';
 import { detectUnreachableFiles } from './unreachable-files.ts';
 
 const previewSuccessSchema = v.object({
@@ -36,13 +36,13 @@ const previewSuccessSchema = v.object({
   previewUrl: v.pipe(v.string(), v.description('Direct URL to open the story preview.')),
 });
 
-const previewFailureSchema = v.object({
+const unresolvedStorySchema = v.object({
   input: storyInputSchema,
   error: v.string(),
 });
 
 const previewOutputSchema = v.object({
-  stories: v.array(v.union([previewSuccessSchema, previewFailureSchema])),
+  stories: v.array(v.union([previewSuccessSchema, unresolvedStorySchema])),
   instructions: v.pipe(
     v.optional(v.string()),
     v.description('What to do with these preview URLs next. Follow it.')
@@ -58,10 +58,10 @@ const embedSuccessSchema = v.object({
 });
 
 const embedOutputSchema = v.object({
-  stories: v.array(v.union([embedSuccessSchema, previewFailureSchema])),
+  stories: v.array(v.union([embedSuccessSchema, unresolvedStorySchema])),
 });
 
-export type EmbedStoriesOutput = v.InferOutput<typeof embedOutputSchema>;
+type EmbedStoriesOutput = v.InferOutput<typeof embedOutputSchema>;
 
 const changeStatusSchema = v.union([
   v.literal('status-value:new'),
@@ -324,14 +324,14 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
       },
       embed: {
         input: v.strictObject({
-          stories: v.pipe(storyInputArraySchema, v.description('Stories to embed.')),
+          stories: storyInputArraySchema,
         }),
         output: embedOutputSchema,
         title: 'Get story embed URLs',
         requiresDevServer: true,
-        description: `Use this tool to get URLs that render one story on its own, to use as the \`src\` of an \`<iframe>\` in HTML you author, such as an in-app visualization that shows live stories next to your own content.
-Unlike preview URLs, these also load inside sandboxed frames.
-Each URL carries a secret that grants read access to this Storybook's dev server: put it only in content shown to the user, never send it to an external service.`,
+        description: `Get URLs that each render a single story, for the \`src\` of an \`<iframe>\` in HTML you author.
+Unlike preview URLs, they also load inside sandboxed frames.
+Each URL contains a secret that grants read access to this Storybook's dev server: only put it in content shown to the user, never send it to an external service.`,
         handler: async (input, ctx): Promise<ToolsetOutcome<EmbedStoriesOutput, never>> => {
           if (!ctx.embedOrigin) {
             throw new OpenServiceMissingEmbedOriginError();
@@ -344,7 +344,7 @@ Each URL carries a secret that grants read access to this Storybook's dev server
                 : {
                     title: story.entry.title,
                     name: story.entry.name,
-                    embedUrl: `${ctx.embedOrigin}/iframe.html?id=${story.entry.id}&viewMode=story${storyQueryParams(story.input)}`,
+                    embedUrl: `${ctx.embedOrigin}/iframe.html?id=${story.entry.id}&viewMode=story${storyQuerySuffix(story.input)}`,
                   }
             ),
           };

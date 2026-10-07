@@ -5,7 +5,10 @@ import { timingSafeEqual } from 'node:crypto';
  *
  * @returns `true` if tokens match, `false` otherwise
  */
-export function isValidToken(requestToken: string | null, expectedToken: string): boolean {
+export function isValidToken(
+  requestToken: string | null | undefined,
+  expectedToken: string
+): boolean {
   if (!requestToken || !expectedToken) {
     return false;
   }

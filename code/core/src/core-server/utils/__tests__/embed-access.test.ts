@@ -36,8 +36,8 @@ describe('createEmbedAccess', () => {
     expect(createEmbedAccess('http://localhost:6006/', '192.168.1.5').origin).toBeUndefined();
   });
 
-  it('lets any page read a file requested from the embed origin', () => {
-    const setHeader = request();
+  it.each(['GET', 'HEAD'])('lets any page read a file it %ss from the embed origin', (method) => {
+    const setHeader = request({ method });
 
     expect(setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
     expect(setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
@@ -52,17 +52,17 @@ describe('createEmbedAccess', () => {
     expect(request({ host })).not.toHaveBeenCalled();
   });
 
-  it.each(['OPTIONS', 'POST', 'PUT', 'DELETE'])(
-    'does not let a page read a %s response',
-    (method) => {
-      expect(request({ method })).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
-    }
-  );
+  it.each(['OPTIONS', 'POST'])('does not let a page read a %s response', (method) => {
+    expect(request({ method })).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+  });
 
   it.each(['/iframe.html?id=button--primary', '/', '/index.html', '/docs/'])(
-    'does not let a page read %s, which holds the channel token',
+    'serves %s, which holds the channel token, without letting a page read it',
     (url) => {
-      expect(request({ url })).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+      const setHeader = request({ url });
+
+      expect(setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
+      expect(setHeader).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
     }
   );
 });

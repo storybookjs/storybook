@@ -3,22 +3,21 @@ import { randomUUID } from 'node:crypto';
 import type { Middleware } from '../../types/index.ts';
 import { isValidToken } from './validate-token.ts';
 
-const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '::1', '0.0.0.0', '::'];
+const listensOnLoopback = (host?: string) =>
+  !host || ['localhost', '127.0.0.1', '::1', '0.0.0.0', '::'].includes(host);
 
-// A sandboxed frame sends `Origin: null`, and so can any website, so the origin cannot earn
-// permission to read. The hostname can: every `*.localhost` name resolves to loopback, and only
-// those who were told this unguessable one can address requests to it.
+// `Origin: null` is what a sandboxed frame sends and what any site can forge, so the credential
+// is an unguessable `*.localhost` hostname instead.
 export function createEmbedAccess(localAddress: string, host?: string) {
   const url = new URL(localAddress);
   url.hostname = `sb-${randomUUID()}.localhost`;
 
   const middleware: Middleware = (req, res, next) => {
-    if (isValidToken(req.headers.host ?? null, url.host)) {
+    if (isValidToken(req.headers.host, url.host)) {
       res.setHeader('Referrer-Policy', 'no-referrer');
       const isRead = req.method === 'GET' || req.method === 'HEAD';
-      // A frame navigates to pages and never reads them, and they hold the channel token that
-      // allows writes.
-      const isPage = /(\/|\.html)$/.test((req.url ?? '').split('?')[0]);
+      // Pages hold the channel token, and a frame navigates to them without reading them.
+      const isPage = /\/$|\.html$/.test(new URL(req.url ?? '/', url).pathname);
       if (isRead && !isPage) {
         res.setHeader('Access-Control-Allow-Origin', '*');
       }
@@ -26,6 +25,5 @@ export function createEmbedAccess(localAddress: string, host?: string) {
     next();
   };
 
-  const listensOnLoopback = !host || LOOPBACK_HOSTS.includes(host);
-  return { middleware, origin: listensOnLoopback ? url.origin : undefined };
+  return { middleware, origin: listensOnLoopback(host) ? url.origin : undefined };
 }

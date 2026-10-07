@@ -252,7 +252,7 @@ describe('ServerChannelTransport', () => {
     expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
   });
 
-  it('quietly rejects a sandboxed frame (Origin: null) even with a valid token', () => {
+  it('quietly rejects a sandboxed frame even with a valid token', () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;

@@ -493,8 +493,7 @@
   }
 </script>
 <script>
-  // A sandboxed frame without `allow-same-origin` throws on any storage access, which would crash
-  // every story whose code touches it. Storage that lasts for the page keeps those stories working.
+  // A sandboxed frame without `allow-same-origin` throws on any storage access.
   {
     class MemoryStorage {
       #items = new Map();
@@ -527,13 +526,13 @@
       try {
         void window[name];
       } catch {
-        Object.defineProperty(window, name, { value: new MemoryStorage(), configurable: true });
+        Object.defineProperty(window, name, { value: new MemoryStorage() });
       }
     }
     try {
       void document.cookie;
     } catch {
-      Object.defineProperty(document, 'cookie', { get: () => '', set() {}, configurable: true });
+      Object.defineProperty(document, 'cookie', { get: () => '', set() {} });
     }
   }
 </script>

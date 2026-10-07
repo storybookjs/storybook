@@ -73,7 +73,7 @@ export const storyInputArraySchema = v.array(storyInputSchema);
 
 export type StoryInput = v.InferOutput<typeof storyInputSchema>;
 
-export function storyQueryParams(input: StoryInput) {
+export function storyQuerySuffix(input: StoryInput) {
   const args = buildArgsParam({}, input.props ?? {});
   const globals = buildArgsParam({}, input.globals ?? {});
   return `${args ? `&args=${args}` : ''}${globals ? `&globals=${globals}` : ''}`;

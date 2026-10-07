@@ -66,11 +66,7 @@ export type RuntimeInstanceRecord = {
   port: number;
   /** Token authenticating clients against this instance's WebSocket channel. */
   token?: string;
-  /**
-   * Origin that serves the preview to sandboxed (opaque-origin) frames, e.g.
-   * `${embedOrigin}/iframe.html?id=…`. Its hostname is a secret: holding it grants read access to
-   * everything the dev server serves.
-   */
+  /** Origin that serves the preview to sandboxed frames. A secret, like `token`. */
   embedOrigin?: string;
   agent?: string;
   storybookVersion: string;

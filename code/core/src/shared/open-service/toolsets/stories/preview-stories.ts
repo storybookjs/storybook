@@ -2,7 +2,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import type { PreviewStoriesOutput } from './definition.ts';
 import { findStoryIds } from './find-story-ids.ts';
-import { type StoryInput, storyQueryParams } from './story-input.ts';
+import { type StoryInput, storyQuerySuffix } from './story-input.ts';
 
 export type PreviewStoriesParams = {
   origin: string;
@@ -33,7 +33,7 @@ export function previewStories({
     }
 
     const indexEntry = story.entry;
-    const previewUrl = `${origin}/?path=/story/${indexEntry.id}${storyQueryParams(story.input)}`;
+    const previewUrl = `${origin}/?path=/story/${indexEntry.id}${storyQuerySuffix(story.input)}`;
 
     result.push({
       title: indexEntry.title,

@@ -198,7 +198,7 @@ describe('stories.embed', () => {
     ]);
   });
 
-  it('tells the caller to restart a Storybook that does not serve embeds', async () => {
+  it('throws when the Storybook has no embed origin', async () => {
     await expect(runEmbed([{ storyId: 'button--primary' }], cliCtx)).rejects.toBeInstanceOf(
       OpenServiceMissingEmbedOriginError
     );

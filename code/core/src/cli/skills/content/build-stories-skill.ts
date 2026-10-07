@@ -78,8 +78,14 @@ This project has no command that lists story ids. Select a story by its file and
           : `A shared file ${sharedFile} has no stories of its own: pass the components that use it to \`find-by-component\`.`,
         'When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
       ];
+  const affected = [
+    inputs.changeDetectionEnabled && '`stories changed`',
+    inputs.moduleGraphSupported && '`find-by-component`',
+  ].filter(Boolean);
   const guidance = [
-    `Run one of these ${before}, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects.`,
+    affected.length > 0
+      ? `Run ${affected.join(' or ')} ${before}, also when you already know the ids of the stories you wrote: ${affected.length > 1 ? 'they add' : 'it adds'} the stories of other components that your change affects.`
+      : `Run it ${before}.`,
     'Story ids come only from these commands. Never build one from a file name, a title or memory.',
     ...fallback,
     'When none of them finds a story for a component, it has no stories yet: say so, or write them.',

@@ -44,6 +44,14 @@ describe('buildStoriesSkill', () => {
     expect(text).not.toContain('accessibility');
   });
 
+  it('requires the commands that find affected stories before a review, not the full story list', () => {
+    const text = buildStoriesSkill(everything);
+
+    expect(text).toContain(
+      'Run `stories changed` or `find-by-component` before every review, also when you already know the ids'
+    );
+  });
+
   it('selects stories by file and export when no command lists story ids', () => {
     const text = buildStoriesSkill({
       ...everything,

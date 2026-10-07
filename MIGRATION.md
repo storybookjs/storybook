@@ -2,6 +2,7 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Tag filtering API](#tag-filtering-api)
+  - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -580,6 +581,24 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Legacy highlight object format removed
+
+The legacy highlight payload `{ elements, color, style }` is no longer accepted by the `HIGHLIGHT` event. Senders must use the current format, which targets elements with `selectors` and controls their appearance with `styles`:
+
+| Removed | Replacement |
+| --- | --- |
+| `elements` | `selectors` |
+| `color` and `style` | `styles` (CSS properties, e.g. `{ outline: '2px dashed red' }`) |
+
+```diff
+import { HIGHLIGHT } from 'storybook/highlight';
+
+- emit(HIGHLIGHT, { elements: ['#button'], color: 'red', style: 'dashed' });
++ emit(HIGHLIGHT, { selectors: ['#button'], styles: { outline: '2px dashed red' } });
+```
+
+The full payload contract is `{ selectors, styles, hoverStyles, focusStyles, menu, priority, id }`. See the [highlight documentation](./docs/essentials/highlight.mdx) for the complete reference.
 
 ### Tag filtering API
 

@@ -1,5 +1,3 @@
-import { resolve } from 'node:path';
-
 import {
   ProjectType,
   installSkills,
@@ -33,6 +31,7 @@ import {
   executeProjectDetection,
   executeUserPreferences,
 } from './commands/index.ts';
+import { writeProjectScopedFlag } from '../../../core/src/shared/utils/ai-checklist-flags.ts';
 import { DependencyCollector } from './dependency-collector.ts';
 import { registerAllGenerators } from './generators/index.ts';
 import type { CommandOptions } from './generators/types.ts';
@@ -187,19 +186,9 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 9: Print final summary
   if (configDir && isAiSetupAvailable) {
-    // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
-    // (checklist item, copy-prompt button) on the user's actual choice — not on
-    // a telemetry-event side effect. Scoped to the project's configDir so a
-    // monorepo with hoisted `node_modules/.cache` doesn't leak the flag across
-    // sibling Storybook projects. This is a tiny local file with no PII, so it
-    // is written even when telemetry is disabled.
-    await cache
-      .set('ai-init-opt-in', {
-        timestamp: Date.now(),
-        configDir: resolve(configDir),
-        answer: hasAiFeature,
-      })
-      .catch(() => {});
+    await writeProjectScopedFlag('ai-init-opt-in', configDir, { answer: hasAiFeature }).catch(
+      () => {}
+    );
     // Telemetry event remains for analytics. UI logic does not depend on it.
     await telemetry('ai-init-opt-in', {
       answer: hasAiFeature,

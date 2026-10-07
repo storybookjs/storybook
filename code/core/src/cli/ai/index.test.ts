@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { cache, JsPackageManagerFactory, PackageManagerName } from 'storybook/internal/common';
+import { JsPackageManagerFactory, PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import { SupportedRenderer } from 'storybook/internal/types';
@@ -10,11 +10,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs, vol } from 'memfs';
 
+import { writeProjectScopedFlag } from '../../shared/utils/ai-checklist-flags.ts';
 import { getProjectInfo, type ProjectInfo } from '../skills/project-info.ts';
 import { aiSetup } from './index.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('../../shared/utils/ai-checklist-flags.ts', { spy: true });
 vi.mock('../skills/project-info.ts', () => ({ getProjectInfo: vi.fn() }));
 
 const projectInfo: ProjectInfo = {
@@ -40,7 +42,7 @@ beforeEach(() => {
   vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as unknown as typeof writeFile);
   vi.mocked(telemetry).mockResolvedValue(undefined);
   vi.mocked(getProjectInfo).mockResolvedValue({ ok: true, projectInfo });
-  vi.spyOn(cache, 'set').mockResolvedValue(undefined);
+  vi.mocked(writeProjectScopedFlag).mockResolvedValue(undefined);
   vi.spyOn(logger, 'log').mockImplementation(() => {});
   vi.spyOn(logger, 'error').mockImplementation(() => {});
   vi.spyOn(process.stdout, 'write').mockReturnValue(true);
@@ -80,10 +82,8 @@ describe('aiSetup', () => {
       expect.stringContaining('Use `npx storybook skills setup` instead.')
     );
     expect(process.stdout.write).not.toHaveBeenCalledWith(expect.stringContaining('deprecated'));
-    expect(cache.set).toHaveBeenCalledWith('ai-setup-ran', {
-      timestamp: expect.any(Number),
+    expect(writeProjectScopedFlag).toHaveBeenCalledWith('ai-setup-ran', '.storybook', {
       runId: 'setup-test',
-      configDir: resolve('.storybook'),
     });
     expect(telemetry).toHaveBeenCalledWith(
       'ai-setup',
@@ -152,7 +152,7 @@ describe('aiSetup', () => {
     );
     expect(process.stdout.write).not.toHaveBeenCalled();
     expect(writeFile).not.toHaveBeenCalled();
-    expect(cache.set).not.toHaveBeenCalled();
+    expect(writeProjectScopedFlag).not.toHaveBeenCalled();
     expect(telemetry).not.toHaveBeenCalled();
   });
 
@@ -188,7 +188,7 @@ describe('aiSetup', () => {
 
     expect(logger.error).toHaveBeenCalledWith('Could not detect framework');
     expect(process.stdout.write).not.toHaveBeenCalled();
-    expect(cache.set).not.toHaveBeenCalled();
+    expect(writeProjectScopedFlag).not.toHaveBeenCalled();
     expect(telemetry).not.toHaveBeenCalled();
   });
 });

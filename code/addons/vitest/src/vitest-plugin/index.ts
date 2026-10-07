@@ -25,7 +25,6 @@ import { MainFileMissingError } from 'storybook/internal/server-errors';
 import {
   detectAgent,
   isTelemetryModuleEnabled,
-  isWithinInitialSession,
   oneWayHash,
   telemetry,
   setTelemetryEnabled,
@@ -49,6 +48,7 @@ import {
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
+import { isWithinAiSetupSession } from '../../../../core/src/shared/utils/ai-checklist-flags.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
@@ -283,7 +283,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     async config(nonMutableInputConfig, { mode }) {
       if (isTelemetryModuleEnabled()) {
         agent = detectAgent();
-        withinAgenticSetupSession = !!agent && (await isWithinInitialSession('ai-setup'));
+        withinAgenticSetupSession =
+          !!agent && (await isWithinAiSetupSession(finalOptions.configDir));
       }
 
       if (mode) {

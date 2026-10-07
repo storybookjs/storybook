@@ -25,7 +25,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
     } = {};
 
     // Initialize contextual data; if ghost stories are triggered to assess the
-    // quality of an ai setup workflow, inject the runId for the ai setup session.
+    // quality of a `ai setup` workflow, inject the runId for that setup session.
     const aiSetupRunId = await getAiSetupRunId(options.configDir);
 
     try {
@@ -34,13 +34,10 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           const ghostRunStart = Date.now();
           const lastEvents = await getLastEvents();
           const lastInit = lastEvents?.init;
-          const lastAISetup = lastEvents?.['ai-setup'];
-          const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
           const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
 
-          // We only want to run ghost stories immediately after init or ai setup.
-          const lastRelevantEvent = lastAISetup ?? lastInit;
-          if (!lastRelevantEvent) {
+          // We only want to run ghost stories immediately after init or `ai setup`.
+          if (!aiSetupRunId && !lastInit) {
             throw new SkipGhostStoriesTelemetry();
           }
 
@@ -48,14 +45,10 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           // data for a new instance of `ai setup`.
           if (
             lastGhostStoriesRun &&
-            lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
+            lastGhostStoriesRun.body.payload.aiSetupRunId === aiSetupRunId
           ) {
             throw new SkipGhostStoriesTelemetry();
           }
-
-          // No session-ID match: `storybook ai setup` runs as a separate CLI
-          // process, so its sessionId never matches the dev server's. The
-          // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
 
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');

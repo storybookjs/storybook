@@ -1,5 +1,7 @@
 import { resolve } from 'node:path';
 
+import { SESSION_TIMEOUT } from 'storybook/internal/telemetry';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockCacheStore, mockCache } = vi.hoisted(() => {
@@ -15,13 +17,13 @@ const { mockCacheStore, mockCache } = vi.hoisted(() => {
   };
 });
 
-vi.mock('storybook/internal/common', () => ({
-  cache: mockCache,
-}));
+vi.mock('storybook/internal/common', { spy: true });
 
 describe('ai-checklist-flags', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mockCacheStore.clear();
+    const common = await import('storybook/internal/common');
+    vi.mocked(common.createFileSystemCache).mockReturnValue(mockCache as never);
   });
 
   afterEach(() => {
@@ -113,6 +115,22 @@ describe('ai-checklist-flags', () => {
       mockCacheStore.set('ai-setup-ran', { timestamp: Date.now() });
       const { hasAiSetupRun } = await import('./ai-checklist-flags.ts');
       expect(await hasAiSetupRun('/any/project/.storybook')).toBe(false);
+    });
+  });
+
+  describe('isWithinAiSetupSession', () => {
+    it('returns true only while the setup run is younger than the session timeout', async () => {
+      const { isWithinAiSetupSession } = await import('./ai-checklist-flags.ts');
+      const configDir = resolve('/repo/apps/web/.storybook');
+
+      mockCacheStore.set('ai-setup-ran', {
+        timestamp: Date.now() - SESSION_TIMEOUT / 2,
+        configDir,
+      });
+      expect(await isWithinAiSetupSession(configDir)).toBe(true);
+
+      mockCacheStore.set('ai-setup-ran', { timestamp: Date.now() - SESSION_TIMEOUT, configDir });
+      expect(await isWithinAiSetupSession(configDir)).toBe(false);
     });
   });
 

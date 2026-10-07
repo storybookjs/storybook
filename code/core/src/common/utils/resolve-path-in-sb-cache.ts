@@ -13,13 +13,20 @@ import versions from '../versions.ts';
  * The cache directory includes the Storybook version to ensure that upgrading Storybook
  * automatically invalidates the cache, preventing stale cache issues.
  *
+ * The project is the nearest `package.json` at or above `cwd`. Pass a directory inside the target
+ * project when processes started from different directories must agree on the location.
+ *
  * @param fileOrDirectoryName {string} Name of the file or directory
  * @param sub {string} Optional subdirectory name (defaults to 'default')
  * @returns {string} Absolute path to the file or directory
  */
-export function resolvePathInStorybookCache(fileOrDirectoryName: string, sub = 'default'): string {
-  let cacheDirectory = pkg.cache('storybook');
-  cacheDirectory ||= join(process.cwd(), 'node_modules', '.cache', 'storybook');
+export function resolvePathInStorybookCache(
+  fileOrDirectoryName: string,
+  sub = 'default',
+  cwd = process.cwd()
+): string {
+  let cacheDirectory = pkg.cache('storybook', { cwd });
+  cacheDirectory ||= join(cwd, 'node_modules', '.cache', 'storybook');
 
   // Include the storybook version in the cache path to automatically invalidate
   // cache when upgrading to a new version

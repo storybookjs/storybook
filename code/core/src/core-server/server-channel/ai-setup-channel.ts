@@ -7,6 +7,7 @@ import {
   getLastEvents,
   getStorybookMetadata,
   isStoryCreatedByAISetup,
+  isTelemetryModuleEnabled,
   telemetry,
 } from 'storybook/internal/telemetry';
 import type { Options } from 'storybook/internal/types';
@@ -22,7 +23,7 @@ export function initAIAnalyticsChannel(
   options: Options,
   getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
 ) {
-  /** Send analytics about the ai setup workflow when requested*/
+  /** Send analytics about the `ai setup` workflow when requested*/
   channel.on(AI_SETUP_ANALYTICS_REQUEST, async () => {
     const stats: {
       fileCount?: number;
@@ -34,20 +35,17 @@ export function initAIAnalyticsChannel(
 
     try {
       const lastEvents = await getLastEvents();
-      const lastAISetup = lastEvents?.['ai-setup'];
       const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
       runId = await getAiSetupRunId(options.configDir);
 
-      // Only run if sb ai setup has been called
-      if (!lastAISetup) {
+      // Only run if `storybook ai setup` has been called. The result is only
+      // reported through telemetry, and without it nothing records that scoring ran.
+      if (!runId || !isTelemetryModuleEnabled()) {
         return;
       }
 
       // Already ran once for this project and `ai setup` session — never run again
-      if (
-        lastSetupStoryScoringRun &&
-        lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
-      ) {
+      if (lastSetupStoryScoringRun?.body.payload.runId === runId) {
         return;
       }
 

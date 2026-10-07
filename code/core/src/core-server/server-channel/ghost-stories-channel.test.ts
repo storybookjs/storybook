@@ -32,6 +32,8 @@ vi.mock('storybook/internal/telemetry', async (importOriginal) => {
   };
 });
 
+vi.mock('../../shared/utils/ai-checklist-flags.ts', { spy: true });
+
 vi.mock('../utils/ghost-stories/get-candidates', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../utils/ghost-stories/get-candidates')>();
   return {
@@ -68,6 +70,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 const mockCommon = await import('storybook/internal/common');
 const mockTelemetry = await import('storybook/internal/telemetry');
 const mockStoryGeneration = await import('../utils/ghost-stories/get-candidates.ts');
+const mockAiChecklistFlags = await import('../../shared/utils/ai-checklist-flags.ts');
 
 const expectGhostStoriesTelemetryPayload = async (expectedPayload: unknown) => {
   const telemetryMock = vi.mocked(mockTelemetry.telemetry);
@@ -104,6 +107,7 @@ describe('ghostStoriesChannel', () => {
     vi.mocked(mockCommon.executeCommand).mockReset();
     vi.mocked(mockCommon.resolvePathInStorybookCache).mockReset();
     vi.mocked(mockTelemetry.getLastEvents).mockReset();
+    vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockReset().mockResolvedValue(undefined);
     vi.mocked(mockTelemetry.getSessionId).mockReset();
     vi.mocked(mockTelemetry.getStorybookMetadata).mockReset();
     vi.mocked(mockTelemetry.setTelemetryEnabled).mockReset();
@@ -349,7 +353,7 @@ describe('ghostStoriesChannel', () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
         // Has already run (ghost stories event exists)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-          'ghost-stories': { timestamp: Date.now(), body: {} },
+          'ghost-stories': { timestamp: Date.now(), body: { payload: {} } },
           init: { body: { sessionId: 'test-session' } },
         } as any);
         vi.mocked(mockTelemetry.getSessionId).mockResolvedValue('test-session');
@@ -368,16 +372,19 @@ describe('ghostStoriesChannel', () => {
         expect(mockTelemetry.getSessionId).not.toHaveBeenCalled();
         expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
+        await expect(vi.mocked(mockTelemetry.telemetry).mock.results[0].value).rejects.toThrow();
       });
 
-      it('should skip discovery run when ghost stories ran and ai-setup scoring runId matches current ai-setup session', async () => {
+      it('should skip discovery run when ghost stories already ran for the current ai-setup session', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-          'ghost-stories': { timestamp: Date.now(), body: {} },
-          'ai-setup': { body: { payload: { runId: 'session-A' } } },
-          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          'ghost-stories': {
+            timestamp: Date.now(),
+            body: { payload: { aiSetupRunId: 'session-A' } },
+          },
           init: { body: { sessionId: 'test-session' } },
         } as any);
+        vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
 
         initGhostStoriesChannel(mockChannel, {} as Options);
 
@@ -391,16 +398,16 @@ describe('ghostStoriesChannel', () => {
         expect(mockStoryGeneration.getComponentCandidates).not.toHaveBeenCalled();
       });
 
-      it('should run discovery again when ghost stories ran but ai-setup scoring runId is from an older session', async () => {
+      it('should run discovery again when ghost stories ran for an older ai-setup session', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Ghost stories has run before, but a new `ai setup` session has started
-        // (scoring runId is from session-A, ai-setup runId is now session-B)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-          'ghost-stories': { timestamp: Date.now(), body: {} },
-          'ai-setup': { body: { payload: { runId: 'session-B' } } },
-          'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
+          'ghost-stories': {
+            timestamp: Date.now(),
+            body: { payload: { aiSetupRunId: 'session-A' } },
+          },
           init: { body: { sessionId: 'test-session' } },
         } as any);
+        vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-B');
 
         vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
           renderer: '@storybook/react',

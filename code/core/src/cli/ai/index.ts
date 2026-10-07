@@ -2,10 +2,10 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
+import { writeProjectScopedFlag } from '../../shared/utils/ai-checklist-flags.ts';
 import { getSetupMarkdownOutput } from '../skills/content/setup-prompts/index.ts';
 import { getProjectInfo } from '../skills/project-info.ts';
 import { getSetupSupportError } from '../skills/setup-support.ts';
@@ -44,18 +44,9 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
 
   const { markdown: markdownOutput, prompt } = await getSetupMarkdownOutput(projectInfo);
 
-  // Persist the fact that `storybook ai setup` ran in this project, scoped to
-  // the resolved configDir. The dev server reads this together with the story
-  // index to decide whether the agent actually produced work — never to
-  // unconditionally hide the copy-prompt button. This is a tiny local file
-  // with no PII, so it is written even when telemetry is disabled.
-  await cache
-    .set('ai-setup-ran', {
-      timestamp: Date.now(),
-      runId: options.runId,
-      configDir: resolve(projectInfo.configDir),
-    })
-    .catch(() => {});
+  await writeProjectScopedFlag('ai-setup-ran', projectInfo.configDir, {
+    runId: options.runId,
+  }).catch(() => {});
 
   await telemetry('ai-setup', {
     cliOptions: {

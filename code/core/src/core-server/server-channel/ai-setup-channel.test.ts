@@ -17,6 +17,7 @@ vi.mock('storybook/internal/telemetry', async (importOriginal) => {
     getLastEvents: vi.fn(),
     getStorybookMetadata: vi.fn(),
     isStoryCreatedByAISetup: vi.fn(),
+    isTelemetryModuleEnabled: vi.fn(),
     telemetry: vi.fn(),
   };
 });
@@ -71,6 +72,7 @@ describe('initAIAnalyticsChannel', () => {
     vi.mocked(mockTelemetry.getStorybookMetadata).mockReset();
     vi.mocked(mockTelemetry.isStoryCreatedByAISetup).mockReset();
     vi.mocked(mockTelemetry.telemetry).mockReset();
+    vi.mocked(mockTelemetry.isTelemetryModuleEnabled).mockReset().mockReturnValue(true);
     vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockReset().mockResolvedValue(undefined);
     vi.mocked(mockRunStoryTests.runStoryTests).mockReset();
     vi.mocked(mockWaitForIdleVitest.waitForIdleVitest).mockReset().mockResolvedValue(true);
@@ -82,7 +84,7 @@ describe('initAIAnalyticsChannel', () => {
   });
 
   describe('no-op conditions', () => {
-    it('should skip scoring when there is no lastAISetup event', async () => {
+    it('should skip scoring when `ai setup` has not run for this project', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
@@ -100,13 +102,13 @@ describe('initAIAnalyticsChannel', () => {
       expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
     });
 
-    it('should skip scoring when lastSetupStoryScoringRun.runId matches lastAISetup.runId (same session)', async () => {
+    it('should skip scoring when lastSetupStoryScoringRun.runId matches the setup run id (same session)', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-A' } } },
         'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
       } as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
 
       initAIAnalyticsChannel(mockChannel, {} as Options);
       mockChannel.emit(AI_SETUP_ANALYTICS_REQUEST);
@@ -118,15 +120,32 @@ describe('initAIAnalyticsChannel', () => {
       expect(mockTelemetry.telemetry).not.toHaveBeenCalled();
       expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
     });
+
+    it('should skip scoring when telemetry is disabled, since nothing would record that it ran', async () => {
+      mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
+
+      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({} as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
+      vi.mocked(mockTelemetry.isTelemetryModuleEnabled).mockReturnValue(false);
+
+      initAIAnalyticsChannel(mockChannel, {} as Options);
+      mockChannel.emit(AI_SETUP_ANALYTICS_REQUEST);
+
+      await vi.waitFor(() => {
+        expect(analyticsResponseListener).toHaveBeenCalled();
+      });
+
+      expect(mockTelemetry.getStorybookMetadata).not.toHaveBeenCalled();
+      expect(mockRunStoryTests.runStoryTests).not.toHaveBeenCalled();
+    });
   });
 
   describe('run conditions', () => {
     it('should run scoring when there is no lastSetupStoryScoringRun (first time)', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
-      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-A' } } },
-      } as any);
+      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({} as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
         renderer: '@storybook/react',
         addons: { '@storybook/addon-vitest': {} },
@@ -157,13 +176,13 @@ describe('initAIAnalyticsChannel', () => {
       );
     });
 
-    it('should run scoring when lastSetupStoryScoringRun.runId differs from lastAISetup.runId (new ai-setup session)', async () => {
+    it('should run scoring when lastSetupStoryScoringRun.runId differs from the setup run id (new ai-setup session)', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-B' } } },
         'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
       } as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-B');
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
         renderer: '@storybook/react',
         addons: { '@storybook/addon-vitest': {} },
@@ -198,9 +217,9 @@ describe('initAIAnalyticsChannel', () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
       vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-B' } } },
         'ai-setup-final-scoring': { body: { payload: { runId: 'session-A' } } },
       } as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-B');
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
         renderer: '@storybook/react',
         addons: { '@storybook/addon-vitest': {} },
@@ -260,9 +279,8 @@ describe('initAIAnalyticsChannel', () => {
     it('should skip scoring when renderer is not React', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
-      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-A' } } },
-      } as any);
+      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({} as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
         renderer: '@storybook/vue',
         addons: { '@storybook/addon-vitest': {} },
@@ -282,9 +300,8 @@ describe('initAIAnalyticsChannel', () => {
     it('should skip scoring when vitest addon is not present', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
-      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-A' } } },
-      } as any);
+      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({} as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
         renderer: '@storybook/react',
         addons: {},
@@ -304,9 +321,8 @@ describe('initAIAnalyticsChannel', () => {
     it('should skip scoring when vitest is not idle', async () => {
       mockChannel.addListener(AI_SETUP_ANALYTICS_RESPONSE, analyticsResponseListener);
 
-      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
-        'ai-setup': { body: { payload: { runId: 'session-A' } } },
-      } as any);
+      vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({} as any);
+      vi.mocked(mockAiChecklistFlags.getAiSetupRunId).mockResolvedValue('session-A');
       vi.mocked(mockTelemetry.getStorybookMetadata).mockResolvedValue({
         renderer: '@storybook/react',
         addons: { '@storybook/addon-vitest': {} },

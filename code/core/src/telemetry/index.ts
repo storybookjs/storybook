@@ -25,12 +25,7 @@ export * from './error-collector.ts';
 
 export * from './ai-setup-utils.ts';
 
-export {
-  getPrecedingUpgrade,
-  getLastEvents,
-  isWithinInitialSession,
-  type CacheEntry,
-} from './event-cache.ts';
+export { getPrecedingUpgrade, getLastEvents, type CacheEntry } from './event-cache.ts';
 
 export { getSessionId, SESSION_TIMEOUT } from './session-id.ts';
 

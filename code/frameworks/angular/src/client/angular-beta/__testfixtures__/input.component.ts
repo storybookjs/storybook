@@ -3,8 +3,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export const exportedConstant = 'An exported constant';
 
 export enum ButtonAccent {
-  'Normal' = 'Normal',
-  'High' = 'High',
+  Normal = 'Normal',
+  High = 'High',
 }
 
 export interface ISomeInterface {

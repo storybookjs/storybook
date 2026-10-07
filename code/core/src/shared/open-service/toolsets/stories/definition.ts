@@ -18,7 +18,12 @@ import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
-import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
+import {
+  formatChangedStories,
+  formatFindByComponent,
+  formatPreviewStories,
+  previewInstructions,
+} from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 import { detectUnreachableFiles } from './unreachable-files.ts';
@@ -26,12 +31,7 @@ import { detectUnreachableFiles } from './unreachable-files.ts';
 const previewSuccessSchema = v.object({
   title: v.string(),
   name: v.string(),
-  previewUrl: v.pipe(
-    v.string(),
-    v.description(
-      'Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.'
-    )
-  ),
+  previewUrl: v.pipe(v.string(), v.description('Direct URL to open the story preview.')),
 });
 
 const previewFailureSchema = v.object({
@@ -41,6 +41,10 @@ const previewFailureSchema = v.object({
 
 const previewOutputSchema = v.object({
   stories: v.array(v.union([previewSuccessSchema, previewFailureSchema])),
+  instructions: v.pipe(
+    v.optional(v.string()),
+    v.description('What to do with these preview URLs next. Follow it.')
+  ),
 });
 
 export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
@@ -110,15 +114,13 @@ const findByComponentOutputSchema = v.object({
       ),
     })
   ),
+  maxDistance: v.pipe(
+    v.number(),
+    v.description('The `maxDistance` ceiling this lookup applied, whether passed or defaulted.')
+  ),
 });
 
-/**
- * `maxDistance` echoes the ceiling actually applied so formatters can name it; it is deliberately
- * absent from {@link findByComponentOutputSchema}, which is the published output contract.
- */
-export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema> & {
-  maxDistance: number;
-};
+export type FindByComponentOutput = v.InferOutput<typeof findByComponentOutputSchema>;
 
 export type StoryIndexAccess = {
   getIndex: () => Promise<StoryIndex>;
@@ -260,7 +262,7 @@ export function createStoriesToolset({
     description: 'Story discovery, change detection, and preview URL generation.',
     methods: {
       preview: {
-        input: v.object({
+        input: v.strictObject({
           stories: v.pipe(
             storyInputArraySchema,
             v.description(
@@ -283,16 +285,20 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
               methodName: 'preview',
             });
           }
-          const data = previewStories({
+          const { stories } = previewStories({
             origin: ctx.origin,
             index: await storyIndex.getIndex(),
             stories: input.stories,
           });
+          const data = {
+            stories,
+            instructions: previewInstructions(stories, ctx, reviewEnabled),
+          };
 
           return {
             ok: true,
             data,
-            markdown: formatPreviewStories(data, ctx, { reviewEnabled }),
+            markdown: formatPreviewStories(data),
             telemetry: {
               payload: {
                 inputStoryCount: input.stories.length,
@@ -303,7 +309,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       changed: {
-        input: v.object({}),
+        input: v.strictObject({}),
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
@@ -372,7 +378,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       findByComponent: {
-        input: v.object({
+        input: v.strictObject({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),

@@ -4,6 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { dedent } from 'ts-dedent';
 
 import type { JsPackageManager } from '../js-package-manager/index.ts';
+import { normalizeAddonName } from './get-addon-names.ts';
 import { getConfigInfo } from './get-storybook-info.ts';
 
 export type RemoveAddonOptions = {
@@ -47,17 +48,19 @@ export async function removeAddon(addon: string, options: RemoveAddonOptions) {
     await packageManager.installDependencies();
   }
 
-  const currentAddons = main.getNamesFromPath(['addons']) ?? [];
+  try {
+    // Every entry that names the addon, such as `'<addon>/preset'` or an absolute path to it.
+    const entries = (main.getNamesFromPath(['addons']) ?? []).filter(
+      (name) => normalizeAddonName(name) === addon
+    );
 
-  // Fault tolerant as the addon might have been removed already
-  if (currentAddons.includes(addon)) {
-    // add to main.js
-    logger.debug(`Removing '${addon}' from main.js addons field.`);
-    try {
-      main.removeEntryFromArray(['addons'], addon);
+    // Fault tolerant as the addon might have been removed already
+    if (entries.length > 0) {
+      logger.debug(`Removing '${addon}' from main.js addons field.`);
+      entries.forEach((entry) => main.removeEntryFromArray(['addons'], entry));
       await writeConfig(main);
-    } catch (err) {
-      logger.warn(`Failed to remove '${addon}' from main.js addons field. ${String(err)}`);
     }
+  } catch (err) {
+    logger.warn(`Failed to remove '${addon}' from main.js addons field. ${String(err)}`);
   }
 }

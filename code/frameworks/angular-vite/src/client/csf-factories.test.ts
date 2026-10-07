@@ -12,9 +12,7 @@ import type { Decorator } from './public-types.ts';
 @Component({
   selector: 'storybook-button',
   standalone: true,
-  template: `
-    <button [disabled]="disabled">{{ label }}</button>
-  `,
+  template: ` <button [disabled]="disabled">{{ label }}</button> `,
 })
 class ButtonComponent {
   @Input()
@@ -297,13 +295,45 @@ describe('Story args can be inferred', () => {
   });
 });
 
+describe('Custom args types written by the csf-factories codemod', () => {
+  type Icon = { name: string };
+  type StoryArgs = { pageIcon: Icon };
+  type ButtonAndCustomArgs = ButtonComponent & { footer?: string };
+
+  it('✅ A custom arg can be used when meta has no component', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      render: (args) => ({ props: args, template: `${args.pageIcon.name}` }),
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story();
+    const Overridden = meta.story({ args: { pageIcon: { name: 'user' } } });
+  });
+
+  it('❌ A custom args type that includes the component class requires every member of that class', () => {
+    const meta = preview.type<{ args: ButtonAndCustomArgs }>().meta({
+      component: ButtonComponent,
+    });
+
+    // @ts-expect-error label, disabled and disabledChange not provided ❌
+    const CustomFooter = meta.story({ args: { footer: 'good' } });
+  });
+
+  it('✅ The component class can be left out of a custom args type', () => {
+    const meta = preview.type<{ args: { footer?: string } }>().meta({
+      component: ButtonComponent,
+      render: ({ footer, ...args }) => ({ props: args, template: `${footer} ${args.label}` }),
+    });
+
+    const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
+  });
+});
+
 it('Components without Props can be used', () => {
   @Component({
     selector: 'storybook-simple',
     standalone: true,
-    template: `
-      <div>Simple</div>
-    `,
+    template: ` <div>Simple</div> `,
   })
   class SimpleComponent {}
 
@@ -599,4 +629,88 @@ it('a render typed as any or as the component keeps the component args', () => {
     render: (args: ButtonComponent) => ({ props: args }),
   });
   const Default = componentRender.story({ args: { label: 'Hi' } });
+});
+
+describe('meta.type<>() types the stories created from it', () => {
+  const meta = preview.meta({ component: ButtonComponent, args: { disabled: false } });
+
+  it('adds an arg to the args and the render of that story only', () => {
+    meta.type<{ args: { icon: 'star' | 'heart' } }>().story({
+      args: { label: 'Hi', icon: 'star' },
+      render: (args) => {
+        expectTypeOf(args.icon).toEqualTypeOf<'star' | 'heart'>();
+        expectTypeOf(args.label).toEqualTypeOf<string | undefined>();
+        return { props: args, template: '<storybook-button [label]="label" />' };
+      },
+      play: async ({ args }) => {
+        expectTypeOf(args.icon).toEqualTypeOf<'star' | 'heart'>();
+      },
+    });
+
+    meta.story({
+      // @ts-expect-error icon is not an arg of the other stories
+      render: ({ icon }) => ({ template: '<storybook-button />' }),
+    });
+    // @ts-expect-error icon must be 'star' | 'heart'
+    meta.type<{ args: { icon: 'star' | 'heart' } }>().story({ args: { icon: 'x' } });
+  });
+
+  it('a required key is required in that story only, next to the optional component args', () => {
+    const typed = meta.type<{ args: { icon: string } }>();
+    typed.story({ args: { icon: 'star' } });
+    typed.story({ args: { icon: 'star', label: 'Hi', disabled: true } });
+    // @ts-expect-error icon is required
+    typed.story({ args: { label: 'Hi' } });
+    // @ts-expect-error icon is required
+    typed.story();
+    meta.type<{ args: { icon?: string } }>().story();
+    meta.story();
+  });
+
+  it('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error disabled is required, the meta sets it to false
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi' } });
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi', disabled: true } });
+  });
+
+  it('a story with a render that takes no args needs no args', () => {
+    const typed = meta.type<{ args: { icon: string } }>();
+    typed.story(() => ({ template: '<storybook-button />' }));
+    typed.story({ render: () => ({ template: '<storybook-button />' }) });
+  });
+
+  it('composes with preview.type<>(), decorators and itself', () => {
+    const withTheme: Decorator<{ theme: 'light' | 'dark' }> = (story) => story();
+    const typedMeta = preview.type<{ args: { locale: 'en' | 'nl' } }>().meta({
+      component: ButtonComponent,
+      decorators: [withTheme],
+      args: { locale: 'nl' },
+    });
+    const typed = typedMeta.type<{ args: { icon: string } }>().type<{ args: { size: number } }>();
+
+    typed.story({
+      args: { theme: 'dark', icon: 'star', size: 1 },
+      play: async ({ args }) => {
+        expectTypeOf(args.locale).toEqualTypeOf<'en' | 'nl'>();
+        expectTypeOf(args.theme).toEqualTypeOf<'light' | 'dark'>();
+        expectTypeOf(args.icon).toEqualTypeOf<string>();
+        expectTypeOf(args.size).toEqualTypeOf<number>();
+      },
+    });
+    // @ts-expect-error size is required
+    typed.story({ args: { theme: 'dark', icon: 'star' } });
+  });
+
+  it('the story can be extended and composed', () => {
+    const WithIcon = meta.type<{ args: { icon: string } }>().story({
+      args: { label: 'Hi', icon: 'star' },
+    });
+    const WithHeart = WithIcon.extend({ args: { icon: 'heart' } });
+    // @ts-expect-error icon is a string
+    WithIcon.extend({ args: { icon: 1 } });
+
+    expectTypeOf(WithIcon.composed.args.icon).toEqualTypeOf<string>();
+    expect(WithIcon.composed.args).toEqual({ label: 'Hi', icon: 'star', disabled: false });
+    expect(WithHeart.composed.args).toEqual({ label: 'Hi', icon: 'heart', disabled: false });
+  });
 });

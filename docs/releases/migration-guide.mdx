@@ -27,10 +27,12 @@ The rest of this guide will help you upgrade successfully, either automatically 
 
 - Ecosystem updates
   - [Node.js 22.12 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2212-or-higher)
+  - [TypeScript 5.9 or 6.x](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#typescript-59-or-6x)
   - [Vite 6.3 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher)
   - [Vitest 4 or higher for the Vitest addon](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
   - [Next.js 15 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up)
   - [Angular 21 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-requires-angular-21-or-higher)
+  - [React 18 or higher, and `framework.options.legacyRootApi` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up)
   - [Preact 10.8.0 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preact-require-v1080-and-up)
   - [Create React App preset removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
@@ -40,12 +42,16 @@ The rest of this guide will help you upgrade successfully, either automatically 
   - [Docs Code panel enabled by default](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#docs-code-panel-enabled-by-default)
 - Removed APIs
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
+  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [`features.legacyDecoratorFileOrder` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#featureslegacydecoratorfileorder-removed)
 - Configuration changes
+  - [Move `storySort` to `storySorts` in main](#storysort-moved-to-storysorts-in-main)
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [`--preview-url` and `--force-build-preview` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#--preview-url-and---force-build-preview-removed)
   - [Addon tabs no longer render, including `parameters.previewTabs` and `layout.showTabs`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-tab-registration-removed)
+  - [Most Node.js built-in polyfills removed from `@storybook/nextjs`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
 - Internal tooling changes
   - [Update custom CSF tooling to the unified mutation API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-csf-tools-use-the-unified-mutation-api)
   - [`experimental_UniversalStore` is now internal](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-universalstore-api-is-now-internal)
@@ -122,6 +128,40 @@ export default {
 ```
 
 The upgrade command offers the `component-subtitle` automigration to do this for you. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed) for what it cannot migrate and how subtitle precedence changes.
+
+## `storySort` moved to `storySorts` in main
+
+Storybook 11 no longer reads `parameters.options.storySort` from `.storybook/preview.js|ts`. Configure sorting with the [`storySorts`](../api/main-config/main-config-story-sorts.mdx) array in `.storybook/main.js|ts` instead:
+
+```ts
+// .storybook/main.ts
+export default {
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  storySorts: [{ order: ['Introduction', 'Components'] }],
+};
+```
+
+The upgrade command offers the `story-sort-to-main` automigration for statically readable objects and arrays. Move comparator functions, imported values, and shared or reassigned variables yourself. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main).
+
+## `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+
+The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` no longer carries `argTypes`.
+Reading it throws `SB_PREVIEW_API_0017`.
+With server-side docgen the preview only holds the arg types written in the story file, so that object looked complete while leaving out everything inferred from your component.
+
+```diff
+export const Primary: Story = {
+- play: async ({ argTypes, args }) => {
+-   for (const name of Object.keys(argTypes)) {
++ play: async ({ args }) => {
++   for (const name of Object.keys(args)) {
+      // ...
+    }
+  },
+};
+```
+
+There is no automigration. To read the resolved arg types, including the inferred ones, use the Controls panel or the `ArgTypes` doc block instead. Decorators and `render` functions still receive `argTypes`, under the new `StoryContextForRender` type. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach) for what portable stories still expose and when to switch a helper's context type.
 
 ## Yarn PnP support removed
 

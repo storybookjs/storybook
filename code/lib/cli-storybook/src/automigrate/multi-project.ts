@@ -237,7 +237,19 @@ export async function promptForAutomigrations(
       ({ fix }) =>
         preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
     );
-    logSelection('Running all detected automigrations:', selected);
+    const optIn = automigrations.filter((am) => !selected.includes(am));
+    logSelection(
+      optIn.length > 0
+        ? 'Running these detected automigrations:'
+        : 'Running all detected automigrations:',
+      selected
+    );
+    if (optIn.length > 0) {
+      logSelection(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):',
+        optIn
+      );
+    }
     return selected;
   }
 
@@ -500,7 +512,7 @@ export async function runAutomigrations(
       logger.warn(
         checkFailed
           ? `Skipping --features ${name}: the '${fixId}' migration check failed. Run with --debug for details.`
-          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config, unsupported by your Storybook version, or missing a prerequisite.`
+          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config or unsupported by your framework or Storybook version.`
       );
     });
 

@@ -1,3 +1,4 @@
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
@@ -466,6 +467,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Read before the automigrations, so skills that the skills automigration installs are not
+    // installed a second time below.
+    const hadSkills = await hasStorybookSkills();
+
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
     let detectedAutomigrations: AutomigrationCheckResult[] = [];
@@ -548,6 +553,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    const skills =
+      !options.dryRun && hadSkills
+        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
+        : undefined;
+
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
@@ -605,6 +615,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 

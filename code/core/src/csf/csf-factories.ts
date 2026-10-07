@@ -153,6 +153,15 @@ export type StoryArgs<TArgs, TKeys extends PropertyKey> = SetOptional<
 >;
 
 /**
+ * The meta's arg keys after `meta.type<T>()`. An arg that `T` redeclares is required again, because
+ * the meta's value was not checked against its new type.
+ */
+export type TypedMetaArgKeys<TKeys extends PropertyKey, T> = Exclude<
+  TKeys,
+  T extends { args: infer TArgs } ? keyof TArgs : never
+>;
+
+/**
  * Adds the args of a typed `render` to those of the meta's `component`. A `render` typed as `any` or
  * `Args` adds none, and it can't change the types of the component's args.
  */
@@ -182,6 +191,8 @@ export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyK
   >(
     input?: TInput
   ): Story<TRenderer, TInput>;
+
+  type<T>(): Meta<TRenderer & T, TypedMetaArgKeys<TMetaArgKeys, T>>;
 }
 
 export function isMeta(input: unknown): input is Meta<Renderer> {
@@ -199,6 +210,9 @@ function defineMeta<TRenderer extends Renderer>(
       parameters: { ...input.parameters, csfFactory: true },
     } as Meta<TRenderer>['input'],
     preview,
+    type<T>() {
+      return this as unknown as Meta<TRenderer & T>;
+    },
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {

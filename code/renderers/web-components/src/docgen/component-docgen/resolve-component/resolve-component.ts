@@ -35,11 +35,11 @@ function tagFromNode(node: t.Node): WebComponentsComponentResolution {
   return { reason: 'component-not-a-tag', expression };
 }
 
-export function resolveStoryComponent(
-  storyFilePath: string,
-  title = 'Docgen'
-): WebComponentsComponentResolution {
-  const csf = parseStoryFile(storyFilePath, title);
-  const component = csf?._metaAnnotations.component;
-  return component ? tagFromNode(component) : { reason: 'no-meta-component' };
+export function resolveStoryComponent(csf: CsfFile): WebComponentsComponentResolution {
+  const component = csf._metaAnnotations.component;
+  if (!component) {
+    return { reason: 'no-meta-component' };
+  }
+
+  return tagFromNode(component);
 }

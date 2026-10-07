@@ -3,11 +3,30 @@ import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/s
 import { deepEqual } from './deep-equal.ts';
 import type { Violation } from './types.ts';
 
+const LEGACY_MANIFEST_RUNTIME_SCALARS = new Set<SBType['name']>([
+  'boolean',
+  'date',
+  'number',
+  'string',
+]);
+const STRICT_LEGACY_MANIFEST_RUNTIME_SCALARS = new Set<SBType['name']>([
+  'boolean',
+  'number',
+  'string',
+]);
+
 export interface CompareArgTypesOptions {
   /** Waive the legacy Angular pipeline's invented defaults, which must not be ratcheted. */
   legacyBaseline?: boolean;
+  /**
+   * The legacy web-components runtime keyed args by member name and recorded `void` for events, so a
+   * same-name candidate under another key is a re-keying and `void` is an unresolved stub.
+   */
+  legacyManifestRuntime?: boolean;
   /** Also gate `table.type.summary` text and the `required` flag, for a same-engine baseline. */
   strictTable?: boolean;
+  /** Baseline args whose loss is accepted, e.g. members the manifest marks private or static. */
+  waivedArgs?: ReadonlySet<string>;
 }
 
 /**
@@ -22,15 +41,24 @@ export function compareArgTypes(
   candidate: StrictArgTypes,
   options: CompareArgTypesOptions = {}
 ): Violation[] {
+  if (options.legacyManifestRuntime === true && options.legacyBaseline !== true) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error('legacyManifestRuntime may only waive legacy baselines');
+  }
+
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {
     // ES-private `#member`s are inaccessible outside their class; legacy Compodoc records them
     // anyway, and the modern extractor only surfaces them under `propsTable: 'all'`. Their loss
     // never gates.
-    if (arg.startsWith('#')) {
+    if (arg.startsWith('#') || options.waivedArgs?.has(arg) === true) {
       continue;
     }
-    const candidateEntry = candidate[arg] as StrictInputType | undefined;
+    const candidateEntry =
+      (candidate[arg] as StrictInputType | undefined) ??
+      (options.legacyManifestRuntime === true
+        ? findSameNamedCandidate(arg, baseEntry, candidate)
+        : undefined);
     if (candidateEntry === undefined) {
       violations.push({
         arg,
@@ -75,7 +103,9 @@ export function compareArgTypes(
           kind: 'lost-type',
           message: `the baseline records type ${printType(baseType)} but the candidate has none`,
         });
-      } else if (!typeCurrentOrBetter(baseType, candidateType)) {
+      } else if (
+        !typeCurrentOrBetter(baseType, candidateType, options.legacyManifestRuntime === true)
+      ) {
         violations.push({
           arg,
           kind: 'type-fidelity',
@@ -197,7 +227,11 @@ const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 // Deep equality after normalization, or an enumerated improvement. Everything lateral fails and is
 // accepted only through a reviewed baseline update. Both sides are already normalized recorded
 // types, so the discriminants can be trusted.
-function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
+function typeCurrentOrBetter(
+  baseline: SBType,
+  candidate: SBType,
+  legacyManifestRuntime = false
+): boolean {
   if (deepEqual(canonicalType(baseline), canonicalType(candidate))) {
     return true;
   }
@@ -211,7 +245,7 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
     // Unequal other-text falls through to stub resolution so a nothing-recorded marker accepts
     // any candidate, including another `other`.
     if (!isQuotedToken(baseline.value)) {
-      return resolvesStub(baseline.value, candidate);
+      return resolvesStub(baseline.value, candidate, legacyManifestRuntime);
     }
   }
   const baselineMembers = memberSet(baseline);
@@ -229,25 +263,30 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   ) {
     const candidateValues = (candidate as Extract<SBType, { name: typeof baseline.name }>).value;
     return baseline.value.every((member) =>
-      candidateValues.some((candidateMember) => typeCurrentOrBetter(member, candidateMember))
+      candidateValues.some((candidateMember) =>
+        typeCurrentOrBetter(member, candidateMember, legacyManifestRuntime)
+      )
     );
   }
   if (baseline.name === 'tuple' && candidate.name === 'tuple') {
     // Tuples are positional: each recorded slot must survive at its index; appended slots pass.
     return (
       candidate.value.length >= baseline.value.length &&
-      baseline.value.every((member, index) => typeCurrentOrBetter(member, candidate.value[index]))
+      baseline.value.every((member, index) =>
+        typeCurrentOrBetter(member, candidate.value[index], legacyManifestRuntime)
+      )
     );
   }
   if (baseline.name === 'object' && candidate.name === 'object') {
     // An empty baseline value means "not extracted", so any candidate object improves on it.
     return Object.entries(baseline.value).every(
       ([key, member]) =>
-        candidate.value[key] !== undefined && typeCurrentOrBetter(member, candidate.value[key])
+        candidate.value[key] !== undefined &&
+        typeCurrentOrBetter(member, candidate.value[key], legacyManifestRuntime)
     );
   }
   if (baseline.name === 'array' && candidate.name === 'array') {
-    return typeCurrentOrBetter(baseline.value, candidate.value);
+    return typeCurrentOrBetter(baseline.value, candidate.value, legacyManifestRuntime);
   }
   return false;
 }
@@ -300,20 +339,157 @@ function normalizeRecordedType(type: SBType): SBType {
 const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 
 // Legacy engines park what they cannot resolve in `other`, so its value is free text naming a real
-// type rather than a shape. Reading more than a scalar or single literal out of that text would mean
-// guessing at each engine's spelling, so anything else falls through to a reviewed re-record.
+// type rather than a shape. The legacy Web Components runtime also wrote free type text: under
+// `legacyManifestRuntime`, `void` remains unresolved, nullable scalar unions resolve to the scalar,
+// object-like text resolves to `object`, and function-looking text resolves to `function`.
+// Anything else falls through to a reviewed re-record.
 //
 // Not the perf engine's `isOpaque`, which counts real type names an engine never looked through:
 // `undefined` is an extraction-failure marker here and a resolved type name there.
-const resolvesStub = (stub: string, candidate: SBType): boolean => {
+const resolvesStub = (stub: string, candidate: SBType, legacyManifestRuntime = false): boolean => {
   const text = stub.trim();
   if (UNRESOLVED_STUBS.has(text)) {
     return true;
+  }
+  if (legacyManifestRuntime) {
+    const legacyManifestRuntimeVerdict = resolvesLegacyManifestRuntimeStub(text, candidate);
+    if (legacyManifestRuntimeVerdict !== undefined) {
+      return legacyManifestRuntimeVerdict;
+    }
   }
   if (candidate.name === 'literal') {
     return normalizeLiteral(candidate.value) === normalizeLiteral(text);
   }
   return isPopulatedStructure(candidate) || text === candidate.name;
+};
+
+function resolvesLegacyManifestRuntimeStub(text: string, candidate: SBType): boolean | undefined {
+  if (text === 'void') {
+    return true;
+  }
+  const nonNullableText = dropNullableLegacyUnionMembers(text);
+  const typeTextVerdict = resolvesLegacyManifestRuntimeTypeText(nonNullableText, candidate);
+  if (typeTextVerdict !== undefined) {
+    return typeTextVerdict;
+  }
+  if (candidate.name === 'object' && isObjectLikeLegacyText(nonNullableText)) {
+    return true;
+  }
+  if (
+    LEGACY_MANIFEST_RUNTIME_SCALARS.has(candidate.name) &&
+    nonNullableText.toLowerCase() === candidate.name
+  ) {
+    return true;
+  }
+  return candidate.name === 'function' &&
+    (nonNullableText.includes('=>') || /\bFunction\b/.test(nonNullableText))
+    ? true
+    : undefined;
+}
+
+function resolvesLegacyManifestRuntimeTypeText(
+  text: string,
+  candidate: SBType
+): boolean | undefined {
+  const members = splitTopLevelUnion(text).filter(Boolean);
+  const scalar = members.length === 1 ? legacyManifestRuntimeScalar(members[0]) : undefined;
+  if (scalar !== undefined && STRICT_LEGACY_MANIFEST_RUNTIME_SCALARS.has(scalar)) {
+    return candidate.name === scalar;
+  }
+
+  const literals = members.map(legacyManifestRuntimeLiteral);
+  if (literals.length > 0 && literals.every((literal) => literal !== undefined)) {
+    if (candidate.name !== 'enum') {
+      return false;
+    }
+    const candidateValues = new Set(candidate.value.map(normalizeLiteral));
+    return literals.every((literal) => candidateValues.has(normalizeLiteral(literal)));
+  }
+
+  if (
+    literals.some((literal) => literal !== undefined) &&
+    members.some((member) => legacyManifestRuntimeScalar(member) !== undefined)
+  ) {
+    return false;
+  }
+
+  return undefined;
+}
+
+function legacyManifestRuntimeScalar(text: string): SBType['name'] | undefined {
+  const scalar = text.toLowerCase();
+  return LEGACY_MANIFEST_RUNTIME_SCALARS.has(scalar as SBType['name'])
+    ? (scalar as SBType['name'])
+    : undefined;
+}
+
+function legacyManifestRuntimeLiteral(text: string): string | number | undefined {
+  if (isQuotedToken(text)) {
+    return normalizeLiteral(text);
+  }
+  return /^-?(?:\d+|\d*\.\d+)$/.test(text) ? Number(text) : undefined;
+}
+
+const dropNullableLegacyUnionMembers = (text: string): string =>
+  splitTopLevelUnion(text)
+    .filter((member) => member !== 'undefined' && member !== 'null')
+    .join(' | ');
+
+const isObjectLikeLegacyText = (text: string): boolean =>
+  text.includes('<') || text.startsWith('{') || text.startsWith('[');
+
+const splitTopLevelUnion = (text: string): string[] => {
+  const members: string[] = [];
+  let start = 0;
+  let angleDepth = 0;
+  let braceDepth = 0;
+  let bracketDepth = 0;
+  let parenDepth = 0;
+  let quote: string | undefined;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const previous = text[index - 1];
+    if (quote !== undefined) {
+      if (char === quote && previous !== '\\') {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+    if (char === '<') {
+      angleDepth += 1;
+    } else if (char === '>') {
+      angleDepth = Math.max(0, angleDepth - 1);
+    } else if (char === '{') {
+      braceDepth += 1;
+    } else if (char === '}') {
+      braceDepth = Math.max(0, braceDepth - 1);
+    } else if (char === '[') {
+      bracketDepth += 1;
+    } else if (char === ']') {
+      bracketDepth = Math.max(0, bracketDepth - 1);
+    } else if (char === '(') {
+      parenDepth += 1;
+    } else if (char === ')') {
+      parenDepth = Math.max(0, parenDepth - 1);
+    } else if (
+      char === '|' &&
+      angleDepth === 0 &&
+      braceDepth === 0 &&
+      bracketDepth === 0 &&
+      parenDepth === 0
+    ) {
+      members.push(text.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+
+  members.push(text.slice(start).trim());
+  return members;
 };
 
 const isPopulatedStructure = (candidate: SBType): boolean => {
@@ -409,3 +585,20 @@ const isSingleToken = (value: string): boolean =>
 
 const isQuotedToken = (value: unknown): boolean =>
   typeof value === 'string' && (/^"[^"]*"$/.test(value) || /^'[^']*'$/.test(value));
+
+const findSameNamedCandidate = (
+  arg: string,
+  baseEntry: StrictInputType,
+  candidate: StrictArgTypes
+): StrictInputType | undefined => {
+  const baseName = argName(arg, baseEntry);
+  const baseCategory = baseEntry.table?.category;
+  return Object.entries(candidate).find(
+    ([candidateArg, candidateEntry]) =>
+      argName(candidateArg, candidateEntry) === baseName &&
+      (baseCategory === undefined || candidateEntry.table?.category === baseCategory)
+  )?.[1];
+};
+
+const argName = (arg: string, entry: StrictInputType): string =>
+  typeof entry.name === 'string' ? entry.name : arg;

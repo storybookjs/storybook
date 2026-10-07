@@ -1,4 +1,4 @@
-import type { AddonTypes, InferTypes, PreviewAddonEntry } from 'storybook/internal/csf';
+import type { AddonTypes, InferTypes, PreviewAddon, PreviewAddonEntry } from 'storybook/internal/csf';
 import type { ProjectAnnotations } from 'storybook/internal/types';
 
 import type { ReactPreview } from '@storybook/react';
@@ -16,10 +16,11 @@ export * from './portable-stories.ts';
 export function definePreview<Addons extends PreviewAddonEntry[] = []>(
   preview: { addons?: Addons } & ProjectAnnotations<ReactTypes & NextJsTypes & InferTypes<Addons>>
 ): NextPreview<InferTypes<Addons>> {
-  // @ts-expect-error hard
   return __definePreview({
     ...preview,
-    addons: [nextPreview, ...(preview.addons ?? [])],
+    addons: [nextPreview, ...(preview.addons ?? [])] as PreviewAddon<
+      NextJsTypes & InferTypes<Addons>
+    >[],
   });
 }
 

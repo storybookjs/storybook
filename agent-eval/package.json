@@ -1,6 +1,6 @@
 {
   "name": "agent-eval",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.4",
   "private": true,
   "type": "module",
   "imports": {
@@ -8,6 +8,7 @@
     "#test-utils": "./lib/test-utils.ts"
   },
   "scripts": {
+    "compile:checkout": "node scripts/compile-checkout-packages.ts",
     "eval": "agent-eval",
     "eval:agentic-ref": "node scripts/run-agentic-ref.ts",
     "eval:agentic-ref:dry": "node scripts/run-agentic-ref.ts --dry",

@@ -1,26 +1,19 @@
 import { getService } from '../../shared/open-service/server.ts';
+import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { importModule } from '../../shared/utils/module.ts';
 import type { Builder, CoreConfig, Options } from '../../types/index.ts';
 
 import { isAddonA11yEnabled } from './addon-a11y.ts';
 import { isAddonVitestEnabled } from './addon-vitest.ts';
 import { getManifestStatus, type ManifestFeatures } from './manifest-status.ts';
-import { getReviewStatus } from './review-status.ts';
 
 export interface ToolAvailability {
   /** The `core/module-graph` open service is registered/resolvable. Gates `stories-find-by-component`. */
   moduleGraphSupported: boolean;
   /** The `changeDetection` feature flag is enabled. Gates `stories-changed`. */
   changeDetectionEnabled: boolean;
-  /** The `experimentalReview` AND `changeDetection` feature flags are enabled. Gates `review-create` for direct MCP clients. */
+  /** The `changeDetection` feature flag is enabled, which review builds on. Gates `review-create`. */
   reviewEnabled: boolean;
-  /**
-   * Same gate for the `storybook ai` CLI channel (the Claude/Codex plugins),
-   * where review is on by default: `changeDetection` on and `experimentalReview`
-   * not explicitly `false`. Gates `review-create` for CLI-marked requests and
-   * everything derived from the storybook-ai metadata preset.
-   */
-  reviewEnabledForCli: boolean;
   /** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
   docsEnabled: boolean;
   /**
@@ -39,7 +32,7 @@ export interface ToolAvailability {
   testSupported: boolean;
   /** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `test-run`. */
   a11yEnabled: boolean;
-  /** `experimentalDocgenServer` mode: read manifest data in-process from the open services. */
+  /** `docgenServer` mode: read manifest data in-process from the open services. */
   docgenServer: boolean;
 }
 
@@ -48,9 +41,7 @@ export interface GetToolAvailabilityOptions {
    * Pre-resolved `features` preset. Pass it to avoid re-applying the preset and
    * risking a different snapshot than the caller already resolved.
    */
-  features?:
-    | (ManifestFeatures & { changeDetection?: boolean; experimentalReview?: boolean })
-    | undefined;
+  features?: (ManifestFeatures & { changeDetection?: boolean }) | undefined;
   /**
    * Pre-resolved module-graph support. The live MCP server should omit this so it
    * probes the registered open service. Serverless metadata can pass a builder-level
@@ -132,23 +123,22 @@ export async function getToolAvailability(
   const resolvedFeatures =
     features ??
     ((await options.presets.apply('features', {})) as
-      | (ManifestFeatures & { changeDetection?: boolean; experimentalReview?: boolean })
+      | (ManifestFeatures & { changeDetection?: boolean })
       | undefined);
 
-  const [moduleGraphSupported, reviewStatus, manifestStatus, addonVitestEnabled, a11yEnabled] =
-    await Promise.all([
+  const [moduleGraphSupported, manifestStatus, addonVitestEnabled, a11yEnabled] = await Promise.all(
+    [
       moduleGraphSupportedOverride ?? isModuleGraphSupported(),
-      getReviewStatus(options, { features: resolvedFeatures }),
       getManifestStatus(options),
       isAddonVitestEnabled(options),
       isAddonA11yEnabled(options),
-    ]);
+    ]
+  );
 
   return {
     moduleGraphSupported,
     changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
-    reviewEnabled: reviewStatus.available,
-    reviewEnabledForCli: reviewStatus.availableForCli,
+    reviewEnabled: isReviewFeatureEnabled(resolvedFeatures),
     docsEnabled: manifestStatus.available,
     docsEnabledForCli: manifestStatus.hasManifests,
     docsHasManifests: manifestStatus.hasManifests,

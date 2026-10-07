@@ -182,7 +182,8 @@ export const internalStorybookE2e = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_playwright',
-      class: 'medium+',
+      // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -191,7 +192,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui',
+          command: 'yarn storybook:ui',
         },
       },
       server.wait(['6006']),
@@ -226,7 +227,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
+          command: 'yarn storybook:ui:build',
         },
       },
       {
@@ -353,7 +354,7 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
@@ -415,7 +416,7 @@ export const testUnit_windows = defineJob(
       {
         run: {
           command:
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
+            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',
         },
       },

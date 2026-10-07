@@ -109,10 +109,14 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
 
 - `title` — required short display label used by client UIs and the tools CLI command list
 - `description` — `string`, or a function of `ctx` when the prose differs per transport
-- `input` — the input schema
+- `input` — the input schema; a `v.strictObject`, so a mistyped argument is an invalid-input
+  error instead of being dropped and the method running on its defaults. `defineToolset` rejects
+  any other valibot schema (`v.object`, `v.looseObject`, …), piped or not, as a type error and
+  at runtime. Only the top-level schema is checked; nested object schemas are not
 - `output` — optional; published as the MCP `outputSchema`, and `structuredContent` is
-  narrowed to it. An outcome's `data` may carry more than this declares; only the declared shape
-  reaches the wire
+  narrowed to it. Some clients (Claude Code) hand the model only `structuredContent` when a tool
+  publishes it and drop the text, so the declared shape must carry everything the Markdown says,
+  including what the agent should do next (an `instructions` field)
 - `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
   effects and the usage report
 
@@ -423,7 +427,7 @@ Handling of extra object fields depends on the schema implementation you choose.
 
 ## Server Registration Flow
 
-Server-side registration happens through the `services` preset hook. Storybook calls `await presets.apply('services')` during both dev startup and static builds, and each service author's preset implementation is responsible for calling `registerService(...)` directly.
+Server-side registration happens through the `services` preset hook. Storybook calls `await presets.apply('services')` during dev startup, static builds, and in the `storybook tools` CLI, and each service author's preset implementation is responsible for calling `registerService(...)` directly.
 
 That split is intentional:
 
@@ -439,6 +443,8 @@ annotation, which CSF4 composes twice (once in `definePreview`, once in `StorySt
 re-runs on HMR. The default `services` preset hook in
 [common-preset.ts](../../core-server/presets/common-preset.ts) still throws if the preset is applied
 more than once in the same process, which catches misconfigured preset wiring early.
+
+Registration must not start subscriptions that execute commands, because the attached tools CLI registers the same services. Its first [state sync](#state-sync-multi-master) advances every query from the initial state to the dev server's current one, so such a subscription would treat old changes as new and send their commands to the dev server. Export the subscription next to `register…Service` and start it from the `experimental_devServer` preset hook, which only the dev server applies; in [common-preset.ts](../../core-server/presets/common-preset.ts), `services` queues it beside the registration and `experimental_devServer` starts the queue. `experimental_devServer` applies `services` through `applyServicesPresetOnce` and awaits it, so the dev server needs no separate `services` call and the queue is always complete.
 
 The internal Storybook config registers an example debug service through a dedicated preset file
 ([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on
@@ -1033,7 +1039,7 @@ type ExampleState = {
   values: Record<string, string | undefined>;
 };
 
-const entryIdSchema = v.object({ entryId: v.string() });
+const entryIdSchema = v.strictObject({ entryId: v.string() });
 const valueSchema = v.nullable(v.string());
 
 export const exampleServiceDef = defineService({

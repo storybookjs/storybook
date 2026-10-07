@@ -1,33 +1,42 @@
 name: Agent eval
 
 on:
+  schedule:
+    # Weekly on `next`, Monday 08:00 UTC. Conditions with `"schedule": true` in
+    # agent-eval/eval-conditions.json (the full 8xx/82x line) are on for this run.
+    - cron: '0 8 * * 1'
   pull_request:
     types:
       - opened
       - reopened
       - synchronize
       - labeled
+      - unlabeled
   workflow_dispatch:
     inputs:
-      eval_only:
-        description: 'Comma-separated eval names to run (overrides extra_evals), e.g. 803-edit-component'
+      pr_number:
+        description: 'PR number for the eval gate thread (optional; inferred from the branch if omitted)'
         type: string
         default: ''
-      extra_evals:
+      evals:
+        description: 'Comma-separated eval names to run (overrides all_evals), e.g. 803-edit-component'
+        type: string
+        default: ''
+      all_evals:
         description: 'Run the full 8xx eval line instead of only the default eval'
         type: boolean
         default: false
       storybook_latest:
-        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local build'
-        type: boolean
-        default: false
-      review:
-        description: 'Enable the experimentalReview feature flag in eval sandboxes and assert the review workflow'
+        description: 'Install every Storybook package from the npm latest tag instead of this checkout'
         type: boolean
         default: false
 
 concurrency:
-  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # One run per PR at a time. A push, adding an `agent-eval:` label, or removing `agent-eval:eval`
+  # cancels the running eval. Other label changes also trigger this workflow, and GitHub applies
+  # the concurrency group before the job `if` can skip the run.
+  # The run ID suffix gives that run its own group, so it cannot cancel the running eval.
+  group: agent-eval-${{ github.workflow }}-${{ inputs.pr_number || github.event.pull_request.number || github.ref }}${{ ((github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:')) || (github.event.action == 'unlabeled' && github.event.label.name != 'agent-eval:eval')) && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 env:
@@ -36,24 +45,36 @@ env:
 jobs:
   eval:
     name: Run agent eval experiments
+    # Evals start when an `agent-eval:` label is added, or when a PR with `agent-eval:eval` is
+    # opened or reopened. Pushes and other labels do not start them, because every run costs money.
+    # A push reopens the gate thread instead (see reopen-eval-gate below).
     if: >-
+      github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      (!github.event.pull_request.head.repo.fork &&
-        contains(github.event.pull_request.labels.*.name, 'ci:eval'))
+      (github.event_name == 'pull_request' &&
+        contains(fromJSON('["opened","reopened","labeled"]'), github.event.action) &&
+        (github.event.action != 'labeled' || startsWith(github.event.label.name, 'agent-eval:')) &&
+        !github.event.pull_request.head.repo.fork &&
+        contains(github.event.pull_request.labels.*.name, 'agent-eval:eval'))
     runs-on: ubuntu-latest
     environment:
       # Keep this rule in sync with the Resolve Vercel target step below.
       # GitHub evaluates environment.name before step outputs exist.
-      name: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/next' && 'production' || 'preview' }}
+      name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/next' && 'production' || 'preview' }}
       url: ${{ steps.deploy_playground.outputs.url }}
     permissions:
-      contents: read
+      # resolveReviewThread/unresolveReviewThread need contents: write on top
+      # of pull-requests: write (GitHub returns 403 with pull-requests alone).
+      contents: write
       deployments: write
       pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          # The PR head rather than GitHub's temporary merge commit, so the commit each result
+          # records can still be looked up later.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Node.js
@@ -62,13 +83,69 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'yarn'
 
+      - name: Resolve PR for the eval gate thread
+        id: gate_pr
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER_INPUT: ${{ github.event.pull_request.number || inputs.pr_number || '' }}
+        run: |
+          pr="$PR_NUMBER_INPUT"
+          if [[ -z "$pr" && "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REF_NAME" --json number,isCrossRepository --jq '[.[] | select(.isCrossRepository | not)][0].number // empty')"
+          fi
+          if [[ -z "$pr" ]]; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "No PR for the eval gate thread (ok for next/schedule-style runs)."
+            exit 0
+          fi
+          labels="$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | tojson')"
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+          if ! jq -e 'any(. == "agent-eval:eval")' <<< "$labels" > /dev/null; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "PR #$pr does not have agent-eval:eval, so its gate thread is left alone."
+            exit 0
+          fi
+          echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
+
+      # The result step compares this with the live PR head, so a run that finishes after a new
+      # push does not resolve the gate thread for a commit it did not evaluate.
+      - name: Capture evaluated head SHA
+        id: gate_head
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "evaluated_head_sha=${PR_HEAD_SHA:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      # Conditions are declared in agent-eval/eval-conditions.json.
+      - name: Resolve eval conditions
+        id: conditions
+        env:
+          PR_LABELS: ${{ steps.gate_pr.outputs.labels || toJSON(github.event.pull_request.labels.*.name) }}
+          DISPATCH_INPUTS: ${{ toJSON(inputs) }}
+        run: node agent-eval/scripts/resolve-conditions.ts --labels "$PR_LABELS" --inputs "$DISPATCH_INPUTS"
+
+      - name: Create or update the eval gate thread
+        id: gate_thread
+        if: ${{ steps.gate_pr.outputs.pr_number != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
+          EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SCOPE_LINE: ${{ steps.conditions.outputs.scope_line }}
+        run: >-
+          node agent-eval/scripts/eval-gate-thread.ts ensure
+          --pr "$PR_NUMBER" --sha "$EVALUATED_HEAD_SHA" --run-url "$RUN_URL" --scope "$SCOPE_LINE"
+
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build local MCP packages
+      # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
+      - name: Compile the Storybook packages the sandboxes install
+        if: ${{ steps.conditions.outputs.storybook_latest != '1' }}
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+        run: yarn workspace agent-eval run compile:checkout
 
       - name: Type check agent eval config
         run: yarn workspace agent-eval run typecheck
@@ -96,14 +173,18 @@ jobs:
 
       - name: Run all experiments
         id: run_evals
-        run: yarn workspace agent-eval run eval
+        run: |
+          for key in ANTHROPIC_API_KEY OPENAI_API_KEY; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error title=Missing eval secret::$key is required; agent-eval would skip those experiments."
+              exit 1
+            fi
+          done
+          yarn workspace agent-eval run eval
         env:
-          # PR labels (ci:extra-evals) and workflow_dispatch inputs both opt
-          # in; unlabeled ci:eval runs stay minimal.
-          EVAL_ONLY: ${{ inputs.eval_only || '' }}
-          EVAL_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
-          EVAL_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && '1' || '' }}
-          EVAL_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && '1' || '' }}
+          EVAL_ONLY: ${{ inputs.evals || '' }}
+          EVAL_ALL: ${{ steps.conditions.outputs.all_evals }}
+          EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -154,7 +235,7 @@ jobs:
         shell: bash
         run: |
           # Keep this rule in sync with jobs.eval.environment.name above.
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$GITHUB_REF" == "refs/heads/next" ]]; then
+          if [[ ("$GITHUB_EVENT_NAME" == "workflow_dispatch" || "$GITHUB_EVENT_NAME" == "schedule") && "$GITHUB_REF" == "refs/heads/next" ]]; then
             echo "target=production" >> "$GITHUB_OUTPUT"
           else
             echo "target=preview" >> "$GITHUB_OUTPUT"
@@ -245,3 +326,94 @@ jobs:
             echo "- Project: \`$VERCEL_PROJECT_NAME\`"
             echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Update the eval gate thread with the result
+        if: >-
+          always() &&
+          !cancelled() &&
+          steps.gate_thread.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
+          EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+          EVAL_OUTCOME: ${{ steps.check_results.outcome == 'success' && steps.run_evals.outcome || 'failure' }}
+        run: |
+          summary_file="$(mktemp)"
+          node agent-eval/scripts/render-results-summary.mjs > "$summary_file" || true
+          node agent-eval/scripts/eval-gate-thread.ts result \
+            --pr "$PR_NUMBER" --sha "$EVALUATED_HEAD_SHA" --outcome "$EVAL_OUTCOME" \
+            --run-url "$RUN_URL" --playground-url "$PLAYGROUND_URL" --summary-file "$summary_file"
+
+      # Weekly / next-dispatch summary for the #sb-monitoring channel.
+      - name: Notify Slack
+        if: >-
+          always() &&
+          !cancelled() &&
+          (github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/next'))
+        shell: bash
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_AGENT_EVAL_WEBHOOK_URL }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
+        run: |
+          if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
+            echo "::warning title=Missing Slack webhook::SLACK_AGENT_EVAL_WEBHOOK_URL is not set; skipping #sb-monitoring notify."
+            exit 0
+          fi
+
+          text="$(FORMAT=slack node agent-eval/scripts/render-results-summary.mjs)"
+          payload="$(jq -n --arg text "$text" '{text: $text}')"
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+
+  # New push on an agent-eval:eval PR: previous eval results no longer cover
+  # the head. Pushes do not auto-reopen resolved review threads, so explicitly
+  # reopen the gate thread without rerunning evals.
+  reopen-eval-gate:
+    name: Reopen or resolve the eval gate thread
+    if: >-
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.head.repo.fork &&
+      ((github.event.action == 'synchronize' &&
+        contains(github.event.pull_request.labels.*.name, 'agent-eval:eval')) ||
+        (github.event.action == 'unlabeled' && github.event.label.name == 'agent-eval:eval'))
+    runs-on: ubuntu-latest
+    permissions:
+      # unresolveReviewThread needs contents: write + pull-requests: write.
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout eval gate script
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            agent-eval/scripts
+            scripts/utils
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Reopen the eval gate thread for the new head
+        if: ${{ github.event.action == 'synchronize' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          NEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node agent-eval/scripts/eval-gate-thread.ts reopen --pr "$PR_NUMBER" --sha "$NEW_HEAD_SHA"
+
+      - name: Resolve the eval gate thread after opting out
+        if: ${{ github.event.action == 'unlabeled' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          node agent-eval/scripts/eval-gate-thread.ts opt-out
+          --pr "$PR_NUMBER" --sha "$HEAD_SHA" --actor "$GITHUB_ACTOR"

@@ -126,12 +126,21 @@ export class NPMProxy extends JsPackageManager {
     return `npx ${args.join(' ')}`;
   }
 
-  public runPackageCommand(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ResultPromise {
+  public getRemoteRunCommand(args: string[]): string {
+    return `npx ${args.join(' ')}`;
+  }
+
+  public runPackageCommand({
+    useRemotePkg = false,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & {
+    args: string[];
+    useRemotePkg?: boolean;
+  }): ResultPromise {
     return executeCommand({
       command: 'npx',
       ...options,
+      ...(useRemotePkg && { env: { npm_config_yes: 'true', ...options.env } }),
     });
   }
 

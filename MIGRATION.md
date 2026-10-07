@@ -1397,11 +1397,13 @@ For the details, see the [SvelteKit 3 migration guide](https://svelte.dev/docs/k
 
 `@storybook/svelte-vite` and `@storybook/sveltekit` now include Svelte CSF, so you no longer need `@storybook/addon-svelte-csf`. Storybook doesn't start while the addon is still in `addons`.
 
-Run the automigration:
+The `addon-svelte-csf-to-core` automigration runs when you upgrade:
 
 ```sh
-npx storybook automigrate addon-svelte-csf-to-core
+npx storybook@latest upgrade
 ```
+
+If you already upgraded to Storybook 11, run it on its own with `npx storybook automigrate addon-svelte-csf-to-core`. On Storybook 10 that command doesn't know the automigration yet.
 
 The automigration changes your stories and the files in your Storybook config directory. Change other files that import from `@storybook/addon-svelte-csf` by hand.
 
@@ -1428,7 +1430,7 @@ Svelte CSF supports only stories defined with `defineMeta`. Storybook 11 removes
 - The `let:args` and `let:context` directives on `<Story>`
 - The `id`, `autodocs` and `source` props on `<Story>`
 
-The automigration lists the story files that don't use `defineMeta`, and doesn't change them. Migrate them by hand.
+The automigration lists the story files that don't use `defineMeta`, and doesn't change them. It also lists the `defineMeta` stories that still use `let:args`, `let:context`, or the `id`, `autodocs` or `source` props. Migrate them by hand.
 
 <details>
 <summary>Migrate legacy stories to <code>defineMeta</code></summary>

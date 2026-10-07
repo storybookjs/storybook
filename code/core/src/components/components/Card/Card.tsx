@@ -35,11 +35,28 @@ const getOpaqueBackground = (theme: StorybookTheme, color?: ThemeColor): string 
   return `linear-gradient(${bg}, ${bg}), ${theme.background.content}`;
 };
 
-const fadeInOut = keyframes({
-  '0%': { opacity: 0 },
-  '5%': { opacity: 1 },
-  '25%': { opacity: 1 },
-  '30%': { opacity: 0 },
+// Hardcoded colors to prevent themes from messing with them
+// (orange+gold, lavender+pink, secondary+seafoam)
+const getSpinColors = (theme: StorybookTheme, outlineColor?: ThemeColor): [string, string] => {
+  if (outlineColor === 'negative') {
+    return ['#FC521F', '#FFAE00'];
+  }
+  if (outlineColor === 'agentic') {
+    // Agentic is intentionally subtle. Pale lavender stays low-contrast on a
+    // light background, but the same colors read as a bright sweep on dark, so
+    // dark mode uses low-alpha hues to keep it a faint glow.
+    return theme.base === 'dark'
+      ? ['rgba(114,58,166,0.65)', 'rgba(157,98,214,0.6)']
+      : ['#b6a7ff', '#d8aeff'];
+  }
+  return ['#029CFD', '#37D5D3'];
+};
+
+const rainbowOrange = 'rgb(255, 157, 0)';
+const rainbowGreen = 'rgb(0, 172, 0)';
+
+const pulse = keyframes({
+  '50%': { opacity: 0.5 },
 });
 
 const spin = keyframes({
@@ -52,13 +69,11 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-// Half the layer's width plus half its height projects exactly one hue cycle onto the 45°
-// gradient axis, so the loop wraps seamlessly at any card size. Animating transform instead
-// of background-position keeps the infinite shimmer on the compositor — background-position
-// forced a main-thread repaint on every frame for as long as the card was mounted.
+// Moves the card's view from the bottom-left to the top-right quarter of a layer four times its
+// size, so the shimmer comes to rest on the last gradient segment, from orange to green.
 const slide = keyframes({
   to: {
-    transform: 'translate(-50%, 50%)',
+    transform: 'translate(-75%, 75%)',
   },
 });
 
@@ -73,78 +88,79 @@ const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
   color?: ThemeColor;
   outlineColor?: ThemeColor;
-}>(({ animation = 'none', color, outlineColor = color, theme }) => ({
-  position: 'relative',
-  width: '100%',
-  padding: 1,
-  overflow: 'hidden',
-  backgroundColor: getBackgroundColor(theme, color),
-  borderRadius: theme.appBorderRadius + 1,
-  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && getBorderColor(theme, color, outlineColor)) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
-  transition: 'box-shadow 1s',
+}>(({ animation = 'none', color, outlineColor = color, theme }) => {
+  const [spinStart, spinEnd] = getSpinColors(theme, outlineColor);
 
-  '@supports (interpolate-size: allow-keywords)': {
-    interpolateSize: 'allow-keywords',
-    transition: 'all var(--transition-duration, 0.2s), box-shadow 1s',
-    transitionBehavior: 'allow-discrete',
-  },
-
-  '@media (prefers-reduced-motion: reduce)': {
-    transition: 'box-shadow 1s',
-  },
-
-  '&:before': {
-    content: '""',
-    display: animation === 'none' ? 'none' : 'block',
-    position: 'absolute',
-    left: 0,
-    top: 0,
+  return {
+    position: 'relative',
     width: '100%',
-    height: '100%',
-    opacity: 1,
+    padding: 1,
+    overflow: 'hidden',
+    backgroundColor: getBackgroundColor(theme, color),
+    borderRadius: theme.appBorderRadius + 1,
+    boxShadow: `inset 0 0 0 1px ${(animation === 'none' && getBorderColor(theme, color, outlineColor)) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
+    transition: 'box-shadow 1s',
 
-    ...(animation === 'rainbow' && {
-      // Oversized so the card stays covered throughout the diagonal slide.
-      width: '1000%',
-      height: '200%',
-      top: '-100%',
-      animation: `${slide} 10s infinite linear, ${fadeInOut} 60s infinite linear`,
-      // 13 stops: 6 hues twice plus the first hue again, so the hue pattern repeats at
-      // exactly 50% of the gradient line.
-      backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
-      willChange: 'transform, opacity',
-      '@media (prefers-reduced-motion: reduce)': {
-        animation: 'none',
-        width: '100%',
-        height: '100%',
-        top: 0,
-      },
-    }),
+    '@supports (interpolate-size: allow-keywords)': {
+      interpolateSize: 'allow-keywords',
+      transition: 'all var(--transition-duration, 0.2s), box-shadow 1s',
+      transitionBehavior: 'allow-discrete',
+    },
 
-    ...(animation === 'spin' && {
-      left: '50%',
-      top: '50%',
-      marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
-      marginTop: 'calc(max(100vw, 100vh) * -0.5)',
-      height: 'max(100vw, 100vh)',
-      width: 'max(100vw, 100vh)',
-      animation: `${spin} 5s linear infinite`,
-      // Hardcoded colors to prevent themes from messing with them
-      // (orange+gold, lavender+pink, secondary+seafoam)
-      backgroundImage:
-        outlineColor === 'negative'
-          ? `conic-gradient(transparent 90deg, #FC521F 150deg, #FFAE00 210deg, transparent 270deg)`
-          : outlineColor === 'agentic'
-            ? // Agentic is intentionally subtle. Pale lavender stays low-contrast on a
-              // light background, but the same colors read as a bright sweep on dark, so
-              // the dark arc is dimmed with low-alpha hues to keep it a faint glow.
-              theme.base === 'dark'
-              ? `conic-gradient(transparent 90deg, rgba(114,58,166,0.65) 150deg, rgba(157,98,214,0.6) 210deg, transparent 270deg)`
-              : `conic-gradient(transparent 90deg, #b6a7ff 150deg, #d8aeff 210deg, transparent 270deg)`
-            : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
-    }),
-  },
-}));
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'box-shadow 1s',
+    },
+
+    '&:before': {
+      content: '""',
+      display: animation === 'none' ? 'none' : 'block',
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      width: '100%',
+      height: '100%',
+      opacity: 1,
+
+      // Stops within 5 seconds, with or without reduced motion, to meet
+      // WCAG 2.2.2 (Pause, Stop, Hide).
+      ...(animation === 'rainbow' && {
+        width: '400%',
+        height: '400%',
+        top: '-300%',
+        animation: `${slide} 5s ease-in-out forwards`,
+        backgroundImage: `linear-gradient(to top right, rgb(0, 166, 255), rgb(181, 0, 181), rgb(234, 0, 0), ${rainbowOrange}, ${rainbowGreen})`,
+        '@media (prefers-reduced-motion: reduce)': {
+          width: '100%',
+          height: '100%',
+          top: 0,
+          animation: `${pulse} 2.5s ease-in-out 2`,
+          backgroundImage: `linear-gradient(to top right, ${rainbowOrange}, ${rainbowGreen})`,
+        },
+      }),
+
+      ...(animation === 'spin' && {
+        left: '50%',
+        top: '50%',
+        marginLeft: 'calc(max(100vw, 100vh) * -0.5)',
+        marginTop: 'calc(max(100vw, 100vh) * -0.5)',
+        height: 'max(100vw, 100vh)',
+        width: 'max(100vw, 100vh)',
+        animation: `${spin} 5s linear infinite`,
+        backgroundImage: `conic-gradient(transparent 90deg, ${spinStart} 150deg, ${spinEnd} 210deg, transparent 270deg)`,
+        '@media (prefers-reduced-motion: reduce)': {
+          left: 0,
+          top: 0,
+          marginLeft: 0,
+          marginTop: 0,
+          height: '100%',
+          width: '100%',
+          animation: `${pulse} 2.5s ease-in-out infinite`,
+          backgroundImage: `linear-gradient(to top right, ${spinStart}, ${spinEnd})`,
+        },
+      }),
+    },
+  };
+});
 
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';

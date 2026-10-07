@@ -21,7 +21,7 @@ export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | 
     componentMetaManagerPromise = (async () => {
       try {
         const ts = await import('typescript');
-        return new ComponentMetaManager(ts);
+        return new ComponentMetaManager(ts.default ?? ts);
       } catch {
         logger.debug(
           '[reactComponentMeta] TypeScript not available, skipping component meta extraction.'

@@ -1,3 +1,5 @@
+import { expect } from 'storybook/test';
+
 import preview from '../../../../../.storybook/preview.tsx';
 import { Card } from './Card.tsx';
 
@@ -15,17 +17,47 @@ export const Default = meta.story(() => (
   </Card>
 ));
 
-export const Rainbow = meta.story(() => (
-  <Card outlineAnimation="rainbow">
-    <Contents>Rainbow</Contents>
-  </Card>
-));
+export const Rainbow = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow">
+      <Contents>Rainbow</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { pauseAnimationAtEnd: true } },
+  play: async ({ canvasElement }) => {
+    const animations = canvasElement.getAnimations({ subtree: true });
+    await expect(animations).not.toHaveLength(0);
+    for (const animation of animations) {
+      await expect(animation.effect?.getComputedTiming().endTime).toBeLessThanOrEqual(5000);
+    }
+  },
+});
+
+/** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
+export const RainbowReducedMotion = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow">
+      <Contents>Rainbow with reduced motion</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { prefersReducedMotion: 'reduce' } },
+});
 
 export const Spinning = meta.story(() => (
   <Card outlineAnimation="spin">
     <Contents>Spinning</Contents>
   </Card>
 ));
+
+/** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
+export const SpinningReducedMotion = meta.story({
+  render: () => (
+    <Card outlineAnimation="spin">
+      <Contents>Spinning with reduced motion</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { prefersReducedMotion: 'reduce' } },
+});
 
 export const SpinningAgentic = meta.story(() => (
   <Card outlineAnimation="spin" outlineColor="agentic">

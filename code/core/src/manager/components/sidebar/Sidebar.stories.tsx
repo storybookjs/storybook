@@ -528,17 +528,11 @@ export const Bottom: Story = {
  *    the bottom
  */
 export const Scrolled: Story = {
-  parameters: {
-    // we need a very short viewport
-    viewport: {
-      defaultViewport: 'mobile1',
-      defaultOrientation: 'landscape',
-    },
-  },
+  // we need a very short viewport
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1', isRotated: true } },
   args: {
     storyId: 'group-1--child-b1',
   },
-  globals: { sb_theme: 'light' },
   decorators: [
     (StoryFn) => (
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>

@@ -3,6 +3,7 @@
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Tag filtering API](#tag-filtering-api)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
@@ -645,6 +646,28 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+### `viewport.defaultViewport` parameter and `responsiveViewport` removed
+
+Storybook 11 removes the deprecated `parameters.viewport.defaultViewport` parameter and the `responsiveViewport` export from `storybook/viewport`. Set the viewport with the `globals` API instead:
+
+```diff
+// .storybook/preview.ts
+export default {
+-  viewport: {
+-    defaultViewport: 'mobile1',
+-  },
++  initialGlobals: {
++    viewport: {
++      value: 'mobile1',
++    },
++  },
+};
+```
+
+`parameters.viewport.viewports` and `parameters.viewport.options`, which define the available viewports, remain unchanged.
+
+If you imported `responsiveViewport` from `storybook/viewport`, remove the import. Selecting the responsive, full-size view still works through the viewport addon UI.
 
 ### `parameters.componentSubtitle` removed
 

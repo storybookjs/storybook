@@ -105,8 +105,7 @@ const meta = {
       return (
         <MemoryRouter initialEntries={['/']}>
           <ManagerContext.Provider value={makeManagerContext(parameters?.contextOptions ?? {})}>
-            {/* Without a provider, consumers read the context default: no active review. */}
-            {parameters?.withReviewProvider ? <ReviewProvider>{content}</ReviewProvider> : content}
+            <ReviewProvider>{content}</ReviewProvider>
           </ManagerContext.Provider>
         </MemoryRouter>
       );
@@ -255,7 +254,6 @@ export const ContextualTagFilter: Story = {
 /** The review widget renders in the same spot and takes precedence over this CTA. */
 export const HiddenWhenReviewActive: Story = {
   parameters: {
-    withReviewProvider: true,
     contextOptions: {
       storyIds: ['s1', 's2'],
     },

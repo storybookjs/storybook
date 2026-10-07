@@ -75,11 +75,22 @@ describe('remove-change-detection-flag', () => {
     expect(await check(mainWith('features: { experimentalTestSyntax: true },'))).toBeNull();
   });
 
-  it('does not apply when the flag is only mentioned in a comment', async () => {
-    const source = mainWith('// changeDetection is gone\n  features: { ...sharedFeatures },');
+  it('does not apply when the flag is only commented out next to a spread', async () => {
+    const source = mainWith(
+      'features: {\n    ...sharedFeatures,\n    // changeDetection: false,\n  },'
+    );
 
     expect(await check(source)).toBeNull();
   });
+
+  it.each(["['changeDetection']: false", 'changeDetection'])(
+    'applies to the flag written as %s',
+    async (property) => {
+      const source = `const changeDetection = false;\n${mainWith(`features: { ${property} },`)}`;
+
+      expect(await check(source)).not.toBeNull();
+    }
+  );
 
   it.each(['11.0.0-alpha.1', '11.0.0', '11.1.0'])('applies on Storybook %s', async (version) => {
     expect(await check(mainWith('features: { changeDetection: true },'), version)).not.toBeNull();

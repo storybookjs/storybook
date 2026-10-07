@@ -75,8 +75,10 @@ usage metadata in the results playground before growing the eval set past it
 The 9xx evals are a trimmed MCP-only set for shapes the 8xx line does not
 cover (async mocks, story drift, tool params, preview-by-path/id, vitest CLI).
 They never run on the default `next` matrix; under `EVAL_STORYBOOK_LATEST=1`
-they become the active line (default smoke: `908-run-story-tests`). See
-`lib/experiment.ts`. Twins of 8xx scenarios were removed.
+they become the active line (default smoke: `908-run-story-tests`), and
+`EVAL_ONLY` accepts only 9xx names: the 8xx and 82x evals assert the current
+workflow, which the stable release does not have. See `lib/experiment.ts`.
+Twins of 8xx scenarios were removed.
 
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
 effort explicitly, so a CLI default change cannot silently change what runs.

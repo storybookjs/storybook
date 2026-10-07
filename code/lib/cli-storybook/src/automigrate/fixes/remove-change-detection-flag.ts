@@ -12,8 +12,13 @@ export const removeChangeDetectionFlag: Fix = {
 
   transform: () => [
     {
-      filter: { kind: ['main'], code: /\bchangeDetection['"]?\s*:/ },
-      editConfig: (main) => main.remove(['features', 'changeDetection']),
+      filter: { kind: ['main'], code: 'changeDetection' },
+      // A mention outside `features`, such as a comment, must not fail on a spread it cannot edit.
+      editConfig: (main) => {
+        if (main.getFieldNode(['features', 'changeDetection'])) {
+          main.remove(['features', 'changeDetection']);
+        }
+      },
     },
   ],
 };

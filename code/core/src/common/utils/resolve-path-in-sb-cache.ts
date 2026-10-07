@@ -18,6 +18,7 @@ import versions from '../versions.ts';
  *
  * @param fileOrDirectoryName {string} Name of the file or directory
  * @param sub {string} Optional subdirectory name (defaults to 'default')
+ * @param cwd {string} Directory to look up the project from (defaults to `process.cwd()`)
  * @returns {string} Absolute path to the file or directory
  */
 export function resolvePathInStorybookCache(

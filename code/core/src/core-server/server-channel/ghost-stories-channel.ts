@@ -25,7 +25,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
     } = {};
 
     // Initialize contextual data; if ghost stories are triggered to assess the
-    // quality of a `ai setup` workflow, inject the runId for that setup session.
+    // quality of an `ai setup` workflow, inject the runId for that setup session.
     const aiSetupRunId = await getAiSetupRunId(options.configDir);
 
     try {

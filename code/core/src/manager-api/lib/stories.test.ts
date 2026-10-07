@@ -300,4 +300,75 @@ describe('transformStoryIndexToStoriesHash', () => {
     expect(result['story-2']).toBeUndefined();
     expect(result['2']).toBeUndefined();
   });
+
+  describe('docs entries', () => {
+    const options = {
+      provider: { getConfig: () => ({ sidebar: {} }) } as any,
+      docsOptions: { docsMode: false },
+      filters: {},
+      allStatuses: {},
+    };
+    const docs = (id: string, title: string) => ({
+      id,
+      type: 'docs' as const,
+      title,
+      name: 'Docs',
+      importPath: `./${id}.mdx`,
+      storiesImports: [],
+      tags: [],
+    });
+
+    const result = transformStoryIndexToStoriesHash(
+      {
+        v: 5,
+        entries: {
+          'welcome--docs': docs('welcome--docs', 'Welcome'),
+          'guides-intro--docs': docs('guides-intro--docs', 'Guides/Intro'),
+          'guides-button--docs': docs('guides-button--docs', 'Guides/Button'),
+          'guides-button--primary': {
+            id: 'guides-button--primary',
+            type: 'story',
+            subtype: 'story',
+            title: 'Guides/Button',
+            name: 'Primary',
+            importPath: './button.stories.ts',
+            tags: [],
+          },
+        },
+      },
+      options
+    );
+
+    it('puts an unattached docs page in place of its component', () => {
+      expect(result['guides-intro']).toBeUndefined();
+      expect(result['guides-intro--docs']).toMatchObject({
+        name: 'Intro',
+        parent: 'guides',
+        depth: 1,
+      });
+      expect(result['guides']).toMatchObject({
+        children: ['guides-intro--docs', 'guides-button'],
+      });
+    });
+
+    it('puts a root-level unattached docs page at the root', () => {
+      expect(result['welcome']).toBeUndefined();
+      expect(result['welcome--docs']).toMatchObject({
+        name: 'Welcome',
+        parent: undefined,
+        depth: 0,
+      });
+    });
+
+    it('keeps the component of a docs page that has stories', () => {
+      expect(result['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary'],
+      });
+      expect(result['guides-button--docs']).toMatchObject({
+        name: 'Docs',
+        parent: 'guides-button',
+      });
+    });
+  });
 });

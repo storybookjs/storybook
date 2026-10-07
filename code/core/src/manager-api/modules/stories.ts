@@ -651,16 +651,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       if (!name) {
         // Find the entry (group, component, story or docs) that is referred to
-        let entry: API_HashEntry | undefined = titleOrId
-          ? hash[titleOrId] || hash[sanitize(titleOrId)]
+        const entry = titleOrId
+          ? hash[titleOrId] ||
+            hash[sanitize(titleOrId)] ||
+            // Unattached docs pages have no entry keyed by their title
+            Object.values(hash).find(
+              (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
+            )
           : hash[kindSlug];
-
-        if (!entry && titleOrId) {
-          const sanitizedTitle = sanitize(titleOrId);
-          entry = Object.values(hash).find(
-            (e) => (e.type === 'docs' || e.type === 'story') && sanitize(e.title) === sanitizedTitle
-          );
-        }
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);

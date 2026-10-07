@@ -1065,6 +1065,29 @@ describe('stories API', () => {
       api.jumpToComponent(1);
       expect(navigate).not.toHaveBeenCalled();
     });
+    it('lands on an unattached docs page', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          ...navigationEntries,
+          'intro--docs': {
+            type: 'docs',
+            id: 'intro--docs',
+            title: 'Intro',
+            name: 'Page',
+            importPath: './intro.mdx',
+            storiesImports: [],
+          },
+        },
+      });
+      api.jumpToComponent(1);
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
+    });
     it('does nothing if you are at the first component and go backward', () => {
       const initialState = { path: '/story/a--2', storyId: 'a--2', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });

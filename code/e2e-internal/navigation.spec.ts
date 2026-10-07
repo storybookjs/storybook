@@ -40,13 +40,13 @@ test.describe('navigating', () => {
       await page.getByRole('searchbox').fill('Monospace');
 
       const searchItem = page.getByRole('option', {
-        name: 'Docs / Monospace brand / Typography',
+        name: 'Typography / Monospace brand',
         exact: true,
       });
       await expect(searchItem).toBeVisible();
       await expect(
         page.getByRole('option', {
-          name: 'Docs / Sans-serif brand / Typography',
+          name: 'Typography / Sans-serif brand',
           exact: true,
         })
       ).toBeHidden();
@@ -64,7 +64,7 @@ test.describe('navigating', () => {
 
       await page
         .getByRole('option', {
-          name: 'Docs / Monospace brand / Typography',
+          name: 'Typography / Monospace brand',
           exact: true,
         })
         .click();

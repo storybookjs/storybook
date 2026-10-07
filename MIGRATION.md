@@ -926,6 +926,7 @@ The sidebar hid that wrapper when rendering, so the index that addons read and t
 The manager index (`useStorybookState().index` and `filteredIndex`) no longer contains these wrappers.
 The `docs` entry takes the wrapper's place: it has the wrapper's `name` and `depth`, and its `parent` is the wrapper's parent (or `undefined` at the root).
 Functions passed to `sidebar.renderLabel` and sidebar filters receive that `docs` entry instead of the wrapper and its `Docs` child.
+Sidebar search shows these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
 
 `api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
 

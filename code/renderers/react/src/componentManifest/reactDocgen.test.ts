@@ -62,6 +62,23 @@ test('matches a unique default export when its local name matches another compon
   expect(match?.actualName).toBe('Button');
 });
 
+test('matches a unique default export ahead of a named reexport from another file', async () => {
+  const defaultButton = await parse(
+    'export default function MainButton() { return <button /> }',
+    'MainButton.tsx'
+  );
+  const namedButton = await parse('export function Button() { return <span /> }', 'Button.tsx');
+
+  const match = getMatchingDocgen([...namedButton, ...defaultButton], {
+    componentName: 'Button',
+    importName: 'default',
+    localImportName: 'Button',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('MainButton');
+});
+
 test('matches an asserted default component ahead of a different file default export', async () => {
   const skeleton = await parse(
     'export default function ButtonSkeleton() { return <span /> }',

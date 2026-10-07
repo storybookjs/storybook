@@ -55,7 +55,9 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
     );
     if (
       matchingName &&
-      (!uniqueDefault || matchingName.definedInFile !== uniqueDefault.definedInFile)
+      (!uniqueDefault ||
+        (matchingName.definedInFile !== uniqueDefault.definedInFile &&
+          matchingName.exportName === undefined))
     ) {
       return matchingName;
     }

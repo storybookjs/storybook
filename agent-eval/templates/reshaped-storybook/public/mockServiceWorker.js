@@ -7,29 +7,29 @@
  * - Please do NOT modify this file.
  */
 
-const PACKAGE_VERSION = '3.0.2';
-const INTEGRITY_CHECKSUM = '5cd5cf8b54c3a90f82960cedcd637772';
-const IS_MOCKED_RESPONSE = Symbol('isMockedResponse');
+const PACKAGE_VERSION = '3.0.2'
+const INTEGRITY_CHECKSUM = '5cd5cf8b54c3a90f82960cedcd637772'
+const IS_MOCKED_RESPONSE = Symbol('isMockedResponse')
 
-const activeClientIds = new Set();
+const activeClientIds = new Set()
 /**
  * @type {Map<string, Set<Promise<Response>>>}
  */
-const pendingRequests = new Map();
+const pendingRequests = new Map()
 
 addEventListener('install', function () {
-  self.skipWaiting();
-});
+  self.skipWaiting()
+})
 
 addEventListener('activate', function (event) {
-  event.waitUntil(self.clients.claim());
-});
+  event.waitUntil(self.clients.claim())
+})
 
 addEventListener('message', function (event) {
-  const clientId = Reflect.get(event.source || {}, 'id');
+  const clientId = Reflect.get(event.source || {}, 'id')
 
   if (!clientId || !self.clients) {
-    return;
+    return
   }
 
   event.waitUntil(
@@ -37,36 +37,36 @@ addEventListener('message', function (event) {
       if (event.data === 'CLIENT_CLOSE') {
         const allClients = await self.clients.matchAll({
           type: 'window',
-        });
+        })
 
-        activeClientIds.delete(clientId);
+        activeClientIds.delete(clientId)
 
         // Await any pending requests from the closing client.
         // This makes sure that those requests are handled and not passthrough.
-        const pending = pendingRequests.get(clientId);
+        const pending = pendingRequests.get(clientId)
         if (pending != null && pending.size > 0) {
-          await Promise.allSettled(pending);
+          await Promise.allSettled(pending)
         }
-        pendingRequests.delete(clientId);
+        pendingRequests.delete(clientId)
 
         const remainingClients = allClients.filter((client) => {
-          return client.id !== clientId;
-        });
+          return client.id !== clientId
+        })
 
         // Unregister itself when there are no more clients
         if (remainingClients.length === 0) {
-          await self.registration.unregister();
+          await self.registration.unregister()
         }
 
-        const client = await self.clients.get(clientId);
+        const client = await self.clients.get(clientId)
 
         if (client != null) {
           await sendToClient(client, {
             type: 'CLIENT_CLOSED',
-          });
+          })
         }
 
-        return;
+        return
       }
 
       /**
@@ -75,18 +75,18 @@ addEventListener('message', function (event) {
        * and disassociated itself from the worker. This ensures self-unregistration
        * still fires for those pages.
        */
-      const client = await self.clients.get(clientId);
+      const client = await self.clients.get(clientId)
 
       if (!client) {
-        return;
+        return
       }
 
       switch (event.data) {
         case 'KEEPALIVE_REQUEST': {
           await sendToClient(client, {
             type: 'KEEPALIVE_RESPONSE',
-          });
-          break;
+          })
+          break
         }
 
         case 'INTEGRITY_CHECK_REQUEST': {
@@ -96,12 +96,12 @@ addEventListener('message', function (event) {
               packageVersion: PACKAGE_VERSION,
               checksum: INTEGRITY_CHECKSUM,
             },
-          });
-          break;
+          })
+          break
         }
 
         case 'MOCK_ACTIVATE': {
-          activeClientIds.add(clientId);
+          activeClientIds.add(clientId)
 
           await sendToClient(client, {
             type: 'MOCKING_ENABLED',
@@ -111,57 +111,62 @@ addEventListener('message', function (event) {
                 frameType: client.frameType,
               },
             },
-          });
-          break;
+          })
+          break
         }
       }
-    })()
-  );
-});
+    })(),
+  )
+})
 
 addEventListener('fetch', function (event) {
   // Opening the DevTools triggers the "only-if-cached" request
   // that cannot be handled by the worker. Bypass such requests.
-  if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
-    return;
+  if (
+    event.request.cache === 'only-if-cached' &&
+    event.request.mode !== 'same-origin'
+  ) {
+    return
   }
 
   // Bypass all requests when there are no active clients.
   // Prevents the self-unregistered worked from handling requests
   // after it's been terminated (still remains active until the next reload).
   if (activeClientIds.size === 0) {
-    return;
+    return
   }
 
-  const requestId = crypto.randomUUID();
-  event.respondWith(handleRequest(event, requestId));
-});
+  const requestId = crypto.randomUUID()
+  event.respondWith(handleRequest(event, requestId))
+})
 
 /**
  * @param {FetchEvent} event
  * @param {string} requestId
  */
 async function handleRequest(event, requestId) {
-  const client = await resolveMainClient(event);
-  const requestCloneForEvents = event.request.clone();
+  const client = await resolveMainClient(event)
+  const requestCloneForEvents = event.request.clone()
 
-  const responsePromise = getResponse(event, client, requestId);
+  const responsePromise = getResponse(event, client, requestId)
 
   if (client != null) {
-    let pending = pendingRequests.get(client.id);
+    let pending = pendingRequests.get(client.id)
 
     if (pending == null) {
-      pendingRequests.set(client.id, (pending = new Set()));
+      pendingRequests.set(client.id, (pending = new Set()))
     }
 
-    pending.add(responsePromise);
-    responsePromise.finally(() => pending.delete(responsePromise)).catch(() => {});
+    pending.add(responsePromise)
+    responsePromise
+      .finally(() => pending.delete(responsePromise))
+      .catch(() => {})
   }
 
-  let response;
+  let response
 
   try {
-    response = await responsePromise;
+    response = await responsePromise
   } catch (error) {
     // The request has settled without a response (e.g. a passthrough
     // request failed with a network error). Notify the client so it
@@ -175,17 +180,17 @@ async function handleRequest(event, requestId) {
           },
           error: serializeError(error),
         },
-      });
+      })
     }
 
-    throw error;
+    throw error
   }
 
   // Send back the response clone for the "response:*" life-cycle events.
   // Ensure MSW is active and ready to handle the message, otherwise
   // this message will pend indefinitely.
   if (client && activeClientIds.has(client.id)) {
-    const serializedRequest = await serializeRequest(requestCloneForEvents);
+    const serializedRequest = await serializeRequest(requestCloneForEvents)
 
     // Omit the body of server-sent event stream responses.
     // Cloning such responses would prevent client-side stream cancelations
@@ -195,10 +200,10 @@ async function handleRequest(event, requestId) {
     const isEventStreamResponse = response.headers
       .get('content-type')
       ?.toLowerCase()
-      .startsWith('text/event-stream');
+      .startsWith('text/event-stream')
 
     // Clone the response so both the client and the library could consume it.
-    const responseClone = isEventStreamResponse ? null : response.clone();
+    const responseClone = isEventStreamResponse ? null : response.clone()
 
     sendToClient(
       client,
@@ -219,11 +224,13 @@ async function handleRequest(event, requestId) {
           },
         },
       },
-      responseClone && responseClone.body ? [serializedRequest.body, responseClone.body] : []
-    );
+      responseClone && responseClone.body
+        ? [serializedRequest.body, responseClone.body]
+        : [],
+    )
   }
 
-  return response;
+  return response
 }
 
 /**
@@ -235,30 +242,30 @@ async function handleRequest(event, requestId) {
  * @returns {Promise<Client | undefined>}
  */
 async function resolveMainClient(event) {
-  const client = await self.clients.get(event.clientId);
+  const client = await self.clients.get(event.clientId)
 
   if (activeClientIds.has(event.clientId)) {
-    return client;
+    return client
   }
 
   if (client?.frameType === 'top-level') {
-    return client;
+    return client
   }
 
   const allClients = await self.clients.matchAll({
     type: 'window',
-  });
+  })
 
   return allClients
     .filter((client) => {
       // Get only those clients that are currently visible.
-      return client.visibilityState === 'visible';
+      return client.visibilityState === 'visible'
     })
     .find((client) => {
       // Find the client ID that's recorded in the
       // set of clients that have registered the worker.
-      return activeClientIds.has(client.id);
-    });
+      return activeClientIds.has(client.id)
+    })
 }
 
 /**
@@ -270,49 +277,51 @@ async function resolveMainClient(event) {
 async function getResponse(event, client, requestId) {
   // Clone the request because it might've been already used
   // (i.e. its body has been read and sent to the client).
-  const requestClone = event.request.clone();
+  const requestClone = event.request.clone()
 
   /**
    * @param {{ request?: { headers?: Array<[string, string]> } }} [data]
    */
   function passthrough(data) {
-    const headers = new Headers();
-    const requestHeaders = data?.request?.headers;
+    const headers = new Headers()
+    const requestHeaders = data?.request?.headers
 
     if (Array.isArray(requestHeaders)) {
       // Apply the request headers provided by the client.
       // Those reflect any modifications made in the request handlers.
       // Use ".append()" to support multiple headers with the same name.
       for (const [name, value] of requestHeaders) {
-        headers.append(name, value);
+        headers.append(name, value)
       }
     } else {
       for (const [name, value] of requestClone.headers) {
-        headers.append(name, value);
+        headers.append(name, value)
       }
     }
 
     // Remove the "accept" header value that marked this request as passthrough.
     // This prevents request alteration and also keeps it compliant with the
     // user-defined CORS policies.
-    const acceptHeader = headers.get('accept');
+    const acceptHeader = headers.get('accept')
     if (acceptHeader) {
-      const values = acceptHeader.split(',').map((value) => value.trim());
-      const filteredValues = values.filter((value) => value !== 'msw/passthrough');
+      const values = acceptHeader.split(',').map((value) => value.trim())
+      const filteredValues = values.filter(
+        (value) => value !== 'msw/passthrough',
+      )
 
       if (filteredValues.length > 0) {
-        headers.set('accept', filteredValues.join(', '));
+        headers.set('accept', filteredValues.join(', '))
       } else {
-        headers.delete('accept');
+        headers.delete('accept')
       }
     }
 
-    return fetch(requestClone, { headers });
+    return fetch(requestClone, { headers })
   }
 
   // Bypass mocking when the client is not active.
   if (!client) {
-    return passthrough();
+    return passthrough()
   }
 
   // Bypass initial page load requests (i.e. static assets).
@@ -320,11 +329,11 @@ async function getResponse(event, client, requestId) {
   // means that MSW hasn't dispatched the "MOCK_ACTIVATE" event yet
   // and is not ready to handle requests.
   if (!activeClientIds.has(client.id)) {
-    return passthrough();
+    return passthrough()
   }
 
   // Notify the client that a request has been intercepted.
-  const serializedRequest = await serializeRequest(event.request);
+  const serializedRequest = await serializeRequest(event.request)
   const clientMessage = await sendToClient(
     client,
     {
@@ -334,20 +343,20 @@ async function getResponse(event, client, requestId) {
         ...serializedRequest,
       },
     },
-    [serializedRequest.body]
-  );
+    [serializedRequest.body],
+  )
 
   switch (clientMessage.type) {
     case 'MOCK_RESPONSE': {
-      return respondWithMock(clientMessage.data, event);
+      return respondWithMock(clientMessage.data, event)
     }
 
     case 'PASSTHROUGH': {
-      return passthrough(clientMessage.data);
+      return passthrough(clientMessage.data)
     }
   }
 
-  return passthrough();
+  return passthrough()
 }
 
 /**
@@ -359,13 +368,13 @@ function serializeError(error) {
     return {
       name: error.name,
       message: error.message,
-    };
+    }
   }
 
   return {
     name: 'Error',
     message: String(error),
-  };
+  }
 }
 
 /**
@@ -376,18 +385,21 @@ function serializeError(error) {
  */
 function sendToClient(client, message, transferrables = []) {
   return new Promise((resolve, reject) => {
-    const channel = new MessageChannel();
+    const channel = new MessageChannel()
 
     channel.port1.onmessage = (event) => {
       if (event.data && event.data.error) {
-        return reject(event.data.error);
+        return reject(event.data.error)
       }
 
-      resolve(event.data);
-    };
+      resolve(event.data)
+    }
 
-    client.postMessage(message, [channel.port2, ...transferrables.filter(Boolean)]);
-  });
+    client.postMessage(message, [
+      channel.port2,
+      ...transferrables.filter(Boolean),
+    ])
+  })
 }
 
 /**
@@ -401,10 +413,10 @@ async function respondWithMock(response, event) {
   // instance will have status code set to 0. Since it's not possible to create
   // a Response instance with status code 0, handle that use-case separately.
   if (response.status === 0) {
-    return Response.error();
+    return Response.error()
   }
 
-  let body = response.body;
+  let body = response.body
 
   // Buffer the streamed mocked response body for navigation requests.
   // The stream is transferred from the client that is being navigated
@@ -413,17 +425,17 @@ async function respondWithMock(response, event) {
   // Buffering here keeps "event.respondWith()" pending (the navigation
   // cannot commit) until the entire body arrives from the client.
   if (event.request.mode === 'navigate' && body instanceof ReadableStream) {
-    body = await new Response(body).arrayBuffer();
+    body = await new Response(body).arrayBuffer()
   }
 
-  const mockedResponse = new Response(body, response);
+  const mockedResponse = new Response(body, response)
 
   Reflect.defineProperty(mockedResponse, IS_MOCKED_RESPONSE, {
     value: true,
     enumerable: true,
-  });
+  })
 
-  return mockedResponse;
+  return mockedResponse
 }
 
 /**
@@ -444,5 +456,5 @@ async function serializeRequest(request) {
     referrerPolicy: request.referrerPolicy,
     body: await request.arrayBuffer(),
     keepalive: request.keepalive,
-  };
+  }
 }

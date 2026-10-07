@@ -108,67 +108,27 @@ function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): str
 - ${passingStories.map((status) => status.storyId).join('\n- ')}`;
 }
 
-const DOM_DUMP_HEADING = /^(Ignored nodes: comments, [^\n]*\n)/m;
-const MATCHING_ELEMENTS_HEADING = 'Here are the matching elements:';
-const LIST_HEADING = /^Here are the (?:matching elements|\w+ roles):\n/m;
 const LIST_LIMIT = 2000;
-// Testing Library cuts a printed element off after this many characters and appends `...`.
-const DOM_DUMP_LIMIT = 7000;
+const DOM_DUMP_HEADING = /^Ignored nodes: comments, .*\n/gm;
+const MATCHING_ELEMENTS = /^Here are the matching elements:\n[^]*?\n\(If this is intentional/gm;
+const ROLES_BEFORE_DOM_DUMP =
+  /(?<=^Here are the \w+ roles:\n)[^]*?(?=\n\nIgnored nodes: comments, )/gm;
+// Testing Library prints the container up to its closing tag, or cuts it off after 7000 characters
+// and appends `...`. Anything else is not recognised as a dump and stays in the report.
+const DOM_DUMP =
+  /(?:\n\n)?^Ignored nodes: comments, .*\n(?:[^]{7000}\.\.\.|<([^\s/>]+)(?: \/>|[^]*?\n(?:<\/\1|\/)>)(?:\.\.\.)?)$/gm;
 
-function domDumpLength(text: string): number | undefined {
-  const end = DOM_DUMP_LIMIT + 3;
-  if (text.startsWith('...', DOM_DUMP_LIMIT) && (text.length === end || text[end] === '\n')) {
-    return end;
-  }
-  // Text content is HTML-escaped (attribute values are not), so only the root element can close at
-  // the start of a line.
-  return /^<([^\s/>]+)(?: \/>|[\s\S]*?\n(?:<\/\1|\/)>)(?:\.\.\.)?(?=\n|$)/.exec(text)?.[0].length;
-}
-
-function withCappedList(text: string): string {
-  const heading = LIST_HEADING.exec(text);
-  const listStart = heading ? heading.index + heading[0].length : text.length;
-  if (text.length - listStart <= LIST_LIMIT) {
-    return text;
-  }
-  const kept = text.slice(0, text.lastIndexOf('\n', listStart + LIST_LIMIT)).trimEnd();
-  return `${kept}\n\n  (${text.length - kept.length} more characters omitted)`;
-}
-
-// A dump that cannot be delimited exactly is left in place.
-function withoutDomDumps(description: string): string {
-  const [head, ...parts] = description.split(DOM_DUMP_HEADING);
-  let done = '';
-  let pending = head;
-  let listingMatches = false;
-
-  for (let i = 0; i < parts.length; i += 2) {
-    const heading = parts[i];
-    const text = parts[i + 1];
-    const length = domDumpLength(text);
-
-    if (length === undefined) {
-      listingMatches ||= pending.trimEnd().endsWith(MATCHING_ELEMENTS_HEADING);
-      done += pending + heading;
-      pending = text;
-      continue;
-    }
-
-    const rest = text.slice(length);
-    let kept = pending.trimEnd();
-    if (listingMatches || kept.endsWith(MATCHING_ELEMENTS_HEADING)) {
-      kept += `\n\n${text.slice(0, length)}`;
-      listingMatches = rest.trim() === '';
-      if (listingMatches) {
-        pending = kept;
-        continue;
+function withoutDomDumps(text: string): string {
+  return text
+    .replace(MATCHING_ELEMENTS, (elements) => elements.replace(DOM_DUMP_HEADING, ''))
+    .replace(ROLES_BEFORE_DOM_DUMP, (roles) => {
+      if (roles.length <= LIST_LIMIT) {
+        return roles;
       }
-    }
-    done += withCappedList(kept);
-    pending = rest;
-  }
-
-  return done + (listingMatches ? withCappedList(pending) : pending);
+      const kept = roles.slice(0, roles.lastIndexOf('\n', LIST_LIMIT)).trimEnd();
+      return `${kept}\n\n  (${roles.length - kept.length} more characters omitted)`;
+    })
+    .replace(DOM_DUMP, '');
 }
 
 function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {

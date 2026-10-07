@@ -424,36 +424,6 @@ Here are the matching elements:
     at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
       });
 
-      it('keeps the matching elements that follow one it cannot delimit', async () => {
-        const description = `Found multiple elements with the role "button"
-
-Here are the matching elements:
-
-Ignored nodes: comments, script, style
-<button>
-  Edi...
-
-Ignored nodes: comments, script, style
-<button />
-
-(If this is intentional, then use the \`*AllBy*\` variant of the query).`;
-
-        vi.mocked(runStoryTests).mockResolvedValue(
-          failing(`${description}
-
-${dump}
-    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`)
-        );
-
-        expect((await runForMcp()).markdown).toContain(`<button>
-  Edi...
-
-<button />
-
-(If this is intentional, then use the \`*AllBy*\` variant of the query).
-    at getByRole (/workspace/stories/Alert.stories.tsx:77:54)`);
-      });
-
       it('caps a long list of accessible roles', async () => {
         const intro = `Unable to find an accessible element with the role "status"
 

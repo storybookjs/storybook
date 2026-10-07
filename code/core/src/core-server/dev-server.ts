@@ -14,7 +14,7 @@ import { ChangeDetectionService } from './change-detection/change-detection-serv
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
-import { getEmbedAccessMiddleware } from './utils/embed-access.ts';
+import { createEmbedAccess } from './utils/embed-access.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
@@ -30,8 +30,7 @@ import { summarizeIndex } from './utils/summarizeIndex.ts';
 
 export async function storybookDevServer(
   options: Options,
-  server: Awaited<ReturnType<typeof getServer>>,
-  embedHostname: string
+  server: Awaited<ReturnType<typeof getServer>>
 ) {
   const core = await options.presets.apply('core');
 
@@ -76,7 +75,8 @@ export async function storybookDevServer(
     })
   );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
-  app.use(getEmbedAccessMiddleware(embedHostname));
+  const embed = createEmbedAccess(options.localAddress!, options.host);
+  app.use(embed.middleware);
   app.use(getCachingMiddleware());
 
   registerIndexJsonRoute({
@@ -227,5 +227,5 @@ export async function storybookDevServer(
   process.on('SIGINT', cancelTelemetry);
   process.on('SIGTERM', cancelTelemetry);
 
-  return { previewResult, managerResult };
+  return { previewResult, managerResult, embedOrigin: embed.origin };
 }

@@ -25,9 +25,9 @@ import {
   formatPreviewStories,
   previewInstructions,
 } from './format.ts';
-import { embedStories } from './embed-stories.ts';
+import { findStoryIds } from './find-story-ids.ts';
 import { previewStories } from './preview-stories.ts';
-import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
+import { storyInputArraySchema, storyInputSchema, storyQueryParams } from './story-input.ts';
 import { detectUnreachableFiles } from './unreachable-files.ts';
 
 const previewSuccessSchema = v.object({
@@ -336,11 +336,18 @@ Each URL carries a secret that grants read access to this Storybook's dev server
           if (!ctx.embedOrigin) {
             throw new OpenServiceMissingEmbedOriginError();
           }
-          const data = embedStories({
-            embedOrigin: ctx.embedOrigin,
-            index: await storyIndex.getIndex(),
-            stories: input.stories,
-          });
+          const index = await storyIndex.getIndex();
+          const data: EmbedStoriesOutput = {
+            stories: findStoryIds(index, input.stories).map((story) =>
+              'errorMessage' in story
+                ? { input: story.input, error: story.errorMessage }
+                : {
+                    title: story.entry.title,
+                    name: story.entry.name,
+                    embedUrl: `${ctx.embedOrigin}/iframe.html?id=${story.entry.id}&viewMode=story${storyQueryParams(story.input)}`,
+                  }
+            ),
+          };
 
           return {
             ok: true,

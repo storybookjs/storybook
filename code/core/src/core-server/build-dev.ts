@@ -29,7 +29,6 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
 import { storybookDevServer } from './dev-server.ts';
 import { getWsToken } from './presets/wsToken.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
-import { createEmbedHostname } from './utils/embed-access.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
@@ -71,8 +70,6 @@ export async function resolveOnboardingInitialPath(
   }
   return undefined;
 }
-
-const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '::1', '0.0.0.0', '::'];
 
 export async function buildDevStandalone(
   options: CLIOptions &
@@ -293,19 +290,15 @@ export async function buildDevStandalone(
     channel,
   };
 
-  const embedHostname = createEmbedHostname();
-  const { managerResult, previewResult } = await buildOrThrow(async () =>
-    storybookDevServer(fullOptions, server, embedHostname)
+  const { managerResult, previewResult, embedOrigin } = await buildOrThrow(async () =>
+    storybookDevServer(fullOptions, server)
   );
 
   const mcp: RuntimeInstanceRecord['mcp'] = getMcpMetadataFromMainConfig(config);
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
-    // `*.localhost` only reaches a server that listens on loopback.
-    ...(!options.host || LOOPBACK_HOSTS.includes(options.host)
-      ? { embedOrigin: Object.assign(new URL(localAddress), { hostname: embedHostname }).origin }
-      : {}),
+    embedOrigin,
     configDir: options.configDir,
     mcp,
     port,

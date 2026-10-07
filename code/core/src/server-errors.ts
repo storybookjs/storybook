@@ -363,7 +363,8 @@ export class OpenServiceMissingEmbedOriginError extends StorybookError {
       name: 'OpenServiceMissingEmbedOriginError',
       category: Category.CORE_COMMON,
       code: 33,
-      message: 'The running Storybook did not record an embed origin. Restart it, then retry.',
+      message:
+        'The running Storybook has no embed origin. Either it listens on a network address only (`--host`), which embeds cannot reach, or an older Storybook started it and it needs a restart.',
     });
   }
 }

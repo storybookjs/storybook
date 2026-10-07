@@ -13,7 +13,7 @@ export default {
   // handle Codex's Responses namespace tool shape yet:
   // https://github.com/openai/codex/issues/26234
   agent: 'codex',
-  model: 'gpt-6-sol?reasoningEffort=medium',
+  model: 'gpt-6.1-sol?reasoningEffort=medium',
   evals: WORKFLOW_STORYBOOK_EVALS,
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp' });

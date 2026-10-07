@@ -60,7 +60,7 @@ test.describe('story embeds in a sandboxed frame', () => {
     const story = page.frameLocator('iframe');
     await expect(story.locator('#storybook-root')).toContainText('Default');
 
-    const frame = page.frames()[1];
+    const frame = page.frame({ url: /\/embed\// })!;
     expect(
       await frame.evaluate(() => {
         localStorage.setItem('embed', 'local');
@@ -68,9 +68,14 @@ test.describe('story embeds in a sandboxed frame', () => {
         return [localStorage.getItem('embed'), sessionStorage.getItem('embed')];
       })
     ).toStrictEqual(['local', 'session']);
-    expect(await frame.evaluate(() => fetch('/index.json').then((response) => response.ok))).toBe(
-      true
-    );
+    expect(
+      await frame.evaluate(() =>
+        Promise.all([
+          fetch('/index.json').then((response) => response.ok),
+          fetch(new Request('/index.json')).then((response) => response.ok),
+        ])
+      )
+    ).toStrictEqual([true, true]);
   });
 
   test('keeps the story blank through its normal URL', async ({ page }) => {

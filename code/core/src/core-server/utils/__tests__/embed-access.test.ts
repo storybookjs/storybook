@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { Server } from 'node:http';
+import { type IncomingMessage, type Server, ServerResponse } from 'node:http';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -52,22 +52,44 @@ describe('attachEmbedAccess', () => {
     expect(res.setHeader).not.toHaveBeenCalled();
   });
 
-  it.each(['/fonts/inter.woff2', '/embed/wrong/fonts/inter.WOFF?v=2', '/assets/icons.ttf'])(
-    'lets any origin read the font at %s',
-    (url) => {
-      const { req, res } = request(url);
+  function respond(url: string, respondWith: (res: ServerResponse) => void) {
+    const server = new EventEmitter() as Server;
+    attachEmbedAccess(server, 'secret');
+    const res = new ServerResponse({ url, method: 'GET' } as IncomingMessage);
+    server.emit('request', { url, method: 'GET' }, res);
+    respondWith(res);
+    return res.getHeader('Access-Control-Allow-Origin');
+  }
 
-      expect(req.url).toBe(url);
-      expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+  it.each(['/fonts/inter.woff2', '/fonts/inter.WOFF?v=2', '/assets/icons.ttf'])(
+    'lets any origin read the font served at %s',
+    (url) => {
+      expect(respond(url, (res) => res.writeHead(200, { 'Content-Type': 'font/woff2' }))).toBe('*');
+      expect(
+        respond(url, (res) => {
+          res.setHeader('content-type', 'font/woff2');
+          res.end();
+        })
+      ).toBe('*');
     }
   );
 
-  it.each(['/src/secret.ts?file=.woff2', '/fonts/inter.woff2.ts', '/woff2'])(
-    'does not mistake %s for a font',
-    (url) => {
-      expect(request(url).res.setHeader).not.toHaveBeenCalled();
-    }
-  );
+  it('keeps a route that answers a font-looking path with other content unreadable', () => {
+    expect(
+      respond('/project.json/x.woff2', (res) =>
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+      )
+    ).toBeUndefined();
+    expect(respond('/missing.woff2', (res) => res.writeHead(404))).toBeUndefined();
+  });
+
+  it('does not treat a font extension in the query as a font', () => {
+    expect(
+      respond('/src/secret.ts?file=.woff2', (res) =>
+        res.writeHead(200, { 'Content-Type': 'font/woff2' })
+      )
+    ).toBeUndefined();
+  });
 
   it('runs before the listeners already on the server', () => {
     const server = new EventEmitter() as Server;

@@ -1,0 +1,13 @@
+/*
+ * A reset in its own layer. StyleX is configured with `useCSSLayers: { before: ['reset'] }`.
+ * Scoped to `.stylex-reset` (the `StyleX/Layers` stories) so the other stories in the sandbox keep
+ * their styles. The scope does not change the result: layer order decides, not specificity.
+ */
+@layer reset {
+  .stylex-reset div,
+  .stylex-reset p {
+    color: blue;
+    padding: 0;
+    margin: 0;
+  }
+}

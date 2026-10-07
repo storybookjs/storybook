@@ -1,0 +1,13 @@
+{
+  "name": "stylex-tokens-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StyleX tokens installed as a package. Its exports deliberately omit ./package.json, which @stylexjs/unplugin's package discovery misses.",
+  "type": "module",
+  "exports": {
+    "./tokens.stylex.js": "./tokens.stylex.js"
+  },
+  "peerDependencies": {
+    "@stylexjs/stylex": "*"
+  }
+}

@@ -126,6 +126,9 @@
     "vitest": "^4.1.6",
     "wait-on": "^8.0.3"
   },
+  "devDependencies": {
+    "@stylexjs/stylex": "^0.19.1"
+  },
   "dependenciesMeta": {
     "ejs": {
       "built": false

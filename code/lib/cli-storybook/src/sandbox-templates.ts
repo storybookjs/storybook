@@ -107,6 +107,11 @@ export type Template = {
      * from this template's key, so a derived template can share its base template's stories.
      */
     storiesVariant?: string;
+    /**
+     * Adds the StyleX fixture setup and stories; see `addStylexSetup` in
+     * scripts/tasks/sandbox-parts.ts
+     */
+    stylex?: boolean;
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
@@ -145,6 +150,19 @@ type BaseTemplates = Template & {
     | 'JavaScript'
     | 'TypeScript'})`;
 };
+
+// The StyleX compiler packages each framework's StyleX setup needs; see `addStylexSetup` in
+// scripts/tasks/sandbox-parts.ts
+const STYLEX_VITE_DEPENDENCIES = [
+  '@stylexjs/stylex@^0.19.1',
+  '@stylexjs/unplugin@^0.19.1',
+  'unplugin@^2.3.11',
+];
+const STYLEX_NEXTJS_DEPENDENCIES = [
+  '@stylexjs/stylex@^0.19.1',
+  '@stylexjs/babel-plugin@^0.19.1',
+  '@stylexjs/postcss-plugin@^0.19.1',
+];
 
 export const baseTemplates = {
   'nextjs/15-ts': {
@@ -191,7 +209,8 @@ export const baseTemplates = {
           changeDetection: true,
         },
       },
-      extraDevDependencies: ['server-only', 'prop-types'],
+      extraDevDependencies: ['server-only', 'prop-types', ...STYLEX_NEXTJS_DEPENDENCIES],
+      stylex: true,
     },
     initOptions: {
       builder: SupportedBuilder.WEBPACK5,
@@ -275,7 +294,15 @@ export const baseTemplates = {
           changeDetection: true,
         },
       },
-      extraDevDependencies: ['server-only', 'vite', 'prop-types'],
+      extraDevDependencies: [
+        'server-only',
+        'vite',
+        'prop-types',
+        ...STYLEX_NEXTJS_DEPENDENCIES,
+        '@stylexjs/unplugin@^0.19.1',
+        'unplugin@^2.3.11',
+      ],
+      stylex: true,
     },
     skipTasks: ['bench'],
   },
@@ -309,8 +336,14 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/prop-types',
+        '@storybook/addon-mcp',
+        ...STYLEX_VITE_DEPENDENCIES,
+      ],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      stylex: true,
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -643,6 +676,10 @@ export const baseTemplates = {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDevDependencies: STYLEX_VITE_DEPENDENCIES,
+      stylex: true,
     },
     skipTasks: ['e2e-tests', 'bench'],
   },

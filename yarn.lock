@@ -10300,6 +10300,7 @@ __metadata:
     "@storybook/vue3-vite": "workspace:*"
     "@storybook/web-components": "workspace:*"
     "@storybook/web-components-vite": "workspace:*"
+    "@stylexjs/stylex": "npm:^0.19.1"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^16.2.0"
@@ -11205,6 +11206,17 @@ __metadata:
   version: 1.2.1
   resolution: "@stroncium/procfs@npm:1.2.1"
   checksum: 10c0/94421e19073905c98e619aaa9a2b6dc65b3cd706d8b0ef6fc0f242b0edb80e7ddd25cbd19ff0506d7d56546b2dc95a458523dc5dee058bc9b7749c02c0758102
+  languageName: node
+  linkType: hard
+
+"@stylexjs/stylex@npm:^0.19.1":
+  version: 0.19.1
+  resolution: "@stylexjs/stylex@npm:0.19.1"
+  dependencies:
+    css-mediaquery: "npm:^0.1.2"
+    invariant: "npm:^2.2.4"
+    styleq: "npm:0.2.1"
+  checksum: 10c0/37307d5bd6318788766fb17d6d58a0353b56aee317059d538bdfdcab6a3db47eae93c25655e12c2dbede5002312431598769f8ac797244ee8aafe7dc799a8a7c
   languageName: node
   linkType: hard
 
@@ -18205,6 +18217,13 @@ __metadata:
     webpack:
       optional: true
   checksum: 10c0/8743a8f1a0beff371d0fbeae7dbae7b079e546c734e3c936f0c5dc4603a716a576200e9261c934565584cf0e090cca444efb613efa4282ee3fcab81db4c73c7e
+  languageName: node
+  linkType: hard
+
+"css-mediaquery@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "css-mediaquery@npm:0.1.2"
+  checksum: 10c0/b7825a78f52ce8a8198e004fcad0d7be1d3c9a0463ecd05ba31a0f2c94fb81468ad6f4d7bf715a6ca775696e7a17500c2a339b5216a6d0f789cbf78f9454d048
   languageName: node
   linkType: hard
 
@@ -34179,6 +34198,13 @@ __metadata:
     babel-plugin-macros:
       optional: true
   checksum: 10c0/7a2544664f74dbd940c96017f81c7066b6c1e88df6e2062fd1ffcada66cfb22eb3367438b4f0ec47de7ba37f7359d153f25da2bf9593a6f3e35af44c7bbaeb48
+  languageName: node
+  linkType: hard
+
+"styleq@npm:0.2.1":
+  version: 0.2.1
+  resolution: "styleq@npm:0.2.1"
+  checksum: 10c0/93deb170c59cae56e0bb4147edcb1a024b4c3ad73d8f67aedf730c339a1a0097419367473f979b0ee6776fc51184d3a742e80deaa80623e6d64014f3acd24e49
   languageName: node
   linkType: hard
 

@@ -107,6 +107,8 @@ describe('tag-filter-api', () => {
         'const config = { experimental_setFilter: 1, setFilter: 2 };',
         'api.experimental_setFilter("x", () => true);',
         'api?.experimental_setFilters({});',
+        'useStorybookApi().experimental_setFilter("direct", () => true);',
+        'useStorybookApi().experimental_setFilters({});',
         'const { experimental_setFilter } = api;',
         'const { experimental_setFilters } = useStorybookApi();',
       ].join('\n'),
@@ -118,6 +120,8 @@ describe('tag-filter-api', () => {
     expect(story).toContain('const config = { experimental_setFilter: 1, setFilter: 2 };');
     expect(story).toContain('api.setFilter("x", () => true);');
     expect(story).toContain('api?.setFilters({});');
+    expect(story).toContain('useStorybookApi().setFilter("direct", () => true);');
+    expect(story).toContain('useStorybookApi().setFilters({});');
     expect(story).toContain('const { setFilter } = api;');
     expect(story).toContain('const { setFilters } = useStorybookApi();');
   });
@@ -142,6 +146,30 @@ describe('tag-filter-api', () => {
     expect(manager).toContain('unrelatedApi?.experimental_setFilter();');
     expect(manager).toContain(
       'addons.register((unrelatedApi) => unrelatedApi.experimental_setFilter());'
+    );
+  });
+
+  it('renames methods destructured from the Storybook API callback parameter', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: 'export default { stories: [] };',
+      [managerConfigPath]: [
+        'import { addons } from "storybook/manager-api";',
+        'addons.register("test", ({ experimental_setFilter, experimental_setFilters }, unrelatedApi) => {',
+        '  experimental_setFilter("x", () => true);',
+        '  experimental_setFilters({});',
+        '  unrelatedApi.experimental_setFilter();',
+        '});',
+        'addons.register(({ experimental_setFilter }) => experimental_setFilter());',
+      ].join('\n'),
+      [storyPath]: 'export default {};',
+    });
+
+    expect(await runFix(tagFilterApi, { ...options, result: {} })).toEqual([]);
+    const manager = fs.readFileSync(managerConfigPath, 'utf8') as string;
+    expect(manager).toContain('({ setFilter, setFilters }, unrelatedApi)');
+    expect(manager).toContain('unrelatedApi.experimental_setFilter();');
+    expect(manager).toContain(
+      'addons.register(({ experimental_setFilter }) => experimental_setFilter());'
     );
   });
 

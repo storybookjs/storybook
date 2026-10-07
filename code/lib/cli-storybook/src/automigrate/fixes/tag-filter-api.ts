@@ -46,27 +46,20 @@ const isManagerApiImport = (path: NodePath<t.Identifier>, importedName: string) 
   );
 };
 
-const isStorybookApi = (path: NodePath<t.Identifier>): boolean => {
-  const binding = path.scope.getBinding(path.node.name);
-  if (!binding?.constant) {
+const isUseStorybookApiCall = (path: NodePath<t.Expression | null | undefined>) => {
+  if (!path.isCallExpression()) {
     return false;
   }
-  if (binding.path.isVariableDeclarator()) {
-    const init = binding.path.get('init') as NodePath<t.Expression | null>;
-    if (!init.isCallExpression()) {
-      return false;
-    }
-    const callee = init.get('callee');
-    return callee.isIdentifier() && isManagerApiImport(callee, 'useStorybookApi');
-  }
-  if (!binding.path.isIdentifier()) {
-    return false;
-  }
-  const callback = binding.path.parentPath;
+  const callee = path.get('callee');
+  return callee.isIdentifier() && isManagerApiImport(callee, 'useStorybookApi');
+};
+
+const isRegisterApiParameter = (path: NodePath<t.Identifier | t.ObjectPattern>) => {
+  const callback = path.parentPath;
   if (!callback.isArrowFunctionExpression() && !callback.isFunctionExpression()) {
     return false;
   }
-  if (callback.node.params[0] !== binding.path.node) {
+  if (callback.node.params[0] !== path.node) {
     return false;
   }
   const call = callback.parentPath;
@@ -81,6 +74,20 @@ const isStorybookApi = (path: NodePath<t.Identifier>): boolean => {
   return object.isIdentifier() && isManagerApiImport(object, 'addons');
 };
 
+const isStorybookApi = (path: NodePath<t.Identifier>): boolean => {
+  const binding = path.scope.getBinding(path.node.name);
+  if (!binding?.constant) {
+    return false;
+  }
+  if (binding.path.isVariableDeclarator()) {
+    return isUseStorybookApiCall(binding.path.get('init'));
+  }
+  if (!binding.path.isIdentifier()) {
+    return false;
+  }
+  return isRegisterApiParameter(binding.path);
+};
+
 const isSetFilterApiReference = (path: NodePath<t.Identifier>) => {
   const { parent, parentPath } = path;
   if (
@@ -89,7 +96,7 @@ const isSetFilterApiReference = (path: NodePath<t.Identifier>) => {
     parentPath.node.property === path.node
   ) {
     const object = parentPath.get('object') as NodePath<t.Expression>;
-    return object.isIdentifier() && isStorybookApi(object);
+    return (object.isIdentifier() && isStorybookApi(object)) || isUseStorybookApiCall(object);
   }
   const isDestructuredApiKey =
     t.isObjectProperty(parent) &&
@@ -99,19 +106,16 @@ const isSetFilterApiReference = (path: NodePath<t.Identifier>) => {
   if (!isDestructuredApiKey) {
     return false;
   }
-  const declarator = parentPath.parentPath?.parentPath;
-  if (!declarator?.isVariableDeclarator()) {
+  const pattern = parentPath.parentPath;
+  if (!pattern?.isObjectPattern()) {
     return false;
   }
-  const init = declarator.get('init');
-  if (init.isIdentifier()) {
-    return isStorybookApi(init);
+  const source = pattern.parentPath;
+  if (source?.isVariableDeclarator()) {
+    const init = source.get('init');
+    return (init.isIdentifier() && isStorybookApi(init)) || isUseStorybookApiCall(init);
   }
-  if (!init.isCallExpression()) {
-    return false;
-  }
-  const callee = init.get('callee');
-  return callee.isIdentifier() && isManagerApiImport(callee, 'useStorybookApi');
+  return isRegisterApiParameter(pattern);
 };
 
 const renameSetFilterIdentifiers = (code: string) => {

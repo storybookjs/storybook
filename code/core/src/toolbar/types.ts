@@ -1,7 +1,5 @@
 import type { InputType } from 'storybook/internal/types';
 
-import type { IconsProps } from '../components/components/icon/icon.tsx';
-
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
 
 export type ToolbarItemType = 'item' | 'reset';
@@ -13,9 +11,22 @@ export interface ToolbarShortcutConfig {
 
 export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig>;
 
+/**
+ * Legacy string icon name from the removed `Icons` component.
+ *
+ * String icon names no longer render: icons must be provided as a React node. Toolbar menus
+ * relying on `icon` should set a `title` so they remain usable.
+ * @deprecated Remove in a future major; see https://github.com/storybookjs/storybook/issues/29159
+ */
+export type ToolbarIconName = string;
+
 export interface ToolbarItem {
   value?: string;
-  icon?: IconsProps['icon'];
+  /**
+   * No longer renders; string icon names were removed with the `Icons` component.
+   * @deprecated
+   */
+  icon?: ToolbarIconName;
   right?: string;
   title?: string;
   hideIcon?: boolean;
@@ -25,8 +36,8 @@ export interface ToolbarItem {
 export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
-  /** Choose an icon to show for this toolbar item */
-  icon?: IconsProps['icon'];
+  /** No longer renders; the `Icons`/`Symbols` components were removed in Storybook 11. */
+  icon?: ToolbarIconName;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;
   items: ToolbarItem[];

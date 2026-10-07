@@ -6,14 +6,9 @@ import { Select } from 'storybook/internal/components';
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { Icons } from '../../components/components/icon/icon.tsx';
 import type { ToolbarItem, ToolbarMenuProps } from '../types.ts';
 import { getSelectedItem } from '../utils/get-selected.ts';
 import { registerShortcuts } from '../utils/register-shortcuts.ts';
-
-// We can't remove the Icons component just yet because there's no way for now to import icons
-// in the preview directly. Before having a better solution, we are going to keep the Icons component
-// for now and remove the deprecated warning.
 
 const ToolbarMenuItemContainer = styled('div')({
   width: '100%',
@@ -29,33 +24,21 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   id,
   name,
   description,
-  toolbar: {
-    icon: _icon,
-    items,
-    title: _title,
-    preventDynamicIcon,
-    dynamicTitle = true,
-    shortcuts,
-  },
+  toolbar: { items, title: _title, dynamicTitle = true, shortcuts },
 }) => {
   const api = useStorybookApi();
   const [globals, updateGlobals, storyGlobals] = useGlobals();
 
   const currentValue = globals[id];
   const isOverridden = id in storyGlobals;
-  let icon = _icon;
   let title = _title;
-
-  if (!preventDynamicIcon) {
-    icon = getSelectedItem({ currentValue, items })?.icon || icon;
-  }
 
   if (dynamicTitle) {
     title = getSelectedItem({ currentValue, items })?.title || title;
   }
 
-  if (!title && !icon) {
-    console.warn(`Toolbar '${name}' has no title or icon`);
+  if (!title) {
+    console.warn(`Toolbar '${name}' has no title. String icon names no longer render.`);
   }
 
   const resetItem = items.find((item) => item.type === 'reset');
@@ -66,10 +49,6 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
         .filter((item): item is ToolbarItem => item.type === 'item')
         .map((item) => {
           const itemTitle = item.title ?? item.value ?? 'Untitled';
-          const iconComponent =
-            !item.hideIcon && item.icon ? (
-              <Icons icon={item.icon} __suppressDeprecationWarning={true} />
-            ) : undefined;
 
           if (item.right) {
             return {
@@ -77,7 +56,6 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
               value: item.value,
               children: (
                 <ToolbarMenuItemContainer>
-                  {iconComponent}
                   <ToolbarMenuItemMiddle>{item.title ?? item.value}</ToolbarMenuItemMiddle>
                   {item.right}
                 </ToolbarMenuItemContainer>
@@ -87,7 +65,6 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
             return {
               title: itemTitle,
               value: item.value,
-              icon: iconComponent,
             };
           }
         }),
@@ -138,7 +115,6 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       resetLabel={resetLabel}
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
-      icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
       showSelectedOptionTitle={dynamicTitle}
     >
       {title}

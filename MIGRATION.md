@@ -2,6 +2,7 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Tag filtering API](#tag-filtering-api)
+  - [Icons component removed](#icons-component-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -601,6 +602,30 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 `sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
+### Icons component removed
+
+The deprecated `Icons` and `Symbol` components are removed from `@storybook/components`. Render the icon you need directly from `@storybook/icons` (see [#29159](https://github.com/storybookjs/storybook/issues/29159)):
+
+```diff
+-import { Icons } from 'storybook/internal/components';
++import { HeartIcon } from '@storybook/icons';
+
+-<Icons icon="heart" />
++<HeartIcon />
+```
+
+String icon names in `globalTypes` toolbar menus no longer render. Menu labels fall back to the selected item's `title` or `value`, so give every toolbar menu a `title`:
+
+```diff
+myAddon: {
+  toolbar: {
+-   icon: 'circle',
++   title: 'Background',
+    items: [{ value: 'light', title: 'Light' }],
+  },
+}
+```
 
 ### Addon `TAB` registration removed
 
@@ -1874,6 +1899,7 @@ The Button component now has an `ariaLabel` prop, to ensure that Storybook UI co
 When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
 
 In every other case (your Button only contains an icon, has a responsive layout that can hide its text, or relies on visual context to make sense), you must pass a label to `ariaLabel`, which screenreaders will read. The label should be short and start with an action verb.
+
 
 ##### Added: shortcut
 

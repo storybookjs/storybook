@@ -1129,6 +1129,31 @@ function collectObjectLiteralDefaults(
   }
 }
 
+function followVariableReferences(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  symbol: ts.Symbol
+): ts.Symbol {
+  let current = symbol;
+  for (let depth = 0; depth <= MAX_UNWRAP_DEPTH; depth++) {
+    const decl = current.valueDeclaration;
+    if (
+      !decl ||
+      !typescript.isVariableDeclaration(decl) ||
+      !decl.initializer ||
+      !typescript.isIdentifier(decl.initializer)
+    ) {
+      return current;
+    }
+    const next = checker.getSymbolAtLocation(decl.initializer);
+    if (!next) {
+      return current;
+    }
+    current = resolveAliasedSymbol(typescript, checker, next);
+  }
+  return current;
+}
+
 /**
  * Extracts default values from `Component.defaultProps = {...}` and `static defaultProps = {...}`
  * patterns.
@@ -1478,8 +1503,11 @@ export function serializeComponentDoc(
   }
   const excluded = getBulkSourceExclusions(typescript, allProperties);
 
+  // Defaults live on the implementation, not on `export const Button = Inner` re-bindings.
+  const implementation = followVariableReferences(typescript, checker, resolved);
+
   // Collect defaults: destructuring > defaultProps > JSDoc (in extractPropItem)
-  const defaultsMap = extractDestructuringDefaults(typescript, resolved, checker);
+  const defaultsMap = extractDestructuringDefaults(typescript, implementation, checker);
 
   // Fallback: when the symbol resolves to a .d.ts file (e.g. package imports in
   // monorepos), .d.ts declarations have no function bodies so extractDestructuringDefaults
@@ -1496,7 +1524,7 @@ export function serializeComponentDoc(
   }
 
   // Also check for defaultProps pattern (legacy, deprecated in React 19)
-  const staticDefaults = extractStaticDefaultProps(typescript, checker, resolved);
+  const staticDefaults = extractStaticDefaultProps(typescript, checker, implementation);
   for (const [key, value] of staticDefaults) {
     if (!defaultsMap.has(key)) {
       defaultsMap.set(key, value);

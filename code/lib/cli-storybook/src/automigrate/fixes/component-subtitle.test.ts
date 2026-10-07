@@ -66,7 +66,7 @@ describe('component-subtitle', () => {
     expect(await checkFix(componentSubtitle, { ...options, storiesPaths: [docsPath] })).toBeNull();
   });
 
-  it('moves componentSubtitle to docs.subtitle in the preview and meta, where the Subtitle block read it', async () => {
+  it('moves componentSubtitle to docs.subtitle in the preview, meta, and story', async () => {
     const { failures, preview, story } = await migrate({
       preview: "export default { parameters: { componentSubtitle: 'Preview' } };",
       story: [
@@ -88,8 +88,26 @@ describe('component-subtitle', () => {
           subtitle: 'Meta'
         }
       } };
-      export const Primary = { parameters: { componentSubtitle: 'Story' } };"
+      export const Primary = { parameters: { docs: {
+        subtitle: 'Story'
+      } } };"
     `);
+  });
+
+  it('keeps an explicit meta subtitle and migrates a story subtitle on the first run only', async () => {
+    const source = [
+      "export default { parameters: { componentSubtitle: 'Legacy meta', docs: { subtitle: 'Current meta' } } };",
+      "export const Primary = { parameters: { componentSubtitle: 'Legacy story' } };",
+    ].join('\n');
+    const first = await migrate({ story: source });
+    const second = await migrate({ story: first.story as string });
+
+    expect(first.failures).toEqual([]);
+    expect(first.story).toContain("subtitle: 'Current meta'");
+    expect(first.story).toContain("subtitle: 'Legacy story'");
+    expect(first.story).not.toContain('componentSubtitle');
+    expect(second.failures).toEqual([]);
+    expect(second.story).toBe(first.story);
   });
 
   it('keeps an existing docs.subtitle, which the Subtitle block preferred', async () => {

@@ -7,8 +7,6 @@ import type { Fix } from '../types.ts';
 const legacyPath = ['parameters', 'componentSubtitle'];
 const subtitlePath = ['parameters', 'docs', 'subtitle'];
 
-// The Subtitle block read the preview and meta parameters only, and preferred `docs.subtitle`,
-// so an existing one keeps winning.
 const migrate = (object: CsfObject) => {
   if (!object.get(legacyPath)) {
     return;
@@ -32,7 +30,7 @@ export const componentSubtitle: Fix = {
     {
       filter: { kind: ['preview', 'story'], code: 'componentSubtitle' },
       editConfig: migrate,
-      editCsf: (csf) => csf.objects({ stories: false }).forEach(migrate),
+      editCsf: (csf) => csf.objects().forEach(migrate),
     },
   ],
 };

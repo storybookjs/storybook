@@ -53,7 +53,7 @@ describe('tag-filter-api', () => {
       [mainConfigPath]:
         'export default { tags: { internal: { excludeFromSidebar: true, excludeFromDocsStories: true } } };',
       [managerConfigPath]:
-        'api.experimental_setFilters({ internal: (item) => !item.tags?.includes("internal") });\napi.experimental_setFilter("other", () => true);',
+        'import { addons } from "storybook/manager-api";\nconst unrelatedApi = { experimental_setFilter() { return "unchanged" } };\nunrelatedApi.experimental_setFilter();\naddons.register("test", (api) => { api.experimental_setFilters({ internal: (item) => !item.tags?.includes("internal") });\napi.experimental_setFilter("other", () => true); });',
       [storyPath]:
         'export const example = { play: async ({ api }) => api.experimental_setFilter("x", () => true) };',
     });
@@ -63,11 +63,16 @@ describe('tag-filter-api', () => {
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toContain('hideFromSidebar: true');
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toContain('hideFromAutodocs: true');
     expect(fs.readFileSync(mainConfigPath, 'utf8')).not.toContain('excludeFrom');
-    expect(fs.readFileSync(managerConfigPath, 'utf8')).toBe(
-      'api.setFilters({ internal: (item) => !item.tags?.includes("internal") });\napi.setFilter("other", () => true);'
+    expect(fs.readFileSync(managerConfigPath, 'utf8')).toContain('api.setFilters(');
+    expect(fs.readFileSync(managerConfigPath, 'utf8')).toContain('api.setFilter(');
+    expect(fs.readFileSync(managerConfigPath, 'utf8')).toContain(
+      'unrelatedApi.experimental_setFilter()'
     );
-    expect(fs.readFileSync(storyPath, 'utf8')).toContain('api.setFilter("x"');
-    expect(fs.readFileSync(storyPath, 'utf8')).not.toContain('experimental_setFilter');
+    expect(fs.readFileSync(storyPath, 'utf8')).toContain('api.experimental_setFilter("x"');
+
+    const migratedManager = fs.readFileSync(managerConfigPath, 'utf8');
+    expect(await runFix(tagFilterApi, { ...options, result: {} })).toEqual([]);
+    expect(fs.readFileSync(managerConfigPath, 'utf8')).toBe(migratedManager);
   });
 
   it('keeps string literals and longer identifiers', async () => {
@@ -77,7 +82,8 @@ describe('tag-filter-api', () => {
       [storyPath]: [
         "const title = 'API/experimental_setFilter';",
         'const experimental_setFilterExtra = true;',
-        'api.experimental_setFilter("x", () => true);',
+        'const unrelatedApi = { experimental_setFilter() { return "unchanged" } };',
+        'unrelatedApi.experimental_setFilter();',
         "api['experimental_setFilters'](() => true);",
       ].join('\n'),
     });
@@ -87,7 +93,7 @@ describe('tag-filter-api', () => {
     const story = fs.readFileSync(storyPath, 'utf8') as string;
     expect(story).toContain("const title = 'API/experimental_setFilter';");
     expect(story).toContain('const experimental_setFilterExtra = true;');
-    expect(story).toContain('api.setFilter("x", () => true);');
+    expect(story).toContain('unrelatedApi.experimental_setFilter();');
     expect(story).toContain("api['experimental_setFilters'](() => true);");
   });
 
@@ -96,6 +102,8 @@ describe('tag-filter-api', () => {
       [mainConfigPath]: 'export default { stories: [] };',
       [managerConfigPath]: 'export {};',
       [storyPath]: [
+        'import { useStorybookApi } from "storybook/manager-api";',
+        'const api = useStorybookApi();',
         'const config = { experimental_setFilter: 1, setFilter: 2 };',
         'api.experimental_setFilter("x", () => true);',
         'api?.experimental_setFilters({});',
@@ -140,7 +148,8 @@ describe('tag-filter-api', () => {
         '};',
       ].join('\n'),
       [managerConfigPath]: 'export {};',
-      [storyPath]: 'value.toString();\napi.experimental_setFilter("x", () => true);',
+      [storyPath]:
+        'import { useStorybookApi } from "storybook/manager-api";\nconst api = useStorybookApi();\nvalue.toString();\napi.experimental_setFilter("x", () => true);',
     });
 
     const failures = await runFix(tagFilterApi, { ...options, result: {} });

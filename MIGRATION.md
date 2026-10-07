@@ -37,6 +37,7 @@
   - [Internal toolset inputs must be strict objects](#internal-toolset-inputs-must-be-strict-objects)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
+  - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
@@ -1174,7 +1175,7 @@ If you used it to mock the addon channel in tests or in non-browser environments
 +import { Channel } from 'storybook/internal/channels';
 
 -addons.setChannel(mockChannel());
-+addons.setChannel(new Channel());
++addons.setChannel(new Channel({}));
 ```
 
 ### React: Require v18 and up

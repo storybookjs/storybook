@@ -14,7 +14,7 @@ import {
   SAVE_STORY_RESPONSE,
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
-import { storyNameFromExport, toId } from 'storybook/internal/csf';
+import { storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { isExampleStoryId, telemetry } from 'storybook/internal/telemetry';

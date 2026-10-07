@@ -1,3 +1,5 @@
+import { stat } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -11,6 +13,13 @@ import {
 import { MockUniversalStore } from '../../shared/universal-store/mock.ts';
 
 import { getService } from '../../shared/open-service/server.ts';
+import type { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
+import {
+  buildIndexBaselineStatuses,
+  ChangeDetectionService,
+  mergeChangeDetectionStatuses,
+  mergeStatusValues,
+} from './change-detection-service.ts';
 import {
   buildReverseIndex,
   createDeferred,
@@ -20,22 +29,16 @@ import {
   installDependencyGraphMocks,
   installModuleGraphQueryMock,
 } from './change-detection.test-helpers.ts';
-import {
-  buildIndexBaselineStatuses,
-  ChangeDetectionService,
-  mergeChangeDetectionStatuses,
-  mergeStatusValues,
-} from './change-detection-service.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
+import type { GitDiffResult } from './GitDiffProvider.ts';
+import { GitDiffProvider } from './GitDiffProvider.ts';
+import type { IndexBaselineService } from './IndexBaselineService.ts';
 import {
   getChangeDetectionReadiness,
   resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
 } from './readiness.ts';
-import type { GitDiffResult } from './GitDiffProvider.ts';
-import { GitDiffProvider } from './GitDiffProvider.ts';
-import type { IndexBaselineService } from './IndexBaselineService.ts';
-import type { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 
+vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../../shared/open-service/server.ts', () => ({
   getService: vi.fn(),
@@ -56,12 +59,10 @@ vi.mock(
 );
 
 class MockGitDiffProvider extends GitDiffProvider {
-  readonly getChangedFilesMock = vi.fn(
-    async (): Promise<GitDiffResult> => ({
-      changed: new Set(),
-      new: new Set(),
-    })
-  );
+  readonly getChangedFilesMock = vi.fn(async (): Promise<GitDiffResult> => ({
+    changed: new Set(),
+    new: new Set(),
+  }));
 
   readonly getRepoRootMock = vi.fn(async (): Promise<string> => '/repo');
 
@@ -134,6 +135,8 @@ describe('ChangeDetectionService', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    // Fixture paths do not exist; real fs I/O would also not settle under fake timers.
+    vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
     internal_resetChangeDetectionReadiness();
     vi.mocked(logger.info).mockImplementation(() => undefined);
     vi.mocked(logger.warn).mockImplementation(() => undefined);
@@ -608,9 +611,11 @@ describe('ChangeDetectionService', () => {
     await service.dispose();
   });
 
-  it('does not rescan when an out-of-graph file changes', async () => {
-    // orphan.ts is not imported by any story, so the graph revision must not advance and no
-    // change-detection scan should run off the back of its file event.
+  it('rescans when a file changes even if it is out of the module graph', async () => {
+    // Change detection is driven by git diffs. A working-tree edit must trigger a rescan even when
+    // the module graph classifies the path as out-of-graph (empty bumpedStoryFiles), e.g. a Vite
+    // watcher path that does not match reverse-index keys. graphRevision stays put for review
+    // staleness; fileActivityRevision is what wakes the scan.
     const reverseIndex = buildReverseIndex([
       ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
     ]);
@@ -644,7 +649,7 @@ describe('ChangeDetectionService', () => {
     emitFileChange({ kind: 'change', path: '/repo/src/orphan.ts' });
     await vi.runAllTimersAsync();
 
-    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
+    expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
   });
@@ -1085,10 +1090,10 @@ describe('ChangeDetectionService', () => {
     await expect(service.dispose()).resolves.toBeUndefined();
   });
 
-  it('rescans the working tree when the module graph revision advances', async () => {
+  it('rescans the working tree when file activity advances', async () => {
     // Graph-side reconciliation (replaying add/unlink, the refreshInFlight guard) is covered by
-    // module-graph-engine.test.ts; here we assert the status side of the seam: a graph revision
-    // bump (from a file change or story-index reconciliation) re-runs the git-diff scan.
+    // module-graph-engine.test.ts; here we assert the status side of the seam: a file-activity
+    // bump (from any processed file change, in-graph or not) re-runs the git-diff scan.
     const reverseIndex = buildReverseIndex([]);
     installDependencyGraphMocks(reverseIndex);
 

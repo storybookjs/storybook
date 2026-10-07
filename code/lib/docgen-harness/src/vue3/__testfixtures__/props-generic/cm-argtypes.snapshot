@@ -1,0 +1,34 @@
+{
+  "items": {
+    "description": "Items rendered in order.",
+    "name": "items",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "T[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "T[]",
+    },
+  },
+  "selected": {
+    "description": "Currently selected item.",
+    "name": "selected",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "T",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "T | undefined",
+    },
+  },
+}

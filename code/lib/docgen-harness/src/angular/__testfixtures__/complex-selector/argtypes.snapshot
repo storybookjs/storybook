@@ -1,0 +1,20 @@
+{
+  "emphasis": {
+    "description": "
+",
+    "name": "emphasis",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+}

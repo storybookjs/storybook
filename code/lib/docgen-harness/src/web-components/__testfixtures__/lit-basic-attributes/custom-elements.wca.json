@@ -1,0 +1,68 @@
+{
+  "version": "experimental",
+  "tags": [
+    {
+      "name": "lit-basic-attributes",
+      "description": "Panel with string, number and boolean attributes.",
+      "attributes": [
+        {
+          "name": "label",
+          "description": "Text shown in the component.",
+          "type": "string",
+          "default": "'Basic label'"
+        },
+        {
+          "name": "count",
+          "description": "Number of items to display.",
+          "type": "number",
+          "default": "2"
+        },
+        {
+          "name": "disabled",
+          "description": "Whether the panel is disabled.",
+          "type": "boolean",
+          "default": "false"
+        },
+        {
+          "name": "is-open",
+          "description": "Whether the panel is open.",
+          "type": "boolean",
+          "default": "false"
+        }
+      ],
+      "properties": [
+        {
+          "name": "label",
+          "attribute": "label",
+          "description": "Text shown in the component.",
+          "type": "string",
+          "default": "'Basic label'"
+        },
+        {
+          "name": "count",
+          "attribute": "count",
+          "description": "Number of items to display.",
+          "type": "number",
+          "default": "2"
+        },
+        {
+          "name": "disabled",
+          "attribute": "disabled",
+          "description": "Whether the panel is disabled.",
+          "type": "boolean",
+          "default": "false"
+        },
+        {
+          "name": "isOpen",
+          "attribute": "is-open",
+          "description": "Whether the panel is open.",
+          "type": "boolean",
+          "default": "false"
+        }
+      ],
+      "events": [],
+      "slots": [],
+      "cssProperties": []
+    }
+  ]
+}

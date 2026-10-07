@@ -9,6 +9,20 @@ For components that make network requests (e.g. fetching data from a REST or Gra
 
 The [MSW addon](https://storybook.js.org/addons/msw-storybook-addon/) brings this functionality into Storybook, allowing you to mock API requests in your stories. Below is an overview of how to set up and use the addon.
 
+<Callout variant="warning" icon="⚠️">
+
+The instructions and snippets here are for **v3 of the MSW addon**. If you're using v2, please refer to an [older version of this page](../../../release-9-1/docs/writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) for guidance.
+
+After updating `msw-storybook-addon` to v3, you can migrate your configuration and stories from v2 to v3 automatically using the codemod:
+
+```shell
+npx msw-storybook-migrate
+```
+
+For more information, see the [MSW migration guide](https://github.com/mswjs/msw-storybook-addon/blob/main/MIGRATION.md#from-2xx-to-3xx).
+
+</Callout>
+
 ## Set up the MSW addon
 
 First, if necessary, run this command to install MSW and the MSW addon:
@@ -33,7 +47,7 @@ Then ensure the [`staticDirs`](../../api/main-config/main-config-static-dirs.mdx
 
 <CodeSnippets path="main-config-static-dirs.md" />
 
-Finally, initialize the addon and apply it to all stories with a [project-level loader](../loaders.mdx#global-loaders):
+Finally, initialize the addon and register it for all stories with a [project-level loader](../loaders.mdx#global-loaders) (if using CSF 3) or by adding the addon to `preview.ts` (if using CSF Next):
 
 <CodeSnippets path="msw-addon-initialize.md" />
 
@@ -85,4 +99,6 @@ The MSW addon allows you to write stories that use MSW to mock the GraphQL reque
 
 ## Configuring MSW for stories
 
-In the examples above, note how each story is configured with `parameters.msw` to define the request handlers for the mock server. Because it uses parameters in this way, it can also be configured at the [component](../parameters.mdx#component-parameters) or even [project](../parameters.mdx#global-parameters) level, allowing you to share the same mock server configuration across multiple stories.
+In the examples above, note how each story is configured using `beforeEach` on the stories to define the request handlers for the mock server. You can also use `beforeEach` at the component (meta) level to apply handlers to all stories in that file or at the project level (in `preview.ts`) to apply them to all stories in the project.
+
+If using CSF 3, you can also use the `msw` parameter to define handlers for a story, component, or project. See the [older version of this page](../../../release-9-1/docs/writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) for examples of using the `msw` parameter.

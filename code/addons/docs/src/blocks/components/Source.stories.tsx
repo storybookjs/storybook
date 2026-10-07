@@ -4,9 +4,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Source, SourceError } from './Source';
 
-const meta: Meta<typeof Source> = {
+const meta = {
   component: Source,
-};
+} satisfies Meta<typeof Source>;
 
 export default meta;
 
@@ -90,4 +90,25 @@ export const JSXSmallViewport: Story = {
       <Source {...args} />
     </div>
   ),
+};
+
+/**
+ * A snippet the provider flagged as an incomplete example. The caveat sits top-right, clear of the
+ * copy action bar in the bottom-right corner.
+ */
+export const IncompleteSnippet: Story = {
+  args: {
+    code: `import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LocalComponent],
+  template: \`<sb-local-component [heading]="'Declared here'"></sb-local-component>\`,
+})
+export class DemoComponent {}`,
+    language: 'typescript',
+    format: false,
+    warning:
+      'LocalComponent is declared in the story file, so the snippet references it without importing it.',
+  },
 };

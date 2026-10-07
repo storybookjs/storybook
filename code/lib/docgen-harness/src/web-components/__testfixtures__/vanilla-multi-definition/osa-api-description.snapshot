@@ -1,0 +1,16 @@
+## Attributes
+
+```
+export type MultiBetaAttributes = {
+  'beta-label'?: string;
+}
+```
+
+## Properties
+
+```
+export type MultiBetaProperties = {
+  /** Beta label. */
+  betaLabel?: unknown;
+}
+```

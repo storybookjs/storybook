@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -88,6 +90,7 @@ vi.mock('storybook/internal/common', () => {
     versions: {
       storybook: '8.0.0',
       '@storybook/addon-docs': '8.0.0',
+      '@storybook/addon-mcp': '8.0.0',
     },
     frameworkToRenderer: vi.fn(),
   };
@@ -127,6 +130,8 @@ describe('add', () => {
     { input: '@storybook/addon-docs@~4', expected: '@storybook/addon-docs@~4' },
     { input: '@storybook/addon-docs@next', expected: '@storybook/addon-docs@next' },
     { input: '@storybook/addon-docs', expected: '@storybook/addon-docs@^8.0.0' }, // takes it from the versions file
+    // Core monorepo package: pins to versions.storybook, not registry latest (mocked as 1.0.0)
+    { input: '@storybook/addon-mcp', expected: '@storybook/addon-mcp@^8.0.0' },
   ];
 
   test.each(testData)('$input', async ({ input, expected }) => {
@@ -185,5 +190,21 @@ describe('add (extra)', () => {
       logger: expect.any(Object),
       prompt: expect.any(Object),
     });
+  });
+
+  test('logs the main config path relative to the working directory', async () => {
+    MockedMainConfigFileHelper.getStorybookData.mockReturnValueOnce({
+      ...MockedMainConfigFileHelper.getStorybookData(),
+      mainConfigPath: join(process.cwd(), 'packages', 'ui', '.storybook', 'main.ts'),
+    });
+
+    await add('@storybook/addon-docs', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: true,
+    });
+
+    expect(logger.log).toHaveBeenCalledWith(
+      `Adding '@storybook/addon-docs' to the "addons" field in ${join('packages', 'ui', '.storybook', 'main.ts')}`
+    );
   });
 });

@@ -1,0 +1,14 @@
+{
+  "id": "function-slot-bail",
+  "name": "FunctionSlotBailPanel",
+  "path": "__PATH__",
+  "stories": {
+    "forms-function-slot-bail--primary": {
+      "description": "The default slot renders, but the scoped footer slot bails the whole snippet.",
+      "id": "forms-function-slot-bail--primary",
+      "name": "Primary",
+      "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
+    },
+  },
+}

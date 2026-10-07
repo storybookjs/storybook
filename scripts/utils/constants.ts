@@ -23,3 +23,11 @@ export const JUNIT_DIRECTORY = join(ROOT_DIRECTORY, 'test-results');
 
 export const LOCAL_REGISTRY_URL = 'http://localhost:6001';
 export const SCRIPT_TIMEOUT = 5 * 60 * 1000;
+
+/**
+ * npm below this version silently ignores `NPM_CONFIG_MIN_RELEASE_AGE`. 11.17+ is required for
+ * `min-release-age-exclude`, which templates with `minAgeGateExemptions` rely on during npx/npm
+ * scaffolds. Lives here rather than in `sandbox/utils/yarn.ts` so the CI config generator can read
+ * it without loading the sandbox generator, which needs built core packages at runtime.
+ */
+export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.17.0';

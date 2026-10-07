@@ -1,0 +1,4 @@
+<sb-decorator-generic
+    [items]="['alpha', 'beta']"
+    [selected]="'alpha'">
+</sb-decorator-generic>

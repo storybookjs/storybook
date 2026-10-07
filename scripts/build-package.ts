@@ -20,6 +20,7 @@ import picocolors from 'picocolors';
 import prompts from 'prompts';
 import windowSize from 'window-size';
 
+import { isBuildEntries } from './build/entry-configs.ts';
 import { ROOT_DIRECTORY } from './utils/constants.ts';
 import { findMostMatchText } from './utils/diff.ts';
 import { getCodeWorkspaces } from './utils/workspace.ts';
@@ -36,7 +37,7 @@ async function run() {
       defaultValue: boolean;
       suffix: string;
       value?: unknown;
-      location?: string;
+      location: string;
     }
   > = packages
     .map((pkg) => {
@@ -50,13 +51,12 @@ async function run() {
         defaultValue: false,
       };
     })
-    .reduce(
-      (acc, next) => {
-        acc[next.name] = next;
-        return acc;
-      },
-      {} as Record<string, { name: string; defaultValue: boolean; suffix: string }>
-    );
+    .reduce<
+      Record<string, { name: string; defaultValue: boolean; suffix: string; location: string }>
+    >((acc, next) => {
+      acc[next.name] = next;
+      return acc;
+    }, {});
 
   const main = program
     .version('5.0.0')
@@ -104,19 +104,36 @@ async function run() {
     process.exit(1);
   }
 
+  // Workspaces without build-config (e.g. agent-eval) appear in yarn workspaces but
+  // cannot be built by this script. Filter --all silently; reject explicit picks.
+  const nonBuildable = selection.filter((item) => !isBuildEntries(item.name));
+  if (nonBuildable.length && !opts.all) {
+    for (const item of nonBuildable) {
+      process.stderr.write(
+        `${picocolors.red('Error')}: ${picocolors.cyan(
+          item.name
+        )} has no build entries and cannot be built with this script.\n`
+      );
+    }
+    process.exit(1);
+  }
+  selection = selection.filter((item) => isBuildEntries(item.name));
+
+  const buildablePackages = packages.filter((pkg) => isBuildEntries(pkg.name));
+
   if (!selection.length) {
     selection = await prompts(
       [
-        watchMode === undefined && {
-          type: 'toggle',
+        {
+          type: watchMode === undefined && 'toggle',
           name: 'watch',
           message: 'Start in watch mode',
           initial: false,
           active: 'yes',
           inactive: 'no',
         },
-        prodMode === undefined && {
-          type: 'toggle',
+        {
+          type: prodMode === undefined && 'toggle',
           name: 'prod',
           message: 'Start in production mode',
           initial: false,
@@ -131,7 +148,7 @@ async function run() {
           hint: 'You can also run directly with package name like `yarn build storybook`, or `yarn build --all` for all packages!',
           // @ts-expect-error @types incomplete
           optionsPerPage: windowSize.height - 3, // 3 lines for extra info
-          choices: packages.map(({ name: key }) => ({
+          choices: buildablePackages.map(({ name: key }) => ({
             value: key,
             title: tasks[key].name || key,
             selected: (tasks[key] && tasks[key].defaultValue) || false,

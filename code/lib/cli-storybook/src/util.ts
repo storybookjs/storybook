@@ -1,6 +1,13 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManager,
+  getPkgPrNewPackageSpecifier,
+  getProjectRoot,
+  isPkgPrNewVersionSpecifier,
+  isSatelliteAddon,
+  versions,
+} from 'storybook/internal/common';
 import {
   experimental_loadStorybook,
   getStoriesPathsFromConfig,
@@ -37,6 +44,7 @@ interface UpgradeConfig {
   readonly isCLIPrerelease: boolean;
   readonly isCLIExactPrerelease: boolean;
   readonly isCLIExactLatest: boolean;
+  readonly storybookVersionSpecifier?: string;
 }
 
 /** Result of successfully collecting project data */
@@ -51,7 +59,6 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string | null;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
-  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -145,7 +152,10 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @returns True if the version is a canary release
  */
 const isCanaryVersion = (version: string): boolean =>
-  version.startsWith('0.0.0') || version.startsWith('portal:') || version.startsWith('workspace:');
+  version.startsWith('0.0.0') ||
+  version.startsWith('portal:') ||
+  version.startsWith('workspace:') ||
+  isPkgPrNewVersionSpecifier(version);
 
 /**
  * Validates that a version string is not empty or undefined
@@ -205,6 +215,9 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       cwd,
       dot: true,
       gitignore: true,
+      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
+      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      ignore: ['**/node_modules/**'],
       absolute: true,
       onlyDirectories: true,
       followSymbolicLinks: false,
@@ -296,14 +309,17 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
+      versionSpecifier,
       versionInstalled,
-      hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
     validateVersion(versionInstalled);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
+    const isCanary =
+      isCanaryVersion(currentCLIVersion) ||
+      isCanaryVersion(versionInstalled) ||
+      isPkgPrNewVersionSpecifier(versionSpecifier);
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
@@ -359,10 +375,10 @@ const processProject = async ({
       currentCLIVersion,
       latestCLIVersionOnNPM,
       isCLIExactPrerelease,
+      storybookVersionSpecifier: versionSpecifier,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
-      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));
@@ -441,6 +457,15 @@ export const generateUpgradeSpecs = async (
   // Generate core Storybook upgrades
   const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
     const versionSpec = dependencies[dependency];
+
+    const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+      dependency,
+      config.storybookVersionSpecifier
+    );
+
+    if (pkgPrNewSpecifier) {
+      return `${dependency}@${pkgPrNewSpecifier}`;
+    }
 
     if (!versionSpec) {
       return `${dependency}@${versions[dependency]}`;
@@ -743,13 +768,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(
-      ...globbySync(matchers, {
-        gitignore: true,
-        absolute: true,
-        cwd: directory,
-      })
-    );
+    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
+    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
+    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;

@@ -1,5 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 
+import type { JsPackageManager } from 'storybook/internal/common';
+
 import { autoblock } from './index.ts';
 import { type BlockerModule, createBlocker } from './types.ts';
 
@@ -79,4 +81,22 @@ test('1 fail', async () => {
 
   expect(result?.[0].result).toEqual(false);
   expect(result?.[1].result).toEqual({ bad: true });
+});
+
+test('no blocker fires for a @storybook/nextjs project (deprecation stays soft in SB11)', async () => {
+  const nextjsProjectPackageManager = {
+    getModulePackageJSON: vi.fn(async (packageName: string) =>
+      packageName === '@storybook/nextjs' ? { version: '11.0.0' } : null
+    ),
+    getInstalledVersion: vi.fn(async () => null),
+    isPackageInstalled: vi.fn(async () => false),
+    getAllDependencies: vi.fn(() => ({ storybook: '10.0.0' })),
+  } as unknown as JsPackageManager;
+
+  const results = await autoblock({
+    ...baseOptions,
+    packageManager: nextjsProjectPackageManager,
+  });
+
+  expect(results?.every(({ result }) => result === false || result == null)).toBe(true);
 });

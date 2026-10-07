@@ -1,0 +1,98 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "DecoratorGenericComponent",
+      "id": "component-DecoratorGenericComponent-6a48e595066efee336431d0609944fee1702f1b7de4acb15246287579cc8b6dfaf0b073ce8971024f1ce9c437f6daeb72a9ae81b414b7c37dc3eaf55010551c2",
+      "file": "decorator-generic.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-decorator-generic",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<ul>@for (item of items; track $index) {<li>{{ item }}</li>}</ul>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "items",
+          "defaultValue": "[]",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 8,
+          "type": "T[]",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "selected",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 10,
+          "type": "T",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, Input } from '@angular/core';\n\n@Component({\n  selector: 'sb-decorator-generic',\n  template: '<ul>@for (item of items; track $index) {<li>{{ item }}</li>}</ul>',\n})\nexport class DecoratorGenericComponent<T> {\n  @Input() items: T[] = [];\n\n  @Input() selected?: T;\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "decorator-generic.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "DecoratorGenericComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/3",
+        "status": "low"
+      }
+    ]
+  }
+}

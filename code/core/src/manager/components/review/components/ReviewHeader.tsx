@@ -1,6 +1,6 @@
 import React, { type FC, type ReactNode, useRef } from 'react';
 
-import { useId } from '@react-aria/utils';
+import { useId } from 'react-aria/useId';
 import { styled } from 'storybook/theming';
 import { useLandmark } from '../../../hooks/useLandmark.ts';
 

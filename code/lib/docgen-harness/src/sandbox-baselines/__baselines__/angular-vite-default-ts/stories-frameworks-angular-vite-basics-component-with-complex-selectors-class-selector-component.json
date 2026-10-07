@@ -1,0 +1,48 @@
+{
+  "argTypes": {
+    "el": {
+      "name": "el",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "ElementRef"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "generatedTemplate": {
+      "name": "generatedTemplate",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "selectors": {
+      "name": "selectors",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-complex-selectors-class-selector-component",
+  "jsDocTags": {},
+  "name": "ClassSelectorComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-complex-selectors/class-selector.component.stories.ts"
+}

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 import { getCodeWorkspaces } from '../utils/workspace.ts';
@@ -22,12 +22,15 @@ const CI_CONCURRENCY = 4;
 const HEAVY_WORKSPACES = [
   'storybook',
   '@storybook/vue3',
+  '@storybook/docgen-harness',
   '@storybook/svelte',
   '@storybook/angular',
 ];
 
 function getCheckCommand(name: string, cwd: string) {
-  if (name === '@storybook/vue3') {
+  // The docgen-harness needs vue-tsc for its .vue fixtures, mirroring its project.json
+  // check override (plain tsc cannot load SFCs and fails with TS2307 on every import).
+  if (name === '@storybook/vue3' || name === '@storybook/docgen-harness') {
     return `npx vue-tsc --noEmit --project ${join(cwd, 'tsconfig.json')}`;
   }
   if (name === '@storybook/svelte') {
@@ -37,7 +40,7 @@ function getCheckCommand(name: string, cwd: string) {
   return `node ${script} --cwd ${cwd}`;
 }
 
-export const check: Task = {
+export const check: Task<MonorepoDetails> = {
   description: 'Typecheck the source code of the monorepo',
   async ready() {
     return false;

@@ -175,6 +175,9 @@ describe('storybook type system', () => {
           kind?: Kind;
           inlinedNumericLiteralUnion: 0 | 1;
           enumUnion: EnumUnion;
+          nullableLiteralUnion: 'red' | 'blue' | null;
+          nullableLiteralUnionWithUndefined: 'top' | 'bottom' | null | undefined;
+          nullableScalarUnion: string | number | null;
         }
         export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
         "
@@ -208,6 +211,40 @@ describe('storybook type system', () => {
               {
                 "name": "other",
                 "value": "NumericEnum"
+              }
+            ]
+          },
+          "nullableLiteralUnion": {
+            "raw": "'red' | 'blue' | null",
+            "name": "enum",
+            "value": [
+              "red",
+              "blue",
+              null
+            ]
+          },
+          "nullableLiteralUnionWithUndefined": {
+            "raw": "'top' | 'bottom' | null | undefined",
+            "name": "enum",
+            "value": [
+              "top",
+              "bottom",
+              null
+            ]
+          },
+          "nullableScalarUnion": {
+            "raw": "string | number | null",
+            "name": "union",
+            "value": [
+              {
+                "name": "string"
+              },
+              {
+                "name": "number"
+              },
+              {
+                "name": "other",
+                "value": "null"
               }
             ]
           }

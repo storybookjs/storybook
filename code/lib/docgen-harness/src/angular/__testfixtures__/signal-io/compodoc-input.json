@@ -1,0 +1,159 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "SignalIoComponent",
+      "id": "component-SignalIoComponent-d8bd6334b404ea07eec08c3f9c73a057d44261ff47d1103ebfa74e8bfe89d8b14daf6ddc3389fb68b81ec37698cba1a3ef25a5876feddac344fd9adde9970910",
+      "file": "signal-io.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-signal-io",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span>{{ label() }} {{ count() }} {{ step() }} {{ disabled() }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "name": "count",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "number",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 11,
+          "rawdescription": "\n",
+          "required": true
+        },
+        {
+          "name": "disabled",
+          "coverageIgnore": false,
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "boolean",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 15,
+          "rawdescription": "\n",
+          "required": false
+        },
+        {
+          "name": "label",
+          "coverageIgnore": false,
+          "defaultValue": "''",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "<p>Visible caption next to the control.</p>\n",
+          "line": 9,
+          "rawdescription": "\nVisible caption next to the control.",
+          "required": false
+        },
+        {
+          "name": "increment",
+          "coverageIgnore": false,
+          "defaultValue": "1",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "number",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 13,
+          "rawdescription": "\n",
+          "required": false
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "toggled",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "boolean",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 17,
+          "rawdescription": "\n",
+          "required": false
+        }
+      ],
+      "propertiesClass": [
+        {
+          "name": "version",
+          "coverageIgnore": false,
+          "defaultValue": "'v1'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 19,
+          "rawdescription": "\n",
+          "modifierKind": [148]
+        }
+      ],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, booleanAttribute, input, output } from '@angular/core';\n\n@Component({\n  selector: 'sb-signal-io',\n  template: '<span>{{ label() }} {{ count() }} {{ step() }} {{ disabled() }}</span>',\n})\nexport class SignalIoComponent {\n  /** Visible caption next to the control. */\n  label = input('');\n\n  count = input.required<number>();\n\n  step = input(1, { alias: 'increment' });\n\n  disabled = input(false, { transform: booleanAttribute });\n\n  toggled = output<boolean>();\n\n  readonly version = 'v1';\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 14,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "signal-io.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "SignalIoComponent",
+        "coveragePercent": 14,
+        "coverageCount": "1/7",
+        "status": "low"
+      }
+    ]
+  }
+}

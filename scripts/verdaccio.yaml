@@ -137,10 +137,6 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/addon-svelte-csf':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/create-svelte-with-args':
     access: $all
     publish: $all
@@ -150,10 +146,6 @@ packages:
     publish: $all
     proxy: npmjs
   '@storybook/testing-library':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/test-runner':
     access: $all
     publish: $all
     proxy: npmjs
@@ -186,14 +178,6 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/addon-mcp':
-    access: $all
-    publish: $all
-    proxy: npmjs
-  '@storybook/mcp':
-    access: $all
-    publish: $all
-    proxy: npmjs
 
   # storybook packages are NOT proxied to global registry
   # allowing us to republish any version during tests
@@ -218,6 +202,10 @@ packages:
     publish: $all
 
   'eslint-plugin-storybook':
+    access: $all
+    publish: $all
+
+  'vite-plugin-storybook-nextjs':
     access: $all
     publish: $all
 

@@ -21,7 +21,6 @@ export default preview;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonDocs from '@storybook/addon-docs';
-import addonDocs from '@storybook/addon-docs';
 
 export default definePreview({
   addons: [addonDocs()],

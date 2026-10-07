@@ -1,0 +1,34 @@
+{
+  "default": {
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "icon": {
+    "description": undefined,
+    "name": "icon",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ size: unknown; fill: unknown }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ size: unknown; fill: unknown }",
+    },
+  },
+}

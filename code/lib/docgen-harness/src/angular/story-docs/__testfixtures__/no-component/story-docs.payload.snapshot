@@ -1,0 +1,12 @@
+{
+  "id": "no-component",
+  "name": "no-component",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-no-component--primary": {
+      "description": "Documented without a component, so there is nothing to derive a snippet from.",
+      "id": "storydocs-no-component--primary",
+      "name": "Primary",
+    },
+  },
+}

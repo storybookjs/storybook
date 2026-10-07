@@ -1,3 +1,5 @@
+import { stat } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -13,6 +15,7 @@ import {
 import { ModuleGraphFailureError } from '../errors.ts';
 import { ModuleGraphEngine } from './module-graph-engine.ts';
 
+vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./dependency-graph/dependency-graph-builder.ts', { spy: true });
@@ -27,7 +30,8 @@ function setup(options?: {
 }) {
   const callbacks = {
     onSnapshot: vi.fn(),
-    onUpdate: vi.fn(),
+    onIndex: vi.fn(),
+    onBump: vi.fn(),
     onError: vi.fn(),
     onUnavailable: vi.fn(),
   };
@@ -49,6 +53,8 @@ function setup(options?: {
 describe('ModuleGraphEngine', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Fixture paths do not exist; real fs I/O would also not settle under fake timers.
+    vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
     vi.mocked(logger.info).mockImplementation(() => undefined);
     vi.mocked(logger.warn).mockImplementation(() => undefined);
     vi.mocked(logger.error).mockImplementation(() => undefined);
@@ -155,6 +161,42 @@ describe('ModuleGraphEngine', () => {
     );
   });
 
+  it('whenSettled waits for the initial build, so a caller after start() observes a ready graph', async () => {
+    const reverseIndex = buildReverseIndex([
+      ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+    ]);
+    const buildDeferred = createDeferred<void>();
+    const { buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockImplementation(async () => {
+      await buildDeferred.promise;
+      return { reverseIndex, graph: new Map() };
+    });
+
+    const { service, adapter } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+      ]),
+    });
+
+    service.start(adapter);
+
+    let settled = false;
+    void service.whenSettled().then(() => {
+      settled = true;
+    });
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(settled).toBe(false);
+    expect(service.hasGraph()).toBe(false);
+
+    buildDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    expect(settled).toBe(true);
+    expect(service.hasGraph()).toBe(true);
+  });
+
   it('mirrors an update after each file-change patch settles, but not for the initial build', async () => {
     installDependencyGraphMocks(buildReverseIndex([]));
     const { service, adapter, emitFileChange, callbacks } = setup({
@@ -165,13 +207,89 @@ describe('ModuleGraphEngine', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+    expect(callbacks.onIndex).not.toHaveBeenCalled();
+    expect(callbacks.onBump).not.toHaveBeenCalled();
 
     emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
     emitFileChange({ kind: 'change', path: '/repo/src/C.tsx' });
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onUpdate).toHaveBeenCalledTimes(2);
+    expect(callbacks.onIndex).toHaveBeenCalledTimes(2);
+  });
+
+  it('still bumps file activity when a patch leaves the index untouched and bumps no story', async () => {
+    const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+    const { service, adapter, emitFileChange, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+      ]),
+    });
+    patchSpy.mockImplementation(async () => undefined);
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    // A file the graph has never seen: nothing to re-serialize, and graphRevision stays put,
+    // but change detection still needs the empty bump so fileActivityRevision can advance.
+    emitFileChange({ kind: 'change', path: '/repo/unrelated.log' });
+    await vi.runAllTimersAsync();
+
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    expect(callbacks.onIndex).not.toHaveBeenCalled();
+    expect(callbacks.onBump).toHaveBeenCalledTimes(1);
+    expect(callbacks.onBump).toHaveBeenCalledWith([], expect.any(Number));
+  });
+
+  it('bumps stories without calling onIndex when a patch leaves the reverse index untouched', async () => {
+    const story = '/repo/src/B.stories.tsx';
+    const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
+    const { service, adapter, emitFileChange, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+      ]),
+    });
+    // Leave the reverse-index revision alone so the update is bump-only.
+    patchSpy.mockImplementation(async () => undefined);
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    // A comment-only edit to a story file: its dependency set is unchanged, so the index still
+    // holds, but the story itself must still be reported as bumped.
+    emitFileChange({ kind: 'change', path: story });
+    await vi.runAllTimersAsync();
+
+    expect(callbacks.onIndex).not.toHaveBeenCalled();
+    expect(callbacks.onBump).toHaveBeenCalledTimes(1);
+    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
+  });
+
+  it('dates a bump by its file mtime capped at arrival, and a deleted file by arrival', async () => {
+    const story = '/repo/src/B.stories.tsx';
+    const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
+    const { service, adapter, emitFileChange, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+      ]),
+    });
+    patchSpy.mockImplementation(async () => undefined);
+    vi.setSystemTime(50_000);
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    vi.mocked(stat).mockResolvedValueOnce({ mtimeMs: 40_000 } as Awaited<ReturnType<typeof stat>>);
+    emitFileChange({ kind: 'change', path: story });
+    await vi.runAllTimersAsync();
+    vi.mocked(stat).mockResolvedValueOnce({ mtimeMs: 60_000 } as Awaited<ReturnType<typeof stat>>);
+    emitFileChange({ kind: 'change', path: story });
+    await vi.runAllTimersAsync();
+    emitFileChange({ kind: 'unlink', path: story });
+    await vi.runAllTimersAsync();
+
+    expect(callbacks.onBump).toHaveBeenNthCalledWith(1, ['./src/B.stories.tsx'], 40_000);
+    expect(callbacks.onBump).toHaveBeenNthCalledWith(2, ['./src/B.stories.tsx'], 50_000);
+    expect(callbacks.onBump).toHaveBeenNthCalledWith(3, ['./src/B.stories.tsx'], 50_000);
   });
 
   it('buffers file events emitted during the build and applies them in order after build resolves', async () => {
@@ -230,10 +348,8 @@ describe('ModuleGraphEngine', () => {
 
     expect(patchSpy).toHaveBeenCalledWith({ kind: 'add', path: '/repo/src/B.stories.tsx' });
     // The replayed add flows through the normal patch path, so the new story is reported as a
-    // targeted update — no separate untargeted index-invalidation bump is needed.
-    expect(callbacks.onUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ bumpedStoryFiles: ['./src/B.stories.tsx'] })
-    );
+    // targeted bump — no separate untargeted index-invalidation bump is needed.
+    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
   });
 
   it('does not emit an update when an invalidation leaves the story set unchanged', async () => {
@@ -249,12 +365,14 @@ describe('ModuleGraphEngine', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+    expect(callbacks.onIndex).not.toHaveBeenCalled();
+    expect(callbacks.onBump).not.toHaveBeenCalled();
 
     service.onStoryIndexInvalidated();
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+    expect(callbacks.onIndex).not.toHaveBeenCalled();
+    expect(callbacks.onBump).not.toHaveBeenCalled();
   });
 
   it('guards duplicate onStoryIndexInvalidated so a newly-added story is replayed only once', async () => {

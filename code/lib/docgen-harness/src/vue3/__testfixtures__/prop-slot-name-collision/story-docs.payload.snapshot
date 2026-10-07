@@ -1,0 +1,20 @@
+{
+  "id": "prop-slot-name-collision",
+  "name": "PropSlotNameCollision",
+  "path": "__PATH__",
+  "stories": {
+    "forms-prop-slot-name-collision--icon-prop-as-written": {
+      "description": undefined,
+      "id": "forms-prop-slot-name-collision--icon-prop-as-written",
+      "name": "Icon Prop As Written",
+      "snippet": "<script lang="ts" setup>
+import PropSlotNameCollision from './PropSlotNameCollision.vue';
+</script>
+
+<template>
+  <PropSlotNameCollision icon="pi pi-check" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

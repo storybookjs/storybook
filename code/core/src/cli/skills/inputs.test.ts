@@ -124,11 +124,10 @@ describe('resolveSkillInputs', () => {
     expect(inputs).toMatchObject({
       csfFactories: true,
       previewFile: '.storybook/preview.tsx',
-      typescript: true,
     });
   });
 
-  it('reads a plain JavaScript preview as CSF 3 without TypeScript', async () => {
+  it('reads a plain JavaScript preview as CSF 3', async () => {
     vol.fromNestedJSON({
       '/project/.storybook/preview.js': 'export default { parameters: {} };',
     });
@@ -140,7 +139,6 @@ describe('resolveSkillInputs', () => {
     expect(inputs).toMatchObject({
       csfFactories: false,
       previewFile: '.storybook/preview.js',
-      typescript: false,
     });
   });
 
@@ -154,7 +152,6 @@ describe('resolveSkillInputs', () => {
     expect(inputs).toMatchObject({
       csfFactories: false,
       previewFile: '.storybook/preview.ts',
-      typescript: true,
     });
   });
 });

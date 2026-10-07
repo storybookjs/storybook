@@ -29,7 +29,6 @@ const deps = () => ({
     renderer: '@storybook/react',
     csfFactories: false,
     previewFile: '.storybook/preview.ts',
-    typescript: true,
     changeDetectionEnabled: true,
     moduleGraphSupported: true,
     reviewEnabled: true,

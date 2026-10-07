@@ -204,10 +204,8 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   if (id === 'stories') {
     return buildStoriesSkill({
       framework: inputs.framework,
-      renderer: inputs.renderer,
       csfFactories: inputs.csfFactories,
       previewFile: inputs.previewFile,
-      typescript: inputs.typescript,
       docsEnabled: inputs.docsEnabledForCli,
       testSupported: inputs.testSupported,
       a11yEnabled: inputs.a11yEnabled,

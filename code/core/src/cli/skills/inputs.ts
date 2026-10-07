@@ -19,7 +19,6 @@ export type SkillInputs = ToolAvailability & {
   csfFactories: boolean;
   /** Path of the preview file relative to the working directory; a default name when there is none. */
   previewFile: string;
-  typescript: boolean;
 };
 
 const isTypeScriptFile = (path: string) => /\.[cm]?tsx?$/.test(path);
@@ -39,7 +38,6 @@ async function resolvePreview(configDir = '.storybook') {
   return {
     csfFactories,
     previewFile: relative(process.cwd(), path).replaceAll('\\', '/') || path,
-    typescript,
   };
 }
 

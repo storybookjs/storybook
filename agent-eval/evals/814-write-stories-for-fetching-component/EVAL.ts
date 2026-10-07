@@ -44,7 +44,7 @@ describe('writing stories for an existing OrderHistory that fetches its data', (
 
   test('uses the msw-storybook-addon 3 API instead of parameters.msw', () => {
     const stories = readFileSync(STORIES_PATH, 'utf8');
-    expect(stories, 'Expected handlers registered with msw.use').toMatch(/\.use\(/);
+    expect(stories, 'Expected handlers registered with msw.use').toMatch(/\bmsw\.use\(/);
     expect(stories, 'Expected no deprecated parameters.msw handlers').not.toMatch(
       /\bmsw\s*:\s*[{[]/
     );

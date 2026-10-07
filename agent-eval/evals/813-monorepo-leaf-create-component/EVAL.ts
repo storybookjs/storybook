@@ -31,12 +31,13 @@ describe('creating a Callout in a monorepo UI package', () => {
     ).toBe(true);
   });
 
-  test.skipIf(modelRunsTestsOnlyWhenAsked())(
-    'runs story tests after the change and finishes with them passing',
-    async () => {
-      await expectStoryTestsRanAndPassed({ covering: ['callout'], cwd: 'packages/ui' });
-    }
-  );
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['callout'],
+      cwd: 'packages/ui',
+    });
+  });
 
   describe.runIf(review)('when review is enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {

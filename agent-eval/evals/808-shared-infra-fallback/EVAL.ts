@@ -40,10 +40,13 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test.skipIf(codexMcpReviewGap || modelRunsTestsOnlyWhenAsked())(
+  test.skipIf(codexMcpReviewGap)(
     'runs story tests after the change and finishes with them passing',
     async () => {
-      await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+      await expectStoryTestsRanAndPassed({
+        requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+        covering: ['badge', 'statuspill'],
+      });
     }
   );
 

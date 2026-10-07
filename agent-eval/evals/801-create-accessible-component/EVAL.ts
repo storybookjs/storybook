@@ -20,12 +20,12 @@ import { describe, expect, test } from 'vitest';
 describe('creating an accessible ToggleSwitch', () => {
   const reviewEnabled = isReviewEnabled();
 
-  test.skipIf(modelRunsTestsOnlyWhenAsked())(
-    'runs story tests after the change and finishes with them passing',
-    async () => {
-      await expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
-    }
-  );
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['toggleswitch'],
+    });
+  });
 
   describe.runIf(reviewEnabled)('with review enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {

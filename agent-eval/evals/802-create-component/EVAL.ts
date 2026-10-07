@@ -18,12 +18,12 @@ import { describe, test } from 'vitest';
 describe('creating a ProfileCard component', () => {
   const review = isReviewEnabled();
 
-  test.skipIf(modelRunsTestsOnlyWhenAsked())(
-    'runs story tests after the change and finishes with them passing',
-    async () => {
-      await expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
-    }
-  );
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['profilecard'],
+    });
+  });
 
   describe.runIf(review)('when review is enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {

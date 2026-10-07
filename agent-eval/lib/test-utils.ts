@@ -92,8 +92,8 @@ export function getEvalContext(): EvalContext {
 // model catalog (codex-cli 0.160.1), says "Do not add or run tests unless the
 // user asks you to test or verify implementation." at every reasoning effort,
 // and Luna follows it over the stories skill. That is the model vendor's
-// choice, so evals skip their test-run assertion for Luna rather than having
-// the skill overrule the system prompt.
+// choice, so evals do not require Luna to run the tests itself rather than
+// having the skill overrule the system prompt.
 export function modelRunsTestsOnlyWhenAsked(): boolean {
   return getEvalContext().model?.startsWith('gpt-6-luna') === true;
 }
@@ -472,15 +472,20 @@ export type WorkflowToolResult = {
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
+// `requireAgentRun: false` drops the transcript checks and keeps the harness's
+// own run, for a model that runs tests only when asked.
 export async function expectStoryTestsRanAndPassed(options?: {
   covering?: string[];
   cwd?: string;
+  requireAgentRun?: boolean;
 }): Promise<void> {
-  expectWorkflowCalls(['test-run']);
-  expect(
-    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
-    "The agent's last test run must not report failing stories or unhandled errors"
-  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+  if (options?.requireAgentRun !== false) {
+    expectWorkflowCalls(['test-run']);
+    expect(
+      getWorkflowToolResults('test-run').at(-1)?.output ?? '',
+      "The agent's last test run must not report failing stories or unhandled errors"
+    ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+  }
 
   const result = await runStoryTestsInSandbox(options?.cwd);
   expect(

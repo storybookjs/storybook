@@ -23,7 +23,6 @@ export const Rainbow = meta.story({
       <Contents>Rainbow</Contents>
     </Card>
   ),
-  parameters: { chromatic: { pauseAnimationAtEnd: true } },
   play: async ({ canvasElement }) => {
     const animations = canvasElement.getAnimations({ subtree: true });
     await expect(animations).not.toHaveLength(0);

@@ -52,9 +52,6 @@ const getSpinColors = (theme: StorybookTheme, outlineColor?: ThemeColor): [strin
   return ['#029CFD', '#37D5D3'];
 };
 
-const rainbowOrange = 'rgb(255, 157, 0)';
-const rainbowGreen = 'rgb(0, 172, 0)';
-
 const pulse = keyframes({
   '50%': { opacity: 0.5 },
 });
@@ -69,12 +66,9 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-// Moves the card's view from the bottom-left to the top-right quarter of a layer four times its
-// size, so the shimmer comes to rest on the last gradient segment, from orange to green.
-const slide = keyframes({
-  to: {
-    transform: 'translate(-75%, 75%)',
-  },
+const hueCycle = keyframes({
+  from: { filter: 'hue-rotate(0deg)' },
+  to: { filter: 'hue-rotate(360deg)' },
 });
 
 const CardContent = styled.div<{ color?: ThemeColor }>(({ color, theme }) => ({
@@ -124,17 +118,10 @@ const CardOutline = styled.div<{
       // Stops within 5 seconds, with or without reduced motion, to meet
       // WCAG 2.2.2 (Pause, Stop, Hide).
       ...(animation === 'rainbow' && {
-        width: '400%',
-        height: '400%',
-        top: '-300%',
-        animation: `${slide} 5s ease-in-out forwards`,
-        backgroundImage: `linear-gradient(to top right, rgb(0, 166, 255), rgb(181, 0, 181), rgb(234, 0, 0), ${rainbowOrange}, ${rainbowGreen})`,
+        backgroundImage: 'linear-gradient(to top right, rgb(255, 157, 0), rgb(0, 172, 0))',
+        animation: `${hueCycle} 5s ease-in-out`,
         '@media (prefers-reduced-motion: reduce)': {
-          width: '100%',
-          height: '100%',
-          top: 0,
           animation: `${pulse} 2.5s ease-in-out 2`,
-          backgroundImage: `linear-gradient(to top right, ${rainbowOrange}, ${rainbowGreen})`,
         },
       }),
 

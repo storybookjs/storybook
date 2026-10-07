@@ -244,6 +244,7 @@ export const ChecklistWidget = () => {
   }, [animated, nextItems, items]);
 
   const hasItems = renderItems.length > 0;
+  const isShown = hasItems && loaded;
   const transitionItems = useTransitionArray(allItems, renderItems, {
     keyFn: (item) => item.id,
     timeout: animated ? 300 : 0,
@@ -254,8 +255,8 @@ export const ChecklistWidget = () => {
   }
 
   return (
-    <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
-      <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
+    <CollapsibleWithMargin collapsed={!isShown}>
+      <HoverCard id="storybook-checklist-widget" outlineAnimation={isShown ? 'rainbow' : 'none'}>
         <Collapsible
           storageKey="checklist-widget"
           initialCollapsed={!hasItems}

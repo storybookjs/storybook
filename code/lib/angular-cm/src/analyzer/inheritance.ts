@@ -2,6 +2,7 @@ import type * as ts from 'typescript';
 
 import type { Method, Property } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
+import { applyHostDirectives } from './host-directives.ts';
 import type { ClassMembers, DocumentedClassKind, MemberEntry } from './members.ts';
 import { applyMetadataInputsOutputs, sameMemberIdentity, visitClassMembers } from './members.ts';
 import { signalValueTypeFromType } from './signals.ts';
@@ -40,6 +41,18 @@ function resolveWithBases(
   if (instantiatedType) {
     instantiateMembers(ctx, instantiatedType, classNode, members, substitutions);
   }
+  // Last, so a host's own binding of the same public name is already there to take precedence.
+  applyHostDirectives(ctx, classNode, members, (declaration) =>
+    visited.has(declaration)
+      ? undefined
+      : resolveWithBases(
+          ctx,
+          declaration,
+          'directive',
+          new Set([...visited, declaration]),
+          new Map()
+        )
+  );
   return members;
 }
 

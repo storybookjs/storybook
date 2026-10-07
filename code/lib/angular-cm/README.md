@@ -17,6 +17,5 @@ These are inherited from the Compodoc behaviour this replaces, and are not fixed
 
 - **Numeric enums produce no control.** `enum Size { Small, Medium }` and `enum Size { Small = 1, Medium }` both surface as `empty-enum` rather than a select, because auto-incremented members carry no initializer to read. String enums and union type aliases resolve correctly. The type checker could answer this via `getConstantValue`, so this is fixable here in a way it was not in Compodoc.
 - **Inputs and outputs inherited from compiled libraries are skipped.** A base class from a `.d.ts` contributes its plain properties and methods but not its IO, because the decorators are erased; Angular records them in `ɵɵDirectiveDeclaration` type arguments, which this analyzer does not read.
-- **`hostDirectives` bindings are absent.** Inputs and outputs a component exposes through directive composition are not class members, so they never reach the props table.
 
 Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

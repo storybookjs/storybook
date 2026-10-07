@@ -13,7 +13,7 @@ export const entries = async (_: unknown, options: any) => {
     result = result.concat(
       `${fileURLToPath(
         import.meta.resolve('webpack-hot-middleware/client.js')
-      )}?reload=true&quiet=false&overlay=${JSON.stringify({
+      )}?path=__webpack_hmr&reload=true&quiet=false&overlay=${JSON.stringify({
         errors: true,
         warnings: false,
         runtimeErrors: false,

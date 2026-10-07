@@ -52,6 +52,23 @@ describe('attachEmbedAccess', () => {
     expect(res.setHeader).not.toHaveBeenCalled();
   });
 
+  it.each(['/fonts/inter.woff2', '/embed/wrong/fonts/inter.WOFF?v=2', '/assets/icons.ttf'])(
+    'lets any origin read the font at %s',
+    (url) => {
+      const { req, res } = request(url);
+
+      expect(req.url).toBe(url);
+      expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+    }
+  );
+
+  it.each(['/src/secret.ts?file=.woff2', '/fonts/inter.woff2.ts', '/woff2'])(
+    'does not mistake %s for a font',
+    (url) => {
+      expect(request(url).res.setHeader).not.toHaveBeenCalled();
+    }
+  );
+
   it('runs before the listeners already on the server', () => {
     const server = new EventEmitter() as Server;
     const seen: (string | undefined)[] = [];

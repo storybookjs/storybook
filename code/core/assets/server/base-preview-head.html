@@ -492,3 +492,76 @@
     console.warn('unable to connect to top frame for connecting dev tools');
   }
 </script>
+<script>
+  /* globals window, document, location, XMLHttpRequest */
+  // A sandboxed frame without `allow-same-origin` throws on any storage access, which would crash
+  // every story whose code touches it. Storage that lasts for the page keeps those stories working.
+  (function () {
+    function createMemoryStorage() {
+      var items = new Map();
+      return {
+        getItem: function (key) {
+          return items.has(String(key)) ? items.get(String(key)) : null;
+        },
+        setItem: function (key, value) {
+          items.set(String(key), String(value));
+        },
+        removeItem: function (key) {
+          items.delete(String(key));
+        },
+        clear: function () {
+          items.clear();
+        },
+        key: function (index) {
+          return Array.from(items.keys())[index] ?? null;
+        },
+        get length() {
+          return items.size;
+        },
+      };
+    }
+    ['localStorage', 'sessionStorage'].forEach(function (name) {
+      try {
+        void window[name];
+      } catch (e) {
+        Object.defineProperty(window, name, { value: createMemoryStorage(), configurable: true });
+      }
+    });
+    try {
+      void document.cookie;
+    } catch (e) {
+      Object.defineProperty(document, 'cookie', {
+        get: function () {
+          return '';
+        },
+        set: function () {},
+        configurable: true,
+      });
+    }
+  })();
+
+  // Under the dev server's embed path, only URLs below that path are readable. Imports stay below
+  // it through the import map; root-absolute `fetch` and XHR URLs are moved below it here.
+  (function () {
+    var match = /^\/embed\/[^/]+\//.exec(location.pathname);
+    if (!match) {
+      return;
+    }
+    var base = match[0];
+    function rebase(url) {
+      var isRootAbsolute =
+        typeof url === 'string' && url[0] === '/' && url[1] !== '/' && url.indexOf(base) !== 0;
+      return isRootAbsolute ? base + url.slice(1) : url;
+    }
+    var originalFetch = window.fetch;
+    window.fetch = function (input, init) {
+      return originalFetch.call(this, rebase(input), init);
+    };
+    var originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function (method, url) {
+      var args = Array.prototype.slice.call(arguments);
+      args[1] = rebase(url);
+      return originalOpen.apply(this, args);
+    };
+  })();
+</script>

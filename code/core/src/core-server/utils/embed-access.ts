@@ -5,6 +5,7 @@ import { isValidToken } from './validate-token.ts';
 
 const embedToken = randomUUID();
 const EMBED_PATH = /^\/embed\/([^/?]+)(\/.*)$/;
+const FONT_PATH = /\.(woff2?|ttf|otf|eot)$/i;
 
 export type EmbedRequest = IncomingMessage & { storybookEmbedBase?: string };
 
@@ -15,10 +16,17 @@ export const getEmbedBase = () => `/embed/${embedToken}/`;
 export function attachEmbedAccess(server: Server, token: string = embedToken) {
   // Polka matches routes before running middleware, so the base is stripped ahead of it.
   server.prependListener('request', (req: EmbedRequest, res) => {
-    const [, requestToken, path] = EMBED_PATH.exec(req.url ?? '') ?? [];
     // Reads only: a preflight answered here would open routes like the MCP endpoint to the frame.
-    const isRead = req.method === 'GET' || req.method === 'HEAD';
-    if (!isRead || !isValidToken(requestToken ?? null, token)) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return;
+    }
+    // CSS `url()` cannot be moved under the embed base, and fonts are the one thing it loads with
+    // CORS. Font files are not sources, so they are readable from any origin.
+    if (FONT_PATH.test((req.url ?? '').split('?')[0])) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+    const [, requestToken, path] = EMBED_PATH.exec(req.url ?? '') ?? [];
+    if (!isValidToken(requestToken ?? null, token)) {
       return;
     }
     req.url = path;

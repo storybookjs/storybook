@@ -216,10 +216,13 @@ export const useExpanded = ({
         onSelectStoryId(highlightedItemId);
       }
 
-      const isExpanded = highlightedElement.getAttribute('aria-expanded');
+      const highlightedEntry = data[highlightedItemId];
+      const isExpandable =
+        !!highlightedEntry && 'children' in highlightedEntry && !!highlightedEntry.children?.length;
+      const isExpanded = isExpandable && !!expanded[highlightedItemId];
 
       if (isArrowLeft) {
-        if (isExpanded === 'true') {
+        if (isExpanded) {
           // The highlighted node is expanded, so we collapse it.
           // @ts-expect-error (non strict)
           setExpanded({ ids: [highlightedItemId], value: false });
@@ -242,9 +245,9 @@ export const useExpanded = ({
       }
 
       if (isArrowRight) {
-        if (isExpanded === 'false') {
+        if (isExpandable && !isExpanded) {
           updateExpanded({ ids: [highlightedItemId], value: true });
-        } else if (isExpanded === 'true') {
+        } else if (isExpanded) {
           updateExpanded({ ids: getDescendantIds(data, highlightedItemId, true), value: true });
         }
       }
@@ -257,6 +260,7 @@ export const useExpanded = ({
     isBrowsing,
     refId,
     data,
+    expanded,
     highlightedRef,
     setHighlightedItemId,
     onSelectStoryId,

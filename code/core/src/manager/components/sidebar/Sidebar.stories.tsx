@@ -63,6 +63,7 @@ const managerContext: any = (
     once: fn().mockName('api::once'),
     getData: fn().mockName('api::getData'),
     getIndex: fn().mockName('api::getIndex'),
+    resolveStory: fn((id: string) => index[id]).mockName('api::resolveStory'),
     getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getChannel: fn().mockName('api::getChannel'),
     getElements: fn(() => ({})),
@@ -205,6 +206,23 @@ const waitForChecklistWidget = async () => {
 
 export const Simple: Story = {
   play: waitForChecklistWidget,
+};
+
+export const ArrowKeysCollapseAndExpand: Story = {
+  play: async ({ canvasElement }) => {
+    const component = canvasElement.querySelector('button#root-1-child-a2')!;
+    const selected = canvasElement.querySelector<HTMLElement>(`[data-item-id="${storyId}"] a`)!;
+    await expect(component).toHaveAttribute('aria-expanded', 'true');
+
+    selected.focus();
+    await userEvent.keyboard('{ArrowUp}');
+    await wait(100);
+    await userEvent.keyboard('{ArrowLeft}');
+    await waitFor(() => expect(component).toHaveAttribute('aria-expanded', 'false'));
+
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() => expect(component).toHaveAttribute('aria-expanded', 'true'));
+  },
 };
 
 export const SimpleInProduction: Story = {

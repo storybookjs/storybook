@@ -48,8 +48,10 @@
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
+  - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -1382,15 +1384,51 @@ A decorator that calls element methods on the story result must read the element
 },
 ```
 
+### SvelteKit: Require v3 and up
+
+Storybook 11 requires SvelteKit 3, and `@storybook/sveltekit` requires Vite 8, like SvelteKit 3 does. Upgrade SvelteKit before you upgrade Storybook. SvelteKit's migration tool does most of the work:
+
+```sh
+npx sv migrate sveltekit-3
+```
+
+For the details, see the [SvelteKit 3 migration guide](https://svelte.dev/docs/kit/migrating-to-sveltekit-3).
+
+`@storybook/sveltekit` changes with SvelteKit 3:
+
+- SvelteKit 3 removed `$app/stores`, so Storybook no longer mocks it, and `parameters.sveltekit_experimental.stores` is removed. Use `$app/state` in your components, and mock it with `parameters.sveltekit_experimental.state`:
+
+  ```diff
+   parameters: {
+     sveltekit_experimental: {
+  -    stores: {
+  -      page: { data: { test: 'passed' } },
+  -      updated: true,
+  -    },
+  +    state: {
+  +      page: { data: { test: 'passed' } },
+  +      updated: { current: true },
+  +    },
+     },
+   },
+  ```
+
+- Storybook serves the files in your SvelteKit `static` directory at the root, like SvelteKit does. If you added `static` to `staticDirs` for this, you can remove it.
+- The `$app/navigation` mock supports `refreshAll`. Mock it with `parameters.sveltekit_experimental.navigation.refreshAll`.
+- Static variables from `$app/env/public` work in Storybook. Dynamic variables are `undefined`, because Storybook has no server to provide them. This also applies to the deprecated `$env/dynamic/public` module, which used to work in development mode.
+- Storybook fails to load a story that imports `$app/env/private`, `$app/server` or the deprecated `$env/*/private` modules, so private values can't get into the browser. Mock the module that imports them with a [mock file](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules#mock-files).
+
 ### Svelte CSF is built into the Svelte frameworks
 
 `@storybook/svelte-vite` and `@storybook/sveltekit` now include Svelte CSF, so you no longer need `@storybook/addon-svelte-csf`. Storybook doesn't start while the addon is still in `addons`.
 
-Run the automigration:
+The `addon-svelte-csf-to-core` automigration runs when you upgrade:
 
 ```sh
-npx storybook automigrate addon-svelte-csf-to-core
+npx storybook@latest upgrade
 ```
+
+If you already upgraded to Storybook 11, run it on its own with `npx storybook automigrate addon-svelte-csf-to-core`. On Storybook 10 that command doesn't know the automigration yet.
 
 The automigration changes your stories and the files in your Storybook config directory. Change other files that import from `@storybook/addon-svelte-csf` by hand.
 
@@ -1417,7 +1455,7 @@ Svelte CSF supports only stories defined with `defineMeta`. Storybook 11 removes
 - The `let:args` and `let:context` directives on `<Story>`
 - The `id`, `autodocs` and `source` props on `<Story>`
 
-The automigration lists the story files that don't use `defineMeta`, and doesn't change them. Migrate them by hand.
+The automigration lists the story files that don't use `defineMeta`, and doesn't change them. It also lists the `defineMeta` stories that still use `let:args`, `let:context`, or the `id`, `autodocs` or `source` props. Migrate them by hand.
 
 <details>
 <summary>Migrate legacy stories to <code>defineMeta</code></summary>
@@ -1593,6 +1631,12 @@ After:
 - `source="…"` → `parameters.docs.source.code`. Remove a `source` prop without a value: Storybook generates the source from the story.
 
 </details>
+
+### Svelte CSF: stories files are indexed without preprocessors
+
+Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
+
+If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
 
 ## From version 10.5.x to 10.6.0
 

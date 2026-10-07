@@ -1,5 +1,5 @@
 <script>
-  import { browser, dev, building, version } from '$app/environment';
+  import { browser, dev, building, version } from '$app/env';
 </script>
 
 <div data-testid="browser">{browser}</div>

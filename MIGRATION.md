@@ -660,7 +660,7 @@ export default {
 ```
 
 When the same object already sets `docs.subtitle`, the automigration keeps it and removes `componentSubtitle`, because `docs.subtitle` already took precedence.
-A `componentSubtitle` set on a single story never affected the Subtitle block, so the automigration leaves it in place for you to delete.
+A `componentSubtitle` set on a single story did not affect the Subtitle block. The automigration moves a truthy value to that story's `parameters.docs.subtitle`, or keeps an existing truthy `docs.subtitle` and removes `componentSubtitle`. Delete the resulting story-level `docs.subtitle` if you do not need it.
 Files it cannot edit safely, such as parameters built from a spread, are listed in `automigrations-summary.md` for you to change by hand.
 
 Before, any `docs.subtitle` took precedence over any `componentSubtitle`, even one set in the preview over one set in a component's meta.

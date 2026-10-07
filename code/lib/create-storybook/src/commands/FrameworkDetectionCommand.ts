@@ -1,5 +1,5 @@
-import { type ProjectType } from 'storybook/internal/cli';
-import { type JsPackageManager } from 'storybook/internal/common';
+import { ProjectType } from 'storybook/internal/cli';
+import { HandledError, type JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { SupportedBuilder } from 'storybook/internal/types';
 import { type SupportedRenderer } from 'storybook/internal/types';
@@ -24,7 +24,7 @@ export interface FrameworkDetectionResult {
  */
 export class FrameworkDetectionCommand {
   constructor(
-    packageManager: JsPackageManager,
+    private packageManager: JsPackageManager,
     private frameworkDetectionService = new FrameworkDetectionService(packageManager),
     private telemetryService = new TelemetryService()
   ) {}
@@ -40,6 +40,18 @@ export class FrameworkDetectionCommand {
     }
 
     const { metadata } = generatorModule;
+    const dependencies = this.packageManager.getAllDependencies();
+
+    if (
+      projectType === ProjectType.REACT &&
+      !options.builder &&
+      (dependencies['react-scripts'] || dependencies['@storybook/preset-create-react-app'])
+    ) {
+      logger.error(
+        'Create React App support was removed in Storybook 11. Remove @storybook/preset-create-react-app if installed and migrate your Storybook configuration to Vite. Then run `storybook init --type react --builder vite`. To use another supported builder, pass `--type react --builder <builder>` explicitly. See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed'
+      );
+      throw new HandledError('Create React App requires an explicit Storybook builder');
+    }
 
     // Determine builder - use override if specified, otherwise detect
     let builder: SupportedBuilder;

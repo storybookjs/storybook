@@ -49,18 +49,15 @@ test('matches a default import by component name when reexports contain multiple
 });
 
 test('matches a unique default export when its local name matches another component', async () => {
-  const match = getMatchingDocgen(
-    [
-      { actualName: 'Alias', displayName: 'Alias', exportName: 'Alias' },
-      { actualName: 'Button', displayName: 'Button', exportName: 'default' },
-    ] as unknown as Parameters<typeof getMatchingDocgen>[0],
-    {
-      componentName: 'Alias',
-      importName: 'default',
-      localImportName: 'Alias',
-      isPackage: false,
-    }
+  const docgens = await parse(
+    'export function Alias() { return <span /> } export default function Button() { return <button /> }'
   );
+  const match = getMatchingDocgen(docgens, {
+    componentName: 'Alias',
+    importName: 'default',
+    localImportName: 'Alias',
+    isPackage: false,
+  });
 
   expect(match?.actualName).toBe('Button');
 });

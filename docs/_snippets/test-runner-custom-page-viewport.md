@@ -10,7 +10,8 @@ module.exports = {
     const context = await getStoryContext(page, story);
     const viewportGlobal = context.globals?.viewport;
     // The viewport global may be a string or a `{ value }` object depending on how it was set
-    const viewportName = typeof viewportGlobal === 'string' ? viewportGlobal : viewportGlobal?.value;
+    const viewportName =
+      typeof viewportGlobal === 'string' ? viewportGlobal : viewportGlobal?.value;
     const viewportParameter = MINIMAL_VIEWPORTS[viewportName];
 
     if (viewportParameter) {
@@ -44,7 +45,8 @@ const config: TestRunnerConfig = {
     const context = await getStoryContext(page, story);
     const viewportGlobal = context.globals?.viewport;
     // The viewport global may be a string or a `{ value }` object depending on how it was set
-    const viewportName = typeof viewportGlobal === 'string' ? viewportGlobal : viewportGlobal?.value;
+    const viewportName =
+      typeof viewportGlobal === 'string' ? viewportGlobal : viewportGlobal?.value;
     const viewportParameter = MINIMAL_VIEWPORTS[viewportName];
 
     if (viewportParameter) {

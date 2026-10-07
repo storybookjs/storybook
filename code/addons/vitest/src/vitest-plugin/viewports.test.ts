@@ -189,5 +189,3 @@ describe('setViewport', () => {
     });
   });
 });
-
-

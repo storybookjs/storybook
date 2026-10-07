@@ -1,3 +1,7 @@
+import { existsSync } from 'node:fs';
+import { cp } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
@@ -25,8 +29,7 @@ export async function build(options: Options) {
     build: {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
-      // Storybook copies the public dir itself through the `staticDirs` preset so that its own
-      // output files and user `staticDirs` take precedence over public assets.
+      // Storybook copies public assets after staticDirs so user static files take precedence.
       copyPublicDir: false,
       // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
       [bundlerOptionsKey]: {
@@ -44,6 +47,28 @@ export async function build(options: Options) {
   } as InlineConfig).build;
 
   const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
+  const { outputDir } = options;
+
+  if (outputDir && finalConfig.publicDir !== false && finalConfig.publicDir !== '') {
+    const publicDir = resolve(
+      finalConfig.root ?? resolve(options.configDir, '..'),
+      finalConfig.publicDir ?? 'public'
+    );
+
+    if (existsSync(publicDir)) {
+      const protectedFiles = ['index.html', 'iframe.html', 'index.json', 'project.json'].map(
+        (name) => resolve(outputDir, name)
+      );
+
+      await cp(publicDir, outputDir, {
+        dereference: true,
+        preserveTimestamps: true,
+        filter: (_, destination) => !protectedFiles.includes(resolve(destination)),
+        recursive: true,
+        force: false,
+      });
+    }
+  }
 
   // Add a plugin to enforce key build properties that may be overwritten
   // by framework plugins like Nitro or Adonis. We run in `enforce: 'post'`

@@ -143,9 +143,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   if (staticDirs) {
-    effects.push(
-      copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir)
-    );
+    await copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir);
   }
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');

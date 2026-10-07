@@ -1,19 +1,30 @@
+import { existsSync } from 'node:fs';
+import { cp } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
 import { Channel } from 'storybook/internal/channels';
 import type { Presets } from 'storybook/internal/types';
 
 import type { InlineConfig, Plugin } from 'vite';
 import { resolveConfig, build as viteBuild } from 'vite';
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 
 import { build } from './build.ts';
 
+vi.mock('node:fs', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
 vi.mock(import('vite'), async (importOriginal) => ({
   ...(await importOriginal()),
   build: vi.fn(async () => []),
   loadConfigFromFile: vi.fn(async () => null),
 }));
 
-it('keeps Vite from copying the public dir, which Storybook copies through staticDirs', async () => {
+afterEach(() => {
+  vi.mocked(existsSync).mockReset();
+  vi.mocked(cp).mockReset();
+});
+
+it('keeps Vite from copying the public dir during its own build', async () => {
   await build({
     configType: 'PRODUCTION',
     configDir: '',
@@ -30,6 +41,54 @@ it('keeps Vite from copying the public dir, which Storybook copies through stati
         copyPublicDir: false,
       }),
     })
+  );
+});
+
+it('does not copy public assets when viteFinal disables publicDir', async () => {
+  vi.mocked(existsSync).mockReturnValue(true);
+  vi.mocked(cp).mockResolvedValue();
+
+  await build({
+    configType: 'PRODUCTION',
+    configDir: '/project/.storybook',
+    outputDir: '/project/storybook-static',
+    channel: new Channel({}),
+    presets: {
+      apply: async (key: string, config: InlineConfig) =>
+        ({ core: { builder: {} }, viteFinal: { ...config, publicDir: false } })[key],
+    } as Presets,
+  });
+
+  expect(cp).not.toHaveBeenCalled();
+});
+
+it('copies a custom publicDir from viteFinal without overriding staticDirs or Storybook files', async () => {
+  vi.mocked(existsSync).mockReturnValue(true);
+  vi.mocked(cp).mockResolvedValue();
+
+  await build({
+    configType: 'PRODUCTION',
+    configDir: '/project/.storybook',
+    outputDir: '/project/storybook-static',
+    channel: new Channel({}),
+    presets: {
+      apply: async (key: string, config: InlineConfig) =>
+        ({ core: { builder: {} }, viteFinal: { ...config, publicDir: 'assets/public' } })[key],
+    } as Presets,
+  });
+
+  expect(cp).toHaveBeenCalledWith(
+    resolve('/project/assets/public'),
+    '/project/storybook-static',
+    expect.objectContaining({ force: false, recursive: true })
+  );
+
+  const filter = vi.mocked(cp).mock.lastCall?.[2]?.filter;
+  expect(
+    filter?.('/project/assets/public/index.json', '/project/storybook-static/index.json')
+  ).toBe(false);
+  expect(filter?.('/project/assets/public/asset.txt', '/project/storybook-static/asset.txt')).toBe(
+    true
   );
 });
 

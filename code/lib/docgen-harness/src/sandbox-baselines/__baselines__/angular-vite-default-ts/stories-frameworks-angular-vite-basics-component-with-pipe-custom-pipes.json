@@ -1,0 +1,23 @@
+{
+  "argTypes": {
+    "field": {
+      "name": "field",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "empty-enum"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-pipe-custom-pipes",
+  "jsDocTags": {},
+  "name": "WithPipeComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-pipe/custom-pipes.stories.ts"
+}

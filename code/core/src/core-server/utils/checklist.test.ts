@@ -25,7 +25,7 @@ vi.mock('../../shared/utils/ai-checklist-flags.ts', () => ({
 }));
 
 vi.mock('storybook/internal/core-server', () => ({
-  experimental_UniversalStore: {
+  internal_UniversalStore: {
     create: vi.fn(),
   },
 }));
@@ -119,9 +119,9 @@ describe('initializeChecklist', () => {
       vi
     );
 
-    const { experimental_UniversalStore } = await import('storybook/internal/core-server');
-    vi.mocked(experimental_UniversalStore.create).mockReturnValue(
-      mockStore as unknown as ReturnType<typeof experimental_UniversalStore.create>
+    const { internal_UniversalStore } = await import('storybook/internal/core-server');
+    vi.mocked(internal_UniversalStore.create).mockReturnValue(
+      mockStore as unknown as ReturnType<typeof internal_UniversalStore.create>
     );
 
     mockSettingsValue = { checklist: undefined };
@@ -160,7 +160,7 @@ describe('initializeChecklist', () => {
     expect(state.items.aiSetup.status).toBe('open');
   });
 
-  it('does NOT mark aiSetup done just because `storybook ai setup` ran (no agent work yet)', async () => {
+  it('does NOT mark aiSetup done just because `storybook skills setup` ran (no agent work yet)', async () => {
     const { get: getEventCacheEntry } = await import('../../telemetry/event-cache.ts');
     vi.mocked(getEventCacheEntry).mockResolvedValue(undefined);
     await setAiFlags({ setupRan: true });

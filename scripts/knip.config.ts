@@ -9,7 +9,7 @@ import { match } from 'minimatch';
 // Files we want to exclude from analysis should be negated project patterns, not `ignores`
 // docs: https://knip.dev/guides/configuring-project-files
 const project = [
-  'src/**/*.{js,jsx,ts,tsx}',
+  'src/**/*.{js,jsx,ts,tsx,mdx}',
   '!**/__search-files-tests__/**',
   '!**/__testfixtures__/**',
   '!**/__mocks-ng-workspace__/**',
@@ -24,7 +24,9 @@ const project = [
 const importMatcher = /import[^'"]+['"]([^'"]+)['"]/g;
 const fencedCodeBlockMatcher = /```[\s\S]*?```/g;
 const mdx = (text: string) =>
-  [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)].join('\n');
+  [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)]
+    .map(([statement]) => statement)
+    .join(';\n');
 
 const baseConfig = {
   // storybook itself configured (only) in root
@@ -63,6 +65,19 @@ const baseConfig = {
       entry: ['src/index.ts', 'src/ink/steps/checks/index.tsx'],
       project,
     },
+    // The perf bench is a set of CLIs and spawned child processes, reachable from `yarn
+    // bench:docgen-*` rather than from the package's own entry, so each root is listed here.
+    'lib/docgen-harness': {
+      entry: [
+        'src/index.ts',
+        'src/perf/docgen-perf/run.ts',
+        'src/perf/docgen-perf/engines/{react-legacy,vue-component-meta,vue-docgen-api}.ts',
+        'src/perf/docgen-perf/generators/{angular,vue}.ts',
+        'src/perf/docgen-memory/{gate,memory-harness,generate-project}.ts',
+        'src/sandbox-baselines/run.ts',
+      ],
+      project,
+    },
     'lib/*': {
       project,
     },
@@ -85,6 +100,10 @@ export const addBundlerEntries = async (config: KnipConfig) => {
   if (typeof config === 'function') {
     throw new Error('addBundlerEntries expects a config object, not a function');
   }
+  const { workspaces } = config;
+  if (!workspaces) {
+    return config;
+  }
   const baseDir = join(__dirname, '..');
   const rootManifest = await import(pathToFileURL(join(baseDir, 'package.json')).href, {
     with: { type: 'json' },
@@ -100,7 +119,7 @@ export const addBundlerEntries = async (config: KnipConfig) => {
         const manifest = await import(pathToFileURL(join(baseDir, wsDir, 'package.json')).href, {
           with: { type: 'json' },
         });
-        const configEntries = (config.workspaces[configKey].entry as string[]) ?? [];
+        const configEntries = (workspaces[configKey].entry as string[]) ?? [];
         const bundler = manifest?.bundler;
         for (const value of Object.values(bundler ?? {})) {
           if (Array.isArray(value)) {
@@ -109,7 +128,7 @@ export const addBundlerEntries = async (config: KnipConfig) => {
             );
           }
         }
-        config.workspaces[configKey].entry = Array.from(new Set(configEntries));
+        workspaces[configKey].entry = Array.from(new Set(configEntries));
       }
     }
   }

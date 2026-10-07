@@ -1,13 +1,12 @@
 import { Component, Input, Output } from '@angular/core';
-import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
-import { describe, expect, it } from 'vitest';
+import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
+import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
 import decorateStory from './decorateStory.ts';
 import type { AngularRenderer } from './types.ts';
 
-// TODO: Fix. Test is infinitely running.
-describe.skip('decorateStory', () => {
+describe('decorateStory', () => {
   describe('angular behavior', () => {
     it('should use componentWrapperDecorator with args', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
@@ -37,8 +36,11 @@ describe.skip('decorateStory', () => {
           grandparentInput: 'grandparent input',
           parentOutput: expect.any(Function),
         },
-        template:
-          '<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent [parentInput]="parentInput" (parentOutput)="parentOutput($event)"></child></parent></grandparent></great-grandparent>',
+        template: `<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent
+    [parentInput]="parentInput"
+    (parentOutput)="parentOutput($event)">
+</child>
+</parent></grandparent></great-grandparent>`,
         userDefinedTemplate: true,
       });
     });
@@ -76,8 +78,11 @@ describe.skip('decorateStory', () => {
           grandparentInput: 'Grandparent input',
           sameInput: 'Story input',
         },
-        template:
-          '<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent [parentInput]="parentInput" (parentOutput)="parentOutput($event)"></child></parent></grandparent></great-grandparent>',
+        template: `<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent
+    [parentInput]="parentInput"
+    (parentOutput)="parentOutput($event)">
+</child>
+</parent></grandparent></great-grandparent>`,
         userDefinedTemplate: true,
       });
     });
@@ -207,9 +212,9 @@ describe.skip('decorateStory', () => {
       });
     });
 
-    it('should only keeps args with a control or an action in argTypes', () => {
+    it('passes every arg to the story, including ones carrying no control', () => {
       const decorated = decorateStory(
-        (context: StoryContext) => ({
+        (context: StoryContextForRender<AngularRenderer>) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
         }),
         []
@@ -222,17 +227,17 @@ describe.skip('decorateStory', () => {
             argTypes: {
               withControl: { control: { type: 'object' }, name: 'withControl' },
               withAction: { action: 'onClick', name: 'withAction' },
-              toRemove: { name: 'toRemove' },
+              plain: { name: 'plain' },
             },
             args: {
               withControl: 'withControl',
               withAction: () => ({}),
-              toRemove: 'toRemove',
+              plain: 'plain',
             },
           })
         )
       ).toEqual({
-        template: 'Args available in the story : withControl,withAction',
+        template: 'Args available in the story : withControl,withAction,plain',
         userDefinedTemplate: true,
       });
     });
@@ -243,14 +248,17 @@ describe.skip('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 1] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 2] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 3] } };
         },
       ];
@@ -263,18 +271,24 @@ describe.skip('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 2 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 3 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
       ];
-      const decorated = decorateStory((c: StoryContext) => ({ props: { a: [c.k] } }), decorators);
+      const decorated = decorateStory(
+        (c: StoryContextForRender<AngularRenderer>) => ({ props: { a: [c.k] } }),
+        decorators
+      );
 
       expect(decorated(makeContext({ k: 0 }))).toEqual({ props: { a: [1, 2, 3, 0] } });
     });
@@ -283,6 +297,7 @@ describe.skip('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1, parameters: { p: 1 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -290,6 +305,7 @@ describe.skip('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 2, parameters: { p: 2 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -297,6 +313,7 @@ describe.skip('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 3, parameters: { p: 3 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -304,7 +321,9 @@ describe.skip('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContext) => ({ props: { a: [c.k], p: [c.parameters.p] } }),
+        (c: StoryContextForRender<AngularRenderer>) => ({
+          props: { a: [c.k], p: [c.parameters.p] },
+        }),
         decorators
       );
 
@@ -315,7 +334,7 @@ describe.skip('decorateStory', () => {
   });
 });
 
-function makeContext(input: Record<string, unknown>): StoryContext<AngularRenderer> {
+function makeContext(input: Record<string, unknown>): StoryContextForRender<AngularRenderer> {
   return {
     id: 'id',
     kind: 'kind',
@@ -323,26 +342,22 @@ function makeContext(input: Record<string, unknown>): StoryContext<AngularRender
     viewMode: 'story',
     parameters: {},
     ...input,
-  } as StoryContext<AngularRenderer>;
+  } as StoryContextForRender<AngularRenderer>;
 }
 
 @Component({
   selector: 'foo',
-  template: `
-    foo
-  `,
+  template: ` foo `,
 })
 class FooComponent {}
 
 @Component({
   selector: 'parent',
-  template: `
-    <ng-content></ng-content>
-  `,
+  template: ` <ng-content></ng-content> `,
 })
 class ParentComponent {
   @Input()
-  parentInput: string;
+  parentInput?: string;
 
   @Output()
   parentOutput: any;

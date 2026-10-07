@@ -4,14 +4,8 @@ import { Tag } from '../../../../shared/constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
-import { registerDocgenService } from './server.ts';
+import { registerDocgenService, subscribeDocgenToModuleGraphChanges } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
-
-beforeEach(() => {
-  // registerDocgenService subscribes to `core/module-graph` and fails hard when it is missing, so
-  // the dependency must be registered first (mirroring the dev-server, where it always is).
-  registerTestModuleGraphService();
-});
 
 afterEach(() => {
   clearRegistry();
@@ -161,6 +155,36 @@ describe('docgen open service', () => {
     });
   });
 
+  describe('extractAllDocgen command', () => {
+    it('records one component`s failure without dropping every other component`s payload', async () => {
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([
+          makeStoryEntry('button--primary', 'Button'),
+          makeStoryEntry('card--default', 'Card'),
+        ]),
+        docgenProvider: async ({ entry }) => {
+          if (entry.importPath.includes('button')) {
+            throw new TypeError('provider blew up');
+          }
+          return makeDocgenPayload({ id: 'card', name: 'Card', path: entry.importPath });
+        },
+      });
+
+      await service.commands.extractAllDocgen(undefined);
+
+      expect(service.queries.docgen.get({ id: 'card' })).toEqual(
+        makeDocgenPayload({ id: 'card', name: 'Card', path: './card.stories.tsx' })
+      );
+      expect(service.queries.docgen.get({ id: 'button' })).toEqual({
+        id: 'button',
+        name: 'Button',
+        path: './button.stories.tsx',
+        jsDocTags: {},
+        error: { name: 'TypeError', message: 'provider blew up' },
+      });
+    });
+  });
+
   describe('docgen query', () => {
     it('returns undefined synchronously when nothing has been extracted yet', async () => {
       const service = registerDocgenService({
@@ -195,6 +219,28 @@ describe('docgen open service', () => {
   });
 
   describe('module graph hot refresh', () => {
+    beforeEach(() => {
+      registerTestModuleGraphService();
+    });
+
+    it('does not re-extract on registration alone', async () => {
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        docgenProvider: provider,
+      });
+      await service.queries.docgen.loaded({ id: 'button' });
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await expect(
+        vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2), { timeout: 200 })
+      ).rejects.toThrow();
+    });
+
     it('refreshes already-extracted components without loading every bumped component', async () => {
       const buttonEntry = makeStoryEntry('button--primary', 'Button');
       const cardEntry = makeStoryEntry('card--primary', 'Card');
@@ -205,16 +251,14 @@ describe('docgen open service', () => {
           path: entry.importPath,
         })
       );
-      const service = registerDocgenService({
-        getIndex: makeGetIndex([buttonEntry, cardEntry]),
-        docgenProvider: provider,
-      });
+      const getIndex = makeGetIndex([buttonEntry, cardEntry]);
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
-      const moduleGraph = getService('core/module-graph');
+      const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx', './card.stories.tsx'],
       });
 
@@ -236,16 +280,14 @@ describe('docgen open service', () => {
           path: entry.importPath,
         })
       );
-      const service = registerDocgenService({
-        getIndex: makeGetIndex([buttonEntry, cardEntry]),
-        docgenProvider: provider,
-      });
+      const getIndex = makeGetIndex([buttonEntry, cardEntry]);
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
-      const moduleGraph = getService('core/module-graph');
+      const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 

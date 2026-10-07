@@ -1,7 +1,7 @@
 import { dirname, isAbsolute, resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
+import { JsPackageManagerFactory, getStorybookInfo, warnOnYarn1 } from 'storybook/internal/common';
 import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -18,7 +18,7 @@ export function getWorkingDir(configDir: string): string {
 /**
  * Gathers the project metadata CLI commands need from the target Storybook: config, framework,
  * package manager, installed version, and story paths. The canonical collector — `automigrate`,
- * `doctor`, `add`, and `ai setup` all consume it.
+ * `doctor`, `add`, and `skills setup` all consume it.
  */
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
@@ -69,6 +69,8 @@ export const getStorybookData = async ({
     configDir,
     storiesPaths,
   });
+
+  warnOnYarn1(packageManager.type);
 
   logger.debug('Getting Storybook version...');
   const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;

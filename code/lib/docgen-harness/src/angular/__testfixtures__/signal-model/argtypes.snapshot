@@ -25,7 +25,7 @@
     "table": {
       "category": "outputs",
       "type": {
-        "required": true,
+        "required": false,
         "summary": "(e: boolean) => void",
       },
     },
@@ -44,7 +44,7 @@ Current text value of the field.",
         "summary": "start",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "string",
       },
     },
@@ -60,7 +60,7 @@ Current text value of the field.",
     "table": {
       "category": "outputs",
       "type": {
-        "required": true,
+        "required": false,
         "summary": "(e: string) => void",
       },
     },

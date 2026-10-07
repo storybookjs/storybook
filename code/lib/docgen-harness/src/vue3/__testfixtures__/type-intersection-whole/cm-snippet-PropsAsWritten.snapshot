@@ -1,0 +1,3 @@
+<template>
+  <TypeIntersectionWhole id="save-button" size="medium" />
+</template>

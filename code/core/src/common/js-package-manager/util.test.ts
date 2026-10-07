@@ -113,6 +113,19 @@ describe('js package manager util', () => {
     expect(
       getRemotePackageRunnerArgs(PackageManagerName.BUN, '@storybook/cli', '10.3.2', ['upgrade'])
     ).toEqual(['@storybook/cli@10.3.2', 'upgrade']);
+    expect(
+      getRemotePackageRunnerArgs(
+        PackageManagerName.NPM,
+        '@storybook/cli',
+        'https://pkg.pr.new/storybookjs/storybook/@storybook/cli@deadbeef',
+        ['upgrade']
+      )
+    ).toEqual([
+      '--yes',
+      '--allow-remote=all',
+      '@storybook/cli@https://pkg.pr.new/storybookjs/storybook/@storybook/cli@deadbeef',
+      'upgrade',
+    ]);
   });
 
   it('builds package-manager-aware setup commands', () => {

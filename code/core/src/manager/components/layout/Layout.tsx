@@ -44,7 +44,6 @@ interface Props {
    * keep state (e.g. loaded iframes) alive across route changes.
    */
   slotOverlay?: React.ReactNode;
-  hasTab: boolean;
 }
 
 const layoutStateIsEqual = (state: ManagerLayoutState, other: ManagerLayoutState) =>
@@ -63,13 +62,11 @@ const useLayoutSyncingState = ({
   managerLayoutState,
   setManagerLayoutState,
   isDesktop,
-  hasTab,
 }: {
   api: API;
   managerLayoutState: Props['managerLayoutState'];
   setManagerLayoutState: Props['setManagerLayoutState'];
   isDesktop: boolean;
-  hasTab: boolean;
 }) => {
   // ref to keep track of previous managerLayoutState, to check if the props change
   const prevManagerLayoutStateRef = React.useRef<ManagerLayoutState>(managerLayoutState);
@@ -114,7 +111,7 @@ const useLayoutSyncingState = ({
   }, [internalDraggingSizeState, setManagerLayoutState]);
 
   const isPagesShown = isPagesViewMode(managerLayoutState.viewMode);
-  const isPanelShown = managerLayoutState.viewMode === 'story' && !hasTab;
+  const isPanelShown = managerLayoutState.viewMode === 'story';
 
   const { navSize, rightPanelWidth, bottomPanelHeight } = internalDraggingSizeState.isDragging
     ? internalDraggingSizeState
@@ -152,7 +149,7 @@ const OrderedMobileNavigation = styled(MobileNavigation)({
   order: 1,
 });
 
-export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
+export const Layout = ({ managerLayoutState, setManagerLayoutState, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
   // Subscribe to manager state so nav availability re-evaluates on route and layout changes.
@@ -172,7 +169,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     showPanel,
     isDragging,
     dragCursor,
-  } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
+  } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop });
 
   // Install landmark navigation listener in parent container of all landmarks.
   useLandmarkIndicator();

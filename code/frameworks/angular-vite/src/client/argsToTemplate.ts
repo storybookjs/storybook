@@ -1,4 +1,4 @@
-import { formatPropInTemplate } from './renderer/ComputesTemplateFromComponent.ts';
+import { formatPropInTemplate } from '../template-grammar.ts';
 
 /**
  * Options for controlling the behavior of the argsToTemplate function.

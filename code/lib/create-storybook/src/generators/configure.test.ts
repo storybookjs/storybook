@@ -149,7 +149,7 @@ describe('configureMain', () => {
       prefixes: [],
       addons: [
         "%%path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json')))%%",
-        "%%path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))%%",
+        "%%path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))%%",
       ],
       storybookConfigFolder: '.storybook',
       framework:
@@ -173,7 +173,7 @@ describe('configureMain', () => {
         ],
         "addons": [
           path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
-          path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))
+          path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))
         ],
         "framework": path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))
       };

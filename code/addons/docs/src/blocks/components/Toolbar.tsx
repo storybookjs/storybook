@@ -32,6 +32,8 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
 
+export const TRAILING_INSET = 10;
+
 const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
   left: 0,
@@ -66,7 +68,14 @@ export const Toolbar: FC<ToolbarProps> = ({
   ...rest
 }) => (
   <AbsoluteBar
-    innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }}
+    // The toolbar is absolutely positioned inside the preview container's 1px border, so it lands
+    // on the shared edge one pixel short of the inset the other two icons use.
+    innerStyle={{
+      gap: 4,
+      paddingInline: 7,
+      paddingInlineEnd: TRAILING_INSET - 1,
+      justifyContent: 'space-between',
+    }}
     lang="en"
     {...rest}
   >

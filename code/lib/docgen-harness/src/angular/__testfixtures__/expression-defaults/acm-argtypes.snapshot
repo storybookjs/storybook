@@ -1,0 +1,52 @@
+{
+  "rows": {
+    "description": undefined,
+    "name": "rows",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "saved": {
+    "action": "saved",
+    "description": undefined,
+    "name": "saved",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "timeoutMs": {
+    "description": undefined,
+    "name": "timeoutMs",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+}

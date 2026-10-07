@@ -1,0 +1,98 @@
+{
+  "id": "render-function",
+  "name": "RenderFunctionButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-render-function--args-member": {
+      "description": undefined,
+      "id": "forms-render-function--args-member",
+      "name": "Args Member",
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <div>
+    <RenderFunctionButton label="From args" />
+  </div>
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--args-on-wrapper-and-component": {
+      "description": undefined,
+      "id": "forms-render-function--args-on-wrapper-and-component",
+      "name": "Args On Wrapper And Component",
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <section class="toolbar" label="Confirm">
+    <RenderFunctionButton label="Confirm" />
+  </section>
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--nested": {
+      "description": undefined,
+      "id": "forms-render-function--nested",
+      "name": "Nested",
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <section class="toolbar">
+    <h2>Actions</h2>
+    <RenderFunctionButton label="Confirm" />
+    <RenderFunctionButton label="Cancel" />
+  </section>
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--primary": {
+      "description": undefined,
+      "id": "forms-render-function--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton label="Render" />
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--slot-children": {
+      "description": undefined,
+      "id": "forms-render-function--slot-children",
+      "name": "Slot Children",
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton label="Confirm">
+    <span>Extra</span>
+    <template #footer>
+      <strong>Note</strong>
+    </template>
+  </RenderFunctionButton>
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--spread-override": {
+      "description": undefined,
+      "id": "forms-render-function--spread-override",
+      "name": "Spread Override",
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton label="Overridden" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

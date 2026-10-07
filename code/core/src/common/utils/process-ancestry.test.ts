@@ -90,14 +90,24 @@ describe('getProcessAncestry', () => {
     expect(getProcessAncestry(9999)).toEqual([]);
   });
 
-  it('breaks on cycles in the process tree', () => {
+  it('stops without warning on a self-referencing process on posix', () => {
     platformMock.mockReturnValue('linux');
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     execSyncMock.mockReturnValue(' 5  5 looping-process \n');
 
-    getProcessAncestry(5);
+    expect(getProcessAncestry(5)).toEqual([{ pid: 5, ppid: 5, command: 'looping-process' }]);
+  });
 
-    expect(warn).toHaveBeenCalledWith('Detected cycle in process tree at PID 5');
-    warn.mockRestore();
+  it('stops without warning on cycles in the process tree', () => {
+    platformMock.mockReturnValue('win32');
+    execSyncMock.mockImplementation((command: string) =>
+      command.includes('ProcessId=10)')
+        ? 'Node,CommandLine,ParentProcessId,ProcessId\r\nHOST,node child.js,20,10\r\n'
+        : 'Node,CommandLine,ParentProcessId,ProcessId\r\nHOST,cmd.exe,10,20\r\n'
+    );
+
+    expect(getProcessAncestry(10)).toEqual([
+      { pid: 10, ppid: 20, command: 'node child.js' },
+      { pid: 20, ppid: 10, command: 'cmd.exe' },
+    ]);
   });
 });

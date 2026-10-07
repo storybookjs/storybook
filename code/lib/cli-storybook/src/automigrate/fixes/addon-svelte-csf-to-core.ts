@@ -286,11 +286,13 @@ export const addonSvelteCsfToCore: Fix<AddonSvelteCsfToCoreResult> = {
     ];
   },
 
-  async run({ packageManager, result, configDir }) {
+  async run({ packageManager, result, configDir, storybookVersion }) {
     if (needsLegacyWarning(result)) {
       logger.warn(legacyWarning(result.legacyStoryFiles));
     }
 
+    // In a monorepo, the packages that own stories also list the addon, and import from it.
+    packageManager.replaceDependency(ADDON_SVELTE_CSF, result.framework, `^${storybookVersion}`);
     await removeAddon(ADDON_SVELTE_CSF, { packageManager, configDir, skipInstall: true });
   },
 };

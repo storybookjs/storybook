@@ -1358,6 +1358,8 @@ npx storybook automigrate addon-svelte-csf-to-core
 
 The automigration changes your stories and the files in your Storybook config directory. Change other files that import from `@storybook/addon-svelte-csf` by hand.
 
+In a monorepo, the automigration replaces the addon with your framework package in every `package.json` that lists it. If you migrate by hand, do the same: each package that imports Svelte CSF needs the framework package. If a package still lists the addon, your package manager installs Storybook 10 for it, because the addon needs `storybook@^10`, and imports from the framework package fail.
+
 Or migrate by hand:
 
 1. Remove `@storybook/addon-svelte-csf` from `addons` in `.storybook/main.js|ts`, and from your `package.json`.

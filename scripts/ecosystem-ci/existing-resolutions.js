@@ -27,6 +27,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   'aria-query@5.3.0',
   'caniuse-lite',
   'esbuild',
+  'form-data@npm:~2.3.2',
   'playwright',
   'playwright-core',
   'polka@npm:1.0.0-next.28/@polka/url',

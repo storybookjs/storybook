@@ -15,35 +15,8 @@ const argName = (property: t.ObjectProperty): string | undefined => {
   return undefined;
 };
 
-const strip = (object: CsfObject, program: t.Program) => {
+const strip = (object: CsfObject) => {
   const argTypes = object.get(['argTypes']);
-  if (t.isIdentifier(argTypes)) {
-    let sharedArgTypes = program.body
-      .flatMap((statement) =>
-        t.isVariableDeclaration(statement)
-          ? statement.declarations
-          : t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)
-            ? statement.declaration.declarations
-            : []
-      )
-      .find((declaration) => t.isIdentifier(declaration.id, { name: argTypes.name }))?.init;
-    while (t.isTSAsExpression(sharedArgTypes) || t.isTSSatisfiesExpression(sharedArgTypes)) {
-      sharedArgTypes = sharedArgTypes.expression;
-    }
-    if (
-      t.isObjectExpression(sharedArgTypes) &&
-      sharedArgTypes.properties.some(
-        (property) =>
-          t.isObjectProperty(property) &&
-          t.isObjectExpression(property.value) &&
-          property.value.properties.some(
-            (field) => t.isObjectProperty(field) && argName(field) === 'defaultValue'
-          )
-      )
-    ) {
-      throw new Error('Shared argTypes contain defaultValue and need manual migration');
-    }
-  }
   if (!t.isObjectExpression(argTypes)) {
     return;
   }
@@ -69,9 +42,9 @@ export const argtypesDefaultValue: Fix = {
   transform: () => [
     {
       filter: { kind: ['preview', 'story'], code: 'defaultValue' },
-      editConfig: (config) => strip(config, config._ast.program),
+      editConfig: strip,
       editCsf: (csf) => {
-        csf.objects().forEach((object) => strip(object, csf._ast.program));
+        csf.objects().forEach(strip);
       },
     },
   ],

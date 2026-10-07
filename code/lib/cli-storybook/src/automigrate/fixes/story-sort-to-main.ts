@@ -48,7 +48,7 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
       filter: { kind: ['main'] },
       editConfig: (main) => {
         if (previewProblem) {
-          fail(`the preview config cannot be changed: ${previewProblem}`);
+          fail(previewProblem);
         }
         if (main.get(['storySorts'])) {
           fail('The main config already defines storySorts');

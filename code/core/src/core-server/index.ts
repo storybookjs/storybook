@@ -140,7 +140,6 @@ export {
   getEffectiveToolAvailability,
   getToolAvailability,
   isModuleGraphSupported,
-  isModuleGraphSupportedByBuilder,
 } from '../cli/skills/availability.ts';
 export type { GetToolAvailabilityOptions, ToolAvailability } from '../cli/skills/availability.ts';
 export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';

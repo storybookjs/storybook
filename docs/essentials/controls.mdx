@@ -82,7 +82,7 @@ When you set the `component` annotation of the meta (or default export) of your 
 
 <If renderer="react">
 
-By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`react-docgen`](https://github.com/reactjs/react-docgen), a documentation generator for React components that also includes first-class support for TypeScript.
+By default, Storybook will choose a control for each arg based on its initial value. This works well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file. Storybook's server-side docgen then infers the controls and generates the matching [`argTypes`](../api/arg-types.mdx) from your React component and its TypeScript types.
 
 <CodeSnippets path="button-story-default-export-with-component.md" />
 
@@ -90,7 +90,7 @@ By default, Storybook will choose a control for each arg based on its initial va
 
 <If renderer="vue">
 
-By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`vue-docgen-api`](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api), including first-class support for Vue's `props`, `events`, and `slots`.
+By default, Storybook will choose a control for each arg based on its initial value. This works well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file. Storybook's server-side docgen uses [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) to infer controls and generate the matching [`argTypes`](../api/arg-types.mdx), including first-class support for Vue's `props`, `events`, and `slots`.
 
 <CodeSnippets path="button-story-default-export-with-component.md" />
 

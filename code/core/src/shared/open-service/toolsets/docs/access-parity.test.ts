@@ -100,7 +100,7 @@ const mdxPayload = {
 
 /** The same project as the open services expose it (docgen-server mode). */
 function serviceToolset() {
-  const services: Record<string, unknown> = {
+  const services: Record<string, object> = {
     'core/docgen': {
       commands: { resolveManifestEntries: async () => selectManifestEntries(storyIndex) },
       queries: {
@@ -268,7 +268,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
   /** The project as the dev server's open services expose it: no docgen, stories with no snippet. */
   function devAccess() {
-    const services: Record<string, unknown> = {
+    const services: Record<string, object> = {
       'core/docgen': {
         commands: {
           resolveManifestEntries: async () => selectManifestEntries(componentlessIndex),
@@ -302,7 +302,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
   /** The same project as a static build writes it, served back over a manifest provider. */
   function staticAccess() {
-    const files: Record<string, unknown> = {
+    const files: Record<string, object> = {
       './manifests/components.json': buildComponentsRefManifest(
         toComponentManifestIndexEntries(
           [componentId],

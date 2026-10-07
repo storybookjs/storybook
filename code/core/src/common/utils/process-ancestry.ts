@@ -119,8 +119,8 @@ function walkAncestry(
   let maxDepth = MAX_DEPTH;
 
   while (currentPid && maxDepth > 0) {
+    // Windows reuses PIDs without reparenting orphans, so a cycle here is expected.
     if (visited.has(currentPid)) {
-      console.warn(`Detected cycle in process tree at PID ${currentPid}`);
       break;
     }
     visited.add(currentPid);

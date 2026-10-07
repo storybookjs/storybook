@@ -13,7 +13,7 @@ export const removeChangeDetectionFlag: Fix = {
   transform: () => [
     {
       filter: { kind: ['main'], code: 'changeDetection' },
-      // A mention outside `features`, such as a comment, must not fail on a spread it cannot edit.
+      // `remove` fails on a spread in `features`, even when the flag is only mentioned in a comment.
       editConfig: (main) => {
         if (main.getFieldNode(['features', 'changeDetection'])) {
           main.remove(['features', 'changeDetection']);

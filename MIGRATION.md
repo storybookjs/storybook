@@ -1227,6 +1227,7 @@ If change detection makes your Storybook slower, please [open an issue](https://
 The `remove-change-detection-flag` automigration deletes the flag from your main config, whether it is `true` or `false`.
 You can also run it with `storybook automigrate remove-change-detection-flag`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
 A typed main config that still sets the flag fails type-checking until it is removed.
 
 ### `--preview-url` and `--force-build-preview` removed

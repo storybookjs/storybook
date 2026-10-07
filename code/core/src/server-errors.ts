@@ -363,8 +363,7 @@ export class OpenServiceMissingEmbedOriginError extends StorybookError {
       name: 'OpenServiceMissingEmbedOriginError',
       category: Category.CORE_COMMON,
       code: 33,
-      message:
-        'The running Storybook does not serve story embeds. It was started with an older version; restart it, then retry.',
+      message: 'The running Storybook did not record an embed origin. Restart it, then retry.',
     });
   }
 }

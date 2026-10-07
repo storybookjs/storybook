@@ -8,15 +8,21 @@ import { isValidToken } from './validate-token.ts';
 export const createEmbedHostname = () => `sb-${randomUUID()}.localhost`;
 
 // A sandboxed frame loads modules as CORS requests with `Origin: null`, which any website can
-// send, so only requests to the unguessable hostname are made readable to it.
+// send, so only requests to the unguessable hostname are made readable to it. The HTML documents
+// stay unreadable: a frame navigates to them, and they carry the channel token that allows writes.
 export function getEmbedAccessMiddleware(embedHostname: string): Middleware {
   return (req, res, next) => {
-    // Reads only: a preflight answered here would open routes like the MCP endpoint to the frame.
-    const isRead = req.method === 'GET' || req.method === 'HEAD';
     const hostname = req.headers.host?.replace(/:\d+$/, '') ?? null;
-    if (isRead && isValidToken(hostname, embedHostname)) {
+    if (!isValidToken(hostname, embedHostname)) {
+      next();
+      return;
+    }
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+    const path = (req.url ?? '').split('?')[0];
+    const isDocument = path.endsWith('/') || path.endsWith('.html');
+    if (isRead && !isDocument) {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Referrer-Policy', 'no-referrer');
     }
     next();
   };

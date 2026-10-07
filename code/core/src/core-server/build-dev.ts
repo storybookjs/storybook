@@ -72,6 +72,8 @@ export async function resolveOnboardingInitialPath(
   return undefined;
 }
 
+const LOOPBACK_HOSTS = ['localhost', '127.0.0.1', '::1', '0.0.0.0', '::'];
+
 export async function buildDevStandalone(
   options: CLIOptions &
     LoadOptions &
@@ -300,7 +302,10 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
-    embedOrigin: Object.assign(new URL(localAddress), { hostname: embedHostname }).origin,
+    // `*.localhost` only reaches a server that listens on loopback.
+    ...(!options.host || LOOPBACK_HOSTS.includes(options.host)
+      ? { embedOrigin: Object.assign(new URL(localAddress), { hostname: embedHostname }).origin }
+      : {}),
     configDir: options.configDir,
     mcp,
     port,

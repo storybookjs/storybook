@@ -4,11 +4,11 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createEmbedHostname, getEmbedAccessMiddleware } from '../embed-access.ts';
 
-function request(host: string | undefined, method = 'GET') {
+function request(host: string | undefined, method = 'GET', url = '/src/Button.tsx?t=1') {
   const res = { setHeader: vi.fn() };
   const next = vi.fn();
   getEmbedAccessMiddleware('sb-secret.localhost')(
-    { headers: { host }, method } as IncomingMessage,
+    { headers: { host }, method, url } as IncomingMessage,
     res as any,
     next
   );
@@ -46,7 +46,20 @@ describe('getEmbedAccessMiddleware', () => {
   it.each(['OPTIONS', 'POST', 'PUT', 'DELETE'])(
     'adds no cross-origin access to a %s request',
     (method) => {
-      expect(request('sb-secret.localhost:6006', method).setHeader).not.toHaveBeenCalled();
+      expect(request('sb-secret.localhost:6006', method).setHeader).not.toHaveBeenCalledWith(
+        'Access-Control-Allow-Origin',
+        '*'
+      );
+    }
+  );
+
+  it.each(['/iframe.html?id=button--primary', '/', '/index.html', '/docs/'])(
+    'keeps the document at %s, which carries the channel token, unreadable',
+    (url) => {
+      const res = request('sb-secret.localhost:6006', 'GET', url);
+
+      expect(res.setHeader).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+      expect(res.setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
     }
   );
 });

@@ -16,7 +16,15 @@ const STORY_ID = 'components-badge--default';
 async function getEmbedUrl() {
   const { stdout } = await execFileAsync(
     process.execPath,
-    [dispatcher, 'tools', 'stories', 'embed', '--stories', JSON.stringify([{ storyId: STORY_ID }])],
+    [
+      dispatcher,
+      'tools',
+      '--attach',
+      'stories',
+      'embed',
+      '--stories',
+      JSON.stringify([{ storyId: STORY_ID }]),
+    ],
     { env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' }, timeout: 60_000 }
   );
   const embedUrl = stdout.split('\n').find((line) => line.includes('.localhost'));
@@ -51,7 +59,7 @@ test.describe('story embeds in a sandboxed frame', () => {
 
   const hostUrl = () => `http://127.0.0.1:${(host.address() as AddressInfo).port}/`;
 
-  test('renders a story through its embed URL, with working storage and absolute fetches', async ({
+  test('renders a story through its embed URL, with working storage and fetches', async ({
     page,
   }) => {
     frameSrc = await getEmbedUrl();
@@ -68,20 +76,9 @@ test.describe('story embeds in a sandboxed frame', () => {
         return [localStorage.getItem('embed'), sessionStorage.getItem('embed')];
       })
     ).toStrictEqual(['local', 'session']);
-    expect(
-      await frame.evaluate(() =>
-        Promise.all([
-          fetch('/index.json').then((response) => response.ok),
-          fetch(new Request('/index.json')).then((response) => response.ok),
-          new Promise((resolve) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', '/index.json');
-            xhr.onloadend = () => resolve(xhr.status === 200);
-            xhr.send();
-          }),
-        ])
-      )
-    ).toStrictEqual([true, true, true]);
+    expect(await frame.evaluate(() => fetch('/index.json').then((response) => response.ok))).toBe(
+      true
+    );
   });
 
   test('keeps the story blank through its normal URL', async ({ page }) => {

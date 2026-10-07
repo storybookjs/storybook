@@ -498,12 +498,44 @@ const getListOfSandboxes = (workflow: Workflow) => {
   }
 };
 
-export function getSandboxes(workflow: Workflow) {
-  const sandboxes = getListOfSandboxes(workflow).map(defineSandboxFlow);
+export function getSandboxes(workflowName: Workflow) {
+  const sandboxes = getListOfSandboxes(workflowName).map(defineSandboxFlow);
 
   const list: JobOrNoOpJob[] = sandboxes.flatMap((sandbox) => sandbox.jobs);
 
-  if (isWorkflowOrAbove(workflow, 'daily')) {
+  if (isWorkflowOrAbove(workflowName, 'daily')) {
+    const memorySandbox = sandboxes.find(
+      (sandbox) => sandbox.name === 'bench/react-vite-default-ts'
+    );
+    if (!memorySandbox) {
+      throw new Error('The memory benchmark requires the React/Vite benchmark sandbox.');
+    }
+    list.push(
+      defineJob(
+        'Storybook memory benchmark',
+        () => ({
+          executor: {
+            name: 'sb_playwright',
+            class: 'medium+',
+          },
+          steps: [
+            ...workflow.restoreLinux({ sandboxId: memorySandbox.id }),
+            {
+              run: {
+                name: 'Measure dev, HMR, and build memory',
+                command:
+                  'yarn task memory --template bench/react-vite-default-ts --no-link --start-from task',
+              },
+            },
+            artifact.persist(
+              join(LINUX_ROOT_DIR, SANDBOX_DIR, memorySandbox.path, 'memory-benchmark.json'),
+              'memory-benchmark'
+            ),
+          ],
+        }),
+        [memorySandbox.createJob]
+      )
+    );
     const windows_sandbox_build = defineWindowsSandboxBuild(sandboxes[0]);
     const windows_sandbox_dev = defineWindowsSandboxDev(sandboxes[0]);
 

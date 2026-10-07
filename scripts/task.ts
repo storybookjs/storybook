@@ -26,6 +26,7 @@ import { e2eTestsDev } from './tasks/e2e-tests-dev.ts';
 import { e2eTestsInternal } from './tasks/e2e-tests-internal.ts';
 import { generate } from './tasks/generate.ts';
 import { install } from './tasks/install.ts';
+import { memory } from './tasks/memory.ts';
 import { publish } from './tasks/publish.ts';
 import { runRegistryTask } from './tasks/run-registry.ts';
 import { sandbox } from './tasks/sandbox.ts';
@@ -98,6 +99,7 @@ const sandboxTasks = {
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,
   bench,
+  memory,
   'vitest-integration': vitestTests,
 };
 

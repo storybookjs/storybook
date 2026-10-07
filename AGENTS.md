@@ -67,6 +67,7 @@ yarn storybook:vitest
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
+| Run the Storybook memory bench  | `yarn task --task memory --template bench/react-vite-default-ts --start-from auto --no-link` |
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
 | List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
 | Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |

@@ -21,6 +21,20 @@ test.describe('navigating', () => {
     expect(sbPage.page.url()).toContain('/docs/example-button--docs');
   });
 
+  test('a URL with the title id of an unattached docs page redirects to the page', async ({
+    page,
+  }) => {
+    await page.goto(`${storybookUrl}?path=/docs/brand-typography`);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+
+    await page.waitForFunction(() =>
+      window.document.location.href.match('/docs/brand-typography--docs')
+    );
+    await expect(sbPage.previewIframe().getByRole('heading', { name: 'Monospace' })).toBeVisible();
+  });
+
   test('searching for "typography" surfaces the brand typography docs entry', async ({ page }) => {
     await page.goto(storybookUrl);
 

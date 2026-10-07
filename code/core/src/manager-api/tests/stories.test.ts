@@ -741,6 +741,21 @@ describe('stories API', () => {
       provider.channel.emit(STORY_SPECIFIED, { storyId: 'a--1', viewMode: 'story' });
       expect(navigate).not.toHaveBeenCalled();
     });
+    it('navigates to the entry the preview resolved from a partial id', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          path: '/docs/intro',
+          storyId: 'intro',
+          viewMode: 'docs',
+          index: { 'intro--docs': { type: 'docs', id: 'intro--docs' } as any },
+        },
+      });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, provider } = moduleArgs;
+
+      provider.channel.emit(STORY_SPECIFIED, { storyId: 'intro--docs', viewMode: 'docs' });
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
+    });
     it('DOES not navigate if a settings page was selected', async () => {
       const moduleArgs = createMockModuleArgs({
         initialState: { path: '/settings/about', index: {} },

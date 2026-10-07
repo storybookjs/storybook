@@ -1128,7 +1128,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = !(type === 'root' || type === 'component' || type === 'group');
+        const isStory = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few

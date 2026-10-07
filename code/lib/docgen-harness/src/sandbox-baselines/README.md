@@ -8,7 +8,7 @@ That is where component name collisions, unresolvable imports, and tsconfig cove
 
 ## Where the data comes from
 
-`build-storybook` with `features.experimentalDocgenServer` writes one snapshot per component to `storybook-static/services/core/docgen/`.
+`build-storybook` with `features.docgenServer` writes one snapshot per component to `storybook-static/services/core/docgen/`.
 The recorder reads that directory and keeps only the portable `DocgenPayload` fields, so engine-specific extras (the raw Compodoc entry, roughly 117KB of source text across a stock sandbox) stay out of the repository.
 Absolute sandbox paths inside error messages are rewritten to `<sandbox>`, because a sandbox lives somewhere different on every machine and every CI run.
 
@@ -18,7 +18,7 @@ Skipping them takes the Angular sandbox from 111 recorded components to 37, of w
 
 ## Which templates are covered
 
-Every sandbox template whose main config turns on both `experimentalDocgenServer` and `componentsManifest`, read from the template definitions themselves rather than from a list kept here.
+Every sandbox template whose main config turns on both `docgenServer` and `componentsManifest`, read from the template definitions themselves rather than from a list kept here.
 Turning those flags on for a template is all it takes to bring it into this coverage, and there is nothing to keep in sync.
 A template that is flagged but has nothing recorded yet fails rather than skipping quietly.
 

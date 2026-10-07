@@ -126,7 +126,7 @@ function main(): void {
     // Silence here would read as "everything passed" while nothing had been checked.
     console.error(
       'No sandbox template enables server docgen, so there is nothing to baseline. Set ' +
-        'features.experimentalDocgenServer and features.componentsManifest on a template first.'
+        'features.docgenServer and features.componentsManifest on a template first.'
     );
     process.exitCode = 1;
     return;

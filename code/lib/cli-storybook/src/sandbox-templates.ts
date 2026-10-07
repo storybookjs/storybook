@@ -534,7 +534,7 @@ export const baseTemplates = {
       storiesVariant: 'vue3-vite-default-ts',
       mainConfig: {
         features: {
-          experimentalDocgenServer: true,
+          docgenServer: true,
           componentsManifest: true,
         },
       },
@@ -712,7 +712,7 @@ export const baseTemplates = {
       // docgen path is now an explicit opt-out rather than the absence of a flag.
       mainConfig: {
         features: {
-          experimentalDocgenServer: false,
+          docgenServer: false,
         },
       },
     },
@@ -752,7 +752,7 @@ export const baseTemplates = {
       // `docgenServerTemplates`.
       mainConfig: {
         features: {
-          experimentalDocgenServer: true,
+          docgenServer: true,
           componentsManifest: true,
         },
       },
@@ -1140,9 +1140,9 @@ export const daily: TemplateKey[] = [
 
 export const templatesByCadence = { normal, merged, daily };
 
-// Both are required: without `componentsManifest`, `experimentalDocgenServer` writes nothing to disk
+// Both are required: without `componentsManifest`, `docgenServer` writes nothing to disk
 // for the recorded baselines to read.
-const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
+const DOCGEN_SERVER_FEATURES = ['docgenServer', 'componentsManifest'] as const;
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
 // read without running the sandbox generator. A new function-form template throws below instead of

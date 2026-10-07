@@ -999,7 +999,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   // wiring an opting-out user adds by hand.
   if (template.expected.framework === '@storybook/angular-vite') {
     const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
-    if (mainConfig.getValue(['features', 'experimentalDocgenServer']) === false) {
+    if (mainConfig.getValue(['features', 'docgenServer']) === false) {
       previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
       previewConfig.setImport('docJson', '../documentation.json');
       previewConfig._ast.program.body.push(

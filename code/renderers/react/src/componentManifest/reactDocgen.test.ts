@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { matchPath, parseWithReactDocgen } from './reactDocgen.ts';
+import { getMatchingDocgen, matchPath, parseWithReactDocgen } from './reactDocgen.ts';
 import { invalidateCache } from './utils.ts';
 
 const tempDirs: string[] = [];
@@ -27,6 +27,26 @@ async function parse(code: string, name = 'Component.tsx') {
   const filename = `/virtual/${name}`;
   return parseWithReactDocgen(code, filename);
 }
+
+test('matches a default import by component name when reexports contain multiple defaults', async () => {
+  const skeleton = await parse(
+    'export default function ButtonSkeleton() { return <span /> }',
+    'Button.Skeleton.tsx'
+  );
+  const button = await parse(
+    'export default function Button() { return <button /> }',
+    'Button.tsx'
+  );
+
+  const match = getMatchingDocgen([...skeleton, ...button], {
+    componentName: 'Button',
+    importName: 'default',
+    localImportName: 'Button',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('Button');
+});
 
 describe('parseWithReactDocgen exportName coverage', () => {
   test('inline default export function declaration', async () => {

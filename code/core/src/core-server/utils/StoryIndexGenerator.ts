@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
+import { types as t } from 'storybook/internal/babel';
 import {
   commonGlobOptions,
   getProjectRoot,
@@ -890,16 +891,17 @@ export class StoryIndexGenerator {
     if (previewCode) {
       try {
         const projectAnnotations = loadConfig(previewCode).parse();
-        const tags = projectAnnotations.getValue(['tags']) ?? [];
-        invariant(
-          !projectAnnotations.mutationDiagnostics.some(
-            ({ code }) => code === 'unsupported-value'
-          ) &&
-            Array.isArray(tags) &&
-            tags.every((tag) => typeof tag === 'string'),
-          'Preview tags must be a static array of strings'
-        );
-        projectTags = tags;
+        const tagsNode = projectAnnotations.getFieldNode(['tags']);
+        if (tagsNode) {
+          invariant(
+            t.isArrayExpression(tagsNode),
+            'Preview tags must be a static array of strings'
+          );
+          projectTags = tagsNode.elements.map((tag) => {
+            invariant(t.isStringLiteral(tag), 'Preview tags must be a static array of strings');
+            return tag.value;
+          });
+        }
       } catch (err) {
         once.warn(dedent`
           Unable to parse tags from project configuration. If defined, tags should be specified inline, e.g.

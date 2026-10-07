@@ -112,6 +112,23 @@ describe('argtypes-default-value', () => {
     expect(result.story).toBe(story);
   });
 
+  it('reports a deprecated defaultValue in shared argTypes for manual migration', async () => {
+    const story = [
+      'const sharedArgTypes = { label: { defaultValue: "Hi", control: "text" } };',
+      'export default { argTypes: sharedArgTypes };',
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      {
+        file: storyPath,
+        kind: 'story',
+        message: expect.stringContaining('Shared argTypes contain defaultValue'),
+      },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('deletes an explicit defaultValue that sits beside a spread', async () => {
     const result = await migrate({
       story:

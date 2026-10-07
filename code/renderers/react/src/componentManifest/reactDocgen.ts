@@ -45,6 +45,17 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
     return docgens[0];
   }
 
+  if (component.importName === 'default') {
+    const names = new Set([component.localImportName, component.componentName].filter(Boolean));
+    const matchingName = docgens.find(
+      (docgen) =>
+        names.has(docgen.actualName) || (docgen.displayName && names.has(docgen.displayName))
+    );
+    if (matchingName) {
+      return matchingName;
+    }
+  }
+
   const matchingDocgen =
     docgens.find((docgen) =>
       [component.importName, component.localImportName].includes(docgen.exportName)

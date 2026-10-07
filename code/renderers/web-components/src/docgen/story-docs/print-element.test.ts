@@ -3,14 +3,28 @@ import { describe, expect, it } from 'vitest';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
 
+type ElementSnippetFixture = Omit<ElementSnippet, 'listeners'> & {
+  listeners?: ListenerFixture[];
+};
+
+type ListenerFixture = Omit<ElementSnippet['listeners'][number], 'tag'> & { tag?: string };
+
 interface PrintCase {
   name: string;
-  snippet: ElementSnippet;
+  snippet: ElementSnippetFixture;
   assert: (value: string) => void;
 }
 
+const withListeners = (snippet: ElementSnippetFixture): ElementSnippet => ({
+  ...snippet,
+  listeners: (snippet.listeners ?? []).map((listener) => ({
+    ...listener,
+    tag: listener.tag ?? snippet.tag,
+  })),
+});
+
 describe('printElementSnippet', () => {
-  it.each<PrintCase>([
+  const printCases: PrintCase[] = [
     {
       name: 'attributes only',
       snippet: {
@@ -90,7 +104,10 @@ describe('printElementSnippet', () => {
           "<demo-card>
             Body <b>text</b>
             <button slot="actions">Go</button>
-            <span slot="footer"><b>One</b><i>Two</i></span>
+            <span slot="footer">
+              <b>One</b>
+              <i>Two</i>
+            </span>
           </demo-card>"
         `),
     },
@@ -106,7 +123,9 @@ describe('printElementSnippet', () => {
       assert: (value) =>
         expect(value).toMatchInlineSnapshot(`
           "<demo-card>
-            <span slot="actions"><button slot="menu">Go</button></span>
+            <span slot="actions">
+              <button slot="menu">Go</button>
+            </span>
           </demo-card>"
         `),
     },
@@ -137,7 +156,9 @@ describe('printElementSnippet', () => {
       assert: (value) =>
         expect(value).toMatchInlineSnapshot(`
           "<demo-card>
-            <button slot="actions"><button>Inner</button></button>
+            <button slot="actions">
+              <button>Inner</button>
+            </button>
           </demo-card>"
         `),
     },
@@ -185,7 +206,9 @@ describe('printElementSnippet', () => {
       assert: (value) =>
         expect(value).toMatchInlineSnapshot(`
           "<demo-card>
-            <span slot="actions"><button /></span>
+            <span slot="actions">
+              <button></button>
+            </span>
           </demo-card>"
         `),
     },
@@ -211,6 +234,202 @@ describe('printElementSnippet', () => {
         `),
     },
     {
+      name: 'root-only listeners',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [{ name: 'label', value: 'Save' }],
+        cssProperties: [],
+        listeners: [
+          { event: 'my-change', handler: '(event) => {}' },
+          { event: 'my-close', handler: '() => {}' },
+        ],
+        slots: [],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card label="Save"></demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('my-change', (event) => {});
+              host.addEventListener('my-close', () => {});
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'duplicate listener event',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [
+          { event: 'my-change', handler: '(event) => first(event)' },
+          { event: 'my-change', handler: '(event) => second(event)' },
+          { event: 'my-close', handler: '() => {}' },
+        ],
+        slots: [],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card></demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('my-change', (event) => first(event));
+              host.addEventListener('my-close', () => {});
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'nested-only listeners',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [{ event: 'click', handler: '() => {}', tag: 'button' }],
+        slots: [{ name: 'default', html: '<button>Go</button>' }],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <button>Go</button>
+          </demo-card>"
+        `),
+    },
+    {
+      name: 'mixed listener targets',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [
+          { event: 'my-change', handler: '() => {}', tag: 'demo-card' },
+          { event: 'click', handler: '() => {}', tag: 'button' },
+          { event: 'click', handler: '() => second()', tag: 'button' },
+        ],
+        slots: [{ name: 'default', html: '<button>Go</button>' }],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <button>Go</button>
+          </demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('my-change', () => {});
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'event name containing script close',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [{ event: 'before</script>after', handler: '() => {}' }],
+        slots: [],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card></demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('before\\x3C/script>after', () => {});
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'handler containing script close',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [{ event: 'click', handler: "() => '</script>'" }],
+        slots: [],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card></demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('click', () => '<\\/script>');
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'handler containing html comment open',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [{ event: 'click', handler: "() => '<!--'" }],
+        slots: [],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card></demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('click', () => '<\\!--');
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'handler containing script open',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [{ event: 'click', handler: "() => '<!--<script>'" }],
+        slots: [],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card></demo-card>
+          <script>
+            {
+              const host = document.currentScript.previousElementSibling;
+              host.addEventListener('click', () => '<\\!--<\\script>');
+            }
+          </script>"
+        `),
+    },
+    {
+      name: 'listener tag with quote',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        listeners: [{ event: 'click', handler: '() => {}', tag: "x-'button" }],
+        slots: [{ name: 'default', html: "<x-'button>Go</x-'button>" }],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <x-'button>Go</x-'button>
+          </demo-card>"
+        `),
+    },
+    {
       name: 'everything together',
       snippet: {
         tag: 'demo-card',
@@ -224,12 +443,12 @@ describe('printElementSnippet', () => {
           "<style>
             demo-card::part(panel) { color: red; }
           </style>
-          <demo-card label="Save" style="--accent: teal;">
-            Body
-          </demo-card>"
+          <demo-card label="Save" style="--accent: teal;">Body</demo-card>"
         `),
     },
-  ])('$name', ({ snippet, assert }) => {
-    assert(printElementSnippet(snippet));
+  ];
+
+  it.each(printCases)('$name', ({ snippet, assert }) => {
+    assert(printElementSnippet(withListeners(snippet)));
   });
 });

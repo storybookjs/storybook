@@ -27,6 +27,7 @@ const declaration = {
     { name: 'active', fieldName: 'active' },
     { name: 'is-open', fieldName: 'isOpen' },
     { name: 'variant' },
+    { name: 'heading', fieldName: 'heading' },
   ],
   members: [
     { kind: 'field', name: 'label', attribute: 'label' } as ManifestClassField & {
@@ -47,6 +48,9 @@ const declaration = {
       attribute: string;
     },
     { kind: 'field', name: 'isOpen', attribute: 'is-open' } as ManifestClassField & {
+      attribute: string;
+    },
+    { kind: 'field', name: 'heading', attribute: 'heading' } as ManifestClassField & {
       attribute: string;
     },
     { kind: 'field', name: 'items' },
@@ -184,6 +188,222 @@ describe('buildStoryDocsPayload', () => {
       },
     },
     {
+      name: 'story render template',
+      source: `
+        import { html } from 'lit';
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { label: 'Template', count: 2 },
+          render: (args) => html\`<test-element label=\${args.label} count=\${args.count}></test-element>\`,
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element label="Template" count="2"></test-element>',
+      },
+    },
+    {
+      name: 'story render block template aliases',
+      source: `
+        import { html } from 'lit';
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { label: 'Aliased', count: 7, heading: 'Head' },
+          render: (args) => {
+            const { label, count: n } = args;
+            const heading = args.heading;
+            const tag = html\`<b>\${label}</b>\`;
+            return html\`<test-element label=\${label} count=\${n} .heading=\${heading}>\${tag}</test-element>\`;
+          },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element label="Aliased" count="7" heading="Head">
+  <b>Aliased</b>
+</test-element>`,
+      },
+    },
+    {
+      name: 'meta render fallback',
+      source: `
+        import { html } from 'lit';
+        export default {
+          title: 'Example/TestElement',
+          component: 'test-element',
+          render: (args) => html\`<test-element label=\${args.label}></test-element>\`,
+        };
+        export const Primary = { args: { label: 'Meta render' } };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element label="Meta render"></test-element>',
+      },
+    },
+    {
+      name: 'story render unresolved does not fall back to meta render',
+      source: `
+        import { html } from 'lit';
+        import { ImportedRender } from './shared-render';
+        export default {
+          title: 'Example/TestElement',
+          component: 'test-element',
+          render: (args) => html\`<test-element label="meta-\${args.label}"></test-element>\`,
+        };
+        export const Primary = { args: { label: 'Story' }, render: ImportedRender };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element label="Story"></test-element>',
+        warning: 'Incomplete snippet: `ImportedRender` could not be resolved statically.',
+      },
+      files: { 'shared-render.ts': `export const ImportedRender = () => null;` },
+    },
+    {
+      name: 'csf2 function story',
+      source: `
+        import { html } from 'lit';
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = (args) => html\`<test-element label=\${args.label}></test-element>\`;
+        Primary.args = { label: 'csf2' };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element label="csf2"></test-element>',
+      },
+    },
+    {
+      name: 'unbound args warning for render template',
+      source: `
+        import { html } from 'lit';
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { label: 'Bound', count: 2 },
+          render: (args) => html\`<test-element label=\${args.label}></test-element>\`,
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element label="Bound"></test-element>',
+        warning: 'Incomplete snippet: args not bound by the render template: `count`.',
+      },
+    },
+    {
+      name: 'unresolved template expression arg is not unbound',
+      source: `
+        import { html } from 'lit';
+        import { classMap } from 'lit/directives/class-map.js';
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { active: true },
+          render: (args) => html\`<test-element class=\${classMap({ active: Boolean(args.active) })}></test-element>\`,
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element></test-element>',
+        warning:
+          'Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.',
+      },
+    },
+    {
+      name: 'args event row listener',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { 'shape-change-event': (event) => event.preventDefault() },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element></test-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', event => event.preventDefault());
+  }
+</script>`,
+      },
+    },
+    {
+      name: 'args on-convention listener',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { onShapeChange: () => {} },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element></test-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>`,
+      },
+    },
+    {
+      name: 'args duplicate event listeners',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { 'shape-change-event': (event) => first(event), onShapeChange: (event) => second(event) },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element></test-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', event => first(event));
+  }
+</script>`,
+      },
+    },
+    {
+      name: 'args listener without matching event',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { onUnknown: () => {} },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element></test-element>',
+        warning: 'Incomplete snippet: listeners the HTML snippet cannot express: `onUnknown`.',
+      },
+    },
+    {
+      name: 'function arg in non-event argTypes row warns as listener',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: { label: () => 'x' },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: '<test-element></test-element>',
+        warning: 'Incomplete snippet: listeners the HTML snippet cannot express: `label`.',
+      },
+    },
+    {
       name: 'uses the docgen declaration tag',
       source: `
         const Button = {};
@@ -196,8 +416,8 @@ describe('buildStoryDocsPayload', () => {
         snippet: '<test-element label="Meta"></test-element>',
       },
     },
-  ])('$name', async ({ source, expected }) => {
-    await expect(firstStory(source)).resolves.toEqual(expected);
+  ])('$name', async ({ source, expected, files }) => {
+    await expect(firstStory(source, { files })).resolves.toEqual(expected);
   });
 
   it('records story-level errors', async () => {

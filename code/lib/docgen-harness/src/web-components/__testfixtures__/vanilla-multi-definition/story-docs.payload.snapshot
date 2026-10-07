@@ -19,9 +19,7 @@ Incomplete snippet: properties without an attribute: `betaLabel`.",
     "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
-      "snippet": "<multi-beta></multi-beta>",
-      "warning": "Incomplete snippet: `args => html`<multi-beta beta-label=${args.betaLabel}></multi-beta>`` could not be resolved statically.
-Incomplete snippet: properties without an attribute: `betaLabel`.",
+      "snippet": "<multi-beta beta-label="Beta"></multi-beta>",
     },
   },
 }

@@ -1,3 +1,7 @@
 <csf-shapes label="Meta"></csf-shapes>
-
-warning: Incomplete snippet: listeners the HTML snippet cannot express: `shape-change-event`, `onShapeChange`.
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>

@@ -1,3 +1,8 @@
 <lit-events value="default event"></lit-events>
-
-warning: Incomplete snippet: listeners the HTML snippet cannot express: `my-change-event`, `my-close-event`.
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>

@@ -43,6 +43,7 @@ describe('classifyArg', () => {
       isFunction: false,
       expected: { kind: 'attribute', name: 'label', viaField: false },
     },
+    { key: 'label', isFunction: true, expected: { kind: 'listener' } },
     {
       key: 'count',
       isFunction: false,
@@ -61,8 +62,22 @@ describe('classifyArg', () => {
     },
     { key: '--accent', isFunction: false, expected: { kind: 'cssProperty', name: '--accent' } },
     { key: '--nope', isFunction: false, expected: { kind: 'unknown' } },
-    { key: 'shape-change-event', isFunction: false, expected: { kind: 'listener' } },
+    {
+      key: 'shape-change-event',
+      isFunction: false,
+      expected: { event: 'shape-change', kind: 'listener' },
+    },
     { key: 'onShapeChange', isFunction: false, expected: { kind: 'unknown' } },
+    {
+      key: 'onShapeChange',
+      isFunction: true,
+      expected: { event: 'shape-change', kind: 'listener' },
+    },
+    {
+      key: 'shape-change',
+      isFunction: true,
+      expected: { event: 'shape-change', kind: 'listener' },
+    },
     { key: 'anything', isFunction: true, expected: { kind: 'listener' } },
     { key: 'refresh-method', isFunction: false, expected: { kind: 'method' } },
     { key: 'default-slot', isFunction: false, expected: { kind: 'slot', name: 'default' } },

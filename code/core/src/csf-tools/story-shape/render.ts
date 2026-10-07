@@ -1,11 +1,13 @@
 import { type NodePath, type types as t } from 'storybook/internal/babel';
 
+import type { CsfFile } from '../CsfFile.ts';
+import { normalizeStoryDeclaration } from './normalize-story.ts';
 import {
   type ReferenceContext,
   type ResolvedMembers,
   resolveObjectMembers,
 } from './resolve-members.ts';
-import { keyOf, pathForNode, resolveIdentifierInit } from './utils.ts';
+import { keyOf, metaObjectPath, pathForNode, resolveIdentifierInit } from './utils.ts';
 
 /** A function a story or meta supplies through `render`. */
 export type RenderFunctionPath = NodePath<
@@ -27,6 +29,8 @@ export type RenderResolution =
   | { kind: 'missing' }
   | { kind: 'resolved'; path: RenderFunctionPath }
   | { kind: 'unresolved'; shadowedRender?: RenderFunctionPath };
+
+type RenderReadResult = RenderResolution | { kind: 'invalid'; path: NodePath<t.Node> };
 
 const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
   path.isArrowFunctionExpression() || path.isFunctionExpression() || path.isFunctionDeclaration();
@@ -86,7 +90,12 @@ export function resolveRenderFunction(
       : { kind: 'missing' };
   }
 
-  const resolved = resolveRenderProperty(properties[renderIndex], storyDeclaration);
+  const resolved = readRenderProperty(properties[renderIndex], storyDeclaration);
+  if (resolved.kind === 'invalid') {
+    throw resolved.path.buildCodeFrameError(
+      'Expected render to be an arrow function or function expression'
+    );
+  }
   if (properties.some((property, index) => index > renderIndex && property.isSpreadElement())) {
     const read = throughSpreads();
     if (read.kind !== 'unresolved') {
@@ -99,6 +108,83 @@ export function resolveRenderFunction(
 
   return resolved;
 }
+
+export function resolveEffectiveRender(
+  csf: CsfFile,
+  exportName: string,
+  references?: ReferenceContext
+): RenderResolution {
+  const declaration = csf._storyDeclarationPath[exportName];
+  const normalized = normalizeStoryDeclarationForRender(declaration);
+  if (normalized.type === 'fn') {
+    return { kind: 'resolved', path: normalized.path };
+  }
+
+  const storyRender = readRender(
+    normalized.type === 'config' ? normalized.path : undefined,
+    declaration,
+    references
+  );
+  if (storyRender.kind === 'invalid') {
+    return { kind: 'unresolved' };
+  }
+  if (storyRender.kind !== 'missing') {
+    return storyRender;
+  }
+
+  const metaRender = readRender(metaObjectPath(csf), declaration, references);
+  return metaRender.kind === 'invalid' ? { kind: 'unresolved' } : metaRender;
+}
+
+const normalizeStoryDeclarationForRender = normalizeStoryDeclaration;
+
+const readRender = (
+  config: NodePath<t.ObjectExpression> | undefined,
+  storyDeclaration: NodePath<t.Node>,
+  references?: ReferenceContext
+): RenderReadResult => {
+  const properties = config?.get('properties') ?? [];
+
+  let renderIndex = -1;
+  for (let index = properties.length - 1; index >= 0; index -= 1) {
+    const property = properties[index];
+    if (
+      (property.isObjectProperty() || property.isObjectMethod()) &&
+      keyOf(property.node) === 'render'
+    ) {
+      renderIndex = index;
+      break;
+    }
+  }
+
+  const throughSpreads = () =>
+    config && references
+      ? renderFromMembers(
+          resolveObjectMembers(config.node, references),
+          references,
+          storyDeclaration
+        )
+      : { kind: 'unresolved' as const };
+
+  if (renderIndex === -1) {
+    return properties.some((property) => property.isSpreadElement())
+      ? throughSpreads()
+      : { kind: 'missing' };
+  }
+
+  const resolved = readRenderProperty(properties[renderIndex], storyDeclaration);
+  if (properties.some((property, index) => index > renderIndex && property.isSpreadElement())) {
+    const read = throughSpreads();
+    if (read.kind !== 'unresolved') {
+      return read;
+    }
+    return resolved.kind === 'resolved'
+      ? { kind: 'unresolved', shadowedRender: resolved.path }
+      : { kind: 'unresolved' };
+  }
+
+  return resolved;
+};
 
 /**
  * The `render` a config's resolved members hold, once its spreads have been followed.
@@ -138,10 +224,10 @@ function renderFromMembers(
   return isRenderFunction(path) ? { kind: 'resolved', path } : { kind: 'unresolved' };
 }
 
-function resolveRenderProperty(
+function readRenderProperty(
   renderProperty: NodePath<t.ObjectExpression['properties'][number]>,
   storyDeclaration: NodePath<t.Node>
-): Extract<RenderResolution, { kind: 'resolved' | 'unresolved' }> {
+): Extract<RenderReadResult, { kind: 'invalid' | 'resolved' | 'unresolved' }> {
   if (renderProperty.isObjectMethod()) {
     // A getter's render value is what it returns, a setter reads as undefined, and a generator is
     // not a render function, so only a plain method is the function itself.
@@ -160,9 +246,7 @@ function resolveRenderProperty(
   }
 
   if (!isRenderFunction(renderPath)) {
-    throw renderPath.buildCodeFrameError(
-      'Expected render to be an arrow function or function expression'
-    );
+    return { kind: 'invalid', path: renderPath };
   }
 
   return { kind: 'resolved', path: renderPath };

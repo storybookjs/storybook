@@ -53,7 +53,7 @@ export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
   ? C & { csf4: true }
   : never;
 
-export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[] = []>(
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   type TPreviewRenderer = TRenderer & InferTypes<Addons>;

@@ -50,17 +50,6 @@ test('csf factories', () => {
   expect(MyStory.input.args?.label).toBe('Hello world');
 });
 
-test('addons can be omitted without collapsing preview types', () => {
-  const previewWithoutAddons = __definePreview({});
-  const meta = previewWithoutAddons.meta({
-    component: Button,
-    args: { disabled: false },
-  });
-  const story = meta.story({ args: { label: 'No addons' } });
-
-  expect(story.input.args?.label).toBe('No addons');
-});
-
 test('legacy annotation namespaces are accepted as addons', () => {
   const previewWithLegacyAnnotations = __definePreview({
     addons: [legacyAnnotations],

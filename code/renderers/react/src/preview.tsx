@@ -49,8 +49,8 @@ import type { ReactTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddonEntry[] = []>(
-  input: { addons?: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
+  input: { addons: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,

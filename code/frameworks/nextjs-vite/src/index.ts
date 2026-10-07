@@ -18,7 +18,7 @@ export * from '@storybook/react';
 export * from './portable-stories.ts';
 export * from './types.ts';
 
-export function definePreview<Addons extends PreviewAddonEntry[] = []>(
+export function definePreview<Addons extends PreviewAddonEntry[]>(
   preview: { addons?: Addons } & ProjectAnnotations<ReactTypes & NextJsTypes & InferTypes<Addons>>
 ): NextPreview<InferTypes<Addons>> {
   return __definePreview({

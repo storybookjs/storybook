@@ -45,8 +45,8 @@ import { type VueTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddonEntry[] = []>(
-  input: { addons?: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
+  input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
 ): VuePreview<VueTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,

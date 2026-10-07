@@ -16,7 +16,9 @@ export function attachEmbedAccess(server: Server, token: string = embedToken) {
   // Polka matches routes before running middleware, so the base is stripped ahead of it.
   server.prependListener('request', (req: EmbedRequest, res) => {
     const [, requestToken, path] = EMBED_PATH.exec(req.url ?? '') ?? [];
-    if (!isValidToken(requestToken ?? null, token)) {
+    // Reads only: a preflight answered here would open routes like the MCP endpoint to the frame.
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+    if (!isRead || !isValidToken(requestToken ?? null, token)) {
       return;
     }
     req.url = path;

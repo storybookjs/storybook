@@ -5,10 +5,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { type EmbedRequest, attachEmbedAccess, getEmbedBase } from '../embed-access.ts';
 
-function request(url: string) {
+function request(url: string, method = 'GET') {
   const server = new EventEmitter() as Server;
   attachEmbedAccess(server, 'secret');
-  const req = { url } as EmbedRequest;
+  const req = { url, method } as EmbedRequest;
   const res = { setHeader: vi.fn() };
   server.emit('request', req, res);
   return { req, res };
@@ -45,13 +45,24 @@ describe('attachEmbedAccess', () => {
     expect(res.setHeader).not.toHaveBeenCalled();
   });
 
+  it.each(['OPTIONS', 'POST', 'PUT', 'DELETE'])('leaves a %s request untouched', (method) => {
+    const { req, res } = request('/embed/secret/mcp', method);
+
+    expect(req.url).toBe('/embed/secret/mcp');
+    expect(res.setHeader).not.toHaveBeenCalled();
+  });
+
   it('runs before the listeners already on the server', () => {
     const server = new EventEmitter() as Server;
     const seen: (string | undefined)[] = [];
     server.on('request', (req) => seen.push(req.url));
     attachEmbedAccess(server, 'secret');
 
-    server.emit('request', { url: '/embed/secret/index.json' }, { setHeader: vi.fn() });
+    server.emit(
+      'request',
+      { url: '/embed/secret/index.json', method: 'GET' },
+      { setHeader: vi.fn() }
+    );
 
     expect(seen).toEqual(['/index.json']);
   });

@@ -1206,7 +1206,6 @@ describe('Refs API', () => {
           'component-a',
           'component-a--page',
           'component-a--story-2',
-          'component-b',
           'component-b--page',
           'component-c',
           'component-c--story-4',
@@ -1258,7 +1257,7 @@ describe('Refs API', () => {
         const hash = refs.fake.index;
 
         // We need exact key ordering, even if in theory JS doesn't guarantee it
-        expect(Object.keys(hash)).toEqual(['component-a', 'component-a--docs']);
+        expect(Object.keys(hash)).toEqual(['component-a--docs']);
         expect(hash['component-a--docs'].type).toBe('docs');
       });
     });

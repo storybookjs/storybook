@@ -202,28 +202,16 @@ export const DocsOnlySingleStoryComponents = {
         isBrowsing
         isMain
         refId={DEFAULT_REF_ID}
-        // @ts-expect-error (non strict)
         data={{
-          ...{
-            single: {
-              type: 'component',
-              name: 'Single',
-              id: 'single',
-              parent: null,
-              depth: 0,
-              children: ['single--docs'],
-            },
-            'single--docs': {
-              type: 'docs',
-              id: 'single--docs',
-              title: 'Single',
-              name: 'Single',
-              tags: [],
-              prepared: true,
-              depth: 1,
-              parent: 'single',
-              importPath: './single.stories.js',
-            },
+          'single--docs': {
+            type: 'docs',
+            id: 'single--docs',
+            title: 'Single',
+            name: 'Single',
+            tags: [],
+            prepared: true,
+            depth: 0,
+            importPath: './single.stories.js',
           },
           ...Object.keys(index).reduce((acc, key) => {
             if (key === 'tooltip-tooltipselect--default') {

@@ -19,6 +19,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Manager index: title entries are typed by their contents](#manager-index-title-entries-are-typed-by-their-contents)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
@@ -916,6 +917,27 @@ option exists in both places, keep the nested value because it was authoritative
 `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working - the parameter is optional.
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
+
+### Manager index: title entries are typed by their contents
+
+The manager index (`useStorybookState().index` and `filteredIndex`) used to type every title by its position: the last segment of a title was always a `component`.
+An unattached docs page (for example an MDX file with `<Meta title="Introduction" />`) was therefore wrapped in a synthetic `component` with a single `docs` child, which the sidebar hid when rendering.
+
+Each title is now typed by everything the story index puts under it:
+
+| Under the title | Entry in the manager index |
+| --- | --- |
+| Other titles | `group` (or `root`) |
+| At least one story | `component` |
+| Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
+| Several docs pages and no stories | `group` |
+
+The type comes from the full index, so `index` and `filteredIndex` always agree on it.
+Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child, and the sidebar shows it as such instead of collapsing it.
+
+Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs` entry instead of the old wrapper and its `Docs` child.
+Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
+`api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
 
 ### Test runner support ended
 

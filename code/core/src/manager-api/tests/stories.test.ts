@@ -18,7 +18,11 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/client-logger';
-import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
+import {
+  type API_PreparedIndexEntry,
+  type API_StoryEntry,
+  type StoryIndex,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -371,36 +375,36 @@ describe('stories API', () => {
       api.setIndex({
         v: 5,
         entries: {
-          'a-sampleone': {
+          'a-sampleone--1': {
             type: 'story',
             subtype: 'story',
-            id: 'a-sampleone',
+            id: 'a-sampleone--1',
             title: 'A/SampleOne',
             name: '1',
             tags: ['shared', 'one-specific'],
             importPath: './a.ts',
           },
-          'a-sampletwo': {
+          'a-sampletwo--2': {
             type: 'story',
             subtype: 'story',
-            id: 'a-sampletwo',
+            id: 'a-sampletwo--2',
             title: 'A/SampleTwo',
             name: '2',
             tags: ['shared', 'two-specific'],
             importPath: './a.ts',
           },
-          'a-embedded-othertopic': {
+          'a-embedded-othertopic--docs': {
             type: 'docs',
-            id: 'a-embedded-othertopic',
+            id: 'a-embedded-othertopic--docs',
             title: 'A/Embedded/OtherTopic',
             name: '3',
             tags: ['shared', 'embedded-docs-specific', 'other'],
             storiesImports: [],
             importPath: './embedded/other.mdx',
           },
-          'a-embedded-extras': {
+          'a-embedded-extras--docs': {
             type: 'docs',
-            id: 'a-embedded-extras',
+            id: 'a-embedded-extras--docs',
             title: 'A/Embedded/Extras',
             name: '3',
             tags: ['shared', 'embedded-docs-specific', 'extras'],
@@ -414,10 +418,12 @@ describe('stories API', () => {
       expect(Object.keys(index!)).toEqual([
         'a',
         'a-sampleone',
+        'a-sampleone--1',
         'a-sampletwo',
+        'a-sampletwo--2',
         'a-embedded',
-        'a-embedded-othertopic',
-        'a-embedded-extras',
+        'a-embedded-othertopic--docs',
+        'a-embedded-extras--docs',
       ]);
       // Acts as the root, so that the next level is a group we're testing.
       expect(index!.a).toMatchObject({
@@ -559,7 +565,6 @@ describe('stories API', () => {
           'component-a',
           'component-a--page',
           'component-a--story-2',
-          'component-b',
           'component-b--docs',
           'component-c',
           'component-c--story-4',
@@ -579,7 +584,7 @@ describe('stories API', () => {
           const { store } = moduleArgs;
           api.setIndex({ v: 5, entries: docsEntries });
           const { index } = store.getState();
-          expect(Object.keys(index!)).toEqual(['component-b', 'component-b--docs']);
+          expect(Object.keys(index!)).toEqual(['component-b--docs']);
         });
       });
     });
@@ -1066,6 +1071,29 @@ describe('stories API', () => {
       api.jumpToComponent(1);
       expect(navigate).not.toHaveBeenCalled();
     });
+    it('lands on an unattached docs page', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          ...navigationEntries,
+          'intro--docs': {
+            type: 'docs',
+            id: 'intro--docs',
+            title: 'Intro',
+            name: 'Page',
+            importPath: './intro.mdx',
+            storiesImports: [],
+          },
+        },
+      });
+      api.jumpToComponent(1);
+      expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
+    });
     it('does nothing if you are at the first component and go backward', () => {
       const initialState = { path: '/story/a--2', storyId: 'a--2', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });
@@ -1120,6 +1148,34 @@ describe('stories API', () => {
       api.setIndex({ v: 5, entries: navigationEntries });
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
+    });
+    it('selects the docs page of a component whose stories are all filtered out', () => {
+      const initialState = {
+        path: '/story/a--1',
+        storyId: 'a--1',
+        viewMode: 'story',
+        filters: { hideStories: (entry: API_PreparedIndexEntry) => entry.type !== 'story' },
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate } = moduleArgs;
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a--docs': {
+            type: 'docs',
+            id: 'a--docs',
+            title: 'a',
+            name: 'Docs',
+            importPath: './a.ts',
+            storiesImports: [],
+          },
+          'a--1': navigationEntries['a--1'],
+        },
+      });
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/docs/a--docs', undefined);
     });
     it('selects first visible child when component is clicked with filtered index', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };

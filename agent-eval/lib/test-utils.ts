@@ -29,12 +29,15 @@ const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
 
 type AgentContext = {
   agent?: unknown;
+  model?: unknown;
   integration?: unknown;
   review?: unknown;
 };
 
 type EvalContext = {
   agent: string;
+  /** The experiment's model id, such as `gpt-6-luna?reasoningEffort=low`; absent when the experiment does not pass one. */
+  model?: string;
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
@@ -60,7 +63,7 @@ export type StoryInputExpectation = {
 
 export function getEvalContext(): EvalContext {
   const agentContext = readAgentContext();
-  const { agent, integration } = agentContext;
+  const { agent, model, integration } = agentContext;
 
   if (typeof agent !== 'string') {
     throw new Error(
@@ -77,7 +80,22 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  return { agent, integration, review: agentContext.review === true };
+  return {
+    agent,
+    ...(typeof model === 'string' && { model }),
+    integration,
+    review: agentContext.review === true,
+  };
+}
+
+// The Codex system prompt of GPT-6 Luna, and of no other model in Codex's
+// model catalog (codex-cli 0.160.1), says "Do not add or run tests unless the
+// user asks you to test or verify implementation." at every reasoning effort,
+// and Luna follows it over the stories skill. That is the model vendor's
+// choice, so evals skip their test-run assertion for Luna rather than having
+// the skill overrule the system prompt.
+export function modelRunsTestsOnlyWhenAsked(): boolean {
+  return getEvalContext().model?.startsWith('gpt-6-luna') === true;
 }
 
 // Review mode of this run (see isReviewEnabledFor in lib/templates.ts).

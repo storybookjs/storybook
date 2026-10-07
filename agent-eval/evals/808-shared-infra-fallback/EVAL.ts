@@ -12,6 +12,7 @@ import {
   getWorkflowCalls,
   getWorkflowToolResults,
   isReviewEnabled,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
@@ -39,7 +40,7 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test.skipIf(codexMcpReviewGap)(
+  test.skipIf(codexMcpReviewGap || modelRunsTestsOnlyWhenAsked())(
     'runs story tests after the change and finishes with them passing',
     async () => {
       await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });

@@ -13,14 +13,18 @@ import {
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   isReviewEnabled,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('writing the first Button stories in an empty Storybook', () => {
   const review = isReviewEnabled();
 
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({ covering: ['button'] });
-  });
+  test.skipIf(modelRunsTestsOnlyWhenAsked())(
+    'runs story tests after the change and finishes with them passing',
+    async () => {
+      await expectStoryTestsRanAndPassed({ covering: ['button'] });
+    }
+  );
 
   describe.runIf(review)('when review is enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {

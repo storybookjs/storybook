@@ -12,6 +12,7 @@ import {
   expectWorkflowCalls,
   getEvalContext,
   isReviewEnabled,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
@@ -19,9 +20,12 @@ import { describe, expect, test } from 'vitest';
 describe('creating an accessible ToggleSwitch', () => {
   const reviewEnabled = isReviewEnabled();
 
-  test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
-  });
+  test.skipIf(modelRunsTestsOnlyWhenAsked())(
+    'runs story tests after the change and finishes with them passing',
+    async () => {
+      await expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
+    }
+  );
 
   describe.runIf(reviewEnabled)('with review enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {

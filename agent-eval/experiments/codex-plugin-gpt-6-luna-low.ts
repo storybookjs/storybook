@@ -6,7 +6,7 @@ import {
   writeCodexPluginSkills,
 } from '../lib/templates.ts';
 
-const model = 'gpt-6.1-sol?reasoningEffort=medium';
+const model = 'gpt-6-luna?reasoningEffort=low';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,

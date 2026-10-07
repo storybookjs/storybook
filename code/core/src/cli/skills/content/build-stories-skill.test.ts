@@ -98,6 +98,13 @@ describe('buildStoriesSkill', () => {
     expect(text).not.toContain('preview.meta({');
   });
 
+  it('leaves out the Meta and StoryObj types in a JavaScript project', () => {
+    const text = buildStoriesSkill({ ...everything, previewFile: '.storybook/preview.js' });
+
+    expect(text).not.toContain('StoryObj');
+    expect(text).toContain('- Import `fn`, `expect`, `mocked` and `sb` from `storybook/test`.');
+  });
+
   it('puts MSW before module mocks and names the preview file of the project', () => {
     const text = buildStoriesSkill({ ...everything, previewFile: 'config/preview.tsx' });
 

@@ -31,7 +31,9 @@ Run \`docs list\` once at the start, then \`docs show\` for every listed compone
 function writeSection({ framework, csfFactories, previewFile }: StoriesSkillInputs): string {
   const format = csfFactories
     ? `This project writes stories with CSF Factories, because \`${previewFile}\` uses \`definePreview\`: \`import preview from '../.storybook/preview'\` (the path to that file), then \`const meta = preview.meta({ component: Button })\` and \`export const Primary = meta.story({ args: { ... } })\`. Do not import \`Meta\` or \`StoryObj\`. Import`
-    : `Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and`;
+    : /\.[cm]?tsx?$/.test(previewFile)
+      ? `Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and`
+      : 'Import';
   return `## Write the component and its stories
 
 Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
@@ -100,7 +102,18 @@ ${commands.join('\n')}
 ${guidance}`;
 }
 
-function reviewSection(): string {
+function reviewSection({
+  changeDetectionEnabled,
+  moduleGraphSupported,
+}: StoriesSkillInputs): string {
+  const discovery = [
+    changeDetectionEnabled && '`stories changed`',
+    moduleGraphSupported && '`find-by-component`',
+  ].filter(Boolean);
+  const discoverFirst =
+    discovery.length > 0
+      ? ` Right before it, run ${discovery.join(' or ')} and take the story ids from there, also when you only wrote stories, not from the output of the tests.`
+      : '';
   return `## Finish with a review
 
 \`\`\`sh
@@ -115,9 +128,9 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
 
-Then do both things the command prints, every time: open the review in the in-app browser with a browser tool, and end your answer with the review section it gives you. Do not list separate story links next to it.`;
+Then do both things the command prints, every time: open the review in the in-app browser with a browser tool (unless you have none), and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }
 
 function previewSection(reviewEnabled: boolean): string {
@@ -146,7 +159,7 @@ Follow this for every change to how the UI looks (components, stories, styles, t
     writeSection(inputs),
     inputs.testSupported && testSection(inputs.a11yEnabled),
     discoverSection(inputs),
-    inputs.reviewEnabled && reviewSection(),
+    inputs.reviewEnabled && reviewSection(inputs),
     previewSection(inputs.reviewEnabled),
   ]
     .filter(Boolean)

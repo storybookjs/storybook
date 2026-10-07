@@ -1,0 +1,14 @@
+import { Meta, Canvas } from '@storybook/addon-docs/blocks';
+import * as IdentifiersStories from './test/identifiers.stories.svelte';
+
+<Meta name="MDX Docs" />
+
+This page imports Svelte CSF stories by their export name.
+
+The export name of the next story comes from its `name` prop:
+
+<Canvas of={IdentifiersStories.OnlyName} />
+
+The next story sets its export name with the `exportName` prop:
+
+<Canvas of={IdentifiersStories.DifferentExportName} />

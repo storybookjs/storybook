@@ -141,7 +141,7 @@ export const getPullInfoFromCommits = async ({
   return pullRequests;
 };
 
-export type Change = PullRequestInfo;
+export type Change = Omit<PullRequestInfo, 'title'> & { title: string | undefined };
 
 export const mapToChanges = ({
   commits,
@@ -195,7 +195,7 @@ export const getChangelogText = ({
   version,
 }: {
   changes: Change[];
-  version: string;
+  version: string | undefined;
 }): string => {
   const heading = `## ${version}`;
   const formattedEntries = changes
@@ -230,7 +230,7 @@ export const getChanges = async ({
   unpickedPatches,
   verbose,
 }: {
-  version: string;
+  version: string | undefined;
   from?: string;
   to?: string;
   unpickedPatches?: boolean;

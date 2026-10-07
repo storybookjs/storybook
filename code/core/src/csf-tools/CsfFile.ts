@@ -1169,7 +1169,11 @@ export const formatCsf = (
 
 /** Use this function, if you want to preserve styles. Uses recast under the hood. */
 export const printCsf = (csf: CsfFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(csf._ast, options);
+  return recast.print(csf._ast, {
+    // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+    lineTerminator: '\n',
+    ...options,
+  });
 };
 
 export const readCsf = async (fileName: string, options: CsfOptions) => {

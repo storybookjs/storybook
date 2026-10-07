@@ -30,17 +30,20 @@ export interface CallArgumentsOptions {
   moduleNames: Iterable<string>;
 }
 
+// Only logged: a mutation of such an export fails with a diagnostic of its own.
 const getCsfParsingErrorMessage = ({
+  fileName,
   expectedType,
   foundType,
   node,
 }: {
+  fileName: string | undefined;
   expectedType: string;
   foundType: string | undefined;
   node: any | undefined;
 }) => {
   return dedent`
-      CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
+      CSF Parsing error in ${fileName ?? 'a config file'}: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
     `;
 };
 
@@ -389,6 +392,10 @@ export class ConfigFile implements CsfObject {
   };
 
   parse() {
+    // Infer the dominant quote style from the pristine AST up front: later mutations can
+    // remove the last string literals (e.g. cleanupTypeImports dropping a legacy import),
+    // which must not change how newly generated nodes are quoted.
+    this._inferQuotes();
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     traverse(this._ast, {
@@ -415,8 +422,9 @@ export class ConfigFile implements CsfObject {
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);
           } else {
-            logger.warn(
+            logger.debug(
               getCsfParsingErrorMessage({
+                fileName: self.fileName,
                 expectedType: 'ObjectExpression',
                 foundType: decl?.type,
                 node: decl || node.declaration,
@@ -482,8 +490,9 @@ export class ConfigFile implements CsfObject {
               }
             });
           } else {
-            logger.warn(
+            logger.debug(
               getCsfParsingErrorMessage({
+                fileName: self.fileName,
                 expectedType: 'VariableDeclaration',
                 foundType: node.declaration?.type,
                 node: node.declaration,
@@ -516,8 +525,9 @@ export class ConfigFile implements CsfObject {
                   }
                 });
               } else {
-                logger.warn(
+                logger.debug(
                   getCsfParsingErrorMessage({
+                    fileName: self.fileName,
                     expectedType: 'ObjectExpression',
                     foundType: exportObject?.type,
                     node: exportObject,
@@ -787,16 +797,22 @@ export class ConfigFile implements CsfObject {
 
   _inferQuotes() {
     if (!this._quotes) {
-      // first 500 tokens for efficiency
-      const occurrences = (this._ast.tokens || []).slice(0, 500).reduce(
-        (acc, token) => {
-          if (token.type.label === 'string') {
-            acc[this._code[token.start]] += 1;
-          }
-          return acc;
-        },
-        { "'": 0, '"': 0 }
-      );
+      // Count the raw quote character of each string literal from the AST. Token offsets
+      // cannot be trusted here: recast reconstructs the parser input with `os.EOL` line
+      // endings, so on Windows the token offsets of an LF-only source point into that CRLF
+      // reconstruction and misalign with `this._code`, which made every source infer as
+      // double-quoted and printed newly generated nodes with the wrong quotes.
+      const occurrences = { "'": 0, '"': 0 };
+      const countQuotes = ({ node }: { node: t.Node }) => {
+        const raw = (node as t.StringLiteral).extra?.raw;
+        if (typeof raw === 'string' && (raw[0] === "'" || raw[0] === '"')) {
+          occurrences[raw[0] as "'" | '"'] += 1;
+        }
+      };
+      traverse(this._ast, {
+        StringLiteral: { enter: countQuotes },
+        DirectiveLiteral: { enter: countQuotes },
+      });
       this._quotes = occurrences["'"] > occurrences['"'] ? 'single' : 'double';
     }
     return this._quotes;
@@ -1431,7 +1447,12 @@ export const formatConfig = (config: ConfigFile): string => {
 };
 
 export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(config._ast, { quote: config._inferQuotes(), ...options });
+  return recast.print(config._ast, {
+    quote: config._inferQuotes(),
+    // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+    lineTerminator: '\n',
+    ...options,
+  });
 };
 
 export const readConfig = async (fileName: string) => {

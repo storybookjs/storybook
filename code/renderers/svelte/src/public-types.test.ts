@@ -1,20 +1,28 @@
 // this file tests Typescript types that's why there are no assertions
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { satisfies } from 'storybook/internal/common';
 import type {
   Args,
   Canvas,
   ComponentAnnotations,
+  StoryContext as GenericStoryContext,
   StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
 
-import type { Component, ComponentProps } from 'svelte';
+import type { Component, ComponentProps, Snippet } from 'svelte';
 
 import Button from './__test__/Button.svelte';
 import Decorator2 from './__test__/Decorator2.svelte';
 import Decorator1 from './__test__/Decorator.svelte';
-import type { Decorator, Meta, StoryObj } from './public-types.ts';
+import type {
+  Args as SvelteArgs,
+  Decorator,
+  Meta,
+  StoryContext,
+  StoryObj,
+} from './public-types.ts';
+import { defineMeta } from './svelte-csf/index.ts';
 import type { SvelteRenderer } from './types.ts';
 
 type SvelteStory<Comp extends Component<any, any, any>, Args, RequiredArgs> = StoryAnnotations<
@@ -52,10 +60,10 @@ describe('Meta', () => {
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good' },
-    });
+    } satisfies Meta<typeof Button>;
 
     type Actual = StoryObj<typeof meta>;
     type Expected = SvelteStory<
@@ -68,7 +76,7 @@ describe('StoryObj', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<typeof Button>;
 
       type Expected = SvelteStory<
         typeof Button,
@@ -78,10 +86,10 @@ describe('StoryObj', () => {
       expectTypeOf<StoryObj<typeof meta>>().toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const meta = {
         component: Button,
         args: { label: 'good' },
-      });
+      } satisfies Meta<typeof Button>;
       // @ts-expect-error disabled not provided ❌
       const Basic: StoryObj<typeof meta> = {};
 
@@ -93,7 +101,7 @@ describe('StoryObj', () => {
       expectTypeOf(Basic).toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<{ label: string; disabled: boolean }>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -123,7 +131,7 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = satisfies<Meta<ComponentProps<typeof Button> & { theme: ThemeData }>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       render: (args, { component }) => {
@@ -132,7 +140,7 @@ describe('Story args can be inferred', () => {
           props: args,
         };
       },
-    });
+    } satisfies Meta<ComponentProps<typeof Button> & { theme: ThemeData }>;
 
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
@@ -155,11 +163,11 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ComponentProps<typeof Button> & { decoratorArg: string };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
@@ -182,11 +190,11 @@ describe('Story args can be inferred', () => {
       props: { decoratorArg2 },
     });
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = {
       args: { decoratorArg: '', decoratorArg2: '', label: 'good' },
@@ -221,4 +229,52 @@ it('StoryObj can accept args directly', () => {
       prop: true,
     },
   };
+});
+
+describe('Args', () => {
+  it('is the record of args without a type argument', () => {
+    expectTypeOf<SvelteArgs>().toEqualTypeOf<Args>();
+    expectTypeOf<Meta>().toEqualTypeOf<Meta<Args>>();
+    expectTypeOf<StoryObj>().toEqualTypeOf<StoryObj<Args>>();
+  });
+
+  it('is the args of a Svelte CSF story with the Story component as the type argument', () => {
+    const { Story } = defineMeta({ component: Button });
+
+    expectTypeOf<SvelteArgs<typeof Story>>().toEqualTypeOf<ComponentProps<typeof Button>>();
+  });
+
+  it('is never for a type argument that is not a Story component', () => {
+    expectTypeOf<SvelteArgs<typeof Button>>().toBeNever();
+    expectTypeOf<SvelteArgs<{ label: string }>>().toBeNever();
+  });
+});
+
+describe('StoryContext', () => {
+  it('is the Svelte renderer story context', () => {
+    expectTypeOf<StoryContext>().toEqualTypeOf<GenericStoryContext<SvelteRenderer, StrictArgs>>();
+  });
+
+  it('types the play function of a Svelte CSF story', () => {
+    const { Story: _Story } = defineMeta({
+      component: Button,
+      play(context) {
+        expectTypeOf(context).toExtend<StoryContext<ComponentProps<typeof Button>>>();
+        expectTypeOf(context.args).toEqualTypeOf<ComponentProps<typeof Button>>();
+      },
+    });
+  });
+
+  it('fits the play and template props of a Svelte CSF story', () => {
+    const { Story } = defineMeta({ component: Button });
+    type TArgs = SvelteArgs<typeof Story>;
+    type TStoryProps = ComponentProps<typeof Story>;
+
+    expectTypeOf<(context: StoryContext<TArgs>) => Promise<void>>().toExtend<
+      NonNullable<TStoryProps['play']>
+    >();
+    expectTypeOf<Snippet<[TArgs, StoryContext<TArgs>]>>().toExtend<
+      NonNullable<Extract<TStoryProps, { template?: unknown }>['template']>
+    >();
+  });
 });

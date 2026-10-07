@@ -70,6 +70,24 @@ describe('ConfigFile mutations', () => {
     }
   );
 
+  it('infers quotes and prints LF output for CRLF sources', () => {
+    const source = [
+      "import { definePreview } from '@storybook/react';",
+      '',
+      'export default definePreview({ tags: [] });',
+    ].join('\r\n');
+    const config = loadConfig(source).parse();
+    expect(config.set(['tags'], ['autodocs']).ok).toBe(true);
+
+    const result = printConfig(config);
+    // Recast defaults to `os.EOL`; printed files must stay LF on Windows too.
+    expect(result.code).not.toContain('\r');
+    // Freshly generated nodes must reuse the source's quote style, which is
+    // only inferable when token offsets align with the original code.
+    expect(result.code).toContain("'autodocs'");
+    expect(result.code).not.toContain('"autodocs"');
+  });
+
   it('keeps an empty parent that shadows an earlier spread', () => {
     const config = loadConfig(
       'export default { ...shared, parameters: { legacy: true } };'

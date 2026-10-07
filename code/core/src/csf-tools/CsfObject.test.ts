@@ -42,6 +42,25 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('prints CRLF sources with LF output', async () => {
+    // Recast reads `os.EOL` at print time; simulate Windows so the default is
+    // observable on any platform.
+    const os = (await import('node:os')).default;
+    const original = os.EOL;
+    Object.defineProperty(os, 'EOL', { value: '\r\n' });
+    try {
+      const source = ['const tags = ["autodocs"];', '', 'export default { tags };'].join('\r\n');
+      const csf = parse(source);
+      const [meta] = csf.objects({ stories: false });
+      expect(meta.set(['tags'], ['autodocs', 'dev']).ok).toBe(true);
+
+      const result = printCsf(csf);
+      expect(result.code).not.toContain('\r');
+    } finally {
+      Object.defineProperty(os, 'EOL', { value: original });
+    }
+  });
+
   it('keeps local bindings readable after replacing a story expression', () => {
     const csf = parse(`
       const params = { a11y: { element: '#app' } };

@@ -56,9 +56,4 @@ export const Row = {
       <PlaceholderInline color="silver" />
     </div>
   ),
-  argTypes: {
-    col: {
-      defaultValue: 1,
-    },
-  },
 };

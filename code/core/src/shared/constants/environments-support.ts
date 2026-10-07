@@ -2,12 +2,11 @@ import type { BuildOptions } from 'esbuild';
 
 // https://esbuild.github.io/api/#target
 export const BROWSER_TARGETS: BuildOptions['target'] = [
-  'chrome131',
-  'edge134',
-  'firefox136',
-  'safari18.3',
-  'ios18.3',
-  'opera117',
+  'chrome147',
+  'edge150',
+  'firefox152',
+  'safari26.5',
+  'ios26.5',
 ];
 
 // https://esbuild.github.io/api/#target

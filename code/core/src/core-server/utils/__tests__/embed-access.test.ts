@@ -1,4 +1,4 @@
-import type { IncomingMessage } from 'node:http';
+import { type IncomingMessage, ServerResponse } from 'node:http';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,12 +7,19 @@ import { createEmbedAccess } from '../embed-access.ts';
 const embed = createEmbedAccess('http://localhost:6006/');
 const embedHost = new URL(embed.origin!).host;
 
-function request({ host = embedHost, method = 'GET', url = '/src/Button.tsx?t=1' } = {}) {
-  const res = { setHeader: vi.fn() };
+// Sends a response through the middleware and returns the headers it ends up with.
+function respond({
+  host = embedHost,
+  method = 'GET',
+  send = (res: ServerResponse) => res.writeHead(200, { 'Content-Type': 'text/javascript' }),
+} = {}) {
+  const req = { headers: { host }, method, url: '/src/Button.tsx' } as IncomingMessage;
+  const res = new ServerResponse(req);
   const next = vi.fn();
-  embed.middleware({ headers: { host }, method, url } as IncomingMessage, res as any, next);
+  embed.middleware(req, res, next);
   expect(next).toHaveBeenCalledTimes(1);
-  return res.setHeader;
+  send(res);
+  return res.getHeaders();
 }
 
 describe('createEmbedAccess', () => {
@@ -37,10 +44,10 @@ describe('createEmbedAccess', () => {
   });
 
   it.each(['GET', 'HEAD'])('lets any page read a file it %ss from the embed origin', (method) => {
-    const setHeader = request({ method });
-
-    expect(setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
-    expect(setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
+    expect(respond({ method })).toMatchObject({
+      'access-control-allow-origin': '*',
+      'referrer-policy': 'no-referrer',
+    });
   });
 
   it.each([
@@ -49,20 +56,37 @@ describe('createEmbedAccess', () => {
     embedHost.replace(':6006', ''),
     `${embedHost}.evil.com`,
   ])('changes nothing for a request to %s', (host) => {
-    expect(request({ host })).not.toHaveBeenCalled();
+    const headers = respond({ host });
+
+    expect(headers).not.toHaveProperty('access-control-allow-origin');
+    expect(headers).not.toHaveProperty('referrer-policy');
+  });
+
+  it('keeps a cached file readable when the server confirms it with a 304', () => {
+    expect(respond({ send: (res) => res.writeHead(304) })).toHaveProperty(
+      'access-control-allow-origin',
+      '*'
+    );
   });
 
   it.each(['OPTIONS', 'POST'])('does not let a page read a %s response', (method) => {
-    expect(request({ method })).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
+    expect(respond({ method })).not.toHaveProperty('access-control-allow-origin');
   });
 
-  it.each(['/iframe.html?id=button--primary', '/', '/index.html', '/docs/'])(
-    'serves %s, which holds the channel token, without letting a page read it',
-    (url) => {
-      const setHeader = request({ url });
+  it.each([
+    [
+      'passed to writeHead',
+      (res: ServerResponse) => res.writeHead(200, { 'content-type': 'text/html' }),
+    ],
+    [
+      'set before the body',
+      (res: ServerResponse) => res.setHeader('Content-Type', 'text/html; charset=utf-8').end(),
+    ],
+    ['left out', (res: ServerResponse) => res.end()],
+  ])('serves a page without letting other pages read it, with its type %s', (_, send) => {
+    const headers = respond({ send });
 
-      expect(setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
-      expect(setHeader).not.toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
-    }
-  );
+    expect(headers).not.toHaveProperty('access-control-allow-origin');
+    expect(headers).toHaveProperty('referrer-policy', 'no-referrer');
+  });
 });

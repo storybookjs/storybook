@@ -50,6 +50,19 @@ describe('buildStoriesSkill', () => {
     expect(text).toContain(
       'Run `stories changed` or `find-by-component` before every review, also when you already know the ids'
     );
+    expect(text).not.toContain('Run one of these');
+  });
+
+  it('speaks of one command when only the story list can find stories', () => {
+    const text = buildStoriesSkill({
+      ...everything,
+      changeDetectionEnabled: false,
+      moduleGraphSupported: false,
+      reviewEnabled: false,
+    });
+
+    expect(text).toContain('Run it before you share links. Story ids come only from this command.');
+    expect(text).toContain('When it does not find a story');
   });
 
   it('selects stories by file and export when no command lists story ids', () => {

@@ -65,8 +65,8 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_ALL=1` run (12 workflow evals × 4 experiments + 4
-lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
+A full `EVAL_ALL=1` run (12 workflow evals × 5 experiments + 4
+lifecycle evals × 3 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
 lifecycle eval). The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
@@ -137,6 +137,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
 - `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+- `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`. Its Codex system prompt says not to run tests unless asked, so evals do not require it to run them itself (see `modelRunsTestsOnlyWhenAsked` in `lib/test-utils.ts`). It costs about $0.01 per eval.
 
 ## Running evals in CI
 

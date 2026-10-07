@@ -10,9 +10,6 @@ const model = 'gpt-6-luna?reasoningEffort=low';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
-  // Keep Codex plugin and MCP experiments on the same direct Codex runner.
-  // The MCP variant cannot use the AI Gateway path yet:
-  // https://github.com/openai/codex/issues/26234
   agent: 'codex',
   model,
   // Skipped under EVAL_STORYBOOK_LATEST=1; see PLUGIN_STORYBOOK_EVALS.

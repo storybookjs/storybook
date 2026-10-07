@@ -82,13 +82,14 @@ This project has no command that lists story ids. Select a story by its file and
     inputs.changeDetectionEnabled && '`stories changed`',
     inputs.moduleGraphSupported && '`find-by-component`',
   ].filter(Boolean);
+  const several = commands.length > 1;
   const guidance = [
     affected.length > 0
       ? `Run ${affected.join(' or ')} ${before}, also when you already know the ids of the stories you wrote: ${affected.length > 1 ? 'they add' : 'it adds'} the stories of other components that your change affects.`
       : `Run it ${before}.`,
-    'Story ids come only from these commands. Never build one from a file name, a title or memory.',
+    `Story ids come only from ${several ? 'these commands' : 'this command'}. Never build one from a file name, a title or memory.`,
     ...fallback,
-    'When none of them finds a story for a component, it has no stories yet: say so, or write them.',
+    `When ${several ? 'none of them finds' : 'it does not find'} a story for a component, it has no stories yet: say so, or write them.`,
   ].join(' ');
   return `## Find the stories
 

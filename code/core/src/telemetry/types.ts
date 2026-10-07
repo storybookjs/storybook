@@ -49,7 +49,6 @@ export type EventType =
   | 'sidebar-filter'
   | 'tools-command'
   | 'skills-get'
-  | 'ai-command'
   | 'ai-init-opt-in'
   | 'ai-prompt-nudge'
   | 'ai-setup'

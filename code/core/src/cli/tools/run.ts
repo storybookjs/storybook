@@ -193,7 +193,7 @@ export async function runToolsCommand(
   };
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
-  // alike — matching the ai CLI, where the output file always receives the printed text.
+  // alike.
   const result = (
     partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
   ): ToolsRunResult => ({

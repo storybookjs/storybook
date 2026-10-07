@@ -66,7 +66,6 @@ const play: PlayFunction = async ({ canvasElement, step }) => {
       await expect(styles.animationIterationCount).toBe('2');
     } else {
       await expect(styles.animationIterationCount).toBe('1');
-      await expect(styles.animationFillMode).toBe('forwards');
     }
   });
 

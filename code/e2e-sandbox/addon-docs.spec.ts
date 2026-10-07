@@ -227,7 +227,6 @@ test.describe('addon-docs', () => {
     let expectedReactVersionRange = /^19/;
     if (
       templateName.includes('internal/react18-webpack-babel') ||
-      templateName.includes('preact-vite/default-js') ||
       templateName.includes('react-webpack/18-ts')
     ) {
       expectedReactVersionRange = /^18/;

@@ -7,7 +7,7 @@ import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
-import { enableExperimentalDocgenServer } from './experimental-features.ts';
+import { docgenServer } from './docgen-server.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
@@ -44,8 +44,8 @@ export const allFixes: Fix[] = [
   sidebarFilters,
   csfNextMockedArgs,
   removeExperimentalReview,
-  enableExperimentalDocgenServer,
   skills,
+  docgenServer,
 ];
 
 export const commandFixes: CommandFix[] = [csfFactories];

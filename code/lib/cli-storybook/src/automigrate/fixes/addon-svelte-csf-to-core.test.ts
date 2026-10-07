@@ -76,6 +76,7 @@ const LEGACY_STORY_FILE = dedent`
 describe('addon-svelte-csf-to-core', () => {
   const packageManager = {
     getAllDependencies: vi.fn(),
+    replaceDependency: vi.fn(),
   } as unknown as JsPackageManager;
 
   const storyFiles = () =>
@@ -279,6 +280,19 @@ describe('addon-svelte-csf-to-core', () => {
 
       expect(files[LEGACY_STORY]).toBe(legacyStory);
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(`- ${LEGACY_STORY}`));
+    });
+
+    it('replaces the addon with the framework package in every package.json', async () => {
+      await migrate({
+        framework: '@storybook/svelte-vite',
+        addons: ['@storybook/addon-svelte-csf'],
+      });
+
+      expect(vi.mocked(packageManager.replaceDependency)).toHaveBeenCalledWith(
+        '@storybook/addon-svelte-csf',
+        '@storybook/svelte-vite',
+        '^11.0.0'
+      );
     });
 
     it('removes the addon with removeAddon', async () => {

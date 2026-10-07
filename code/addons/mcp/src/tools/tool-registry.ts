@@ -5,13 +5,11 @@ import {
   createDocsToolset,
   type DocsToolset,
 } from 'storybook/internal/toolsets-docs';
-import type { Options } from 'storybook/internal/types';
 import type { McpServer } from 'tmcp';
 import type { AddonContext } from '../types.ts';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import {
   addGetUIBuildingInstructionsTool,
-  buildStorybookStoryInstructions,
   getStorybookStoryInstructionsToolMetadata,
 } from './get-storybook-story-instructions.ts';
 import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './preview-stories.ts';
@@ -36,21 +34,10 @@ export type ToolMetadata = {
   _meta?: Record<string, unknown>;
 };
 
-export type StorybookAiToolCallResult = {
-  content: Array<{ type: 'text'; text: string }>;
-  structuredContent?: Record<string, unknown>;
-  isError?: boolean;
-};
-
-export type StorybookAiLocalTool = {
-  call: (input?: Record<string, unknown>) => Promise<StorybookAiToolCallResult>;
-};
-
 export type AddonToolRegistryContext = {
   availability: ToolAvailability;
   multiSource?: boolean;
   toolsets?: AddonContext['toolsets'];
-  options?: Options;
 };
 
 type ToolEnabled = Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'];
@@ -65,7 +52,6 @@ type AddonToolDefinition = {
     context: AddonToolRegistryContext,
     enabled: ToolEnabled
   ) => Promise<void>;
-  getLocalTool?: (context: AddonToolRegistryContext & { options: Options }) => StorybookAiLocalTool;
 };
 
 const isToolsetEnabled = (
@@ -190,17 +176,6 @@ const addonToolDefinitions: AddonToolDefinition[] = [
         docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
         addonVitestAvailable: availability.testSupported,
       }),
-    getLocalTool: ({ availability, toolsets, options }) => ({
-      call: async () => {
-        const text = await buildStorybookStoryInstructions(options, {
-          toolsets,
-          a11yEnabled: availability.a11yEnabled,
-          addonVitestAvailable: availability.testSupported,
-          docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
-        });
-        return { content: [{ type: 'text', text }] };
-      },
-    }),
   },
   fromToolset({
     toolset: 'dev',
@@ -236,8 +211,8 @@ const addonToolDefinitions: AddonToolDefinition[] = [
  * registered.
  *
  * That mismatch is a wiring bug (each gate is written to match its toolset's registration
- * condition), but it must cost the user one tool, not the whole MCP server or the `storybook ai`
- * metadata build — the error log keeps it loud. Only this one error is contained: every other
+ * condition), but it must cost the user one tool, not the whole MCP server — the error log keeps
+ * it loud. Only this one error is contained: every other
  * failure rethrows, so a genuinely broken adapter still fails fast.
  */
 function dropToolIfToolsetMissing(name: string, error: unknown): undefined {
@@ -265,21 +240,6 @@ export function getAddonToolMetadata(context: AddonToolRegistryContext): ToolMet
       );
       return metadata ? [metadata] : [];
     });
-}
-
-export function getAddonLocalTools(
-  context: AddonToolRegistryContext & { options: Options }
-): Record<string, StorybookAiLocalTool> {
-  return Object.fromEntries(
-    addonToolDefinitions
-      .filter((definition) => isMetadataToolEnabled(definition, context))
-      .flatMap((definition) => {
-        const localTool = resolveDefinitionOrDrop(definition.name, () =>
-          definition.getLocalTool?.(context)
-        );
-        return localTool ? [[definition.name, localTool]] : [];
-      })
-  );
 }
 
 export async function registerAddonMcpTools(

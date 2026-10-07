@@ -841,10 +841,9 @@ export const baseTemplates = {
     },
     modifications: {
       // create-vite still scaffolds Preact 10, which default-js keeps covering.
-      // 11.0.0 is newer than the sandbox npmMinimalAgeGate (7 days) allows until 2026-10-07.
-      extraDependencies: ['preact-render-to-string', 'preact@11.0.0-rc.2'],
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
       resolutions: {
-        preact: 'npm:preact@11.0.0-rc.2',
+        preact: 'npm:preact@^11',
       },
     },
     skipTasks: ['e2e-tests', 'bench'],

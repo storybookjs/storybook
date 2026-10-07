@@ -1,10 +1,9 @@
-import type { types as t } from 'storybook/internal/babel';
-
 import { readFileSync } from 'node:fs';
 
 import { createModuleResolver } from '../../common/utils/module-resolver.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
-import { babelParseFile } from '../CsfFile.ts';
+import type { Node } from '../estree/ast.ts';
+import { SourceEditor } from '../estree/editor.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
 import type { ReferenceModule, StoryReferenceResolver } from './resolve-members.ts';
 
@@ -66,11 +65,13 @@ export function createStoryReferenceResolver(
 /** Parses a module reached by an import, for a caller that already resolved its path. */
 export const parseReferenceModule = (filePath: string): ReferenceModule | undefined => {
   try {
-    const code = readFileSync(filePath, 'utf8');
-    return { program: babelParseFile({ code, filename: filePath }).path, filePath };
+    const editor = new SourceEditor(readFileSync(filePath, 'utf8'), filePath);
+    // Index the module so its nodes print as written wherever a resolution carries them.
+    editor.parentOf(editor.program);
+    return { editor, filePath };
   } catch {
     return undefined;
   }
 };
 
-const selfContained = (node: t.Node) => (isSelfContained(node) ? node : undefined);
+const selfContained = (node: Node) => (isSelfContained(node) ? node : undefined);

@@ -156,7 +156,7 @@ describe('CsfObject discovery', () => {
     `);
     const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
+    expect(meta.get(['title'])).toMatchObject({ type: 'Literal', value: 'Example' });
   });
 
   it.each([

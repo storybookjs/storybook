@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative } from 'node:path';
 
-import { types as t, traverse } from 'storybook/internal/babel';
 import {
   extractFrameworkPackageName,
   findConfigFile,
@@ -19,6 +18,7 @@ import * as walk from 'empathic/walk';
 
 import type { ArgTypes } from '../../csf/index.ts';
 import { loadConfig, printConfig } from '../../csf-tools/index.ts';
+import { isStringLiteral, walk as walkAst } from '../../csf-tools/estree/ast.ts';
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
@@ -205,14 +205,13 @@ function replaceArgsPlaceholders(storyFileContent: string) {
 
   let needsFnImport = false;
 
-  traverse(storyFile._ast, {
-    StringLiteral(path) {
-      if (path.node.value === STORYBOOK_FN_PLACEHOLDER) {
-        needsFnImport = true;
-        path.replaceWith(t.callExpression(t.identifier('fn'), []));
-      }
-    },
+  walkAst(storyFile._program, (node) => {
+    if (isStringLiteral(node) && node.value === STORYBOOK_FN_PLACEHOLDER) {
+      needsFnImport = true;
+      storyFile._editorSource.edits.overwrite(node.start, node.end, 'fn()');
+    }
   });
+  storyFile._commit();
 
   if (needsFnImport) {
     storyFile.setImport(['fn'], 'storybook/test');

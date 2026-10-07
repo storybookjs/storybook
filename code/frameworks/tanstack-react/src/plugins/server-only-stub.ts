@@ -1,4 +1,4 @@
-import { babelParse as parse, types as t } from 'storybook/internal/babel';
+import { type ESTree as E, parseModule } from 'storybook/internal/csf-tools';
 
 import type { Plugin } from 'vite';
 
@@ -54,48 +54,43 @@ function collectExports(code: string, id: string): ExportInfo {
   const named = new Set<string>();
   let hasDefault = false;
 
-  let ast: ReturnType<typeof parse>;
+  let program: E.Program;
   try {
-    ast = parse(code);
+    ({ program } = parseModule(code, id));
   } catch {
     return { named, hasDefault };
   }
 
-  for (const node of ast.program.body) {
-    if (t.isExportDefaultDeclaration(node)) {
+  for (const node of program.body) {
+    if (node.type === 'ExportDefaultDeclaration') {
       hasDefault = true;
       continue;
     }
-    if (t.isExportAllDeclaration(node)) {
-      // `export * from '...'` — we can't enumerate; ignore to be safe.
-      // Consumers of unknown re-exports will get `undefined`, which is
-      // acceptable for server-only modules.
+    // `export * from '...'` can't be enumerated; consumers of unknown re-exports will get
+    // `undefined`, which is acceptable for server-only modules.
+    if (node.type !== 'ExportNamedDeclaration') {
       continue;
     }
-    if (t.isExportNamedDeclaration(node)) {
-      const decl = node.declaration;
-      if (decl) {
-        if (t.isVariableDeclaration(decl)) {
-          for (const declarator of decl.declarations) {
-            if (t.isIdentifier(declarator.id)) {
-              named.add(declarator.id.name);
-            }
-          }
-        } else if ((t.isFunctionDeclaration(decl) || t.isClassDeclaration(decl)) && decl.id?.name) {
-          named.add(decl.id.name);
+    const decl = node.declaration;
+    if (decl?.type === 'VariableDeclaration') {
+      for (const declarator of decl.declarations) {
+        if (declarator.id.type === 'Identifier') {
+          named.add(declarator.id.name);
         }
       }
-      for (const spec of node.specifiers) {
-        if (t.isExportSpecifier(spec)) {
-          const exportedName = t.isIdentifier(spec.exported)
-            ? spec.exported.name
-            : spec.exported.value;
-          if (exportedName !== 'default') {
-            named.add(exportedName);
-          } else {
-            hasDefault = true;
-          }
-        }
+    } else if (
+      (decl?.type === 'FunctionDeclaration' || decl?.type === 'ClassDeclaration') &&
+      decl.id?.name
+    ) {
+      named.add(decl.id.name);
+    }
+    for (const spec of node.specifiers) {
+      const exportedName =
+        spec.exported.type === 'Identifier' ? spec.exported.name : String(spec.exported.value);
+      if (exportedName !== 'default') {
+        named.add(exportedName);
+      } else {
+        hasDefault = true;
       }
     }
   }

@@ -1,16 +1,22 @@
-import type { NodePath, types as t } from 'storybook/internal/babel';
-
+import { type E, type Node, locationOf } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
 import { isCanonicalCsf2BindCall, isCsfFactoryCall, resolveIdentifierInit } from './utils.ts';
 
 export type NormalizedStoryDeclaration =
-  | { type: 'config'; path: NodePath<t.ObjectExpression> }
-  | {
-      type: 'fn';
-      path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>;
-    }
-  | { type: 'emptyConfig'; path: NodePath<t.Expression> };
+  | { type: 'config'; node: E.ObjectExpression }
+  | { type: 'fn'; node: E.ArrowFunctionExpression | E.Function }
+  | { type: 'emptyConfig'; node: E.CallExpression };
 
-type StoryDeclarationExpression = NodePath<t.FunctionDeclaration | t.Expression>;
+type StoryDeclarationExpression = E.Function | E.Expression;
+
+/** An error pointing at the node a story file got wrong, like Babel's `buildCodeFrameError`. */
+export const storyShapeError = (message: string, node: Node, editor: SourceEditor) => {
+  const span = node as Node & { start: number; end: number };
+  const { start } = locationOf(editor.code, span.start, span.end);
+  return new SyntaxError(
+    `${editor.fileName ? `${editor.fileName}: ` : ''}${message} (${start.line}:${start.column})`
+  );
+};
 
 /**
  * Resolve a story export's declaration to its snippet-ready story shape.
@@ -18,124 +24,117 @@ type StoryDeclarationExpression = NodePath<t.FunctionDeclaration | t.Expression>
  * @example
  *
  * ```ts
- * export const A: Story = { args: {} }; //            → { type: 'config', path }
- * export const B = {} satisfies Story; //             → { type: 'config', path }
- * export const C = meta.story({ args: {} }); //       → { type: 'config', path }
- * export const D = meta.story(); //                   → { type: 'emptyConfig', path }
+ * export const A: Story = { args: {} }; //            → { type: 'config', node }
+ * export const B = {} satisfies Story; //             → { type: 'config', node }
+ * export const C = meta.story({ args: {} }); //       → { type: 'config', node }
+ * export const D = meta.story(); //                   → { type: 'emptyConfig', node }
  * export const E = Template.bind({}); //              → Template's classified initializer
  * ```
  */
 export function normalizeStoryDeclaration(
-  storyDeclaration: NodePath<t.Node>
+  storyDeclaration: Node,
+  editor: SourceEditor
 ): NormalizedStoryDeclaration {
-  const storyPath = declarationExpression(storyDeclaration);
-  const resolvedBindPath = bindInitializer(storyDeclaration, storyPath);
-  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(storyPath);
-  const unwrappedPath = unwrapTypeExpression(normalizedPath);
+  const storyNode = declarationExpression(storyDeclaration, editor);
+  const resolvedBind = bindInitializer(editor, storyNode);
+  const normalized = resolvedBind ?? factoryArgumentExpression(storyNode, editor);
+  const unwrapped = unwrapTypeExpression(normalized);
 
-  return classifyStoryPath(unwrappedPath);
+  return classifyStory(unwrapped, editor);
 }
 
 /** Declaration body that can be classified as a story shape. */
-function declarationExpression(storyDeclaration: NodePath<t.Node>): StoryDeclarationExpression {
-  if (storyDeclaration.isFunctionDeclaration()) {
+function declarationExpression(
+  storyDeclaration: Node,
+  editor: SourceEditor
+): StoryDeclarationExpression {
+  if (storyDeclaration.type === 'FunctionDeclaration') {
     return storyDeclaration;
   }
 
-  if (storyDeclaration.isVariableDeclarator()) {
-    const init = storyDeclaration.get('init');
-    if (!init.isExpression()) {
-      throw storyDeclaration.buildCodeFrameError('Expected story initializer to be an expression');
+  if (storyDeclaration.type === 'VariableDeclarator') {
+    if (!storyDeclaration.init) {
+      throw storyShapeError(
+        'Expected story initializer to be an expression',
+        storyDeclaration,
+        editor
+      );
     }
-    return init;
+    return storyDeclaration.init;
   }
 
-  throw storyDeclaration.buildCodeFrameError(
-    'Expected story to be a function or variable declaration'
+  throw storyShapeError(
+    'Expected story to be a function or variable declaration',
+    storyDeclaration,
+    editor
   );
 }
 
 /** Initializer resolved from a local `Template.bind(...)` call. */
 function bindInitializer(
-  storyDeclaration: NodePath<t.Node>,
-  storyPath: StoryDeclarationExpression
+  editor: SourceEditor,
+  storyNode: StoryDeclarationExpression
 ): StoryDeclarationExpression | null {
-  if (!storyPath.isCallExpression()) {
+  if (!isCanonicalCsf2BindCall(storyNode)) {
     return null;
   }
-
-  if (!isCanonicalCsf2BindCall(storyPath.node)) {
-    return null;
-  }
-
-  const callee = storyPath.get('callee');
-  if (!callee.isMemberExpression()) {
-    return null;
-  }
-  const obj = callee.get('object');
-  if (!obj.isIdentifier()) {
-    return null;
-  }
-
-  return resolveIdentifierInit(storyDeclaration, obj);
+  return resolveIdentifierInit(editor.program, storyNode.callee.object.name);
 }
 
 /** Single config argument from factory calls, preserving zero-arg calls. */
 function factoryArgumentExpression(
-  storyPath: StoryDeclarationExpression
+  storyNode: StoryDeclarationExpression,
+  editor: SourceEditor
 ): StoryDeclarationExpression {
-  if (!storyPath.isCallExpression() || !isCsfFactoryCall(storyPath.node)) {
-    return storyPath;
+  if (!isCsfFactoryCall(storyNode)) {
+    return storyNode;
   }
 
-  const args = storyPath.get('arguments');
+  const args = storyNode.arguments;
   if (args.length === 0) {
-    return storyPath;
+    return storyNode;
   }
 
-  if (args.length !== 1 || !args[0].isExpression()) {
-    throw storyPath.buildCodeFrameError('Could not evaluate story expression');
+  if (args.length !== 1 || args[0].type === 'SpreadElement') {
+    throw storyShapeError('Could not evaluate story expression', storyNode, editor);
   }
 
   return args[0];
 }
 
-/** Path-level unwrap for story-legal TS wrappers only; declaration normalization preserves paths. */
-function unwrapTypeExpression(storyPath: StoryDeclarationExpression): StoryDeclarationExpression {
-  if (storyPath.isTSSatisfiesExpression()) {
-    return storyPath.get('expression');
+/** Unwrap story-legal TS wrappers only. */
+function unwrapTypeExpression(storyNode: StoryDeclarationExpression): StoryDeclarationExpression {
+  if (storyNode.type === 'TSSatisfiesExpression' || storyNode.type === 'TSAsExpression') {
+    return storyNode.expression;
   }
 
-  if (storyPath.isTSAsExpression()) {
-    return storyPath.get('expression');
-  }
-
-  return storyPath;
+  return storyNode;
 }
 
-/** Final story shape classification for a normalized declaration path. */
-function classifyStoryPath(storyPath: StoryDeclarationExpression): NormalizedStoryDeclaration {
-  if (storyPath.isObjectExpression()) {
-    return { type: 'config', path: storyPath };
+/** Final story shape classification for a normalized declaration. */
+function classifyStory(
+  storyNode: StoryDeclarationExpression,
+  editor: SourceEditor
+): NormalizedStoryDeclaration {
+  if (storyNode.type === 'ObjectExpression') {
+    return { type: 'config', node: storyNode };
   }
 
   if (
-    storyPath.isArrowFunctionExpression() ||
-    storyPath.isFunctionExpression() ||
-    storyPath.isFunctionDeclaration()
+    storyNode.type === 'ArrowFunctionExpression' ||
+    storyNode.type === 'FunctionExpression' ||
+    storyNode.type === 'FunctionDeclaration'
   ) {
-    return { type: 'fn', path: storyPath };
+    return { type: 'fn', node: storyNode };
   }
 
-  if (
-    storyPath.isCallExpression() &&
-    isCsfFactoryCall(storyPath.node) &&
-    storyPath.node.arguments.length === 0
-  ) {
-    return { type: 'emptyConfig', path: storyPath };
+  if (isCsfFactoryCall(storyNode) && storyNode.arguments.length === 0) {
+    return { type: 'emptyConfig', node: storyNode };
   }
 
-  throw storyPath.buildCodeFrameError(
-    'Expected story to be csf factory, function or an object expression'
+  throw storyShapeError(
+    'Expected story to be csf factory, function or an object expression',
+    storyNode,
+    editor
   );
 }

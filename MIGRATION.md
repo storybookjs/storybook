@@ -28,6 +28,7 @@
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
+  - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
@@ -1071,6 +1072,19 @@ Key changes:
 The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
 
 Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+
+### `storybook/internal/babel` removed; `csf-tools` uses ESTree
+
+Storybook no longer bundles Babel or recast to read and write story and config files. Both are parsed with OXC, and edits are applied to the source text, so code a migration does not touch keeps its formatting.
+
+This only affects tooling that imports Storybook's internal entry points:
+
+- `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
+- The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile._program` and `CsfFile._editor`.
+- `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `printExpression(node)` to read an expression's source.
+- An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf._appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`.
+
+Babel itself is still used where it compiles your code, for example by `@storybook/nextjs` and the webpack Babel compiler addon.
 
 ### Create React App support removed
 

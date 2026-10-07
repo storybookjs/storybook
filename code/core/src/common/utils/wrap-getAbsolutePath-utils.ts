@@ -1,5 +1,7 @@
-import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
+
+import { type Node, isStringLiteral } from '../../csf-tools/estree/ast.ts';
+import { printString } from '../../csf-tools/estree/editor.ts';
 
 const PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'getAbsolutePath';
 const ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'wrapForPnp';
@@ -14,38 +16,13 @@ const ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'wrapForPnp';
  * function <name>() {}
  * ```
  */
-export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
+export function doesVariableOrFunctionDeclarationExist(node: Node, name: string) {
   return (
-    (t.isVariableDeclaration(node) &&
+    (node.type === 'VariableDeclaration' &&
       node.declarations.length === 1 &&
-      t.isVariableDeclarator(node.declarations[0]) &&
-      t.isIdentifier(node.declarations[0].id) &&
-      node.declarations[0].id?.name === name) ||
-    (t.isFunctionDeclaration(node) && t.isIdentifier(node.id) && node.id.name === name)
-  );
-}
-
-/**
- * Wrap a value with getAbsolutePath wrapper.
- *
- * @example
- *
- * ```ts
- * // Before
- * {
- *   framework: '@storybook/react-vite';
- * }
- *
- * // After
- * {
- *   framework: getAbsolutePath('@storybook/react-vite');
- * }
- * ```
- */
-function getReferenceToGetAbsolutePathWrapper(config: ConfigFile, value: string) {
-  return t.callExpression(
-    t.identifier(getAbsolutePathWrapperName(config) ?? PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME),
-    [t.stringLiteral(value)]
+      node.declarations[0].id.type === 'Identifier' &&
+      node.declarations[0].id.name === name) ||
+    (node.type === 'FunctionDeclaration' && node.id?.name === name)
   );
 }
 
@@ -72,31 +49,47 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
   return null;
 }
 
+/**
+ * Source of a call to the getAbsolutePath wrapper.
+ *
+ * @example
+ *
+ * ```ts
+ * getAbsolutePathCall(config, '@storybook/react-vite'); // "getAbsolutePath('@storybook/react-vite')"
+ * ```
+ */
+export function getAbsolutePathCall(config: ConfigFile, value: string) {
+  const wrapper = getAbsolutePathWrapperName(config) ?? PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME;
+  return `${wrapper}(${printString(value, config._quote)})`;
+}
+
 /** Check if the node needs to be wrapped with getAbsolutePath wrapper. */
 export function isGetAbsolutePathWrapperNecessary(
-  node: t.Node,
-  cb: (node: t.StringLiteral | t.ObjectProperty | t.ArrayExpression) => void = () => {}
-) {
-  if (t.isStringLiteral(node)) {
-    // value will be converted from StringLiteral to CallExpression.
+  node: Node,
+  cb: (node: Node) => void = () => {}
+): boolean {
+  if (isStringLiteral(node)) {
+    // value will be converted from a string literal to a call expression.
     cb(node);
     return true;
   }
 
-  if (t.isObjectExpression(node)) {
+  if (node.type === 'ObjectExpression') {
     const nameProperty = node.properties.find(
       (property) =>
-        t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name === 'name'
-    ) as t.ObjectProperty;
+        property.type === 'Property' &&
+        property.key.type === 'Identifier' &&
+        property.key.name === 'name'
+    );
 
-    if (nameProperty && t.isStringLiteral(nameProperty.value)) {
-      cb(nameProperty);
+    if (nameProperty?.type === 'Property' && isStringLiteral(nameProperty.value)) {
+      cb(nameProperty.value);
       return true;
     }
   }
 
   if (
-    t.isArrayExpression(node) &&
+    node.type === 'ArrayExpression' &&
     node.elements.some((element) => element && isGetAbsolutePathWrapperNecessary(element))
   ) {
     cb(node);
@@ -111,24 +104,22 @@ export function isGetAbsolutePathWrapperNecessary(
  *
  * @returns Array of fields that need to be wrapped with getAbsolutePath wrapper.
  */
-export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): t.Node[] {
+export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): Node[] {
   const frameworkNode = config.getFieldNode(['framework']);
   const builderNode = config.getFieldNode(['core', 'builder']);
   const rendererNode = config.getFieldNode(['core', 'renderer']);
   const addons = config.getFieldNode(['addons']);
 
-  const fieldsWithRequireWrapper = [
+  return [
     ...(frameworkNode ? [frameworkNode] : []),
     ...(builderNode ? [builderNode] : []),
     ...(rendererNode ? [rendererNode] : []),
-    ...(addons && t.isArrayExpression(addons) ? [addons] : []),
+    ...(addons?.type === 'ArrayExpression' ? [addons] : []),
   ];
-
-  return fieldsWithRequireWrapper;
 }
 
 /**
- * Returns AST for the following function
+ * Returns the source of the following function, for `ConfigFile#setBodyDeclaration`.
  *
  * @example
  *
@@ -138,78 +129,32 @@ export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): t.Node[]
  * }
  * ```
  */
-export function getAbsolutePathWrapperAsCallExpression(
-  isConfigTypescript: boolean
-): t.FunctionDeclaration {
-  const functionDeclaration = {
-    ...t.functionDeclaration(
-      t.identifier(PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME),
-      [
-        {
-          ...t.identifier('value'),
-          ...(isConfigTypescript
-            ? { typeAnnotation: t.tsTypeAnnotation(t.tSStringKeyword()) }
-            : {}),
-        },
-      ],
-      t.blockStatement([
-        t.returnStatement(
-          t.callExpression(t.identifier('dirname'), [
-            t.callExpression(t.identifier('fileURLToPath'), [
-              t.callExpression(
-                t.memberExpression(
-                  t.metaProperty(t.identifier('import'), t.identifier('meta')),
-                  t.identifier('resolve')
-                ),
-                [
-                  t.templateLiteral(
-                    [
-                      t.templateElement({ raw: '' }),
-                      t.templateElement({ raw: '/package.json' }, true),
-                    ],
-                    [t.identifier('value')]
-                  ),
-                ]
-              ),
-            ]),
-          ])
-        ),
-      ])
-    ),
-    ...(isConfigTypescript ? { returnType: t.tSTypeAnnotation(t.tsAnyKeyword()) } : {}),
-  };
-
-  t.addComment(
-    functionDeclaration,
-    'leading',
-    '*\n * This function is used to resolve the absolute path of a package.\n * It is needed in projects that are set up within a monorepo.\n'
-  );
-
-  return functionDeclaration;
+export function getAbsolutePathWrapperDeclaration(isConfigTypescript: boolean): string {
+  return [
+    '/**',
+    ' * This function is used to resolve the absolute path of a package.',
+    ' * It is needed in projects that are set up within a monorepo.',
+    ' */',
+    `function ${PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME}(value${isConfigTypescript ? ': string' : ''})${isConfigTypescript ? ': any' : ''} {`,
+    '  return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));',
+    '}',
+  ].join('\n');
 }
 
-export function wrapValueWithGetAbsolutePathWrapper(config: ConfigFile, node: t.Node) {
-  isGetAbsolutePathWrapperNecessary(node, (n) => {
-    if (t.isStringLiteral(n)) {
-      const wrapperNode = getReferenceToGetAbsolutePathWrapper(config, n.value);
-      Object.keys(n).forEach((k) => {
-        delete n[k as keyof typeof n];
-      });
-      Object.keys(wrapperNode).forEach((k) => {
-        (n as any)[k] = wrapperNode[k as keyof typeof wrapperNode];
-      });
-    }
-
-    if (t.isObjectProperty(n) && t.isStringLiteral(n.value)) {
-      n.value = getReferenceToGetAbsolutePathWrapper(config, n.value.value) as any;
-    }
-
-    if (t.isArrayExpression(n)) {
-      n.elements.forEach((element) => {
-        if (element && isGetAbsolutePathWrapperNecessary(element)) {
-          wrapValueWithGetAbsolutePathWrapper(config, element);
-        }
-      });
-    }
-  });
+/** Wrap every string value in the given config nodes with the getAbsolutePath wrapper. */
+export function wrapValuesWithGetAbsolutePathWrapper(config: ConfigFile, nodes: Node[]) {
+  const wrap = (node: Node) =>
+    isGetAbsolutePathWrapperNecessary(node, (target) => {
+      if (isStringLiteral(target)) {
+        config._editorSource.edits.overwrite(
+          target.start,
+          target.end,
+          getAbsolutePathCall(config, target.value)
+        );
+      } else if (target.type === 'ArrayExpression') {
+        target.elements.forEach((element) => element && wrap(element));
+      }
+    });
+  nodes.forEach(wrap);
+  config._commit();
 }

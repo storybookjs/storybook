@@ -92,7 +92,10 @@ describe('wrapGetAbsolutePath', () => {
           },
         };
         export default config;
-
+        /**
+         * This function is used to resolve the absolute path of a package.
+         * It is needed in projects that are set up within a monorepo.
+         */
         function getAbsolutePath(value) {
           return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }

@@ -1,7 +1,12 @@
 import { resolve } from 'node:path';
 
-import { parser, traverse, types as t } from 'storybook/internal/babel';
 import { normalizeAddonName, removeAddon } from 'storybook/internal/common';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  parseModule,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -46,9 +51,9 @@ const needsLegacyWarning = (result: AddonSvelteCsfToCoreResult) =>
 
 const parse = (code: string) => {
   // A `.ts` file with `<T>(x: T) => x` or `<T>value` only parses without JSX.
-  for (const plugins of [['typescript', 'jsx'], ['typescript']] as const) {
+  for (const fileName of ['file.tsx', 'file.ts']) {
     try {
-      return parser.parse(code, { sourceType: 'module', plugins: [...plugins] });
+      return parseModule(code, fileName);
     } catch {}
   }
   return undefined;
@@ -61,34 +66,32 @@ const renameImports = (code: string, framework: string) => {
     return code.replace(ADDON_IMPORT, `$1$2${framework}$2`);
   }
   const ranges: { start: number; end: number }[] = [];
-  const addSource = (node: t.Node | null | undefined) => {
-    const name = t.isStringLiteral(node)
-      ? node.value
-      : t.isTemplateLiteral(node) && node.expressions.length === 0
-        ? node.quasis[0].value.cooked
-        : undefined;
+  const addSource = (node: Node | null | undefined) => {
+    const name =
+      node?.type === 'Literal'
+        ? node.value
+        : node?.type === 'TemplateLiteral' && node.expressions.length === 0
+          ? node.quasis[0].value.cooked
+          : undefined;
     if (node && name === ADDON_SVELTE_CSF) {
-      ranges.push({ start: node.start! + 1, end: node.end! - 1 });
+      ranges.push({ start: node.start + 1, end: node.end - 1 });
     }
   };
-  traverse(ast, {
-    ImportDeclaration: ({ node }) => addSource(node.source),
-    ExportNamedDeclaration: ({ node }) => addSource(node.source),
-    ExportAllDeclaration: ({ node }) => addSource(node.source),
-    CallExpression: ({ node }) => {
-      if (t.isImport(node.callee)) {
-        addSource(node.arguments[0]);
-      }
-    },
-    TSImportType: ({ node }) => {
-      const argument = node.argument as t.Node;
-      addSource(t.isTSLiteralType(argument) ? argument.literal : argument);
-    },
+  walk(ast.program, (node) => {
+    if (
+      node.type === 'ImportDeclaration' ||
+      node.type === 'ExportNamedDeclaration' ||
+      node.type === 'ExportAllDeclaration' ||
+      node.type === 'ImportExpression' ||
+      node.type === 'TSImportType'
+    ) {
+      addSource(node.source);
+    }
   });
   for (const comment of ast.comments ?? []) {
     for (const match of comment.value.matchAll(COMMENT_IMPORT)) {
       // Comment values start after `//` or `/*`.
-      const start = comment.start! + 2 + match.index + match[1].length + 1;
+      const start = comment.start + 2 + match.index + match[1].length + 1;
       ranges.push({ start, end: start + ADDON_SVELTE_CSF.length });
     }
   }
@@ -107,13 +110,13 @@ const mergeImports = (code: string, source: string) => {
     return code;
   }
 
-  const groups = new Map<string, t.ImportDeclaration[]>();
+  const groups = new Map<string, E.ImportDeclaration[]>();
   for (const node of ast.program.body) {
     if (
-      t.isImportDeclaration(node) &&
+      node.type === 'ImportDeclaration' &&
       node.source.value === source &&
       node.specifiers.length > 0 &&
-      node.specifiers.every((specifier) => t.isImportSpecifier(specifier))
+      node.specifiers.every((specifier) => specifier.type === 'ImportSpecifier')
     ) {
       const kind = node.importKind ?? 'value';
       groups.set(kind, [...(groups.get(kind) ?? []), node]);
@@ -126,21 +129,21 @@ const mergeImports = (code: string, source: string) => {
       continue;
     }
     const specifiers = [first, ...rest].flatMap(({ specifiers }) =>
-      specifiers.map((specifier) => code.slice(specifier.start!, specifier.end!))
+      specifiers.map((specifier) => code.slice(specifier.start, specifier.end))
     );
     edits.push({
-      start: first.specifiers[0].start!,
-      end: first.specifiers.at(-1)!.end!,
+      start: first.specifiers[0].start,
+      end: first.specifiers.at(-1)!.end,
       text: [...new Set(specifiers)].join(', '),
     });
     for (const node of rest) {
-      const lineStart = code.lastIndexOf('\n', node.start! - 1) + 1;
-      const lineEnd = code.startsWith('\r\n', node.end!) ? 2 : code[node.end!] === '\n' ? 1 : 0;
-      const ownLine = code.slice(lineStart, node.start!).trim() === '' && lineEnd > 0;
+      const lineStart = code.lastIndexOf('\n', node.start - 1) + 1;
+      const lineEnd = code.startsWith('\r\n', node.end) ? 2 : code[node.end] === '\n' ? 1 : 0;
+      const ownLine = code.slice(lineStart, node.start).trim() === '' && lineEnd > 0;
       edits.push(
         ownLine
-          ? { start: lineStart, end: node.end! + lineEnd, text: '' }
-          : { start: node.start!, end: node.end!, text: '' }
+          ? { start: lineStart, end: node.end + lineEnd, text: '' }
+          : { start: node.start, end: node.end, text: '' }
       );
     }
   }
@@ -181,13 +184,9 @@ const usesDefineMeta = (code: string) =>
       return /\bdefineMeta\b/.test(content);
     }
     let found = false;
-    traverse(ast, {
-      Identifier: (path) => {
-        if (path.node.name === 'defineMeta') {
-          found = true;
-          path.stop();
-        }
-      },
+    walk(ast.program, (node) => {
+      found ||= node.type === 'Identifier' && node.name === 'defineMeta';
+      return !found;
     });
     return found;
   });

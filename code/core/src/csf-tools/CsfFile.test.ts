@@ -83,9 +83,7 @@ describe('CsfFile', () => {
           { transformInlineMeta: true }
         )
       ).toMatchInlineSnapshot(`
-        "const _meta = {
-          title: 'foo/bar'
-        };
+        "const _meta = { title: 'foo/bar' };
         export default _meta;"
       `);
     });
@@ -3037,7 +3035,7 @@ describe('CsfFile', () => {
         `
           )
         ).toThrowErrorMatchingInlineSnapshot(`
-          [MultipleMetaError: CSF: multiple meta objects 
+          [MultipleMetaError: CSF: multiple meta objects (line 3, col 15)
 
           More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
         `);

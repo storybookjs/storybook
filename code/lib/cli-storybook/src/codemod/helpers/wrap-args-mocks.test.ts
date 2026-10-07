@@ -13,7 +13,7 @@ expect.addSnapshotSerializer({
 
 const transform = (source: string) => {
   const csf = loadCsf(source, { makeTitle: () => 'FIXME' }).parse();
-  wrapArgsMocks(csf._ast);
+  wrapArgsMocks(csf._editor);
   return printCsf(csf).code;
 };
 
@@ -143,8 +143,7 @@ describe('wrapArgsMocks', () => {
       `)
     ).toMatchInlineSnapshot(`
       import preview from '#.storybook/preview';
-
-      import { mocked } from "storybook/test";
+      import { mocked } from 'storybook/test';
 
       const sharedPlay = async (context) => {
         const { getUsers } = context.args;
@@ -337,18 +336,17 @@ describe('wrapArgsMocks', () => {
 
     it('adds a new import after the last import', () => {
       expect(transform(story)).toMatchInlineSnapshot(`
-          import preview from '#.storybook/preview';
+        import preview from '#.storybook/preview';
+        import { mocked } from 'storybook/test';
 
-          import { mocked } from "storybook/test";
+        const meta = preview.meta({ component: Button });
 
-          const meta = preview.meta({ component: Button });
-
-          export const A = meta.story({
-            play: async ({ args }) => {
-              mocked(args.onClick).mockClear();
-            },
-          });
-        `);
+        export const A = meta.story({
+          play: async ({ args }) => {
+            mocked(args.onClick).mockClear();
+          },
+        });
+      `);
     });
 
     it('adds a value import next to a type-only one', () => {

@@ -10,8 +10,12 @@ export {
   isTypeSpecifier,
   type ImportBinding,
 } from './imports.ts';
-export { extractStoryJSDocInfo, jsDocTagsForPath } from './jsdoc.ts';
-export { normalizeStoryDeclaration, type NormalizedStoryDeclaration } from './normalize-story.ts';
+export { extractStoryJSDocInfo, jsDocTagsForNode } from './jsdoc.ts';
+export {
+  normalizeStoryDeclaration,
+  storyShapeError,
+  type NormalizedStoryDeclaration,
+} from './normalize-story.ts';
 export {
   createStoryReferenceResolver,
   parseReferenceModule,
@@ -19,6 +23,7 @@ export {
 } from './reference-context.ts';
 export { isSelfContained, resolveArgValue, type ResolvedArgValue } from './resolve-arg-value.ts';
 export {
+  codeOf,
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
@@ -37,19 +42,18 @@ export {
   type ResolvedStoryArgs,
   type StoryArgsResolver,
 } from './resolve-story-args.ts';
-export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
+export { resolveRenderFunction, type RenderFunction, type RenderResolution } from './render.ts';
 export {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
   keyOf,
-  metaObjectPath,
-  pathForNode,
+  metaObject,
   propertyValue,
   resolveIdentifierInit,
   resolveReturnedObjectExpression,
   returnedExpression,
-  returnedExpressionPath,
   unwrapExpression,
   withoutTypeCalls,
+  type FunctionNode,
 } from './utils.ts';

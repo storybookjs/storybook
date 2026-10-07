@@ -1,5 +1,11 @@
-import { types as t, traverse } from 'storybook/internal/babel';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type SourceEditor,
+  walk,
+} from 'storybook/internal/csf-tools';
 
+import { removeStatements } from '../../automigrate/helpers/source-edits.ts';
 import { cleanupTypeImports } from './csf-factories-utils.ts';
 
 // Name of types that should be removed from the import list
@@ -15,8 +21,14 @@ const typesDisallowList = [
 
 const disallowedTypesSet = new Set(typesDisallowList);
 
+type TypeDeclaration = E.TSTypeAliasDeclaration | E.TSInterfaceDeclaration;
+
+const isTypeDeclaration = (node: Node | null | undefined): node is TypeDeclaration =>
+  node?.type === 'TSTypeAliasDeclaration' || node?.type === 'TSInterfaceDeclaration';
+
 /**
- * Remove unused Storybook-specific type aliases from the program.
+ * Remove unused Storybook-specific type aliases from the program, then the Storybook type imports
+ * nothing uses anymore. Commits the editor after each removal pass.
  *
  * Conditions to remove a declared type/interface:
  *
@@ -24,153 +36,72 @@ const disallowedTypesSet = new Set(typesDisallowList);
  * - It is not referenced anywhere in the file,
  * - AND it (the declaration) references at least one Storybook type from typesDisallowList.
  *
- * Each pass performs one traversal of `ast`. During a pass we:
- *
- * - Collect declared type names,
- * - Record references to declared types (including handling references that appear before
- *   declarations),
- * - Detect per-declaration whether it references any disallowed Storybook type, and then filter
- *   program.body. The pass repeats while it removes a type.
+ * A removed type can have held the only reference to another one, such as `type Story =
+ * StoryObj<StoryMeta>` to `StoryMeta`, so passes repeat while they remove a type.
  */
-export function removeUnusedTypes(programNode: t.Program, ast: t.File): void {
-  // Declared type/interface names seen in this file
-  const declaredTypes = new Set<string>();
+export function removeUnusedTypes(editor: SourceEditor): void {
+  for (;;) {
+    const declaredTypes = new Set<string>();
+    const referencedTypes = new Set<string>();
+    // Identifier names seen before their declaration, so forward references count.
+    const pendingIdentifierNames = new Set<string>();
+    const typeDeclReferencesDisallowed = new Set<string>();
 
-  // Names of declared types that are referenced somewhere in the file
-  const referencedTypes = new Set<string>();
-
-  // Temporary: identifier names seen before we encountered their declaration
-  // This lets us count forward references (identifier appears before type is declared).
-  const pendingIdentifierNames = new Set<string>();
-
-  // Names of type declarations that (somewhere in their AST) reference a disallowed Storybook type
-  const typeDeclReferencesDisallowed = new Set<string>();
-
-  traverse(ast, {
-    enter(path) {
-      const node = path.node;
-
-      // 1) When we encounter a type/interface declaration, register it.
-      if (path.isTSTypeAliasDeclaration() || path.isTSInterfaceDeclaration()) {
-        // These always have an `id` property that's an Identifier
-        const idNode = (node as t.TSTypeAliasDeclaration | t.TSInterfaceDeclaration).id;
-        const name = idNode && t.isIdentifier(idNode) ? idNode.name : undefined;
-        if (name) {
-          declaredTypes.add(name);
-
-          // If we previously saw identifiers with this name before the declaration,
-          // count them now as references (handles reference-before-declaration).
-          if (pendingIdentifierNames.has(name)) {
-            referencedTypes.add(name);
-          }
-        }
-
-        // No need to traverse into the id itself here; we still want to traverse the
-        // declaration body so that disallowed-type references inside are detected
-        // by the TSTypeReference/TSExpressionWithTypeArguments handlers below.
-        return;
+    const markOwner = (node: Node) => {
+      let owner = editor.parentOf(node);
+      while (owner && !isTypeDeclaration(owner)) {
+        owner = editor.parentOf(owner);
       }
+      if (owner) {
+        typeDeclReferencesDisallowed.add(owner.id.name);
+      }
+    };
 
-      // 2) Track identifier references to declared types.
-      if (path.isIdentifier()) {
-        const identifierNode = node as t.Identifier;
-        const name = identifierNode.name;
-
-        // Skip the identifier that *is* the declaration id itself:
-        // parent is TSTypeAliasDeclaration or TSInterfaceDeclaration and its id is this node
-        const parentPath = path.parentPath;
-        if (
-          parentPath &&
-          (parentPath.isTSTypeAliasDeclaration() || parentPath.isTSInterfaceDeclaration())
-        ) {
-          const parentIdNode = (
-            parentPath.node as t.TSTypeAliasDeclaration | t.TSInterfaceDeclaration
-          ).id;
-          if (parentIdNode === node) {
-            return;
-          }
+    walk(editor.program, (node, parent) => {
+      if (isTypeDeclaration(node)) {
+        declaredTypes.add(node.id.name);
+        if (pendingIdentifierNames.has(node.id.name)) {
+          referencedTypes.add(node.id.name);
         }
-
-        // If we've already seen the declaration, mark as referenced.
-        if (declaredTypes.has(name)) {
-          referencedTypes.add(name);
+      } else if (node.type === 'Identifier') {
+        if (isTypeDeclaration(parent) && parent.id === node) {
+          return;
+        }
+        if (declaredTypes.has(node.name)) {
+          referencedTypes.add(node.name);
         } else {
-          // Otherwise record as pending — if the declaration appears later, we'll promote it.
-          pendingIdentifierNames.add(name);
+          pendingIdentifierNames.add(node.name);
         }
-
-        return;
-      }
-
-      // 3) Detect references to disallowed Storybook types inside type declarations.
-      // If we find one, record which type declaration (owner) contains it.
-      if (path.isTSTypeReference()) {
-        const typeRefNode = node as t.TSTypeReference;
-        const typeNameNode = typeRefNode.typeName;
-
-        if (t.isIdentifier(typeNameNode) && disallowedTypesSet.has(typeNameNode.name)) {
-          // Find the nearest enclosing type declaration (alias or interface)
-          const owner = path.findParent(
-            (p) => p.isTSTypeAliasDeclaration() || p.isTSInterfaceDeclaration()
-          );
-          if (owner && (owner.isTSTypeAliasDeclaration() || owner.isTSInterfaceDeclaration())) {
-            const ownerId = (owner.node as t.TSTypeAliasDeclaration | t.TSInterfaceDeclaration).id;
-            const ownerName = t.isIdentifier(ownerId) ? ownerId.name : undefined;
-            if (ownerName) {
-              typeDeclReferencesDisallowed.add(ownerName);
-            }
-          }
-        }
-
-        return;
-      }
-
-      if (path.isTSExpressionWithTypeArguments()) {
-        const tsExprNode = node as t.TSExpressionWithTypeArguments;
-        const expr = tsExprNode.expression;
-        if (t.isIdentifier(expr) && disallowedTypesSet.has(expr.name)) {
-          const owner = path.findParent(
-            (p) => p.isTSTypeAliasDeclaration() || p.isTSInterfaceDeclaration()
-          );
-          if (owner && (owner.isTSTypeAliasDeclaration() || owner.isTSInterfaceDeclaration())) {
-            const ownerId = (owner.node as t.TSTypeAliasDeclaration | t.TSInterfaceDeclaration).id;
-            const ownerName = t.isIdentifier(ownerId) ? ownerId.name : undefined;
-            if (ownerName) {
-              typeDeclReferencesDisallowed.add(ownerName);
-            }
-          }
-        }
-        return;
-      }
-    },
-  });
-
-  // Final pass: remove unused declared types that reference disallowed types
-  const body = programNode.body.filter((node) => {
-    if (t.isTSTypeAliasDeclaration(node) || t.isTSInterfaceDeclaration(node)) {
-      const name = node.id.name;
-
-      // If it's a declared type, unused, and references a disallowed Storybook type — remove it.
-      if (
-        declaredTypes.has(name) &&
-        !referencedTypes.has(name) &&
-        typeDeclReferencesDisallowed.has(name)
+      } else if (
+        node.type === 'TSTypeReference' &&
+        node.typeName.type === 'Identifier' &&
+        disallowedTypesSet.has(node.typeName.name)
       ) {
-        return false; // filter out (remove)
+        markOwner(node);
+      } else if (
+        (node.type === 'TSInterfaceHeritage' || node.type === 'TSClassImplements') &&
+        node.expression.type === 'Identifier' &&
+        disallowedTypesSet.has(node.expression.name)
+      ) {
+        markOwner(node);
       }
+    });
+
+    const removed = new Set<Node>(
+      editor.program.body.filter(
+        (node) =>
+          isTypeDeclaration(node) &&
+          declaredTypes.has(node.id.name) &&
+          !referencedTypes.has(node.id.name) &&
+          typeDeclReferencesDisallowed.has(node.id.name)
+      )
+    );
+    if (removed.size === 0) {
+      break;
     }
-
-    return true; // keep everything else
-  });
-
-  // A removed type can have held the only reference to another one, such as
-  // `type Story = StoryObj<StoryMeta>` to `StoryMeta`.
-  if (body.length < programNode.body.length) {
-    programNode.body = body;
-    removeUnusedTypes(programNode, ast);
-    return;
+    removeStatements(editor, removed);
+    editor.commit();
   }
 
-  // Cleanup any now-unused Storybook type imports (keeps original API: pass array)
-  programNode.body = cleanupTypeImports(programNode, typesDisallowList);
+  cleanupTypeImports(editor, typesDisallowList);
 }

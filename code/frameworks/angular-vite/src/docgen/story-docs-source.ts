@@ -1,6 +1,10 @@
-import { types as t } from 'storybook/internal/babel';
-import type { ReferenceContext, ResolvedMembers } from 'storybook/internal/csf-tools';
+import type {
+  ESTreeNode as Node,
+  ReferenceContext,
+  ResolvedMembers,
+} from 'storybook/internal/csf-tools';
 import {
+  isStringLiteral,
   resolveArgValue,
   resolveObjectMembers,
   sourceOf,
@@ -17,7 +21,7 @@ export type AuthoredSource =
   | { kind: 'unresolvable'; source: string };
 
 type MemberPathResolution =
-  | { kind: 'value'; node: t.Node }
+  | { kind: 'value'; node: Node }
   | { kind: 'missing' }
   | { kind: 'masked' }
   | { kind: 'unresolvable'; source: string };
@@ -40,16 +44,17 @@ export const authoredSource = (
 
     const resolved = resolveArgValue(code.node, ctx);
     const value = unwrapExpression(resolved.node);
-    if (t.isIdentifier(value, { name: 'undefined' })) {
+    if (isUndefined(value)) {
       continue;
     }
-    if (t.isUnaryExpression(value, { operator: 'void' })) {
-      continue;
-    }
-    if (t.isNullLiteral(value)) {
+    if (
+      value.type === 'Literal' &&
+      value.value === null &&
+      !('regex' in value || 'bigint' in value)
+    ) {
       return { kind: 'disabled' };
     }
-    if (t.isStringLiteral(value)) {
+    if (isStringLiteral(value)) {
       return { kind: 'code', code: value.value };
     }
     const parts = templateParts(value);
@@ -74,11 +79,8 @@ const memberAt = (
     }
     const original = result.node;
     const object = unwrapExpression(resolveArgValue(original, ctx).node);
-    if (!t.isObjectExpression(object)) {
-      if (
-        t.isIdentifier(object, { name: 'undefined' }) ||
-        t.isUnaryExpression(object, { operator: 'void' })
-      ) {
+    if (object.type !== 'ObjectExpression') {
+      if (isUndefined(object)) {
         return { kind: 'missing' };
       }
       if (isOpaqueValue(object)) {
@@ -103,5 +105,15 @@ const memberOf = (members: ResolvedMembers, key: string): MemberPathResolution =
   return { kind: 'missing' };
 };
 
-const isOpaqueValue = (node: t.Node): boolean =>
-  !t.isLiteral(node) && !t.isArrayExpression(node) && !t.isFunction(node);
+const isUndefined = (node: Node): boolean =>
+  (node.type === 'Identifier' && node.name === 'undefined') ||
+  (node.type === 'UnaryExpression' && node.operator === 'void');
+
+const isOpaqueValue = (node: Node): boolean =>
+  node.type !== 'Literal' &&
+  node.type !== 'TemplateLiteral' &&
+  node.type !== 'ArrayExpression' &&
+  node.type !== 'ArrowFunctionExpression' &&
+  node.type !== 'FunctionExpression' &&
+  node.type !== 'FunctionDeclaration' &&
+  !(node.type === 'Property' && node.method);

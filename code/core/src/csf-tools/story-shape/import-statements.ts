@@ -1,5 +1,4 @@
-import { babelParse, babelPrint, types as t } from 'storybook/internal/babel';
-
+import { type E, parseModule } from '../estree/ast.ts';
 import { type ImportBinding, importedName, isTypeSpecifier } from './imports.ts';
 
 /** A component reference resolved to the module binding it comes from. */
@@ -68,10 +67,10 @@ interface ParsedOverride {
 }
 
 function parseImportOverride(code: string): ParsedOverride | undefined {
-  let declaration: t.ImportDeclaration | undefined;
+  let declaration: E.ImportDeclaration | undefined;
   try {
-    declaration = babelParse(code).program.body.find((node): node is t.ImportDeclaration =>
-      t.isImportDeclaration(node)
+    declaration = parseModule(code).program.body.find(
+      (node): node is E.ImportDeclaration => node.type === 'ImportDeclaration'
     );
   } catch {
     return undefined;
@@ -82,25 +81,30 @@ function parseImportOverride(code: string): ParsedOverride | undefined {
   }
 
   const source = declaration.source.value;
-  const specifier = (declaration.specifiers ?? []).find((s) => !isTypeSpecifier(s));
+  const specifier = declaration.specifiers.find((s) => !isTypeSpecifier(s));
 
-  if (t.isImportNamespaceSpecifier(specifier)) {
+  if (specifier?.type === 'ImportNamespaceSpecifier') {
     return { source, specifier: { kind: 'namespace', local: specifier.local.name } };
   }
-  if (t.isImportDefaultSpecifier(specifier)) {
+  if (specifier?.type === 'ImportDefaultSpecifier') {
     return { source, specifier: { kind: 'default' } };
   }
-  if (t.isImportSpecifier(specifier)) {
+  if (specifier?.type === 'ImportSpecifier') {
     return { source, specifier: { kind: 'named', imported: importedName(specifier.imported) } };
   }
   return { source };
 }
 
+interface NamedSpecifier {
+  local: string;
+  imported: string;
+}
+
 interface Bucket {
-  source: t.StringLiteral;
-  defaults: t.Identifier[];
-  namespaces: t.Identifier[];
-  named: t.ImportSpecifier[];
+  source: string;
+  defaults: string[];
+  namespaces: string[];
+  named: NamedSpecifier[];
 }
 
 function addUniqueBy<T>(list: T[], item: T, eq: (candidate: T) => boolean) {
@@ -112,13 +116,13 @@ function addUniqueBy<T>(list: T[], item: T, eq: (candidate: T) => boolean) {
 function addNamed(bucket: Bucket, local: string, imported: string) {
   addUniqueBy(
     bucket.named,
-    t.importSpecifier(t.identifier(local), t.identifier(imported)),
-    (n) => n.local.name === local && importedName(n.imported) === imported
+    { local, imported },
+    (n) => n.local === local && n.imported === imported
   );
 }
 
-function addSingle(list: t.Identifier[], name: string) {
-  addUniqueBy(list, t.identifier(name), (n) => n.name === name);
+function addSingle(list: string[], name: string) {
+  addUniqueBy(list, name, (n) => n === name);
 }
 
 function collectSpecifier(
@@ -176,25 +180,42 @@ function collectSpecifier(
   }
 }
 
-function printBucket({ source, defaults, namespaces, named }: Bucket): string[] {
-  const print = (
-    specifiers: (t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier | t.ImportSpecifier)[]
-  ) => babelPrint(t.importDeclaration(specifiers, source));
+const WRAP_COLUMN = 80;
 
-  const extraDefaults = defaults.slice(1).map((d) => print([t.importDefaultSpecifier(d)]));
+/** Prints an import declaration the way the formatter it replaces did, wrapping long lists. */
+function printImport(
+  source: string,
+  {
+    defaultName,
+    namespace,
+    named,
+  }: { defaultName?: string; namespace?: string; named?: NamedSpecifier[] }
+): string {
+  const from = `from '${source.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}';`;
+  const leading = [defaultName, namespace && `* as ${namespace}`].filter(Boolean);
+  const names = (named ?? []).map(({ local, imported }) =>
+    local === imported ? local : `${imported} as ${local}`
+  );
+  if (names.length === 0) {
+    return `import ${leading.join(', ')} ${from}`;
+  }
+  const head = leading.length > 0 ? `${leading.join(', ')}, ` : '';
+  const braced = `{ ${names.join(', ')} }`;
+  // Only the specifier list wraps, so a long path alone keeps the import on one line.
+  return braced.length <= WRAP_COLUMN
+    ? `import ${head}${braced} ${from}`
+    : `import ${head}{\n${names.map((name) => `  ${name},`).join('\n')}\n} ${from}`;
+}
+
+function printBucket({ source, defaults, namespaces, named }: Bucket): string[] {
+  const extraDefaults = defaults.slice(1).map((d) => printImport(source, { defaultName: d }));
 
   if (namespaces.length > 0) {
-    const first: (t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier)[] = [];
-    if (defaults[0]) {
-      first.push(t.importDefaultSpecifier(defaults[0]));
-    }
-    first.push(t.importNamespaceSpecifier(namespaces[0]));
-
     return [
-      print(first),
-      ...(named.length > 0 ? [print(named)] : []),
+      printImport(source, { defaultName: defaults[0], namespace: namespaces[0] }),
+      ...(named.length > 0 ? [printImport(source, { named })] : []),
       ...extraDefaults,
-      ...namespaces.slice(1).map((ns) => print([t.importNamespaceSpecifier(ns)])),
+      ...namespaces.slice(1).map((ns) => printImport(source, { namespace: ns })),
     ];
   }
 
@@ -202,13 +223,7 @@ function printBucket({ source, defaults, namespaces, named }: Bucket): string[] 
     return [];
   }
 
-  const first: (t.ImportDefaultSpecifier | t.ImportSpecifier)[] = [];
-  if (defaults[0]) {
-    first.push(t.importDefaultSpecifier(defaults[0]));
-  }
-  first.push(...named);
-
-  return [print(first), ...extraDefaults];
+  return [printImport(source, { defaultName: defaults[0], named }), ...extraDefaults];
 }
 
 /**
@@ -238,7 +253,7 @@ export function buildImportStatements({
 
     let bucket = buckets.get(source);
     if (!bucket) {
-      bucket = { source: t.stringLiteral(source), defaults: [], namespaces: [], named: [] };
+      bucket = { source, defaults: [], namespaces: [], named: [] };
       buckets.set(source, bucket);
     }
 

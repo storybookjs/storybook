@@ -1,8 +1,15 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { parser, recast, types as t } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  SourceEditor,
+  isStringLiteral,
+  parseModule,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 export const METRO_CONFIG_CANDIDATES = ['metro.config.ts', 'metro.config.js', 'metro.config.cjs'];
@@ -49,113 +56,61 @@ const hasStorybookPackage = (value: string) => {
   return value === 'storybook' || value.startsWith('@storybook/') || value.startsWith('storybook/');
 };
 
-const isAstNode = (value: unknown): value is t.Node => {
-  return !!value && typeof value === 'object' && 'type' in value;
+const isRequireOfStorybook = (node: Node) =>
+  node.type === 'CallExpression' &&
+  node.callee.type === 'Identifier' &&
+  node.callee.name === 'require' &&
+  isStringLiteral(node.arguments[0]) &&
+  hasStorybookPackage(node.arguments[0].value);
+
+const statementContainsStorybookCall = (statement: Node) => {
+  let found = false;
+  walk(statement, (node) => {
+    if (found || isRequireOfStorybook(node)) {
+      found = true;
+      return false;
+    }
+  });
+  return found;
 };
 
-const getRequirePackageFromCallExpression = (callExpression: t.CallExpression) => {
-  if (t.isIdentifier(callExpression.callee, { name: 'require' })) {
-    const [firstArgument] = callExpression.arguments;
-    return t.isStringLiteral(firstArgument) ? firstArgument.value : null;
-  }
-
-  if (
-    t.isMemberExpression(callExpression.callee) &&
-    t.isCallExpression(callExpression.callee.object)
-  ) {
-    const objectCall = callExpression.callee.object;
-    if (!t.isIdentifier(objectCall.callee, { name: 'require' })) {
-      return null;
-    }
-
-    const [firstArgument] = objectCall.arguments;
-    return t.isStringLiteral(firstArgument) ? firstArgument.value : null;
-  }
-
-  return null;
-};
-
-const statementContainsStorybookCall = (statement: t.Statement) => {
-  const visited = new WeakSet<object>();
-  const queue: unknown[] = [statement];
-
-  while (queue.length > 0) {
-    const current = queue.pop();
-    if (!current || typeof current !== 'object') {
-      continue;
-    }
-
-    if (visited.has(current)) {
-      continue;
-    }
-    visited.add(current);
-
-    if (isAstNode(current) && t.isCallExpression(current)) {
-      const packageName = getRequirePackageFromCallExpression(current);
-      if (packageName && hasStorybookPackage(packageName)) {
-        return true;
-      }
-    }
-
-    if (Array.isArray(current)) {
-      queue.push(...current);
-      continue;
-    }
-
-    for (const value of Object.values(current as Record<string, unknown>)) {
-      if (value && (typeof value === 'object' || Array.isArray(value))) {
-        queue.push(value);
-      }
-    }
-  }
-
-  return false;
-};
-
-const isModuleExportsTarget = (left: t.LVal | t.OptionalMemberExpression) => {
+const isModuleExportsTarget = (left: Node) => {
   return (
-    t.isMemberExpression(left) &&
-    t.isIdentifier(left.object, { name: 'module' }) &&
-    t.isIdentifier(left.property, { name: 'exports' })
+    left.type === 'MemberExpression' &&
+    left.object.type === 'Identifier' &&
+    left.object.name === 'module' &&
+    left.property.type === 'Identifier' &&
+    left.property.name === 'exports'
   );
 };
 
-const isWithStorybookCall = (node: t.Node | null | undefined, withStorybookLocalName: string) => {
-  return t.isCallExpression(node) && t.isIdentifier(node.callee, { name: withStorybookLocalName });
+const isWithStorybookCall = (node: Node, withStorybookLocalName: string) => {
+  return (
+    node.type === 'CallExpression' &&
+    node.callee.type === 'Identifier' &&
+    node.callee.name === withStorybookLocalName
+  );
 };
 
-const parseConfig = (source: string) => {
-  return recast.parse(source, {
-    parser: {
-      parse(code: string) {
-        return parser.parse(code, {
-          sourceType: 'unambiguous',
-          plugins: ['jsx', 'typescript', 'decorators-legacy', 'classProperties'],
-        });
-      },
-    },
-  }) as t.File;
-};
-
-const usesEsmSyntax = (program: t.Program) => {
+const usesEsmSyntax = (program: E.Program) => {
   return program.body.some(
     (node) =>
-      t.isImportDeclaration(node) ||
-      t.isExportDefaultDeclaration(node) ||
-      t.isExportNamedDeclaration(node) ||
-      t.isExportAllDeclaration(node)
+      node.type === 'ImportDeclaration' ||
+      node.type === 'ExportDefaultDeclaration' ||
+      node.type === 'ExportNamedDeclaration' ||
+      node.type === 'ExportAllDeclaration'
   );
 };
 
 export const containsStorybookImport = (source: string) => {
   try {
-    const ast = parseConfig(source);
-    for (const statement of ast.program.body) {
-      if (t.isImportDeclaration(statement) && hasStorybookPackage(statement.source.value)) {
+    const { program } = parseModule(source);
+    for (const statement of program.body) {
+      if (statement.type === 'ImportDeclaration' && hasStorybookPackage(statement.source.value)) {
         return true;
       }
 
-      if (t.isExportNamedDeclaration(statement) && statement.source) {
+      if (statement.type === 'ExportNamedDeclaration' && statement.source) {
         if (hasStorybookPackage(statement.source.value)) {
           return true;
         }
@@ -172,58 +127,55 @@ export const containsStorybookImport = (source: string) => {
   return false;
 };
 
-const hasWithStorybookBinding = (program: t.Program) => {
+const hasWithStorybookBinding = (program: E.Program) => {
   for (const statement of program.body) {
     if (
-      t.isImportDeclaration(statement) &&
+      statement.type === 'ImportDeclaration' &&
       statement.source.value === '@storybook/react-native/withStorybook'
     ) {
       const withStorybookSpecifier = statement.specifiers.find(
         (specifier) =>
-          t.isImportSpecifier(specifier) &&
-          t.isIdentifier(specifier.imported, { name: 'withStorybook' })
+          specifier.type === 'ImportSpecifier' &&
+          specifier.imported.type === 'Identifier' &&
+          specifier.imported.name === 'withStorybook'
       );
-      if (withStorybookSpecifier && t.isImportSpecifier(withStorybookSpecifier)) {
+      if (withStorybookSpecifier) {
         return withStorybookSpecifier.local.name;
       }
     }
 
-    if (!t.isVariableDeclaration(statement)) {
+    if (statement.type !== 'VariableDeclaration') {
       continue;
     }
 
     for (const declaration of statement.declarations) {
-      if (!t.isObjectPattern(declaration.id) || !t.isCallExpression(declaration.init)) {
+      const { id, init } = declaration;
+      if (
+        id.type !== 'ObjectPattern' ||
+        init?.type !== 'CallExpression' ||
+        init.callee.type !== 'Identifier' ||
+        init.callee.name !== 'require'
+      ) {
         continue;
       }
 
-      if (!t.isIdentifier(declaration.init.callee, { name: 'require' })) {
+      const [firstArgument] = init.arguments;
+      if (
+        !isStringLiteral(firstArgument) ||
+        firstArgument.value !== '@storybook/react-native/withStorybook'
+      ) {
         continue;
       }
 
-      const [firstArgument] = declaration.init.arguments;
-      if (!t.isStringLiteral(firstArgument)) {
-        continue;
-      }
-
-      if (firstArgument.value !== '@storybook/react-native/withStorybook') {
-        continue;
-      }
-
-      for (const property of declaration.id.properties) {
-        if (!t.isObjectProperty(property)) {
-          continue;
+      for (const property of id.properties) {
+        if (
+          property.type === 'Property' &&
+          property.key.type === 'Identifier' &&
+          property.key.name === 'withStorybook' &&
+          property.value.type === 'Identifier'
+        ) {
+          return property.value.name;
         }
-
-        if (!t.isIdentifier(property.key, { name: 'withStorybook' })) {
-          continue;
-        }
-
-        if (!t.isIdentifier(property.value)) {
-          continue;
-        }
-
-        return property.value.name;
       }
     }
   }
@@ -231,109 +183,47 @@ const hasWithStorybookBinding = (program: t.Program) => {
   return undefined;
 };
 
-// Returns the index in program.body after any directive-prologue statements
-// (ExpressionStatement nodes whose expression is a StringLiteral, e.g. 'use strict',
-// 'use client') so that injected imports are never inserted before them.
-// Babel normally stores these in program.directives rather than program.body, but
-// we guard defensively for configurations that leave them as body nodes.
-const getBodyInsertionIndex = (program: t.Program): number => {
-  for (let i = 0; i < program.body.length; i++) {
-    const statement = program.body[i];
-    if (t.isExpressionStatement(statement) && t.isStringLiteral(statement.expression)) {
-      continue;
-    }
-    return i;
+// Where a statement inserted at the top of the file goes: after the directive prologue and after a
+// file-leading pragma comment (// @ts-nocheck, /* eslint-disable */), but above the other comments
+// of the first statement.
+const getTopInsertionPosition = (editor: SourceEditor) => {
+  const { body } = editor.program;
+  const firstStatement = body.find(
+    (statement) =>
+      !(statement.type === 'ExpressionStatement' && isStringLiteral(statement.expression))
+  );
+  if (!firstStatement) {
+    return undefined;
   }
-  return program.body.length;
+  const previousEnd = body[body.indexOf(firstStatement) - 1]?.end ?? 0;
+  const leadingComment = editor.comments.find(
+    (comment) =>
+      comment.start > 0 && comment.start >= previousEnd && comment.end <= firstStatement.start
+  );
+  return leadingComment?.start ?? firstStatement.start;
 };
 
-// Babel nodes don't expose comment arrays in their public types; define a minimal
-// shape for the two comment storage formats used by Babel and recast respectively.
-interface ASTComment {
-  start?: number;
-  leading?: boolean;
-}
-
-interface NodeWithComments {
-  /** recast: comment objects with {leading, trailing} boolean flags */
-  comments?: ASTComment[];
-  /** Babel: leading-only comments (no {leading} flag needed) */
-  leadingComments?: ASTComment[];
-}
-
-// Move file-level leading comments (those that start at source position 0) from
-// `fromNode` to `toNode` so that pragmas like // @ts-nocheck, /* eslint-disable */,
-// and // @flow remain the very first content in the printed file even after a new
-// import/require statement is inserted before them.
-// recast stores comments in both node.comments (with {leading, trailing} flags) and
-// node.leadingComments; we update both so the printer sees the change.
-const shiftFileLeadingComments = (fromNode: t.Node, toNode: t.Node) => {
-  const from = fromNode as unknown as NodeWithComments;
-  const to = toNode as unknown as NodeWithComments;
-
-  const isFileLeading = (c: ASTComment) => typeof c.start === 'number' && c.start === 0;
-
-  // recast-style: node.comments[{leading: true, ...}]
-  if (Array.isArray(from.comments)) {
-    const fileLeading = from.comments.filter((c) => c.leading && isFileLeading(c));
-    if (fileLeading.length > 0) {
-      to.comments = [...fileLeading, ...(to.comments ?? [])];
-      from.comments = from.comments.filter((c) => !(c.leading && isFileLeading(c)));
-    }
-  }
-
-  // Babel-style: node.leadingComments[]
-  if (Array.isArray(from.leadingComments)) {
-    const fileLeading = from.leadingComments.filter(isFileLeading);
-    if (fileLeading.length > 0) {
-      to.leadingComments = [...fileLeading, ...(to.leadingComments ?? [])];
-      from.leadingComments = from.leadingComments.filter((c) => !isFileLeading(c));
-    }
-  }
-};
-
-const injectWithStorybookImport = (program: t.Program, useEsmImport: boolean) => {
-  if (useEsmImport) {
-    const importDeclaration = t.importDeclaration(
-      [t.importSpecifier(t.identifier('withStorybook'), t.identifier('withStorybook'))],
-      t.stringLiteral('@storybook/react-native/withStorybook')
-    );
-    const lastImportIndex = [...program.body]
-      .reverse()
-      .findIndex((statement) => t.isImportDeclaration(statement));
-
-    if (lastImportIndex === -1) {
-      const insertAt = getBodyInsertionIndex(program);
-      const nodeAtInsert = program.body[insertAt];
-      if (nodeAtInsert) {
-        shiftFileLeadingComments(nodeAtInsert, importDeclaration);
-      }
-      program.body.splice(insertAt, 0, importDeclaration);
-      return;
-    }
-
-    const insertAfter = program.body.length - lastImportIndex;
-    program.body.splice(insertAfter, 0, importDeclaration);
+const injectWithStorybookImport = (editor: SourceEditor, useEsmImport: boolean) => {
+  const { body } = editor.program;
+  const lastImport = body.findLast((statement) => statement.type === 'ImportDeclaration');
+  if (useEsmImport && lastImport) {
+    editor.edits.appendLeft(lastImport.end, `\n${WITH_STORYBOOK_IMPORT}`);
     return;
   }
 
-  const requireDeclaration = t.variableDeclaration('const', [
-    t.variableDeclarator(
-      t.objectPattern([
-        t.objectProperty(t.identifier('withStorybook'), t.identifier('withStorybook'), false, true),
-      ]),
-      t.callExpression(t.identifier('require'), [
-        t.stringLiteral('@storybook/react-native/withStorybook'),
-      ])
-    ),
-  ]);
-  const insertAt = getBodyInsertionIndex(program);
-  const nodeAtInsert = program.body[insertAt];
-  if (nodeAtInsert) {
-    shiftFileLeadingComments(nodeAtInsert, requireDeclaration);
+  const statement = useEsmImport ? WITH_STORYBOOK_IMPORT : WITH_STORYBOOK_REQUIRE;
+  const position = getTopInsertionPosition(editor);
+  if (position === undefined) {
+    editor.edits.append(`\n${statement}\n`);
+    return;
   }
-  program.body.splice(insertAt, 0, requireDeclaration);
+  editor.edits.appendRight(position, `${statement}\n\n`);
 };
+
+const WITH_STORYBOOK_IMPORT =
+  "import { withStorybook } from '@storybook/react-native/withStorybook';";
+const WITH_STORYBOOK_REQUIRE =
+  "const { withStorybook } = require('@storybook/react-native/withStorybook');";
 
 export const prependMetroFallbackComment = (source: string) => {
   if (source.includes(METRO_FALLBACK_COMMENT_MARKER)) {
@@ -344,14 +234,23 @@ export const prependMetroFallbackComment = (source: string) => {
 };
 
 export const transformMetroConfigSource = (source: string, filePath: string): TransformResult => {
-  const ast = parseConfig(source);
-  const program = ast.program;
+  const editor = new SourceEditor(source);
+  const { program } = editor;
   const withStorybookLocalName = hasWithStorybookBinding(program) ?? 'withStorybook';
   let matchedExport = false;
   let changed = false;
 
+  const wrap = (node: Node) => {
+    editor.edits.appendRight(node.start, `${withStorybookLocalName}(`);
+    editor.edits.appendLeft(node.end, ')');
+    changed = true;
+  };
+
   for (const statement of program.body) {
-    if (t.isExpressionStatement(statement) && t.isAssignmentExpression(statement.expression)) {
+    if (
+      statement.type === 'ExpressionStatement' &&
+      statement.expression.type === 'AssignmentExpression'
+    ) {
       if (!isModuleExportsTarget(statement.expression.left)) {
         continue;
       }
@@ -361,49 +260,37 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
         return { action: 'already-configured' };
       }
 
-      statement.expression.right = t.callExpression(t.identifier(withStorybookLocalName), [
-        statement.expression.right as t.Expression,
-      ]);
-      changed = true;
+      wrap(statement.expression.right);
       continue;
     }
 
-    if (!t.isExportDefaultDeclaration(statement)) {
+    if (statement.type !== 'ExportDefaultDeclaration') {
       continue;
     }
 
     matchedExport = true;
+    const { declaration } = statement;
 
-    if (t.isFunctionDeclaration(statement.declaration)) {
-      const functionExpression = t.functionExpression(
-        statement.declaration.id,
-        statement.declaration.params,
-        statement.declaration.body,
-        statement.declaration.generator,
-        statement.declaration.async
-      );
-      // Preserve TypeScript/Flow function metadata when converting declaration -> expression.
-      functionExpression.returnType = statement.declaration.returnType ?? null;
-      functionExpression.typeParameters = statement.declaration.typeParameters ?? null;
-      statement.declaration = t.callExpression(t.identifier(withStorybookLocalName), [
-        functionExpression,
-      ]);
-      changed = true;
+    // A function declaration's source is also a valid function expression.
+    if (declaration.type === 'FunctionDeclaration' && declaration.body) {
+      wrap(declaration);
       continue;
     }
 
-    if (!t.isExpression(statement.declaration)) {
+    if (
+      declaration.type === 'FunctionDeclaration' ||
+      declaration.type === 'ClassDeclaration' ||
+      declaration.type === 'TSInterfaceDeclaration' ||
+      declaration.type === 'TSDeclareFunction'
+    ) {
       return { action: 'unsupported' };
     }
 
-    if (isWithStorybookCall(statement.declaration, withStorybookLocalName)) {
+    if (isWithStorybookCall(declaration, withStorybookLocalName)) {
       return { action: 'already-configured' };
     }
 
-    statement.declaration = t.callExpression(t.identifier(withStorybookLocalName), [
-      statement.declaration,
-    ]);
-    changed = true;
+    wrap(declaration);
   }
 
   if (!matchedExport) {
@@ -416,18 +303,10 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
 
   if (!hasWithStorybookBinding(program)) {
     const shouldUseEsmImport = usesEsmSyntax(program) || filePath.endsWith('.mjs');
-    injectWithStorybookImport(program, shouldUseEsmImport);
+    injectWithStorybookImport(editor, shouldUseEsmImport);
   }
 
-  return {
-    action: 'updated',
-    code: recast.print(ast, {
-      quote: 'single',
-      trailingComma: true,
-      tabWidth: 2,
-      wrapColumn: 100,
-    }).code,
-  };
+  return { action: 'updated', code: editor.toString() };
 };
 
 const pathExists = async (value: string) => {

@@ -1,7 +1,21 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
-import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  SourceEditor,
+  appendToList,
+  arrayList,
+  importedName,
+  isStringLiteral,
+  prependStatement,
+  printString,
+  readConfig,
+  unwrapESTreeExpression as unwrapExpression,
+  walk,
+  writeConfig,
+} from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import commentJson from 'comment-json';
@@ -9,8 +23,6 @@ import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
-
-import { babelParse, recast, types as t, traverse } from '../babel/index.ts';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -41,44 +53,26 @@ export const findEslintFile = (instanceDir: string) => {
   return undefined;
 };
 
-function unwrapTSExpression(expr: any): t.Expression | null | undefined {
-  if (!expr) {
-    return expr;
-  }
-
-  if (t.isTSAsExpression(expr) || t.isTSSatisfiesExpression(expr)) {
-    return unwrapTSExpression(expr.expression);
-  }
-  return expr;
-}
+const STORYBOOK_CONFIG = 'storybook.configs["flat/recommended"]';
 
 export const configureFlatConfig = async (code: string) => {
-  const ast = babelParse(code);
+  const editor = new SourceEditor(code);
+  const { program } = editor;
 
   // Bail out if eslint-plugin-storybook is already imported (static or dynamic) to avoid
   // referencing an undefined variable or duplicating the config spread.
   // Some configs use dynamic import() expressions (e.g. via eslint-flat-config-utils).
   let alreadyHasStorybookImport = false;
-  traverse(ast, {
-    ImportDeclaration(path) {
-      if (path.node.source.value === 'eslint-plugin-storybook') {
-        alreadyHasStorybookImport = true;
-        path.stop();
-      }
-    },
-    CallExpression(path) {
-      // Dynamic import: import('eslint-plugin-storybook')
-      // Babel represents this as a CallExpression with callee.type === 'Import'
-      if (
-        t.isImport(path.node.callee) &&
-        path.node.arguments.length > 0 &&
-        t.isStringLiteral(path.node.arguments[0]) &&
-        path.node.arguments[0].value === 'eslint-plugin-storybook'
-      ) {
-        alreadyHasStorybookImport = true;
-        path.stop();
-      }
-    },
+  walk(program, (node) => {
+    if (
+      (node.type === 'ImportDeclaration' && node.source.value === 'eslint-plugin-storybook') ||
+      (node.type === 'ImportExpression' &&
+        isStringLiteral(node.source) &&
+        node.source.value === 'eslint-plugin-storybook')
+    ) {
+      alreadyHasStorybookImport = true;
+    }
+    return !alreadyHasStorybookImport;
   });
   if (alreadyHasStorybookImport) {
     return code;
@@ -86,7 +80,38 @@ export const configureFlatConfig = async (code: string) => {
 
   let tsEslintLocalName = '';
   let eslintDefineConfigLocalName = '';
-  let eslintConfigExpression: any = null;
+  for (const node of program.body) {
+    if (node.type !== 'ImportDeclaration') {
+      continue;
+    }
+    if (node.source.value === 'typescript-eslint') {
+      const defaultSpecifier = node.specifiers.find((s) => s.type === 'ImportDefaultSpecifier');
+      if (defaultSpecifier) {
+        tsEslintLocalName = defaultSpecifier.local.name;
+      }
+    }
+    if (node.source.value === 'eslint/config') {
+      const defineConfigSpecifier = node.specifiers.find(
+        (s) => s.type === 'ImportSpecifier' && importedName(s.imported) === 'defineConfig'
+      );
+      if (defineConfigSpecifier) {
+        eslintDefineConfigLocalName = defineConfigSpecifier.local.name;
+      }
+    }
+  }
+
+  const spreadInto = (array: Node | null | undefined) => {
+    const unwrapped = array && unwrapExpression(array);
+    if (unwrapped?.type === 'ArrayExpression') {
+      appendToList(editor, arrayList(unwrapped), [`...${STORYBOOK_CONFIG}`], '');
+    }
+  };
+  const isDefineConfigCall = (node: Node | null | undefined): node is E.CallExpression =>
+    node?.type === 'CallExpression' &&
+    node.callee.type === 'Identifier' &&
+    !!eslintDefineConfigLocalName &&
+    node.callee.name === eslintDefineConfigLocalName &&
+    node.arguments.length > 0;
 
   /**
    * What this supports:
@@ -99,119 +124,56 @@ export const configureFlatConfig = async (code: string) => {
    *
    * 1. Module.exports = [] Though it will add the import and a code comment that points to the docs
    */
-  traverse(ast, {
-    ImportDeclaration(path) {
-      if (path.node.source.value === 'typescript-eslint') {
-        const defaultSpecifier = path.node.specifiers.find((s) => t.isImportDefaultSpecifier(s));
-        if (defaultSpecifier) {
-          tsEslintLocalName = defaultSpecifier.local.name;
-        }
+  const exportDefault = program.body.find(
+    (node): node is E.ExportDefaultDeclaration => node.type === 'ExportDefaultDeclaration'
+  );
+  const eslintConfigExpression =
+    exportDefault && unwrapExpression(exportDefault.declaration as Node);
+
+  // Case 1: Direct array
+  spreadInto(eslintConfigExpression);
+
+  // Case 2: tseslint.config(...)
+  if (
+    eslintConfigExpression?.type === 'CallExpression' &&
+    eslintConfigExpression.callee.type === 'MemberExpression' &&
+    tsEslintLocalName &&
+    eslintConfigExpression.callee.object.type === 'Identifier' &&
+    eslintConfigExpression.callee.object.name === tsEslintLocalName &&
+    eslintConfigExpression.callee.property.type === 'Identifier' &&
+    eslintConfigExpression.callee.property.name === 'config'
+  ) {
+    const callee = eslintConfigExpression;
+    const close = callee.end - 1;
+    const open = editor.code.indexOf('(', callee.callee.end) + 1;
+    appendToList(editor, { open, close, items: callee.arguments }, [STORYBOOK_CONFIG], '');
+  }
+
+  // Case 2b: export default defineConfig([...]) from "eslint/config"
+  if (isDefineConfigCall(eslintConfigExpression)) {
+    spreadInto(eslintConfigExpression.arguments[0]);
+  }
+
+  // Case 3: export default config (resolve to array or call expression with array)
+  if (eslintConfigExpression?.type === 'Identifier') {
+    const binding = editor.scopes.program.bindings.get(eslintConfigExpression.name);
+    if (binding?.node.type === 'VariableDeclarator' && binding.node.init) {
+      const init = unwrapExpression(binding.node.init);
+      if (init.type === 'ArrayExpression') {
+        spreadInto(init);
+      } else if (isDefineConfigCall(init)) {
+        // Handle cases like defineConfig([...]) from "eslint/config"
+        spreadInto(init.arguments[0]);
       }
-      if (path.node.source.value === 'eslint/config') {
-        const defineConfigSpecifier = path.node.specifiers.find(
-          (s) => t.isImportSpecifier(s) && t.isIdentifier(s.imported, { name: 'defineConfig' })
-        );
-        if (defineConfigSpecifier && t.isImportSpecifier(defineConfigSpecifier)) {
-          eslintDefineConfigLocalName = defineConfigSpecifier.local.name;
-        }
-      }
-    },
+    }
+  }
 
-    ExportDefaultDeclaration(path) {
-      const node = path.node;
-      eslintConfigExpression = unwrapTSExpression(node.declaration);
+  prependStatement(
+    editor,
+    `// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format\nimport storybook from ${printString('eslint-plugin-storybook', editor.quote)};`
+  );
 
-      const storybookConfig = t.memberExpression(
-        t.memberExpression(t.identifier('storybook'), t.identifier('configs')),
-        t.stringLiteral('flat/recommended'),
-        true
-      );
-
-      // Case 1: Direct array
-      if (t.isArrayExpression(eslintConfigExpression)) {
-        eslintConfigExpression.elements.push(t.spreadElement(storybookConfig));
-      }
-
-      // Case 2: tseslint.config(...)
-      if (
-        t.isCallExpression(eslintConfigExpression) &&
-        t.isMemberExpression(eslintConfigExpression.callee) &&
-        tsEslintLocalName &&
-        t.isIdentifier(eslintConfigExpression.callee.object, { name: tsEslintLocalName }) &&
-        t.isIdentifier(eslintConfigExpression.callee.property, { name: 'config' })
-      ) {
-        eslintConfigExpression.arguments.push(storybookConfig);
-      }
-
-      // Case 2b: export default defineConfig([...]) from "eslint/config"
-      if (
-        t.isCallExpression(eslintConfigExpression) &&
-        t.isIdentifier(eslintConfigExpression.callee) &&
-        eslintDefineConfigLocalName &&
-        eslintConfigExpression.callee.name === eslintDefineConfigLocalName &&
-        eslintConfigExpression.arguments.length > 0
-      ) {
-        const firstArg = eslintConfigExpression.arguments[0];
-        if (t.isExpression(firstArg)) {
-          const unwrappedArg = unwrapTSExpression(firstArg);
-          if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
-            unwrappedArg.elements.push(t.spreadElement(storybookConfig));
-          }
-        }
-      }
-
-      // Case 3: export default config (resolve to array or call expression with array)
-      if (t.isIdentifier(eslintConfigExpression)) {
-        const binding = path.scope.getBinding(eslintConfigExpression.name);
-        if (binding && t.isVariableDeclarator(binding.path.node)) {
-          const init = unwrapTSExpression(binding.path.node.init);
-
-          if (t.isArrayExpression(init)) {
-            init.elements.push(t.spreadElement(storybookConfig));
-          } else if (
-            t.isCallExpression(init) &&
-            init.arguments.length > 0 &&
-            t.isIdentifier(init.callee) &&
-            eslintDefineConfigLocalName &&
-            init.callee.name === eslintDefineConfigLocalName
-          ) {
-            // Handle cases like defineConfig([...]) from "eslint/config"
-            const firstArg = init.arguments[0];
-            if (t.isExpression(firstArg)) {
-              const unwrappedArg = unwrapTSExpression(firstArg);
-              if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
-                unwrappedArg.elements.push(t.spreadElement(storybookConfig));
-              }
-            }
-          }
-        }
-      }
-    },
-
-    Program(path) {
-      const alreadyImported = path.node.body.some(
-        (node) => t.isImportDeclaration(node) && node.source.value === 'eslint-plugin-storybook'
-      );
-
-      if (!alreadyImported) {
-        // Add import: import storybook from 'eslint-plugin-storybook'
-        const importDecl = t.importDeclaration(
-          [t.importDefaultSpecifier(t.identifier('storybook'))],
-          t.stringLiteral('eslint-plugin-storybook')
-        );
-        (importDecl as any).comments = [
-          {
-            type: 'CommentLine',
-            value:
-              ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
-          },
-        ];
-        path.node.body.unshift(importDecl);
-      }
-    },
-  });
-
-  return recast.print(ast).code;
+  return editor.toString();
 };
 
 export async function extractEslintInfo(packageManager: JsPackageManager): Promise<{

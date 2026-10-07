@@ -1,4 +1,11 @@
-import { types as t, traverse } from 'storybook/internal/babel';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type SourceEditor,
+  walk,
+} from 'storybook/internal/csf-tools';
+
+import { removeStatements, setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 
 const projectAnnotationNames = [
   'decorators',
@@ -20,128 +27,106 @@ const projectAnnotationNames = [
   'runStep',
 ];
 
-export function cleanupTypeImports(programNode: t.Program, disallowList: string[]) {
+// Removes disallowed specifiers that the code no longer uses from `@storybook/*` imports.
+export function cleanupTypeImports(editor: SourceEditor, disallowList: string[]) {
   const usedIdentifiers = new Set<string>();
+  walk(editor.program, (node) => {
+    if (node.type === 'ImportDeclaration') {
+      return false;
+    }
+    if (node.type === 'Identifier') {
+      usedIdentifiers.add(node.name);
+    }
+  });
 
-  try {
-    // Collect all identifiers used in the program
-    traverse(programNode, {
-      Identifier(path) {
-        // Ensure we're not counting identifiers within import declarations
-        if (!path.findParent((p) => p.isImportDeclaration())) {
-          usedIdentifiers.add(path.node.name);
-        }
-      },
-      noScope: true,
-    });
-  } catch (err) {
-    // traversing could fail if the code isn't supported by
-    // our babel parse plugins, so we ignore
+  const removed = new Set<Node>();
+  for (const node of editor.program.body) {
+    if (node.type !== 'ImportDeclaration' || !node.source.value.startsWith('@storybook/')) {
+      continue;
+    }
+    const allowedSpecifiers = node.specifiers.filter(
+      (specifier) =>
+        specifier.type !== 'ImportSpecifier' ||
+        specifier.imported.type !== 'Identifier' ||
+        !disallowList.includes(specifier.imported.name) ||
+        usedIdentifiers.has(specifier.imported.name)
+    );
+    if (allowedSpecifiers.length === 0) {
+      removed.add(node);
+    } else if (allowedSpecifiers.length < node.specifiers.length) {
+      setImportSpecifiers(editor, node, allowedSpecifiers);
+    }
   }
-
-  return programNode.body.filter((node) => {
-    if (t.isImportDeclaration(node)) {
-      const { source, specifiers } = node;
-
-      if (source.value.startsWith('@storybook/')) {
-        const allowedSpecifiers = specifiers.filter((specifier) => {
-          if (t.isImportSpecifier(specifier) && t.isIdentifier(specifier.imported)) {
-            const name = specifier.imported.name;
-            // Only remove if disallowed AND unused
-            return !disallowList.includes(name) || usedIdentifiers.has(name);
-          }
-          // Retain namespace imports and non-specifiers
-          return true;
-        });
-
-        // Remove the entire import if no valid specifiers remain
-        if (allowedSpecifiers.length > 0) {
-          node.specifiers = allowedSpecifiers;
-          return true;
-        }
-        return false;
-      }
-    }
-
-    // Retain all other nodes
-    return true;
-    // @TODO adding any for now, unsure how to fix the following error:
-    // error TS4058: Return type of exported function has or is using name 'BlockStatement' from external module "/code/core/dist/babel/index" but cannot be named
-  }) as any;
+  removeStatements(editor, removed);
 }
 
-export function removeExportDeclarations(
-  programNode: t.Program,
-  exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration>
-) {
-  return programNode.body.filter((node) => {
-    if (t.isExportNamedDeclaration(node) && node.declaration) {
-      if (t.isVariableDeclaration(node.declaration)) {
-        // Handle variable declarations
-        node.declaration.declarations = node.declaration.declarations.filter(
-          (decl) => t.isIdentifier(decl.id) && !exportDecls[decl.id.name]
+export type ExportDeclarations = Record<string, E.VariableDeclarator | E.Function>;
+
+// Removes the given named export declarations, and declarators that are not plain identifiers.
+export function removeExportDeclarations(editor: SourceEditor, exportDecls: ExportDeclarations) {
+  const removed = new Set<Node>();
+  for (const node of editor.program.body) {
+    if (node.type !== 'ExportNamedDeclaration' || !node.declaration) {
+      continue;
+    }
+    const { declaration } = node;
+    if (declaration.type === 'VariableDeclaration') {
+      const { declarations } = declaration;
+      const kept = declarations.filter(
+        (decl) => decl.id.type === 'Identifier' && !exportDecls[decl.id.name]
+      );
+      if (kept.length === 0) {
+        removed.add(node);
+      } else if (kept.length < declarations.length) {
+        editor.edits.overwrite(
+          declarations[0].start,
+          declarations.at(-1)!.end,
+          kept.map((decl) => editor.source(decl)).join(', ')
         );
-        return node.declaration.declarations.length > 0;
-      } else if (t.isFunctionDeclaration(node.declaration)) {
-        // Handle function declarations
-        const funcDecl = node.declaration;
-        return t.isIdentifier(funcDecl.id) && !exportDecls[funcDecl.id.name];
       }
+    } else if (
+      declaration.type === 'FunctionDeclaration' &&
+      (!declaration.id || exportDecls[declaration.id.name])
+    ) {
+      removed.add(node);
     }
-    return true;
-    // @TODO adding any for now, unsure how to fix the following error:
-    // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/code/core/dist/babel/index" but cannot be named.
-  }) as any;
+  }
+  removeStatements(editor, removed);
 }
 
+// Source of the `name: value` members a `defineMain`/`definePreview` call gets from named exports.
 export function getConfigProperties(
-  exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration>,
+  editor: SourceEditor,
+  exportDecls: ExportDeclarations,
   options: { configType: 'main' | 'preview' }
 ) {
-  const properties = [];
+  const properties: string[] = [];
 
-  // Collect properties from named exports
   for (const [name, decl] of Object.entries(exportDecls)) {
     // only include real preview exports to definePreview factory
     if (options.configType === 'preview' && !projectAnnotationNames.includes(name)) {
       continue;
     }
-    if (t.isVariableDeclarator(decl) && decl.init) {
-      properties.push(t.objectProperty(t.identifier(name), decl.init));
-    } else if (t.isFunctionDeclaration(decl)) {
-      properties.push(
-        t.objectProperty(t.identifier(name), t.arrowFunctionExpression([], decl.body))
-      );
+    if (decl.type === 'VariableDeclarator' && decl.init) {
+      properties.push(`${name}: ${editor.source(decl.init)}`);
+    } else if (decl.type === 'FunctionDeclaration' && decl.body) {
+      properties.push(`${name}: () => ${editor.source(decl.body)}`);
     }
   }
 
-  // @TODO adding any for now, unsure how to fix the following error:
-  // error TS4058: Return type of exported function has or is using name 'ObjectProperty' from external module "/tmp/storybook/code/core/dist/babel/index" but cannot be named.
-  return properties as any;
+  return properties;
 }
 
-/**
- * Adds an import declaration to the beginning of the program while preserving any leading comments
- * (like license headers or @ts-check directives).
- *
- * When using `programNode.body.unshift()`, the import would be placed before any leading comments
- * attached to the first node. This function transfers those comments to the new import so they
- * remain at the top of the file.
- *
- * Note: We use the `comments` property (used by recast for printing) rather than `leadingComments`
- * (used by babel internally) to ensure proper output formatting.
- */
-export function addImportToTop(programNode: t.Program, importDecl: t.ImportDeclaration): void {
-  const firstNode = programNode.body[0] as t.Node & { comments?: t.Comment[] };
-
-  if (firstNode && firstNode.leadingComments && firstNode.leadingComments.length > 0) {
-    // Transfer leading comments from the first node to the import using 'comments' property
-    // which is what recast uses for printing (not 'leadingComments')
-    (importDecl as t.Node & { comments?: t.Comment[] }).comments = firstNode.leadingComments;
-    // Clear comments from the original first node to avoid duplication
-    firstNode.leadingComments = [];
-    firstNode.comments = [];
+// Inserts an import above the first statement, below the comments that lead the file (like
+// license headers or `@ts-check`) and below any directives.
+export function addImportToTop(editor: SourceEditor, importDeclaration: string): void {
+  const first = editor.program.body.find(
+    (node) => !(node.type === 'ExpressionStatement' && node.directive)
+  );
+  if (first) {
+    editor.edits.appendLeft(first.start, `${importDeclaration}\n`);
+  } else {
+    const { code } = editor;
+    editor.edits.append(`${code && !code.endsWith('\n') ? '\n' : ''}${importDeclaration}\n`);
   }
-
-  programNode.body.unshift(importDecl);
 }

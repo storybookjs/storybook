@@ -1,124 +1,74 @@
-import { types as t, traverse } from 'storybook/internal/babel';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 
+import { type E, type Node, identifierKey, walk } from '../../../csf-tools/estree/ast.ts';
+import { appendMembers, prependMembers, replaceValue } from '../../../csf-tools/estree/editor.ts';
 import { SaveStoryError } from './utils.ts';
-import { valueToAST } from './valueToAST.ts';
+import { objectSource, valueToSource } from './valueToSource.ts';
 
-export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
-  let found = false;
+// Write `input` into the `args` of a story. Edits accumulate on the file; print them with
+// `printCsf`.
+export const updateArgsInCsfFile = async (csf: CsfFile, node: Node, input: Record<string, any>) => {
+  const editor = csf._editor;
   const args = Object.fromEntries(
-    Object.entries(input).map(([k, v]) => {
-      return [k, valueToAST(v)];
-    })
+    Object.entries(input).map(([k, v]) => [k, valueToSource(v, editor.quote)])
   );
 
   const isCsf4Story =
-    t.isCallExpression(node) &&
-    t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.property) &&
+    node.type === 'CallExpression' &&
+    node.callee.type === 'MemberExpression' &&
+    node.callee.property.type === 'Identifier' &&
     node.callee.property.name === 'story';
 
   // detect CSF2 and throw
-  if (!isCsf4Story && (t.isArrowFunctionExpression(node) || t.isCallExpression(node))) {
+  if (!isCsf4Story && (node.type === 'ArrowFunctionExpression' || node.type === 'CallExpression')) {
     throw new SaveStoryError(`Updating a CSF2 story is not supported`);
   }
 
-  if (t.isObjectExpression(node)) {
-    const properties = node.properties;
-    const argsProperty = properties.find((property) => {
-      if (t.isObjectProperty(property)) {
-        const key = property.key;
-        return t.isIdentifier(key) && key.name === 'args';
-      }
+  // The story object itself, or the first object inside it (e.g. the `meta.story({ … })` argument).
+  let story: E.ObjectExpression | undefined;
+  walk(node, (child) => {
+    if (story) {
       return false;
-    });
-
-    if (argsProperty) {
-      if (t.isObjectProperty(argsProperty)) {
-        const a = argsProperty.value;
-        if (t.isObjectExpression(a)) {
-          a.properties.forEach((p) => {
-            if (t.isObjectProperty(p)) {
-              const key = p.key;
-              if (t.isIdentifier(key) && key.name in args) {
-                p.value = args[key.name];
-                delete args[key.name];
-              }
-            }
-          });
-
-          const remainder = Object.entries(args);
-          if (Object.keys(args).length) {
-            remainder.forEach(([key, value]) => {
-              a.properties.push(t.objectProperty(t.identifier(key), value));
-            });
-          }
-        }
-      }
-    } else {
-      properties.unshift(
-        t.objectProperty(
-          t.identifier('args'),
-          t.objectExpression(
-            Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
-          )
-        )
-      );
     }
+    if (child.type === 'ObjectExpression') {
+      story = child;
+      return false;
+    }
+  });
+  if (!story) {
     return;
   }
 
-  traverse(node, {
-    ObjectExpression(path) {
-      if (found) {
-        return;
-      }
+  const argsProperty = story.properties.find(
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && !property.computed && identifierKey(property) === 'args'
+  );
 
-      found = true;
-      const properties = path.get('properties');
-      const argsProperty = properties.find((property) => {
-        if (property.isObjectProperty()) {
-          const key = property.get('key');
-          return key.isIdentifier() && key.node.name === 'args';
-        }
-        return false;
-      });
+  if (!argsProperty) {
+    prependMembers(editor, story, [
+      `args: ${objectSource(Object.entries(args).map(([key, value]) => `${key}: ${value}`))}`,
+    ]);
+    return;
+  }
 
-      if (argsProperty) {
-        if (argsProperty.isObjectProperty()) {
-          const a = argsProperty.get('value');
-          if (a.isObjectExpression()) {
-            a.traverse({
-              ObjectProperty(p) {
-                const key = p.get('key');
-                if (key.isIdentifier() && key.node.name in args) {
-                  p.get('value').replaceWith(args[key.node.name]);
-                  delete args[key.node.name];
-                }
-              },
-              noScope: true,
-            });
+  if (argsProperty.value.type !== 'ObjectExpression') {
+    return;
+  }
+  for (const property of argsProperty.value.properties) {
+    const key =
+      property.type === 'Property' && !property.computed ? identifierKey(property) : undefined;
+    if (property.type === 'Property' && key && key in args) {
+      replaceValue(editor, property, args[key]);
+      delete args[key];
+    }
+  }
 
-            const remainder = Object.entries(args);
-            if (Object.keys(args).length) {
-              remainder.forEach(([key, value]) => {
-                a.pushContainer('properties', t.objectProperty(t.identifier(key), value));
-              });
-            }
-          }
-        }
-      } else {
-        path.unshiftContainer(
-          'properties',
-          t.objectProperty(
-            t.identifier('args'),
-            t.objectExpression(
-              Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
-            )
-          )
-        );
-      }
-    },
-
-    noScope: true,
-  });
+  const remainder = Object.entries(args);
+  if (remainder.length > 0) {
+    appendMembers(
+      editor,
+      argsProperty.value,
+      remainder.map(([key, value]) => `${key}: ${value}`)
+    );
+  }
 };

@@ -1,20 +1,21 @@
 import path from 'node:path';
 
-import {
-  BabelFileClass,
-  type NodePath,
-  babelParse,
-  generate,
-  types as t,
-  traverse,
-} from 'storybook/internal/babel';
 import type { ArgTypes } from 'storybook/internal/csf';
 
 import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
 } from '../../core-server/utils/get-dummy-args-from-argtypes.ts';
-import { createTestGuardDeclaration } from './transformer.ts';
+import { type E, type Node, unwrapExpression, walk } from '../estree/ast.ts';
+import {
+  SourceEditor,
+  appendToList,
+  prependStatement,
+  printKey,
+  printValue,
+} from '../estree/editor.ts';
+import { generateUid } from '../estree/scope.ts';
+import { GeneratedTail, createTestGuardDeclaration, printWithTail } from './transformer.ts';
 
 const VITEST_IMPORT_SOURCE = 'vitest';
 const TEST_UTILS_IMPORT_SOURCE = '@storybook/addon-vitest/internal/test-utils';
@@ -22,7 +23,7 @@ const STORYBOOK_TEST_IMPORT_SOURCE = 'storybook/test';
 
 type ComponentExport = {
   exportedName: string;
-  localIdentifier: t.Identifier;
+  localName: string;
 };
 
 const sanitizeIdentifier = (value: string) => {
@@ -39,240 +40,169 @@ const createComponentNameFromFileName = (fileName: string) => {
   return sanitizeIdentifier(basename);
 };
 
-const containsJsxNode = (valuePath: NodePath<t.Node | null | undefined> | null) => {
-  if (!valuePath?.node) {
+const containsJsxNode = (node: Node | null | undefined) => {
+  if (!node) {
     return false;
   }
 
   let found = false;
-  valuePath.traverse({
-    JSXElement(path) {
+  walk(node, (child) => {
+    if (found) {
+      return false;
+    }
+    if (child.type === 'JSXElement' || child.type === 'JSXFragment') {
       found = true;
-      path.stop();
-    },
-    JSXFragment(path) {
-      found = true;
-      path.stop();
-    },
+      return false;
+    }
   });
   return found;
 };
 
-const unwrapExpression = (node: t.Node | null): t.Node | null => {
-  if (!node) {
-    return null;
-  }
-
-  if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
-    return unwrapExpression(node.expression);
-  }
-
-  return node;
-};
-
-const dedupeImports = (program: t.Program, source: string, specifiers: t.ImportSpecifier[]) => {
-  const existing = program.body.find(
-    (node) => t.isImportDeclaration(node) && node.source.value === source
-  ) as t.ImportDeclaration | undefined;
-
-  if (existing) {
-    specifiers.forEach((specifier) => {
-      if (
-        existing.specifiers.every(
-          (existingSpecifier) =>
-            !t.isImportSpecifier(existingSpecifier) ||
-            existingSpecifier.local.name !== specifier.local.name
-        )
-      ) {
-        existing.specifiers.push(specifier);
-      }
-    });
+const dedupeImports = (
+  editor: SourceEditor,
+  source: string,
+  specifiers: { imported: string; local: string }[]
+) => {
+  const texts = specifiers.map(({ imported, local }) =>
+    imported === local ? imported : `${imported} as ${local}`
+  );
+  const existing = editor.program.body.find(
+    (node): node is E.ImportDeclaration =>
+      node.type === 'ImportDeclaration' &&
+      node.source.value === source &&
+      node.importKind !== 'type'
+  );
+  const named = existing?.specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
+  if (existing && named && named.length > 0) {
+    const open = editor.code.indexOf('{', existing.start) + 1;
+    appendToList(editor, { open, close: editor.code.indexOf('}', open), items: named }, texts);
     return;
   }
-
-  program.body.unshift(t.importDeclaration(specifiers, t.stringLiteral(source)));
+  if (
+    existing &&
+    existing.specifiers.length === 1 &&
+    existing.specifiers[0].type === 'ImportDefaultSpecifier'
+  ) {
+    editor.edits.appendLeft(existing.specifiers[0].end, `, { ${texts.join(', ')} }`);
+    return;
+  }
+  prependStatement(editor, `import { ${texts.join(', ')} } from ${JSON.stringify(source)};`);
 };
 
-// Traverses the AST to find all exported components that contain JSX. Handles named exports,
-// default exports, and various declaration types.
-const collectComponentExports = (program: t.Program, fileName: string) => {
+// Finds all exported components that contain JSX. Handles named exports, default exports, and
+// various declaration types.
+const collectComponentExports = (editor: SourceEditor, fileName: string) => {
   const components: ComponentExport[] = [];
+  const { program, scopes } = editor;
 
   // Helper to add a component to the collection if it contains JSX
   const addComponent = (
     exportedName: string,
-    localIdentifier: t.Identifier,
-    valuePath: NodePath<t.Node | null | undefined> | null
+    localName: string,
+    value: Node | null | undefined
   ) => {
-    if (!valuePath || !valuePath.node) {
+    if (!value || !unwrapExpression(value)) {
       return;
     }
 
-    const target = unwrapExpression(valuePath.node);
-    if (!target) {
+    if (!containsJsxNode(value)) {
       return;
     }
 
-    if (!containsJsxNode(valuePath)) {
-      return;
-    }
-
-    components.push({ exportedName, localIdentifier });
+    components.push({ exportedName, localName });
   };
 
-  traverse(program, {
-    ExportNamedDeclaration(path) {
-      const { node } = path;
+  for (const node of program.body) {
+    if (node.type === 'ExportNamedDeclaration') {
       if (node.source) {
-        return;
+        continue;
       }
 
-      const declarationPath = path.get('declaration');
-
-      if (declarationPath.isVariableDeclaration()) {
-        declarationPath.get('declarations').forEach((declPath) => {
-          if (!declPath.isVariableDeclarator()) {
-            return;
+      const { declaration } = node;
+      if (declaration?.type === 'VariableDeclaration') {
+        for (const declarator of declaration.declarations) {
+          if (declarator.id.type === 'Identifier') {
+            addComponent(declarator.id.name, declarator.id.name, declarator.init);
           }
-          const id = declPath.node.id;
-          if (!t.isIdentifier(id)) {
-            return;
-          }
-          const initPath = declPath.get('init');
-          addComponent(id.name, id, initPath);
-        });
-      } else if (declarationPath.isFunctionDeclaration() && declarationPath.node.id) {
-        const declarationId = declarationPath.node.id;
-        if (t.isIdentifier(declarationId)) {
-          addComponent(declarationId.name, declarationId, declarationPath);
         }
-      } else if (declarationPath.isClassDeclaration() && declarationPath.node.id) {
-        const declarationId = declarationPath.node.id;
-        if (t.isIdentifier(declarationId)) {
-          addComponent(declarationId.name, declarationId, declarationPath);
-        }
+      } else if (
+        (declaration?.type === 'FunctionDeclaration' || declaration?.type === 'ClassDeclaration') &&
+        declaration.id
+      ) {
+        addComponent(declaration.id.name, declaration.id.name, declaration);
       }
 
-      path.get('specifiers').forEach((specifierPath) => {
-        if (!specifierPath.isExportSpecifier()) {
-          return;
+      for (const specifier of node.specifiers) {
+        const { local, exported } = specifier;
+        if (local.type !== 'Identifier' || exported.type !== 'Identifier') {
+          continue;
         }
-        const { local, exported } = specifierPath.node;
-        if (!t.isIdentifier(local) || !t.isIdentifier(exported)) {
-          return;
-        }
-        const binding = specifierPath.scope.getBinding(local.name);
+        const binding = scopes.program.bindings.get(local.name);
         if (!binding) {
-          return;
+          continue;
         }
-
-        const bindingPath = binding.path;
-        const localIdentifier = binding.identifier;
-        if (!t.isIdentifier(localIdentifier)) {
-          return;
+        if (binding.node.type === 'VariableDeclarator') {
+          addComponent(exported.name, binding.name, binding.node.init);
+        } else if (
+          (binding.node.type === 'FunctionDeclaration' ||
+            binding.node.type === 'ClassDeclaration') &&
+          binding.node.id
+        ) {
+          addComponent(exported.name, binding.name, binding.node);
         }
-        if (bindingPath.isVariableDeclarator()) {
-          addComponent(exported.name, localIdentifier, bindingPath.get('init'));
-        } else if (bindingPath.isFunctionDeclaration() || bindingPath.isClassDeclaration()) {
-          const bindingNodeId = bindingPath.node.id;
-          if (t.isIdentifier(bindingNodeId)) {
-            addComponent(exported.name, localIdentifier, bindingPath);
-          }
-        }
-      });
-    },
-    ExportDefaultDeclaration(path) {
-      const { node } = path;
-      const declaration = node.declaration;
+      }
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      const declaration = node.declaration as Node;
 
       if (
-        t.isFunctionExpression(declaration) ||
-        t.isArrowFunctionExpression(declaration) ||
-        t.isClassExpression(declaration)
-      ) {
-        const identifierName = createComponentNameFromFileName(fileName);
-        const identifier = path.scope.generateUidIdentifier(identifierName);
-        const variableDeclaration = t.variableDeclaration('const', [
-          t.variableDeclarator(identifier, declaration),
-        ]);
-        variableDeclaration.loc = node.loc;
-        path.insertBefore(variableDeclaration);
-        node.declaration = identifier;
-
-        const insertedVarPath = path.getPrevSibling();
-        let initPath: NodePath<t.Node | null | undefined> | null = null;
-        if (insertedVarPath?.isVariableDeclaration()) {
-          const declarationPath = insertedVarPath.get('declarations')[0];
-          if (declarationPath?.isVariableDeclarator()) {
-            initPath = declarationPath.get('init');
-          }
-        }
-
-        addComponent(identifierName, identifier, initPath);
-        return;
-      }
-
-      if (t.isCallExpression(declaration)) {
+        declaration.type === 'FunctionExpression' ||
+        declaration.type === 'ArrowFunctionExpression' ||
+        declaration.type === 'ClassExpression' ||
         // Handle wrapped component exports e.g.
         // export default someWrapper(Component)
+        declaration.type === 'CallExpression'
+      ) {
         const identifierName = createComponentNameFromFileName(fileName);
-        const identifier = path.scope.generateUidIdentifier(identifierName);
-        const variableDeclaration = t.variableDeclaration('const', [
-          t.variableDeclarator(identifier, declaration),
-        ]);
-        variableDeclaration.loc = node.loc;
-        path.insertBefore(variableDeclaration);
-        node.declaration = identifier;
+        const identifier = generateUid(scopes, identifierName);
+        const span = declaration as Node & { start: number };
+        editor.edits.overwrite(node.start, span.start, `const ${identifier} = `);
+        editor.edits.appendLeft(node.end, `\nexport default ${identifier};`);
 
-        // Assume wrapped exports are components without detecting JSX to filter out. We can do that if needed in the future based on feedback.
-        components.push({ exportedName: identifierName, localIdentifier: identifier });
-        return;
+        if (declaration.type === 'CallExpression') {
+          // Assume wrapped exports are components without detecting JSX to filter out. We can do that if needed in the future based on feedback.
+          components.push({ exportedName: identifierName, localName: identifier });
+        } else {
+          addComponent(identifierName, identifier, declaration);
+        }
+        continue;
       }
 
-      if (t.isIdentifier(declaration)) {
-        const binding = path.scope.getBinding(declaration.name);
+      if (declaration.type === 'Identifier') {
+        const binding = scopes.program.bindings.get(declaration.name);
         if (!binding) {
-          return;
+          continue;
         }
 
-        const bindingIdentifier = binding.identifier;
-        if (!t.isIdentifier(bindingIdentifier)) {
-          return;
+        if (binding.node.type === 'VariableDeclarator') {
+          addComponent(createComponentNameFromFileName(fileName), binding.name, binding.node.init);
+        } else if (
+          (binding.node.type === 'FunctionDeclaration' ||
+            binding.node.type === 'ClassDeclaration') &&
+          binding.node.id
+        ) {
+          addComponent(binding.node.id.name, binding.name, binding.node);
         }
-
-        if (binding.path.isVariableDeclarator()) {
-          addComponent(
-            createComponentNameFromFileName(fileName),
-            bindingIdentifier,
-            binding.path.get('init')
-          );
-        } else if (binding.path.isFunctionDeclaration() || binding.path.isClassDeclaration()) {
-          const bindingNodeId = binding.path.node.id;
-          if (t.isIdentifier(bindingNodeId)) {
-            addComponent(bindingNodeId.name, bindingIdentifier, binding.path);
-          }
-        }
-        return;
+        continue;
       }
 
-      if (t.isFunctionDeclaration(declaration) && declaration.id) {
-        addComponent(
-          declaration.id.name,
-          declaration.id,
-          path.get('declaration') as NodePath<t.FunctionDeclaration>
-        );
-        return;
+      if (
+        (declaration.type === 'FunctionDeclaration' || declaration.type === 'ClassDeclaration') &&
+        declaration.id
+      ) {
+        addComponent(declaration.id.name, declaration.id.name, declaration);
       }
-
-      if (t.isClassDeclaration(declaration) && declaration.id) {
-        addComponent(
-          declaration.id.name,
-          declaration.id,
-          path.get('declaration') as NodePath<t.ClassDeclaration>
-        );
-      }
-    },
-  });
+    }
+  }
 
   return components;
 };
@@ -293,31 +223,22 @@ export const componentTransform = async ({
     componentName: string;
     fileName: string;
   }) => Promise<ArgTypes | null | undefined>;
-}): Promise<ReturnType<typeof generate> | { code: string; map: null }> => {
-  const ast = babelParse(code);
-  const file = new BabelFileClass({ filename: fileName, highlightCode: false }, { code, ast });
+}): Promise<ReturnType<typeof printWithTail> | { code: string; map: null }> => {
+  const editor = new SourceEditor(code, fileName);
 
-  const components = collectComponentExports(ast.program, fileName);
+  const components = collectComponentExports(editor, fileName);
   if (!components.length) {
     return { code, map: null };
   }
 
-  const vitestTestId = file.path.scope.generateUidIdentifier('test');
-  const vitestExpectId = file.path.scope.generateUidIdentifier('expect');
-  const testStoryId = file.path.scope.generateUidIdentifier('testStory');
-  const convertToFilePathId = t.identifier('convertToFilePath');
-  const fnId = file.path.scope.generateUidIdentifier('fn');
+  const { scopes } = editor;
+  const vitestTestId = generateUid(scopes, 'test');
+  const vitestExpectId = generateUid(scopes, 'expect');
+  const testStoryId = generateUid(scopes, 'testStory');
+  const convertToFilePathId = 'convertToFilePath';
+  const fnId = generateUid(scopes, 'fn');
 
-  dedupeImports(ast.program, VITEST_IMPORT_SOURCE, [
-    t.importSpecifier(vitestTestId, t.identifier('test')),
-    t.importSpecifier(vitestExpectId, t.identifier('expect')),
-  ]);
-  dedupeImports(ast.program, TEST_UTILS_IMPORT_SOURCE, [
-    t.importSpecifier(testStoryId, t.identifier('testStory')),
-    t.importSpecifier(convertToFilePathId, t.identifier('convertToFilePath')),
-  ]);
-
-  const testStatements: t.ExpressionStatement[] = [];
+  const testStatements: string[] = [];
 
   // Detect whether argTypes contains fn placeholders that need replacing with an actual function expression. Done ahead of time for performance reasons.
   const hasFunctionPlaceholder = (value: unknown): boolean => {
@@ -329,43 +250,36 @@ export const componentTransform = async ({
    * [[STORYBOOK_FN_PLACEHOLDER]] In those cases we need to replace them with an actual fn() call
    * from storybook/test
    */
-  const valueToNodeRecursive = (value: unknown, replaceFnCalls: boolean): t.Expression => {
-    // When there are no function placeholders, no need to recurse - just use valueToNode
+  const printArg = (value: unknown, replaceFnCalls: boolean): string => {
     if (!replaceFnCalls) {
-      return t.valueToNode(value) as t.Expression;
+      return printValue(value, '"');
     }
 
     if (value === STORYBOOK_FN_PLACEHOLDER) {
-      return t.callExpression(fnId, []);
+      return `${fnId}()`;
     }
 
     if (typeof value === 'object' && value !== null) {
       if (Array.isArray(value)) {
-        return t.arrayExpression(value.map((val) => valueToNodeRecursive(val, replaceFnCalls)));
+        return `[${value.map((val) => printArg(val, replaceFnCalls)).join(', ')}]`;
       }
 
       // For objects, create a new object with recursively processed values
-      const properties = Object.entries(value).map(([key, val]) => {
-        const keyNode = t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key);
-        return t.objectProperty(keyNode, valueToNodeRecursive(val, replaceFnCalls));
-      });
-      return t.objectExpression(properties);
+      return buildArgsExpression(value as Record<string, unknown>, replaceFnCalls);
     }
 
-    return t.valueToNode(value) as t.Expression;
+    return printValue(value, '"');
   };
 
-  // Helper to convert a props object to an AST object expression
+  // Helper to convert a props object to an object expression
   const buildArgsExpression = (args?: Record<string, unknown>, useFnImport = false) => {
     if (!args || Object.keys(args).length === 0) {
-      return t.objectExpression([]);
+      return '{}';
     }
 
-    const properties = Object.entries(args).map(([key, value]) => {
-      const keyNode = t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key);
-      return t.objectProperty(keyNode, valueToNodeRecursive(value, useFnImport));
-    });
-    return t.objectExpression(properties);
+    return `{ ${Object.entries(args)
+      .map(([key, value]) => `${printKey(key, '"')}: ${printArg(value, useFnImport)}`)
+      .join(', ')} }`;
   };
 
   // Check if any component has function placeholders and add import if needed
@@ -386,65 +300,43 @@ export const componentTransform = async ({
 
     // Each component export is passed as component in an inline meta
     // this allows for multiple component metas in a single test file
-    const meta = t.objectExpression([
-      t.objectProperty(
-        t.identifier('title'),
-        t.stringLiteral(`generated/tests/${component.exportedName}`)
-      ),
-      t.objectProperty(t.identifier('component'), component.localIdentifier),
-    ]);
+    const meta = `{ title: ${JSON.stringify(`generated/tests/${component.exportedName}`)}, component: ${component.localName} }`;
 
-    // The actual testStory function
-    const testStoryArgs = t.objectExpression([
-      t.objectProperty(t.identifier('exportName'), t.stringLiteral(component.exportedName)),
-      // This is where the story annotation for a particular component is defined, inline
-      t.objectProperty(
-        t.identifier('story'),
-        t.objectExpression([
-          t.objectProperty(
-            t.identifier('args'),
-            buildArgsExpression(generatedArgs, hasAnyFunctionPlaceholders)
-          ),
-        ])
-      ),
-      t.objectProperty(t.identifier('meta'), meta),
-      t.objectProperty(t.identifier('skipTags'), t.arrayExpression([])),
-      t.objectProperty(
-        t.identifier('storyId'),
-        t.stringLiteral(`generated-${component.exportedName}`)
-      ),
-      t.objectProperty(t.identifier('componentPath'), t.stringLiteral(fileName)),
-      t.objectProperty(
-        t.identifier('componentName'),
-        t.stringLiteral(component.localIdentifier.name)
-      ),
-    ]);
+    // The actual testStory function, with the story annotation for the component defined inline
+    const testStoryArgs = [
+      `exportName: ${JSON.stringify(component.exportedName)}`,
+      `story: { args: ${buildArgsExpression(generatedArgs, hasAnyFunctionPlaceholders)} }`,
+      `meta: ${meta}`,
+      'skipTags: []',
+      `storyId: ${JSON.stringify(`generated-${component.exportedName}`)}`,
+      `componentPath: ${JSON.stringify(fileName)}`,
+      `componentName: ${JSON.stringify(component.localName)}`,
+    ].join(', ');
 
-    const testCall = t.expressionStatement(
-      t.callExpression(vitestTestId, [
-        t.stringLiteral(component.exportedName),
-        t.callExpression(testStoryId, [testStoryArgs]),
-      ])
+    testStatements.push(
+      `  ${vitestTestId}(${JSON.stringify(component.exportedName)}, ${testStoryId}({ ${testStoryArgs} }));`
     );
-
-    testStatements.push(testCall);
   }
 
+  dedupeImports(editor, VITEST_IMPORT_SOURCE, [
+    { imported: 'test', local: vitestTestId },
+    { imported: 'expect', local: vitestExpectId },
+  ]);
+  dedupeImports(editor, TEST_UTILS_IMPORT_SOURCE, [
+    { imported: 'testStory', local: testStoryId },
+    { imported: 'convertToFilePath', local: convertToFilePathId },
+  ]);
   if (hasAnyFunctionPlaceholders) {
-    dedupeImports(ast.program, STORYBOOK_TEST_IMPORT_SOURCE, [
-      t.importSpecifier(fnId, t.identifier('fn')),
-    ]);
+    dedupeImports(editor, STORYBOOK_TEST_IMPORT_SOURCE, [{ imported: 'fn', local: fnId }]);
   }
 
   // Wrap the code in a guard to avoid side effects when running tests
-  const { declaration: guardDeclaration, identifier: guardIdentifier } = createTestGuardDeclaration(
-    file.path.scope,
-    vitestExpectId,
-    convertToFilePathId
-  );
+  const guardIdentifier = generateUid(scopes, 'isRunningFromThisFile');
+  const tail = new GeneratedTail();
+  tail.push(createTestGuardDeclaration(guardIdentifier, vitestExpectId, convertToFilePathId));
+  tail.push(`if (${guardIdentifier}) {`);
+  testStatements.forEach((statement) => tail.push(statement));
+  tail.push('}');
 
-  ast.program.body.push(guardDeclaration);
-  ast.program.body.push(t.ifStatement(guardIdentifier, t.blockStatement(testStatements)));
-
-  return generate(ast, { sourceMaps: true, sourceFileName: fileName }, code);
+  return printWithTail(editor, tail, fileName);
 };

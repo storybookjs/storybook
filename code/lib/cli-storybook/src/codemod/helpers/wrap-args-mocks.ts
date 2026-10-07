@@ -1,7 +1,13 @@
-import { types as t, traverse } from 'storybook/internal/babel';
-import type { NodePath } from 'storybook/internal/babel';
+import {
+  type Binding,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type SourceEditor,
+  generateUid,
+  walk,
+} from 'storybook/internal/csf-tools';
 
-type Binding = NonNullable<ReturnType<NodePath['scope']['getBinding']>>;
+import { setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 
 const mockMembers = [
   'mock',
@@ -23,189 +29,194 @@ const mockMembers = [
   'mockRejectedValueOnce',
 ];
 
-function keyName(node: t.Node) {
-  if (t.isIdentifier(node)) {
+function keyName(node: Node) {
+  if (node.type === 'Identifier') {
     return node.name;
   }
-  return t.isStringLiteral(node) ? node.value : undefined;
+  return node.type === 'Literal' && typeof node.value === 'string' ? node.value : undefined;
 }
 
-function withoutDefault(node: t.Node) {
-  return t.isAssignmentPattern(node) ? node.left : node;
+function withoutDefault(node: Node) {
+  return node.type === 'AssignmentPattern' ? node.left : node;
 }
 
-function withoutTypeCast(node: t.Node): t.Node {
-  return t.isTSNonNullExpression(node) ||
-    t.isTSAsExpression(node) ||
-    t.isTSSatisfiesExpression(node)
+function withoutTypeCast(node: Node): Node {
+  return node.type === 'TSNonNullExpression' ||
+    node.type === 'TSAsExpression' ||
+    node.type === 'TSSatisfiesExpression'
     ? withoutTypeCast(node.expression)
     : node;
 }
 
-function isRender(path: NodePath<t.Function>) {
-  if (path.isObjectMethod()) {
-    return keyName(path.node.key) === 'render';
+const isTypeCast = (node: Node) =>
+  node.type === 'TSAsExpression' ||
+  node.type === 'TSSatisfiesExpression' ||
+  node.type === 'TSNonNullExpression';
+
+function isRender(editor: SourceEditor, fn: Node) {
+  let value = fn;
+  let owner = editor.parentOf(fn);
+  while (owner && isTypeCast(owner)) {
+    value = owner;
+    owner = editor.parentOf(owner);
   }
-  const owner = path.findParent(
-    (parent) =>
-      !parent.isTSAsExpression() &&
-      !parent.isTSSatisfiesExpression() &&
-      !parent.isTSNonNullExpression()
-  );
-  return !!owner?.isObjectProperty() && keyName(owner.node.key) === 'render';
+  return owner?.type === 'Property' && owner.value === value && keyName(owner.key) === 'render';
 }
 
-function isMember(node: t.Node): node is t.MemberExpression | t.OptionalMemberExpression {
+function isMember(node: Node): node is E.MemberExpression {
   return (
-    (t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) &&
-    (!node.computed || t.isStringLiteral(node.property))
+    node.type === 'MemberExpression' &&
+    (!node.computed ||
+      (node.property.type === 'Literal' && typeof node.property.value === 'string'))
   );
 }
 
 // Wraps mock API access on args in `mocked()`, so `args.onClick.mockClear()` becomes
 // `mocked(args.onClick).mockClear()`. CSF factories type args as the component declares them.
-export function wrapArgsMocks(ast: t.File) {
+// Leaves the edits pending on `editor`.
+export function wrapArgsMocks(editor: SourceEditor) {
+  const { scopes, program } = editor;
   const argsObjects = new Set<Binding>();
   const argValues = new Set<Binding>();
-  const targets: NodePath<t.Expression>[] = [];
+  const targets: Node[] = [];
 
-  const bindingOf = (path: NodePath, node: t.Node | undefined) =>
-    t.isIdentifier(node) ? path.scope.getBinding(node.name) : undefined;
+  const bindingOf = (node: Node | undefined) =>
+    node?.type === 'Identifier' ? scopes.bindingOf(node) : undefined;
 
-  const isBoundIn = (bindings: Set<Binding>, path: NodePath, node: t.Node) => {
-    const binding = bindingOf(path, node);
+  const isBoundIn = (bindings: Set<Binding>, node: Node) => {
+    const binding = bindingOf(node);
     return !!binding && bindings.has(binding);
   };
 
-  const bind = (bindings: Set<Binding>, path: NodePath, node: t.Node | undefined) => {
-    const binding = bindingOf(path, node);
+  const bind = (bindings: Set<Binding>, node: Node | undefined) => {
+    const binding = bindingOf(node);
     if (binding) {
       bindings.add(binding);
     }
   };
 
-  const isArgsObject = (path: NodePath, expression: t.Node) => {
+  const isArgsObject = (expression: Node) => {
     const node = withoutTypeCast(expression);
-    return (
-      isBoundIn(argsObjects, path, node) || (isMember(node) && keyName(node.property) === 'args')
-    );
+    return isBoundIn(argsObjects, node) || (isMember(node) && keyName(node.property) === 'args');
   };
 
-  const addArgs = (path: NodePath, pattern: t.Node) => {
+  const addArgs = (pattern: Node) => {
     const target = withoutDefault(pattern);
-    bind(argsObjects, path, target);
-    if (t.isObjectPattern(target)) {
+    bind(argsObjects, target);
+    if (target.type === 'ObjectPattern') {
       for (const property of target.properties) {
-        if (t.isObjectProperty(property)) {
-          bind(argValues, path, withoutDefault(property.value));
+        if (property.type === 'Property') {
+          bind(argValues, withoutDefault(property.value));
         }
       }
     }
   };
 
-  const addContext = (path: NodePath, pattern: t.Node | undefined) => {
+  const addContext = (pattern: Node | undefined) => {
     const target = pattern && withoutDefault(pattern);
-    if (!t.isObjectPattern(target)) {
+    if (target?.type !== 'ObjectPattern') {
       return;
     }
     for (const property of target.properties) {
-      if (t.isObjectProperty(property) && keyName(property.key) === 'args') {
-        addArgs(path, property.value);
+      if (property.type === 'Property' && keyName(property.key) === 'args') {
+        addArgs(property.value);
       }
     }
   };
 
-  const collectTarget = (path: NodePath<t.MemberExpression | t.OptionalMemberExpression>) => {
-    if (!isMember(path.node) || !mockMembers.includes(keyName(path.node.property) ?? '')) {
+  const collectTarget = (node: E.MemberExpression) => {
+    if (!isMember(node) || !mockMembers.includes(keyName(node.property) ?? '')) {
       return;
     }
-    if (t.isTSAsExpression(path.node.object)) {
+    if (node.object.type === 'TSAsExpression') {
       return;
     }
-    const object = withoutTypeCast(path.node.object);
-    if (
-      isBoundIn(argValues, path, object) ||
-      (isMember(object) && isArgsObject(path, object.object))
-    ) {
-      targets.push(path.get('object'));
+    const object = withoutTypeCast(node.object);
+    if (isBoundIn(argValues, object) || (isMember(object) && isArgsObject(object.object))) {
+      targets.push(node.object);
     }
   };
 
-  traverse(ast, {
-    Function(path) {
-      path.node.params.forEach((param, index) => {
-        if (index === 0 && isRender(path)) {
-          addArgs(path, param);
+  walk(program, (node) => {
+    if (
+      node.type === 'FunctionDeclaration' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'ArrowFunctionExpression'
+    ) {
+      node.params.forEach((param, index) => {
+        if (index === 0 && isRender(editor, node)) {
+          addArgs(param);
         } else {
-          addContext(path, param);
+          addContext(param);
         }
       });
-    },
-    VariableDeclarator(path) {
-      const { id, init } = path.node;
+    } else if (node.type === 'VariableDeclarator') {
+      const { id, init } = node;
       const value = init && withoutTypeCast(init);
-      if (init && isArgsObject(path, init)) {
-        addArgs(path, id);
-      } else if (value && isMember(value) && isArgsObject(path, value.object)) {
-        bind(argValues, path, id);
+      if (init && isArgsObject(init)) {
+        addArgs(id);
+      } else if (value && isMember(value) && isArgsObject(value.object)) {
+        bind(argValues, id);
       } else {
-        addContext(path, id);
+        addContext(id);
       }
-    },
-    MemberExpression: collectTarget,
-    OptionalMemberExpression: collectTarget,
+    } else if (node.type === 'MemberExpression') {
+      collectTarget(node);
+    }
   });
 
   if (targets.length === 0) {
     return;
   }
-  const programScope = targets[0].scope.getProgramParent();
 
-  const testImports = ast.program.body.filter(
-    (node): node is t.ImportDeclaration =>
-      t.isImportDeclaration(node) &&
+  const testImports = program.body.filter(
+    (node): node is E.ImportDeclaration =>
+      node.type === 'ImportDeclaration' &&
       node.source.value === 'storybook/test' &&
       node.importKind !== 'type'
   );
   const specifiers = testImports.flatMap((node) => node.specifiers);
   const existing = specifiers.find(
-    (specifier) =>
-      t.isImportSpecifier(specifier) &&
+    (specifier): specifier is E.ImportSpecifier =>
+      specifier.type === 'ImportSpecifier' &&
       specifier.importKind !== 'type' &&
       keyName(specifier.imported) === 'mocked'
   );
-  const namespace = specifiers.find((specifier) => t.isImportNamespaceSpecifier(specifier));
+  const namespace = specifiers.find((specifier) => specifier.type === 'ImportNamespaceSpecifier');
 
+  const lookup = (target: Node, name: string) => scopes.scopeOf(target).lookup(name);
   const isUnshadowed = (name: string) =>
-    targets.every((target) => target.scope.getBinding(name) === programScope.getBinding(name));
+    targets.every((target) => lookup(target, name) === scopes.program.bindings.get(name));
 
-  let callee: t.Expression;
+  let callee: string;
   if (existing && isUnshadowed(existing.local.name)) {
-    callee = t.identifier(existing.local.name);
+    callee = existing.local.name;
   } else if (namespace && isUnshadowed(namespace.local.name)) {
-    callee = t.memberExpression(t.identifier(namespace.local.name), t.identifier('mocked'));
+    callee = `${namespace.local.name}.mocked`;
   } else {
-    const name = targets.some((target) => target.scope.getBinding('mocked'))
-      ? programScope.generateUidIdentifier('mocked').name
+    const name = targets.some((target) => lookup(target, 'mocked'))
+      ? generateUid(scopes, 'mocked')
       : 'mocked';
-    callee = t.identifier(name);
-    const specifier = t.importSpecifier(t.identifier(name), t.identifier('mocked'));
+    callee = name;
+    const specifier = name === 'mocked' ? 'mocked' : `mocked as ${name}`;
     const namedImport = testImports.find((node) =>
-      node.specifiers.every((s) => !t.isImportNamespaceSpecifier(s))
+      node.specifiers.every((s) => s.type !== 'ImportNamespaceSpecifier')
     );
     if (namedImport) {
-      namedImport.specifiers.push(specifier);
+      setImportSpecifiers(editor, namedImport, namedImport.specifiers, { named: [specifier] });
     } else {
-      const lastImport = ast.program.body.findLastIndex((node) => t.isImportDeclaration(node));
-      ast.program.body.splice(
-        lastImport + 1,
-        0,
-        t.importDeclaration([specifier], t.stringLiteral('storybook/test'))
-      );
+      const lastImport = program.body.findLast((node) => node.type === 'ImportDeclaration');
+      const declaration = `import { ${specifier} } from ${editor.quote}storybook/test${editor.quote};`;
+      if (lastImport) {
+        editor.edits.appendLeft(lastImport.end, `\n${declaration}`);
+      } else {
+        editor.edits.prepend(`${declaration}\n`);
+      }
     }
   }
 
   for (const target of targets) {
-    target.replaceWith(t.callExpression(t.cloneNode(callee), [target.node]));
+    editor.edits.appendRight(target.start, `${callee}(`);
+    editor.edits.appendLeft(target.end, ')');
   }
 }

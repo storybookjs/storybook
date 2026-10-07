@@ -1,10 +1,17 @@
-import { types as t, traverse } from 'storybook/internal/babel';
-import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  isValidPreviewPath,
+  loadCsf,
+  printCsf,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
+import { removeStatements, setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 import { addImportToTop } from './csf-factories-utils.ts';
 import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
@@ -12,6 +19,63 @@ import { wrapArgsMocks } from './wrap-args-mocks.ts';
 
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
+
+const TYPE_CASTS = new Set([
+  'TSAsExpression',
+  'TSSatisfiesExpression',
+  'TSNonNullExpression',
+  'TSTypeAssertion',
+  'TSInstantiationExpression',
+]);
+
+// Whether an identifier sits where an expression like `Story.input` could replace it, rather than
+// in a binding, a key, a label, or a type.
+function isExpressionPosition(node: Node, parent: Node, grandparent: Node | null) {
+  switch (parent.type) {
+    case 'VariableDeclarator':
+      return parent.id !== node;
+    case 'ImportSpecifier':
+    case 'ImportDefaultSpecifier':
+    case 'ImportNamespaceSpecifier':
+    case 'ExportSpecifier':
+    case 'ExportDefaultDeclaration':
+    case 'MetaProperty':
+    case 'LabeledStatement':
+    case 'BreakStatement':
+    case 'ContinueStatement':
+    case 'CatchClause':
+    case 'ArrayPattern':
+    case 'RestElement':
+    case 'ClassDeclaration':
+    case 'ClassExpression':
+      return false;
+    case 'AssignmentPattern':
+      return parent.right === node;
+    case 'MemberExpression':
+      return parent.object === node || parent.computed;
+    case 'Property':
+      return (
+        grandparent?.type !== 'ObjectPattern' &&
+        (parent.value === node || (parent.computed && parent.key === node))
+      );
+    case 'MethodDefinition':
+    case 'PropertyDefinition':
+      return parent.computed && parent.key === node;
+    case 'FunctionDeclaration':
+    case 'FunctionExpression':
+    case 'ArrowFunctionExpression':
+      return parent.body === node;
+    default:
+      return !parent.type.startsWith('TS') || TYPE_CASTS.has(parent.type);
+  }
+}
+
+const isTypeWrapped = (node: Node): node is E.TSAsExpression | E.TSSatisfiesExpression =>
+  node.type === 'TSSatisfiesExpression' || node.type === 'TSAsExpression';
+
+// OXC types declare no annotation on binding identifiers, but TypeScript sources have them.
+const typeAnnotationOf = (id: Node) =>
+  (id as { typeAnnotation?: E.TSTypeAnnotation | null }).typeAnnotation;
 
 type Options =
   | { useSubPathImports: true; previewConfigPath?: string }
@@ -42,19 +106,19 @@ export async function storyToCsfFactory(
 
   const metaVariableName = csf._metaVariableName ?? 'meta';
 
-  /**
-   * Add the preview import if it doesn't exist yet:
-   *
-   * `import preview from '#.storybook/preview'`;
-   */
-  const programNode = csf._ast.program;
-  let previewImport: t.ImportDeclaration | undefined;
+  const editor = csf._editor;
+  const { program, scopes } = editor;
+  const quote = editor.quote;
+  // Registers every node with its parent, which the reference rewrite below asks for.
+  editor.parentOf(program);
 
   // Check if a root-level constant named 'preview' exists
-  const hasRootLevelConfig = programNode.body.some(
+  const hasRootLevelConfig = program.body.some(
     (n) =>
-      t.isVariableDeclaration(n) &&
-      n.declarations.some((declaration) => t.isIdentifier(declaration.id, { name: 'preview' }))
+      n.type === 'VariableDeclaration' &&
+      n.declarations.some(
+        (declaration) => declaration.id.type === 'Identifier' && declaration.id.name === 'preview'
+      )
   );
 
   let previewPath = '#.storybook/preview';
@@ -76,8 +140,8 @@ export async function storyToCsfFactory(
   }
 
   let sbConfigImportName = hasRootLevelConfig ? 'storybookPreview' : 'preview';
-
-  const sbConfigImportSpecifier = t.importDefaultSpecifier(t.identifier(sbConfigImportName));
+  let previewImport: E.ImportDeclaration | undefined;
+  let previewImportNeedsDefault = false;
 
   /**
    * Collect imports from other .stories files.
@@ -99,41 +163,33 @@ export async function storyToCsfFactory(
   const namespaceStoryImports = new Set<string>(); // import * as X
   const namedStoryImports = new Set<string>(); // import { X } or import X
 
-  programNode.body.forEach((node) => {
-    if (t.isImportDeclaration(node)) {
-      const importPath = node.source.value;
+  program.body.forEach((node) => {
+    if (node.type !== 'ImportDeclaration') {
+      return;
+    }
+    const importPath = node.source.value;
 
-      // Check if this import is from a .stories file
-      // Matches: ./Button.stories, ../components/Card.stories.tsx, etc.
-      const isStoryFileImport = /\.stories(\.(ts|tsx|js|jsx|mjs|mts))?$/.test(importPath);
-
-      if (isStoryFileImport) {
-        // Collect all imported names from this story file
-        node.specifiers.forEach((specifier) => {
-          if (t.isImportNamespaceSpecifier(specifier)) {
-            // import * as BaseStories from './Button.stories'
-            // BaseStories.Primary is a story, so we need: BaseStories.Primary.input
-            namespaceStoryImports.add(specifier.local.name);
-          } else if (t.isImportSpecifier(specifier)) {
-            // import { Primary } from './Button.stories'
-            // Primary itself is a story, so we need: Primary.input
-            namedStoryImports.add(specifier.local.name);
-          } else if (t.isImportDefaultSpecifier(specifier)) {
-            // import ButtonStories from './Button.stories'
-            // This typically imports the meta, not stories, so we treat it like namespace
-            namespaceStoryImports.add(specifier.local.name);
-          }
-        });
-      }
+    // Matches: ./Button.stories, ../components/Card.stories.tsx, etc.
+    if (/\.stories(\.(ts|tsx|js|jsx|mjs|mts))?$/.test(importPath)) {
+      node.specifiers.forEach((specifier) => {
+        if (specifier.type === 'ImportSpecifier') {
+          // import { Primary } from './Button.stories': Primary itself is a story
+          namedStoryImports.add(specifier.local.name);
+        } else {
+          // import * as BaseStories from './Button.stories': BaseStories.Primary is a story.
+          // A default import typically imports the meta, so it is treated like a namespace.
+          namespaceStoryImports.add(specifier.local.name);
+        }
+      });
     }
 
-    if (t.isImportDeclaration(node) && isValidPreviewPath(node.source.value)) {
-      const defaultImportSpecifier = node.specifiers.find((specifier) =>
-        t.isImportDefaultSpecifier(specifier)
+    if (isValidPreviewPath(importPath)) {
+      const defaultImportSpecifier = node.specifiers.find(
+        (specifier) => specifier.type === 'ImportDefaultSpecifier'
       );
 
       if (!defaultImportSpecifier) {
-        node.specifiers.push(sbConfigImportSpecifier);
+        previewImportNeedsDefault = true;
       } else if (defaultImportSpecifier.local.name !== sbConfigImportName) {
         sbConfigImportName = defaultImportSpecifier.local.name;
       }
@@ -144,9 +200,10 @@ export async function storyToCsfFactory(
 
   const hasMeta = !!csf._meta;
 
-  const customArgs = customArgsTypes(programNode, csf._metaAnnotations.component);
-  const metaArgsTypes: t.TSType[] = [];
-  const storyCallees: { callee: t.MemberExpression; argsTypes: t.TSType[] }[] = [];
+  const customArgs = customArgsTypes(editor, csf._metaAnnotations.component);
+  const metaArgsTypes: E.TSType[] = [];
+  const storyInits: { init: E.Expression; story: E.Expression; argsTypes: E.TSType[] }[] = [];
+  const functionStories: { statement: Node; fn: E.Function }[] = [];
 
   // Combined set for quick lookup
   const storyFileImports = new Set([...namespaceStoryImports, ...namedStoryImports]);
@@ -155,272 +212,37 @@ export async function storyToCsfFactory(
   // `export function Story() { };` and `export { Story };
   // These are not part of csf._storyExports but rather csf._storyStatements and are tricky to support.
   Object.entries(csf._storyExports).forEach(([exportName, decl]) => {
-    const id = decl.id;
-    const declarator = decl as t.VariableDeclarator;
-    let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
-
-    if (t.isIdentifier(id) && init) {
-      const argsTypes: t.TSType[] = [];
-
-      // Remove type annotations e.g. A<B> in `const Story: A<B> = {};`
-      if (id.typeAnnotation) {
-        argsTypes.push(...customArgs.read(id.typeAnnotation));
-        id.typeAnnotation = null;
-      }
-
-      // Remove type annotations e.g. A<B> in `const Story = {} satisfies A<B>;`
-      if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
-        argsTypes.push(...customArgs.read(init.typeAnnotation));
-        init = init.expression;
-      }
-
-      if (t.isObjectExpression(init) || t.isArrowFunctionExpression(init)) {
-        // Wrap the object in `meta.story()`, or transform CSF1 to `meta.story(<originalFn>)`
-        const callee = t.memberExpression(t.identifier(metaVariableName), t.identifier('story'));
-        declarator.init = t.callExpression(
-          callee,
-          t.isObjectExpression(init) && init.properties.length === 0 ? [] : [init]
-        );
-        storyCallees.push({ callee, argsTypes });
+    if (decl.type === 'FunctionDeclaration') {
+      const statement = csf._storyStatements[exportName];
+      if (decl.id && statement?.type === 'ExportNamedDeclaration') {
+        functionStories.push({ statement, fn: decl });
         transformedStoryExports.add(exportName);
       }
+      return;
     }
-  });
-
-  // Support function-declared stories
-  Object.entries(csf._storyExports).forEach(([exportName, decl]) => {
-    if (t.isFunctionDeclaration(decl) && decl.id) {
-      const arrowFn = t.arrowFunctionExpression(decl.params, decl.body);
-      arrowFn.async = !!decl.async;
-
-      const wrappedCall = t.callExpression(
-        t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-        [arrowFn]
-      );
-
-      const replacement = t.exportNamedDeclaration(
-        t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(exportName), wrappedCall),
-        ])
-      );
-
-      const pathForExport = (
-        csf as unknown as {
-          _storyPaths?: Record<string, { replaceWith?: (node: t.Node) => void }>;
-        }
-      )._storyPaths?.[exportName];
-      if (pathForExport && pathForExport.replaceWith) {
-        pathForExport.replaceWith(replacement);
-        transformedStoryExports.add(exportName);
-      }
+    if (decl.type !== 'VariableDeclarator' || decl.id.type !== 'Identifier' || !decl.init) {
+      return;
     }
-  });
+    const argsTypes: E.TSType[] = [];
 
-  const storyExportDecls = new Map(
-    Object.entries(csf._storyExports).filter(
-      (
-        entry
-      ): entry is [string, Exclude<(typeof csf._storyExports)[string], t.FunctionDeclaration>] =>
-        !t.isFunctionDeclaration(entry[1])
-    )
-  );
+    // Remove type annotations e.g. A<B> in `const Story: A<B> = {};`
+    const typeAnnotation = typeAnnotationOf(decl.id);
+    if (typeAnnotation) {
+      argsTypes.push(...customArgs.read(typeAnnotation));
+      editor.edits.remove(typeAnnotation.start, typeAnnotation.end);
+    }
 
-  // For each story, replace any reference of story reuse e.g.
-  // Story.args -> Story.input.args
-  // meta.args -> meta.input.args
-  // BaseStories.Primary.args -> BaseStories.Primary.input.args (cross-file)
-  traverse(csf._ast, {
-    /**
-     * Handle SAME-FILE story references.
-     *
-     * Examples: Primary.args → Primary.input.args meta.args → meta.input.args
-     */
-    Identifier(nodePath) {
-      const identifierName = nodePath.node.name;
-      const binding = nodePath.scope.getBinding(identifierName);
+    // Remove type annotations e.g. A<B> in `const Story = {} satisfies A<B>;`
+    let story: E.Expression = decl.init;
+    if (isTypeWrapped(story)) {
+      argsTypes.push(...customArgs.read(story.typeAnnotation));
+      story = story.expression;
+    }
 
-      // Check if the identifier corresponds to a story export or the meta variable
-      const isStoryExport = binding && storyExportDecls.has(binding.identifier.name);
-      const isMetaVariable = identifierName === metaVariableName;
-
-      if (isStoryExport || isMetaVariable) {
-        const parent = nodePath.parent;
-
-        // Skip declarations (e.g., `const Story = {};`)
-        if (t.isVariableDeclarator(parent) && parent.id === nodePath.node) {
-          return;
-        }
-
-        // Skip import statements e.g.`import { X as Story }`
-        if (t.isImportSpecifier(parent)) {
-          return;
-        }
-
-        // Skip export statements e.g.`export const Story` or `export { Story }`
-        if (t.isExportSpecifier(parent) || t.isExportDefaultDeclaration(parent)) {
-          return;
-        }
-
-        // Skip if it's already `Story.input` or `meta.input`
-        if (t.isMemberExpression(parent) && t.isIdentifier(parent.property, { name: 'input' })) {
-          return;
-        }
-
-        // Check if the property name is in the disallow list
-        if (
-          t.isMemberExpression(parent) &&
-          t.isIdentifier(parent.property) &&
-          reuseDisallowList.includes(parent.property.name)
-        ) {
-          return;
-        }
-
-        try {
-          // Replace the identifier with `Story.input` or `meta.input`
-          nodePath.replaceWith(
-            t.memberExpression(t.identifier(identifierName), t.identifier('input'))
-          );
-        } catch (err: any) {
-          // This error occurs for cross-file references like `Stories.Story.args`
-          // which are handled by the MemberExpression visitor below.
-          if (err.message.includes(`instead got "MemberExpression"`)) {
-            return;
-          } else {
-            throw err;
-          }
-        }
-      }
-    },
-
-    /**
-     * Handle CROSS-FILE story references.
-     *
-     * When we import stories from another file: import * as BaseStories from './Button.stories';
-     *
-     * And use them like: BaseStories.Primary.args
-     *
-     * We need to transform to: BaseStories.Primary.input.args
-     *
-     * Why? Because the imported file will ALSO be transformed to CSF4, where story properties are
-     * accessed via `.input`.
-     */
-    MemberExpression(nodePath) {
-      const node = nodePath.node;
-
-      // We're looking for patterns like: BaseStories.Primary.args
-      // Which is: MemberExpression { object: MemberExpression { object: Identifier, property }, property }
-      //
-      // We want to find the inner MemberExpression (BaseStories.Primary)
-      // and check if its object (BaseStories) is from a story file import.
-
-      // Check if this is a nested member expression (e.g., BaseStories.Primary.args)
-      // We want to transform BaseStories.Primary → BaseStories.Primary.input
-      // So we look for MemberExpression where object is also a MemberExpression
-
-      const innerObject = node.object;
-
-      // Check if the object is a MemberExpression like BaseStories.Primary
-      if (t.isMemberExpression(innerObject)) {
-        const importName = innerObject.object; // BaseStories
-        const storyName = innerObject.property; // Primary
-        const accessedProperty = node.property; // args
-
-        // Verify: importName is an Identifier that's in our storyFileImports set
-        if (
-          t.isIdentifier(importName) &&
-          storyFileImports.has(importName.name) &&
-          t.isIdentifier(storyName)
-        ) {
-          // Skip if already transformed: BaseStories.Primary.input.args
-          // This check prevents infinite loops when the traverser revisits modified nodes
-          if (t.isIdentifier(storyName, { name: 'input' })) {
-            return;
-          }
-
-          // Only process if the accessed property is an Identifier
-          if (!t.isIdentifier(accessedProperty)) {
-            return;
-          }
-
-          // Skip if the current property being accessed is 'input'
-          // This means we're looking at something like: BaseStories.Primary.input
-          // which was already transformed in a previous iteration
-          if (accessedProperty.name === 'input') {
-            return;
-          }
-
-          // Skip if accessing a property in the disallow list
-          if (reuseDisallowList.includes(accessedProperty.name)) {
-            return;
-          }
-
-          // Transform: BaseStories.Primary.args → BaseStories.Primary.input.args
-          // We do this by replacing the inner object (BaseStories.Primary)
-          // with (BaseStories.Primary.input)
-          nodePath.node.object = t.memberExpression(innerObject, t.identifier('input'));
-
-          // Skip traversing into the newly created node to prevent infinite loops
-          nodePath.skip();
-        }
-      }
-
-      // Handle NAMED IMPORTS: import { Primary } from './Button.stories'
-      // Usage: Primary.args → Primary.input.args
-      //
-      // Pattern: MemberExpression { object: Identifier("Primary"), property: Identifier("args") }
-      // Where "Primary" is in our namedStoryImports set (NOT namespace imports)
-      if (t.isIdentifier(innerObject) && namedStoryImports.has(innerObject.name)) {
-        const accessedProperty = node.property;
-
-        // Only process if the property is an Identifier
-        if (!t.isIdentifier(accessedProperty)) {
-          return;
-        }
-
-        // Skip if this is already accessing .input
-        if (accessedProperty.name === 'input') {
-          return;
-        }
-
-        // Skip if accessing a property in the disallow list
-        if (reuseDisallowList.includes(accessedProperty.name)) {
-          return;
-        }
-
-        // Transform: Primary.args → Primary.input.args
-        nodePath.replaceWith(
-          t.memberExpression(
-            t.memberExpression(innerObject, t.identifier('input')),
-            accessedProperty
-          )
-        );
-        nodePath.skip();
-        return;
-      }
-
-      // Handle NAMESPACE IMPORTS spread: import * as BaseStories from './Button.stories'
-      // Usage: ...BaseStories.Secondary → ...BaseStories.Secondary.input
-      //
-      // Pattern: SpreadElement containing MemberExpression { object: Identifier("BaseStories"), property: Identifier("Secondary") }
-      if (t.isIdentifier(innerObject) && namespaceStoryImports.has(innerObject.name)) {
-        const storyName = node.property;
-
-        // Skip if this is already .input
-        if (t.isIdentifier(storyName, { name: 'input' })) {
-          return;
-        }
-
-        // Check if parent is a SpreadElement (...BaseStories.Secondary)
-        const parent = nodePath.parent;
-        if (t.isSpreadElement(parent)) {
-          // Transform: ...BaseStories.Secondary → ...BaseStories.Secondary.input
-          nodePath.replaceWith(t.memberExpression(node, t.identifier('input')));
-          nodePath.skip();
-        }
-        // Note: For non-spread namespace access like BaseStories.Primary.args,
-        // it's handled by the nested MemberExpression case above
-      }
-    },
+    if (story.type === 'ObjectExpression' || story.type === 'ArrowFunctionExpression') {
+      storyInits.push({ init: decl.init, story, argsTypes });
+      transformedStoryExports.add(exportName);
+    }
   });
 
   // If no stories were transformed, bail early to avoid having a mixed CSF syntax and therefore a broken indexer.
@@ -441,35 +263,127 @@ export async function storyToCsfFactory(
     return info.source;
   }
 
+  const storyExportNames = new Set(
+    Object.entries(csf._storyExports)
+      .filter(([, decl]) => decl.type !== 'FunctionDeclaration')
+      .map(([name]) => name)
+  );
+
+  const isIdentifierNamed = (node: Node, names: Set<string>): node is E.IdentifierReference =>
+    node.type === 'Identifier' && names.has(node.name);
+  const isAllowedAccess = (property: Node) =>
+    property.type === 'Identifier' &&
+    property.name !== 'input' &&
+    !reuseDisallowList.includes(property.name);
+
+  // For each story, replace any reference of story reuse e.g.
+  // Story.args -> Story.input.args
+  // meta.args -> meta.input.args
+  // BaseStories.Primary.args -> BaseStories.Primary.input.args (cross-file)
+  walk(program, (node, parent) => {
+    if (node.type === 'MemberExpression') {
+      const innerObject = node.object;
+
+      // Cross-file namespace access: BaseStories.Primary.args → BaseStories.Primary.input.args
+      if (
+        innerObject.type === 'MemberExpression' &&
+        isIdentifierNamed(innerObject.object, storyFileImports) &&
+        innerObject.property.type === 'Identifier'
+      ) {
+        if (innerObject.property.name === 'input' || !isAllowedAccess(node.property)) {
+          return;
+        }
+        editor.edits.appendLeft(innerObject.end, '.input');
+        return false;
+      }
+
+      // Named story imports: Primary.args → Primary.input.args
+      if (isIdentifierNamed(innerObject, namedStoryImports)) {
+        if (!isAllowedAccess(node.property)) {
+          return;
+        }
+        editor.edits.appendLeft(innerObject.end, '.input');
+        return false;
+      }
+
+      // Namespace spreads: ...BaseStories.Secondary → ...BaseStories.Secondary.input
+      if (
+        isIdentifierNamed(innerObject, namespaceStoryImports) &&
+        !(node.property.type === 'Identifier' && node.property.name === 'input') &&
+        parent?.type === 'SpreadElement'
+      ) {
+        editor.edits.appendLeft(node.end, '.input');
+        return false;
+      }
+      return;
+    }
+
+    // Same-file story references: Primary.args → Primary.input.args, meta.args → meta.input.args
+    if (node.type !== 'Identifier' || !parent) {
+      return;
+    }
+    const isStoryExport = storyExportNames.has(node.name) && !!scopes.bindingOf(node);
+    if (!isStoryExport && node.name !== metaVariableName) {
+      return;
+    }
+    if (
+      parent.type === 'MemberExpression' &&
+      parent.property.type === 'Identifier' &&
+      (parent.property.name === 'input' || reuseDisallowList.includes(parent.property.name))
+    ) {
+      return;
+    }
+    if (!isExpressionPosition(node, parent, editor.parentOf(parent))) {
+      return;
+    }
+    if (parent.type === 'Property' && parent.shorthand) {
+      editor.edits.overwrite(parent.start, parent.end, `${node.name}: ${node.name}.input`);
+    } else {
+      editor.edits.appendLeft(node.end, '.input');
+    }
+  });
+
   // A custom args type that every story has is written once, on the meta.
   const sharedArgsTypes =
-    storyCallees.length === transformedStoryExports.size
-      ? customArgs.shared(storyCallees.map(({ argsTypes }) => argsTypes))
+    storyInits.length === transformedStoryExports.size
+      ? customArgs.shared(storyInits.map(({ argsTypes }) => argsTypes))
       : [];
 
-  // modify meta
-  if (csf._metaPath) {
-    const previewMeta = (input: t.ObjectExpression) =>
-      t.callExpression(
-        t.memberExpression(
-          customArgs.typed(sbConfigImportName, [...metaArgsTypes, ...sharedArgsTypes]),
-          t.identifier('meta')
-        ),
-        [input]
-      );
+  // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it.
+  const wrap = (outer: Node, inner: Node, before: string, after: string) => {
+    if (inner.end < outer.end) {
+      editor.edits.remove(inner.end, outer.end);
+    }
+    editor.edits.appendRight(inner.start, before);
+    editor.edits.appendLeft(inner.end, after);
+  };
 
-    let declaration = csf._metaPath.node.declaration;
-    if (t.isTSSatisfiesExpression(declaration) || t.isTSAsExpression(declaration)) {
+  // modify meta
+  const metaExport = program.body.find(
+    (node): node is E.ExportDefaultDeclaration => node.type === 'ExportDefaultDeclaration'
+  );
+  if (hasMeta && metaExport) {
+    const previewMeta = () =>
+      `${customArgs.typed(sbConfigImportName, [...metaArgsTypes, ...sharedArgsTypes])}.meta(`;
+
+    let declaration = metaExport.declaration as Node;
+    if (isTypeWrapped(declaration)) {
       metaArgsTypes.push(...customArgs.read(declaration.typeAnnotation));
       declaration = declaration.expression;
     }
 
-    if (t.isObjectExpression(declaration)) {
-      const metaVariable = t.variableDeclaration('const', [
-        t.variableDeclarator(t.identifier(metaVariableName), previewMeta(declaration)),
-      ]);
-      csf._metaPath.replaceWith(metaVariable);
-    } else if (t.isIdentifier(declaration)) {
+    if (declaration.type === 'ObjectExpression') {
+      editor.edits.overwrite(
+        metaExport.start,
+        declaration.start,
+        `const ${metaVariableName} = ${previewMeta()}`
+      );
+      if (declaration.end < metaExport.end) {
+        editor.edits.overwrite(declaration.end, metaExport.end, ');');
+      } else {
+        editor.edits.appendLeft(declaration.end, ');');
+      }
+    } else if (declaration.type === 'Identifier') {
       /**
        * Transform const declared metas:
        *
@@ -479,59 +393,75 @@ export async function storyToCsfFactory(
        *
        * `const meta = preview.meta({ title: 'A' });`
        */
-      const binding = csf._metaPath.scope.getBinding(declaration.name);
-      if (binding && binding.path.isVariableDeclarator()) {
-        const originalName = declaration.name;
-
-        if (t.isIdentifier(binding.path.node.id)) {
-          metaArgsTypes.push(...customArgs.read(binding.path.node.id.typeAnnotation));
+      const binding = scopes.program.bindings.get(declaration.name);
+      if (binding?.node.type === 'VariableDeclarator') {
+        const declarator = binding.node;
+        const typeAnnotation = typeAnnotationOf(declarator.id);
+        if (typeAnnotation) {
+          metaArgsTypes.push(...customArgs.read(typeAnnotation));
+          editor.edits.remove(typeAnnotation.start, typeAnnotation.end);
         }
 
-        // Always rename the meta variable to 'meta'
-        binding.path.node.id = t.identifier(metaVariableName);
-
-        let init = binding.path.node.init;
-        if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
+        let init = declarator.init as Node | null;
+        if (init && isTypeWrapped(init)) {
           metaArgsTypes.push(...customArgs.read(init.typeAnnotation));
           init = init.expression;
         }
-        if (t.isObjectExpression(init)) {
-          binding.path.node.init = previewMeta(init);
+        if (init?.type === 'ObjectExpression') {
+          wrap(declarator.init!, init, previewMeta(), ')');
         }
-
-        // Update all references to the original name
-        csf._metaPath.scope.rename(originalName, metaVariableName);
       }
 
       // Remove the default export, it's not needed anymore
-      csf._metaPath.remove();
+      removeStatements(editor, new Set([metaExport]));
     }
   }
 
-  for (const { callee, argsTypes } of storyCallees) {
-    callee.object = customArgs.typed(metaVariableName, argsTypes, [
+  for (const { init, story, argsTypes } of storyInits) {
+    const callee = `${customArgs.typed(metaVariableName, argsTypes, [
       ...metaArgsTypes,
       ...sharedArgsTypes,
-    ]);
+    ])}.story`;
+    if (story.type === 'ObjectExpression' && story.properties.length === 0) {
+      editor.edits.overwrite(init.start, init.end, `${callee}()`);
+    } else {
+      wrap(init, story, `${callee}(`, ')');
+    }
+  }
+
+  for (const { statement, fn } of functionStories) {
+    const params = fn.params.map((param) => editor.source(param)).join(', ');
+    editor.edits.overwrite(
+      statement.start,
+      fn.body!.start,
+      `export const ${fn.id!.name} = ${metaVariableName}.story(${fn.async ? 'async ' : ''}(${params}) => `
+    );
+    editor.edits.appendLeft(fn.body!.end, ');');
   }
 
   if (previewImport) {
-    // If there is alerady an import, just update the path. This is useful for users
+    if (previewImportNeedsDefault) {
+      setImportSpecifiers(editor, previewImport, previewImport.specifiers, {
+        default: sbConfigImportName,
+      });
+    }
+    // If there is already an import, just update the path. This is useful for users
     // who rerun the codemod to change the preview import to use (or not) subpaths
     if (previewImport.source.value !== previewPath) {
-      previewImport.source = t.stringLiteral(previewPath);
+      editor.edits.overwrite(
+        previewImport.source.start,
+        previewImport.source.end,
+        `${quote}${previewPath}${quote}`
+      );
     }
   } else if (hasMeta) {
-    // If the import doesn't exist, create a new one
-    const configImport = t.importDeclaration(
-      [t.importDefaultSpecifier(t.identifier(sbConfigImportName))],
-      t.stringLiteral(previewPath)
-    );
-    addImportToTop(programNode, configImport);
+    addImportToTop(editor, `import ${sbConfigImportName} from ${quote}${previewPath}${quote};`);
   }
 
-  wrapArgsMocks(csf._ast);
-  removeUnusedTypes(programNode, csf._ast);
+  editor.commit();
+  wrapArgsMocks(editor);
+  editor.commit();
+  removeUnusedTypes(editor);
 
   return printCsf(csf).code;
 }

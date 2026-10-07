@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
+import { textOf } from '../estree/ast.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
 
 const parse = (code: string) => {
@@ -12,14 +11,15 @@ const parse = (code: string) => {
 };
 
 const normalize = (code: string, exportName = 'A') => {
-  return normalizeStoryDeclaration(parse(code)._storyDeclarationPath[exportName]);
+  const csf = parse(code);
+  csf._editor.parentOf(csf._program);
+  return normalizeStoryDeclaration(csf._storyExports[exportName], csf._editor);
 };
 
 const printedShape = (code: string) => {
   const normalized = normalize(code);
   return {
-    // Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
-    code: recast.print(normalized.path.node).code.replace(/\r\n/g, '\n'),
+    code: textOf(normalized.node),
     type: normalized.type,
   };
 };
@@ -167,7 +167,7 @@ describe('normalizeStoryDeclaration', () => {
     `);
 
     expect(normalized.type).toBe('fn');
-    expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
+    expect(normalized.node.type).toBe('ArrowFunctionExpression');
   });
 
   it('throws for factory calls with more than one argument', () => {

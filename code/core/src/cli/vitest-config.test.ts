@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { canUpdateVitestConfigFile } from './vitest-config-helpers.ts';
+import { type E, parseModule } from '../csf-tools/estree/ast.ts';
+import {
+  canUpdateVitestConfigFile,
+  findExportDefault,
+  resolveExpression,
+} from './vitest-config.ts';
+
+const parse = (code: string) => parseModule(code, 'file.ts').program;
 
 describe('canUpdateVitestConfigFile', () => {
   it('returns true for plain export default object literal', () => {
@@ -239,8 +246,6 @@ describe('canUpdateVitestConfigFile', () => {
     ).toBe(true);
   });
 
-  // ----- Unsupported patterns (should return false) -----
-
   it('returns false when there is no export default', () => {
     expect(canUpdateVitestConfigFile('const x = 1;')).toBe(false);
   });
@@ -288,5 +293,91 @@ describe('canUpdateVitestConfigFile', () => {
     expect(canUpdateVitestConfigFile('export default function config() { return {}; }')).toBe(
       false
     );
+  });
+});
+
+describe('resolveExpression', () => {
+  it('returns null for null/undefined input', () => {
+    const ast = parse('');
+    expect(resolveExpression(null, ast)).toBeNull();
+    expect(resolveExpression(undefined, ast)).toBeNull();
+  });
+
+  it('returns non-Identifier expressions directly', () => {
+    const ast = parse('42');
+    const numLiteral = (ast.body[0] as E.ExpressionStatement).expression;
+    expect(resolveExpression(numLiteral, ast)).toBe(numLiteral);
+  });
+
+  it('resolves a bare VariableDeclaration', () => {
+    const ast = parse(`
+      const foo = { a: 1 };
+      export default foo;
+    `);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('ObjectExpression');
+  });
+
+  it('resolves an exported const (ExportNamedDeclaration)', () => {
+    const ast = parse(`
+      export const config = { a: 1 };
+      export default config;
+    `);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('ObjectExpression');
+  });
+
+  it('resolves a chain of variable references', () => {
+    const ast = parse(`
+      const inner = { a: 1 };
+      const outer = inner;
+      export default outer;
+    `);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('ObjectExpression');
+  });
+
+  it('resolves through TSAsExpression', () => {
+    const ast = parse(`
+      const foo = { a: 1 };
+      export default foo as any;
+    `);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('ObjectExpression');
+  });
+
+  it('resolves through TSSatisfiesExpression', () => {
+    const ast = parse(`
+      const foo = { a: 1 };
+      export default foo satisfies object;
+    `);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('ObjectExpression');
+  });
+
+  it('returns the Identifier node when variable is not found', () => {
+    const ast = parse(`export default unknown;`);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('Identifier');
+    expect(result).toMatchObject({ name: 'unknown' });
+  });
+
+  it('returns the Identifier node when variable has no initializer', () => {
+    const ast = parse(`
+      let foo;
+      export default foo;
+    `);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result?.type).toBe('Identifier');
+    expect(result).toMatchObject({ name: 'foo' });
+  });
+
+  it('returns null when maxDepth is exceeded', () => {
+    const lines = Array.from({ length: 12 }, (_, i) =>
+      i === 0 ? `const v0 = { a: 1 };` : `const v${i} = v${i - 1};`
+    ).join('\n');
+    const ast = parse(`${lines}\nexport default v11;`);
+    const result = resolveExpression(findExportDefault(ast)!.declaration, ast);
+    expect(result).toBeNull();
   });
 });

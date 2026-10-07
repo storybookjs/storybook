@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { babelParseFile } from '../CsfFile.ts';
+import { expressionFromSource, isStringLiteral } from '../estree/ast.ts';
+import { SourceEditor } from '../estree/editor.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
@@ -15,8 +14,12 @@ import {
   sourceOf,
 } from './resolve-members.ts';
 
+const indexed = (editor: SourceEditor) => {
+  editor.parentOf(editor.program);
+  return editor;
+};
 const moduleOf = (code: string, filePath: string): ReferenceModule => ({
-  program: babelParseFile({ code, filename: filePath }).path,
+  editor: indexed(new SourceEditor(code, filePath)),
   filePath,
 });
 
@@ -585,7 +588,7 @@ describe('externalize', () => {
         `,
       },
       'entry.ts',
-      (node) => (t.isStringLiteral(node) ? node : undefined)
+      (node) => (isStringLiteral(node) ? node : undefined)
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
   });
@@ -593,10 +596,7 @@ describe('externalize', () => {
 
 describe('resolveReferencedValue', () => {
   const valueOf = (ctx: ReferenceContext, expression: string) => {
-    const node = (
-      babelParseFile({ code: `(${expression})`, filename: 'probe.ts' }).ast.program
-        .body[0] as t.ExpressionStatement
-    ).expression;
+    const node = expressionFromSource(expression);
     const resolved = resolveReferencedValue(ctx, node);
     return resolved && { value: sourceOf(resolved.node), filePath: resolved.ctx.filePath };
   };

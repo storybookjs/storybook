@@ -66,11 +66,6 @@
       "code": "./src/highlight/index.ts",
       "default": "./dist/highlight/index.js"
     },
-    "./internal/babel": {
-      "types": "./dist/babel/index.d.ts",
-      "code": "./src/babel/index.ts",
-      "default": "./dist/babel/index.js"
-    },
     "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
     "./internal/bin/loader": "./dist/bin/loader.js",
     "./internal/channels": {
@@ -288,7 +283,6 @@
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "11.21.2",
-    "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",
     "ws": "^8.21.1"
@@ -296,10 +290,6 @@
   "devDependencies": {
     "@aw-web-design/x-default-browser": "1.4.126",
     "@babel/core": "^7.28.5",
-    "@babel/generator": "^7.28.5",
-    "@babel/parser": "^7.28.5",
-    "@babel/traverse": "^7.28.5",
-    "@babel/types": "^7.28.5",
     "@clack/prompts": "1.0.0-alpha.7",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
@@ -309,6 +299,7 @@
     "@emotion/styled": "^11.14.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@happy-dom/global-registrator": "^20.0.11",
+    "@jridgewell/sourcemap-codec": "^1.5.5",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
     "@preact/signals-core": "^1.14.2",
@@ -381,6 +372,7 @@
     "launch-editor": "^2.13.2",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
+    "magic-string": "^1.1.0",
     "mdast-util-from-markdown": "^2.0.0",
     "mdast-util-mdx": "^3.0.0",
     "mdast-util-mdx-jsx": "^3.2.0",

@@ -1,4 +1,3 @@
-import { types as t } from 'storybook/internal/babel';
 import {
   ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   editJsonText,
@@ -215,9 +214,9 @@ const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
 const addZoneJsImport: FixTransform = {
   filter: { kind: ['preview'] },
   editConfig: (preview, { id }) => {
-    const hasZoneJsImport = preview._ast.program.body.some(
+    const hasZoneJsImport = preview._program.body.some(
       (node) =>
-        t.isImportDeclaration(node) &&
+        node.type === 'ImportDeclaration' &&
         (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
     );
     if (hasZoneJsImport) {

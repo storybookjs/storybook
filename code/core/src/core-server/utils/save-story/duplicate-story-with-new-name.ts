@@ -1,62 +1,59 @@
-import { types as t, traverse } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
+import { type E, type Node, identifierKey, walk } from '../../../csf-tools/estree/ast.ts';
+import {
+  SourceEditor,
+  appendStatement,
+  objectList,
+  removeFromList,
+} from '../../../csf-tools/estree/editor.ts';
 import { SaveStoryError } from './utils.ts';
 
 type In = ReturnType<CsfFile['parse']>;
 
+// Append a copy of a story under a new name, without its `args`. Returns the new story's
+// initializer.
 export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newStoryName: string) => {
   const node = csfFile._storyExports[storyName];
-  const cloned = t.cloneNode(node) as t.VariableDeclarator;
-
-  if (!cloned) {
+  if (node?.type !== 'VariableDeclarator' || !node.init) {
     throw new SaveStoryError(`cannot clone Node`);
   }
-
-  let found = false;
-  traverse(cloned, {
-    Identifier(path) {
-      if (found) {
-        return;
-      }
-
-      if (path.node.name === storyName) {
-        found = true;
-        path.node.name = newStoryName;
-      }
-    },
-    ObjectProperty(path) {
-      const key = path.get('key');
-      if (key.isIdentifier() && key.node.name === 'args') {
-        path.remove();
-      }
-    },
-
-    noScope: true,
-  });
+  const init = node.init as Node;
 
   const isCsf4Story =
-    t.isCallExpression(cloned.init) &&
-    t.isMemberExpression(cloned.init.callee) &&
-    t.isIdentifier(cloned.init.callee.property) &&
-    cloned.init.callee.property.name === 'story';
+    init.type === 'CallExpression' &&
+    init.callee.type === 'MemberExpression' &&
+    init.callee.property.type === 'Identifier' &&
+    init.callee.property.name === 'story';
 
   // detect CSF2 and throw
-  if (
-    !isCsf4Story &&
-    (t.isArrowFunctionExpression(cloned.init) || t.isCallExpression(cloned.init))
-  ) {
+  if (!isCsf4Story && (init.type === 'ArrowFunctionExpression' || init.type === 'CallExpression')) {
     throw new SaveStoryError(`Creating a new story based on a CSF2 story is not supported`);
   }
 
-  traverse(csfFile._ast, {
-    Program(path) {
-      path.pushContainer(
-        'body',
-        t.exportNamedDeclaration(t.variableDeclaration('const', [cloned]))
-      );
-    },
+  // Copy the initializer without any `args`, which the caller fills in for the new story.
+  const copy = new SourceEditor(`(${csfFile._editor.source(init)})`, csfFile._options.fileName);
+  walk(copy.program, (child) => {
+    if (child.type !== 'ObjectExpression') {
+      return;
+    }
+    const args = child.properties.filter(
+      (property): property is E.ObjectProperty =>
+        property.type === 'Property' && !property.computed && identifierKey(property) === 'args'
+    );
+    if (args.length > 0) {
+      removeFromList(copy, objectList(child), args);
+    }
   });
+  const initCode = copy.toString().slice(1, -1);
+  const typeAnnotation =
+    node.id.type === 'Identifier' && node.id.typeAnnotation
+      ? csfFile._editor.source(node.id.typeAnnotation)
+      : '';
 
-  return cloned;
+  appendStatement(csfFile._editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
+  csfFile._commit();
+
+  const duplicated = csfFile._storyExports[newStoryName];
+  return (duplicated?.type === 'VariableDeclarator' ? duplicated.init : duplicated) as Node;
 };

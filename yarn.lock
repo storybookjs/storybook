@@ -10062,7 +10062,6 @@ __metadata:
     "@angular/forms": "npm:^21.2.14"
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
-    "@babel/types": "npm:^7.28.5"
     "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
@@ -31269,7 +31268,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"recast@npm:^0.23.1, recast@npm:^0.23.11, recast@npm:^0.23.5, recast@npm:^0.23.9":
+"recast@npm:^0.23.1, recast@npm:^0.23.11, recast@npm:^0.23.9":
   version: 0.23.11
   resolution: "recast@npm:0.23.11"
   dependencies:
@@ -33610,10 +33609,6 @@ __metadata:
   dependencies:
     "@aw-web-design/x-default-browser": "npm:1.4.126"
     "@babel/core": "npm:^7.28.5"
-    "@babel/generator": "npm:^7.28.5"
-    "@babel/parser": "npm:^7.28.5"
-    "@babel/traverse": "npm:^7.28.5"
-    "@babel/types": "npm:^7.28.5"
     "@clack/prompts": "npm:1.0.0-alpha.7"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
@@ -33623,6 +33618,7 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^20.0.11"
+    "@jridgewell/sourcemap-codec": "npm:^1.5.5"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
     "@preact/signals-core": "npm:^1.14.2"
@@ -33705,6 +33701,7 @@ __metadata:
     launch-editor: "npm:^2.13.2"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
+    magic-string: "npm:^1.1.0"
     mdast-util-from-markdown: "npm:^2.0.0"
     mdast-util-mdx: "npm:^3.0.0"
     mdast-util-mdx-jsx: "npm:^3.2.0"
@@ -33739,7 +33736,6 @@ __metadata:
     react-syntax-highlighter: "npm:^15.4.5"
     react-textarea-autosize: "npm:^8.3.0"
     react-transition-state: "npm:^2.3.1"
-    recast: "npm:^0.23.5"
     require-from-string: "npm:^2.0.2"
     rolldown: "npm:^1.1.4"
     semver: "npm:^7.7.3"

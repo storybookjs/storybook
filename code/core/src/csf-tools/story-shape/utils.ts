@@ -1,58 +1,16 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
-
 import type { CsfFile } from '../CsfFile.ts';
-import type { RenderFunctionPath } from './render.ts';
+import { type E, type Node, isFunction, isStringLiteral, unwrapExpression } from '../estree/ast.ts';
 
-type StaticIdentifierMemberCall = t.CallExpression & {
-  callee: t.MemberExpression & { object: t.Identifier; property: t.Identifier };
-};
+export { unwrapExpression };
+export {
+  csfFactoryReceiver,
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
+  withoutTypeCalls,
+} from '../CsfFile.ts';
 
-type CsfFactoryCall = t.CallExpression & {
-  callee: t.MemberExpression & { property: t.Identifier };
-};
-
-/** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
-export const unwrapExpression = (node: t.Node): t.Node =>
-  t.isTSAsExpression(node) ||
-  t.isTSSatisfiesExpression(node) ||
-  t.isTSNonNullExpression(node) ||
-  t.isTSTypeAssertion(node) ||
-  t.isParenthesizedExpression(node)
-    ? unwrapExpression(node.expression)
-    : node;
-
-export const isCanonicalCsf2BindCall = (node: t.Node): node is StaticIdentifierMemberCall =>
-  t.isCallExpression(node) &&
-  t.isMemberExpression(node.callee) &&
-  !node.callee.computed &&
-  t.isIdentifier(node.callee.object) &&
-  t.isIdentifier(node.callee.property, { name: 'bind' }) &&
-  (node.arguments.length === 0 ||
-    (node.arguments.length === 1 &&
-      t.isObjectExpression(node.arguments[0]) &&
-      node.arguments[0].properties.length === 0));
-
-/** Receiver of a `.type<T>()` chain, which returns its receiver: `meta` for `meta.type<T>()`. */
-export const withoutTypeCalls = (object: t.Node): t.Node =>
-  t.isCallExpression(object) &&
-  object.arguments.length === 0 &&
-  t.isMemberExpression(object.callee) &&
-  !object.callee.computed &&
-  t.isIdentifier(object.callee.property, { name: 'type' })
-    ? withoutTypeCalls(object.callee.object)
-    : object;
-
-export const isCsfFactoryCall = (node: t.Node): node is CsfFactoryCall =>
-  t.isCallExpression(node) &&
-  t.isMemberExpression(node.callee) &&
-  !node.callee.computed &&
-  t.isIdentifier(withoutTypeCalls(node.callee.object)) &&
-  t.isIdentifier(node.callee.property) &&
-  (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
-
-/** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
-export const csfFactoryReceiver = (node: CsfFactoryCall): t.Identifier =>
-  withoutTypeCalls(node.callee.object) as t.Identifier;
+/** A function a story or meta can supply as `render`, including a method's function expression. */
+export type FunctionNode = E.Function | E.ArrowFunctionExpression;
 
 /**
  * Static key of an object member, or `null` when it is computed from something else.
@@ -60,26 +18,22 @@ export const csfFactoryReceiver = (node: CsfFactoryCall): t.Identifier =>
  * A computed key written as a string literal is static: `{ ['args']: … }` names the same member as
  * `{ args: … }`, so it reads as that name rather than as a key only running the story would produce.
  */
-export const keyOf = (p: t.ObjectMethod | t.ObjectProperty): string | null =>
-  t.isStringLiteral(p.key) ? p.key.value : !p.computed && t.isIdentifier(p.key) ? p.key.name : null;
+export const keyOf = (p: E.ObjectProperty): string | null =>
+  isStringLiteral(p.key)
+    ? p.key.value
+    : !p.computed && p.key.type === 'Identifier'
+      ? p.key.name
+      : null;
 
 /** Value of an object expression's own property, when it has one. */
 export const propertyValue = (
-  object: t.ObjectExpression | undefined | null,
+  object: E.ObjectExpression | undefined | null,
   name: string
-): t.Node | undefined =>
+): Node | undefined =>
   object?.properties.find(
-    (candidate): candidate is t.ObjectProperty =>
-      t.isObjectProperty(candidate) && keyOf(candidate) === name
+    (candidate): candidate is E.ObjectProperty =>
+      candidate.type === 'Property' && !candidate.method && keyOf(candidate) === name
   )?.value;
-
-/** Expression a block body consists of, when it consists of exactly `return <expression>`. */
-const soleReturnedExpression = (body: t.BlockStatement): t.Expression | undefined => {
-  const [statement, ...rest] = body.body;
-  return rest.length === 0 && t.isReturnStatement(statement) && t.isExpression(statement.argument)
-    ? statement.argument
-    : undefined;
-};
 
 /**
  * Expression a function returns directly, covering the concise body (`() => …`) and a block body
@@ -88,30 +42,19 @@ const soleReturnedExpression = (body: t.BlockStatement): t.Expression | undefine
  * A block body must hold nothing but that `return`, since any extra statement could change what the
  * expression evaluates to and a static reader cannot follow it.
  */
-export const returnedExpression = (fn: t.Node | undefined): t.Expression | undefined => {
-  if (!t.isFunction(fn)) {
+export const returnedExpression = (node: Node | null | undefined): E.Expression | undefined => {
+  // A method shorthand (`setup() { … }`) returns what its function returns.
+  const fn = node?.type === 'Property' && node.method ? node.value : node;
+  if (!isFunction(fn) || !fn.body) {
     return undefined;
   }
-
-  return t.isExpression(fn.body) ? fn.body : soleReturnedExpression(fn.body);
-};
-
-/** {@link returnedExpression} as a path, for callers that resolve identifiers against scope. */
-export const returnedExpressionPath = (
-  renderFunction: RenderFunctionPath
-): NodePath<t.Expression> | undefined => {
-  if (!returnedExpression(renderFunction.node)) {
-    return undefined;
+  if (fn.body.type !== 'BlockStatement') {
+    return fn.body as E.Expression;
   }
-
-  const body = renderFunction.get('body');
-  if (body.isExpression()) {
-    return body;
-  }
-
-  const [statement] = body.isBlockStatement() ? body.get('body') : [];
-  const argument = statement?.isReturnStatement() ? statement.get('argument') : undefined;
-  return argument?.isExpression() ? argument : undefined;
+  const [statement, ...rest] = fn.body.body;
+  return rest.length === 0 && statement?.type === 'ReturnStatement' && statement.argument
+    ? statement.argument
+    : undefined;
 };
 
 /**
@@ -121,95 +64,51 @@ export const returnedExpressionPath = (
  * that object literal
  */
 export const resolveReturnedObjectExpression = (
-  renderFunction: RenderFunctionPath
-): t.ObjectExpression | undefined => {
-  const returned = returnedExpressionPath(renderFunction);
-
-  if (returned?.isObjectExpression()) {
-    return returned.node;
+  renderFunction: FunctionNode,
+  program: E.Program
+): E.ObjectExpression | undefined => {
+  const returned = returnedExpression(renderFunction);
+  if (returned?.type === 'ObjectExpression') {
+    return returned;
   }
-  if (!returned?.isIdentifier()) {
+  if (returned?.type !== 'Identifier') {
     return undefined;
   }
-
-  const resolved = resolveIdentifierInit(renderFunction, returned);
-  return resolved?.isObjectExpression() ? resolved.node : undefined;
+  const resolved = resolveIdentifierInit(program, returned.name);
+  return resolved?.type === 'ObjectExpression' ? resolved : undefined;
 };
 
 /** Resolve a local story helper used by `Template.bind({})` or `render: Template`. */
 export function resolveIdentifierInit(
-  storyPath: NodePath<t.Node>,
-  identifier: NodePath<t.Identifier>
-): NodePath<t.FunctionDeclaration> | NodePath<t.Expression> | null {
-  const programPath = storyPath.findParent((p) => p.isProgram()) as NodePath<t.Program> | null;
-
-  if (!programPath) {
-    return null;
-  }
-
-  for (const stmt of programPath.get('body')) {
-    if (stmt.isFunctionDeclaration() && stmt.node.id?.name === identifier.node.name) {
-      return stmt;
-    }
-    if (stmt.isExportNamedDeclaration()) {
-      const decl = stmt.get('declaration');
-      if (decl.isFunctionDeclaration() && decl.node.id?.name === identifier.node.name) {
-        return decl;
-      }
+  program: E.Program,
+  name: string
+): E.Function | E.Expression | null {
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (declaration?.type === 'FunctionDeclaration' && declaration.id?.name === name) {
+      return declaration;
     }
   }
 
-  const declarators = programPath.get('body').flatMap((stmt) => {
-    if (stmt.isVariableDeclaration()) {
-      return stmt.get('declarations');
+  for (const statement of program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (declaration?.type !== 'VariableDeclaration') {
+      continue;
     }
-    if (stmt.isExportNamedDeclaration()) {
-      const decl = stmt.get('declaration');
-
-      if (decl && decl.isVariableDeclaration()) {
-        return decl.get('declarations');
-      }
+    const match = declaration.declarations.find(
+      (declarator) => declarator.id.type === 'Identifier' && declarator.id.name === name
+    );
+    if (match) {
+      return match.init ?? null;
     }
-    return [];
-  });
-
-  const match = declarators.find((d) => {
-    const id = d.get('id');
-    return id.isIdentifier() && id.node.name === identifier.node.name;
-  });
-
-  if (!match) {
-    return null;
   }
-  const init = match.get('init');
-  return init && init.isExpression() ? init : null;
+
+  return null;
 }
 
-/** NodePath for a known node inside a program. */
-export function pathForNode<T extends t.Node>(
-  program: NodePath<t.Program>,
-  target: T | undefined
-): NodePath<T> | undefined {
-  if (!target) {
-    return undefined;
-  }
-  let found: NodePath<T> | undefined;
-
-  program.traverse({
-    enter(p) {
-      if (p.node && p.node === target) {
-        found = p as NodePath<T>;
-        p.stop();
-      }
-    },
-  });
-
-  return found;
-}
-
-/** ObjectExpression path for the parsed CSF default meta, when available. */
-export function metaObjectPath(csf: CsfFile): NodePath<t.ObjectExpression> | undefined {
-  const metaPath = pathForNode(csf._file.path, csf._metaNode);
-
-  return metaPath?.isObjectExpression() ? metaPath : undefined;
+/** Object literal of the parsed CSF default meta, when it is part of the file. */
+export function metaObject(csf: CsfFile): E.ObjectExpression | undefined {
+  return csf._metaNodeIsSynthetic ? undefined : csf._metaNode;
 }

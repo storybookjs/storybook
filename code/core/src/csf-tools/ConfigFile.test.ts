@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import * as babelParser from '@babel/parser';
-import { babelPrint, parserOptions } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { ConfigFile, loadConfig, printConfig } from './ConfigFile.ts';
+import { loadConfig, printConfig } from './ConfigFile.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -460,10 +457,7 @@ describe('ConfigFile', () => {
           )
         ).toMatchInlineSnapshot(`
           export const addons = [];
-
-          export const core = {
-            builder: "webpack5"
-          };
+          export const core = { builder: "webpack5" };
         `);
       });
       it('missing field', () => {
@@ -475,12 +469,7 @@ describe('ConfigFile', () => {
               export const core = { foo: 'bar' };
             `
           )
-        ).toMatchInlineSnapshot(`
-          export const core = {
-            foo: 'bar',
-            builder: 'webpack5'
-          };
-        `);
+        ).toMatchInlineSnapshot(`export const core = { foo: 'bar', builder: 'webpack5' };`);
       });
       it('found scalar', () => {
         expect(
@@ -513,11 +502,7 @@ describe('ConfigFile', () => {
               export const core = { builder: { name: 'webpack4' } };
             `
           )
-        ).toMatchInlineSnapshot(`
-          export const core = { builder: {
-            name: 'webpack5'
-          } };
-        `);
+        ).toMatchInlineSnapshot(`export const core = { builder: { name: 'webpack5' } };`);
       });
       it('variable export', () => {
         expect(
@@ -546,15 +531,7 @@ describe('ConfigFile', () => {
               module.exports = { addons: [] };
             `
           )
-        ).toMatchInlineSnapshot(`
-          module.exports = {
-            addons: [],
-
-            core: {
-              builder: "webpack5"
-            }
-          };
-        `);
+        ).toMatchInlineSnapshot(`module.exports = { addons: [], core: { builder: "webpack5" } };`);
       });
       it('missing field', () => {
         expect(
@@ -565,12 +542,7 @@ describe('ConfigFile', () => {
               module.exports = { core: { foo: 'bar' }};
             `
           )
-        ).toMatchInlineSnapshot(`
-          module.exports = { core: {
-            foo: 'bar',
-            builder: 'webpack5'
-          }};
-        `);
+        ).toMatchInlineSnapshot(`module.exports = { core: { foo: 'bar', builder: 'webpack5' }};`);
       });
       it('found scalar', () => {
         expect(
@@ -595,15 +567,7 @@ describe('ConfigFile', () => {
               export default { addons: [] };
             `
           )
-        ).toMatchInlineSnapshot(`
-          export default {
-            addons: [],
-
-            core: {
-              builder: "webpack5"
-            }
-          };
-        `);
+        ).toMatchInlineSnapshot(`export default { addons: [], core: { builder: "webpack5" } };`);
       });
       it('missing field', () => {
         expect(
@@ -614,12 +578,7 @@ describe('ConfigFile', () => {
               export default { core: { foo: 'bar' }};
             `
           )
-        ).toMatchInlineSnapshot(`
-          export default { core: {
-            foo: 'bar',
-            builder: 'webpack5'
-          }};
-        `);
+        ).toMatchInlineSnapshot(`export default { core: { foo: 'bar', builder: 'webpack5' }};`);
       });
       it('found scalar', () => {
         expect(
@@ -636,31 +595,23 @@ describe('ConfigFile', () => {
 
     describe('quotes', () => {
       it('no quotes', () => {
-        expect(setField(['foo', 'bar'], 'baz', '')).toMatchInlineSnapshot(`
-          export const foo = {
-            bar: "baz"
-          };
-        `);
+        expect(setField(['foo', 'bar'], 'baz', '')).toMatchInlineSnapshot(
+          `export const foo = { bar: "baz" };`
+        );
       });
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
             export const stories = ['a', 'b', "c"]
-
-            export const foo = {
-              bar: 'baz'
-            };
+            export const foo = { bar: 'baz' };
           `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', "b", "c"]
-
-          export const foo = {
-            bar: "baz"
-          };
-        `);
+            export const stories = ['a', "b", "c"]
+            export const foo = { bar: "baz" };
+          `);
       });
     });
 
@@ -695,10 +646,7 @@ describe('ConfigFile', () => {
             `
           )
         ).toMatchInlineSnapshot(`
-          const parameters = {
-            foo: 'bar',
-            a11y: 'todo'
-          };
+          const parameters = { foo: 'bar', a11y: 'todo' };
           const preview = {
             parameters,
           }
@@ -722,9 +670,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const parameters = { foo: 'bar' };
           const preview = {
-            parameters: {
-              a11y: 'todo'
-            },
+            parameters: { a11y: 'todo' },
           }
           export default preview;
         `);
@@ -748,10 +694,7 @@ describe('ConfigFile', () => {
           import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
             addons: [],
-
-            core: {
-              builder: 'webpack5'
-            }
+            core: { builder: 'webpack5' },
           });
         `);
       });
@@ -770,10 +713,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
-            core: {
-              foo: 'bar',
-              builder: 'webpack5'
-            },
+            core: { foo: 'bar', builder: 'webpack5' },
           });
         `);
       });
@@ -809,12 +749,9 @@ describe('ConfigFile', () => {
               export default { core: { builder: 'webpack5' } };
             `
         )
-      ).toMatchInlineSnapshot(`
-        export default {
-          core: { builder: 'webpack5' },
-          addons: ['docs']
-        };
-      `);
+      ).toMatchInlineSnapshot(
+        `export default { core: { builder: 'webpack5' }, addons: ['docs'] };`
+      );
     });
     it('found scalar', () => {
       expect(() =>
@@ -825,9 +762,7 @@ describe('ConfigFile', () => {
               export default { addons: 5 };
             `
         )
-      ).toThrowErrorMatchingInlineSnapshot(
-        `Error: Expected array at 'addons', got 'NumericLiteral'`
-      );
+      ).toThrowErrorMatchingInlineSnapshot(`Error: Expected array at 'addons', got 'Literal'`);
     });
     it('array of simple values', () => {
       expect(
@@ -1005,11 +940,7 @@ describe('ConfigFile', () => {
               module.exports = { core: { builder: { name: 'webpack4' } }, addons: [] };
             `
           )
-        ).toMatchInlineSnapshot(`
-          module.exports = {
-            addons: []
-          };
-        `);
+        ).toMatchInlineSnapshot(`module.exports = { addons: [] };`);
       });
     });
 
@@ -1072,11 +1003,7 @@ describe('ConfigFile', () => {
               export default { core: { builder: { name: 'webpack4' } }, addons: [] };
             `
           )
-        ).toMatchInlineSnapshot(`
-          export default {
-            addons: []
-          };
-        `);
+        ).toMatchInlineSnapshot(`export default { addons: [] };`);
       });
       it('root globals as variable', () => {
         expect(
@@ -1088,9 +1015,7 @@ describe('ConfigFile', () => {
             `
           )
         ).toMatchInlineSnapshot(`
-          const preview = {
-            bar: { a: 1 }
-          };
+          const preview = { bar: { a: 1 } };
           export default preview;
         `);
       });
@@ -1138,51 +1063,28 @@ describe('ConfigFile', () => {
 
     describe('quotes', () => {
       it('no quotes', () => {
-        expect(setField(['foo', 'bar'], 'baz', '')).toMatchInlineSnapshot(`
-          export const foo = {
-            bar: "baz"
-          };
-        `);
+        expect(setField(['foo', 'bar'], 'baz', '')).toMatchInlineSnapshot(
+          `export const foo = { bar: "baz" };`
+        );
       });
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
             export const stories = ['a', 'b', "c"]
-
-            export const foo = {
-              bar: 'baz'
-            };
+            export const foo = { bar: 'baz' };
           `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', "b", "c"]
-
-          export const foo = {
-            bar: "baz"
-          };
-        `);
+            export const stories = ['a', "b", "c"]
+            export const foo = { bar: "baz" };
+          `);
       });
     });
   });
 
   describe('quote inference under EOL reconstruction', () => {
-    it('keeps single quotes when token offsets index a CRLF reconstruction (Windows)', () => {
-      const source = `export default {\n  framework: '@storybook/react-vite',\n};\n`;
-      // On Windows, recast rebuilds the parser input with `os.EOL` before babel sees it, so
-      // babel's token offsets index a CRLF string while `_code` is the original LF source.
-      // Parsing the CRLF variant directly with @babel/parser recreates exactly that
-      // misalignment; quote inference must not depend on token offsets to survive it.
-      const ast = babelParser.parse(source.replaceAll('\n', '\r\n'), { ...parserOptions });
-      const config = new ConfigFile(ast, source);
-      config.parse();
-      config.setImport(['fileURLToPath'], 'node:url');
-      const printed = printConfig(config).code;
-      expect(printed).toContain("from 'node:url'");
-      expect(printed).not.toContain('from "node:url"');
-    });
-
     it('infers quotes and prints LF output for CRLF sources', () => {
       const source = [
         "import { addons } from 'storybook/manager-api';",
@@ -1444,10 +1346,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        import path from 'path';
+        import path from "path";
         const config: StorybookConfig = { };
         export default config;
       `);
@@ -1463,7 +1365,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'node:path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         import { join, dirname } from 'path';
@@ -1481,10 +1383,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        import path from 'path';
+        import path from "path";
         const config: StorybookConfig = { };
         export default config;
       `);
@@ -1499,10 +1401,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        import { dirname } from 'path';
+        import { dirname } from "path";
         const config: StorybookConfig = { };
         export default config;
       `);
@@ -1519,7 +1421,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setImport(['dirname'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         import { dirname } from 'path';
@@ -1533,18 +1435,18 @@ describe('ConfigFile', () => {
       const config = loadConfig('').parse();
       config.setImport({ namespace: 'path' }, 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
-      expect(parsed).toMatchInlineSnapshot(`import * as path from 'path';`);
+      expect(parsed).toMatchInlineSnapshot(`import * as path from "path";`);
     });
 
     it(`supports setting import without specifier`, () => {
       const config = loadConfig('').parse();
       config.setImport(null, 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
-      expect(parsed).toMatchInlineSnapshot(`import 'path';`);
+      expect(parsed).toMatchInlineSnapshot(`import "path";`);
     });
   });
 
@@ -1558,10 +1460,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        const path = require('path');
+        const path = require("path");
         const config: StorybookConfig = { };
         export default config;
       `);
@@ -1577,7 +1479,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const path = require('path');
@@ -1595,13 +1497,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        const {
-          dirname,
-        } = require('path');
-
+        const { dirname } = require("path");
         const config: StorybookConfig = { };
         export default config;
       `);
@@ -1618,13 +1517,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname', 'basename'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        const {
-          dirname,
-          basename,
-        } = require('path');
+        const { dirname, basename } = require('path');
 
         const config: StorybookConfig = { };
         export default config;
@@ -1642,13 +1538,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname', 'basename'], 'node:path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        const {
-          dirname,
-          basename,
-        } = require('path');
+        const { dirname, basename } = require('path');
 
         const config: StorybookConfig = { };
         export default config;
@@ -1667,7 +1560,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1685,7 +1578,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1703,15 +1596,13 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        const {
-          basename,
-        } = require('path');
+        const { basename } = require('path');
         const config: StorybookConfig = { };
         export default config;
-        `);
+      `);
     });
 
     it(`removes a named ES6 import`, () => {
@@ -1724,7 +1615,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         import { basename } from 'path';
@@ -1743,12 +1634,10 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname', 'basename'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
-        const {
-          join,
-        } = require('path');
+        const { join } = require('path');
         const config: StorybookConfig = { };
         export default config;
       `);
@@ -1764,7 +1653,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname', 'basename'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         import { join } from 'path';
@@ -1782,7 +1671,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport({ namespace: 'path' }, 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1799,7 +1688,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport({ namespace: 'alsoPath' }, 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         import path from 'path';
@@ -1818,7 +1707,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname', 'basename'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1836,7 +1725,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname', 'basename'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1854,7 +1743,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname'], 'node:path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1872,7 +1761,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname'], 'node:path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const config: StorybookConfig = { };
@@ -1889,7 +1778,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport('path', 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(source);
     });
@@ -1904,7 +1793,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['nonexistent'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(source);
     });
@@ -1919,7 +1808,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['nonexistent'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(source);
     });
@@ -1935,7 +1824,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['readFile'], 'fs');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         const { dirname } = require('path');
@@ -1955,7 +1844,7 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeImport(['dirname'], 'path');
 
-      const parsed = babelPrint(config._ast);
+      const parsed = printConfig(config).code;
 
       expect(parsed).toMatchInlineSnapshot(`
         import { readFile } from 'fs';

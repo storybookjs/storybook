@@ -519,9 +519,7 @@ describe('run', () => {
       export default {
         framework: {
           name: '@storybook/angular-vite',
-          options: {
-            zoneless: true
-          },
+          options: { zoneless: true },
         },
       };
     `);

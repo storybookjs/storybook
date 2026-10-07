@@ -49,24 +49,10 @@ test('Warn for possible implicit actions', async () => {
   expect(warn.mock.calls).toMatchInlineSnapshot(`
     [
       [
-        "Component.stories.tsx Possible implicit spy found
-       5 | A.play = async ({ args }) => {
-       6 |   await userEvent.click(screen.getByRole("button"));
-    >  7 |   await expect(args.onImplicit).toHaveBeenCalled();
-         |                     ^^^^^^^^^^
-       8 |   await expect(args.onClick).toHaveBeenCalled();
-       9 |   await expect(args.onHover).toHaveBeenCalled();
-      10 |   await expect(args.onBla).toHaveBeenCalled();",
+        "Component.stories.tsx Possible implicit spy found (7:20)",
       ],
       [
-        "Component.stories.tsx Possible implicit spy found
-      15 |   play: async ({ args }) => {
-      16 |     await userEvent.click(screen.getByRole("button"));
-    > 17 |     await expect(args.onImplicit).toHaveBeenCalled();
-         |                       ^^^^^^^^^^
-      18 |     await expect(args.onClick).toHaveBeenCalled();
-      19 |     await expect(args.onHover).toHaveBeenCalled();
-      20 |     await expect(args.onBla).toHaveBeenCalled();",
+        "Component.stories.tsx Possible implicit spy found (17:22)",
       ],
     ]
   `);

@@ -66,8 +66,11 @@ const isStorybookApi = (path: NodePath<t.Identifier>): boolean => {
   if (!callback.isArrowFunctionExpression() && !callback.isFunctionExpression()) {
     return false;
   }
+  if (callback.node.params[0] !== binding.path.node) {
+    return false;
+  }
   const call = callback.parentPath;
-  if (!call.isCallExpression() || !call.node.arguments.includes(callback.node)) {
+  if (!call.isCallExpression() || call.node.arguments[1] !== callback.node) {
     return false;
   }
   const callee = call.get('callee');
@@ -101,7 +104,14 @@ const isSetFilterApiReference = (path: NodePath<t.Identifier>) => {
     return false;
   }
   const init = declarator.get('init');
-  return init.isIdentifier() && isStorybookApi(init);
+  if (init.isIdentifier()) {
+    return isStorybookApi(init);
+  }
+  if (!init.isCallExpression()) {
+    return false;
+  }
+  const callee = init.get('callee');
+  return callee.isIdentifier() && isManagerApiImport(callee, 'useStorybookApi');
 };
 
 const renameSetFilterIdentifiers = (code: string) => {

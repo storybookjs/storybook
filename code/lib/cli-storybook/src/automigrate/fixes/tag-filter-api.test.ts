@@ -108,6 +108,7 @@ describe('tag-filter-api', () => {
         'api.experimental_setFilter("x", () => true);',
         'api?.experimental_setFilters({});',
         'const { experimental_setFilter } = api;',
+        'const { experimental_setFilters } = useStorybookApi();',
       ].join('\n'),
     });
 
@@ -118,6 +119,30 @@ describe('tag-filter-api', () => {
     expect(story).toContain('api.setFilter("x", () => true);');
     expect(story).toContain('api?.setFilters({});');
     expect(story).toContain('const { setFilter } = api;');
+    expect(story).toContain('const { setFilters } = useStorybookApi();');
+  });
+
+  it('renames only the Storybook API callback parameter', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: 'export default { stories: [] };',
+      [managerConfigPath]: [
+        'import { addons } from "storybook/manager-api";',
+        'addons.register("test", (api, unrelatedApi) => {',
+        '  api.experimental_setFilter("x", () => true);',
+        '  unrelatedApi?.experimental_setFilter();',
+        '});',
+        'addons.register((unrelatedApi) => unrelatedApi.experimental_setFilter());',
+      ].join('\n'),
+      [storyPath]: 'export default {};',
+    });
+
+    expect(await runFix(tagFilterApi, { ...options, result: {} })).toEqual([]);
+    const manager = fs.readFileSync(managerConfigPath, 'utf8') as string;
+    expect(manager).toContain('api.setFilter("x", () => true);');
+    expect(manager).toContain('unrelatedApi?.experimental_setFilter();');
+    expect(manager).toContain(
+      'addons.register((unrelatedApi) => unrelatedApi.experimental_setFilter());'
+    );
   });
 
   it('keeps a story hidden when only the deprecated alias is true', async () => {

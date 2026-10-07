@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Listener } from 'storybook/internal/channels';
+import { Channel, type Listener } from 'storybook/internal/channels';
 import type { TestProviderStateByProviderId } from 'storybook/internal/types';
 import {
   type Addon_Collection,
@@ -10,7 +10,7 @@ import {
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ManagerContext, mockChannel } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
@@ -51,7 +51,7 @@ const testProviderStates: TestProviderStateByProviderId = {
   linting: 'test-provider-state:pending',
 };
 
-const channel = mockChannel();
+const channel = new Channel({});
 const managerContext: any = {
   api: {
     on: (eventName: string, listener: Listener) => {

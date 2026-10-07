@@ -6,8 +6,10 @@ import React from 'react';
 
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
 
+import { Channel } from 'storybook/internal/channels';
+
 import type { API, Combo, State } from '../root.tsx';
-import { Provider as ManagerProvider, mockChannel } from '../root.tsx';
+import { Provider as ManagerProvider } from '../root.tsx';
 
 // The stories module destructures `fetch` from `@storybook/global` at import time to fetch the
 // index on init. Reject it so the init no-ops (into indexError) instead of hitting the network.
@@ -60,7 +62,7 @@ describe('ManagerProvider', () => {
     // Simulate an addon that calls setFilter synchronously from its register callback.
     // handleAPI runs in the constructor, before the component mounts.
     const provider = {
-      channel: mockChannel(),
+      channel: new Channel({}),
       getConfig: () => ({}),
       getElements: () => ({}),
       handleAPI: (a: API) => {

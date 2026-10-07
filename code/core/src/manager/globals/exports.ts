@@ -347,7 +347,6 @@ export default {
     'isShortcutTaken',
     'keyToSymbol',
     'merge',
-    'mockChannel',
     'optionOrAltSymbol',
     'registerService',
     'shortcutMatchesShortcut',

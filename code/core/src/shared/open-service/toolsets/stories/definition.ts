@@ -3,6 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import * as v from 'valibot';
 
 import {
+  OpenServiceMissingEmbedOriginError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -24,8 +25,9 @@ import {
   formatPreviewStories,
   previewInstructions,
 } from './format.ts';
+import { findStoryIds } from './find-story-ids.ts';
 import { previewStories } from './preview-stories.ts';
-import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
+import { storyInputArraySchema, storyInputSchema, storyQuerySuffix } from './story-input.ts';
 import { detectUnreachableFiles } from './unreachable-files.ts';
 
 const previewSuccessSchema = v.object({
@@ -34,13 +36,13 @@ const previewSuccessSchema = v.object({
   previewUrl: v.pipe(v.string(), v.description('Direct URL to open the story preview.')),
 });
 
-const previewFailureSchema = v.object({
+const unresolvedStorySchema = v.object({
   input: storyInputSchema,
   error: v.string(),
 });
 
 const previewOutputSchema = v.object({
-  stories: v.array(v.union([previewSuccessSchema, previewFailureSchema])),
+  stories: v.array(v.union([previewSuccessSchema, unresolvedStorySchema])),
   instructions: v.pipe(
     v.optional(v.string()),
     v.description('What to do with these preview URLs next. Follow it.')
@@ -48,6 +50,18 @@ const previewOutputSchema = v.object({
 });
 
 export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
+
+const embedSuccessSchema = v.object({
+  title: v.string(),
+  name: v.string(),
+  embedUrl: v.pipe(v.string(), v.description('URL to use as the `src` of an `<iframe>`.')),
+});
+
+const embedOutputSchema = v.object({
+  stories: v.array(v.union([embedSuccessSchema, unresolvedStorySchema])),
+});
+
+type EmbedStoriesOutput = v.InferOutput<typeof embedOutputSchema>;
 
 const changeStatusSchema = v.union([
   v.literal('status-value:new'),
@@ -299,6 +313,48 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             ok: true,
             data,
             markdown: formatPreviewStories(data),
+            telemetry: {
+              payload: {
+                inputStoryCount: input.stories.length,
+                outputStoryCount: data.stories.length,
+              },
+            },
+          };
+        },
+      },
+      embed: {
+        input: v.strictObject({
+          stories: storyInputArraySchema,
+        }),
+        output: embedOutputSchema,
+        title: 'Get story embed URLs',
+        requiresDevServer: true,
+        description: `Get URLs that each render a single story, for the \`src\` of an \`<iframe>\` in HTML you author.
+Unlike preview URLs, they also load inside sandboxed frames.
+Each URL contains a secret that grants read access to this Storybook's dev server: only put it in content shown to the user, never send it to an external service.`,
+        handler: async (input, ctx): Promise<ToolsetOutcome<EmbedStoriesOutput, never>> => {
+          if (!ctx.embedOrigin) {
+            throw new OpenServiceMissingEmbedOriginError();
+          }
+          const index = await storyIndex.getIndex();
+          const data: EmbedStoriesOutput = {
+            stories: findStoryIds(index, input.stories).map((story) =>
+              'errorMessage' in story
+                ? { input: story.input, error: story.errorMessage }
+                : {
+                    title: story.entry.title,
+                    name: story.entry.name,
+                    embedUrl: `${ctx.embedOrigin}/iframe.html?id=${story.entry.id}&viewMode=story${storyQuerySuffix(story.input)}`,
+                  }
+            ),
+          };
+
+          return {
+            ok: true,
+            data,
+            markdown: data.stories.map((story) =>
+              'error' in story ? story.error : story.embedUrl
+            ),
             telemetry: {
               payload: {
                 inputStoryCount: input.stories.length,

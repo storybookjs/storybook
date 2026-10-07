@@ -8,6 +8,7 @@ import { connect } from 'node:net';
 import { stringify } from 'telejson';
 import type { WebSocketServer } from 'ws';
 
+import { logger } from '../../../node-logger/index.ts';
 import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
 
 const mockToken = 'test-token-123';
@@ -249,6 +250,24 @@ describe('ServerChannelTransport', () => {
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+  });
+
+  it('quietly rejects a sandboxed frame even with a valid token', () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.end = vi.fn();
+    createTransport(server);
+
+    const request = {
+      url: `/storybook-server-channel?token=${mockToken}`,
+      headers: { origin: 'null' },
+    } as any;
+
+    server.listeners('upgrade')[0](request, socket, Buffer.from(''));
+
+    expect(socket.end).toHaveBeenCalledWith('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('accepts connections without origin header when the token is valid', () => {

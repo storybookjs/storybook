@@ -192,7 +192,7 @@ project-local child host instead.
 
 Methods marked `requiresDevServer` intercept only in **local** mode (start-your-Storybook
 guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from
-the instance record. See [cli/tools/README.md](../../cli/tools/README.md).
+the instance record, and `stories.embed` reads its `embedOrigin`. See [cli/tools/README.md](../../cli/tools/README.md).
 
 ### Query
 

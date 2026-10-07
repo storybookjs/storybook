@@ -290,7 +290,7 @@ export async function buildDevStandalone(
     channel,
   };
 
-  const { managerResult, previewResult } = await buildOrThrow(async () =>
+  const { managerResult, previewResult, embedOrigin } = await buildOrThrow(async () =>
     storybookDevServer(fullOptions, server)
   );
 
@@ -298,6 +298,7 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
+    embedOrigin,
     configDir: options.configDir,
     mcp,
     port,

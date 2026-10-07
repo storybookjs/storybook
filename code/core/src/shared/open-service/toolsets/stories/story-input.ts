@@ -1,5 +1,6 @@
 import * as v from 'valibot';
 
+import { buildArgsParam } from '../../../../router/utils.ts';
 import { toMcpToolName } from '../../toolset-names.ts';
 
 /**
@@ -71,3 +72,9 @@ Use IDs discovered from ${toMcpToolName('docs.list')} (withStoryIds=true) or ${t
 export const storyInputArraySchema = v.array(storyInputSchema);
 
 export type StoryInput = v.InferOutput<typeof storyInputSchema>;
+
+export function storyQuerySuffix(input: StoryInput) {
+  const args = buildArgsParam({}, input.props ?? {});
+  const globals = buildArgsParam({}, input.globals ?? {});
+  return `${args ? `&args=${args}` : ''}${globals ? `&globals=${globals}` : ''}`;
+}

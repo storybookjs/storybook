@@ -57,9 +57,10 @@ export class ServerChannelTransport {
 
         if (!options.skipValidation) {
           // Browsers always send Origin on upgrades, so an absent one means a non-browser client,
-          // which the token alone authenticates.
+          // which the token alone authenticates. Sandboxed frames send `null`: expected, so refused
+          // without a warning.
           const { origin } = request.headers;
-          if (origin && !isValidHost(new URL(origin).host, options)) {
+          if (origin && (origin === 'null' || !isValidHost(new URL(origin).host, options))) {
             socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
             return;
           }

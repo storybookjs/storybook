@@ -357,6 +357,18 @@ export class OpenServiceMissingOriginError extends StorybookError {
   }
 }
 
+export class OpenServiceMissingEmbedOriginError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceMissingEmbedOriginError',
+      category: Category.CORE_COMMON,
+      code: 33,
+      message:
+        'This Storybook has no embed origin. Embeds need a dev server that listens on localhost: start it without a network-only `--host`, or restart it if it was started before an upgrade.',
+    });
+  }
+}
+
 /**
  * Why a review was refused. The toolset renders this as the opening of a longer, coaching message,
  * so it lives here rather than in both places — the two copies had already drifted apart once.

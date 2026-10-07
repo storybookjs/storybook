@@ -51,7 +51,14 @@ import type {
  */
 type AttachedInProcess = {
   runtime: ToolsRuntime;
-  record: { url: string; pid: number; configDir?: string; cwd?: string; port?: number };
+  record: {
+    url: string;
+    pid: number;
+    configDir?: string;
+    cwd?: string;
+    port?: number;
+    embedOrigin?: string;
+  };
   siblings?: StorybookInstanceRecord[];
   connection: { close(): void; disconnected: Promise<never> };
 };
@@ -212,6 +219,7 @@ async function createAttachedTools(
       ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
       ...(siblings ? { siblings } : {}),
     },
+    embedOrigin: inProcess.record.embedOrigin,
     close: () => inProcess.connection.close(),
     disconnected: inProcess.connection.disconnected,
   });
@@ -338,6 +346,7 @@ function createToolsHost(args: {
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  embedOrigin?: string;
   close?: () => void;
   disconnected?: Promise<never>;
 }): AttachedTools;
@@ -350,14 +359,16 @@ function createToolsHost(args: {
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  embedOrigin?: string;
   close?: () => void;
   disconnected?: Promise<never>;
 }): Tools {
-  const { mode, host, requestedMode, runtime, clientInfo, storybook } = args;
+  const { mode, host, requestedMode, runtime, clientInfo, storybook, embedOrigin } = args;
   const baseCtx: ToolsetCtx = {
     transport: transportFor(clientInfo.kind),
     getService: runtime.getService,
     ...(storybook.url ? { origin: storybook.url } : {}),
+    ...(embedOrigin ? { embedOrigin } : {}),
   };
   let closed = false;
 

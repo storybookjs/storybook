@@ -492,3 +492,47 @@
     console.warn('unable to connect to top frame for connecting dev tools');
   }
 </script>
+<script>
+  // A sandboxed frame without `allow-same-origin` throws on any storage access.
+  {
+    class MemoryStorage {
+      #items = new Map();
+
+      getItem(key) {
+        return this.#items.get(String(key)) ?? null;
+      }
+
+      setItem(key, value) {
+        this.#items.set(String(key), String(value));
+      }
+
+      removeItem(key) {
+        this.#items.delete(String(key));
+      }
+
+      clear() {
+        this.#items.clear();
+      }
+
+      key(index) {
+        return [...this.#items.keys()][index] ?? null;
+      }
+
+      get length() {
+        return this.#items.size;
+      }
+    }
+    for (const name of ['localStorage', 'sessionStorage']) {
+      try {
+        void window[name];
+      } catch {
+        Object.defineProperty(window, name, { value: new MemoryStorage() });
+      }
+    }
+    try {
+      void document.cookie;
+    } catch {
+      Object.defineProperty(document, 'cookie', { get: () => '', set() {} });
+    }
+  }
+</script>

@@ -66,6 +66,8 @@ export type RuntimeInstanceRecord = {
   port: number;
   /** Token authenticating clients against this instance's WebSocket channel. */
   token?: string;
+  /** Origin that serves the preview to sandboxed frames. A secret, like `token`. */
+  embedOrigin?: string;
   agent?: string;
   storybookVersion: string;
   /**
@@ -139,6 +141,7 @@ export function createRuntimeInstanceRecord({
   agent,
   configDir,
   cwd = process.cwd(),
+  embedOrigin,
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
   now = new Date(),
@@ -152,6 +155,7 @@ export function createRuntimeInstanceRecord({
   agent?: string;
   configDir?: string;
   cwd?: string;
+  embedOrigin?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   now?: Date;
@@ -173,6 +177,7 @@ export function createRuntimeInstanceRecord({
     url: storybookBaseUrl,
     port,
     ...(token ? { token } : {}),
+    ...(embedOrigin ? { embedOrigin } : {}),
     ...(agent ? { agent } : {}),
     storybookVersion,
     ...(storybookPath ? { storybookPath } : {}),
@@ -386,6 +391,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   agent = detectRuntimeInstanceAgent(),
   configDir,
   cwd,
+  embedOrigin,
   mcp,
   pid,
   port,
@@ -398,6 +404,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   agent?: string;
   configDir?: string;
   cwd?: string;
+  embedOrigin?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
   port: number;
@@ -411,6 +418,7 @@ export async function writeStorybookRuntimeInstanceRecord({
     agent,
     configDir,
     cwd,
+    embedOrigin,
     mcp,
     pid,
     port,

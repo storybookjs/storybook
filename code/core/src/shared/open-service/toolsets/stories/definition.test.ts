@@ -9,6 +9,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
 import {
+  OpenServiceMissingEmbedOriginError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -163,6 +164,45 @@ beforeEach(() => {
 afterAll(() => {
   cwd.mockRestore();
   vol.reset();
+});
+
+describe('stories.embed', () => {
+  const embedOrigin = 'http://sb-secret.localhost:6006';
+  const runEmbed = (stories: Array<Record<string, unknown>>, ctx: ToolsetCtx) =>
+    invokeToolsetMethod(toolset, 'embed', v.parse(toolset.methods.embed.input, { stories }), ctx);
+
+  it('returns one iframe URL under the embed origin per resolved story', async () => {
+    const outcome = await runEmbed([{ storyId: 'button--primary' }, { storyId: 'gone--story' }], {
+      ...cliCtx,
+      embedOrigin,
+    });
+
+    const embedUrl = `${embedOrigin}/iframe.html?id=button--primary&viewMode=story`;
+    expect(outcome.data).toEqual({
+      stories: [
+        { title: 'Button', name: 'Primary', embedUrl },
+        { input: { storyId: 'gone--story' }, error: 'No story found for story ID "gone--story"' },
+      ],
+    });
+    expect(outcome.markdown).toEqual([embedUrl, 'No story found for story ID "gone--story"']);
+  });
+
+  it('appends args and globals to the iframe URL', async () => {
+    const outcome = await runEmbed(
+      [{ storyId: 'button--primary', props: { label: 'Hi' }, globals: { theme: 'dark' } }],
+      { ...cliCtx, embedOrigin }
+    );
+
+    expect(outcome.markdown).toEqual([
+      `${embedOrigin}/iframe.html?id=button--primary&viewMode=story&args=label:Hi&globals=theme:dark`,
+    ]);
+  });
+
+  it('throws when the Storybook has no embed origin', async () => {
+    await expect(runEmbed([{ storyId: 'button--primary' }], cliCtx)).rejects.toBeInstanceOf(
+      OpenServiceMissingEmbedOriginError
+    );
+  });
 });
 
 describe('stories.preview', () => {

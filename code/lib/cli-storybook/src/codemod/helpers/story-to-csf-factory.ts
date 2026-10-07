@@ -5,18 +5,10 @@ import { logger } from 'storybook/internal/node-logger';
 import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
-import { addImportToTop, cleanupTypeImports } from './csf-factories-utils.ts';
+import { addImportToTop } from './csf-factories-utils.ts';
+import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
-
-const typesDisallowList = [
-  'Story',
-  'StoryFn',
-  'StoryObj',
-  'Meta',
-  'MetaObj',
-  'ComponentStory',
-  'ComponentMeta',
-];
+import { wrapArgsMocks } from './wrap-args-mocks.ts';
 
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
@@ -152,6 +144,10 @@ export async function storyToCsfFactory(
 
   const hasMeta = !!csf._meta;
 
+  const customArgs = customArgsTypes(programNode, csf._metaAnnotations.component);
+  const metaArgsTypes: t.TSType[] = [];
+  const storyCallees: { callee: t.MemberExpression; argsTypes: t.TSType[] }[] = [];
+
   // Combined set for quick lookup
   const storyFileImports = new Set([...namespaceStoryImports, ...namedStoryImports]);
 
@@ -164,35 +160,29 @@ export async function storyToCsfFactory(
     let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
 
     if (t.isIdentifier(id) && init) {
+      const argsTypes: t.TSType[] = [];
+
       // Remove type annotations e.g. A<B> in `const Story: A<B> = {};`
       if (id.typeAnnotation) {
+        argsTypes.push(...customArgs.read(id.typeAnnotation));
         id.typeAnnotation = null;
       }
 
       // Remove type annotations e.g. A<B> in `const Story = {} satisfies A<B>;`
       if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
+        argsTypes.push(...customArgs.read(init.typeAnnotation));
         init = init.expression;
       }
 
-      if (t.isObjectExpression(init)) {
-        // Wrap the object in `meta.story()`
-
+      if (t.isObjectExpression(init) || t.isArrowFunctionExpression(init)) {
+        // Wrap the object in `meta.story()`, or transform CSF1 to `meta.story(<originalFn>)`
+        const callee = t.memberExpression(t.identifier(metaVariableName), t.identifier('story'));
         declarator.init = t.callExpression(
-          t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-          init.properties.length === 0 ? [] : [init]
+          callee,
+          t.isObjectExpression(init) && init.properties.length === 0 ? [] : [init]
         );
-        if (t.isIdentifier(id)) {
-          transformedStoryExports.add(exportName);
-        }
-      } else if (t.isArrowFunctionExpression(init)) {
-        // Transform CSF1 to meta.story({ render: <originalFn> })
-        declarator.init = t.callExpression(
-          t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-          [init]
-        );
-        if (t.isIdentifier(id)) {
-          transformedStoryExports.add(exportName);
-        }
+        storyCallees.push({ callee, argsTypes });
+        transformedStoryExports.add(exportName);
       }
     }
   });
@@ -451,22 +441,32 @@ export async function storyToCsfFactory(
     return info.source;
   }
 
+  // A custom args type that every story has is written once, on the meta.
+  const sharedArgsTypes =
+    storyCallees.length === transformedStoryExports.size
+      ? customArgs.shared(storyCallees.map(({ argsTypes }) => argsTypes))
+      : [];
+
   // modify meta
   if (csf._metaPath) {
+    const previewMeta = (input: t.ObjectExpression) =>
+      t.callExpression(
+        t.memberExpression(
+          customArgs.typed(sbConfigImportName, [...metaArgsTypes, ...sharedArgsTypes]),
+          t.identifier('meta')
+        ),
+        [input]
+      );
+
     let declaration = csf._metaPath.node.declaration;
     if (t.isTSSatisfiesExpression(declaration) || t.isTSAsExpression(declaration)) {
+      metaArgsTypes.push(...customArgs.read(declaration.typeAnnotation));
       declaration = declaration.expression;
     }
 
     if (t.isObjectExpression(declaration)) {
       const metaVariable = t.variableDeclaration('const', [
-        t.variableDeclarator(
-          t.identifier(metaVariableName),
-          t.callExpression(
-            t.memberExpression(t.identifier(sbConfigImportName), t.identifier('meta')),
-            [declaration]
-          )
-        ),
+        t.variableDeclarator(t.identifier(metaVariableName), previewMeta(declaration)),
       ]);
       csf._metaPath.replaceWith(metaVariable);
     } else if (t.isIdentifier(declaration)) {
@@ -483,18 +483,20 @@ export async function storyToCsfFactory(
       if (binding && binding.path.isVariableDeclarator()) {
         const originalName = declaration.name;
 
+        if (t.isIdentifier(binding.path.node.id)) {
+          metaArgsTypes.push(...customArgs.read(binding.path.node.id.typeAnnotation));
+        }
+
         // Always rename the meta variable to 'meta'
         binding.path.node.id = t.identifier(metaVariableName);
 
         let init = binding.path.node.init;
         if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
+          metaArgsTypes.push(...customArgs.read(init.typeAnnotation));
           init = init.expression;
         }
         if (t.isObjectExpression(init)) {
-          binding.path.node.init = t.callExpression(
-            t.memberExpression(t.identifier(sbConfigImportName), t.identifier('meta')),
-            [init]
-          );
+          binding.path.node.init = previewMeta(init);
         }
 
         // Update all references to the original name
@@ -504,6 +506,13 @@ export async function storyToCsfFactory(
       // Remove the default export, it's not needed anymore
       csf._metaPath.remove();
     }
+  }
+
+  for (const { callee, argsTypes } of storyCallees) {
+    callee.object = customArgs.typed(metaVariableName, argsTypes, [
+      ...metaArgsTypes,
+      ...sharedArgsTypes,
+    ]);
   }
 
   if (previewImport) {
@@ -521,6 +530,7 @@ export async function storyToCsfFactory(
     addImportToTop(programNode, configImport);
   }
 
+  wrapArgsMocks(csf._ast);
   removeUnusedTypes(programNode, csf._ast);
 
   return printCsf(csf).code;

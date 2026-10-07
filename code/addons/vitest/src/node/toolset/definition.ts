@@ -110,7 +110,7 @@ export type TestRunFailureData = Extract<
   a11y: boolean;
 };
 
-const runInputSchema = v.object({
+const runInputSchema = v.strictObject({
   stories: v.optional(
     v.pipe(
       storyInputArraySchema,

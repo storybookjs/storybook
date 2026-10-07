@@ -24,6 +24,9 @@ export class LitInheritanceMixin extends SelectableMixin(BaseElement) {
   @property({ type: Number })
   count = 1;
 
+  @property({ attribute: 'base-label' })
+  override baseLabel = 'Final';
+
   render() {
     return html`<p>${this.baseLabel} ${this.mixedActive} ${this.count}</p>`;
   }

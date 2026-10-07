@@ -99,7 +99,9 @@ export const Color = {
         name: 'string',
       },
       description: 'someColor description',
-      defaultValue: '#ff0',
+      table: {
+        defaultValue: { summary: '#ff0' },
+      },
       control: {
         type: 'color',
       },

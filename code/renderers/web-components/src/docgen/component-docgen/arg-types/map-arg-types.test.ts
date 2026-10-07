@@ -48,97 +48,65 @@ function orderInvariantCases(): MapArgTypesCase[] {
     { kind: 'field', name: 'a', type: { text: 'boolean' } },
     { kind: 'field', name: 'b', type: { text: 'number' } },
   ];
-  const inheritedAndOwnFields: ManifestClassField[] = [
-    {
-      kind: 'field',
-      name: 'x',
-      inheritedFrom: { name: 'BaseCard' },
-      type: { text: 'string' },
-    } as ManifestClassField,
-    { kind: 'field', name: 'x', type: { text: 'number' } },
-  ];
-
   return [
-    ...permutations(attributesForOneField).map(
-      (attributes, index): MapArgTypesCase => ({
-        name: `two attributes on one field are order-independent ${index + 1}`,
-        declaration: declaration({
-          attributes,
-          members: [{ kind: 'field', name: 'v', type: { text: 'string' } }],
-        }),
-        expected: {
-          v: {
-            name: 'v',
-            description: undefined,
-            type: { name: 'string' },
-            table: {
-              category: 'attributes',
-              type: { summary: 'string' },
-              defaultValue: { summary: undefined },
-            },
-          },
-          value: {
-            name: 'value',
-            description: undefined,
-            type: { name: 'string' },
-            table: {
-              category: 'attributes',
-              type: { summary: 'string' },
-              defaultValue: { summary: undefined },
-            },
+    ...permutations(attributesForOneField).map((attributes, index): MapArgTypesCase => ({
+      name: `two attributes on one field are order-independent ${index + 1}`,
+      declaration: declaration({
+        attributes,
+        members: [{ kind: 'field', name: 'v', type: { text: 'string' } }],
+      }),
+      expected: {
+        v: {
+          name: 'v',
+          description: undefined,
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'string' },
+            defaultValue: { summary: undefined },
           },
         },
-      })
-    ),
-    ...permutations(collidingFields).map(
-      (members, index): MapArgTypesCase => ({
-        name: `attribute key wins over same-name field ${index + 1}`,
-        declaration: declaration({
-          attributes: [{ name: 'b', fieldName: 'a' }],
-          members,
-        }),
-        expected: {
-          a: {
-            name: 'a',
-            description: undefined,
-            type: { name: 'boolean' },
-            table: {
-              category: 'properties',
-              type: { summary: 'boolean' },
-              defaultValue: { summary: undefined },
-            },
-          },
-          b: {
-            name: 'b',
-            description: undefined,
-            type: { name: 'boolean' },
-            table: {
-              category: 'attributes',
-              type: { summary: 'boolean' },
-              defaultValue: { summary: undefined },
-            },
+        value: {
+          name: 'value',
+          description: undefined,
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'string' },
+            defaultValue: { summary: undefined },
           },
         },
-      })
-    ),
-    ...permutations(inheritedAndOwnFields).map(
-      (members, index): MapArgTypesCase => ({
-        name: `own field beats inherited field ${index + 1}`,
-        declaration: declaration({ members }),
-        expected: {
-          x: {
-            name: 'x',
-            description: undefined,
-            type: { name: 'number' },
-            table: {
-              category: 'properties',
-              type: { summary: 'number' },
-              defaultValue: { summary: undefined },
-            },
+      },
+    })),
+    ...permutations(collidingFields).map((members, index): MapArgTypesCase => ({
+      name: `attribute key wins over same-name field ${index + 1}`,
+      declaration: declaration({
+        attributes: [{ name: 'b', fieldName: 'a' }],
+        members,
+      }),
+      expected: {
+        a: {
+          name: 'a',
+          description: undefined,
+          type: { name: 'boolean' },
+          table: {
+            category: 'properties',
+            type: { summary: 'boolean' },
+            defaultValue: { summary: undefined },
           },
         },
-      })
-    ),
+        b: {
+          name: 'b',
+          description: undefined,
+          type: { name: 'boolean' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'boolean' },
+            defaultValue: { summary: undefined },
+          },
+        },
+      },
+    })),
   ];
 }
 
@@ -620,11 +588,6 @@ describe('mapArgTypes', () => {
             type: { summary: 'CustomEvent<{ value: string }>' },
           },
         },
-        onMyChange: {
-          name: 'onMyChange',
-          action: { name: 'my-change' },
-          table: { disable: true },
-        },
       },
     },
     {
@@ -672,11 +635,6 @@ describe('mapArgTypes', () => {
             type: { summary: 'CustomEvent' },
           },
         },
-        onReady: {
-          name: 'onReady',
-          action: { name: 'ready' },
-          table: { disable: true },
-        },
       },
     },
     {
@@ -702,11 +660,6 @@ describe('mapArgTypes', () => {
             jsDocTags: { deprecated: 'Use my-dismiss instead.' },
           },
         },
-        onMyClose: {
-          name: 'onMyClose',
-          action: { name: 'my-close' },
-          table: { disable: true },
-        },
       },
     },
     {
@@ -731,11 +684,6 @@ describe('mapArgTypes', () => {
             category: 'events',
             type: { summary: 'CustomEvent<{ value: number }>' },
           },
-        },
-        onValueChange: {
-          name: 'onValueChange',
-          action: { name: 'value-change' },
-          table: { disable: true },
         },
       },
     },
@@ -771,56 +719,6 @@ describe('mapArgTypes', () => {
               summary:
                 '(index: number, options?: { smooth: boolean } = { smooth: true }) => boolean',
             },
-          },
-        },
-      },
-    },
-    {
-      name: 'own method beats an inherited duplicate',
-      declaration: declaration({
-        members: [
-          { kind: 'method', name: 'focusIt', description: 'own override' },
-          {
-            kind: 'method',
-            name: 'focusIt',
-            description: 'inherited base',
-            inheritedFrom: { name: 'Base' },
-          },
-        ],
-      }),
-      expected: {
-        'focusIt-method': {
-          name: 'focusIt',
-          description: 'own override',
-          type: { name: 'function' },
-          table: {
-            category: 'methods',
-            type: { summary: '()' },
-          },
-        },
-      },
-    },
-    {
-      name: 'own method beats an inherited duplicate when inherited is listed first',
-      declaration: declaration({
-        members: [
-          {
-            kind: 'method',
-            name: 'focusIt',
-            description: 'inherited base',
-            inheritedFrom: { name: 'Base' },
-          },
-          { kind: 'method', name: 'focusIt', description: 'own override' },
-        ],
-      }),
-      expected: {
-        'focusIt-method': {
-          name: 'focusIt',
-          description: 'own override',
-          type: { name: 'function' },
-          table: {
-            category: 'methods',
-            type: { summary: '()' },
           },
         },
       },
@@ -865,11 +763,6 @@ describe('mapArgTypes', () => {
             category: 'events',
             type: { summary: 'CustomEvent' },
           },
-        },
-        onReady: {
-          name: 'onReady',
-          action: { name: 'ready' },
-          table: { disable: true },
         },
         'actions-slot': {
           name: 'actions',

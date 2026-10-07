@@ -22,7 +22,6 @@ Type:
   developmentModeForBuild?: boolean;
   experimentalCodeExamples?: boolean;
   experimentalDocgenServer?: boolean;
-  experimentalReview?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
   interactions?: boolean;
@@ -175,6 +174,8 @@ Default: `true`
 
 Enable [change detection](../../configure/user-interface/change-detection.mdx). When enabled, Storybook monitors your git working tree and the builder's module graph to show which stories are new, modified, or related to code changes. Changed stories are displayed with status icons in the sidebar.
 
+[Agentic review](../../ai/agentic-review.mdx) builds on change detection, so disabling this feature also disables review.
+
 {/* prettier-ignore-start */}
 
 <CodeSnippets path="main-config-features-change-detection.md" />
@@ -282,20 +283,6 @@ Opt in with the configuration below.
 </If>
 
 <If renderer="react">
-
-## `experimentalReview`
-
-(⚠️ **Experimental**)
-
-Type: `boolean`
-
-Default: `false`
-
-Enable the [experimental agentic review](../../ai/agentic-review.mdx) feature, which allows you to review the work an AI agent has done in your Storybook.
-
-Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
-
-<CodeSnippets path="main-config-features-experimental-review.md" />
 
 ## `experimentalTestSyntax`
 

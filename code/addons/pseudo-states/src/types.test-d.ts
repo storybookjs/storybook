@@ -3,6 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 import { definePreview } from 'storybook/internal/csf';
 
 import pseudoAddon from './index.ts';
+import type { PseudoParameter } from './types.ts';
 import '../../../renderers/react/src/typings.ts';
 
 describe('addon parameters are injected to csf factory', () => {
@@ -42,6 +43,6 @@ describe('addon parameters are injected to csf factory', () => {
         },
       },
     });
-    expectTypeOf(meta.input.parameters!.pseudo!).toExtend<{ focus: boolean }>();
+    expectTypeOf(meta.input.parameters!.pseudo).toEqualTypeOf<PseudoParameter | undefined>();
   });
 });

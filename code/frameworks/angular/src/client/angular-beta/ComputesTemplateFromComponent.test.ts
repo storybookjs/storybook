@@ -47,9 +47,7 @@ describe('angular template decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `
-        The content
-      `,
+      template: ` The content `,
     })
     class WithoutSelectorComponent {}
 
@@ -321,9 +319,7 @@ describe('angular source decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `
-        The content
-      `,
+      template: ` The content `,
     })
     class WithoutSelectorComponent {}
 
@@ -628,7 +624,6 @@ describe('angular source decorator', () => {
             options: ['Normal', 'High'],
             type: 'radio',
           },
-          defaultValue: undefined,
           table: {
             category: 'inputs',
           },
@@ -658,7 +653,6 @@ describe('angular source decorator', () => {
             options: ['Normal', 'High'],
             type: 'radio',
           },
-          defaultValue: undefined,
           table: {
             category: 'inputs',
           },

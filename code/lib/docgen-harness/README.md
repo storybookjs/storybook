@@ -71,9 +71,9 @@ src/
 │   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
 │                                 # optional custom-elements.v2.json/custom-elements.wca.json,
 │                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
-│                                 # osa-argtypes.snapshot, osa-payload.snapshot,
+│                                 # osa-argtypes.snapshot, osa-payload.snapshot, osa-api-description.snapshot,
 │                                 # optional osa-v2-argtypes.snapshot and osa-v2-payload.snapshot,
-│                                 # snippet-<story>.snapshot
+│                                 # snippet-<story>.snapshot, osa-snippet-<story>.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
     ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
@@ -150,18 +150,18 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.
-  Optional hand-written 2.1.0 and WCA manifests live next to the capture and record under a prefix; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
+  Optional hand-written 2.1.0, WCA and unflattened manifests live next to the capture and record under a prefix, except the server argTypes of an unflattened manifest, which must equal the capture's; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
 
 ### Svelte story formats
 
 The Svelte harness records two snippet paths because Storybook currently has two production sources:
 
-- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by the published `@storybook/addon-svelte-csf` package pinned in devDependencies (5.1.2).
-  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the addon's runtime.
+- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by Svelte CSF in `@storybook/svelte`.
+  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the Svelte CSF runtime.
 - `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
-`story-descriptions.snapshot` records the docs description parameters that addon-svelte-csf creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
+`story-descriptions.snapshot` records the docs description parameters that Svelte CSF creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
 
-`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the addon's own indexer from `input.stories.svelte`.
+`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the Svelte CSF indexer from `input.stories.svelte`.
 It records `osa-argtypes.snapshot`, `osa-payload.snapshot`, and `osa-description.snapshot` even while the provider returns nothing, so each provider PR shows its progress as a snapshot diff; `osa-argtypes.snapshot` is ratcheted against its own previous recording.
 Parity with the legacy `argtypes.snapshot` is a per-fixture `it.fails` red marker in the same file: when one turns red, add the fixture to `LEGACY_PARITY`, which makes the legacy comparison a hard requirement for it.
 
@@ -203,11 +203,12 @@ The `stencil-props` capture shows that analyzer 0.11.0 emits attributes for Sten
 
 ### Server-side recorder (web-components)
 
-`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, and `osa-payload.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, `osa-payload.snapshot`, and `osa-api-description.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+`web-components-baselines.test.ts` also runs the renderer's default `render` with the docgen-server flag on for every story without a custom render, and records `osa-snippet-<story>.snapshot`, gated current-or-better against the legacy `snippet-<story>.snapshot`.
 The server recorder records CEM inputs only; the WCA shape is covered by the runtime recorder and rejected on the server path by the renderer's unit tests.
-The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes.
+The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes or the api description.
 The server mapper keys events, methods, slots, CSS parts and CSS states as `<name>-event`, `<name>-method`, `<name|default>-slot`, `<name>-part` and `<name>-state`, so they never collide with attributes.
-It keeps the legacy `on<Name>` action twins, and the legacy gate matches re-keyed rows by `name`.
+The server mapper has no `on<Name>` action twins because events bind from `<name>-event` args, and the legacy gate waives those preview-only action args.
 `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
 The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
 The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.
@@ -312,7 +313,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
 - An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
-- Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
+- The analyzer flattens superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/custom-elements.json` is a regression baseline; its hand-written `custom-elements.unflattened.json` keeps the members on the parents and records the legacy gap under the `unflattened-` prefix; the server baselines assert that the resolver closes it by yielding the capture's argTypes exactly, including for an undocumented override. Same-manifest references carry the package name the way `@lit-labs/analyzer` output does.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 
 ## Issue-linked cases (web-components)

@@ -30,8 +30,8 @@ describe('creating a Callout in a monorepo UI package', () => {
     ).toBe(true);
   });
 
-  test('runs story tests after the change and finishes with them passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['callout'] });
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['callout'], cwd: 'packages/ui' });
   });
 
   describe.runIf(review)('when review is enabled', () => {

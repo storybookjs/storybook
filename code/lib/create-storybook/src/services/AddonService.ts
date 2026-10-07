@@ -43,10 +43,6 @@ export class AddonService {
       addons.push('@storybook/addon-onboarding');
     }
 
-    if (features.has(Feature.AI)) {
-      addons.push('@storybook/addon-mcp');
-    }
-
     return addons;
   }
 

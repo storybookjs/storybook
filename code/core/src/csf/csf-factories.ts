@@ -46,12 +46,12 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
  */
 export type PreviewAddonEntry = PreviewAddon<never> | Record<string, unknown>;
 
-type InferAddonTypes<T> = T extends PreviewAddon<infer C> ? C : never;
-
-type IntersectAddonTypes<U> = [U] extends [never] ? unknown : UnionToIntersection<U>;
-
-export type InferTypes<T extends PreviewAddonEntry[]> = AddonTypes &
-  IntersectAddonTypes<InferAddonTypes<T[number]>> & { csf4: true };
+export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
+  T[number],
+  PreviewAddon<never>
+>[] extends PreviewAddon<infer C>[]
+  ? C & { csf4: true }
+  : never;
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[] = []>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }

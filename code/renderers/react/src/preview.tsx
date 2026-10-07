@@ -10,6 +10,7 @@ import type {
   StoryArgs,
   TypedMetaArgKeys,
   Preview,
+  PreviewAddon,
   PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
@@ -58,7 +59,7 @@ export function __definePreview<Addons extends PreviewAddonEntry[] = []>(
       reactArgTypesAnnotations,
       reactDocsAnnotations,
       ...(input.addons ?? []),
-    ],
+    ] as PreviewAddon<InferTypes<Addons>>[],
   }) as ReactPreview<ReactTypes & InferTypes<Addons>>;
 
   const defineMeta = preview.meta.bind(preview);

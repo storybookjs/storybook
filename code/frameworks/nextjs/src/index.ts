@@ -1,4 +1,9 @@
-import type { AddonTypes, InferTypes, PreviewAddon, PreviewAddonEntry } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferTypes,
+  PreviewAddon,
+  PreviewAddonEntry,
+} from 'storybook/internal/csf';
 import type { ProjectAnnotations } from 'storybook/internal/types';
 
 import type { ReactPreview } from '@storybook/react';

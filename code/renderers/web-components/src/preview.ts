@@ -8,6 +8,7 @@ import type {
   TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
+  PreviewAddon,
   PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
@@ -50,7 +51,11 @@ export function __definePreview<Addons extends PreviewAddonEntry[] = []>(
 ): WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,
-    addons: [webComponentsAnnotations, webComponentsDocsAnnotations, ...(input.addons ?? [])],
+    addons: [
+      webComponentsAnnotations,
+      webComponentsDocsAnnotations,
+      ...(input.addons ?? []),
+    ] as PreviewAddon<InferTypes<Addons>>[],
   }) as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
 
   return preview;

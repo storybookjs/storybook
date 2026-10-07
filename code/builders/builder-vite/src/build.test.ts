@@ -7,7 +7,7 @@ import type { Presets } from 'storybook/internal/types';
 
 import type { InlineConfig, Plugin } from 'vite';
 import { resolveConfig, build as viteBuild } from 'vite';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import { build } from './build.ts';
 
@@ -18,6 +18,11 @@ vi.mock(import('vite'), async (importOriginal) => ({
   build: vi.fn(async () => []),
   loadConfigFromFile: vi.fn(async () => null),
 }));
+
+beforeEach(() => {
+  vi.mocked(existsSync).mockReturnValue(true);
+  vi.mocked(cp).mockResolvedValue();
+});
 
 afterEach(() => {
   vi.mocked(existsSync).mockReset();
@@ -45,9 +50,6 @@ it('keeps Vite from copying the public dir during its own build', async () => {
 });
 
 it('does not copy public assets when viteFinal disables publicDir', async () => {
-  vi.mocked(existsSync).mockReturnValue(true);
-  vi.mocked(cp).mockResolvedValue();
-
   await build({
     configType: 'PRODUCTION',
     configDir: '/project/.storybook',
@@ -63,9 +65,6 @@ it('does not copy public assets when viteFinal disables publicDir', async () => 
 });
 
 it('copies a custom publicDir from viteFinal without overriding staticDirs or Storybook files', async () => {
-  vi.mocked(existsSync).mockReturnValue(true);
-  vi.mocked(cp).mockResolvedValue();
-
   await build({
     configType: 'PRODUCTION',
     configDir: '/project/.storybook',

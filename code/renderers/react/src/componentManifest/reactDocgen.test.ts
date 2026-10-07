@@ -62,6 +62,27 @@ test('matches a unique default export when its local name matches another compon
   expect(match?.actualName).toBe('Button');
 });
 
+test('matches an asserted default component ahead of a different file default export', async () => {
+  const skeleton = await parse(
+    'export default function ButtonSkeleton() { return <span /> }',
+    'Button.Skeleton.tsx'
+  );
+  const button = await parse(
+    'type ButtonComponent = typeof Button; const Button = () => <button />; export default Button as ButtonComponent;',
+    'Button.tsx'
+  );
+
+  expect(button[0].exportName).toBeUndefined();
+  const match = getMatchingDocgen([...skeleton, ...button], {
+    componentName: 'Button',
+    importName: 'default',
+    localImportName: 'Button',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('Button');
+});
+
 describe('parseWithReactDocgen exportName coverage', () => {
   test('inline default export function declaration', async () => {
     const code = dedent /* tsx */ `

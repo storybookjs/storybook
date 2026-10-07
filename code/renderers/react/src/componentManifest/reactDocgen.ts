@@ -47,16 +47,20 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
 
   if (component.importName === 'default') {
     const defaultExports = docgens.filter((docgen) => docgen.exportName === 'default');
-    if (defaultExports.length === 1) {
-      return defaultExports[0];
-    }
+    const uniqueDefault = defaultExports.length === 1 ? defaultExports[0] : undefined;
     const names = new Set([component.localImportName, component.componentName].filter(Boolean));
     const matchingName = docgens.find(
       (docgen) =>
         names.has(docgen.actualName) || (docgen.displayName && names.has(docgen.displayName))
     );
-    if (matchingName) {
+    if (
+      matchingName &&
+      (!uniqueDefault || matchingName.definedInFile !== uniqueDefault.definedInFile)
+    ) {
       return matchingName;
+    }
+    if (uniqueDefault) {
+      return uniqueDefault;
     }
   }
 

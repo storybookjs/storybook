@@ -30,8 +30,6 @@ export interface WebComponentsRuntimeManifestOptions {
   setterNames: SetterName[];
   /** Manifest path relative to the config dir; `null` when `package.json#customElements` already names it. */
   manifestPath: string | null;
-  /** `features.experimentalDocgenServer` is unset, so the fix turns it on. */
-  enableDocgenServer: boolean;
 }
 
 export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptions> = {
@@ -48,7 +46,7 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
       getRendererName(mainConfig) !== SupportedRenderer.WEB_COMPONENTS ||
       !mainConfigPath ||
       !previewConfigPath ||
-      mainConfig.features?.experimentalDocgenServer === false
+      mainConfig.features?.docgenServer === false
     ) {
       return null;
     }
@@ -82,7 +80,6 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
     return {
       setterNames,
       manifestPath,
-      enableDocgenServer: mainConfig.features?.experimentalDocgenServer === undefined,
     };
   },
 
@@ -105,9 +102,6 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
           } else {
             main.set(['framework', 'options', 'customElementsManifest'], result.manifestPath);
           }
-        }
-        if (result.enableDocgenServer) {
-          main.set(['features', 'experimentalDocgenServer'], true);
         }
       },
     },

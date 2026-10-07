@@ -67,7 +67,6 @@ const runWith = async (
     result: {
       setterNames: ['setCustomElementsManifest'],
       manifestPath: '../custom-elements.json',
-      enableDocgenServer: false,
       ...result,
     },
     mainConfigPath: MAIN,
@@ -123,9 +122,9 @@ describe('check', (): void => {
       expected: null,
     },
     {
-      name: 'skips when experimentalDocgenServer is false',
+      name: 'skips when docgenServer is false',
       files: { [PREVIEW]: PREVIEW_WITH_MANIFEST },
-      mainConfig: { features: { experimentalDocgenServer: false } } as never,
+      mainConfig: { features: { docgenServer: false } } as never,
       expected: null,
     },
     {
@@ -139,7 +138,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
-        enableDocgenServer: true,
       },
     },
     {
@@ -151,7 +149,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
-        enableDocgenServer: true,
       },
     },
     {
@@ -169,7 +166,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
-        enableDocgenServer: true,
       },
     },
     {
@@ -186,7 +182,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElements'],
         manifestPath: '../custom-elements.json',
-        enableDocgenServer: true,
       },
     },
     {
@@ -227,16 +222,6 @@ describe('check', (): void => {
       expected: null,
     },
     {
-      name: 'reports enableDocgenServer as false when the flag is already true',
-      files: { '/project/custom-elements.json': CEM, [PREVIEW]: PREVIEW_WITH_MANIFEST },
-      mainConfig: { features: { experimentalDocgenServer: true } } as never,
-      expected: {
-        setterNames: ['setCustomElementsManifest'],
-        manifestPath: '../custom-elements.json',
-        enableDocgenServer: false,
-      },
-    },
-    {
       name: 'uses package.json customElements for an inline object argument',
       files: {
         '/project/custom-elements.json': CEM,
@@ -250,7 +235,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: null,
-        enableDocgenServer: true,
       },
     },
     {
@@ -267,7 +251,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
-        enableDocgenServer: true,
       },
     },
     {
@@ -285,7 +268,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
-        enableDocgenServer: true,
       },
     },
     {
@@ -328,7 +310,6 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../preview-elements.json',
-        enableDocgenServer: true,
       },
     },
   ];
@@ -455,23 +436,21 @@ describe('run', (): void => {
     `);
   });
 
-  it('sets experimentalDocgenServer only when unset', async (): Promise<void> => {
-    await runWith({ enableDocgenServer: true });
+  it('does not add features when main has no features', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [MAIN]: "export default { framework: { name: '@storybook/web-components-vite' } };",
+    });
+
+    await runWith();
 
     expect(vol.readFileSync(MAIN, 'utf8')).toMatchInlineSnapshot(`
-      "export default {
-        framework: {
-          name: '@storybook/web-components-vite',
+      "export default { framework: {
+        name: '@storybook/web-components-vite',
 
-          options: {
-            customElementsManifest: '../custom-elements.json'
-          }
-        },
-
-        features: {
-          experimentalDocgenServer: true
+        options: {
+          customElementsManifest: '../custom-elements.json'
         }
-      };"
+      } };"
     `);
   });
 

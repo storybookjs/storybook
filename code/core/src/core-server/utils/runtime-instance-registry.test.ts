@@ -603,6 +603,20 @@ describe('writeRuntimeInstanceRecord', () => {
 });
 
 describe('writeStorybookRuntimeInstanceRecord', () => {
+  it('records the embed base URL without a trailing slash', async () => {
+    const registration = await writeStorybookRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      embedAddress: 'http://localhost:6006/embed/secret/',
+      port: 6006,
+      registerCleanup: false,
+      registryDir: makeTempDir(),
+      storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
+    });
+
+    expect(registration.record.embedUrl).toBe('http://localhost:6006/embed/secret');
+  });
+
   it('records Claude preview provenance from the preview launcher environment', async () => {
     vi.stubEnv('CLAUDE_AGENT_SDK_VERSION', '0.1.0');
     vi.stubEnv('AI_AGENT', undefined);

@@ -29,6 +29,7 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
 import { storybookDevServer } from './dev-server.ts';
 import { getWsToken } from './presets/wsToken.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
+import { getEmbedBase } from './utils/embed-access.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
@@ -298,6 +299,7 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
+    embedAddress: new URL(getEmbedBase().slice(1), localAddress).href,
     configDir: options.configDir,
     mcp,
     port,

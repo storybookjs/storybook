@@ -24,6 +24,7 @@ import {
   formatPreviewStories,
   previewInstructions,
 } from './format.ts';
+import { embedStories } from './embed-stories.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
 import { detectUnreachableFiles } from './unreachable-files.ts';
@@ -48,6 +49,18 @@ const previewOutputSchema = v.object({
 });
 
 export type PreviewStoriesOutput = v.InferOutput<typeof previewOutputSchema>;
+
+const embedSuccessSchema = v.object({
+  title: v.string(),
+  name: v.string(),
+  embedUrl: v.pipe(v.string(), v.description('URL to use as the `src` of an `<iframe>`.')),
+});
+
+const embedOutputSchema = v.object({
+  stories: v.array(v.union([embedSuccessSchema, previewFailureSchema])),
+});
+
+export type EmbedStoriesOutput = v.InferOutput<typeof embedOutputSchema>;
 
 const changeStatusSchema = v.union([
   v.literal('status-value:new'),
@@ -299,6 +312,41 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             ok: true,
             data,
             markdown: formatPreviewStories(data),
+            telemetry: {
+              payload: {
+                inputStoryCount: input.stories.length,
+                outputStoryCount: data.stories.length,
+              },
+            },
+          };
+        },
+      },
+      embed: {
+        input: v.strictObject({
+          stories: v.pipe(storyInputArraySchema, v.description('Stories to embed.')),
+        }),
+        output: embedOutputSchema,
+        title: 'Get story embed URLs',
+        requiresDevServer: true,
+        description: `Use this tool to get URLs that render one story on its own, to use as the \`src\` of an \`<iframe>\` in HTML you author, such as an in-app visualization that shows live stories next to your own content.
+Unlike preview URLs, these also load inside sandboxed frames.
+Each URL carries a secret that grants read access to this Storybook's dev server: put it only in content shown to the user, never send it to an external service.`,
+        handler: async (input, ctx): Promise<ToolsetOutcome<EmbedStoriesOutput, never>> => {
+          if (!ctx.embedOrigin) {
+            throw new OpenServiceMissingOriginError({ toolsetId: 'stories', methodName: 'embed' });
+          }
+          const data = embedStories({
+            embedOrigin: ctx.embedOrigin,
+            index: await storyIndex.getIndex(),
+            stories: input.stories,
+          });
+
+          return {
+            ok: true,
+            data,
+            markdown: data.stories.map((story) =>
+              'error' in story ? story.error : story.embedUrl
+            ),
             telemetry: {
               payload: {
                 inputStoryCount: input.stories.length,

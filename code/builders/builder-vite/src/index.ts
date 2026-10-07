@@ -10,6 +10,7 @@ import type { ViteDevServer } from 'vite';
 import { build as viteBuild } from './build.ts';
 import { createHeadlessViteChangeDetectionAdapter } from './change-detection-adapter/headless.ts';
 import { createViteChangeDetectionAdapter } from './change-detection-adapter/index.ts';
+import { rebaseIframeHtml } from './rebase-iframe-html.ts';
 import type { ViteBuilder } from './types.ts';
 import { createViteServer } from './vite-server.ts';
 
@@ -27,9 +28,10 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
       }
     );
     const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
+    const { storybookEmbedBase } = req as typeof req & { storybookEmbedBase?: string };
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;
-    res.write(transformed);
+    res.write(storybookEmbedBase ? rebaseIframeHtml(transformed, storybookEmbedBase) : transformed);
     res.end();
   };
 }

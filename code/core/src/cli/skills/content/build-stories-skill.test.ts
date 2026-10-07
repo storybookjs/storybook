@@ -39,10 +39,10 @@ describe('buildStoriesSkill', () => {
     expect(text).not.toMatch(/\breview/i);
   });
 
-  it('says that stories are untested when the project cannot run story tests', () => {
+  it("points at the project's own runner when Storybook has no test command", () => {
     const text = buildStoriesSkill({ ...everything, testSupported: false, a11yEnabled: false });
 
-    expect(text).toContain('cannot run story tests');
+    expect(text).toContain('Storybook has no test command in this project');
     expect(text).not.toContain('test run');
     expect(text).not.toContain('accessibility violations');
   });

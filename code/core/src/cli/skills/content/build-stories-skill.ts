@@ -143,7 +143,7 @@ function testSection({ testSupported, a11yEnabled }: StoriesSkillInputs): string
   if (!testSupported) {
     return `## Test
 
-This project cannot run story tests: \`@storybook/addon-vitest\` is not set up. Say so in your answer and do not claim the stories are tested.`;
+Storybook has no test command in this project: \`@storybook/addon-vitest\` is not set up. When the project has its own way to run story tests (a \`package.json\` script, for example with \`@storybook/test-runner\`), run that. Otherwise say in your answer that the stories were not tested.`;
   }
   const a11y = a11yEnabled
     ? '\n\nThe run also reports accessibility violations. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user.'

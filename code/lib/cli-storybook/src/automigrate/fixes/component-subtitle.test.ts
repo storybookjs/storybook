@@ -123,6 +123,19 @@ describe('component-subtitle', () => {
     `);
   });
 
+  it('keeps an explicit story subtitle over a legacy story subtitle', async () => {
+    const { failures, story } = await migrate({
+      story: [
+        'export default {};',
+        "export const Primary = { parameters: { componentSubtitle: 'Legacy story', docs: { subtitle: 'Current story' } } };",
+      ].join('\n'),
+    });
+
+    expect(failures).toEqual([]);
+    expect(story).toContain("subtitle: 'Current story'");
+    expect(story).not.toContain('componentSubtitle');
+  });
+
   it('skips a file it cannot migrate safely and reports it', async () => {
     const story =
       "import { shared } from './shared';\nexport default { parameters: { ...shared, componentSubtitle: 'A' } };";

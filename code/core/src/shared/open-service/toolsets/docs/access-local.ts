@@ -2,7 +2,7 @@
  * Local docs access with registration-based selection between the two engines.
  *
  * Docgen-server mode moves docs data out of the served manifests and into the open services, but
- * the `experimentalDocgenServer` flag alone is not enough to read from them: the docgen
+ * the `docgenServer` flag alone is not enough to read from them: the docgen
  * registrations are skipped for manager-only builds and when no docgen worker is available. Every
  * consumer that reads the local Storybook — core's own docs toolset and a composition's local
  * source alike — must make the same choice, so it lives here: the services when they actually

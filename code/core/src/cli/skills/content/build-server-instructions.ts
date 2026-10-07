@@ -1,9 +1,6 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
-import { getDocsToolsetInstructions } from '../../../shared/open-service/toolsets/docs/instructions.ts';
 import devInstructions from './instructions/dev-instructions.md';
-import legacyDevInstructions from './instructions/legacy-dev-instructions.md';
-import legacyTestInstructions from './instructions/legacy-test-instructions.md';
-import reviewDocsInstructions from './instructions/review-docs-instructions.md';
+import docsInstructions from './instructions/docs-instructions.md';
 import testInstructions from './instructions/test-instructions.md';
 import type { SkillTransport } from './skill-refs.ts';
 import { getSkillRef } from './skill-refs.ts';
@@ -65,71 +62,71 @@ export function buildServerInstructions({
   ];
   const reviewEnabled = options.reviewEnabled ?? false;
 
-  if (options.devEnabled && !reviewEnabled) {
-    sections.push(
-      legacyDevInstructions
-        .replace(
-          '{{STORY_INSTRUCTIONS_STEP}}',
-          `Before creating or editing components or stories, call **${skillRef('write-story')}**.\n- Treat its output as the source of truth for imports, story patterns, and testing conventions.`
-        )
-        .replaceAll('{{PREVIEW_STORIES}}', ref('stories.preview'))
-        .trim()
-    );
-  } else if (options.devEnabled) {
-    // Review is on. review-create is the terminal step for visual work, so
-    // the after-change step feeds the review instead of ending in preview
-    // URLs — a competing "call stories-preview after every change"
-    // instruction reads as an alternative ending and agents take it
-    // (observed on the Codex MCP path: change done, preview links shared,
-    // review never published).
-    const changeDetection = options.changeDetectionEnabled ?? false;
-    const graphSupported = options.moduleGraphSupported ?? false;
-    const previewStoriesStep = changeDetection
-      ? `After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **${ref('stories.changed')}** to discover the affected stories.`
-      : graphSupported
-        ? `After editing anything that changes how the UI looks, call **${ref('stories.findByComponent')}** with the files you touched.`
-        : 'After editing anything that changes how the UI looks, identify the affected stories.';
+  if (options.devEnabled) {
+    const afterEditing =
+      'After editing anything that changes how the UI looks — components, stories, styles, themes, tokens —';
+    const discoverStoriesStep = options.changeDetectionEnabled
+      ? `${afterEditing} call **${ref('stories.changed')}** to discover the affected stories.`
+      : options.moduleGraphSupported
+        ? `${afterEditing} call **${ref('stories.findByComponent')}** with the files you touched.`
+        : `${afterEditing} identify the affected stories.`;
+    // With review on, discovery feeds review-create: a stories-preview step here reads as an
+    // alternative ending and agents take it.
+    const previewStoriesStep = reviewEnabled
+      ? discoverStoriesStep
+      : `${discoverStoriesStep} Then call **${ref('stories.preview')}** for the most relevant ones, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.`;
     // Terse pointer only: the full link-presentation rule reaches the agent
     // through the get-storybook-story-instructions output (getFinalLinksGuidance)
     // and the review-create and stories-preview tool results, which are
     // never truncated.
-    const finalLinksStep = `End your final response with the review section from **${ref('review.create')}**'s result — never substitute preview URLs. **${ref('stories.preview')}** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.`;
+    const finalLinksStep = reviewEnabled
+      ? `End your final response with the review section from **${ref('review.create')}**'s result — never substitute preview URLs. **${ref('stories.preview')}** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.`
+      : 'Include every returned preview URL in your final response.';
     sections.push(
       devInstructions
         .replace(
           '{{STORY_INSTRUCTIONS_STEP}}',
           `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
         )
-        .replaceAll('{{GET_STORIES_BY_COMPONENT}}', ref('stories.findByComponent'))
         .replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
         .replace('{{FINAL_LINKS_STEP}}', finalLinksStep)
         .replace(
           '{{DISPLAY_REVIEW_STEP}}',
-          `\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **${ref('review.create')}** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.`
+          reviewEnabled
+            ? `\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **${ref('review.create')}** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.`
+            : ''
+        )
+        .replace(
+          '{{FIND_BY_COMPONENT_STEP}}',
+          options.moduleGraphSupported
+            ? ` **${ref('stories.findByComponent')}** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.`
+            : ''
         )
         .trim()
     );
   }
 
-  // The test and docs sections follow the same split as the dev section. With review on, the whole
-  // instruction set must fit under the 2,048-char client truncation limit alongside the review
-  // workflow, so slimmed variants (same rules, terser wording) replace the full texts.
   if (options.testSupported) {
     sections.push(
-      (reviewEnabled ? testInstructions : legacyTestInstructions)
+      testInstructions
         .replaceAll('{{RUN_STORY_TESTS}}', ref('test.run'))
+        // With the review workflow, this line would not fit under the 2,048 chars MCP clients keep.
+        .replace(
+          '{{FOCUSED_RUNS_STEP}}',
+          reviewEnabled
+            ? ''
+            : '\n- Use focused runs while iterating, then a broad pass before handoff when scope is unclear or wide.'
+        )
         .trim()
     );
   }
 
   if (options.docsEnabled) {
     sections.push(
-      (reviewEnabled
-        ? reviewDocsInstructions
-            .replaceAll('{{DOCS_LIST}}', ref('docs.list'))
-            .replaceAll('{{DOCS_SHOW}}', ref('docs.show'))
-        : getDocsToolsetInstructions(transport)
-      ).trim()
+      docsInstructions
+        .replaceAll('{{DOCS_LIST}}', ref('docs.list'))
+        .replaceAll('{{DOCS_SHOW}}', ref('docs.show'))
+        .trim()
     );
   }
 

@@ -392,7 +392,9 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '**CRITICAL: Never hallucinate component properties!**'
     );
-    expect(parsedResponse.result.instructions).toContain('## Multi-Source Requests');
+    expect(parsedResponse.result.instructions).toContain(
+      'scope multi-source requests with `storybookId`'
+    );
     expect(parsedResponse.result.instructions).not.toContain(
       '## UI Building and Story Writing Workflow'
     );

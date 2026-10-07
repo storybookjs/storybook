@@ -23,7 +23,7 @@ export type ToolsetCtx = {
    */
   origin?: string;
   /** Base URL that serves the preview to sandboxed frames. Holding it grants read access. */
-  embedOrigin?: string;
+  embedBaseUrl?: string;
   getService: ToolsetGetService;
 };
 

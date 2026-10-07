@@ -41,7 +41,7 @@ export class AttachUnavailableError extends StorybookError {
       instances: data.instances.map((instance) => {
         const rest = { ...instance };
         delete rest.token;
-        delete rest.embedUrl;
+        delete rest.embedBaseUrl;
         return rest;
       }),
       remediation: data.remediation,

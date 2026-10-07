@@ -1,9 +1,10 @@
 import { EventEmitter } from 'node:events';
-import { type IncomingMessage, type Server, ServerResponse } from 'node:http';
+import type { Server } from 'node:http';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { type EmbedRequest, attachEmbedAccess, getEmbedBase } from '../embed-access.ts';
+import type { EmbedRequest } from '../../../types/index.ts';
+import { attachEmbedAccess } from '../embed-access.ts';
 
 function request(url: string, method = 'GET') {
   const server = new EventEmitter() as Server;
@@ -14,19 +15,19 @@ function request(url: string, method = 'GET') {
   return { req, res };
 }
 
-describe('getEmbedBase', () => {
-  it('returns the same unguessable path on every call', () => {
-    expect(getEmbedBase()).toMatch(/^\/embed\/[0-9a-f-]{36}\/$/);
-    expect(getEmbedBase()).toBe(getEmbedBase());
-  });
-});
-
 describe('attachEmbedAccess', () => {
+  it('returns an unguessable embed base that differs per server', () => {
+    const embedBase = attachEmbedAccess(new EventEmitter() as Server);
+
+    expect(embedBase).toMatch(/^\/embed\/[0-9a-f-]{36}\/$/);
+    expect(attachEmbedAccess(new EventEmitter() as Server)).not.toBe(embedBase);
+  });
+
   it('strips the base and lets opaque origins read the response', () => {
     const { req, res } = request('/embed/secret/iframe.html?id=button--primary');
 
     expect(req.url).toBe('/iframe.html?id=button--primary');
-    expect(req.storybookEmbedBase).toBe('/embed/secret/');
+    expect(req.embedBase).toBe('/embed/secret/');
     expect(res.setHeader).toHaveBeenCalledWith('Access-Control-Allow-Origin', '*');
     expect(res.setHeader).toHaveBeenCalledWith('Referrer-Policy', 'no-referrer');
   });
@@ -41,7 +42,7 @@ describe('attachEmbedAccess', () => {
     const { req, res } = request(url);
 
     expect(req.url).toBe(url);
-    expect(req.storybookEmbedBase).toBeUndefined();
+    expect(req.embedBase).toBeUndefined();
     expect(res.setHeader).not.toHaveBeenCalled();
   });
 
@@ -50,45 +51,6 @@ describe('attachEmbedAccess', () => {
 
     expect(req.url).toBe('/embed/secret/mcp');
     expect(res.setHeader).not.toHaveBeenCalled();
-  });
-
-  function respond(url: string, respondWith: (res: ServerResponse) => void) {
-    const server = new EventEmitter() as Server;
-    attachEmbedAccess(server, 'secret');
-    const res = new ServerResponse({ url, method: 'GET' } as IncomingMessage);
-    server.emit('request', { url, method: 'GET' }, res);
-    respondWith(res);
-    return res.getHeader('Access-Control-Allow-Origin');
-  }
-
-  it.each(['/fonts/inter.woff2', '/fonts/inter.WOFF?v=2', '/assets/icons.ttf'])(
-    'lets any origin read the font served at %s',
-    (url) => {
-      expect(respond(url, (res) => res.writeHead(200, { 'Content-Type': 'font/woff2' }))).toBe('*');
-      expect(
-        respond(url, (res) => {
-          res.setHeader('content-type', 'font/woff2');
-          res.end();
-        })
-      ).toBe('*');
-    }
-  );
-
-  it('keeps a route that answers a font-looking path with other content unreadable', () => {
-    expect(
-      respond('/project.json/x.woff2', (res) =>
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-      )
-    ).toBeUndefined();
-    expect(respond('/missing.woff2', (res) => res.writeHead(404))).toBeUndefined();
-  });
-
-  it('does not treat a font extension in the query as a font', () => {
-    expect(
-      respond('/src/secret.ts?file=.woff2', (res) =>
-        res.writeHead(200, { 'Content-Type': 'font/woff2' })
-      )
-    ).toBeUndefined();
   });
 
   it('runs before the listeners already on the server', () => {

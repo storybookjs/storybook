@@ -1,9 +1,8 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { buildArgsParam } from '../../../../router/utils.ts';
 import type { PreviewStoriesOutput } from './definition.ts';
 import { findStoryIds } from './find-story-ids.ts';
-import type { StoryInput } from './story-input.ts';
+import { type StoryInput, storyQueryParams } from './story-input.ts';
 
 export type PreviewStoriesParams = {
   origin: string;
@@ -34,17 +33,7 @@ export function previewStories({
     }
 
     const indexEntry = story.entry;
-    let previewUrl = `${origin}/?path=/story/${indexEntry.id}`;
-
-    const argsParam = buildArgsParam({}, story.input.props ?? {});
-    if (argsParam) {
-      previewUrl += `&args=${argsParam}`;
-    }
-
-    const globalsParam = buildArgsParam({}, story.input.globals ?? {});
-    if (globalsParam) {
-      previewUrl += `&globals=${globalsParam}`;
-    }
+    const previewUrl = `${origin}/?path=/story/${indexEntry.id}${storyQueryParams(story.input)}`;
 
     result.push({
       title: indexEntry.title,

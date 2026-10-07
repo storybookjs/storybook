@@ -9,6 +9,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
 import {
+  OpenServiceMissingEmbedBaseError,
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
@@ -166,17 +167,17 @@ afterAll(() => {
 });
 
 describe('stories.embed', () => {
-  const embedOrigin = 'http://localhost:6006/embed/secret';
+  const embedBaseUrl = 'http://localhost:6006/embed/secret';
   const runEmbed = (stories: Array<Record<string, unknown>>, ctx: ToolsetCtx) =>
     invokeToolsetMethod(toolset, 'embed', v.parse(toolset.methods.embed.input, { stories }), ctx);
 
   it('returns one iframe URL under the embed origin per resolved story', async () => {
     const outcome = await runEmbed([{ storyId: 'button--primary' }, { storyId: 'gone--story' }], {
       ...cliCtx,
-      embedOrigin,
+      embedBaseUrl,
     });
 
-    const embedUrl = `${embedOrigin}/iframe.html?id=button--primary&viewMode=story`;
+    const embedUrl = `${embedBaseUrl}/iframe.html?id=button--primary&viewMode=story`;
     expect(outcome.data).toEqual({
       stories: [
         { title: 'Button', name: 'Primary', embedUrl },
@@ -186,9 +187,20 @@ describe('stories.embed', () => {
     expect(outcome.markdown).toEqual([embedUrl, 'No story found for story ID "gone--story"']);
   });
 
-  it('rejects when the adapter has no embed origin to build URLs from', async () => {
+  it('appends args and globals to the iframe URL', async () => {
+    const outcome = await runEmbed(
+      [{ storyId: 'button--primary', props: { label: 'Hi' }, globals: { theme: 'dark' } }],
+      { ...cliCtx, embedBaseUrl }
+    );
+
+    expect(outcome.markdown).toEqual([
+      `${embedBaseUrl}/iframe.html?id=button--primary&viewMode=story&args=label:Hi&globals=theme:dark`,
+    ]);
+  });
+
+  it('tells the caller to restart a Storybook that does not serve embeds', async () => {
     await expect(runEmbed([{ storyId: 'button--primary' }], cliCtx)).rejects.toBeInstanceOf(
-      OpenServiceMissingOriginError
+      OpenServiceMissingEmbedBaseError
     );
   });
 });

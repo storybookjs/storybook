@@ -73,9 +73,15 @@ test.describe('story embeds in a sandboxed frame', () => {
         Promise.all([
           fetch('/index.json').then((response) => response.ok),
           fetch(new Request('/index.json')).then((response) => response.ok),
+          new Promise((resolve) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', '/index.json');
+            xhr.onloadend = () => resolve(xhr.status === 200);
+            xhr.send();
+          }),
         ])
       )
-    ).toStrictEqual([true, true]);
+    ).toStrictEqual([true, true, true]);
   });
 
   test('keeps the story blank through its normal URL', async ({ page }) => {

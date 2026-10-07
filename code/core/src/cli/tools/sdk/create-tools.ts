@@ -57,7 +57,7 @@ type AttachedInProcess = {
     configDir?: string;
     cwd?: string;
     port?: number;
-    embedUrl?: string;
+    embedBaseUrl?: string;
   };
   siblings?: StorybookInstanceRecord[];
   connection: { close(): void; disconnected: Promise<never> };
@@ -219,7 +219,7 @@ async function createAttachedTools(
       ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
       ...(siblings ? { siblings } : {}),
     },
-    embedOrigin: inProcess.record.embedUrl,
+    embedBaseUrl: inProcess.record.embedBaseUrl,
     close: () => inProcess.connection.close(),
     disconnected: inProcess.connection.disconnected,
   });
@@ -346,7 +346,7 @@ function createToolsHost(args: {
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
-  embedOrigin?: string;
+  embedBaseUrl?: string;
   close?: () => void;
   disconnected?: Promise<never>;
 }): AttachedTools;
@@ -359,7 +359,7 @@ function createToolsHost(args: {
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
-  embedOrigin?: string;
+  embedBaseUrl?: string;
   close?: () => void;
   disconnected?: Promise<never>;
 }): Tools {
@@ -368,7 +368,7 @@ function createToolsHost(args: {
     transport: transportFor(clientInfo.kind),
     getService: runtime.getService,
     ...(storybook.url ? { origin: storybook.url } : {}),
-    ...(args.embedOrigin ? { embedOrigin: args.embedOrigin } : {}),
+    ...(args.embedBaseUrl ? { embedBaseUrl: args.embedBaseUrl } : {}),
   };
   let closed = false;
 

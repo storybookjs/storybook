@@ -357,6 +357,18 @@ export class OpenServiceMissingOriginError extends StorybookError {
   }
 }
 
+export class OpenServiceMissingEmbedBaseError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceMissingEmbedBaseError',
+      category: Category.CORE_COMMON,
+      code: 33,
+      message:
+        'The running Storybook does not serve story embeds. It was started with an older version; restart it, then retry.',
+    });
+  }
+}
+
 /**
  * Why a review was refused. The toolset renders this as the opening of a longer, coaching message,
  * so it lives here rather than in both places — the two copies had already drifted apart once.

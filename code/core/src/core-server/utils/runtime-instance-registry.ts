@@ -68,9 +68,10 @@ export type RuntimeInstanceRecord = {
   token?: string;
   /**
    * Base URL that serves the preview to sandboxed (opaque-origin) frames, e.g.
-   * `${embedUrl}/iframe.html?id=…`. Holding it grants read access to everything the dev server serves.
+   * `${embedBaseUrl}/iframe.html?id=…`. Holding it grants read access to everything the dev server
+   * serves.
    */
-  embedUrl?: string;
+  embedBaseUrl?: string;
   agent?: string;
   storybookVersion: string;
   /**
@@ -144,7 +145,7 @@ export function createRuntimeInstanceRecord({
   agent,
   configDir,
   cwd = process.cwd(),
-  embedAddress,
+  embedBase,
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
   now = new Date(),
@@ -158,7 +159,7 @@ export function createRuntimeInstanceRecord({
   agent?: string;
   configDir?: string;
   cwd?: string;
-  embedAddress?: string;
+  embedBase?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   now?: Date;
@@ -180,7 +181,7 @@ export function createRuntimeInstanceRecord({
     url: storybookBaseUrl,
     port,
     ...(token ? { token } : {}),
-    ...(embedAddress ? { embedUrl: getStorybookBaseUrl(embedAddress) } : {}),
+    ...(embedBase ? { embedBaseUrl: storybookBaseUrl + embedBase.replace(/\/$/, '') } : {}),
     ...(agent ? { agent } : {}),
     storybookVersion,
     ...(storybookPath ? { storybookPath } : {}),
@@ -394,7 +395,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   agent = detectRuntimeInstanceAgent(),
   configDir,
   cwd,
-  embedAddress,
+  embedBase,
   mcp,
   pid,
   port,
@@ -407,7 +408,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   agent?: string;
   configDir?: string;
   cwd?: string;
-  embedAddress?: string;
+  embedBase?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
   port: number;
@@ -421,7 +422,7 @@ export async function writeStorybookRuntimeInstanceRecord({
     agent,
     configDir,
     cwd,
-    embedAddress,
+    embedBase,
     mcp,
     pid,
     port,

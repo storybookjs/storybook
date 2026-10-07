@@ -14,7 +14,6 @@ import { ChangeDetectionService } from './change-detection/change-detection-serv
 import { getStatusStoreByTypeId } from './stores/status.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { doTelemetry } from './utils/doTelemetry.ts';
-import { attachEmbedAccess } from './utils/embed-access.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getCachingMiddleware } from './utils/get-caching-middleware.ts';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware.ts';
@@ -35,7 +34,6 @@ export async function storybookDevServer(
   const core = await options.presets.apply('core');
 
   const app = polka({ server });
-  attachEmbedAccess(server);
 
   const workingDir = process.cwd();
   const configDir = options.configDir;

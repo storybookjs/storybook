@@ -603,10 +603,10 @@ describe('writeRuntimeInstanceRecord', () => {
 });
 
 describe('writeStorybookRuntimeInstanceRecord', () => {
-  it('records the embed base URL without a trailing slash', async () => {
+  it('records the embed base as an absolute URL without a trailing slash', async () => {
     const registration = await writeStorybookRuntimeInstanceRecord({
       address: 'http://localhost:6006/',
-      embedAddress: 'http://localhost:6006/embed/secret/',
+      embedBase: '/embed/secret/',
       port: 6006,
       registerCleanup: false,
       registryDir: makeTempDir(),
@@ -614,7 +614,7 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
       token: 'ws-token',
     });
 
-    expect(registration.record.embedUrl).toBe('http://localhost:6006/embed/secret');
+    expect(registration.record.embedBaseUrl).toBe('http://localhost:6006/embed/secret');
   });
 
   it('records Claude preview provenance from the preview launcher environment', async () => {

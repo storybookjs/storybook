@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
-import type { Builder, Middleware, Options } from 'storybook/internal/types';
+import type { Builder, EmbedRequest, Middleware, Options } from 'storybook/internal/types';
 
 import type { ViteDevServer } from 'vite';
 
@@ -19,7 +19,7 @@ export { hasVitePlugins } from './utils/has-vite-plugins.ts';
 
 export * from './types.ts';
 
-function iframeHandler(options: Options, server: ViteDevServer): Middleware {
+function iframeHandler(options: Options, server: ViteDevServer): Middleware<EmbedRequest> {
   return async (req, res) => {
     const indexHtml = await readFile(
       fileURLToPath(import.meta.resolve('@storybook/builder-vite/input/iframe.html')),
@@ -28,10 +28,9 @@ function iframeHandler(options: Options, server: ViteDevServer): Middleware {
       }
     );
     const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
-    const { storybookEmbedBase } = req as typeof req & { storybookEmbedBase?: string };
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;
-    res.write(storybookEmbedBase ? rebaseIframeHtml(transformed, storybookEmbedBase) : transformed);
+    res.write(req.embedBase ? rebaseIframeHtml(transformed, req.embedBase) : transformed);
     res.end();
   };
 }

@@ -5,8 +5,9 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
+import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import * as v from 'valibot';
 
@@ -33,6 +34,9 @@ import {
   type ToolsRuntime,
 } from './sdk/index.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+
+// The shared setup stubs the logger; these tests assert what the real one prints.
+vi.mock('storybook/internal/node-logger', async (importOriginal) => importOriginal());
 
 const CONFIG_DIR = '/repo/.storybook';
 
@@ -722,6 +726,20 @@ describe('help', () => {
   });
 });
 
+function captureLoggerOutput() {
+  const chunks: string[] = [];
+  const capture = (chunk: unknown) => {
+    chunks.push(String(chunk));
+    return true;
+  };
+  const spies = [
+    vi.spyOn(process.stdout, 'write').mockImplementation(capture),
+    vi.spyOn(console, 'warn').mockImplementation(capture),
+  ];
+  onTestFinished(() => spies.forEach((spy) => spy.mockRestore()));
+  return () => chunks.join('');
+}
+
 describe('outcome mapping', () => {
   beforeEach(() => {
     clearToolsetRegistry();
@@ -760,6 +778,15 @@ describe('outcome mapping', () => {
               throw error;
             },
           },
+          warn: {
+            title: 'warn',
+            input: v.strictObject({}),
+            description: 'warns while running',
+            handler: async () => {
+              logger.warn('No story files found for the specified pattern');
+              return { ok: true, data: {}, markdown: 'result' };
+            },
+          },
           input: {
             title: 'input',
             input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -785,6 +812,28 @@ describe('outcome mapping', () => {
       output: 'one\n\ntwo',
       outcome: { kind: 'success' },
     });
+  });
+
+  it('keeps warnings logged while the tool runs out of the output', async () => {
+    const printed = captureLoggerOutput();
+    const { deps } = makeDeps();
+
+    const result = await run(['echo', 'warn'], deps);
+
+    expect(result.output).toBe('result');
+    expect(printed()).not.toContain('No story files found');
+    expect(logger.getLogLevel()).toBe('info');
+  });
+
+  it('keeps those warnings when a lower log level was asked for', async () => {
+    const printed = captureLoggerOutput();
+    logger.setLogLevel('debug');
+    onTestFinished(() => logger.setLogLevel('info'));
+    const { deps } = makeDeps();
+
+    await run(['echo', 'warn'], deps);
+
+    expect(printed()).toContain('No story files found');
   });
 
   it('exits 1 on ok: false while still printing the markdown', async () => {

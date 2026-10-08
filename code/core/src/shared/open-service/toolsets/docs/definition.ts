@@ -14,6 +14,7 @@ import {
 import type { AllManifests } from './manifest-formatter/manifest-types.ts';
 import { listSources, type DocsSource } from './multi-source.ts';
 import { RequiresOwnMcpError, type SourceListing } from './sources.ts';
+import { suggestEntries, type DocsCandidate } from './suggest.ts';
 import { estimateTokens } from '../estimate-tokens.ts';
 
 const DOCS_TOOLSET_ID = 'docs';
@@ -59,6 +60,10 @@ export type DocsShowOutput = {
   id: string;
   entry?: ResolvedDocsEntry;
   storybookId?: string;
+  /** Set when `id` was missing from this source and resolved from `storybookId`, the one that has it. */
+  requestedStorybookId?: string;
+  /** Listed entries close to an `id` that resolved to nothing. */
+  suggestions?: DocsCandidate[];
   /** Set when the request named no source, or one that does not exist. */
   sourceError?: string;
   /** Set when the named source can only be read through its own MCP endpoint. */
@@ -190,10 +195,46 @@ Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
 
+/** A ready-to-run `show` call, so a correction never has to be pieced together from prose. */
+function formatShowCall(
+  ctx: ToolsetCtx,
+  { id, storybookId }: { id: string; storybookId?: string }
+) {
+  const tool = getToolName(ctx)(DOCS_METHOD_REFS.show);
+  return ctx.transport === 'cli'
+    ? `${tool} --id ${id}${storybookId ? ` --storybookId ${storybookId}` : ''}`
+    : `${tool} ${JSON.stringify(storybookId ? { id, storybookId } : { id })}`;
+}
+
 /** Not-found message for an unknown component or docs id. */
-function formatEntryNotFound(id: string, storybookId: string | undefined, ctx: ToolsetCtx): string {
+function formatEntryNotFound(
+  { id, storybookId, suggestions }: DocsShowOutput,
+  ctx: ToolsetCtx
+): string {
   const suffix = storybookId ? ` in source "${storybookId}"` : '';
-  return `Component or Docs Entry not found: "${id}"${suffix}. Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components and documentation entries.`;
+  const notFound = `Component or Docs Entry not found: "${id}"${suffix}.`;
+  const listHint = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components and documentation entries.`;
+  if (!suggestions?.length) {
+    return `${notFound} ${listHint}`;
+  }
+  return [
+    notFound,
+    '',
+    'Closest matches:',
+    ...suggestions.map((suggestion) => `- ${suggestion.name}: ${formatShowCall(ctx, suggestion)}`),
+    '',
+    listHint,
+  ].join('\n');
+}
+
+/** Tells the agent an entry came from another source than it asked, and how to ask for it directly. */
+function formatResolvedElsewhere(
+  { id, storybookId, requestedStorybookId }: DocsShowOutput,
+  ctx: ToolsetCtx
+): string {
+  const scope =
+    ctx.transport === 'cli' ? `--storybookId ${storybookId}` : `storybookId "${storybookId}"`;
+  return `> "${id}" is not in source "${requestedStorybookId}"; showing it from source "${storybookId}". Pass ${scope} on follow-up calls for this source.`;
 }
 
 /** Pure renderer for `show`; the handler attaches it to both outcome branches. */
@@ -204,11 +245,16 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
     case 'notice':
       return resolution.message;
     case 'entry-missing':
-      return formatEntryNotFound(data.id, data.storybookId, ctx);
-    case 'found':
-      return resolution.entry.kind === 'doc'
-        ? formatDocsManifest(resolution.entry.doc)
-        : formatComponentManifest(resolution.entry.component);
+      return formatEntryNotFound(data, ctx);
+    case 'found': {
+      const documentation =
+        resolution.entry.kind === 'doc'
+          ? formatDocsManifest(resolution.entry.doc)
+          : formatComponentManifest(resolution.entry.component);
+      return data.requestedStorybookId
+        ? `${formatResolvedElsewhere(data, ctx)}\n\n${documentation}`
+        : documentation;
+    }
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -370,6 +416,50 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
     multiSource ? selectSource(sources, storybookId, ctx) : { access: docsAccess };
 
+  const scopedAccesses: { storybookId?: string; access: DocsAccess }[] = multiSource
+    ? sources!.map(({ source, access: sourceAccess }) => ({
+        storybookId: source.id,
+        access: sourceAccess,
+      }))
+    : [{ access: docsAccess! }];
+
+  /**
+   * Recovers an id the requested source does not have: resolved from the one other source that
+   * has it, or answered with the listed entries closest to it, exact matches in other sources first.
+   * A source that cannot be read is skipped, as it would be when listing.
+   */
+  const recoverMissedId = async (
+    id: string,
+    storybookId: string | undefined
+  ): Promise<Partial<DocsShowOutput>> => {
+    const elsewhere = scopedAccesses.filter((scoped) => scoped.storybookId !== storybookId);
+    const resolved = await Promise.all(
+      elsewhere.map(async (scoped) => ({
+        storybookId: scoped.storybookId,
+        entry: await scoped.access.resolve(id).catch(() => undefined),
+      }))
+    );
+    const hits = resolved.filter((hit) => hit.entry !== undefined);
+    if (hits.length === 1) {
+      return { ...hits[0], requestedStorybookId: storybookId };
+    }
+
+    const listings = await Promise.all(
+      scopedAccesses.map(async (scoped) => ({
+        storybookId: scoped.storybookId,
+        manifests: await scoped.access.list({ withStoryIds: false }).catch(() => undefined),
+      }))
+    );
+    const candidates = listings.flatMap(({ storybookId: listedSource, manifests }) =>
+      [
+        ...Object.values(manifests?.componentManifest.components ?? {}),
+        ...Object.values(manifests?.docsManifest?.docs ?? {}),
+      ].map((listed) => ({ id: listed.id, name: listed.name, storybookId: listedSource }))
+    );
+    const suggestions = suggestEntries(id, candidates);
+    return suggestions.length > 0 ? { suggestions } : {};
+  };
+
   return defineToolset({
     id: DOCS_TOOLSET_ID,
     description: 'Storybook component and docs documentation.',
@@ -426,9 +516,12 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
         handler: async (input, ctx): Promise<ToolsetOutcome<DocsShowOutput>> => {
           const { id, storybookId } = input as { id: string; storybookId?: string };
           const selected = access(storybookId, ctx);
-          const data: DocsShowOutput = selected.sourceError
+          let data: DocsShowOutput = selected.sourceError
             ? { id, storybookId, sourceError: selected.sourceError }
             : { id, storybookId, ...(await resolveFromSource(selected.access!, id)) };
+          if (resolveShow(data).kind === 'entry-missing') {
+            data = { ...data, ...(await recoverMissedId(id, storybookId)) };
+          }
 
           const markdown = renderShow(data, ctx);
 

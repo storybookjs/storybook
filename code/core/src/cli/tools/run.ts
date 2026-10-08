@@ -1,4 +1,5 @@
 import { versions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
@@ -337,6 +338,12 @@ async function dispatchTools(
     });
   }
 
+  // The runtime's warnings, such as an empty stories glob while indexing, would land in the middle of
+  // the result on stdout; the result states what the agent needs. An explicit lower level keeps them.
+  const logLevel = logger.getLogLevel();
+  if (logLevel === 'info') {
+    logger.setLogLevel('error');
+  }
   try {
     const outcome = await tools.call(method.ref, parsed.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
@@ -366,6 +373,8 @@ async function dispatchTools(
       output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
+  } finally {
+    logger.setLogLevel(logLevel);
   }
 }
 

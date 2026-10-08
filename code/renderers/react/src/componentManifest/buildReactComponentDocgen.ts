@@ -52,6 +52,12 @@ export interface ReactComponentManifest extends ComponentManifest {
   [key: string]: unknown;
 }
 
+const ENTRY_POINT_FIELDS = ['exports', 'main', 'module', 'types', 'typings', 'browser'];
+
+/**
+ * The name other code imports the component's package by. An app's own package — private, with no
+ * entry point — cannot be imported by name, so its components keep the import the story wrote.
+ */
 function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
@@ -63,12 +69,12 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
     }
 
     const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
-    return typeof parsed === 'object' &&
-      parsed &&
-      'name' in parsed &&
-      typeof parsed.name === 'string'
-      ? parsed.name
-      : undefined;
+    if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
+      return undefined;
+    }
+    const importable =
+      parsed.private !== true || ENTRY_POINT_FIELDS.some((field) => field in parsed);
+    return importable ? parsed.name : undefined;
   } catch {
     return undefined;
   }

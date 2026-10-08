@@ -840,6 +840,7 @@ export function expectStorybookInstalledFromCheckout(): void {
   }
   const { url, version } = registry;
 
+  expect(existsSync('package-lock.json'), 'Expected Storybook to be installed with npm').toBe(true);
   const lockfile = parseJson(readFileSync('package-lock.json', 'utf8'));
   const installed = Object.entries(
     isRecord(lockfile) && isRecord(lockfile.packages) ? lockfile.packages : {}
@@ -856,7 +857,7 @@ export function expectStorybookInstalledFromCheckout(): void {
       ([, entry]) =>
         isRecord(entry) &&
         entry.version === version &&
-        !(typeof entry.resolved === 'string' && entry.resolved.startsWith(url))
+        !(typeof entry.resolved === 'string' && entry.resolved.startsWith(`${url}-/checkout/`))
     )
     .map(([location]) => location);
   expect(fromNpm, 'Expected these packages to come from the checkout registry').toEqual([]);

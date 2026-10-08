@@ -48,10 +48,11 @@ describe.each(readdirSync(EXPERIMENTS_DIR).filter((file) => file.endsWith('.ts')
         default: ExperimentConfig;
       };
 
-      await experiment.setup?.({} as Sandbox);
+      const sandbox = { writeFiles: vi.fn(), runCommand: vi.fn(), readFile: vi.fn() };
+      await experiment.setup?.(sandbox as unknown as Sandbox);
 
-      const callOrders = Object.values(templates).flatMap((value) =>
-        vi.isMockFunction(value) ? value.mock.invocationCallOrder : []
+      const callOrders = [...Object.values(templates), ...Object.values(sandbox)].flatMap(
+        (value) => (vi.isMockFunction(value) ? value.mock.invocationCallOrder : [])
       );
       expect(vi.mocked(templates.commitSandboxBaseline).mock.invocationCallOrder).toEqual([
         Math.max(...callOrders),

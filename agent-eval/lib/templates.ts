@@ -134,10 +134,10 @@ const CHECKOUT_REGISTRY_INFO_SANDBOX_PATH = path.posix.join(
   '__agent_eval__',
   'checkout-registry.json'
 );
-// The CLIs `create storybook` and `storybook upgrade` run, and every package they can install or
-// upgrade in a React + Vite project: the framework and the core addons. `storybook upgrade` bumps
-// every Storybook package the project has, such as the MCP addon a 10.x upgrade adds. The
-// registry also serves the monorepo packages these depend on.
+// The CLIs `create storybook` and `storybook upgrade` run, the React + Vite framework, and the
+// addons `create storybook` installs. `storybook upgrade` bumps every Storybook package a project
+// has, so the registry also serves the MCP addon, which agents add when they upgrade through a
+// published 10.x on the way to 11. The registry also serves the monorepo packages these depend on.
 const CHECKOUT_REGISTRY_PACKAGES = [
   'create-storybook',
   '@storybook/cli',
@@ -145,10 +145,8 @@ const CHECKOUT_REGISTRY_PACKAGES = [
   '@storybook/react-vite',
   '@storybook/addon-a11y',
   '@storybook/addon-docs',
-  '@storybook/addon-links',
   '@storybook/addon-mcp',
   '@storybook/addon-onboarding',
-  '@storybook/addon-themes',
   '@storybook/addon-vitest',
   'eslint-plugin-storybook',
 ];
@@ -221,9 +219,7 @@ export async function setupSandbox(
       Object.assign(files, await packCheckoutPackages(packages));
       files[CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH] = JSON.stringify(packages.map((pkg) => pkg.name));
       // Keeps the megabytes of tarballs out of the run's captured changes and saved results.
-      const gitignore = files['.gitignore'] ?? '';
-      files['.gitignore'] =
-        `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${CHECKOUT_PACKAGES_DIR}/\n`;
+      ignoreInGit(files, `${CHECKOUT_PACKAGES_DIR}/`);
       packedCheckout = true;
     }
   }
@@ -236,6 +232,8 @@ export async function setupSandbox(
       START_STORYBOOK_SCRIPT_SOURCE_PATH,
       'utf8'
     );
+    // The script's debug dumps land after the baseline commit and are not the agent's changes.
+    ignoreInGit(files, 'mcp-debug/');
   }
 
   await setupTemplateSandbox(sandbox, templateMetadata);
@@ -245,9 +243,15 @@ export async function setupSandbox(
     await decodeCheckoutPackages(sandbox);
   }
 
-  if (packageJson.evals?.checkoutRegistry === true && process.env.EVAL_STORYBOOK_LATEST !== '1') {
+  if (packageJson.evals?.checkoutRegistry === true) {
     await startCheckoutRegistry(sandbox, workspace);
   }
+}
+
+function ignoreInGit(files: Record<string, string>, pattern: string): void {
+  const gitignore = files['.gitignore'] ?? '';
+  files['.gitignore'] =
+    `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${pattern}\n`;
 }
 
 // The harness commits the fixture before `setup` runs, so everything setup writes afterwards (the
@@ -793,7 +797,8 @@ async function startCheckoutRegistry(
       `for f in *.base64; do base64 -d "$f" > "${CHECKOUT_REGISTRY_SANDBOX_DIR}/\${f%.base64}"; done`,
       `mv registry.json server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR}/`,
       `cd .. && rm -rf ${CHECKOUT_REGISTRY_UPLOAD_DIR}`,
-      `setsid node ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR} ${CHECKOUT_REGISTRY_PORT} > ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log 2>&1 < /dev/null &`,
+      // Restarted in a loop, because agents stop a hung Storybook with `killall node`.
+      `setsid bash -c 'while :; do node ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR} ${CHECKOUT_REGISTRY_PORT}; sleep 0.2; done' > ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log 2>&1 < /dev/null &`,
       `for i in $(seq 1 100); do ${ping} && break; sleep 0.1; done`,
       `${ping} || { cat ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log; exit 1; }`,
       // User-level, so it applies wherever the agent runs npm and stays out of the project.

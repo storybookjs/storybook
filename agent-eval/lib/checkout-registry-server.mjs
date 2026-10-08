@@ -18,7 +18,7 @@ const [dir, port] = process.argv.slice(2);
 const origin = `http://127.0.0.1:${port}`;
 /** @type {{ version: string; tarballs: Record<string, string>; workspacePackages: string[] }} */
 const config = JSON.parse(await readFile(join(dir, 'registry.json'), 'utf8'));
-const checkoutMajor = majorOf(config.version);
+const checkoutLine = releaseLine(config.version);
 const workspacePackages = new Set(config.workspacePackages);
 
 const tarballs = new Map();
@@ -36,7 +36,9 @@ for (const [name, file] of Object.entries(config.tarballs)) {
   });
 }
 
-createServer(async (req, res) => {
+const packuments = new Map();
+
+const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? '/', origin);
     if (url.pathname === '/-/ping') {
@@ -52,7 +54,17 @@ createServer(async (req, res) => {
     }
     const name = decodeURIComponent(url.pathname.slice(1));
     if (workspacePackages.has(name) && (req.method === 'GET' || req.method === 'HEAD')) {
-      return send(res, 200, await packument(name, req.headers.accept));
+      const key = `${name} ${req.headers.accept}`;
+      if (!packuments.has(key)) {
+        packuments.set(
+          key,
+          packument(name, req.headers.accept).catch((error) => {
+            packuments.delete(key);
+            throw error;
+          })
+        );
+      }
+      return send(res, 200, await packuments.get(key));
     }
     // 307 keeps the method and body of npm's POST requests, such as the audit.
     res.writeHead(req.method === 'GET' || req.method === 'HEAD' ? 302 : 307, {
@@ -60,12 +72,22 @@ createServer(async (req, res) => {
     });
     res.end();
   } catch (error) {
-    send(res, 502, { error: String(error) });
+    console.error(error);
+    if (res.headersSent) {
+      res.destroy();
+    } else {
+      send(res, 502, { error: String(error) });
+    }
   }
-}).listen(Number(port), '127.0.0.1');
+});
+server.on('error', (error) => {
+  console.error(error);
+  process.exit(1);
+});
+server.listen(Number(port), '127.0.0.1');
 
-// The npm packument with the checkout's major version and up removed, so nothing at that version
-// can come from the registry, plus the checkout build for the packages this registry serves.
+// The npm packument without the versions of the checkout's release line and later, so none of
+// them can come from npm, plus the checkout build for the packages this registry serves.
 async function packument(name, accept) {
   const response = await fetch(`${NPM_REGISTRY}/${name.replace('/', '%2F')}`, {
     headers: { accept: accept ?? 'application/json' },
@@ -76,7 +98,9 @@ async function packument(name, accept) {
   const upstream = response.ok ? await response.json() : { name, versions: {}, 'dist-tags': {} };
 
   const versions = Object.fromEntries(
-    Object.entries(upstream.versions ?? {}).filter(([version]) => majorOf(version) < checkoutMajor)
+    Object.entries(upstream.versions ?? {}).filter(
+      ([version]) => compareLines(releaseLine(version), checkoutLine) < 0
+    )
   );
   const distTags = Object.fromEntries(
     Object.entries(upstream['dist-tags'] ?? {}).filter(([, version]) => version in versions)
@@ -111,8 +135,15 @@ function cString(bytes) {
   return bytes.subarray(0, end === -1 ? bytes.length : end).toString('utf8');
 }
 
-function majorOf(version) {
-  return Number.parseInt(version, 10);
+// Published versions of the checkout's [major, minor] line could satisfy the ranges the checkout's
+// CLIs install; older lines, such as the current stable release, cannot.
+function releaseLine(version) {
+  const [major, minor] = version.split('.').map((part) => Number.parseInt(part, 10));
+  return [major, minor];
+}
+
+function compareLines([major, minor], [checkoutMajor, checkoutMinor]) {
+  return major - checkoutMajor || minor - checkoutMinor;
 }
 
 function send(res, status, body) {

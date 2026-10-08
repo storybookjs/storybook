@@ -111,11 +111,11 @@ This covers what the sandbox installs up front. In the lifecycle evals
 `evals` in `package.json`, and setup then starts an npm registry inside the
 sandbox (`lib/checkout-registry-server.mjs`) and points the user-level npm
 config at it. The registry publishes the checkout's build of `create-storybook`,
-`@storybook/cli`, `storybook`, the React + Vite framework and the addons
-`create storybook` installs, together with the monorepo packages they depend
-on, under the `next` dist-tag, and keeps `latest` on the published release, as
-during an 11.0 prerelease. It withholds the published versions at the
-checkout's major version and up, so nothing at that version can come from npm,
+`@storybook/cli`, `storybook`, the React + Vite framework, the addons
+`create storybook` installs and the MCP addon (which an upgrade through 10.x
+adds), together with the monorepo packages they depend on, under the `next` dist-tag, and keeps `latest` on the published release, as
+during an 11.0 prerelease. It withholds the published versions of the
+checkout's `major.minor` and up, so nothing in that line can come from npm,
 and it redirects every other request to npm. Each lifecycle eval checks with
 `expectStorybookInstalledFromCheckout` that the agent installed the checkout's
 build.
@@ -128,14 +128,17 @@ therefore fails.
 The harness commits the fixture to git before setup runs. Every experiment in
 `experiments/` ends its `setup` with `commitSandboxBaseline`, which commits
 everything setup wrote (the template, skills, browser mocks, MCP config), so
-the agent starts from a clean working tree, as in a real project: `git status`
-and `storybook tools stories changed` show only the agent's own changes. The
-saved result projects therefore contain only the files the agent changed. The
-agentic-reference experiments skip the commit, because their post-analysis
-reads the whole application from the saved project. The
-tarballs are left out of them, so a saved `package.json` that points at
-`local-packages/` cannot be installed as-is; rerun the eval from the commit in
-`metadata.checkout` instead.
+the template and setup files no longer look like the agent's changes:
+`storybook tools stories changed` reports only what the agent changed, and
+`git status` shows that plus the `package-lock.json` the harness's
+`npm install` creates afterwards. The saved result projects therefore no longer
+contain the template either. The agentic-reference experiments skip the
+commit, because their post-analysis reads the whole application from the saved
+project.
+
+Saved result projects never include the `local-packages/` tarballs, so a saved
+`package.json` that points at them cannot be installed as-is; rerun the eval
+from the commit in `metadata.checkout` instead.
 
 Set `EVAL_STORYBOOK_LATEST=1` to install the published `latest` release of
 every Storybook package instead, to check whether a behavior change (e.g. in

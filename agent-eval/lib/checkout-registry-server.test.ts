@@ -12,7 +12,8 @@ const SCRIPT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   'checkout-registry-server.mjs'
 );
-const PORT = 48731;
+// Per process, so parallel runs of this file in other checkouts don't collide.
+const PORT = 40_000 + (process.pid % 10_000);
 const REGISTRY = `http://127.0.0.1:${PORT}`;
 
 const upstreamPackuments: Record<string, unknown> = {
@@ -22,6 +23,7 @@ const upstreamPackuments: Record<string, unknown> = {
     versions: {
       '10.6.1': { name: 'storybook', version: '10.6.1' },
       '11.0.0-alpha.4': { name: 'storybook', version: '11.0.0-alpha.4' },
+      '11.0.0-alpha.5': { name: 'storybook', version: '11.0.0-alpha.5' },
     },
   },
   '@storybook/addon-themes': {
@@ -69,11 +71,13 @@ beforeAll(async () => {
     },
     stdio: 'inherit',
   });
-  await vi.waitUntil(() =>
-    fetch(`${REGISTRY}/-/ping`).then(
-      (response) => response.ok,
-      () => false
-    )
+  await vi.waitUntil(
+    () =>
+      fetch(`${REGISTRY}/-/ping`).then(
+        (response) => response.ok,
+        () => false
+      ),
+    { timeout: 10_000 }
   );
 });
 
@@ -108,7 +112,7 @@ describe('the checkout registry', () => {
     expect(Object.keys(packument.versions)).toEqual(['10.6.1']);
   });
 
-  it('serves a package npm does not know yet', async () => {
+  it('answers with an empty packument for a package neither it nor npm has', async () => {
     const packument = await (await fetch(`${REGISTRY}/create-storybook`)).json();
 
     expect(packument).toMatchObject({ name: 'create-storybook', versions: {}, 'dist-tags': {} });

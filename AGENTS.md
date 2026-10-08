@@ -211,6 +211,8 @@ canonical for its topic; this file owns the pointers.
 - [Sandboxes](.agents/guidelines/sandboxes.md) — read before generating or debugging a sandbox.
 - [Testing](.agents/guidelines/testing.md) — read before writing or running tests beyond the
   commands above; covers memfs filesystem tests and global stubbing rules.
+- [Code review](.agents/guidelines/code-review.md) - read before reviewing a PR or a diff;
+  covers evidence, per-area checks, maintainability findings, and comment format.
 
 ## Learned User Preferences
 

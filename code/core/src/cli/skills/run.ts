@@ -231,17 +231,13 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
       docsEnabled: inputs.docsEnabledForCli,
       testSupported: inputs.testSupported,
       a11yEnabled: inputs.a11yEnabled,
-      changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
-      reviewEnabled: inputs.reviewEnabled,
     });
   }
   return buildStoryInstructions({
     transport: 'cli',
     framework: inputs.framework,
     renderer: inputs.renderer,
-    changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled: inputs.reviewEnabled,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     docsEnabled: inputs.docsEnabledForCli,

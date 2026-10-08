@@ -9,9 +9,7 @@ const everything: StoriesSkillInputs = {
   docsEnabled: true,
   testSupported: true,
   a11yEnabled: true,
-  changeDetectionEnabled: true,
   moduleGraphSupported: true,
-  reviewEnabled: true,
 };
 
 describe('buildStoriesSkill', () => {
@@ -24,17 +22,6 @@ describe('buildStoriesSkill', () => {
     expect(text).toContain(`npx storybook tools stories find-by-component --componentPaths '["`);
     expect(text).toContain(`npx storybook tools review create --input '{`);
     expect(text).toContain('accessibility violations');
-  });
-
-  it('ends with story links and never mentions a review when review is off', () => {
-    const text = buildStoriesSkill({
-      ...everything,
-      changeDetectionEnabled: false,
-      reviewEnabled: false,
-    });
-
-    expect(text).toContain('## Finish with links');
-    expect(text).not.toMatch(/\breview/i);
   });
 
   it('leaves out testing when the project cannot run story tests', () => {
@@ -53,30 +40,18 @@ describe('buildStoriesSkill', () => {
     expect(text).not.toContain('Run one of these');
   });
 
-  it('speaks of one command when only the story list can find stories', () => {
-    const text = buildStoriesSkill({
-      ...everything,
-      changeDetectionEnabled: false,
-      moduleGraphSupported: false,
-      reviewEnabled: false,
-    });
-
-    expect(text).toContain('Run it before you share links. Story ids come only from this command.');
-    expect(text).toContain('When it does not find a story');
-  });
-
-  it('selects stories by file and export when no command lists story ids', () => {
+  it('speaks of one command when only stories changed can find stories', () => {
     const text = buildStoriesSkill({
       ...everything,
       docsEnabled: false,
-      changeDetectionEnabled: false,
       moduleGraphSupported: false,
-      reviewEnabled: false,
     });
 
-    expect(text).toContain('"absoluteStoryPath"');
+    expect(text).toContain('Run `stories changed` before every review');
+    expect(text).toContain('it adds the stories of other components');
+    expect(text).toContain('Story ids come only from this command.');
+    expect(text).toContain('When it does not find a story');
     expect(text).not.toContain('find-by-component');
-    expect(text).not.toContain('docs list');
   });
 
   it('teaches CSF Factories instead of Meta and StoryObj when the preview uses definePreview', () => {

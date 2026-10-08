@@ -9,9 +9,7 @@ export type StoriesSkillInputs = {
   docsEnabled: boolean;
   testSupported: boolean;
   a11yEnabled: boolean;
-  changeDetectionEnabled: boolean;
   moduleGraphSupported: boolean;
-  reviewEnabled: boolean;
 };
 
 const ref = getToolName({ transport: 'cli' });
@@ -57,38 +55,25 @@ ${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids: see "Find the stori
 Run this after every change, instead of a \`package.json\` test script. Use focused runs while iterating and one full run before you finish. Fix failures and rerun; never finish with failing tests.${a11y}`;
 }
 
+const affectedStoryCommands = ({ moduleGraphSupported }: StoriesSkillInputs) =>
+  moduleGraphSupported ? '`stories changed` or `find-by-component`' : '`stories changed`';
+
 function discoverSection(inputs: StoriesSkillInputs): string {
   const commands = [
-    inputs.changeDetectionEnabled &&
-      `${ref('stories.changed')}   # stories affected by your uncommitted changes`,
+    `${ref('stories.changed')}   # stories affected by your uncommitted changes`,
     inputs.moduleGraphSupported &&
       `${ref('stories.findByComponent')} --componentPaths '["/abs/path/Button.tsx"]'   # stories that render these files`,
     inputs.docsEnabled && `${ref('docs.list')} --withStoryIds true   # every story id`,
   ].filter(Boolean);
-  if (commands.length === 0) {
-    return `## Find the stories
-
-This project has no command that lists story ids. Select a story by its file and export instead: \`--stories '[{"absoluteStoryPath":"/abs/path/Button.stories.tsx","exportName":"Primary"}]'\`.`;
-  }
-  const before = inputs.reviewEnabled ? 'before every review' : 'before you share links';
-  const sharedFile = '(design token, theme, util, hook)';
   const fallback = !inputs.moduleGraphSupported
     ? []
     : [
-        inputs.changeDetectionEnabled
-          ? `When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file ${sharedFile}, which has no stories of its own, pass the components that use it.`
-          : `A shared file ${sharedFile} has no stories of its own: pass the components that use it to \`find-by-component\`.`,
+        'When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file (design token, theme, util, hook), which has no stories of its own, pass the components that use it.',
         'When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
       ];
-  const affected = [
-    inputs.changeDetectionEnabled && '`stories changed`',
-    inputs.moduleGraphSupported && '`find-by-component`',
-  ].filter(Boolean);
   const several = commands.length > 1;
   const guidance = [
-    affected.length > 0
-      ? `Run ${affected.join(' or ')} ${before}, also when you already know the ids of the stories you wrote: ${affected.length > 1 ? 'they add' : 'it adds'} the stories of other components that your change affects.`
-      : `Run it ${before}.`,
+    `Run ${affectedStoryCommands(inputs)} before every review, also when you already know the ids of the stories you wrote: ${inputs.moduleGraphSupported ? 'they add' : 'it adds'} the stories of other components that your change affects.`,
     `Story ids come only from ${several ? 'these commands' : 'this command'}. Never build one from a file name, a title or memory.`,
     ...fallback,
     `When ${several ? 'none of them finds' : 'it does not find'} a story for a component, it has no stories yet: say so, or write them.`,
@@ -102,18 +87,7 @@ ${commands.join('\n')}
 ${guidance}`;
 }
 
-function reviewSection({
-  changeDetectionEnabled,
-  moduleGraphSupported,
-}: StoriesSkillInputs): string {
-  const discovery = [
-    changeDetectionEnabled && '`stories changed`',
-    moduleGraphSupported && '`find-by-component`',
-  ].filter(Boolean);
-  const discoverFirst =
-    discovery.length > 0
-      ? ` Right before it, run ${discovery.join(' or ')} and take the story ids from there, also when you only wrote stories, not from the output of the tests.`
-      : '';
+function reviewSection(inputs: StoriesSkillInputs): string {
   return `## Finish with a review
 
 \`\`\`sh
@@ -128,26 +102,19 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Right before it, run ${affectedStoryCommands(inputs)} and take the story ids from there, also when you only wrote stories, not from the output of the tests. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
 
 Then do both things the command prints, every time: open the review in the in-app browser with a browser tool (unless you have none), and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }
 
-function previewSection(reviewEnabled: boolean): string {
-  const usage = `\`\`\`sh
+function previewSection(): string {
+  return `## Link to one story
+
+\`\`\`sh
 ${ref('stories.preview')} --stories '[{"storyId":"<id>"}]'   # direct links to stories
-\`\`\``;
-  return reviewEnabled
-    ? `## Link to one story
+\`\`\`
 
-${usage}
-
-Only for a look at one story while you iterate, or when the user asks for a direct link. It does not replace the review, unless \`review create\` keeps failing after you fixed what it reported: then share these links and say why.`
-    : `## Finish with links
-
-${usage}
-
-After every change the user can see, end your answer with the links to the most relevant stories, at most five. It needs a running Storybook.`;
+Only for a look at one story while you iterate, or when the user asks for a direct link. It does not replace the review, unless \`review create\` keeps failing after you fixed what it reported: then share these links and say why.`;
 }
 
 export function buildStoriesSkill(inputs: StoriesSkillInputs): string {
@@ -159,8 +126,8 @@ Follow this for every change to how the UI looks (components, stories, styles, t
     writeSection(inputs),
     inputs.testSupported && testSection(inputs.a11yEnabled),
     discoverSection(inputs),
-    inputs.reviewEnabled && reviewSection(inputs),
-    previewSection(inputs.reviewEnabled),
+    reviewSection(inputs),
+    previewSection(),
   ]
     .filter(Boolean)
     .join('\n\n');

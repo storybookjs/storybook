@@ -3,23 +3,18 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectPreviewOpenedInBrowser,
-  expectPreviewStoriesWithFinalLinks,
   expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  isReviewEnabled,
   modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
 
 describe('creating an accessible ToggleSwitch', () => {
-  const reviewEnabled = isReviewEnabled();
-
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
       requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
@@ -27,45 +22,32 @@ describe('creating an accessible ToggleSwitch', () => {
     });
   });
 
-  describe.runIf(reviewEnabled)('with review enabled', () => {
-    test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-      expectDisplayReviewForVisualChange();
-    });
-
-    test('opens the review in the in-app browser', () => {
-      expectReviewOpenedInBrowser();
-    });
-
-    test('discovers stories through the workflow tools before publishing the review', () => {
-      expectStoryDiscoveryBeforeReview();
-    });
-
-    test('every new story appears in the display review', () => {
-      expectAllStoryExportsInDisplayReview();
-    });
-
-    // Skipped: agents publish one collection with every story instead of 2-5
-    // meaningful collections (e.g. visual states vs interaction behavior).
-    // Seen as score 0.15 < 0.5 in the 2026-07-01T22-16-52 cc-plugin run.
-    // Re-enable when review-create workflow guidance teaches that grouping.
-    test.skip('publishes a well-curated review', async () => {
-      // 0.5 keeps this soft (curation quality is scored, not gating): minor
-      // flaws like one single-story collection pass, arbitrary story dumps
-      // still fail.
-      await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.5);
-    });
+  test('uses Storybook story instructions and publishes a display review', () => {
+    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectDisplayReviewForVisualChange();
   });
 
-  describe.runIf(!reviewEnabled)('with review disabled', () => {
-    test('uses Storybook story instructions and previews the new stories', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions']);
-      expectPreviewStoriesWithFinalLinks({ covering: ['toggleswitch'] });
-    });
+  test('opens the review in the in-app browser', () => {
+    expectReviewOpenedInBrowser();
+  });
 
-    test('opens a story preview in the in-app browser', () => {
-      expectPreviewOpenedInBrowser();
-    });
+  test('discovers stories through the workflow tools before publishing the review', () => {
+    expectStoryDiscoveryBeforeReview();
+  });
+
+  test('every new story appears in the display review', () => {
+    expectAllStoryExportsInDisplayReview();
+  });
+
+  // Skipped: agents publish one collection with every story instead of 2-5
+  // meaningful collections (e.g. visual states vs interaction behavior).
+  // Seen as score 0.15 < 0.5 in the 2026-07-01T22-16-52 cc-plugin run.
+  // Re-enable when review-create workflow guidance teaches that grouping.
+  test.skip('publishes a well-curated review', async () => {
+    // 0.5 keeps this soft (curation quality is scored, not gating): minor
+    // flaws like one single-story collection pass, arbitrary story dumps
+    // still fail.
+    await expect(transcript).toScoreAtLeast(DISPLAY_REVIEW_CURATION_CRITERION, 0.5);
   });
 
   describe('depending on the current agent and integration', () => {

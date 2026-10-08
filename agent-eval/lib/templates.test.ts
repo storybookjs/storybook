@@ -3,12 +3,11 @@ import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   addMcpAddon,
   pointStorybookAtCheckout,
-  isReviewEnabledFor,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
@@ -17,30 +16,6 @@ import {
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
-
-describe('isReviewEnabledFor', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('is on for the plugin and mcp integrations on the checkout', () => {
-    vi.stubEnv('EVAL_STORYBOOK_LATEST', '');
-
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-    expect(isReviewEnabledFor('mcp')).toBe(true);
-  });
-
-  it('is off for the mcp integration on the stable release', () => {
-    vi.stubEnv('EVAL_STORYBOOK_LATEST', '1');
-
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-    expect(isReviewEnabledFor('mcp')).toBe(false);
-  });
-
-  it('is off for the bare sandbox', () => {
-    expect(isReviewEnabledFor('none')).toBe(false);
-  });
-});
 
 describe('addMcpAddon', () => {
   it('registers the addon in every template and fixture Storybook', () => {
@@ -90,9 +65,7 @@ describe('Codex AGENTS.md instructions', () => {
         devEnabled: true,
         testSupported: true,
         docsEnabled: true,
-        changeDetectionEnabled: true,
         moduleGraphSupported: true,
-        reviewEnabled: true,
       }).trim()
     );
   });

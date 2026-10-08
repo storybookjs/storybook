@@ -27,8 +27,7 @@ export type StorybookWorkspace = Map<string, WorkspacePackage>;
 
 export type EvalAgent = 'claude-code' | 'codex';
 // 'none' = bare sandbox: no Storybook tooling flavor recorded in the agent
-// context, review off. Used by control cases that must provide zero agent
-// support.
+// context. Used by control cases that must provide zero agent support.
 export type EvalIntegration = 'mcp' | 'plugin' | 'none';
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
@@ -120,13 +119,6 @@ const CHECKOUT_PACKAGES_DIR = 'local-packages';
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
 const execFileAsync = promisify(execFile);
-// The stable release that EVAL_STORYBOOK_LATEST=1 installs offers review to
-// the plugins only, until Storybook 11 is `latest`.
-export function isReviewEnabledFor(integration: EvalIntegration): boolean {
-  return (
-    integration === 'plugin' || (integration === 'mcp' && process.env.EVAL_STORYBOOK_LATEST !== '1')
-  );
-}
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 // Captures the entries of the `addons` list, without the trailing comma.
@@ -229,12 +221,7 @@ async function writeEvalSupportFiles(
     [SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
     [TYPE_UTIL_SANDBOX_PATH]: await fs.readFile(TYPE_UTIL_SOURCE_PATH, 'utf8'),
     [AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
-      {
-        agent: options.agent,
-        model: options.model,
-        integration: options.integration,
-        review: isReviewEnabledFor(options.integration),
-      },
+      { agent: options.agent, model: options.model, integration: options.integration },
       null,
       2
     ).concat('\n'),

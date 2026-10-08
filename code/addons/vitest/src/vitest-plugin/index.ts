@@ -50,6 +50,7 @@ import {
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
+import { isReactFramework } from './framework-name.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
 const WORKING_DIR = process.cwd();
@@ -438,9 +439,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             // imported by the setup files; without pinning, its CJS-only deps (via
             // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
             'storybook/test',
-            ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
-              ? ['react-dom/test-utils']
-              : []),
+            ...(isReactFramework(frameworkName) ? ['react-dom/test-utils'] : []),
           ],
         },
 

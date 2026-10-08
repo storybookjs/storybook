@@ -42,6 +42,7 @@
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
+  - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
@@ -1208,7 +1209,7 @@ The `features.experimentalReview` flag is removed, and Storybook no longer reads
 Agentic review is now on by default: in the Storybook UI, through `storybook tools`, in the Claude Code and Codex plugins, and in every MCP client connected to `@storybook/addon-mcp`.
 In Storybook 10, MCP clients other than the plugins only got the `review-create` tool with `experimentalReview: true`.
 If you had `experimentalReview: false`, review is now on for your project.
-The only way to turn it off is `features.changeDetection: false`, which also turns off `stories-changed` and the change-detection statuses in the sidebar.
+Review can no longer be turned off, because the [`changeDetection` flag is removed](#changedetection-feature-flag-removed) as well.
 The Claude Code and Codex plugins and `storybook tools` now tell agents to end visual work with a review instead of preview links.
 
 The `remove-experimental-review` automigration deletes the flag from your main config, whether it is `true` or `false`.
@@ -1216,6 +1217,21 @@ You can also run it with `storybook automigrate remove-experimental-review`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
 A typed main config that still sets the flag fails type-checking until it is removed.
 `storybook upgrade --features` no longer accepts `experimentalReview`.
+
+### `changeDetection` feature flag removed
+
+The `features.changeDetection` flag is removed, and Storybook no longer reads it.
+[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools whenever the `dev` toolset is on.
+If you had `changeDetection: false`, change detection and agentic review are now on for your project.
+
+The flag existed as an escape hatch while change detection was new.
+If change detection makes your Storybook slower, please [open an issue](https://github.com/storybookjs/storybook/issues/new/choose) so we can fix it.
+
+The `remove-change-detection-flag` automigration deletes the flag from your main config, whether it is `true` or `false`.
+You can also run it with `storybook automigrate remove-change-detection-flag`.
+If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
+A typed main config that still sets the flag fails type-checking until it is removed.
 
 ### `storybook ai` command removed
 

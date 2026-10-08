@@ -141,7 +141,7 @@ export {
   getToolAvailability,
   isModuleGraphSupported,
 } from '../cli/skills/availability.ts';
-export type { GetToolAvailabilityOptions, ToolAvailability } from '../cli/skills/availability.ts';
+export type { ToolAvailability } from '../cli/skills/availability.ts';
 export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';
 export { isAddonVitestEnabled } from '../cli/skills/addon-vitest.ts';
 export { resolveSkillInputs } from '../cli/skills/inputs.ts';

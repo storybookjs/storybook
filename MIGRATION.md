@@ -3,6 +3,7 @@
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
+  - [Persisted tag-filter state](#persisted-tag-filter-state)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
@@ -634,6 +635,10 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 `sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
+### Persisted tag-filter state
+
+Storybook 10.3.x stored your sidebar tag filters in browser storage (local storage and session storage under `@storybook/manager/store`). Since 10.4.0, tag-filter state lives in the URL instead, and Storybook 11 no longer reads or rewrites those stored values — no action is required. If old tag filters unexpectedly reappear after upgrading directly from 10.3.x or older to 11.0, clear your browser storage for the site and reload.
 
 ### Addon `TAB` registration removed
 

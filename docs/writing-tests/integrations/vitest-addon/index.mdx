@@ -282,11 +282,17 @@ If your stories use assets in the public directory and you're not using the defa
 
 ### How do I isolate Storybook tests from others?
 
-Some projects might contain a `test` property in their Vite configuration. Because the Vitest configuration used by this plugin extends that Vite config, the `test` properties are merged. This lack of isolation can cause issues with your Storybook tests.
+The generated Storybook test project uses `extends: true` to share your root Vite configuration, including framework plugins and aliases. It also inherits root-level test settings, so unit-only setup files at the root can interfere with your stories.
 
-To isolate your Storybook tests from other tests, you need to move the `test` property from your Vite configuration to the Vitest configuration. The Vitest config used by the plugin can then safely extend your Vite config without merging the `test` property.
+Move unit-only settings, such as `setupFiles` and `environment`, into the unit-test project inside `test.projects`. Keep shared Vite plugins and aliases at the root. When the addon converts a single test configuration into projects, it moves project-specific test settings into the unit project automatically.
 
-Additionally, we recommend using a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions to define separate configurations for your Storybook tests and other tests. This ensures each can be run either in isolation or together, depending on your needs.
+If you need to isolate inherited project configuration, set `extends: false` on the Storybook project and explicitly configure its required framework plugins and aliases, either on that project or through Storybook's [`viteFinal`](../../../api/main-config/main-config-vite-final.mdx).
+
+Root `globalSetup` and root plugin hooks such as `config` still run even with `extends: false`. Move unit-only global setup into the unit-test project, and keep root plugin hooks safe for all projects.
+
+Coverage is a [global Vitest option](https://vitest.dev/guide/projects), so `extends: false` does not isolate it. When you run `vitest --project=storybook --coverage`, Vitest still uses the root `test.coverage` configuration.
+
+Use a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions, to define separate configurations for Storybook tests and other tests. This allows each suite to run independently or together.
 
 ### Why do we recommend browser mode?
 

@@ -52,9 +52,22 @@ export interface ReactComponentManifest extends ComponentManifest {
   [key: string]: unknown;
 }
 
-const ENTRY_POINT_FIELDS = ['exports', 'main', 'module', 'types', 'typings', 'browser'];
+const MAIN_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
 
-// An app's own package (private, with no entry point) cannot be imported by name, so its
+// Whether the bare package name resolves: `exports` decides when present, the main fields otherwise.
+function hasRootEntry(pkg: Record<string, unknown>) {
+  const { exports } = pkg;
+  if (exports === undefined) {
+    return MAIN_FIELDS.some((field) => field in pkg);
+  }
+  if (typeof exports !== 'object' || exports === null || Array.isArray(exports)) {
+    return exports !== null;
+  }
+  const keys = Object.keys(exports);
+  return keys.includes('.') || !keys.some((key) => key.startsWith('.'));
+}
+
+// An app's own package (private, with no root entry) cannot be imported by name, so its
 // components keep the import the story wrote.
 function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
   const nearestPkg = cachedFindUp('package.json', {
@@ -70,8 +83,7 @@ function getImportablePackageName(componentPath: string | undefined, fallbackPat
     if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
       return undefined;
     }
-    const importable =
-      parsed.private !== true || ENTRY_POINT_FIELDS.some((field) => field in parsed);
+    const importable = parsed.private !== true || hasRootEntry(parsed);
     return importable ? parsed.name : undefined;
   } catch {
     return undefined;

@@ -726,20 +726,6 @@ describe('help', () => {
   });
 });
 
-function captureLoggerOutput() {
-  const chunks: string[] = [];
-  const capture = (chunk: unknown) => {
-    chunks.push(String(chunk));
-    return true;
-  };
-  const spies = [
-    vi.spyOn(process.stdout, 'write').mockImplementation(capture),
-    vi.spyOn(console, 'warn').mockImplementation(capture),
-  ];
-  onTestFinished(() => spies.forEach((spy) => spy.mockRestore()));
-  return () => chunks.join('');
-}
-
 describe('outcome mapping', () => {
   beforeEach(() => {
     clearToolsetRegistry();
@@ -814,26 +800,41 @@ describe('outcome mapping', () => {
     });
   });
 
-  it('keeps warnings logged while the tool runs out of the output', async () => {
-    const printed = captureLoggerOutput();
-    const { deps } = makeDeps();
+  describe('warnings logged while the tool runs', () => {
+    let printed: string[];
 
-    const result = await run(['echo', 'warn'], deps);
+    beforeEach(() => {
+      printed = [];
+      const capture = (chunk: unknown) => {
+        printed.push(String(chunk));
+        return true;
+      };
+      const spies = [
+        vi.spyOn(process.stdout, 'write').mockImplementation(capture),
+        vi.spyOn(console, 'warn').mockImplementation(capture),
+      ];
+      onTestFinished(() => spies.forEach((spy) => spy.mockRestore()));
+    });
 
-    expect(result.output).toBe('result');
-    expect(printed()).not.toContain('No story files found');
-    expect(logger.getLogLevel()).toBe('info');
-  });
+    it('stay out of the output', async () => {
+      const { deps } = makeDeps();
 
-  it('keeps those warnings when a lower log level was asked for', async () => {
-    const printed = captureLoggerOutput();
-    logger.setLogLevel('debug');
-    onTestFinished(() => logger.setLogLevel('info'));
-    const { deps } = makeDeps();
+      const result = await run(['echo', 'warn'], deps);
 
-    await run(['echo', 'warn'], deps);
+      expect(result.output).toBe('result');
+      expect(printed.join('')).not.toContain('No story files found');
+      expect(logger.getLogLevel()).toBe('info');
+    });
 
-    expect(printed()).toContain('No story files found');
+    it('are kept when a lower log level was asked for', async () => {
+      logger.setLogLevel('debug');
+      onTestFinished(() => logger.setLogLevel('info'));
+      const { deps } = makeDeps();
+
+      await run(['echo', 'warn'], deps);
+
+      expect(printed.join('')).toContain('No story files found');
+    });
   });
 
   it('exits 1 on ok: false while still printing the markdown', async () => {

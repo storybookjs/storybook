@@ -947,6 +947,23 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       expect(result).toContain('  tone?: "neutral" | "primary";');
     });
 
+    it('keeps a literal that contains the separator in one piece', () => {
+      const elements = Array.from({ length: 60 }, (_, index) => `"left-${index} | right-${index}"`);
+      const manifest: ComponentManifest = {
+        id: 'box',
+        name: 'Box',
+        reactDocgenTypescript: {
+          props: {
+            as: { name: 'as', type: { name: elements.join(' | ') }, required: false },
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toContain(
+        '  as?: "left-0 | right-0" | "left-1 | right-1" | "left-2 | right-2" | "left-3 | right-3" | "left-4 | right-4" | "left-5 | right-5" | "left-6 | right-6" | ... (53 more);'
+      );
+    });
+
     it('prints a long union of anything but string literals whole', () => {
       const callback = `(state: { ${Array.from({ length: 40 }, (_, index) => `field${index}: "a" | "b"`).join('; ')} }) => void`;
       const manifest: ComponentManifest = {

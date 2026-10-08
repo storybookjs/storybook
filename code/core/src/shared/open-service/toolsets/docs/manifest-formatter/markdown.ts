@@ -212,8 +212,8 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
 }
 
 const MAX_TYPE_LENGTH = 300;
-const STRING_LITERAL_UNION =
-  /^(?:"[^"]*"|'[^']*'|undefined|null)(?: \| (?:"[^"]*"|'[^']*'|undefined|null))+$/;
+const UNION_MEMBER = `(?:"[^"]*"|'[^']*'|undefined|null)`;
+const STRING_LITERAL_UNION = new RegExp(`^${UNION_MEMBER}(?: \\| ${UNION_MEMBER})+$`);
 
 // A union of string literals this long, such as every intrinsic element name, is cut after its
 // first members; any other type is printed whole.
@@ -221,7 +221,7 @@ function abbreviateUnion(type: string): string {
   if (type.length <= MAX_TYPE_LENGTH || !STRING_LITERAL_UNION.test(type)) {
     return type;
   }
-  const members = type.split(' | ');
+  const members = type.match(new RegExp(UNION_MEMBER, 'g'))!;
   const kept = [members[0]];
   for (const member of members.slice(1)) {
     if (`${kept.join(' | ')} | ${member}`.length > MAX_TYPE_LENGTH / 2) {

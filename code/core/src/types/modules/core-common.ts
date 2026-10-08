@@ -612,6 +612,18 @@ export interface StorybookFeatures {
    * Set NODE_ENV to development in built Storybooks for better testability and debuggability
    */
   developmentModeForBuild?: boolean;
+
+  /**
+   * Build with Vite's app builder in `@storybook/builder-vite`, as `vite build` does. When the Vite
+   * config sets `builder`, for example through a plugin that adds environments for React Server
+   * Components, all of its environments are built and the `buildApp` hooks of plugins run. Frameworks
+   * that need this turn it on in their preset.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  viteAppBuilder?: boolean;
+
   /**
    * Only show input controls in Angular.
    *

@@ -16,7 +16,7 @@ function findPlugin(config: InlineConfig, name: string) {
 }
 
 export async function build(options: Options) {
-  const { createBuilder, mergeConfig } = await import('vite');
+  const { build: viteBuild, createBuilder, mergeConfig } = await import('vite');
   const { presets } = options;
 
   const config = await commonConfig(options, 'build');
@@ -57,8 +57,9 @@ export async function build(options: Options) {
         outDir: options.outputDir,
       },
     }),
-    // Storybook's output is the client environment. Other environments (built
-    // when a plugin asks for Vite's app builder) keep their plugin's config.
+    // Storybook's output is the client environment. Other environments (built with
+    // `features.viteAppBuilder` when a plugin asks for Vite's app builder) keep
+    // their plugin's config.
     configEnvironment: (name) =>
       name === 'client'
         ? {
@@ -97,11 +98,15 @@ export async function build(options: Options) {
 
   finalConfig.customLogger ??= await createViteLogger();
 
-  // Build like `vite build` does: Vite builds only the client environment, unless the config sets
-  // `builder`, as plugins that add environments (e.g. for React Server Components) do. Then it
-  // builds all environments. Plugins' `buildApp` hooks run in both cases.
-  const builder = await createBuilder(finalConfig, null);
-  await builder.buildApp();
+  if (options.features?.viteAppBuilder) {
+    // Build like `vite build` does: Vite builds only the client environment, unless the config sets
+    // `builder`, as plugins that add environments (e.g. for React Server Components) do. Then it
+    // builds all environments. Plugins' `buildApp` hooks run in both cases.
+    const builder = await createBuilder(finalConfig, null);
+    await builder.buildApp();
+  } else {
+    await viteBuild(finalConfig);
+  }
 
   const statsPlugin = findPlugin(
     finalConfig,

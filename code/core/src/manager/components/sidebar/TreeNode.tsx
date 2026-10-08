@@ -204,6 +204,8 @@ export interface TreeNodeProps {
   closeContextMenu?: () => void;
   /** Whether any test provider addon is registered (enables the menu on group rows). */
   hasTestProviders?: boolean;
+  /** Reports this row's focus up to the tree while it holds it. */
+  onRowFocus?: ReportRowFocus;
   children?: React.ReactNode;
 }
 
@@ -219,6 +221,36 @@ const STATUS_ANNOUNCEMENTS: Record<StatusValue, string> = {
   'status-value:reviewing': 'Included in the active review',
 };
 
+/** Reports which row holds focus, and whether the keyboard put it there. */
+export type ReportRowFocus = (itemId: string, keyboard: boolean | null) => void;
+
+/**
+ * Reports this row's focus up to the tree for as long as it holds it. The sticky copies and the
+ * context-menu shortcut render outside the react-aria tree, so they cannot read its focus state;
+ * react-aria hands each row its own `isFocused` and `isFocusVisible`, and only the rows whose
+ * focus changes re-render.
+ */
+function RowFocusReporter({
+  itemId,
+  isFocused,
+  isFocusVisible,
+  onRowFocus,
+}: {
+  itemId: string;
+  isFocused: boolean;
+  isFocusVisible: boolean;
+  onRowFocus?: ReportRowFocus;
+}) {
+  useEffect(() => {
+    if (!isFocused || !onRowFocus) {
+      return;
+    }
+    onRowFocus(itemId, isFocusVisible);
+    return () => onRowFocus(itemId, null);
+  }, [isFocused, isFocusVisible, itemId, onRowFocus]);
+  return null;
+}
+
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
@@ -230,6 +262,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   openContextMenu,
   closeContextMenu,
   hasTestProviders = false,
+  onRowFocus,
   children,
 }) {
   const theme = useTheme();
@@ -413,46 +446,56 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       data-nodetype={nodeType}
     >
       <TreeItemContent>
-        <IndentLines level={item.depth} selectionLevel={selectionLineLevel} />
-        <StyledContent>
-          {leadingIcon}
-          <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>
-          {renderContextMenu && (
-            // react-aria selects rows on pointerdown; the press that opens the menu must not
-            // also activate the row underneath (navigate, or fold the branch under the menu).
-            <MenuTriggerContainer
-              onPointerDown={stopRowPress}
-              onMouseDown={stopRowPress}
-              onTouchStart={stopRowPress}
-            >
-              {
-                <ContextMenu
-                  context={item}
-                  isOpen={isContextMenuOpen}
-                  setIsOpen={handleContextMenuOpenChange}
-                  onSelectStoryId={onSelectStoryId}
-                  api={api}
-                  openedBy={openedBy}
-                  hasProviderMenuEntries={hasProviderMenuEntries}
-                />
-              }
-            </MenuTriggerContainer>
-          )}
-          {(changeStatusIcon || testStatusIcon) && (
-            <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
-              {changeStatusIcon && (
-                <span style={{ display: 'contents' }} data-testid="tree-change-status-button">
-                  {changeStatusIcon}
-                </span>
+        {({ isFocused, isFocusVisible }) => (
+          <>
+            <RowFocusReporter
+              itemId={item.id}
+              isFocused={isFocused}
+              isFocusVisible={isFocusVisible}
+              onRowFocus={onRowFocus}
+            />
+            <IndentLines level={item.depth} selectionLevel={selectionLineLevel} />
+            <StyledContent>
+              {leadingIcon}
+              <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>
+              {renderContextMenu && (
+                // react-aria selects rows on pointerdown; the press that opens the menu must not
+                // also activate the row underneath (navigate, or fold the branch under the menu).
+                <MenuTriggerContainer
+                  onPointerDown={stopRowPress}
+                  onMouseDown={stopRowPress}
+                  onTouchStart={stopRowPress}
+                >
+                  {
+                    <ContextMenu
+                      context={item}
+                      isOpen={isContextMenuOpen}
+                      setIsOpen={handleContextMenuOpenChange}
+                      onSelectStoryId={onSelectStoryId}
+                      api={api}
+                      openedBy={openedBy}
+                      hasProviderMenuEntries={hasProviderMenuEntries}
+                    />
+                  }
+                </MenuTriggerContainer>
               )}
-              {testStatusIcon && (
-                <span style={{ display: 'contents' }} data-testid="tree-test-status-button">
-                  {testStatusIcon}
-                </span>
+              {(changeStatusIcon || testStatusIcon) && (
+                <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
+                  {changeStatusIcon && (
+                    <span style={{ display: 'contents' }} data-testid="tree-change-status-button">
+                      {changeStatusIcon}
+                    </span>
+                  )}
+                  {testStatusIcon && (
+                    <span style={{ display: 'contents' }} data-testid="tree-test-status-button">
+                      {testStatusIcon}
+                    </span>
+                  )}
+                </StatusIconContainer>
               )}
-            </StatusIconContainer>
-          )}
-        </StyledContent>
+            </StyledContent>
+          </>
+        )}
       </TreeItemContent>
       {children}
     </StyledTreeItem>

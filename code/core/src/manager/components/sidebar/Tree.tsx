@@ -22,7 +22,7 @@ import {
   isBranch,
   type TreeEntry,
 } from '../../utils/tree.ts';
-import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+import { TreeNode, type ReportRowFocus, type TreeNodeProps } from './TreeNode.tsx';
 
 import {
   Addon_TypesEnum,
@@ -141,14 +141,30 @@ export const Tree = React.memo<TreeProps>(function Tree({
   onSelectStoryIdRef.current = onSelectStoryIdProp;
   const onSelectStoryId = useCallback((id: string) => onSelectStoryIdRef.current(id), []);
 
-  // The row that holds DOM focus, which the context-menu shortcut acts on. React-aria keeps this
-  // on a row that a pointer press focused, so it is not the row the user is looking at.
-  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+  // The row that holds focus, and whether the keyboard put it there. Each row reports its own
+  // focus (see RowFocusReporter), because the sticky copies and the context-menu shortcut render
+  // outside the react-aria tree and cannot read its focus state.
+  const [rowFocus, setRowFocus] = useState<{ id: string; keyboard: boolean } | null>(null);
+  // The context-menu shortcut acts on the focused row. React-aria keeps focus on a row that a
+  // pointer press focused, so it is not always the row the user is looking at.
+  const focusedItemId = rowFocus?.id ?? null;
   const focusedItemIdRef = useRef<string | null>(null);
+  focusedItemIdRef.current = focusedItemId;
+  // A pointer press never makes focus visible, so the indent lines mark the keyboard's row only.
+  const keyboardFocusedItemId = rowFocus?.keyboard ? rowFocus.id : null;
 
-  // The row that holds keyboard focus. React-aria marks it with data-focus-visible, which a
-  // pointer press never sets, so the indent lines mark it and no other row.
-  const [keyboardFocusedItemId, setKeyboardFocusedItemId] = useState<string | null>(null);
+  const reportRowFocus = useCallback<ReportRowFocus>((itemId, keyboard) => {
+    setRowFocus((current) => {
+      // A row clears the focus only while it still holds it, so the row losing focus cannot
+      // undo the report of the row gaining it.
+      if (keyboard === null) {
+        return current?.id === itemId ? null : current;
+      }
+      return current?.id === itemId && current.keyboard === keyboard
+        ? current
+        : { id: itemId, keyboard };
+    });
+  }, []);
 
   // Rewrite the dataset to place the single child story in place of the component.
   const hoistedData = useMemo(() => hoistSingleStoryComponents(data), [data]);
@@ -263,23 +279,30 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
     const onInputStart = (event: PointerEvent | KeyboardEvent) => {
       lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
-      if (event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ') {
-        isActivatingRef.current = true;
-      }
+      // Assigned rather than only raised, so an arrow key lowers the flag by itself instead of
+      // relying on the previous press having ended.
+      isActivatingRef.current =
+        event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ';
     };
     const onInputEnd = () => {
       isActivatingRef.current = false;
     };
     container.addEventListener('pointerdown', onInputStart, { capture: true });
     container.addEventListener('keydown', onInputStart, { capture: true });
-    // pointerup can land outside the row (or the tree) after a drag, so listen on the window.
+    // The end of a press is watched on the window, in the capture phase, because it can land
+    // anywhere: a drag releases outside the row, a key released after focus moved lands outside
+    // the tree, and a press the browser takes over for a scroll ends in pointercancel with no
+    // pointerup at all. A press whose end is missed would leave the flag raised, and the next
+    // arrow key would open the story it lands on.
     window.addEventListener('pointerup', onInputEnd, { capture: true });
-    container.addEventListener('keyup', onInputEnd, { capture: true });
+    window.addEventListener('pointercancel', onInputEnd, { capture: true });
+    window.addEventListener('keyup', onInputEnd, { capture: true });
     return () => {
       container.removeEventListener('pointerdown', onInputStart, { capture: true });
       container.removeEventListener('keydown', onInputStart, { capture: true });
       window.removeEventListener('pointerup', onInputEnd, { capture: true });
-      container.removeEventListener('keyup', onInputEnd, { capture: true });
+      window.removeEventListener('pointercancel', onInputEnd, { capture: true });
+      window.removeEventListener('keyup', onInputEnd, { capture: true });
     };
   }, []);
 
@@ -290,11 +313,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
   hoistedDataRef.current = hoistedData;
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
-
-  const updateFocusedItemId = useCallback((itemId: string | null) => {
-    focusedItemIdRef.current = itemId;
-    setFocusedItemId(itemId);
-  }, []);
 
   // A branch toggles its own expansion. A leaf navigates to its story or docs page.
   const activateRow = useCallback(
@@ -347,48 +365,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
     });
   }, []);
   const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
-
-  // Track both focus marks with one MutationObserver. React-aria sets data-focused on the row
-  // that holds DOM focus, and data-focus-visible only while the focus came from the keyboard.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-    const idOf = (selector: string) =>
-      container.querySelector<HTMLElement>(selector)?.getAttribute('data-item-id') ?? null;
-    updateFocusedItemId(idOf('[data-focused="true"][data-item-id]'));
-    setKeyboardFocusedItemId(idOf('[data-focus-visible][data-item-id]'));
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        const row = mutation.target;
-        if (!(row instanceof HTMLElement)) {
-          continue;
-        }
-        const itemId = row.getAttribute('data-item-id');
-        if (mutation.attributeName === 'data-focused') {
-          if (row.getAttribute('data-focused') === 'true') {
-            updateFocusedItemId(itemId);
-          } else if (focusedItemIdRef.current === itemId) {
-            updateFocusedItemId(null);
-          }
-        } else if (row.hasAttribute('data-focus-visible')) {
-          setKeyboardFocusedItemId(itemId);
-        } else {
-          setKeyboardFocusedItemId((current) => (current === itemId ? null : current));
-        }
-      }
-    });
-
-    observer.observe(container, {
-      attributes: true,
-      attributeFilter: ['data-focused', 'data-focus-visible'],
-      subtree: true,
-    });
-
-    return () => observer.disconnect();
-  }, [updateFocusedItemId]);
 
   // Geometry of the visible rows, in render order.
   const rows = useMemo(() => flattenRows(tree, expanded), [tree, expanded]);
@@ -674,6 +650,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         openContextMenu,
         closeContextMenu,
         hasTestProviders,
+        onRowFocus: reportRowFocus,
         collectionDependencies,
       }),
     [
@@ -686,6 +663,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       openContextMenu,
       closeContextMenu,
       hasTestProviders,
+      reportRowFocus,
       collectionDependencies,
     ]
   );
@@ -765,6 +743,7 @@ interface RenderNodeProps extends Pick<
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
   hasTestProviders: boolean;
+  onRowFocus: ReportRowFocus;
   /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
   collectionDependencies: unknown[];
 }
@@ -775,6 +754,7 @@ function renderNode({
   openContextMenu,
   closeContextMenu,
   hasTestProviders,
+  onRowFocus,
   collectionDependencies,
   ...props
 }: RenderNodeProps) {
@@ -789,6 +769,7 @@ function renderNode({
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}
+        onRowFocus={onRowFocus}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>

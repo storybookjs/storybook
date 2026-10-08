@@ -27,7 +27,7 @@ describe('writing stories for an existing OrderHistory that fetches its data', (
   test('mocks the request instead of changing the component', () => {
     const component = readFileSync('src/components/OrderHistory.tsx', 'utf8');
     expect(component, 'Expected OrderHistory to keep taking no props').toMatch(
-      /export default function OrderHistory\(\)/
+      /export default function OrderHistory\s*\(\s*\)/
     );
     expect(component, 'Expected OrderHistory to keep fetching /api/orders').toMatch(
       /fetch\(\s*['"`]\/api\/orders/

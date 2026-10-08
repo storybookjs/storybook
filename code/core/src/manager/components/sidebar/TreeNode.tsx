@@ -16,7 +16,7 @@ import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
+import { getStatus } from '../../utils/status.tsx';
 import { isBranch, type TreeEntry } from '../../utils/tree.ts';
 import {
   ContextMenu,
@@ -28,7 +28,7 @@ import {
 import { CollapseIcon } from './CollapseIcon.tsx';
 import { IndentLines, useSelectionLineLevel } from './TreeIndentLines.tsx';
 import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
-import { StatusContext } from './StatusContext.tsx';
+import { useRowStatus } from './StatusStore.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item, SidebarLabelContext } from './types.ts';
 import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
@@ -233,7 +233,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   children,
 }) {
   const theme = useTheme();
-  const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
+  const rowStatus = useRowStatus(item.id);
 
   // The open context menu comes from a subscription store, not from props. As a react-aria
   // collection dependency it invalidates the node cache, which re-renders every row in the tree.
@@ -314,35 +314,20 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     testStatusIcon: React.ReactNode | null;
     statusTextColor: string | null;
   }>(() => {
-    if (!groupDualStatus || !groupDualStatus[item.id]) {
-      return {
-        changeStatus: 'status-value:unknown',
-        changeStatusIcon: null,
-        testStatus: 'status-value:unknown',
-        testStatusIcon: null,
-        statusTextColor: null,
-      };
-    }
-
-    const changeStatus = groupDualStatus[item.id].change;
-    const testStatus = groupDualStatus[item.id].test;
-
-    // 'affected' is never surfaced as an icon, and 'modified' only while its filter is active.
-    const showChangeStatus = shouldShowChangeStatus(changeStatus.value, isModifiedFilterActive);
     const { icon: changeStatusIcon, textColor: changeTextColor } = getStatus(
       theme,
-      changeStatus.value
+      rowStatus.change
     );
-    const { icon: testStatusIcon, textColor: testTextColor } = getStatus(theme, testStatus.value);
+    const { icon: testStatusIcon, textColor: testTextColor } = getStatus(theme, rowStatus.test);
 
     return {
-      changeStatus: showChangeStatus ? changeStatus.value : 'status-value:unknown',
-      changeStatusIcon: showChangeStatus ? changeStatusIcon : null,
-      testStatus: testStatus.value,
+      changeStatus: rowStatus.change,
+      changeStatusIcon,
+      testStatus: rowStatus.test,
       testStatusIcon,
-      statusTextColor: testTextColor ?? (showChangeStatus ? changeTextColor : null),
+      statusTextColor: testTextColor ?? changeTextColor,
     };
-  }, [groupDualStatus, item.id, theme, isModifiedFilterActive]);
+  }, [rowStatus, theme]);
 
   const itemIsBranch = isBranch(item);
 

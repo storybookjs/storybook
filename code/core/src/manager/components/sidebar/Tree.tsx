@@ -1,4 +1,12 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { TooltipNote } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
@@ -25,7 +33,7 @@ import {
 import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { getGroupDualStatus } from '../../utils/status.tsx';
+import { getGroupDualStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import type { ContextMenuTrigger } from './ContextMenu.tsx';
 import { hasContextMenu, hasProviderMenuEntriesFor } from './ContextMenu.tsx';
@@ -35,7 +43,7 @@ import {
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
-import { StatusContext } from './StatusContext.tsx';
+import { createStatusStore, StatusStoreContext, type RowStatus } from './StatusStore.tsx';
 import { TREE_ROW_HEIGHT, flattenRows, scrollTopWithin, treeTopWithin } from './treeGeometry.ts';
 import {
   INDENT_LINE_OPACITY_VAR,
@@ -159,6 +167,27 @@ export const Tree = React.memo<TreeProps>(function Tree({
     () => getGroupDualStatus(hoistedData, allStatuses ?? {}),
     [hoistedData, allStatuses]
   );
+
+  // What each row shows, with the change status already masked by the modified filter. Rows read
+  // this from the store, so toggling the filter reaches only the rows whose own icon changes.
+  const rowStatuses = useMemo(() => {
+    const result: Record<string, RowStatus> = {};
+    for (const [itemId, { change, test }] of Object.entries(groupDualStatus)) {
+      result[itemId] = {
+        change: shouldShowChangeStatus(change.value, isModifiedFilterActive)
+          ? change.value
+          : 'status-value:unknown',
+        test: test.value,
+      };
+    }
+    return result;
+  }, [groupDualStatus, isModifiedFilterActive]);
+
+  const statusStoreRef = useRef(createStatusStore());
+  // Before paint, so a row never shows one frame of the status it had before the update.
+  useLayoutEffect(() => {
+    statusStoreRef.current.setState(rowStatuses);
+  }, [rowStatuses]);
 
   const contextMenuShortcut = useMemo(() => {
     const shortcutKeys = api.getShortcutKeys();
@@ -622,7 +651,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // invalidated consistently — a drifted copy at one level renders stale rows. Deliberately
   // minimal: invalidating the collection re-renders every row in the tree, which takes seconds
   // on fully-expanded trees. The open context menu reaches rows through ContextMenuStore
-  // instead, and the statuses through StatusContext. hasTestProviders is baked into cached row
+  // instead, and the statuses through StatusStore. hasTestProviders is baked into cached row
   // elements, so it must invalidate them when a provider registers.
   const collectionDependencies = useMemo(
     () => [expanded, hasTestProviders],
@@ -663,20 +692,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
   treeLayout.setRows(rows);
   const treeLayoutOptions = useMemo(() => ({ rows }), [rows]);
 
-  // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
-  // every TreeNode through the context.
-  const statusContextValue = useMemo(
-    () => ({ groupDualStatus, isModifiedFilterActive }),
-    [groupDualStatus, isModifiedFilterActive]
-  );
-
   const collapseStickyRow = useCallback(
     (itemId: string) => setExpanded({ ids: [itemId], append: true, value: false }),
     [setExpanded]
   );
 
   return (
-    <StatusContext.Provider value={statusContextValue}>
+    <StatusStoreContext.Provider value={statusStoreRef.current}>
       <ContextMenuStoreContext.Provider value={contextMenuStoreRef.current}>
         <SelectionLineStoreContext.Provider value={selectionLineStoreRef.current}>
           <TreeWrapper ref={treeWrapperRef}>
@@ -724,7 +746,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
           )}
         </SelectionLineStoreContext.Provider>
       </ContextMenuStoreContext.Provider>
-    </StatusContext.Provider>
+    </StatusStoreContext.Provider>
   );
 });
 

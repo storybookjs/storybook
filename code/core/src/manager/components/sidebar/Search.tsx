@@ -171,7 +171,6 @@ export type SearchProps = {
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
-  searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
   belowSearchContent?: ReactNode;
 };
@@ -182,7 +181,6 @@ export const Search = React.memo<SearchProps>(function Search({
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
-  searchBarContent,
   searchFieldContent,
   belowSearchContent,
 }) {
@@ -542,7 +540,6 @@ export const Search = React.memo<SearchProps>(function Search({
                   {searchFieldContent}
                 </Actions>
               </SearchField>
-              {searchBarContent}
             </SearchBar>
             {!isOpen && belowSearchContent}
             <FocusContainer tabIndex={-1} id="storybook-explorer-menu">

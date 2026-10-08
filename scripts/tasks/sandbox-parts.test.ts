@@ -25,6 +25,15 @@ const reactViteTemplate = {
   modifications: {},
 } as TemplateDetails['template'];
 
+const angularViteTemplate = {
+  expected: {
+    framework: '@storybook/angular-vite',
+    renderer: '@storybook/angular-vite',
+    builder: '@storybook/builder-vite',
+  },
+  modifications: {},
+} as TemplateDetails['template'];
+
 /** Reads the emitted preview back as the set of modules it asks Storybook to mock. */
 function mockedModules(source: string) {
   const mocks: { module: string; spy: boolean }[] = [];
@@ -109,4 +118,38 @@ export default preview;
     { module: 'lodash-es/sum', spy: false },
     { module: 'uuid', spy: false },
   ]);
+});
+
+it('wires Compodoc into an Angular Vite preview that opts out of server docgen', async () => {
+  vol.fromNestedJSON({
+    [PREVIEW_PATH]: `export default {};\n`,
+    [`${SANDBOX_DIR}/.storybook/main.ts`]: `export default {
+  features: { docgenServer: false },
+};
+`,
+  });
+
+  await extendPreview(
+    { template: angularViteTemplate, sandboxDir: SANDBOX_DIR } as TemplateDetails,
+    {} as PassedOptionValues
+  );
+
+  expect(await readFile(PREVIEW_PATH, 'utf-8')).toMatchInlineSnapshot(`
+    "import { sb } from \"storybook/test\";
+    import docJson from \"../documentation.json\";
+    import { setCompodocJson } from \"@storybook/addon-docs/angular\";
+    sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');
+    sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });
+    sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');
+    sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });
+    sb.mock(import('lodash-es'));
+    sb.mock(import('lodash-es/add'));
+    sb.mock(import('lodash-es/sum'));
+    sb.mock(import('uuid'));
+    export default {
+      tags: [\"vitest\"]
+    };
+    setCompodocJson(docJson);
+    "
+  `);
 });

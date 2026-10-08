@@ -12,10 +12,19 @@ export function setAfterNavigateArgument(afterNavigateArgs: any) {
 }
 
 export function afterNavigate(cb: any) {
-  const argument = getContext('after-navigate-args');
+  const argument = getContext<Record<string, any> | undefined>('after-navigate-args');
   onMount(() => {
     if (cb && cb instanceof Function) {
-      cb(argument);
+      // SvelteKit always passes a navigation, so components can destructure it
+      cb({
+        type: 'enter',
+        shallow: false,
+        from: null,
+        to: null,
+        willUnload: false,
+        complete: Promise.resolve(),
+        ...argument,
+      });
     }
   });
 }
@@ -38,9 +47,16 @@ export async function invalidateAll() {
   window.dispatchEvent(event);
 }
 
+export async function refreshAll() {
+  const event = new CustomEvent('storybook:refreshAll');
+  window.dispatchEvent(event);
+}
+
 export function preloadCode() {}
 
 export function preloadData() {}
+
+export function snapshot() {}
 
 export async function pushState(...args: any[]) {
   const event = new CustomEvent('storybook:pushState', {

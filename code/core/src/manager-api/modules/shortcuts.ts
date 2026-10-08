@@ -10,6 +10,7 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
+import { logger } from 'storybook/internal/client-logger';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -527,7 +528,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         default:
-          addonsShortcuts[feature].action();
+          if (feature in addonsShortcuts) {
+            addonsShortcuts[feature].action();
+          } else {
+            logger.warn(`api.handleShortcutFeature called with unknown feature: ${feature}.`);
+          }
           break;
       }
     },

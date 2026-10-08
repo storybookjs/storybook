@@ -7,9 +7,6 @@ import type { Addon_PageType } from 'storybook/internal/types';
 import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
-import { global } from '@storybook/global';
-
-import { isReviewFeatureEnabled } from '../shared/review/features.ts';
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
@@ -75,13 +72,11 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages }: Props)
     return () => observer.disconnect();
   }, []);
 
-  const isReviewEnabled = isReviewFeatureEnabled(global.FEATURES);
-
   const layout = (
     <Layout
       managerLayoutState={managerLayoutState}
       setManagerLayoutState={setManagerLayoutState}
-      slotOverlay={isReviewEnabled ? <ReviewPersistentLayer /> : undefined}
+      slotOverlay={<ReviewPersistentLayer />}
       slotMain={<MainPreview />}
       slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
       slotPanel={<Panel />}
@@ -96,9 +91,8 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages }: Props)
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
         {/* The provider wraps the whole layout so the sidebar, toolbar, and content
-            overlay share one review context. Feature-off mounts no provider: consumers
-            fall back to the context default and never touch the review service. */}
-        {isReviewEnabled ? <ReviewProvider>{layout}</ReviewProvider> : layout}
+            overlay share one review context. */}
+        <ReviewProvider>{layout}</ReviewProvider>
       </ManagerErrorBoundary>
     </>
   );

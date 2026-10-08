@@ -1,7 +1,8 @@
-import { join, resolve } from 'node:path';
+import { join, resolve } from 'pathe';
 
 import { describe, expect, it } from 'vitest';
 
+import { storybookConfigExtensions } from './extensions.ts';
 import {
   applyPreviewImportsMap,
   DOCUMENTED_PREVIEW_IMPORT,
@@ -26,13 +27,11 @@ describe('webPreviewCandidates', () => {
   it('lists .storybook preview files next to .rnstorybook', () => {
     const projectDir = resolve('app');
 
-    expect(webPreviewCandidates(join('app', '.rnstorybook', 'preview.tsx'))).toEqual([
-      join(projectDir, '.storybook', 'preview.ts'),
-      join(projectDir, '.storybook', 'preview.tsx'),
-      join(projectDir, '.storybook', 'preview.js'),
-      join(projectDir, '.storybook', 'preview.jsx'),
-      join(projectDir, '.storybook', 'preview.mjs'),
-    ]);
+    expect(webPreviewCandidates(join('app', '.rnstorybook', 'preview.tsx'))).toEqual(
+      storybookConfigExtensions.map((extension) =>
+        join(projectDir, '.storybook', `preview${extension}`)
+      )
+    );
   });
 });
 

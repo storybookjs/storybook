@@ -1,26 +1,18 @@
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join, normalize, relative, resolve } from 'pathe';
+
+import { storybookConfigExtensions } from './extensions.ts';
 
 /** Default React Native on-device Storybook config directory name. */
 export const RN_STORYBOOK_DIR = '.rnstorybook';
 
 export const DOCUMENTED_PREVIEW_IMPORT = '#.storybook/preview';
 
-const WEB_PREVIEW_FILENAMES = [
-  'preview.ts',
-  'preview.tsx',
-  'preview.js',
-  'preview.jsx',
-  'preview.mjs',
-];
-
-const normalizePath = (fileOrDir: string) => fileOrDir.replace(/\\/g, '/');
-
 export function isReactNativeStorybookPath(fileOrDir?: string): boolean {
   if (!fileOrDir) {
     return false;
   }
 
-  const normalized = normalizePath(fileOrDir);
+  const normalized = normalize(fileOrDir);
   return (
     normalized === RN_STORYBOOK_DIR ||
     normalized.startsWith(`${RN_STORYBOOK_DIR}/`) ||
@@ -30,14 +22,16 @@ export function isReactNativeStorybookPath(fileOrDir?: string): boolean {
 }
 
 export function webPreviewCandidates(nativeConfigPath: string): string[] {
-  const parts = resolve(nativeConfigPath).split(sep);
+  const parts = resolve(nativeConfigPath).split('/');
   const index = parts.lastIndexOf(RN_STORYBOOK_DIR);
   if (index <= 0) {
     return [];
   }
 
-  const projectDir = parts.slice(0, index).join(sep);
-  return WEB_PREVIEW_FILENAMES.map((name) => join(projectDir, '.storybook', name));
+  const projectDir = parts.slice(0, index).join('/');
+  return storybookConfigExtensions.map((extension) =>
+    join(projectDir, '.storybook', `preview${extension}`)
+  );
 }
 
 export function hasSiblingReactNativeConfig(
@@ -62,7 +56,7 @@ export function previewFileForImports(
 }
 
 function packageRelativeImport(fromDirectory: string, previewFile: string): string {
-  const relativePath = relative(resolve(fromDirectory), resolve(previewFile)).replaceAll('\\', '/');
+  const relativePath = relative(resolve(fromDirectory), resolve(previewFile));
   return relativePath.startsWith('./') || relativePath.startsWith('../')
     ? relativePath
     : `./${relativePath}`;

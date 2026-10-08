@@ -133,6 +133,8 @@ Use Storybook loggers instead of raw `console.*` in normal code paths:
 
 For TypeScript source in the repo, prefer explicit file extensions for relative code imports and exports such as `./foo.ts` or `./bar.tsx` when the target is another TS/JS module in this repository. Keep framework-specific component imports like `.vue` and `.svelte` in the form already expected by their package tooling.
 
+Prefer `pathe` over `node:path`. It normalizes separators to `/`, so path code should not rewrite slashes itself.
+
 The pre-commit hook automatically detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is auto-fixed when agents commit.
 
 Avoid `console.log`, `console.warn`, and `console.error` unless the file is isolated enough that importing the logger is not reasonable.

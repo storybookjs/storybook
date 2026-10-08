@@ -6,22 +6,21 @@ import {
 } from '../lib/experiment.ts';
 import {
   setupSandbox,
-  writeClaudeInAppBrowserMock,
-  writeClaudePluginSkills,
+  writeCodexInAppBrowserMock,
+  writeCodexPluginSkills,
 } from '../lib/templates.ts';
 
-const model = 'claude-opus-5-5';
+const model = 'gpt-6-luna?reasoningEffort=low';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
-  agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
+  agent: 'codex',
   model,
-  agentOptions: { effort: 'medium' },
   // Not in the default set: runs only when named. Also skipped under EVAL_STORYBOOK_LATEST=1.
   evals: onlyWhenNamed(import.meta.url, PLUGIN_STORYBOOK_EVALS),
   setup: async (sandbox) => {
-    await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin', model });
-    await writeClaudePluginSkills(sandbox);
-    await writeClaudeInAppBrowserMock(sandbox);
+    await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin', model });
+    await writeCodexPluginSkills(sandbox);
+    await writeCodexInAppBrowserMock(sandbox);
   },
 } satisfies ExperimentConfig;

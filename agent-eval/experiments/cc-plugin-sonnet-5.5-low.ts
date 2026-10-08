@@ -10,13 +10,13 @@ import {
   writeClaudePluginSkills,
 } from '../lib/templates.ts';
 
-const model = 'claude-opus-5-5';
+const model = 'claude-sonnet-5-5';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
   agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
   model,
-  agentOptions: { effort: 'medium' },
+  agentOptions: { effort: 'low' },
   // Not in the default set: runs only when named. Also skipped under EVAL_STORYBOOK_LATEST=1.
   evals: onlyWhenNamed(import.meta.url, PLUGIN_STORYBOOK_EVALS),
   setup: async (sandbox) => {

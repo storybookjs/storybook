@@ -23,7 +23,7 @@ ${ref('docs.show')} --id <id>   # props and usage examples of one entry
 ${ref('docs.showStory')} --storyId <id>   # the code of a story that docs show only lists
 \`\`\`
 
-Run \`docs list\` once at the start, then \`docs show\` for every listed component you use, even one you only add such as a button, and for each one you are asked about. Reuse what exists instead of building a duplicate. Use only the props that \`docs show\` documents, never one you assume from a name or another library, and answer props, API and usage questions from these commands. Read source files or \`node_modules\` only when the commands return nothing relevant. When \`docs list\` groups its entries under sources (\`id: acme\`), pass the source of the entry to both commands that show it: \`--storybookId acme\`.`;
+Do this before you edit any file: run \`docs list\` once, then \`docs show\` for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Reuse what exists instead of building a duplicate. Use only the props that \`docs show\` documents, never one you assume from a name or another library, and answer props, API and usage questions from these commands. Read source files or \`node_modules\` only when the commands return nothing relevant. When \`docs list\` groups its entries under sources (\`id: acme\`), pass the source of the entry to both commands that show it: \`--storybookId acme\`.`;
 }
 
 function writeSection({ framework, csfFactories, previewFile }: StoriesSkillInputs): string {
@@ -52,7 +52,7 @@ function testSection(a11yEnabled: boolean): string {
 ${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids: see "Find the stories"; leave out --stories to run every story
 \`\`\`
 
-Run this after every change, instead of a \`package.json\` test script. Use focused runs while iterating and one full run before you finish. Fix failures and rerun; never finish with failing tests.${a11y}`;
+Run this after every change. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Use focused runs while iterating and one full run before you finish. Fix failures and rerun; never finish with failing tests.${a11y}`;
 }
 
 const affectedStoryCommands = ({ moduleGraphSupported }: StoriesSkillInputs) =>

@@ -651,7 +651,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
       if (!name) {
         // Find the entry (group, component, story or docs) that is referred to
-        const entry = titleOrId ? hash[titleOrId] || hash[sanitize(titleOrId)] : hash[kindSlug];
+        const entry = titleOrId
+          ? hash[titleOrId] ||
+            hash[sanitize(titleOrId)] ||
+            // Unattached docs pages have no entry keyed by their title
+            Object.values(hash).find(
+              (e) => e.type === 'docs' && sanitize(e.title) === sanitize(titleOrId)
+            )
+          : hash[kindSlug];
 
         if (!entry) {
           throw new Error(`Unknown id or title: '${titleOrId}'`);
@@ -1121,7 +1128,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         const stateHasSelection = state.viewMode && state.storyId;
         const stateSelectionDifferent = state.viewMode !== viewMode || state.storyId !== storyId;
         const { type } = state.index?.[state.storyId] || {};
-        const isStory = !(type === 'root' || type === 'component' || type === 'group');
+        const isStory = type === 'story' || type === 'docs';
 
         /**
          * When storybook starts, we want to navigate to the first story. But there are a few

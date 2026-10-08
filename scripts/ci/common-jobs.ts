@@ -111,6 +111,7 @@ export const fmt = defineJob('Format check', () => ({
         command: 'yarn fmt:check',
       },
     },
+    ...workflow.cancelOnFailure(),
   ],
 }));
 
@@ -192,7 +193,7 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui',
+          command: 'yarn storybook:ui',
         },
       },
       server.wait(['6006']),
@@ -227,7 +228,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true yarn storybook:ui:build',
+          command: 'yarn storybook:ui:build',
         },
       },
       {

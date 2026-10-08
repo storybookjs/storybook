@@ -74,9 +74,9 @@ describe('resolveSkillInputs', () => {
   it('spreads the resolved tool availability onto the result', async () => {
     const options = createMockOptions({ features: { changeDetection: true } });
 
-    const inputs = await resolveSkillInputs(options, { moduleGraphSupported: true });
+    const inputs = await resolveSkillInputs(options);
 
-    expect(inputs.moduleGraphSupported).toBe(true);
+    expect(inputs.moduleGraphSupported).toBe(false);
     expect(inputs.changeDetectionEnabled).toBe(true);
   });
 
@@ -85,7 +85,6 @@ describe('resolveSkillInputs', () => {
 
     const inputs = await resolveSkillInputs(options, {
       features: { changeDetection: true },
-      moduleGraphSupported: true,
     });
 
     // The mock's `presets.apply('features', ...)` would report changeDetection off; an "on"

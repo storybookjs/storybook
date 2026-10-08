@@ -235,8 +235,10 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       return null;
     }
 
-    // An explicit opt-out means the user still runs Compodoc, so their setup has to stay.
-    if (mainConfig.features?.experimentalDocgenServer === false) {
+    // Checks run before `docgen-server` renames the flag, so an unmigrated config still has it.
+    const features: { docgenServer?: boolean; experimentalDocgenServer?: boolean } =
+      mainConfig.features ?? {};
+    if ((features.docgenServer ?? features.experimentalDocgenServer) === false) {
       return null;
     }
 

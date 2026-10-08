@@ -921,11 +921,13 @@ option exists in both places, keep the nested value because it was authoritative
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
 
-### Create-new-story button removed from the sidebar
+### 'Create new story' UI feature removed
 
-The ➕ button next to the sidebar search, which searched the project for a component file and generated a basic story file for it in React projects, is removed. Saving a story from the Controls panel is unchanged: adjust a control and save the result as a new story in the existing story file.
+We have removed the button next to the sidebar's search field, which allowed React framework users to create a new story file for a component in their project. This feature was not widely adopted, and only supported in one framework. Removing it allowed us to remove thousands of lines of code, which will help us maintain Storybook more efficiently.
 
-The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed with it.
+Saving a story from the Controls panel is unchanged: you can still adjust controls and save the result as a new story, or update an existing story, in an existing story file.
+
+The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed too.
 
 ### Test runner support ended
 

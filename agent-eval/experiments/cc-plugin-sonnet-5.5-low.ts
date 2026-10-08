@@ -6,17 +6,15 @@ import {
   writeClaudePluginSkills,
 } from '../lib/templates.ts';
 
-const model = 'claude-opus-5-5';
-
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
   agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
-  model,
-  agentOptions: { effort: 'medium' },
+  model: 'claude-sonnet-5-5',
+  agentOptions: { effort: 'low' },
   // Skipped under EVAL_STORYBOOK_LATEST=1; see PLUGIN_STORYBOOK_EVALS.
   evals: PLUGIN_STORYBOOK_EVALS,
   setup: async (sandbox) => {
-    await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin', model });
+    await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin' });
     await writeClaudePluginSkills(sandbox);
     await writeClaudeInAppBrowserMock(sandbox);
   },

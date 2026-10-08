@@ -141,7 +141,7 @@ const CODEX_PLUGIN_SKILLS_DIR = path.join(
 
 export async function setupSandbox(
   sandbox: Sandbox,
-  options: { agent: EvalAgent; integration: EvalIntegration; model?: string }
+  options: { agent: EvalAgent; integration: EvalIntegration }
 ): Promise<void> {
   await writeEvalSupportFiles(sandbox, options);
 
@@ -214,14 +214,14 @@ export async function setupSandbox(
 
 async function writeEvalSupportFiles(
   sandbox: Sandbox,
-  options: { agent: EvalAgent; integration: EvalIntegration; model?: string }
+  options: { agent: EvalAgent; integration: EvalIntegration }
 ): Promise<void> {
   await sandbox.writeFiles({
     [TRANSCRIPT_HELPER_SANDBOX_PATH]: await fs.readFile(TRANSCRIPT_HELPER_SOURCE_PATH, 'utf8'),
     [SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
     [TYPE_UTIL_SANDBOX_PATH]: await fs.readFile(TYPE_UTIL_SOURCE_PATH, 'utf8'),
     [AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
-      { agent: options.agent, model: options.model, integration: options.integration },
+      { agent: options.agent, integration: options.integration },
       null,
       2
     ).concat('\n'),

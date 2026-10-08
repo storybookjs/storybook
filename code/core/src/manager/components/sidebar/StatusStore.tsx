@@ -30,8 +30,8 @@ export interface StatusStore {
   subscribe: (listener: () => void) => () => void;
 }
 
-export const createStatusStore = (): StatusStore => {
-  let state: Record<StoryId, RowStatus> = {};
+export const createStatusStore = (initial: Record<StoryId, RowStatus> = {}): StatusStore => {
+  let state: Record<StoryId, RowStatus> = initial;
   const listeners = new Set<() => void>();
   return {
     getRowStatus: (itemId: StoryId) => state[itemId] ?? NO_STATUS,

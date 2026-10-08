@@ -43,13 +43,19 @@ import {
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
-import { createStatusStore, StatusStoreContext, type RowStatus } from './StatusStore.tsx';
+import {
+  createStatusStore,
+  StatusStoreContext,
+  type RowStatus,
+  type StatusStore,
+} from './StatusStore.tsx';
 import { TREE_ROW_HEIGHT, flattenRows, scrollTopWithin, treeTopWithin } from './treeGeometry.ts';
 import {
   INDENT_LINE_OPACITY_VAR,
   SelectionLineStoreContext,
   createSelectionLineStore,
   type SelectionLine,
+  type SelectionLineStore,
 } from './TreeIndentLines.tsx';
 import { TreeRowLayout } from './TreeRowLayout.ts';
 import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
@@ -107,10 +113,10 @@ interface TreeProps {
 }
 
 export const Tree = React.memo<TreeProps>(function Tree({
-  allStatuses: allStatusesProp,
+  allStatuses,
   includedStatusFilters,
   refId,
-  data: dataProp,
+  data,
   selectedStoryId,
   onSelectStoryId: onSelectStoryIdProp,
 }) {
@@ -128,13 +134,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Whether any test provider is registered: gates the context menu on group/component rows.
   const hasTestProviders =
     Object.keys(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER)).length > 0;
-
-  // The manager recreates the index and status records on unrelated state ticks. Their
-  // identities feed the react-aria collection (items + dependencies) and the status context,
-  // where a fresh identity re-renders every row in the tree — seconds when fully expanded.
-  // Reuse the previous identity while the entries themselves are unchanged.
-  const data = useStableIdentity(dataProp);
-  const allStatuses = useStableIdentity(allStatusesProp);
 
   // Keep the selection callback identity stable for the same reason: it feeds the memoized
   // row renderer.
@@ -183,10 +182,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return result;
   }, [groupDualStatus, isModifiedFilterActive]);
 
-  const statusStoreRef = useRef(createStatusStore());
-  // Before paint, so a row never shows one frame of the status it had before the update.
+  // Seeded on the first render, so no row renders once without its status and again with it.
+  const statusStoreRef = useRef<StatusStore | null>(null);
+  statusStoreRef.current ??= createStatusStore(rowStatuses);
+  // Later updates land before paint, so a row never shows one frame of its previous status.
   useLayoutEffect(() => {
-    statusStoreRef.current.setState(rowStatuses);
+    statusStoreRef.current!.setState(rowStatuses);
   }, [rowStatuses]);
 
   const contextMenuShortcut = useMemo(() => {
@@ -421,9 +422,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
     return { level: depths[firstChildIndex], rowIds };
   }, [rows, selectedParentId]);
-  const selectionLineStoreRef = useRef(createSelectionLineStore());
+  const selectionLineStoreRef = useRef<SelectionLineStore | null>(null);
+  selectionLineStoreRef.current ??= createSelectionLineStore();
   useEffect(() => {
-    selectionLineStoreRef.current.setState(selectionLine);
+    selectionLineStoreRef.current!.setState(selectionLine);
   }, [selectionLine]);
 
   // Recompute the sticky rows on every scroll and whenever the geometry changes. A resize alone
@@ -752,29 +754,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
 // Stable module-level constant so empty-state props don't bust React.memo equality checks.
 const EMPTY_KEYS: Set<string> = new Set();
-
-function shallowEqualRecords(
-  a: Record<string, unknown> | undefined,
-  b: Record<string, unknown> | undefined
-): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (!a || !b) {
-    return false;
-  }
-  const aKeys = Object.keys(a);
-  return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key]);
-}
-
-/** Reuse the previous object identity while its entries are shallow-equal (same value refs). */
-function useStableIdentity<T extends Record<string, any> | undefined>(value: T): T {
-  const ref = useRef(value);
-  if (ref.current !== value && !shallowEqualRecords(ref.current, value)) {
-    ref.current = value;
-  }
-  return ref.current;
-}
 
 interface RenderNodeProps extends Pick<
   TreeNodeProps,

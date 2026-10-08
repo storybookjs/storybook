@@ -26,7 +26,6 @@ declare var STORYBOOK_LAST_EVENTS: Record<
 >;
 declare var STORYBOOK_SESSION_ID: string | undefined;
 declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
-declare var PREVIEW_URL: string | undefined;
 
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__: any;
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: any;

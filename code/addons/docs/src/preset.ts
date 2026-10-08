@@ -153,10 +153,6 @@ const docs: PresetProperty<'docs'> = (input = {}, options) => {
   return result;
 };
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/react-dom-shim/preset'),
-];
-
 export const viteFinal = async (config: any, options: DocsOptions) => {
   const { plugins = [] } = config;
   const { csfPluginOptions = {} } = options;
@@ -226,11 +222,7 @@ export const resolvedReact = async (existing: any) => ({
 export const services = async (_value: void, options: Options): Promise<void> => {
   const features = await options.presets.apply('features');
 
-  if (
-    features?.experimentalDocgenServer &&
-    features?.componentsManifest &&
-    !options.ignorePreview
-  ) {
+  if (features?.docgenServer && features?.componentsManifest) {
     registerMdxService({
       getIndex: () =>
         options.presets
@@ -244,7 +236,6 @@ const optimizeViteDeps = [
   '@storybook/addon-docs',
   '@storybook/addon-docs/blocks',
   '@storybook/addon-docs > @mdx-js/react',
-  '@storybook/addon-docs > @storybook/react-dom-shim',
   'react-dom/client',
   'react/jsx-runtime',
   'react',

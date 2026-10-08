@@ -1,10 +1,15 @@
+import { execFile } from 'node:child_process';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
 import { collectTranscriptUsage } from './usage.ts';
 
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
 // one per workflow behavior branch. This is the set that always runs on CI.
 const CORE_STORYBOOK_EVALS = [
-  '801-create-component-no-launch-config',
+  '801-create-accessible-component',
   '802-create-component',
   '803-edit-component',
   '804-write-story-for-existing-component',
@@ -16,6 +21,7 @@ const CORE_STORYBOOK_EVALS = [
   '811-fix-a11y-violations',
   '812-first-story-empty-project',
   '813-monorepo-leaf-create-component',
+  '814-write-stories-for-fetching-component',
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).
@@ -60,7 +66,7 @@ type EvalName =
 const STORYBOOK_LATEST = process.env.EVAL_STORYBOOK_LATEST === '1';
 
 // By default only the first eval of the active line runs, to keep costs low.
-// EVAL_EXTRA_EVALS=1 runs the full line; EVAL_ONLY=<name>[,<name>] narrows
+// EVAL_ALL=1 runs the full line; EVAL_ONLY=<name>[,<name>] narrows
 // the set to specific evals for local debugging.
 function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
   const only = process.env.EVAL_ONLY;
@@ -75,6 +81,14 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
       if (match === undefined) {
         throw new Error(
           `Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(', ')}`
+        );
+      }
+      if (
+        STORYBOOK_LATEST &&
+        !(PORTED_WORKFLOW_STORYBOOK_EVALS as readonly string[]).includes(match)
+      ) {
+        throw new Error(
+          `EVAL_ONLY entry "${match}" cannot run with EVAL_STORYBOOK_LATEST=1: only the 9xx line supports the stable release.`
         );
       }
       return match;
@@ -95,15 +109,18 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
     return partitioned;
   }
 
-  if (process.env.EVAL_EXTRA_EVALS === '1') {
+  if (process.env.EVAL_ALL === '1') {
     return STORYBOOK_LATEST
       ? { core: [...PORTED_WORKFLOW_STORYBOOK_EVALS], lifecycle: [] }
-      : { core: [...CORE_STORYBOOK_EVALS], lifecycle: [...LIFECYCLE_STORYBOOK_EVALS] };
+      : {
+          core: [...CORE_STORYBOOK_EVALS],
+          lifecycle: [...LIFECYCLE_STORYBOOK_EVALS],
+        };
   }
 
   return STORYBOOK_LATEST
     ? { core: ['908-run-story-tests'], lifecycle: [] }
-    : { core: ['801-create-component-no-launch-config'], lifecycle: [] };
+    : { core: ['801-create-accessible-component'], lifecycle: [] };
 }
 
 const ACTIVE_EVALS = resolveActiveEvals();
@@ -119,36 +136,43 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   ? []
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
-// Non-default model tiers run zero evals unless EVAL_EXTRA_MODELS=1, so
-// labeled CI runs only pay for the default-model experiments.
-export const EXTRA_MODEL_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const execFileAsync = promisify(execFile);
+let checkoutRevision: Promise<{ commit: string; dirty: boolean }> | undefined;
 
-export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];
+function readCheckoutRevision(): Promise<{ commit: string; dirty: boolean }> {
+  checkoutRevision ??= Promise.all([
+    execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT }),
+    execFileAsync('git', ['status', '--porcelain'], { cwd: REPO_ROOT }),
+  ]).then(([head, status]) => ({
+    commit: head.stdout.trim(),
+    dirty: status.stdout.trim() !== '',
+  }));
+  return checkoutRevision;
+}
 
-function attachUsageMetadata({ runData }: RunCompleteContext) {
-  if (!runData.transcript) {
-    return;
-  }
-
-  const usage = collectTranscriptUsage(runData.transcript, runData.result.observedModel);
-
-  if (!usage) {
-    return;
-  }
+async function attachRunMetadata({ runData }: RunCompleteContext) {
+  const usage = runData.transcript
+    ? collectTranscriptUsage(runData.transcript, runData.result.observedModel)
+    : undefined;
+  // Recording the commit is bookkeeping; a git failure must not fail the eval itself.
+  const checkout = await readCheckoutRevision().catch(() => undefined);
 
   return {
     ...runData,
     result: {
       ...runData.result,
-      metadata: { ...runData.result.metadata, usage },
+      metadata: {
+        ...runData.result.metadata,
+        ...(checkout ? { checkout } : {}),
+        ...(usage ? { usage } : {}),
+      },
     },
   };
 }
 
 export const DEFAULT_EXPERIMENT_CONFIG = {
-  onRunComplete: attachUsageMetadata,
+  onRunComplete: attachRunMetadata,
   // Keep runs at 1: the runner starts all attempts in parallel (earlyExit only
   // aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
   runs: 1,
@@ -156,6 +180,9 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // The runner default of 600s is too tight for opus-high on the plugin
   // path: passing runs have taken up to 458s (2026-07-03 CI runs).
   timeout: 900,
+  // "auto" is recommended and uploads results to Vercel, making it easier to share
+  // with the team. Switch to "docker" to run evals on your local machine, e.g. for
+  // throwaway experiments, or in case of Vercel outage or payment issue.
   sandbox: 'auto',
   copyFiles: 'all',
   // Post-run script checks stay disabled: they fail on sandbox environment

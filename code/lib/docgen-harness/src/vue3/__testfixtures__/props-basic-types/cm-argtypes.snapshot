@@ -1,6 +1,5 @@
 {
   "big": {
-    "defaultValue": undefined,
     "description": "Large numeric identifier.",
     "name": "big",
     "table": {
@@ -17,7 +16,6 @@
     },
   },
   "config": {
-    "defaultValue": undefined,
     "description": "Arbitrary configuration object.",
     "name": "config",
     "table": {
@@ -34,9 +32,6 @@
     },
   },
   "count": {
-    "defaultValue": {
-      "summary": "1",
-    },
     "description": "How many times the label repeats.",
     "name": "count",
     "table": {
@@ -54,9 +49,6 @@
     },
   },
   "enabled": {
-    "defaultValue": {
-      "summary": "false",
-    },
     "description": "Whether the control is enabled.",
     "name": "enabled",
     "table": {
@@ -74,7 +66,6 @@
     },
   },
   "formatter": {
-    "defaultValue": undefined,
     "description": "Formats the count for display.",
     "name": "formatter",
     "table": {
@@ -91,7 +82,6 @@
     },
   },
   "label": {
-    "defaultValue": undefined,
     "description": "The main label text.",
     "name": "label",
     "table": {
@@ -107,9 +97,6 @@
     },
   },
   "tags": {
-    "defaultValue": {
-      "summary": "[]",
-    },
     "description": "Plain string tags rendered after the label.",
     "name": "tags",
     "table": {
@@ -128,7 +115,6 @@
     },
   },
   "token": {
-    "defaultValue": undefined,
     "description": "Unique token for the instance.",
     "name": "token",
     "table": {

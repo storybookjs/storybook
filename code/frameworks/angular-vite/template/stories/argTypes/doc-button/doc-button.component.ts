@@ -20,8 +20,8 @@ export interface ISomeInterface {
 }
 
 export enum ButtonAccent {
-  'Normal' = 'Normal',
-  'High' = 'High',
+  Normal = 'Normal',
+  High = 'High',
 }
 
 /**

@@ -1,0 +1,76 @@
+{
+  "count": {
+    "description": undefined,
+    "name": "count",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "disabled": {
+    "description": undefined,
+    "name": "disabled",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "disabled-state": {
+    "description": "Set while the element is disabled.",
+    "name": "disabled",
+    "table": {
+      "category": "css states",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "label": {
+    "description": undefined,
+    "name": "label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "legacy-label": {
+    "description": "Old name for label. @deprecated Use label instead.",
+    "name": "legacy-label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

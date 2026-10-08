@@ -45,6 +45,10 @@ function isStringValued(type?: DocgenType) {
   return false;
 }
 
+function isQuotedStringLiteral(value: string) {
+  return /^(['"]).*\1$/s.test(value);
+}
+
 function createDefaultValue(
   defaultValue: DocgenPropDefaultValue,
   type: DocgenType
@@ -55,7 +59,11 @@ function createDefaultValue(
     if (!isDefaultValueBlacklisted(value)) {
       // Work around a bug in `react-docgen-typescript-loader`, which returns 'string' for a string
       // default, instead of "'string'" -- which is incorrect
-      if (isReactDocgenTypescript(defaultValue) && isStringValued(type)) {
+      if (
+        isReactDocgenTypescript(defaultValue) &&
+        isStringValued(type) &&
+        !isQuotedStringLiteral(value)
+      ) {
         return createSummaryValue(JSON.stringify(value));
       }
 
@@ -88,12 +96,10 @@ function applyJsDocResult(propDef: PropDef, jsDocParsingResult?: JsDocParsingRes
 
     const value = {
       ...extractedTags,
-      params: extractedTags?.params?.map(
-        (x): JsDocParam => ({
-          name: x.getPrettyName(),
-          description: x.description,
-        })
-      ),
+      params: extractedTags?.params?.map((x): JsDocParam => ({
+        name: x.getPrettyName(),
+        description: x.description,
+      })),
     };
 
     if (Object.values(value).filter(Boolean).length > 0) {

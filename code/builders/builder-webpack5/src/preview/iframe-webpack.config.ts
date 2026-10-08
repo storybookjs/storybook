@@ -8,6 +8,7 @@ import {
   stringifyProcessEnvs,
 } from 'storybook/internal/common';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
+import { WebpackMissingPreviewTemplateError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
 
 import { type BuilderOptions } from '@storybook/core-webpack';
@@ -18,7 +19,6 @@ import type { TransformOptions as EsbuildOptions } from 'esbuild';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
-import { dedent } from 'ts-dedent';
 import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
@@ -41,7 +41,6 @@ export default async (
     packageJson,
     configType,
     presets,
-    previewUrl,
     typescriptOptions,
     features,
   } = options;
@@ -98,12 +97,7 @@ export default async (
       : {};
 
   if (!template) {
-    throw new Error(dedent`
-      Storybook's Webpack5 builder requires a template to be specified.
-      Somehow you've ended up with a falsy value for the template option.
-
-      Please file an issue at https://github.com/storybookjs/storybook with a reproduction.
-    `);
+    throw new WebpackMissingPreviewTemplateError();
   }
 
   const externals: Record<string, string> = globalsNameReferenceMap;
@@ -161,7 +155,6 @@ export default async (
             FRAMEWORK_OPTIONS: frameworkOptions,
             CHANNEL_OPTIONS: coreOptions.channelOptions,
             FEATURES: features,
-            PREVIEW_URL: previewUrl,
             STORIES: stories.map((specifier) => ({
               ...specifier,
               importPathMatcher: specifier.importPathMatcher.source,

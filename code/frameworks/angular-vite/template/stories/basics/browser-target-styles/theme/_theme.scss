@@ -1,0 +1,5 @@
+/* Served through the browser target's stylePreprocessorOptions.includePaths: this partial is
+   resolved by a bare @use specifier that no relative path can satisfy. Losing the inherited
+   include path fails the build, which is the regression signal for issue #36009. */
+$banner-background: #b400ff;
+$banner-border: #04c10a;

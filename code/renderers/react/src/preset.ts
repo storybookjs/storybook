@@ -22,17 +22,30 @@ interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
   presets?: Options['presets'];
 }
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/react-dom-shim/preset'),
-];
-
 export { manifests as experimental_manifests } from './componentManifest/generator.ts';
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
+// the optional `typescript` peer, so a project without it keeps builder docgen.
+export const isDocgenProviderEnabled = () => {
+  try {
+    import.meta.resolve('typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
@@ -132,4 +145,4 @@ export async function internal_getArgTypesData(
   return argTypesData;
 }
 
-export const optimizeViteDeps: string[] = ['react-dom/test-utils'];
+export const optimizeViteDeps: string[] = ['react-dom/client', 'react-dom/test-utils'];

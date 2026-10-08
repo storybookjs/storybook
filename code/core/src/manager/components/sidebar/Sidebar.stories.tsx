@@ -68,8 +68,8 @@ const managerContext: any = (
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
-    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
-    experimental_setFilters: fn().mockName('api::experimental_setFilters'),
+    setFilter: fn().mockName('api::setFilter'),
+    setFilters: fn().mockName('api::setFilters'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
     getIsNavShown: () => true,
     getUrlState: () => ({
@@ -111,7 +111,6 @@ const meta = {
     refId: DEFAULT_REF_ID,
     refs: {},
     allStatuses: {},
-    showCreateStoryButton: true,
     isDevelopment: true,
   },
   decorators: [
@@ -208,9 +207,6 @@ export const Simple: Story = {
 };
 
 export const SimpleInProduction: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const configType = global.CONFIG_TYPE;
     global.CONFIG_TYPE = 'PRODUCTION';
@@ -221,9 +217,6 @@ export const SimpleInProduction: Story = {
 };
 
 export const SimpleNoChecklist: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const features = global.FEATURES;
     global.FEATURES = {

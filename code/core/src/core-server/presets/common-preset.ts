@@ -66,11 +66,8 @@ import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
 import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
-import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
@@ -251,7 +248,6 @@ export const features: PresetProperty<'features'> = async (existing, options) =>
   argTypeTargetsV7: true,
   babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
-  changeDetection: true,
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
@@ -321,8 +317,6 @@ export const experimental_serverChannel = async (
   initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
-  initFileSearchChannel(channel, options);
-  initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);
@@ -398,7 +392,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   });
 
   const features = await options.presets.apply('features');
-  const reviewEnabled = isReviewFeatureEnabled(features);
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
   // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
@@ -413,17 +406,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getChangedFiles: () => gitDiffProvider.getChangedFiles(),
       },
       changeStatuses: { getAll: getSyncedStatuses },
-      reviewEnabled,
     })
   );
 
-  if (reviewEnabled) {
-    registerReviewService({
-      getIndex,
-    });
-    devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
-    registerToolset(reviewToolset);
-  }
+  registerReviewService({
+    getIndex,
+  });
+  devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
+  registerToolset(reviewToolset);
 
   if (features?.docgenServer) {
     const [docgenDescriptors, storyDocsProvider] = await Promise.all([

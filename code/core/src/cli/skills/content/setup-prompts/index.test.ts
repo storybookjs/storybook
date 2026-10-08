@@ -51,7 +51,6 @@ describe.each(['ts', 'js'] as const)('setup instructions in %s projects', (langu
         expect(markdown).toContain(`preview.${language}`);
         expect(markdown).toContain(`*.stories.${language}`);
         expect(markdown).toContain(`renderer=${docsRenderer}&`);
-        expect(markdown).toContain('return Story();');
         expect(markdown).not.toMatch(
           /\breact\b|jsx|tsx|<Story|SessionProvider|ThemeProvider|createPortal|children:/i
         );
@@ -83,9 +82,8 @@ describe.each(['ts', 'js'] as const)('setup instructions in %s projects', (langu
         expect(markdown).toContain('providers wrapping `<App />`');
         expect(markdown).toContain('`useQuery`');
         expect(markdown).toContain('Use the **real** provider tree');
-        expect(markdown).toContain("`createPortal(..., document.getElementById('foo'))`");
-        expect(markdown).toContain('Copy JSX patterns');
-        expect(markdown).toContain('a hex color in styled-components');
+        expect(markdown).toContain('`createPortal(...)`');
+        expect(markdown).toContain('JSX patterns copied');
         expect(markdown).toContain("args: { children: 'Submit' }");
         expect(markdown).toContain("canvas.getByRole('button', { name: /submit/i })");
       }
@@ -127,11 +125,9 @@ it('keeps MSW and MockDate optional and installs them separately', async () => {
   vi.stubEnv('EVAL_SETUP_PROMPT', '');
   const { markdown } = await getSetupMarkdownOutput(projectInfo);
 
-  expect(markdown).toContain('Add MSW only if a selected story makes network requests');
-  expect(markdown).toContain(
-    "Add MockDate only if a selected story's rendered output depends on the current date or time"
-  );
-  expect(markdown).toContain('If neither condition applies, skip this step');
+  expect(markdown).toContain('If a selected story makes network requests');
+  expect(markdown).toContain("If a selected story's output depends on the current date or time");
+  expect(markdown).toContain('Otherwise skip this step');
   expect(markdown).not.toMatch(/npm install[^\n]*msw[^\n]*mockdate/i);
 });
 
@@ -146,4 +142,72 @@ it('uses the detected renderer instead of guessing React from a custom framework
 
   expect(markdown).toContain('@custom/framework');
   expect(markdown).not.toMatch(/react|jsx|tsx|<Story|SessionProvider/i);
+});
+
+it('keeps the default prompt under 11 KB, so agents read it in one go', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+  expect(Buffer.byteLength(markdown)).toBeLessThan(11_000);
+});
+
+it.each([...new Set(PROMPT_NAMES)])(
+  'names no agent-specific tools in the %s prompt',
+  async (name) => {
+    vi.stubEnv('EVAL_SETUP_PROMPT', name);
+    const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+    expect(markdown).not.toMatch(/\b(Glob|Grep)\b/);
+  }
+);
+
+it.each([...new Set(PROMPT_NAMES)])(
+  'links an existing Vitest docs page in the %s prompt',
+  async (name) => {
+    vi.stubEnv('EVAL_SETUP_PROMPT', name);
+    const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+    expect(markdown).not.toContain('writing-tests/vitest-plugin');
+  }
+);
+
+it('lets npm projects use npx', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+  expect(markdown).toContain('**Use npm** for installs and `npx storybook`');
+  expect(markdown).not.toMatch(/(don't|do not) use `npx`/i);
+});
+
+it('keeps pnpm projects off npx', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const { markdown } = await getSetupMarkdownOutput({
+    ...projectInfo,
+    packageManager: JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.PNPM }),
+    packageManagerName: 'pnpm',
+  });
+
+  expect(markdown).toContain('**Use pnpm** for installs and `pnpm exec storybook`');
+  expect(markdown).toContain("Don't use `npx`");
+  expect(markdown).toContain('pnpm exec vitest --project storybook run');
+});
+
+it('has the agent add the Vitest addon only when the project lacks it', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const without = await getSetupMarkdownOutput(projectInfo);
+  const withAddon = await getSetupMarkdownOutput({
+    ...projectInfo,
+    addons: ['@storybook/addon-vitest'],
+  });
+
+  expect(without.markdown).toContain('npx storybook add @storybook/addon-vitest --yes');
+  expect(withAddon.markdown).not.toContain('storybook add @storybook/addon-vitest');
+});
+
+it('only lets the agent delete the examples that storybook init generated', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+  expect(markdown).toContain('Never delete or rewrite the stories, components, or config');
+  expect(markdown).toContain('delete that folder once your own stories pass');
 });

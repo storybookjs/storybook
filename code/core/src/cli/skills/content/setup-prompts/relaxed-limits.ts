@@ -16,23 +16,22 @@ import {
 import {
   batchTestsRule,
   editOverWriteRule,
+  keepUserWorkRule,
   nodeModuleReadsRule,
   noPolishRule,
   packageManagerRule,
   preferSharedFixesRule,
   readBudgetRuleRelaxed,
-  toolsVsShellRule,
 } from './partials/rules.ts';
 import {
-  buildPortalStep,
   buildSharedPreviewStep,
   cleanupStep,
   discoveryStepRelaxed,
-  interactionPlayStep,
   mswStep,
   verifyStep,
   writeStoriesStep,
 } from './partials/steps.ts';
+import { referenceSection } from './partials/reference.ts';
 import type { SetupInstructionsContext } from './types.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
@@ -57,31 +56,29 @@ export function instructions(projectInfo: ProjectInfo): string {
   };
 
   return dedent`
-    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW or MockDate (when selected stories need them), and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
+    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW or MockDate (when selected stories need them), and write up to 10 colocated \`*.stories.${tsx}\` files.
 
-    ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
+    ## Rules (follow strictly: they are time budgets, not suggestions)
 
     ${listRules([
-      toolsVsShellRule(ctx),
       nodeModuleReadsRule(ctx),
       readBudgetRuleRelaxed(ctx),
       editOverWriteRule(ctx),
+      keepUserWorkRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),
       noPolishRule(ctx),
     ])}
 
-    ## Plan (do not skip steps, but keep each step lean)
+    ## Plan (don't skip steps, but keep each one lean)
 
     ${listSteps(
       [
         discoveryStepRelaxed(projectInfo, ctx),
         buildSharedPreviewStep(projectInfo, ctx),
-        buildPortalStep(projectInfo, ctx),
         mswStep(projectInfo, ctx),
         writeStoriesStep(projectInfo, ctx),
-        interactionPlayStep(projectInfo, ctx),
         verifyStep(projectInfo, ctx),
         cleanupStep(projectInfo, ctx),
       ],
@@ -89,7 +86,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     )}
 
     ## Done when
-        
+
     ${listDOD([
       cssCheckDOD(ctx),
       storyTagsV1DOD(ctx),
@@ -99,14 +96,6 @@ export function instructions(projectInfo: ProjectInfo): string {
       optionalTestInfrastructureDOD(ctx),
     ])}
 
-    ## Reference (only fetch if stuck)
-
-    - Docs index: https://storybook.js.org/llms.txt
-    - Writing stories: ${docsUrl('writing-stories')}
-    - Decorators: ${docsUrl('writing-stories/decorators')}
-    - Play functions: ${docsUrl('writing-stories/play-function')}
-    - Vitest integration: ${docsUrl('writing-tests/vitest-plugin')}
-
-    Append \`?codeOnly=true\` to any docs URL for code-only snippets. Don't fetch unless a specific question can't be answered from this prompt.
+    ${referenceSection(ctx)}
   `;
 }

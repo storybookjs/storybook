@@ -29,7 +29,6 @@ describe('ProjectTypeService', () => {
     it('logs a helpful message when framework cannot be detected', async () => {
       const service = new ProjectTypeService(pm);
       const options = { html: false } as unknown as CommandOptions;
-      // @ts-expect-error accessing private for test
       vi.spyOn(service, 'detectProjectType').mockResolvedValue(ProjectType.UNDETECTED);
 
       await expect(service.autoDetectProjectType(options)).rejects.toThrowError(

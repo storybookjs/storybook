@@ -653,26 +653,16 @@ export interface StorybookFeatures {
   experimentalCodeExamples?: boolean;
 
   /**
-   * Enable the experimental docgen open service.
+   * Enable server-side component metadata extraction.
    *
    * When true, Storybook registers the `core/docgen` service in the open-service registry and
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
-   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
-   * back to Compodoc.
-   *
-   * @default false // `true` when the framework is `@storybook/angular-vite`
-   * @experimental This feature is in early development and may change significantly in future releases.
+   * @default true when a preset that ships an `experimental_docgenProvider` exports
+   *   `isDocgenProviderEnabled`
    */
-  experimentalDocgenServer?: boolean;
-
-  /**
-   * Enable change detection. Agentic review depends on it, so `false` also turns review off.
-   * @default true
-   */
-  changeDetection?: boolean;
+  docgenServer?: boolean;
 }
 
 export interface StorybookConfigRaw {

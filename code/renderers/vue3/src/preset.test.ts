@@ -10,8 +10,8 @@ describe('features', () => {
   });
 
   it('keeps other feature defaults from earlier presets', async () => {
-    expect(await applyFeatures({ changeDetection: true })).toMatchObject({
-      changeDetection: true,
+    expect(await applyFeatures({ controls: true })).toMatchObject({
+      controls: true,
       componentsManifest: true,
     });
   });

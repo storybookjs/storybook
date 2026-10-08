@@ -21,6 +21,7 @@ const CORE_STORYBOOK_EVALS = [
   '811-fix-a11y-violations',
   '812-first-story-empty-project',
   '813-monorepo-leaf-create-component',
+  '814-write-stories-for-fetching-component',
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).
@@ -80,6 +81,14 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
       if (match === undefined) {
         throw new Error(
           `Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(', ')}`
+        );
+      }
+      if (
+        STORYBOOK_LATEST &&
+        !(PORTED_WORKFLOW_STORYBOOK_EVALS as readonly string[]).includes(match)
+      ) {
+        throw new Error(
+          `EVAL_ONLY entry "${match}" cannot run with EVAL_STORYBOOK_LATEST=1: only the 9xx line supports the stable release.`
         );
       }
       return match;

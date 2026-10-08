@@ -574,6 +574,21 @@ export class WebpackCompilationError extends StorybookError {
   }
 }
 
+export class WebpackMissingPreviewTemplateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'WebpackMissingPreviewTemplateError',
+      category: Category.BUILDER_WEBPACK5,
+      code: 4,
+      message: dedent`
+        Storybook's Webpack5 builder requires a template to be specified.
+        Somehow you've ended up with a falsy value for the template option.
+
+        Please file an issue at https://github.com/storybookjs/storybook with a reproduction.`,
+    });
+  }
+}
+
 export class MissingAngularJsonError extends StorybookError {
   constructor(
     public data: {

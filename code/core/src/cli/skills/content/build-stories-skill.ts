@@ -38,13 +38,13 @@ Every component you create or change gets stories: one per distinct state it can
 
 - ${format} \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
 - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options.
-- A story never calls a real service. Mock network requests with MSW when the project has it (\`msw-storybook-addon\` in \`${previewFile}\`): give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`, and leave the code that calls \`fetch\` unmocked. Only version 2 of that addon has no \`msw\` there: it takes \`parameters: { msw: { handlers: [...] } }\`.
+- A story never calls a real service. Mock network requests with MSW when the project has it (\`msw-storybook-addon\` in \`${previewFile}\`): give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`, and leave the code that calls \`fetch\` unmocked. Read its version in \`package.json\`: only version 2 has no \`msw\` there and takes \`parameters: { msw: { handlers: [...] } }\` instead.
 - Mock a module only for what MSW cannot reach (no MSW in the project, or a dependency that is not a network call): register it in \`${previewFile}\` with \`sb.mock(import('../src/api.ts'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`.`;
 }
 
 function testSection(a11yEnabled: boolean): string {
   const a11y = a11yEnabled
-    ? '\n\nThe run also reports accessibility violations. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user.'
+    ? '\n\nThe run lists accessibility violations under `## Accessibility Violations`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user.'
     : '';
   return `## Test
 

@@ -1,3 +1,10 @@
+## 10.6.2
+
+- Angular-Vite: Require @analogjs/vite-plugin-angular 2.7.3 or later - [#36525](https://github.com/storybookjs/storybook/pull/36525), thanks @valentinpalkovic!
+- CLI: Fix hidden output of CLI commands on Yarn 1 - [#36419](https://github.com/storybookjs/storybook/pull/36419), thanks @kasperpeulen!
+- Preact: Support Preact 11 - [#36526](https://github.com/storybookjs/storybook/pull/36526), thanks @ghengeveld!
+- Typescript: Explicitly type enhanceArgTypes - [#35664](https://github.com/storybookjs/storybook/pull/35664), thanks @mrginglymus!
+
 ## 10.6.1
 
 - Addon A11y: Fix vision simulator color filters in Firefox - [#36153](https://github.com/storybookjs/storybook/pull/36153), thanks @ghengeveld!

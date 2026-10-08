@@ -66,8 +66,6 @@ import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
 import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
-import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
 import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
@@ -321,8 +319,6 @@ export const experimental_serverChannel = async (
   initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
-  initFileSearchChannel(channel, options);
-  initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);

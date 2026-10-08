@@ -85,7 +85,7 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
 
   prompt: (): string =>
     dedent`
-      @storybook/web-components now reads the Custom Elements Manifest on the server, so setCustomElementsManifest() in the preview is deprecated. We'll move the manifest path to framework.options.customElementsManifest and remove the runtime call.
+      @storybook/web-components runtime manifest API is deprecated. We'll remove the runtime calls and add the manifest path in your main.ts
     `,
 
   transform: ({ result }): FixTransform[] => [

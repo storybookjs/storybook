@@ -2,11 +2,10 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Tag filtering API](#tag-filtering-api)
-  - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
+  - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
-  - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
@@ -17,8 +16,10 @@
   - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
   - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
+  - [Raised browser support floors](#raised-browser-support-floors)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
@@ -28,7 +29,7 @@
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
-  - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
@@ -51,9 +52,18 @@
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
+    - [`<Meta>` component](#meta-component)
+    - [`export const meta`](#export-const-meta)
+    - [`let:args` and `let:context`](#letargs-and-letcontext)
+    - [`<Template>` component](#template-component)
+    - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
+  - [Angular Vite: a new `propsTable` framework option](#angular-vite-a-new-propstable-framework-option)
+  - [MCP tool names follow toolset.method](#mcp-tool-names-follow-toolsetmethod)
+  - [Angular Vite defaults to server-side docgen](#angular-vite-defaults-to-server-side-docgen)
+  - [Angular Vite: tsconfig paths now take priority over `node_modules` in production builds too](#angular-vite-tsconfig-paths-now-take-priority-over-node_modules-in-production-builds-too)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
   - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
@@ -108,7 +118,6 @@
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
     - [Dropped support](#dropped-support)
-      - [Vite 5 and Vite 6](#vite-requires-vite-63-or-higher)
       - [Vite 4](#vite-4)
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
@@ -588,11 +597,11 @@
 
 Storybook 11 removes the experimental and undocumented tag filtering names. They no longer work at runtime.
 
-| Removed | Replacement |
-| --- | --- |
-| `experimental_setFilter` | `setFilter` |
-| `experimental_setFilters` | `setFilters` |
-| `tags.<name>.excludeFromSidebar` | `tags.<name>.hideFromSidebar` |
+| Removed                              | Replacement                    |
+| ------------------------------------ | ------------------------------ |
+| `experimental_setFilter`             | `setFilter`                    |
+| `experimental_setFilters`            | `setFilters`                   |
+| `tags.<name>.excludeFromSidebar`     | `tags.<name>.hideFromSidebar`  |
 | `tags.<name>.excludeFromDocsStories` | `tags.<name>.hideFromAutodocs` |
 
 `setFilter(id, filter)` registers one sidebar filter. A story or docs entry is shown only when every registered filter passes. Call `setFilter(id, () => true)` to stop filtering for that id. `setFilters` registers several filters in one index rebuild.
@@ -921,6 +930,14 @@ option exists in both places, keep the nested value because it was authoritative
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
 
+### 'Create new story' UI feature removed
+
+We have removed the button next to the sidebar's search field, which allowed React framework users to create a new story file for a component in their project. This feature was not widely adopted, and only supported in one framework. Removing it allowed us to remove thousands of lines of code, which will help us maintain Storybook more efficiently.
+
+Saving a story from the Controls panel is unchanged: you can still adjust controls and save the result as a new story, or update an existing story, in an existing story file.
+
+The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed too.
+
 ### Test runner support ended
 
 Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
@@ -1116,12 +1133,12 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 
 If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
 
-| Storybook 10 API                        | Storybook 11 replacement |
-| --------------------------------------- | ------------------------ |
-| `getFieldValue`, `getSafeFieldValue`    | `getValue`               |
-| `setFieldNode`, `setFieldValue`         | `set`                    |
-| `findNamedImportMethodCalls`            | `callArguments`          |
-| `FindNamedImportMethodCallsOptions`     | `CallArgumentsOptions`   |
+| Storybook 10 API                     | Storybook 11 replacement |
+| ------------------------------------ | ------------------------ |
+| `getFieldValue`, `getSafeFieldValue` | `getValue`               |
+| `setFieldNode`, `setFieldValue`      | `set`                    |
+| `findNamedImportMethodCalls`         | `callArguments`          |
+| `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
 `getValue` reads static values without executing source code. When it cannot resolve a value, it returns `undefined` and adds a diagnostic. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
 
@@ -1286,11 +1303,11 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
-| Manifest item       | Runtime docgen key | Server docgen key |
-| ------------------- | ------------------ | ----------------- |
-| event `my-change`   | `my-change`        | `my-change-event` |
-| slot `actions`      | `actions`          | `actions-slot`    |
-| CSS part `label`    | `label`            | `label-part`      |
+| Manifest item     | Runtime docgen key | Server docgen key |
+| ----------------- | ------------------ | ----------------- |
+| event `my-change` | `my-change`        | `my-change-event` |
+| slot `actions`    | `actions`          | `actions-slot`    |
+| CSS part `label`  | `label`            | `label-part`      |
 
 Attributes, properties and CSS custom properties keep their names.
 Methods, CSS states and the default slot are new rows, keyed `<name>-method`, `<name>-state` and `default-slot`.
@@ -1705,16 +1722,16 @@ To drop a single member the default keeps, tag it `@ignore`.
 
 Storybook's MCP tools are now named from their toolset and method (`stories.preview` → `stories-preview`). Update agent prompts, skills, and hard-coded tool allowlists:
 
-| Previous name | New name |
-| --- | --- |
-| `preview-stories` | `stories-preview` |
-| `get-changed-stories` | `stories-changed` |
-| `get-stories-by-component` | `stories-find-by-component` |
-| `display-review` | `review-create` |
-| `run-story-tests` | `test-run` |
-| `list-all-documentation` | `docs-list` |
-| `get-documentation` | `docs-show` |
-| `get-documentation-for-story` | `docs-show-story` |
+| Previous name                 | New name                    |
+| ----------------------------- | --------------------------- |
+| `preview-stories`             | `stories-preview`           |
+| `get-changed-stories`         | `stories-changed`           |
+| `get-stories-by-component`    | `stories-find-by-component` |
+| `display-review`              | `review-create`             |
+| `run-story-tests`             | `test-run`                  |
+| `list-all-documentation`      | `docs-list`                 |
+| `get-documentation`           | `docs-show`                 |
+| `get-documentation-for-story` | `docs-show-story`           |
 
 `get-storybook-story-instructions` is unchanged (it is not backed by a toolset method).
 
@@ -4645,8 +4662,8 @@ To convert this project to 7.0:
 
 The new CLI commands remove the following flags:
 
-| flag     | migration                                                                                     |
-| -------- | --------------------------------------------------------------------------------------------- |
+| flag     | migration                                                                      |
+| -------- | ------------------------------------------------------------------------------ |
 | --modern | No migration needed. [All ESM code is modern in SB7](#modern-browser-support). |
 
 #### New Framework API

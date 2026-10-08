@@ -111,7 +111,6 @@ const meta = {
     refId: DEFAULT_REF_ID,
     refs: {},
     allStatuses: {},
-    showCreateStoryButton: true,
     isDevelopment: true,
   },
   decorators: [
@@ -208,9 +207,6 @@ export const Simple: Story = {
 };
 
 export const SimpleInProduction: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const configType = global.CONFIG_TYPE;
     global.CONFIG_TYPE = 'PRODUCTION';
@@ -221,9 +217,6 @@ export const SimpleInProduction: Story = {
 };
 
 export const SimpleNoChecklist: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const features = global.FEATURES;
     global.FEATURES = {

@@ -7,20 +7,16 @@ import * as os from 'node:os';
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
+import { set as saveToCache } from './event-cache.ts';
 import { ConnectTimeoutError, postEvent } from './post-event.ts';
+import { getSessionId } from './session-id.ts';
 import { handOffPendingEvents, sendTelemetry } from './telemetry.ts';
 
-vi.mock('./post-event.ts', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./post-event.ts')>()),
-  postEvent: vi.fn(async () => {}),
-}));
-vi.mock('./event-cache.ts', () => ({ set: vi.fn() }));
-vi.mock('./session-id.ts', () => ({ getSessionId: vi.fn(() => 'session-id') }));
+vi.mock('./post-event.ts', { spy: true });
+vi.mock('./event-cache.ts', { spy: true });
+vi.mock('./session-id.ts', { spy: true });
 vi.mock('node:fs', { spy: true });
-vi.mock('node:child_process', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('node:child_process')>()),
-  spawn: vi.fn(() => ({ pid: 1, unref: vi.fn() })),
-}));
+vi.mock('node:child_process', { spy: true });
 
 const postMock = vi.mocked(postEvent);
 
@@ -31,6 +27,9 @@ beforeEach(() => {
   vol.mkdirSync(os.tmpdir(), { recursive: true });
   vi.mocked(fs.writeFileSync).mockImplementation(memfs.fs.writeFileSync as any);
   vi.mocked(fs.rmSync).mockImplementation(memfs.fs.rmSync as any);
+  vi.mocked(saveToCache).mockImplementation(async () => {});
+  vi.mocked(getSessionId).mockImplementation(() => 'session-id');
+  vi.mocked(spawn).mockImplementation(() => ({ pid: 1, unref: vi.fn() }) as any);
   postMock.mockImplementation(async () => {});
 });
 

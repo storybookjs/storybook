@@ -10,7 +10,7 @@ import { flushEventsFile } from './flush-events-file.ts';
 import { postEvent } from './post-event.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('./post-event.ts', () => ({ postEvent: vi.fn(async () => {}) }));
+vi.mock('./post-event.ts', { spy: true });
 
 const file = join(tmpdir(), 'storybook-telemetry-abc_-123.json');
 
@@ -20,6 +20,7 @@ beforeEach(async () => {
   vi.mocked(fs.readFile).mockImplementation(memfs.fs.promises.readFile as any);
   vi.mocked(fs.rm).mockImplementation(memfs.fs.promises.rm as any);
   vi.mocked(postEvent).mockClear();
+  vi.mocked(postEvent).mockImplementation(async () => {});
 });
 
 it('posts every event in the file and removes the file', async () => {

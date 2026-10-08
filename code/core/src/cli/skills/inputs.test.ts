@@ -6,19 +6,14 @@ import { resolveSkillInputs } from './inputs.ts';
 
 function createMockOptions({
   framework = '@storybook/react-vite',
-  features,
 }: {
   framework?: string | { name: string };
-  features?: Record<string, unknown>;
 } = {}): Options {
   return {
     presets: {
       apply: vi.fn(async (key: string, defaultValue?: unknown) => {
         if (key === 'framework') {
           return framework;
-        }
-        if (key === 'features') {
-          return features ?? {};
         }
         return defaultValue;
       }),
@@ -72,25 +67,8 @@ describe('resolveSkillInputs', () => {
   });
 
   it('spreads the resolved tool availability onto the result', async () => {
-    const options = createMockOptions({ features: { changeDetection: true } });
+    const inputs = await resolveSkillInputs(createMockOptions());
 
-    const inputs = await resolveSkillInputs(options, { moduleGraphSupported: true });
-
-    expect(inputs.moduleGraphSupported).toBe(true);
-    expect(inputs.changeDetectionEnabled).toBe(true);
-  });
-
-  it('uses pre-resolved features passed via opts and skips re-applying the preset', async () => {
-    const options = createMockOptions({ features: { changeDetection: false } });
-
-    const inputs = await resolveSkillInputs(options, {
-      features: { changeDetection: true },
-      moduleGraphSupported: true,
-    });
-
-    // The mock's `presets.apply('features', ...)` would report changeDetection off; an "on"
-    // result here proves the pre-resolved value was used instead of re-applying the preset.
-    expect(inputs.changeDetectionEnabled).toBe(true);
-    expect(options.presets.apply).not.toHaveBeenCalledWith('features', expect.anything());
+    expect(inputs.moduleGraphSupported).toBe(false);
   });
 });

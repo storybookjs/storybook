@@ -29,7 +29,6 @@ const config = defineMain({
 		disableTelemetry: true,
 	},
 	features: {
-		changeDetection: true,
 		experimentalComponentsManifest: true,
 		// These configs snapshot the legacy manifest path; `.storybook-composition-docgen-server` covers the server.
 		docgenServer: false,

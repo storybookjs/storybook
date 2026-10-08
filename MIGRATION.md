@@ -19,7 +19,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
-  - [Create-new-story button removed from the sidebar](#create-new-story-button-removed-from-the-sidebar)
+  - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)

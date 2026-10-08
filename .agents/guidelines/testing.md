@@ -27,6 +27,7 @@ When writing unit tests (utilities, hooks, non-React modules):
 
 - Export functions that need direct tests
 - Test real behavior, not just syntax patterns
+- Make the input and expected result easy to read together. For a mapper with stable output, prefer `toMatchInlineSnapshot` when it shows the full result more clearly, as in the automigration fix tests.
 - Use coverage when useful: `yarn vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
 - Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows

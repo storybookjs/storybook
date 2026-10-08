@@ -30,7 +30,12 @@ export function selectManifestEntries(index: StoryIndex): ManifestEntries {
   );
 
   const attachedDocIds = Map.groupBy(
-    published.filter((entry) => entry.type === 'docs' && entry.tags?.includes(Tag.ATTACHED_MDX)),
+    published.filter(
+      (entry) =>
+        entry.type === 'docs' &&
+        entry.tags?.includes(Tag.ATTACHED_MDX) &&
+        !entry.tags.includes(Tag.UNATTACHED_MDX)
+    ),
     getComponentIdFromEntry
   );
 

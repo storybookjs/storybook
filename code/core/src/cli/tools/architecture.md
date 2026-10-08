@@ -51,6 +51,11 @@ The same registration hook runs in the caller, so server-realm constructors run 
 triggered by commands or loads is delegated and stays cheap. Eager work at registration time
 (worker spawns, file watchers, index builds) runs in the caller; fix that in core plumbing.
 
+Closures a toolset receives at registration are not delegated: a `getIndex()` call from a handler
+builds the story index in the caller. The docs toolset avoids that by asking `core/docgen`'s
+`resolveManifestEntries` command, which the instance answers from the index it already holds. The
+stories toolset still calls `getIndex()` from its handlers.
+
 ## Topology
 
 The caller is a leaf (`relay: false`, like preview). It talks to the server hub directly.
@@ -101,11 +106,6 @@ Query `load` hooks are thin command triggers (the docgen pattern: `load` only aw
 `query.loaded()`. A bare `.get()` before snapshots arrive reads initial state, the same as the
 manager. Change-detection scan readiness is the same pattern: `changeDetectionReadiness.load`
 awaits `_waitForChangeDetectionReadiness`.
-
-Closures a toolset receives at registration are not delegated: a `getIndex()` call from a handler
-builds the story index in the caller. The docs toolset avoids that by asking `core/docgen`'s
-`resolveManifestEntries` command, which the instance answers from the index it already holds. The
-stories toolset still calls `getIndex()` from its handlers.
 
 See [Load](../../shared/open-service/README.md#load).
 

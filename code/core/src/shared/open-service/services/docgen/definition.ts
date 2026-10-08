@@ -150,6 +150,7 @@ export const docgenServiceDef = defineService({
         'Returns the components and standalone docs the story index publishes to manifests, in index order. Stores nothing: the story index is the only copy.',
       input: v.undefined(),
       output: manifestEntriesSchema,
+      // Handler is supplied at registration time so it can close over the story index.
     },
   },
 });

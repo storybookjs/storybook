@@ -275,6 +275,21 @@ describe('docgen open service', () => {
 
       expect(components.map(({ id }) => id)).toEqual(['button', 'card']);
     });
+
+    it('lists a docs entry tagged both attached and unattached as a standalone doc only', async () => {
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([
+          tagged(makeStoryEntry('button--primary', 'Button')),
+          attachedDocs('button--docs', 'Button', [Tag.UNATTACHED_MDX, Tag.MANIFEST]),
+        ]),
+        docgenProvider: async () => undefined,
+      });
+
+      await expect(service.commands.resolveManifestEntries(undefined)).resolves.toEqual({
+        components: [{ id: 'button', storyBased: true, attachedDocIds: [] }],
+        docs: [{ id: 'button--docs', name: 'Docs' }],
+      });
+    });
   });
 
   describe('module graph hot refresh', () => {

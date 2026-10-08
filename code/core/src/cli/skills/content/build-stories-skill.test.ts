@@ -99,4 +99,19 @@ describe('buildStoriesSkill', () => {
     expect(text.indexOf('msw.use(')).toBeLessThan(text.indexOf('sb.mock('));
     expect(text).toContain('register it in `config/preview.tsx`');
   });
+
+  it('tells how to set up MSW in the format of the project', () => {
+    const csf3 = buildStoriesSkill({ ...everything, previewFile: 'config/preview.tsx' });
+    expect(csf3).toContain('never with a module mock or a replaced `fetch`');
+    expect(csf3).toContain(
+      "`loaders: [mswLoader()]` (`import { mswLoader } from 'msw-storybook-addon/csf3'`"
+    );
+    expect(csf3).toContain('to `config/preview.tsx`');
+
+    const factories = buildStoriesSkill({ ...everything, csfFactories: true });
+    expect(factories).toContain(
+      "`addons: [addonMsw()]` (`import addonMsw from 'msw-storybook-addon'`"
+    );
+    expect(factories).not.toContain('mswLoader');
+  });
 });

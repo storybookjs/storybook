@@ -40,7 +40,7 @@ describe('render', () => {
 
   it('returns a fragment that binds observed attributes and event args when the flag is on', () => {
     const handler = vi.fn();
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
 
     const result = render({ label: 'x', 'my-change-event': handler }, CONTEXT);
     expect(result).toBeInstanceOf(DocumentFragment);
@@ -53,7 +53,7 @@ describe('render', () => {
   });
 
   it('returns a fragment with scoped style rules before the element when the flag is on', () => {
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
 
     const result = render({ 'panel-part': 'color: red;' }, CONTEXT) as DocumentFragment;
     const host = document.createElement('div');

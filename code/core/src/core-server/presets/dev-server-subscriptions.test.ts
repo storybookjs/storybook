@@ -41,7 +41,7 @@ beforeEach(async () => {
           case 'services':
             return services(undefined, options);
           case 'features':
-            return { changeDetection: true };
+            return {};
           case 'storyIndexGenerator':
             return { getIndex: async () => index };
           default:

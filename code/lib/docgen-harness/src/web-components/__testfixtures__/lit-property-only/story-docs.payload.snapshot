@@ -1,0 +1,31 @@
+{
+  "id": "webcomponentsfixtures-lit-property-only",
+  "name": "lit-property-only",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-property-only--args-default-render": {
+      "id": "webcomponentsfixtures-lit-property-only--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-property-only label="Default render"></lit-property-only>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
+    },
+    "webcomponentsfixtures-lit-property-only--dom-node": {
+      "id": "webcomponentsfixtures-lit-property-only--dom-node",
+      "name": "Dom Node",
+      "snippet": "<lit-property-only label="Configured"></lit-property-only>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`, `config`.",
+    },
+    "webcomponentsfixtures-lit-property-only--lit-template": {
+      "id": "webcomponentsfixtures-lit-property-only--lit-template",
+      "name": "Lit Template",
+      "snippet": "<lit-property-only label="Configured"></lit-property-only>",
+      "warning": "Incomplete snippet: `args => html`<lit-property-only
+      label=${args.label}
+      .items=${args.items}
+      .config=${args.config}
+    ></lit-property-only>`` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`, `config`.",
+    },
+  },
+}

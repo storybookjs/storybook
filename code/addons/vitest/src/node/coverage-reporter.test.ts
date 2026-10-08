@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
@@ -9,7 +10,13 @@ import type { ReportNode } from 'istanbul-lib-report';
 import StorybookCoverageReporter from './coverage-reporter.ts';
 import type { TestManager } from './test-manager.ts';
 
-it.each([
+const BUILT = existsSync(new URL('../../dist/node/coverage-reporter.js', import.meta.url));
+
+it.runIf(process.env.CI)('is built before the loader tests run', () => {
+  expect(BUILT).toBe(true);
+});
+
+it.runIf(BUILT).each([
   ['Vitest 4', "require('istanbul-reports').create"],
   ['Vitest 5', "(await import('@vitest/istanbul-lib-report')).createAsync"],
 ])('loads the built coverage reporter through the %s loader', async (_version, loader) => {

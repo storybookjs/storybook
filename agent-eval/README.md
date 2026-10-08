@@ -65,11 +65,10 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_ALL=1` run (13 workflow evals × 4 experiments + 4
-lifecycle evals × 2 plugin experiments) costs roughly **$7** in agent
-tokens at the averages measured in October 2026 (about $0.05–0.17 per workflow
-eval on the low-effort plugin experiments and the medium MCP experiments, and
-$0.07–0.16 per lifecycle eval). The budget guardrail is **$75 per full run** — check the
+A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
+lifecycle evals × 2 plugin experiments) costs roughly **$6** in agent
+tokens at the averages measured in October 2026 (under $0.01 per eval on Haiku 5.5 low, and about
+$0.05–0.17 per eval on GPT-6.1-Sol low and the medium MCP experiments). The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
@@ -130,13 +129,13 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
-- `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`.
 - `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Four more plugin experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
 
-- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort).
+- `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
 - `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
 - `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort). Its Codex system prompt says not to run tests unless asked, so evals do not require it to run the story tests itself.

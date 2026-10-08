@@ -96,7 +96,7 @@ ${guidance}`;
 
 function reviewSection({ moduleGraphSupported }: StoriesSkillInputs): string {
   const discoverFirst = moduleGraphSupported
-    ? ' When you changed code, run \`stories changed\` or \`find-by-component\` right before it and take the story ids from there, also when you only wrote stories, not from the output of the tests.'
+    ? ' When you changed files, run \`stories changed\` or \`find-by-component\` right before it and take the story ids from there, also when you only wrote stories, not from the output of the tests.'
     : '';
   return `## Finish with a review
 
@@ -112,7 +112,7 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
 
 Then do both things the command prints, every time: open the review in the in-app browser with a browser tool (unless you have none), and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }

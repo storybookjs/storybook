@@ -31,6 +31,11 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-rsc.tsx',
         dts: false,
       },
+      {
+        // Shared with frameworks that swap async components at the JSX runtime level.
+        exportEntries: ['./internal/rsc'],
+        entryPoint: './src/rsc/async-component.tsx',
+      },
     ],
     node: [
       {

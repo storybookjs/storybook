@@ -31,6 +31,11 @@
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./entry-preview-rsc": "./dist/entry-preview-rsc.js",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/rsc": {
+      "types": "./dist/rsc/async-component.d.ts",
+      "code": "./src/rsc/async-component.tsx",
+      "default": "./dist/rsc/async-component.js"
+    },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {

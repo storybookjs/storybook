@@ -10,9 +10,9 @@ export type RefType = Refs[keyof Refs] & {
 export type Item = StoriesHash[keyof StoriesHash];
 
 /**
- * The third argument the sidebar passes to `renderLabel` and `renderAriaLabel`. The tree always
- * reports `sidebar`, including inside the mobile drawer: `bottom-bar` is reserved for the mobile
- * bottom bar, whose labels the documentation advises integrators to strip down.
+ * Final argument passed to `renderLabel` and `renderAriaLabel`. The tree always reports `sidebar`,
+ * including inside MobileNavigation's drawer. The mobile layout's bottom bar reports `bottom-bar`
+ * instead, where there is less room for non-essential decoration.
  */
 export interface SidebarLabelContext {
   isMobile: boolean;

@@ -21,7 +21,7 @@ import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
-/** How the user opened a context menu. A keyboard open also focuses the first menu item. */
+/** How the user opened a context menu. A keyboard open prepends a nav link item and autofocuses it. */
 export type ContextMenuTrigger = 'pointer' | 'keyboard';
 
 function getGoToLabel(context: API_HashEntry): string | null {
@@ -152,9 +152,10 @@ export const ContextMenu: FC<{
         });
       }
 
-      // Focus the first item on a keyboard open, so the menu is operable without a Tab press. A
-      // pointer open keeps focus on the dialog container, because a focused item makes screen
-      // readers announce it twice. React honors autoFocus on the buttons these links render as.
+      // Move focus to the first item when opening from the keyboard, so the user can operate the
+      // menu without a Tab press. A pointer open keeps focus on the dialog container, because a
+      // focused item makes screen readers announce it twice. React honors autoFocus on the
+      // buttons these links render as.
       if (openedBy === 'keyboard' && defaultLinks[0]) {
         defaultLinks[0].autoFocus = true;
       }

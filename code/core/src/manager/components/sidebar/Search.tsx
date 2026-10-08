@@ -542,6 +542,7 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
             </SearchBar>
             {!isOpen && belowSearchContent}
+            {/* Programmatically focusable (focusableUIElements.storyListMenu). */}
             <FocusContainer tabIndex={-1} id="storybook-explorer-menu">
               {children({
                 query: input,

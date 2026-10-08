@@ -18,8 +18,8 @@ Skipping them takes the Angular sandbox from 111 recorded components to 37, of w
 
 ## Which templates are covered
 
-Every sandbox template whose main config turns on both `docgenServer` and `componentsManifest`, read from the template definitions themselves rather than from a list kept here.
-Turning those flags on for a template is all it takes to bring it into this coverage, and there is nothing to keep in sync.
+Every supported default-on sandbox template whose main config turns on `componentsManifest` without explicitly disabling `docgenServer`, read from the template definitions themselves rather than from a list kept here.
+Turning on `componentsManifest` for a supported template is all it takes to bring it into this coverage, and there is nothing to keep in sync.
 A template that is flagged but has nothing recorded yet fails rather than skipping quietly.
 
 ## Updating

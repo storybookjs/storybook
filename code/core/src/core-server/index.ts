@@ -10,8 +10,6 @@ export { default as build } from './standalone.ts';
 export { mapStaticDir } from './utils/server-statics.ts';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config.ts';
-export { generateStoryFile } from './utils/generate-story.ts';
-export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story.ts';
 export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes.ts';
 
 export { loadStorybook as experimental_loadStorybook } from './load.ts';
@@ -140,9 +138,8 @@ export {
   getEffectiveToolAvailability,
   getToolAvailability,
   isModuleGraphSupported,
-  isModuleGraphSupportedByBuilder,
 } from '../cli/skills/availability.ts';
-export type { GetToolAvailabilityOptions, ToolAvailability } from '../cli/skills/availability.ts';
+export type { ToolAvailability } from '../cli/skills/availability.ts';
 export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';
 export { isAddonVitestEnabled } from '../cli/skills/addon-vitest.ts';
 export { resolveSkillInputs } from '../cli/skills/inputs.ts';

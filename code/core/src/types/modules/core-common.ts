@@ -663,12 +663,6 @@ export interface StorybookFeatures {
    *   `isDocgenProviderEnabled`
    */
   docgenServer?: boolean;
-
-  /**
-   * Enable change detection. Agentic review depends on it, so `false` also turns review off.
-   * @default true
-   */
-  changeDetection?: boolean;
 }
 
 export interface StorybookConfigRaw {

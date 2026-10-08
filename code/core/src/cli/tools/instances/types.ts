@@ -8,7 +8,7 @@ import * as v from 'valibot';
 
 /**
  * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` may appear on
- * records from older writers / external wrappers and must keep being dispatched here.
+ * records from older writers / external wrappers and must keep parsing.
  */
 export const McpStatusSchema = v.picklist(['not-installed', 'starting', 'ready', 'error']);
 export type McpStatus = v.InferOutput<typeof McpStatusSchema>;
@@ -53,10 +53,3 @@ export const StorybookInstanceRecordSchema = v.object({
   }),
 });
 export type StorybookInstanceRecord = v.InferOutput<typeof StorybookInstanceRecordSchema>;
-
-export type InterceptReason =
-  | 'no-instance'
-  | 'port-mismatch'
-  | 'addon-missing'
-  | 'mcp-starting'
-  | 'mcp-error';

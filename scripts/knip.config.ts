@@ -10,7 +10,6 @@ import { match } from 'minimatch';
 // docs: https://knip.dev/guides/configuring-project-files
 const project = [
   'src/**/*.{js,jsx,ts,tsx,mdx}',
-  '!**/__search-files-tests__/**',
   '!**/__testfixtures__/**',
   '!**/__mocks-ng-workspace__/**',
   '!**/__mockdata__/**',

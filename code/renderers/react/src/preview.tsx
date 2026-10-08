@@ -10,9 +10,10 @@ import type {
   StoryArgs,
   TypedMetaArgKeys,
   Preview,
+  PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
-import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
@@ -48,7 +49,7 @@ import type { ReactTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
@@ -58,7 +59,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       reactArgTypesAnnotations,
       reactDocsAnnotations,
       ...(input.addons ?? []),
-    ],
+    ] as PreviewAddon<InferTypes<Addons>>[],
   }) as ReactPreview<ReactTypes & InferTypes<Addons>>;
 
   const defineMeta = preview.meta.bind(preview);

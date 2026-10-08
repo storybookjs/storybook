@@ -212,16 +212,16 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
 }
 
 const MAX_TYPE_LENGTH = 300;
+const STRING_LITERAL_UNION =
+  /^(?:"[^"]*"|'[^']*'|undefined|null)(?: \| (?:"[^"]*"|'[^']*'|undefined|null))+$/;
 
-/**
- * Cuts a union too long to read, such as every intrinsic element name, after its first members.
- * Anything shorter, or not a union, is printed whole.
- */
+// A union of string literals this long, such as every intrinsic element name, is cut after its
+// first members; any other type is printed whole.
 function abbreviateUnion(type: string): string {
-  const members = type.split(' | ');
-  if (type.length <= MAX_TYPE_LENGTH || members.length < 2) {
+  if (type.length <= MAX_TYPE_LENGTH || !STRING_LITERAL_UNION.test(type)) {
     return type;
   }
+  const members = type.split(' | ');
   const kept = [members[0]];
   for (const member of members.slice(1)) {
     if (`${kept.join(' | ')} | ${member}`.length > MAX_TYPE_LENGTH / 2) {

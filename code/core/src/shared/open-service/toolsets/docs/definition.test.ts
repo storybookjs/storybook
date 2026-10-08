@@ -432,7 +432,13 @@ describe('usage reporting', () => {
       toolset: 'docs',
       tool: 'show',
       event: 'tool:docs_show',
-      payload: { componentId: 'button', found: true, resultTokenCount: expect.any(Number) },
+      payload: {
+        componentId: 'button',
+        found: true,
+        resolvedElsewhere: false,
+        suggestionCount: 0,
+        resultTokenCount: expect.any(Number),
+      },
     });
   });
 

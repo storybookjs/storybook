@@ -59,8 +59,9 @@ export type DocsListOutput = {
 export type DocsShowOutput = {
   id: string;
   entry?: ResolvedDocsEntry;
+  /** The source the entry came from, or was looked up in when it resolved to nothing. */
   storybookId?: string;
-  /** Set when `id` was missing from this source and resolved from `storybookId`, the one that has it. */
+  /** The source the caller named, when the entry was found in `storybookId` instead. */
   requestedStorybookId?: string;
   /** Listed entries close to an `id` that resolved to nothing. */
   suggestions?: DocsCandidate[];
@@ -195,7 +196,7 @@ Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
 
-/** A ready-to-run `show` call, so a correction never has to be pieced together from prose. */
+// A ready-to-run `show` call, so a correction never has to be pieced together from prose.
 function formatShowCall(
   ctx: ToolsetCtx,
   { id, storybookId }: { id: string; storybookId?: string }
@@ -227,7 +228,7 @@ function formatEntryNotFound(
   ].join('\n');
 }
 
-/** Tells the agent an entry came from another source than it asked, and how to ask for it directly. */
+// Tells the agent an entry came from another source than it asked, and how to ask for it directly.
 function formatResolvedElsewhere(
   { id, storybookId, requestedStorybookId }: DocsShowOutput,
   ctx: ToolsetCtx
@@ -423,20 +424,22 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
       }))
     : [{ access: docsAccess! }];
 
-  /**
-   * Recovers an id the requested source does not have: resolved from the one other source that
-   * has it, or answered with the listed entries closest to it, exact matches in other sources first.
-   * A source that cannot be read is skipped, as it would be when listing.
-   */
+  // Recovers an id the requested source does not have: resolved from the one other source that has
+  // it, or answered with the listed entries closest to it. A source that cannot be read is skipped,
+  // as it would be when listing.
   const recoverMissedId = async (
     id: string,
     storybookId: string | undefined
   ): Promise<Partial<DocsShowOutput>> => {
+    const unreadable = new Set<string | undefined>();
     const elsewhere = scopedAccesses.filter((scoped) => scoped.storybookId !== storybookId);
     const resolved = await Promise.all(
       elsewhere.map(async (scoped) => ({
         storybookId: scoped.storybookId,
-        entry: await scoped.access.resolve(id).catch(() => undefined),
+        entry: await scoped.access.resolve(id).catch(() => {
+          unreadable.add(scoped.storybookId);
+          return undefined;
+        }),
       }))
     );
     const hits = resolved.filter((hit) => hit.entry !== undefined);
@@ -444,8 +447,9 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
       return { ...hits[0], requestedStorybookId: storybookId };
     }
 
+    const readable = scopedAccesses.filter((scoped) => !unreadable.has(scoped.storybookId));
     const listings = await Promise.all(
-      scopedAccesses.map(async (scoped) => ({
+      readable.map(async (scoped) => ({
         storybookId: scoped.storybookId,
         manifests: await scoped.access.list({ withStoryIds: false }).catch(() => undefined),
       }))
@@ -529,6 +533,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
             payload: {
               componentId: id,
               found: data.entry !== undefined,
+              resolvedElsewhere: data.requestedStorybookId !== undefined,
+              suggestionCount: data.suggestions?.length ?? 0,
               resultTokenCount: estimateTokens(markdown),
             },
           };

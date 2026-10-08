@@ -53,6 +53,31 @@ describe('suggestEntries', () => {
     expect(ids('components-carousel')).toEqual([]);
   });
 
+  it('ranks the same id in every other source first, however many have it', () => {
+    const everywhere = ['a', 'b', 'c'].map((storybookId) => ({
+      id: 'switch',
+      name: 'Switch',
+      storybookId,
+    }));
+
+    expect(
+      suggestEntries('switch', [...everywhere, { id: 'button', name: 'Button', storybookId: 'a' }])
+    ).toEqual(everywhere);
+  });
+
+  it('finds the entry a word names even when most ids share that word', () => {
+    const kebab = ['button', 'icon-button', 'toggle-button', 'split-button', 'card'].map(
+      (name) => ({
+        id: `components-${name}`,
+        name: name.replace(/(^|-)(\w)/g, (_, _dash, letter: string) => letter.toUpperCase()),
+      })
+    );
+
+    expect(suggestEntries('button', kebab).map((candidate) => candidate.id)).toEqual([
+      'components-button',
+    ]);
+  });
+
   it('keeps the source of each suggestion', () => {
     expect(suggestEntries('switch', candidates)).toEqual([
       { id: 'components-switch', name: 'Switch', storybookId: 'reshaped' },

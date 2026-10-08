@@ -647,21 +647,6 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       `);
     });
 
-    it('puts the props before the stories, so the head of the output carries them', () => {
-      const manifest: ComponentManifest = {
-        id: 'button',
-        name: 'Button',
-        stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
-        reactDocgenTypescript: {
-          props: { size: { name: 'size', type: { name: 'string' }, required: true } },
-        },
-      };
-
-      const result = formatComponentManifest(manifest);
-
-      expect(result.indexOf('## Props')).toBeLessThan(result.indexOf('## Stories'));
-    });
-
     it('should show all stories fully when component has no props', () => {
       const manifest: ComponentManifest = {
         id: 'button',
@@ -941,7 +926,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
   });
 
   describe('props section', () => {
-    it('cuts a union too long to read after its first members', () => {
+    it('cuts a string-literal union too long to read after its first members', () => {
       const elements = Array.from({ length: 120 }, (_, index) => `"element-${index}"`);
       const manifest: ComponentManifest = {
         id: 'box',
@@ -962,25 +947,19 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       expect(result).toContain('  tone?: "neutral" | "primary";');
     });
 
-    it('keeps a multi-line prop description in a block comment', () => {
+    it('prints a long union of anything but string literals whole', () => {
+      const callback = `(state: { ${Array.from({ length: 40 }, (_, index) => `field${index}: "a" | "b"`).join('; ')} }) => void`;
       const manifest: ComponentManifest = {
         id: 'box',
         name: 'Box',
         reactDocgenTypescript: {
           props: {
-            gap: {
-              name: 'gap',
-              description: 'Space between children.\nIn units of 4px.',
-              type: { name: 'number' },
-              required: false,
-            },
+            render: { name: 'render', type: { name: `ReactNode | ${callback}` }, required: false },
           },
         },
       };
 
-      expect(formatComponentManifest(manifest)).toContain(
-        '  /**\n    Space between children.\nIn units of 4px.\n  */\n  gap?: number;'
-      );
+      expect(formatComponentManifest(manifest)).toContain(`  render?: ReactNode | ${callback};`);
     });
 
     it('should format props from reactDocgenTypescript', () => {

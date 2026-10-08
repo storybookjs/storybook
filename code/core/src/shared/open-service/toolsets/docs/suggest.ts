@@ -13,14 +13,14 @@ function tokens(value: string): Set<string> {
   return new Set([...words, words.join('')]);
 }
 
-/**
- * The listed entries closest to an id that resolved to nothing, best first. A story id is matched
- * by its component part.
- */
+// The listed entries closest to an id that resolved to nothing, best first: the same id in other
+// sources, then the entry it names, then ids sharing its words. A story id is matched by its
+// component part.
 export function suggestEntries(id: string, candidates: DocsCandidate[]): DocsCandidate[] {
+  const componentId = id.split('--')[0];
   // Agents glue the source onto the id (`reshaped-button`); the source names no entry.
   const sourceIds = new Set(candidates.map((candidate) => candidate.storybookId));
-  const wanted = new Set([...tokens(id.split('--')[0])].filter((token) => !sourceIds.has(token)));
+  const wanted = new Set([...tokens(componentId)].filter((token) => !sourceIds.has(token)));
 
   // A word most ids share, such as a `components` title prefix, says nothing about which one was meant.
   const frequency = new Map<string, number>();
@@ -36,8 +36,8 @@ export function suggestEntries(id: string, candidates: DocsCandidate[]): DocsCan
     .map((candidate) => {
       const own = new Set([...tokens(candidate.id), ...tokens(candidate.name)]);
       const namesIt = wanted.has(candidate.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
-      const score = telling.filter((token) => own.has(token)).length;
-      return { candidate, score: score > 0 && namesIt ? score + 1 : score };
+      const score = telling.filter((token) => own.has(token)).length + (namesIt ? 2 : 0);
+      return { candidate, score: candidate.id === componentId ? Number.MAX_SAFE_INTEGER : score };
     })
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || a.candidate.id.localeCompare(b.candidate.id))

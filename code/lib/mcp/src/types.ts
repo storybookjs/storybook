@@ -96,7 +96,8 @@ export type StorybookContext = {
    * Storybook's dev server when `docgenServer` is enabled. When set,
    * single-entry tools (`docs-show`, `docs-show-story`) call
    * this instead of fetching the (potentially all-component) manifest index, so a
-   * single lookup never triggers docgen extraction for every component.
+   * lookup that finds its entry never triggers docgen extraction for every component.
+   * A `docs-show` miss still reads the index, to suggest close ids.
    *
    * Returns the fully-resolved component or doc in `@storybook/mcp`'s internal
    * shape (already adapted from the open-service payloads), or `undefined` when the

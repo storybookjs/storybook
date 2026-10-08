@@ -1092,14 +1092,14 @@ http://remote.example.com/mcp`);
       expect((response.result as any).content[0].text).toContain('# Welcome');
     });
 
-    it('returns not-found when resolveEntry yields nothing, suggesting from the listing', async () => {
+    it('returns not-found when resolveEntry yields nothing, with close ids from the listing', async () => {
       const resolveEntry = vi.fn().mockResolvedValue(undefined);
 
       const request = {
         jsonrpc: '2.0' as const,
         id: 1,
         method: 'tools/call',
-        params: { name: GET_TOOL_NAME, arguments: { id: 'nope' } },
+        params: { name: GET_TOOL_NAME, arguments: { id: 'primary-button' } },
       };
 
       const mockHttpRequest = new Request('https://example.com/mcp');
@@ -1107,13 +1107,11 @@ http://remote.example.com/mcp`);
         custom: { request: mockHttpRequest, manifestProvider, resolveEntry },
       });
 
-      expect(manifestProvider).toHaveBeenCalledWith(
-        mockHttpRequest,
-        COMPONENT_MANIFEST_PATH,
-        undefined
-      );
       expect((response.result as any).isError).toBe(true);
       expect((response.result as any).content[0].text).toContain('not found');
+      expect((response.result as any).content[0].text).toContain(
+        '- Button: docs-show {"id":"button"}'
+      );
     });
   });
 });

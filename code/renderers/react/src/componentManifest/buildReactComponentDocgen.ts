@@ -54,11 +54,9 @@ export interface ReactComponentManifest extends ComponentManifest {
 
 const ENTRY_POINT_FIELDS = ['exports', 'main', 'module', 'types', 'typings', 'browser'];
 
-/**
- * The name other code imports the component's package by. An app's own package — private, with no
- * entry point — cannot be imported by name, so its components keep the import the story wrote.
- */
-function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
+// An app's own package (private, with no entry point) cannot be imported by name, so its
+// components keep the import the story wrote.
+function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
   });
@@ -230,7 +228,7 @@ export function buildStoryDocsFromResolved({
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-  const packageName = getPackageInfo(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path, storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds, {
     filePath: storyPath,
@@ -299,7 +297,7 @@ export function buildComponentDocgenFromResolved({
 }): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const packageName = getPackageInfo(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path, storyPath);
 
   const base = {
     id,

@@ -228,6 +228,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
       framework: inputs.framework,
       csfFactories: inputs.csfFactories,
       previewFile: inputs.previewFile,
+      typescript: inputs.typescript,
       docsEnabled: inputs.docsEnabledForCli,
       testSupported: inputs.testSupported,
       a11yEnabled: inputs.a11yEnabled,

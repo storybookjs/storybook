@@ -15,6 +15,8 @@ export type SkillInputs = ToolAvailability & {
   csfFactories: boolean;
   /** Path of the preview file relative to the working directory; a default name when there is none. */
   previewFile: string;
+  /** The preview file, or `main` when there is none, is TypeScript. */
+  typescript: boolean;
 };
 
 const isTypeScriptFile = (path: string) => /\.[cm]?tsx?$/.test(path);
@@ -27,12 +29,11 @@ async function resolvePreview(configDir = '.storybook') {
   if (previewPath) {
     try {
       csfFactories = isCsfFactoryPreview(await readConfig(previewPath));
-    } catch {
-      // An unparsable preview is treated as a non-factory one.
-    }
+    } catch {}
   }
   return {
     csfFactories,
+    typescript,
     previewFile: relative(process.cwd(), path).replaceAll('\\', '/') || path,
   };
 }

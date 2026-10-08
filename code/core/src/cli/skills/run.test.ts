@@ -31,6 +31,7 @@ const deps = () => ({
     renderer: '@storybook/react',
     csfFactories: false,
     previewFile: '.storybook/preview.ts',
+    typescript: true,
     moduleGraphSupported: true,
     docsEnabled: false,
     docsEnabledForCli: false,

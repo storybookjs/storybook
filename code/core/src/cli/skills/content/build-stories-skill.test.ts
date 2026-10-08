@@ -6,6 +6,7 @@ const everything: StoriesSkillInputs = {
   framework: '@storybook/react-vite',
   csfFactories: false,
   previewFile: '.storybook/preview.ts',
+  typescript: true,
   docsEnabled: true,
   testSupported: true,
   a11yEnabled: true,
@@ -40,18 +41,25 @@ describe('buildStoriesSkill', () => {
     expect(text).not.toContain('Run one of these');
   });
 
-  it('speaks of one command when only stories changed can find stories', () => {
+  it('takes story ids from the story list when the builder has no module graph', () => {
+    const text = buildStoriesSkill({ ...everything, moduleGraphSupported: false });
+
+    expect(text).toContain('docs list --withStoryIds true');
+    expect(text).toContain('Story ids come only from this command.');
+    expect(text).toContain('When it does not find a story');
+    expect(text).not.toContain('stories changed');
+    expect(text).not.toContain('find-by-component');
+  });
+
+  it('selects stories by file and export when no command lists story ids', () => {
     const text = buildStoriesSkill({
       ...everything,
       docsEnabled: false,
       moduleGraphSupported: false,
     });
 
-    expect(text).toContain('Run `stories changed` before every review');
-    expect(text).toContain('it adds the stories of other components');
-    expect(text).toContain('Story ids come only from this command.');
-    expect(text).toContain('When it does not find a story');
-    expect(text).not.toContain('find-by-component');
+    expect(text).toContain('"absoluteStoryPath"');
+    expect(text).not.toContain('stories changed');
   });
 
   it('teaches CSF Factories instead of Meta and StoryObj when the preview uses definePreview', () => {
@@ -74,10 +82,15 @@ describe('buildStoriesSkill', () => {
   });
 
   it('leaves out the Meta and StoryObj types in a JavaScript project', () => {
-    const text = buildStoriesSkill({ ...everything, previewFile: '.storybook/preview.js' });
+    const text = buildStoriesSkill({
+      ...everything,
+      previewFile: '.storybook/preview.js',
+      typescript: false,
+    });
 
     expect(text).not.toContain('StoryObj');
     expect(text).toContain('- Import `fn`, `expect`, `mocked` and `sb` from `storybook/test`.');
+    expect(text).toContain("sb.mock(import('../src/api.js')");
   });
 
   it('puts MSW before module mocks and names the preview file of the project', () => {

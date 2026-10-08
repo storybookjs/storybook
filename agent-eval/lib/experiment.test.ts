@@ -3,19 +3,19 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { ExperimentConfig, RunCompleteContext, Sandbox } from '@vercel/agent-eval';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_EXPERIMENT_CONFIG } from './experiment.ts';
 import * as templates from './templates.ts';
 
-vi.mock('./templates.ts', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./templates.ts')>();
-  return Object.fromEntries(
-    Object.entries(actual).map(([name, value]) => [
-      name,
-      typeof value === 'function' ? vi.fn() : value,
-    ])
-  );
+vi.mock('./templates.ts', { spy: true });
+
+beforeEach(() => {
+  for (const value of Object.values(templates)) {
+    if (vi.isMockFunction(value)) {
+      value.mockReset().mockImplementation(async () => {});
+    }
+  }
 });
 
 const EXPERIMENTS_DIR = path.resolve(
@@ -43,7 +43,6 @@ describe.each(readdirSync(EXPERIMENTS_DIR).filter((file) => file.endsWith('.ts')
   'the %s experiment',
   (file) => {
     it('commits the sandbox baseline after everything its setup writes', async () => {
-      vi.clearAllMocks();
       const { default: experiment } = (await import(path.join(EXPERIMENTS_DIR, file))) as {
         default: ExperimentConfig;
       };

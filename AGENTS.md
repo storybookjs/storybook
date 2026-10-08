@@ -185,6 +185,11 @@ Code should be self-explanatory. A comment is only justified when the code canno
 
 Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
 
+## Code Review
+
+Before reviewing a pull request or a diff, read [`.agents/guidelines/code-review.md`](.agents/guidelines/code-review.md) and follow it.
+It covers what counts as evidence, checks per kind of changed code, structural findings the author must justify, verification expectations, and how to write review comments.
+
 ## Maintenance Rules For Agents
 
 - `AGENTS.md` owns the kickstart: identity, base rules, common commands,
@@ -211,8 +216,6 @@ canonical for its topic; this file owns the pointers.
 - [Sandboxes](.agents/guidelines/sandboxes.md) — read before generating or debugging a sandbox.
 - [Testing](.agents/guidelines/testing.md) — read before writing or running tests beyond the
   commands above; covers memfs filesystem tests and global stubbing rules.
-- [Code review](.agents/guidelines/code-review.md) - read before reviewing a PR or a diff;
-  covers evidence, per-area checks, maintainability findings, and comment format.
 
 ## Learned User Preferences
 

@@ -9991,10 +9991,11 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     "@types/semver": "npm:^7.7.1"
     "@vitest/browser-playwright": "npm:^4.1.6"
-    "@vitest/runner": "npm:^4.1.6"
+    "@vitest/istanbul-lib-report": "npm:^1.0.1"
     empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.43.0"
     istanbul-lib-report: "npm:^3.0.1"
+    istanbul-reports: "npm:^3.2.0"
     micromatch: "npm:^4.0.8"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
@@ -10009,17 +10010,14 @@ __metadata:
     typescript: "npm:^6.0.3"
     vitest: "npm:^4.1.6"
   peerDependencies:
-    "@vitest/browser": ^3.0.0 || ^4.0.0 || ^5.0.0
+    "@vitest/browser": ^4.0.0 || ^5.0.0
     "@vitest/browser-playwright": ^4.0.0 || ^5.0.0
-    "@vitest/runner": ^3.0.0 || ^4.0.0 || ^5.0.0
     storybook: "workspace:^"
-    vitest: ^3.0.0 || ^4.0.0 || ^5.0.0
+    vitest: ^4.0.0 || ^5.0.0
   peerDependenciesMeta:
     "@vitest/browser":
       optional: true
     "@vitest/browser-playwright":
-      optional: true
-    "@vitest/runner":
       optional: true
     vitest:
       optional: true
@@ -14381,6 +14379,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/istanbul-lib-coverage@npm:1.0.2":
+  version: 1.0.2
+  resolution: "@vitest/istanbul-lib-coverage@npm:1.0.2"
+  checksum: 10c0/c839315f8c54fb1eb7d51c61cd908f78c2909bbd17ee0d3d8824764f7eed2785471c40ab29f065eee18b577b8275ece8d4100f0ca6c7a05a39a4128683c57292
+  languageName: node
+  linkType: hard
+
+"@vitest/istanbul-lib-report@npm:^1.0.1":
+  version: 1.0.2
+  resolution: "@vitest/istanbul-lib-report@npm:1.0.2"
+  dependencies:
+    "@vitest/istanbul-lib-coverage": "npm:1.0.2"
+  checksum: 10c0/9b0b3c898448dfe99a51a51238fd564efb1efdfd3dc46570ad6b51a592c9f26811de7be6d07756782d4d0ee71d2431b0592c63be0921f7776bf213a22d87f4d3
+  languageName: node
+  linkType: hard
+
 "@vitest/mocker@npm:3.2.4":
   version: 3.2.4
   resolution: "@vitest/mocker@npm:3.2.4"
@@ -14472,16 +14486,6 @@ __metadata:
     "@vitest/utils": "npm:4.1.10"
     pathe: "npm:^2.0.3"
   checksum: 10c0/554b72639de9694271b99be8ae273fe12ec793093ec91cce143816cd1187d40b7138a4d9d4de4f456cfca9567de986825bff97e107c05b9eb4abc130e854286d
-  languageName: node
-  linkType: hard
-
-"@vitest/runner@npm:^4.1.6":
-  version: 4.1.11
-  resolution: "@vitest/runner@npm:4.1.11"
-  dependencies:
-    "@vitest/utils": "npm:4.1.11"
-    pathe: "npm:^2.0.3"
-  checksum: 10c0/3c782b055e9e688e1785f7c8937bd1669bad1b0e5758cb8b844f918f30a324b1d21e174d46c941ce80ebf37f2b89b55b6d619a675025914a1ece6377b95909e2
   languageName: node
   linkType: hard
 

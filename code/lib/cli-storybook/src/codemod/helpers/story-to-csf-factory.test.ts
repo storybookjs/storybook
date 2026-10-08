@@ -468,17 +468,17 @@ describe('stories codemod', () => {
       }
     });
 
-    it('keeps #.storybook/preview when the native preview lives in .rnstorybook', async () => {
+    it('uses a relative import for .rnstorybook when subpath imports are off', async () => {
       await expect(
         formatFileContent(
-          'src/Button.stories.tsx',
+          '/project/src/Button.stories.tsx',
           await storyToCsfFactory(
             {
               source: dedent`
                 export default {};
                 export const A = {};
               `,
-              path: 'src/Button.stories.tsx',
+              path: '/project/src/Button.stories.tsx',
             },
             {
               previewConfigPath: '/project/.rnstorybook/preview.tsx',
@@ -487,7 +487,7 @@ describe('stories codemod', () => {
           )
         )
       ).resolves.toMatchInlineSnapshot(`
-        import preview from "#.storybook/preview";
+        import preview from "../.rnstorybook/preview";
         const meta = preview.meta({});
         export const A = meta.story();
       `);

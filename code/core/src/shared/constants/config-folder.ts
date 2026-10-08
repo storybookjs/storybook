@@ -55,11 +55,16 @@ export function previewFileForImports(
   );
 }
 
-function packageRelativeImport(fromDirectory: string, previewFile: string): string {
+export function previewImportTarget(
+  previewFile: string,
+  fromDirectory: string
+): string | undefined {
   const relativePath = relative(resolve(fromDirectory), resolve(previewFile));
-  return relativePath.startsWith('./') || relativePath.startsWith('../')
-    ? relativePath
-    : `./${relativePath}`;
+  if (relativePath === '..' || relativePath.startsWith('../')) {
+    return undefined;
+  }
+
+  return relativePath.startsWith('./') ? relativePath : `./${relativePath}`;
 }
 
 export function applyPreviewImportsMap(
@@ -67,10 +72,10 @@ export function applyPreviewImportsMap(
   previewFile: string,
   fromDirectory: string
 ): boolean {
-  const target = packageRelativeImport(fromDirectory, previewFile);
+  const target = previewImportTarget(previewFile, fromDirectory);
   const current = packageJson.imports ?? {};
 
-  if (current[DOCUMENTED_PREVIEW_IMPORT] === target) {
+  if (!target || current[DOCUMENTED_PREVIEW_IMPORT] === target) {
     return false;
   }
 

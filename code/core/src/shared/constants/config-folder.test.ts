@@ -9,6 +9,7 @@ import {
   hasSiblingReactNativeConfig,
   isReactNativeStorybookPath,
   previewFileForImports,
+  previewImportTarget,
   webPreviewCandidates,
 } from './config-folder.ts';
 
@@ -80,5 +81,15 @@ describe('applyPreviewImportsMap', () => {
 
     expect(applyPreviewImportsMap(packageJson, previewFile, fromDirectory)).toBe(false);
     expect(packageJson.imports['#*']).toEqual(['./*']);
+  });
+
+  it('does not write a target outside the package', () => {
+    const packageJson: { imports?: Record<string, unknown> } = {};
+    const fromDirectory = join('repo', 'apps', 'mobile');
+    const previewFile = join('repo', '.storybook', 'preview.tsx');
+
+    expect(previewImportTarget(previewFile, fromDirectory)).toBeUndefined();
+    expect(applyPreviewImportsMap(packageJson, previewFile, fromDirectory)).toBe(false);
+    expect(packageJson.imports).toBeUndefined();
   });
 });

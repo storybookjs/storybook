@@ -16,6 +16,7 @@ import {
   hasSiblingReactNativeConfig,
   isReactNativeStorybookPath,
   previewFileForImports,
+  previewImportTarget,
 } from '../../../../core/src/shared/constants/config-folder.ts';
 import { runCodemod } from '../automigrate/codemod.ts';
 import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.ts';
@@ -113,7 +114,9 @@ export const csfFactories: CommandFix = {
     if (isReactNativePreview) {
       const nativePreviewFile = previewConfigPath ?? join(configDir, 'preview.tsx');
       const previewFile = previewFileForImports(nativePreviewFile, existsSync);
-      if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
+      if (previewImportTarget(previewFile, operationDir) == null) {
+        useSubPathImports = false;
+      } else if (applyPreviewImportsMap(packageJson, previewFile, operationDir)) {
         logger.step(
           `Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
         );

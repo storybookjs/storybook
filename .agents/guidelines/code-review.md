@@ -55,7 +55,7 @@ Post the probe as a command a maintainer can rerun.
 
 ### React UI and accessibility
 
-- Follow the Testing Expectations in `AGENTS.md`.
+- Follow [Testing](./testing.md).
 - Check user-visible state, keyboard and pointer interaction, accessible names and descriptions, and the consumers of the surrounding component.
 - Review fresh-page and first-attempt behavior when tests depend on focus, hover, timers, or retained state.
 

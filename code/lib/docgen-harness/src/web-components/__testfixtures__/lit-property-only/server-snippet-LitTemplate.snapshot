@@ -1,0 +1,8 @@
+<lit-property-only label="Configured"></lit-property-only>
+
+warning: Incomplete snippet: `args => html`<lit-property-only
+      label=${args.label}
+      .items=${args.items}
+      .config=${args.config}
+    ></lit-property-only>`` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`, `config`.

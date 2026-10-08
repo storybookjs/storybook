@@ -1,0 +1,33 @@
+{
+  "id": "webcomponentsfixtures-fast-attributes",
+  "name": "fast-attributes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-fast-attributes--args-default-render": {
+      "id": "webcomponentsfixtures-fast-attributes--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
+    },
+    "webcomponentsfixtures-fast-attributes--dom-node": {
+      "id": "webcomponentsfixtures-fast-attributes--dom-node",
+      "name": "Dom Node",
+      "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('fast-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('size', String(args.size)); if (args.disabled) { el.setAttribute('disabled', ''); } el.setAttribute('max-count', String(args.maxCount)); (el as HTMLElement & { items: string[]; }).items = args.items as string[]; return el; }` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`.",
+    },
+    "webcomponentsfixtures-fast-attributes--lit-template": {
+      "id": "webcomponentsfixtures-fast-attributes--lit-template",
+      "name": "Lit Template",
+      "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+      "warning": "Incomplete snippet: `args => html`<fast-attributes
+      label=${args.label}
+      size=${args.size}
+      ?disabled=${args.disabled}
+      max-count=${args.maxCount}
+      .items=${args.items}
+    ></fast-attributes>`` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`.",
+    },
+  },
+}

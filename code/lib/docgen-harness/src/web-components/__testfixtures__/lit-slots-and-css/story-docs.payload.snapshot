@@ -1,0 +1,33 @@
+{
+  "id": "webcomponentsfixtures-lit-slots-and-css",
+  "name": "lit-slots-and-css",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-slots-and-css--args-default-render": {
+      "id": "webcomponentsfixtures-lit-slots-and-css--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<style>
+  lit-slots-and-css::part(panel) { color: rebeccapurple; }
+</style>
+<lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">
+  Body <b>text</b>
+  <button slot="actions">Confirm</button>
+</lit-slots-and-css>",
+    },
+    "webcomponentsfixtures-lit-slots-and-css--dom-node": {
+      "id": "webcomponentsfixtures-lit-slots-and-css--dom-node",
+      "name": "Dom Node",
+      "snippet": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-slots-and-css'); el.setAttribute('heading', String(args.heading)); const body = document.createElement('p'); body.textContent = 'Default slot content'; const action = document.createElement('button'); action.slot = 'actions'; action.textContent = 'Confirm'; el.append(body, action); return el; }` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-lit-slots-and-css--lit-template": {
+      "id": "webcomponentsfixtures-lit-slots-and-css--lit-template",
+      "name": "Lit Template",
+      "snippet": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
+      "warning": "Incomplete snippet: `args => html`<lit-slots-and-css heading=${args.heading}>
+      <p>Default slot content</p>
+      <button slot="actions">Confirm</button>
+    </lit-slots-and-css>`` could not be resolved statically.",
+    },
+  },
+}

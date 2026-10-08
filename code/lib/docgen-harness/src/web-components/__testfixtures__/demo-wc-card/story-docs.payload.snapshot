@@ -1,0 +1,38 @@
+{
+  "id": "webcomponentsfixtures-demo-wc-card",
+  "name": "demo-wc-card",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-demo-wc-card--back": {
+      "id": "webcomponentsfixtures-demo-wc-card--back",
+      "name": "Back",
+      "snippet": "<demo-wc-card back-side rows="[]"></demo-wc-card>",
+      "warning": "Incomplete snippet: `({ backSide, header, rows, prefix }) => html`
+    <demo-wc-card .backSide=${backSide} .header=${header} .rows=${rows}
+      ><span slot="prefix">${prefix}</span>A simple card</demo-wc-card
+    >
+  `` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-demo-wc-card--front": {
+      "id": "webcomponentsfixtures-demo-wc-card--front",
+      "name": "Front",
+      "snippet": "<demo-wc-card rows="[]"></demo-wc-card>",
+      "warning": "Incomplete snippet: `({ backSide, header, rows, prefix }) => html`
+    <demo-wc-card .backSide=${backSide} .header=${header} .rows=${rows}
+      ><span slot="prefix">${prefix}</span>A simple card</demo-wc-card
+    >
+  `` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-demo-wc-card--prefix": {
+      "id": "webcomponentsfixtures-demo-wc-card--prefix",
+      "name": "Prefix",
+      "snippet": "<demo-wc-card header="my header" rows="[]"></demo-wc-card>",
+      "warning": "Incomplete snippet: `({ backSide, header, rows, prefix }) => html`
+    <demo-wc-card .backSide=${backSide} .header=${header} .rows=${rows}
+      ><span slot="prefix">${prefix}</span>A simple card</demo-wc-card
+    >
+  `` could not be resolved statically.
+Incomplete snippet: args not declared by `demo-wc-card`: `prefix`.",
+    },
+  },
+}

@@ -31,9 +31,6 @@ interface Declaration {
   tagName: string;
 }
 
-const WCA_MANIFEST_DEPRECATION =
-  'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.';
-
 const getMetaDataExperimental = (tagName: string, customElements: CustomElements) => {
   if (!isValidComponent(tagName) || !isValidMetaData(customElements)) {
     return null;
@@ -69,7 +66,9 @@ const getMetaDataV1 = (tagName: string, customElements: CustomElements) => {
 
 const getMetaData = (tagName: string, manifest: any) => {
   if (manifest?.version === 'experimental') {
-    deprecate(WCA_MANIFEST_DEPRECATION);
+    deprecate(
+      'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.'
+    );
     return getMetaDataExperimental(tagName, manifest);
   }
   return getMetaDataV1(tagName, manifest);

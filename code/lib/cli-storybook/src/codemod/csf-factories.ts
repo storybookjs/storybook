@@ -13,6 +13,7 @@ import { dedent } from 'ts-dedent';
 
 import {
   applyPreviewImportsMap,
+  hasSiblingReactNativeConfig,
   isReactNativeStorybookPath,
   previewFileForImports,
 } from '../../../../core/src/shared/constants/config-folder.ts';
@@ -79,7 +80,9 @@ export const csfFactories: CommandFix = {
   }) {
     const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
     const isReactNativePreview =
-      isReactNativeStorybookPath(previewConfigPath) || isReactNativeStorybookPath(configDir);
+      isReactNativeStorybookPath(previewConfigPath) ||
+      isReactNativeStorybookPath(configDir) ||
+      hasSiblingReactNativeConfig(configDir, existsSync);
     // React Native always uses the documented specifier so Metro can alias it.
     let useSubPathImports = inSandbox || isReactNativePreview;
 

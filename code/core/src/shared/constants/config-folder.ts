@@ -1,4 +1,4 @@
-import { join, relative, resolve, sep } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 
 /** Default React Native on-device Storybook config directory name. */
 export const RN_STORYBOOK_DIR = '.rnstorybook';
@@ -38,6 +38,17 @@ export function webPreviewCandidates(nativeConfigPath: string): string[] {
 
   const projectDir = parts.slice(0, index).join(sep);
   return WEB_PREVIEW_FILENAMES.map((name) => join(projectDir, '.storybook', name));
+}
+
+export function hasSiblingReactNativeConfig(
+  configDir: string | undefined,
+  exists: (file: string) => boolean
+): boolean {
+  if (!configDir) {
+    return false;
+  }
+
+  return exists(join(dirname(resolve(configDir)), RN_STORYBOOK_DIR));
 }
 
 export function previewFileForImports(

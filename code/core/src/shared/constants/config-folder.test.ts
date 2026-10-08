@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyPreviewImportsMap,
   DOCUMENTED_PREVIEW_IMPORT,
+  hasSiblingReactNativeConfig,
   isReactNativeStorybookPath,
   previewFileForImports,
   webPreviewCandidates,
@@ -32,6 +33,17 @@ describe('webPreviewCandidates', () => {
       join(projectDir, '.storybook', 'preview.jsx'),
       join(projectDir, '.storybook', 'preview.mjs'),
     ]);
+  });
+});
+
+describe('hasSiblingReactNativeConfig', () => {
+  it('detects .rnstorybook beside the config directory', () => {
+    const configDir = join('apps', 'mobile', '.storybook');
+    const sibling = join(resolve('apps', 'mobile'), '.rnstorybook');
+
+    expect(hasSiblingReactNativeConfig(configDir, (file) => file === sibling)).toBe(true);
+    expect(hasSiblingReactNativeConfig(configDir, () => false)).toBe(false);
+    expect(hasSiblingReactNativeConfig(undefined, () => true)).toBe(false);
   });
 });
 

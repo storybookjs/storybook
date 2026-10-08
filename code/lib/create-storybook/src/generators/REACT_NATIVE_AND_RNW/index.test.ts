@@ -49,14 +49,14 @@ describe('REACT_NATIVE_AND_RNW generator', () => {
     expect(packageManager.writePackageJson).toHaveBeenCalledWith(
       expect.objectContaining({
         imports: expect.objectContaining({
-          '#.storybook/preview': './.storybook/preview.ts',
+          '#.storybook/preview': './.storybook/preview.tsx',
         }),
       }),
       process.cwd()
     );
   });
 
-  it('maps a JavaScript project to preview.js', async () => {
+  it('maps a JavaScript project to preview.jsx', async () => {
     const packageManager = {
       writePackageJson: vi.fn(),
       primaryPackageJson: {
@@ -79,7 +79,7 @@ describe('REACT_NATIVE_AND_RNW generator', () => {
     expect(packageManager.writePackageJson).toHaveBeenCalledWith(
       expect.objectContaining({
         imports: expect.objectContaining({
-          '#.storybook/preview': './.storybook/preview.js',
+          '#.storybook/preview': './.storybook/preview.jsx',
         }),
       }),
       process.cwd()

@@ -27,7 +27,7 @@ export default defineGeneratorModule({
       context
     );
 
-    const previewExtension = context.language === SupportedLanguage.JAVASCRIPT ? 'js' : 'ts';
+    const previewExtension = context.language === SupportedLanguage.JAVASCRIPT ? 'jsx' : 'tsx';
     const { packageJson, operationDir } = packageManager.primaryPackageJson;
     // Vite resolves this specifier; Metro aliases it to `.rnstorybook`.
     if (

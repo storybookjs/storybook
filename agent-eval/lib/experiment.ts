@@ -82,6 +82,14 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
           `Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(', ')}`
         );
       }
+      if (
+        STORYBOOK_LATEST &&
+        !(PORTED_WORKFLOW_STORYBOOK_EVALS as readonly string[]).includes(match)
+      ) {
+        throw new Error(
+          `EVAL_ONLY entry "${match}" cannot run with EVAL_STORYBOOK_LATEST=1: only the 9xx line supports the stable release.`
+        );
+      }
       return match;
     });
     const partitioned = {

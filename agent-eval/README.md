@@ -75,8 +75,10 @@ usage metadata in the results playground before growing the eval set past it
 The 9xx evals are a trimmed MCP-only set for shapes the 8xx line does not
 cover (async mocks, story drift, tool params, preview-by-path/id, vitest CLI).
 They never run on the default `next` matrix; under `EVAL_STORYBOOK_LATEST=1`
-they become the active line (default smoke: `908-run-story-tests`). See
-`lib/experiment.ts`. Twins of 8xx scenarios were removed.
+they become the active line (default smoke: `908-run-story-tests`), and
+`EVAL_ONLY` accepts only 9xx names: the 8xx and 82x evals assert the current
+workflow, which the stable release does not have. See `lib/experiment.ts`.
+Twins of 8xx scenarios were removed.
 
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
 effort explicitly, so a CLI default change cannot silently change what runs.
@@ -122,21 +124,14 @@ the documentation tooling) regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
-Review mode follows the installed Storybook. On the checkout, review is
-available on every surface, so the plugin and MCP experiments both run — and
-assert — the review workflow (review-create published, review section in the
-final response). The stable release that `EVAL_STORYBOOK_LATEST=1` installs
-offers review to the plugins only, so MCP experiments run review-off there
-(stories-preview links, no review-create) until Storybook 11 is `latest`.
-
 Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
-- `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+- `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
+- `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Running evals in CI
 

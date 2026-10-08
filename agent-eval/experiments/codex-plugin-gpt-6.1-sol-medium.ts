@@ -12,7 +12,7 @@ export default {
   // The MCP variant cannot use the AI Gateway path yet:
   // https://github.com/openai/codex/issues/26234
   agent: 'codex',
-  model: 'gpt-6-sol?reasoningEffort=medium',
+  model: 'gpt-6.1-sol?reasoningEffort=medium',
   // Skipped under EVAL_STORYBOOK_LATEST=1; see PLUGIN_STORYBOOK_EVALS.
   evals: PLUGIN_STORYBOOK_EVALS,
   setup: async (sandbox) => {

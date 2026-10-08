@@ -12,6 +12,7 @@ import type { CommandFailureHandler } from '../tools/register.ts';
 import { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { resolveSkillInputs } from './inputs.ts';
 import { getProjectInfo } from './project-info.ts';
+import { recordSetupRun } from './record-setup-run.ts';
 import {
   SKILLS_OPTION_SPECS,
   resolveSkillsIntent,
@@ -64,6 +65,9 @@ export function registerSkillsCommand(
     const run = async () => {
       const result = await runSkillsCommand(invocation, defaultDeps());
       await printResult(result);
+      if (result.setupRun) {
+        await recordSetupRun(result.setupRun);
+      }
       if (result.skill) {
         await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
       }

@@ -1,6 +1,6 @@
 {
   "name": "agent-eval",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.4",
   "private": true,
   "type": "module",
   "imports": {

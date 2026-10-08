@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
@@ -8,7 +10,7 @@ import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
-import type { getProjectInfo } from './project-info.ts';
+import type { ProjectInfo, getProjectInfo } from './project-info.ts';
 import { getSetupSupportError } from './setup-support.ts';
 
 export const SKILLS_OPTION_SPECS = [
@@ -34,7 +36,11 @@ export type SkillsRunResult = {
   exitCode: number;
   // For telemetry: which skill was served (or `all`), when the run got that far.
   skill?: SkillId | 'all';
+  // Set when the `setup` skill itself was requested, so the caller can record the setup session.
+  setupRun?: SetupRun;
 };
+
+export type SetupRun = { projectInfo: ProjectInfo; prompt: string };
 
 export type SkillsRunDeps = {
   /**
@@ -104,11 +110,16 @@ export async function runSkillsCommand(
     // `stories` carries the `write-story` text, so `--all` does not print it a second time.
     const ids =
       intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
-    const docs = await serveSkills(ids, resolveStorybookConfigDir(input.target), deps);
+    const { docs, setupRun } = await serveSkills(
+      ids,
+      resolveStorybookConfigDir(input.target),
+      deps
+    );
     return {
       output: docs.join('\n\n---\n\n'),
       exitCode: 0,
       skill: intent.kind === 'all' ? 'all' : intent.id,
+      ...(intent.kind === 'get' && setupRun ? { setupRun } : {}),
     };
   } catch (error) {
     if (error instanceof SkillsError) {
@@ -125,24 +136,34 @@ async function serveSkills(
   ids: readonly SkillId[],
   configDir: string,
   deps: SkillsRunDeps
-): Promise<string[]> {
+): Promise<{ docs: string[]; setupRun?: SetupRun }> {
   let inputs: SkillInputs | undefined;
   let toolsets: ToolsetCatalogEntry[] | undefined;
+  let setupRun: SetupRun | undefined;
   const docs: string[] = [];
   for (const id of ids) {
     if (id === 'setup') {
-      docs.push(await serveSetup(configDir, deps));
+      const setup = await serveSetup(configDir, deps);
+      docs.push(setup.markdown);
+      setupRun = setup.run;
     } else {
       inputs ??= await loadInputs(configDir, deps);
       toolsets ??= deps.describeToolsets();
       docs.push(withCommandReference(id, inputs, toolsets));
     }
   }
-  return docs;
+  return { docs, setupRun };
 }
 
-async function serveSetup(configDir: string, deps: SkillsRunDeps): Promise<string> {
-  const probed = await deps.getProjectInfo({ configDir });
+async function serveSetup(
+  configDir: string,
+  deps: SkillsRunDeps
+): Promise<{ markdown: string; run: SetupRun }> {
+  // The project probe derives the project directory from the config dir, which only survives
+  // `--config-dir .` while the path is still relative; the prompt also prints it verbatim.
+  const probed = await deps.getProjectInfo({
+    configDir: relative(process.cwd(), configDir) || '.',
+  });
   if (!probed.ok) {
     throw new SkillsError(probed.message);
   }
@@ -150,7 +171,8 @@ async function serveSetup(configDir: string, deps: SkillsRunDeps): Promise<strin
   if (supportError) {
     throw new SkillsError(supportError);
   }
-  return (await deps.getSetupMarkdown(probed.projectInfo)).markdown;
+  const { markdown, prompt } = await deps.getSetupMarkdown(probed.projectInfo);
+  return { markdown, run: { projectInfo: probed.projectInfo, prompt } };
 }
 
 async function loadInputs(configDir: string, deps: SkillsRunDeps): Promise<SkillInputs> {
@@ -200,16 +222,13 @@ function withCommandReference(
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
-  const { reviewEnabled } = inputs;
   if (id === 'stories') {
     const workflow = buildServerInstructions({
       transport: 'cli',
       devEnabled: true,
       testSupported: inputs.testSupported,
       docsEnabled: inputs.docsEnabledForCli,
-      changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
-      reviewEnabled,
       storyInstructionsInline: true,
     });
     return `${workflow}\n\n${assemble('write-story', inputs)}`;
@@ -218,8 +237,6 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     transport: 'cli',
     framework: inputs.framework,
     renderer: inputs.renderer,
-    changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     docsEnabled: inputs.docsEnabledForCli,

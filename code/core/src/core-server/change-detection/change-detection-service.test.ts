@@ -1,3 +1,5 @@
+import { stat } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -36,6 +38,7 @@ import {
   resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
 } from './readiness.ts';
 
+vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../../shared/open-service/server.ts', () => ({
   getService: vi.fn(),
@@ -132,6 +135,8 @@ describe('ChangeDetectionService', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    // Fixture paths do not exist; real fs I/O would also not settle under fake timers.
+    vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
     internal_resetChangeDetectionReadiness();
     vi.mocked(logger.info).mockImplementation(() => undefined);
     vi.mocked(logger.warn).mockImplementation(() => undefined);
@@ -181,7 +186,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
@@ -252,7 +257,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     const all = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll();
@@ -299,7 +304,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     const all = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll();
@@ -344,7 +349,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({});
@@ -398,7 +403,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
@@ -465,7 +470,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll()).toEqual({
@@ -535,7 +540,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(gitDiffProvider.onGitStateChangeMock).toHaveBeenCalledTimes(1);
@@ -584,7 +589,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     // First scan from initial start — debounce 0 runs synchronously.
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
@@ -637,7 +642,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 
@@ -647,62 +652,6 @@ describe('ChangeDetectionService', () => {
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(2);
 
     await service.dispose();
-  });
-
-  it('does not subscribe to git state when change detection is disabled', async () => {
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const gitDiffProvider = createMockGitDiffProvider();
-    const { adapter, hasFileChangeSubscriber } = createMockAdapter();
-    const { service, graph } = createWiredChangeDetection({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn(),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider,
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(false);
-
-    expect(hasFileChangeSubscriber()).toBe(false);
-    expect(gitDiffProvider.onGitStateChangeMock).not.toHaveBeenCalled();
-    expect(await getChangeDetectionReadiness()).toEqual({
-      status: 'unavailable',
-      reason: 'disabled',
-    });
-    await service.dispose();
-  });
-
-  it('acts as a consumer of the module-graph open service', async () => {
-    const engine = {
-      whenSettled: vi.fn(async () => undefined),
-      hasGraph: vi.fn(() => false),
-      lookup: vi.fn(() => new Map<string, number>()),
-    } as unknown as ModuleGraphEngine;
-    installModuleGraphQueryMock(engine);
-
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const service = new ChangeDetectionService({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn(),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      gitDiffProvider: createMockGitDiffProvider(),
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(false);
-    await service.dispose();
-
-    expect(engine.lookup).not.toHaveBeenCalled();
   });
 
   it('logs unavailability when the module graph service is unavailable', async () => {
@@ -727,7 +676,7 @@ describe('ChangeDetectionService', () => {
       workingDir,
     });
 
-    service.start(true);
+    service.start();
     moduleGraphMock.applyUnavailable('builder does not support change detection');
 
     expect(logger.warn).toHaveBeenCalledWith(
@@ -764,7 +713,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     // Let startInternal subscribe before emitting the failure (initial scan parked on git).
     await vi.runAllTimersAsync();
 
@@ -804,7 +753,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(logger.error).toHaveBeenCalledWith('Module graph failed to start: graph build blew up');
@@ -853,7 +802,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     onGitStateChange?.();
@@ -908,7 +857,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.advanceTimersByTimeAsync(0);
     await service.dispose();
     changedFilesDeferred.resolve({
@@ -952,7 +901,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
@@ -1011,7 +960,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     // Start a patch that will block, then immediately schedule a scan mid-patch.
@@ -1055,34 +1004,11 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
 
     await service.dispose();
     expect(gitDiffProvider.disposeMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('does not call gitDiffProvider.dispose() when the provider was never constructed by the service', async () => {
-    // If gitDiffProvider is never passed in and start() exits early (disabled), the service
-    // never lazily constructs a provider, so dispose() must not create one just to tear it down.
-    const { getStatusStoreByTypeId } = createStatusStore({
-      universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),
-      environment: 'server',
-    });
-    const { service, graph } = createWiredChangeDetection({
-      storyIndexGeneratorPromise: Promise.resolve({
-        getIndex: vi.fn(),
-      } as never),
-      statusStore: getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID),
-      // No gitDiffProvider injected — service would lazily create one, but start(false) exits
-      // before getGitDiffProvider() is called.
-      indexBaselineService: createMockStoryIndexBaselineService(),
-      workingDir,
-    });
-
-    service.start(false);
-    // Should not throw and should not attempt to call dispose on an unconstructed provider.
-    await expect(service.dispose()).resolves.toBeUndefined();
   });
 
   it('rescans the working tree when file activity advances', async () => {
@@ -1113,7 +1039,7 @@ describe('ChangeDetectionService', () => {
     });
 
     graph.start(adapter);
-    service.start(true);
+    service.start();
     await vi.runAllTimersAsync();
     expect(gitDiffProvider.getChangedFilesMock).toHaveBeenCalledTimes(1);
 

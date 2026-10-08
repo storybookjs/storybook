@@ -27,8 +27,7 @@ export type StorybookWorkspace = Map<string, WorkspacePackage>;
 
 export type EvalAgent = 'claude-code' | 'codex';
 // 'none' = bare sandbox: no Storybook tooling flavor recorded in the agent
-// context, review off. Used by control cases that must provide zero agent
-// support.
+// context. Used by control cases that must provide zero agent support.
 export type EvalIntegration = 'mcp' | 'plugin' | 'none';
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
@@ -120,13 +119,10 @@ const CHECKOUT_PACKAGES_DIR = 'local-packages';
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
 const execFileAsync = promisify(execFile);
-// The stable release that EVAL_STORYBOOK_LATEST=1 installs offers review to
-// the plugins only, until Storybook 11 is `latest`.
-export function isReviewEnabledFor(integration: EvalIntegration): boolean {
-  return (
-    integration === 'plugin' || (integration === 'mcp' && process.env.EVAL_STORYBOOK_LATEST !== '1')
-  );
-}
+const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
+const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
+// Captures the entries of the `addons` list, without the trailing comma.
+const STORYBOOK_ADDONS_PATTERN = /addons: \[([^\]]*?),?\s*\]/;
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
@@ -177,6 +173,10 @@ export async function setupSandbox(
 
   files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
+  if (options.integration === 'mcp') {
+    addMcpAddon(files);
+  }
+
   const workspace = await readStorybookWorkspace();
   let packedCheckout = false;
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
@@ -221,11 +221,7 @@ async function writeEvalSupportFiles(
     [SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
     [TYPE_UTIL_SANDBOX_PATH]: await fs.readFile(TYPE_UTIL_SOURCE_PATH, 'utf8'),
     [AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
-      {
-        agent: options.agent,
-        integration: options.integration,
-        review: isReviewEnabledFor(options.integration),
-      },
+      { agent: options.agent, integration: options.integration },
       null,
       2
     ).concat('\n'),
@@ -323,6 +319,35 @@ function mergeTemplateAndFixtureFiles(
   }
 
   return files;
+}
+
+// Only the MCP experiments get the addon: the plugin skills have to work in a project without it.
+export function addMcpAddon(files: Record<string, string>): void {
+  for (const [filePath, content] of Object.entries(files)) {
+    if (!STORYBOOK_MAIN_PATTERN.test(filePath)) {
+      continue;
+    }
+
+    if (!STORYBOOK_ADDONS_PATTERN.test(content)) {
+      throw new Error(`Cannot add ${STORYBOOK_MCP_ADDON}: ${filePath} has no "addons: [...]" list`);
+    }
+    files[filePath] = content.replace(
+      STORYBOOK_ADDONS_PATTERN,
+      (_, addons: string) =>
+        `addons: [${[addons.trim(), `'${STORYBOOK_MCP_ADDON}'`].filter(Boolean).join(', ')}]`
+    );
+
+    const manifestPath = path.posix.join(path.posix.dirname(filePath), '..', 'package.json');
+    const packageJson = parseJsonFile(manifestPath, files[manifestPath] ?? '', 'fixture');
+    if (!isRecord(packageJson)) {
+      throw new Error(`Expected ${manifestPath} to contain a JSON object`);
+    }
+    packageJson.devDependencies = {
+      ...(isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {}),
+      [STORYBOOK_MCP_ADDON]: WORKSPACE_SPEC,
+    };
+    files[manifestPath] = JSON.stringify(packageJson, null, 2).concat('\n');
+  }
 }
 
 function parseJsonFile(filePath: string, content: string, source: 'fixture' | 'template'): unknown {
@@ -628,6 +653,11 @@ function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string
 export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]> {
   const workspace = await readStorybookWorkspace();
   const packages = new Map<string, WorkspacePackage>();
+  // No manifest lists the addon: setup adds it for the MCP experiments.
+  const mcpAddon = workspace.get(STORYBOOK_MCP_ADDON);
+  if (mcpAddon) {
+    packages.set(mcpAddon.name, mcpAddon);
+  }
   for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
     for await (const manifestPath of fs.glob('**/package.json', {
       cwd: sourceDir,

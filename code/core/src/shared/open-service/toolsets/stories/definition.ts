@@ -143,11 +143,6 @@ export type CreateStoriesToolsetOptions = {
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
-  /**
-   * Whether curated reviews are available in this Storybook. Reviews are the intended end of visual
-   * work, so when they exist several methods steer the agent there instead of at raw preview links.
-   */
-  reviewEnabled?: boolean;
 };
 
 const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
@@ -165,9 +160,7 @@ function reasonForChangeDetectionReadiness(
 ): string {
   switch (readiness.status) {
     case 'unavailable':
-      return readiness.reason === 'disabled'
-        ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
-        : `Storybook change detection is unavailable: ${readiness.reason}.`;
+      return `Storybook change detection is unavailable: ${readiness.reason}.`;
     case 'error':
       return `Storybook change detection failed: ${readiness.error.message}`;
     case 'pending':
@@ -183,18 +176,9 @@ function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): bool
   return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
 }
 
-function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
-  if (!reviewEnabled) {
-    return `Use this tool to get one or more Storybook preview URLs.
-Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
-Include each returned preview URL in your final user-facing response so users can open them directly.
-Before your final response, open the preview URL that best shows the result in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`;
-  }
-
-  // With reviews available this is strictly a mid-loop tool: no "include the URLs in your final
-  // response" default (that sanctioned preview links as the ending of visual work) and no hedging
-  // about the review tool's availability (a hedged "when available" let an agent that wrongly
-  // believed the tool was missing treat raw links as a sanctioned fallback).
+function describePreview(ctx: ToolsetCtx): string {
+  // No "include the URLs in your final response" and no "when available" hedge: both let agents
+  // end visual work at preview links.
   return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
 Do not end visual work or browse requests with these links — publish a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
 }
@@ -205,23 +189,14 @@ function describeChanged(ctx: ToolsetCtx): string {
 The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 }
 
-function describeFindByComponent(ctx: ToolsetCtx, reviewEnabled: boolean): string {
+function describeFindByComponent(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
-  const handOffTargets = reviewEnabled
-    ? `${ref('stories.preview')} or ${ref('review.create')}`
-    : ref('stories.preview');
-  const inputShapes = reviewEnabled
-    ? `files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change`
-    : `files you just edited, a feature/domain/topic the user named, or a query like "all consumers of X"`;
-  const cascadeGuidance = reviewEnabled
-    ? `For ${ref('review.create')}, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer.`
-    : `The distance buckets map onto the visual cascade (component → direct importers → page context); use them to pick stories to preview.`;
 
-  return `Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to ${handOffTargets} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
+  return `Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to ${ref('stories.preview')} or ${ref('review.create')} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
-Use it whenever you need story IDs: ${inputShapes}. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try ${ref('stories.changed')} first when available; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
+Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try ${ref('stories.changed')} first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 
-Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: ${DEFAULT_MAX_DISTANCE} keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. ${cascadeGuidance} Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
+Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: ${DEFAULT_MAX_DISTANCE} keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For ${ref('review.create')}, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
 
 Only IDs returned by discovery tools resolve: never derive them from file names, feature names, titles (authors can override them) or memory.
 
@@ -255,14 +230,13 @@ export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
-  reviewEnabled = false,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
     methods: {
       preview: {
-        input: v.object({
+        input: v.strictObject({
           stories: v.pipe(
             storyInputArraySchema,
             v.description(
@@ -277,7 +251,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         title: 'Get story preview URLs',
         // Preview URLs only work when they point at a live origin.
         requiresDevServer: true,
-        description: (ctx) => describePreview(ctx, reviewEnabled),
+        description: describePreview,
         handler: async (input, ctx): Promise<ToolsetOutcome<PreviewStoriesOutput, never>> => {
           if (!ctx.origin) {
             throw new OpenServiceMissingOriginError({
@@ -292,7 +266,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           });
           const data = {
             stories,
-            instructions: previewInstructions(stories, ctx, reviewEnabled),
+            instructions: previewInstructions(stories, ctx),
           };
 
           return {
@@ -309,7 +283,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       changed: {
-        input: v.object({}),
+        input: v.strictObject({}),
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
@@ -334,7 +308,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
               return {
                 ok: true,
                 data,
-                markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+                markdown: formatChangedStories(data, ctx),
                 telemetry: {
                   payload: {
                     storyCount: 0,
@@ -365,7 +339,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           return {
             ok: true,
             data,
-            markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+            markdown: formatChangedStories(data, ctx),
             telemetry: {
               payload: {
                 storyCount: data.stories.length,
@@ -378,7 +352,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       findByComponent: {
-        input: v.object({
+        input: v.strictObject({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),
@@ -401,7 +375,7 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
         }),
         output: findByComponentOutputSchema,
         title: 'Get stories for component files',
-        description: (ctx) => describeFindByComponent(ctx, reviewEnabled),
+        description: describeFindByComponent,
         handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
           const maxDistance = input.maxDistance ?? DEFAULT_MAX_DISTANCE;
           const lookup = await findStoriesByComponent({

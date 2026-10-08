@@ -1,13 +1,13 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  addMcpAddon,
   pointStorybookAtCheckout,
-  isReviewEnabledFor,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
@@ -17,27 +17,27 @@ import {
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
-describe('isReviewEnabledFor', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
+describe('addMcpAddon', () => {
+  it('registers the addon in every template and fixture Storybook', () => {
+    const mainFiles = [
+      ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'templates')),
+      ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'evals')),
+    ];
+    expect(mainFiles.length).toBeGreaterThan(0);
 
-  it('is on for the plugin and mcp integrations on the checkout', () => {
-    vi.stubEnv('EVAL_STORYBOOK_LATEST', '');
+    for (const mainFile of mainFiles) {
+      const files = {
+        '.storybook/main.ts': readFileSync(mainFile, 'utf8'),
+        'package.json': readFileSync(join(mainFile, '..', '..', 'package.json'), 'utf8'),
+      };
 
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-    expect(isReviewEnabledFor('mcp')).toBe(true);
-  });
+      addMcpAddon(files);
 
-  it('is off for the mcp integration on the stable release', () => {
-    vi.stubEnv('EVAL_STORYBOOK_LATEST', '1');
-
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-    expect(isReviewEnabledFor('mcp')).toBe(false);
-  });
-
-  it('is off for the bare sandbox', () => {
-    expect(isReviewEnabledFor('none')).toBe(false);
+      expect(files['.storybook/main.ts'], mainFile).toContain("'@storybook/addon-mcp'],");
+      expect(JSON.parse(files['package.json']).devDependencies, mainFile).toMatchObject({
+        '@storybook/addon-mcp': 'workspace:*',
+      });
+    }
   });
 });
 
@@ -65,9 +65,7 @@ describe('Codex AGENTS.md instructions', () => {
         devEnabled: true,
         testSupported: true,
         docsEnabled: true,
-        changeDetectionEnabled: true,
         moduleGraphSupported: true,
-        reviewEnabled: true,
       }).trim()
     );
   });
@@ -94,7 +92,12 @@ describe('readTemplateCheckoutPackages', () => {
     const packages = (await readTemplateCheckoutPackages()).map((pkg) => pkg.name);
 
     expect(packages).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/react-vite', '@storybook/builder-vite'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/react-vite',
+        '@storybook/builder-vite',
+        '@storybook/addon-mcp',
+      ])
     );
   });
 });
@@ -241,3 +244,16 @@ describe('writeClaudeInAppBrowserMock', () => {
     expect(files['CLAUDE.md']).toMatch(/^# Project rules\n\n[\s\S]*<built_in_browser>/);
   });
 });
+
+function findStorybookMainFiles(rootDir: string): string[] {
+  return readdirSync(rootDir, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      return entry.name === 'node_modules' ? [] : findStorybookMainFiles(entryPath);
+    }
+    // `sep`-based so the match also works on Windows, where `join` emits backslashes.
+    return entry.name === 'main.ts' && entryPath.includes(`${sep}.storybook${sep}`)
+      ? [entryPath]
+      : [];
+  });
+}

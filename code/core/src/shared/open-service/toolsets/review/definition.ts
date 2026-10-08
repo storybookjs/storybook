@@ -33,7 +33,7 @@ const reviewCollectionSchema = v.object({
   ),
 });
 
-const reviewCreateInputSchema = v.object({
+const reviewCreateInputSchema = v.strictObject({
   title: v.pipe(
     v.string(),
     v.description(

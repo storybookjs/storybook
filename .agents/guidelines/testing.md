@@ -41,7 +41,7 @@ Do **not** use `/tmp` paths or replace `node:fs/promises` with a full async fact
 
 Use Vitest's global stubbing instead, which is tracked and restorable:
 
-- Set a global with `vi.stubGlobal('FEATURES', { experimentalDocgenServer: true })`.
+- Set a global with `vi.stubGlobal('FEATURES', { docgenServer: true })`.
 - Restore in `afterEach(() => vi.unstubAllGlobals())` (or enable `unstubGlobals: true` in the Vitest config so it resets before each test automatically).
 - For a value used by every test in a file, stub it in `beforeEach` and unstub in `afterEach`; for a one-off override, call `vi.stubGlobal` inside that single test.
 - Never capture-and-restore by hand (`const original = globalThis.X; ... globalThis.X = original`); `vi.stubGlobal` + `vi.unstubAllGlobals()` does this correctly, including deleting keys that did not previously exist.

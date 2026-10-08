@@ -30,6 +30,14 @@ const preview = __definePreview({
   addons: [],
 });
 
+const legacyAnnotations = {
+  default: {
+    parameters: {
+      legacyAddon: true,
+    },
+  },
+};
+
 test('csf factories', () => {
   const meta = preview.meta({ component: Button, args: { disabled: true } });
 
@@ -40,6 +48,25 @@ test('csf factories', () => {
   });
 
   expect(MyStory.input.args?.label).toBe('Hello world');
+});
+
+test('legacy annotation namespaces are accepted as addons', () => {
+  const previewWithLegacyAnnotations = __definePreview({
+    addons: [legacyAnnotations],
+  });
+
+  const meta = previewWithLegacyAnnotations.meta({
+    component: Button,
+    args: { disabled: false },
+    parameters: { layout: 'centered' },
+    decorators: [(Story) => <Story />],
+  });
+  const story = meta.story({ args: { label: 'Legacy' } });
+
+  expect(story.input.args?.label).toBe('Legacy');
+  expect(previewWithLegacyAnnotations.composed.parameters).toMatchObject({
+    legacyAddon: true,
+  });
 });
 
 describe('Args can be provided in multiple ways', () => {

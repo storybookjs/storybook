@@ -114,6 +114,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "stories": {
 				          "description": "Stories to preview.
@@ -388,7 +389,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to stories-preview or review-create instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
-				Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try stories-changed first when available; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
+				Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try stories-changed first; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 
 				Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: 3 keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For review-create, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
 
@@ -397,6 +398,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				Needs a dev server builder with change detection (e.g. Vite); otherwise returns a typed error.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "componentPaths": {
 				          "description": "Absolute paths to component source files (e.g. "/repo/src/Button.tsx").
@@ -529,6 +531,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				Trace the visual cascade up the import graph to page-level surfaces, one collection per layer (changed component → direct importers → page context). Include control stories where the change should not be visible. Theme tokens, shared styles and layout primitives need page-level coverage even for a one-file edit. Larger features: central page → lower-level pieces → usage locations.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "changedFiles": {
 				          "description": "Paths of the files you changed, most central first. Pass an empty array \`[]\` only when no code changed (e.g. browse requests).",
@@ -622,6 +625,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				For visual/design accessibility violations (for example color contrast), ask the user before changing styles.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "a11y": {
 				          "default": true,
@@ -728,6 +732,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with docs-show, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "withStoryIds": {
 				          "default": false,
@@ -749,6 +754,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "id": {
 				          "description": "The component or docs entry ID (e.g., "button")",
@@ -767,6 +773,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it. Identify the story by its story ID (preferred), or by componentId plus storyName.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
+				      "additionalProperties": false,
 				      "properties": {
 				        "componentId": {
 				          "description": "The component ID (e.g., "button"). Use together with storyName, and only when you have no story ID.",

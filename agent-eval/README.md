@@ -65,7 +65,7 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_ALL=1` run (12 workflow evals × 4 experiments + 4
+A full `EVAL_ALL=1` run (13 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
 lifecycle eval). The budget guardrail is **$75 per full run** — check the

@@ -60,11 +60,17 @@ function hasRootEntry(pkg: Record<string, unknown>) {
   if (exports === undefined) {
     return MAIN_FIELDS.some((field) => field in pkg);
   }
-  if (typeof exports !== 'object' || exports === null || Array.isArray(exports)) {
-    return exports !== null;
+  // A string, or an array of fallbacks, is the root entry itself.
+  if (typeof exports !== 'object' || Array.isArray(exports)) {
+    return true;
   }
-  const keys = Object.keys(exports);
-  return keys.includes('.') || !keys.some((key) => key.startsWith('.'));
+  if (exports === null) {
+    return false;
+  }
+  // An object lists either subpaths (`"."`, `"./button"`) or conditions (`"import"`, `"default"`).
+  // Conditions describe the root.
+  const subpaths = Object.keys(exports).filter((key) => key.startsWith('.'));
+  return subpaths.length === 0 || subpaths.includes('.');
 }
 
 // An app's own package (private, with no root entry) cannot be imported by name, so its

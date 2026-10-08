@@ -1,10 +1,17 @@
-/** A listed entry, and the source to scope a follow-up call to when there are several. */
-export type DocsCandidate = { id: string; name: string; storybookId?: string };
+/**
+ * An entry from a listing. `storybookId` is set in a composition, where a follow-up call has to name
+ * the source.
+ */
+export type DocsListedEntry = { id: string; name: string; storybookId?: string };
 
 const MAX_SUGGESTIONS = 5;
+const SAME_ID_SCORE = Number.MAX_SAFE_INTEGER;
+// A whole name spelled out by the id outweighs any single shared word.
+const NAME_SCORE = 2;
 
-// `alert-banner`, `AlertBanner` and `feedback-alertbanner` all yield `alert`, `banner` or `alertbanner`.
-function tokens(value: string): Set<string> {
+// The words of an id or a name, plus those words joined, so that `alert-banner`, `AlertBanner` and
+// `feedback-alertbanner` all share `alertbanner`.
+function tokenize(value: string): Set<string> {
   const words = value
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .toLowerCase()
@@ -13,32 +20,39 @@ function tokens(value: string): Set<string> {
   return new Set([...words, words.join('')]);
 }
 
-// The listed entries closest to an id that resolved to nothing, best first: the same id in other
-// sources, then the entry it names, then ids sharing its words. A story id is matched by its
-// component part.
-export function suggestEntries(id: string, candidates: DocsCandidate[]): DocsCandidate[] {
+// The listed entries closest to an id that resolved to nothing, best first.
+export function suggestEntries(id: string, candidates: DocsListedEntry[]): DocsListedEntry[] {
+  // A story id (`button--primary`) is matched by its component part.
   const componentId = id.split('--')[0];
-  // Agents glue the source onto the id (`reshaped-button`); the source names no entry.
-  const sourceIds = new Set(candidates.map((candidate) => candidate.storybookId));
-  const wanted = new Set([...tokens(componentId)].filter((token) => !sourceIds.has(token)));
 
-  // A word most ids share, such as a `components` title prefix, says nothing about which one was meant.
-  const frequency = new Map<string, number>();
+  // Agents glue the source onto the id (`reshaped-button`), so a word that is a source id is not
+  // matched.
+  const sourceIds = new Set(candidates.map((candidate) => candidate.storybookId));
+  const wanted = new Set([...tokenize(componentId)].filter((token) => !sourceIds.has(token)));
+
+  // A word in more than a quarter of the ids, such as a `components` title prefix, does not tell
+  // entries apart. A word in one or two ids always counts, so a small Storybook still gets matches.
+  const idCountByToken = new Map<string, number>();
   for (const candidate of candidates) {
-    for (const token of tokens(candidate.id)) {
-      frequency.set(token, (frequency.get(token) ?? 0) + 1);
+    for (const token of tokenize(candidate.id)) {
+      idCountByToken.set(token, (idCountByToken.get(token) ?? 0) + 1);
     }
   }
-  const commonThreshold = Math.max(2, candidates.length / 4);
-  const telling = [...wanted].filter((token) => (frequency.get(token) ?? 0) <= commonThreshold);
+  const maxIdCount = Math.max(2, candidates.length / 4);
+  const distinctive = [...wanted].filter((token) => (idCountByToken.get(token) ?? 0) <= maxIdCount);
+
+  const scoreOf = (candidate: DocsListedEntry) => {
+    if (candidate.id === componentId) {
+      return SAME_ID_SCORE;
+    }
+    const candidateTokens = new Set([...tokenize(candidate.id), ...tokenize(candidate.name)]);
+    const sharedWords = distinctive.filter((token) => candidateTokens.has(token)).length;
+    const joinedName = candidate.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return sharedWords + (wanted.has(joinedName) ? NAME_SCORE : 0);
+  };
 
   return candidates
-    .map((candidate) => {
-      const own = new Set([...tokens(candidate.id), ...tokens(candidate.name)]);
-      const namesIt = wanted.has(candidate.name.toLowerCase().replace(/[^a-z0-9]/g, ''));
-      const score = telling.filter((token) => own.has(token)).length + (namesIt ? 2 : 0);
-      return { candidate, score: candidate.id === componentId ? Number.MAX_SAFE_INTEGER : score };
-    })
+    .map((candidate) => ({ candidate, score: scoreOf(candidate) }))
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score || a.candidate.id.localeCompare(b.candidate.id))
     .slice(0, MAX_SUGGESTIONS)

@@ -211,20 +211,21 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
   return parts;
 }
 
-const MAX_TYPE_LENGTH = 300;
+const MAX_LITERAL_UNION_LENGTH = 300;
+const ABBREVIATED_UNION_LENGTH = 150;
 const UNION_MEMBER = `(?:"[^"]*"|'[^']*'|undefined|null)`;
 const STRING_LITERAL_UNION = new RegExp(`^${UNION_MEMBER}(?: \\| ${UNION_MEMBER})+$`);
 
-// A union of string literals this long, such as every intrinsic element name, is cut after its
-// first members; any other type is printed whole.
+// A long union of string literals, such as every intrinsic element name, is cut to its first
+// members and a count: the rest is more of the same. Any other type is printed whole.
 function abbreviateUnion(type: string): string {
-  if (type.length <= MAX_TYPE_LENGTH || !STRING_LITERAL_UNION.test(type)) {
+  if (type.length <= MAX_LITERAL_UNION_LENGTH || !STRING_LITERAL_UNION.test(type)) {
     return type;
   }
   const members = type.match(new RegExp(UNION_MEMBER, 'g'))!;
   const kept = [members[0]];
   for (const member of members.slice(1)) {
-    if (`${kept.join(' | ')} | ${member}`.length > MAX_TYPE_LENGTH / 2) {
+    if (`${kept.join(' | ')} | ${member}`.length > ABBREVIATED_UNION_LENGTH) {
       break;
     }
     kept.push(member);

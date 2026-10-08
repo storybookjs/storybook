@@ -926,7 +926,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
   });
 
   describe('props section', () => {
-    it('cuts a string-literal union too long to read after its first members', () => {
+    it('cuts a long string-literal union after its first members', () => {
       const elements = Array.from({ length: 120 }, (_, index) => `"element-${index}"`);
       const manifest: ComponentManifest = {
         id: 'box',
@@ -964,7 +964,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       );
     });
 
-    it('prints a long union of anything but string literals whole', () => {
+    it('prints a long type that is not a string-literal union whole', () => {
       const callback = `(state: { ${Array.from({ length: 40 }, (_, index) => `field${index}: "a" | "b"`).join('; ')} }) => void`;
       const manifest: ComponentManifest = {
         id: 'box',

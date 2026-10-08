@@ -338,11 +338,11 @@ async function dispatchTools(
     });
   }
 
-  // The runtime's warnings, such as an empty stories glob while indexing, would print on stdout
-  // ahead of the result, which states what the agent needs. Any level other than the default keeps
-  // them. A child host's output is forwarded at warn level, its errors included, so it stays.
-  const logLevel = logger.getLogLevel();
-  if (logLevel === 'info' && tools.host === 'in-process') {
+  // Warnings logged while a tool runs, such as an empty stories glob, would print on stdout ahead of
+  // the result. They are muted only at the default level, and only in-process: a child host's
+  // stderr, its errors included, is forwarded at warn level and has to stay visible.
+  const previousLogLevel = logger.getLogLevel();
+  if (previousLogLevel === 'info' && tools.host === 'in-process') {
     logger.setLogLevel('error');
   }
   try {
@@ -375,7 +375,7 @@ async function dispatchTools(
       outcome: { kind: 'error', error },
     });
   } finally {
-    logger.setLogLevel(logLevel);
+    logger.setLogLevel(previousLogLevel);
   }
 }
 

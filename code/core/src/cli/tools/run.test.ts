@@ -816,7 +816,7 @@ describe('outcome mapping', () => {
       onTestFinished(() => spies.forEach((spy) => spy.mockRestore()));
     });
 
-    it('stay out of the output', async () => {
+    it('stay out of the output, and the log level is restored afterwards', async () => {
       const { deps } = makeDeps();
 
       const result = await run(['echo', 'warn'], deps);
@@ -826,7 +826,7 @@ describe('outcome mapping', () => {
       expect(logger.getLogLevel()).toBe('info');
     });
 
-    it('are kept when a lower log level was asked for', async () => {
+    it('are printed when the log level is not the default', async () => {
       logger.setLogLevel('debug');
       onTestFinished(() => logger.setLogLevel('info'));
       const { deps } = makeDeps();

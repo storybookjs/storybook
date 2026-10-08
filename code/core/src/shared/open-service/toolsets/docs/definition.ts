@@ -14,7 +14,7 @@ import {
 import type { AllManifests } from './manifest-formatter/manifest-types.ts';
 import { listSources, type DocsSource } from './multi-source.ts';
 import { RequiresOwnMcpError, type SourceListing } from './sources.ts';
-import { suggestEntries, type DocsCandidate } from './suggest.ts';
+import { suggestEntries, type DocsListedEntry } from './suggest.ts';
 import { estimateTokens } from '../estimate-tokens.ts';
 
 const DOCS_TOOLSET_ID = 'docs';
@@ -59,12 +59,12 @@ export type DocsListOutput = {
 export type DocsShowOutput = {
   id: string;
   entry?: ResolvedDocsEntry;
-  /** The source the entry came from, or was looked up in when it resolved to nothing. */
+  /** The source the entry was found in. On a miss, the source that was asked. */
   storybookId?: string;
-  /** The source the caller named, when the entry was found in `storybookId` instead. */
+  /** The source the caller asked, set only when the entry was found in another one. */
   requestedStorybookId?: string;
   /** Listed entries close to an `id` that resolved to nothing. */
-  suggestions?: DocsCandidate[];
+  suggestions?: DocsListedEntry[];
   /** Set when the request named no source, or one that does not exist. */
   sourceError?: string;
   /** Set when the named source can only be read through its own MCP endpoint. */
@@ -197,14 +197,11 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 }
 
 // A ready-to-run `show` call, so a correction never has to be pieced together from prose.
-function formatShowCall(
-  ctx: ToolsetCtx,
-  { id, storybookId }: { id: string; storybookId?: string }
-) {
+function formatShowCall({ id, storybookId }: DocsListedEntry, ctx: ToolsetCtx) {
   const tool = getToolName(ctx)(DOCS_METHOD_REFS.show);
   return ctx.transport === 'cli'
     ? `${tool} --id ${id}${storybookId ? ` --storybookId ${storybookId}` : ''}`
-    : `${tool} ${JSON.stringify(storybookId ? { id, storybookId } : { id })}`;
+    : `${tool} ${JSON.stringify({ id, storybookId })}`;
 }
 
 /** Not-found message for an unknown component or docs id. */
@@ -222,13 +219,12 @@ function formatEntryNotFound(
     notFound,
     '',
     'Closest matches:',
-    ...suggestions.map((suggestion) => `- ${suggestion.name}: ${formatShowCall(ctx, suggestion)}`),
+    ...suggestions.map((suggestion) => `- ${suggestion.name}: ${formatShowCall(suggestion, ctx)}`),
     '',
     listHint,
   ].join('\n');
 }
 
-// Tells the agent an entry came from another source than it asked, and how to ask for it directly.
 function formatResolvedElsewhere(
   { id, storybookId, requestedStorybookId }: DocsShowOutput,
   ctx: ToolsetCtx
@@ -313,6 +309,17 @@ const storybookIdField = {
     'local'
   ),
 };
+
+type SourceAccess = { storybookId?: string; access: DocsAccess };
+
+// Every component and docs entry a source lists, or none when the source cannot be read.
+async function listEntries({ storybookId, access }: SourceAccess): Promise<DocsListedEntry[]> {
+  const manifests = await access.list({ withStoryIds: false }).catch(() => undefined);
+  return [
+    ...Object.values(manifests?.componentManifest.components ?? {}),
+    ...Object.values(manifests?.docsManifest?.docs ?? {}),
+  ].map(({ id, name }) => ({ id, name, storybookId }));
+}
 
 // A source that needs its own MCP is an answer to route the agent, not a failed lookup.
 async function resolveFromSource(
@@ -417,49 +424,40 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
     multiSource ? selectSource(sources, storybookId, ctx) : { access: docsAccess };
 
-  const scopedAccesses: { storybookId?: string; access: DocsAccess }[] = multiSource
+  const sourceAccesses: SourceAccess[] = multiSource
     ? sources!.map(({ source, access: sourceAccess }) => ({
         storybookId: source.id,
         access: sourceAccess,
       }))
     : [{ access: docsAccess! }];
 
-  // Recovers an id the requested source does not have: resolved from the one other source that has
-  // it, or answered with the listed entries closest to it. A source that cannot be read is skipped,
-  // as it would be when listing.
+  // An id the requested source does not have is shown from the one other source that has it.
+  // Otherwise the closest listed entries are suggested. A source that fails to answer is not asked
+  // again, as a listing skips it too.
   const recoverMissedId = async (
     id: string,
-    storybookId: string | undefined
+    requestedStorybookId: string | undefined
   ): Promise<Partial<DocsShowOutput>> => {
-    const unreadable = new Set<string | undefined>();
-    const elsewhere = scopedAccesses.filter((scoped) => scoped.storybookId !== storybookId);
-    const resolved = await Promise.all(
-      elsewhere.map(async (scoped) => ({
-        storybookId: scoped.storybookId,
-        entry: await scoped.access.resolve(id).catch(() => {
-          unreadable.add(scoped.storybookId);
-          return undefined;
-        }),
-      }))
+    const others = sourceAccesses.filter((source) => source.storybookId !== requestedStorybookId);
+    const lookups = await Promise.all(
+      others.map(async (source) => {
+        try {
+          return { source, entry: await source.access.resolve(id), failed: false };
+        } catch {
+          return { source, entry: undefined, failed: true };
+        }
+      })
     );
-    const hits = resolved.filter((hit) => hit.entry !== undefined);
+
+    const hits = lookups.filter((lookup) => lookup.entry !== undefined);
     if (hits.length === 1) {
-      return { ...hits[0], requestedStorybookId: storybookId };
+      const [{ source, entry }] = hits;
+      return { entry, storybookId: source.storybookId, requestedStorybookId };
     }
 
-    const readable = scopedAccesses.filter((scoped) => !unreadable.has(scoped.storybookId));
-    const listings = await Promise.all(
-      readable.map(async (scoped) => ({
-        storybookId: scoped.storybookId,
-        manifests: await scoped.access.list({ withStoryIds: false }).catch(() => undefined),
-      }))
-    );
-    const candidates = listings.flatMap(({ storybookId: listedSource, manifests }) =>
-      [
-        ...Object.values(manifests?.componentManifest.components ?? {}),
-        ...Object.values(manifests?.docsManifest?.docs ?? {}),
-      ].map((listed) => ({ id: listed.id, name: listed.name, storybookId: listedSource }))
-    );
+    const failed = new Set(lookups.filter((lookup) => lookup.failed).map(({ source }) => source));
+    const readable = sourceAccesses.filter((source) => !failed.has(source));
+    const candidates = (await Promise.all(readable.map(listEntries))).flat();
     const suggestions = suggestEntries(id, candidates);
     return suggestions.length > 0 ? { suggestions } : {};
   };

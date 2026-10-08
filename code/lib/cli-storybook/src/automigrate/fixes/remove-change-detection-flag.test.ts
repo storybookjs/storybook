@@ -10,7 +10,7 @@ import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
-import { removeExperimentalReview } from './remove-experimental-review.ts';
+import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -26,12 +26,12 @@ const options = {
 
 const check = (source: string, storybookVersion = '11.0.0') => {
   vol.fromJSON({ [mainConfigPath]: source });
-  return checkFix(removeExperimentalReview, { ...options, storybookVersion });
+  return checkFix(removeChangeDetectionFlag, { ...options, storybookVersion });
 };
 
 const migrate = async (source: string) => {
   vol.fromJSON({ [mainConfigPath]: source });
-  const failures = await runFix(removeExperimentalReview, {
+  const failures = await runFix(removeChangeDetectionFlag, {
     ...options,
     result: {},
     storybookVersion: '11.0.0',
@@ -66,30 +66,45 @@ afterEach(() => {
   vi.mocked(fsp.writeFile).mockRestore();
 });
 
-describe('remove-experimental-review', () => {
+describe('remove-change-detection-flag', () => {
   it.each(['true', 'false'])('applies to a main config that sets the flag to %s', async (value) => {
-    expect(await check(mainWith(`features: { experimentalReview: ${value} },`))).not.toBeNull();
+    expect(await check(mainWith(`features: { changeDetection: ${value} },`))).not.toBeNull();
   });
 
   it('does not apply to a main config without the flag', async () => {
     expect(await check(mainWith('features: { experimentalTestSyntax: true },'))).toBeNull();
   });
 
+  it('does not apply when the flag is only commented out next to a spread', async () => {
+    const source = mainWith(
+      'features: {\n    ...sharedFeatures,\n    // changeDetection: false,\n  },'
+    );
+
+    expect(await check(source)).toBeNull();
+  });
+
+  it.each(["['changeDetection']: false", 'changeDetection'])(
+    'applies to the flag written as %s',
+    async (property) => {
+      const source = `const changeDetection = false;\n${mainWith(`features: { ${property} },`)}`;
+
+      expect(await check(source)).not.toBeNull();
+    }
+  );
+
   it.each(['11.0.0-alpha.1', '11.0.0', '11.1.0'])('applies on Storybook %s', async (version) => {
-    expect(
-      await check(mainWith('features: { experimentalReview: true },'), version)
-    ).not.toBeNull();
+    expect(await check(mainWith('features: { changeDetection: true },'), version)).not.toBeNull();
   });
 
   it('does not apply on Storybook 10, which still reads the flag', async () => {
-    expect(await check(mainWith('features: { experimentalReview: true },'), '10.6.0')).toBeNull();
+    expect(await check(mainWith('features: { changeDetection: true },'), '10.6.0')).toBeNull();
   });
 
   it.each(['true', 'false'])(
     'removes the flag set to %s and keeps the other features',
     async (value) => {
       const source = mainWith(
-        `features: { controls: true, experimentalReview: ${value}, experimentalTestSyntax: true },`
+        `features: { controls: true, changeDetection: ${value}, experimentalTestSyntax: true },`
       );
 
       expect(await migrate(source)).toMatchInlineSnapshot(`
@@ -109,8 +124,7 @@ describe('remove-experimental-review', () => {
   );
 
   it('removes the features object when the flag was its only entry', async () => {
-    expect(await migrate(mainWith('features: { experimentalReview: true },')))
-      .toMatchInlineSnapshot(`
+    expect(await migrate(mainWith('features: { changeDetection: true },'))).toMatchInlineSnapshot(`
       "import type { StorybookConfig } from '@storybook/react-vite';
 
       const config: StorybookConfig = {
@@ -123,7 +137,7 @@ describe('remove-experimental-review', () => {
 
   it('fails on a features object with a spread, which it cannot edit', async () => {
     await expect(
-      migrate(mainWith('features: { ...sharedFeatures, experimentalReview: true },'))
+      migrate(mainWith('features: { ...sharedFeatures, changeDetection: true },'))
     ).rejects.toThrow(/spread/);
   });
 });

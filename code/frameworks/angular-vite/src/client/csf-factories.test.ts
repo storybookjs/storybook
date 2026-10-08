@@ -295,6 +295,40 @@ describe('Story args can be inferred', () => {
   });
 });
 
+describe('Custom args types written by the csf-factories codemod', () => {
+  type Icon = { name: string };
+  type StoryArgs = { pageIcon: Icon };
+  type ButtonAndCustomArgs = ButtonComponent & { footer?: string };
+
+  it('✅ A custom arg can be used when meta has no component', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      render: (args) => ({ props: args, template: `${args.pageIcon.name}` }),
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story();
+    const Overridden = meta.story({ args: { pageIcon: { name: 'user' } } });
+  });
+
+  it('❌ A custom args type that includes the component class requires every member of that class', () => {
+    const meta = preview.type<{ args: ButtonAndCustomArgs }>().meta({
+      component: ButtonComponent,
+    });
+
+    // @ts-expect-error label, disabled and disabledChange not provided ❌
+    const CustomFooter = meta.story({ args: { footer: 'good' } });
+  });
+
+  it('✅ The component class can be left out of a custom args type', () => {
+    const meta = preview.type<{ args: { footer?: string } }>().meta({
+      component: ButtonComponent,
+      render: ({ footer, ...args }) => ({ props: args, template: `${footer} ${args.label}` }),
+    });
+
+    const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
+  });
+});
+
 it('Components without Props can be used', () => {
   @Component({
     selector: 'storybook-simple',

@@ -278,6 +278,38 @@ it('✅ Kebab-case HTML attribute names are allowed in args', () => {
   expect(Basic.input.args?.['data-testid']).toBe('button-1');
 });
 
+describe('Custom args types written by the csf-factories codemod', () => {
+  it('✅ A custom arg can be set in meta and used in render', () => {
+    const meta = preview.type<{ args: { footer: string } }>().meta({
+      component: 'my-button',
+      args: { footer: 'good' },
+      render: ({ footer }) => html`<my-button></my-button>${footer.toUpperCase()}`,
+    });
+
+    const Default = meta.story();
+  });
+
+  it('✅ A custom args type is used by the render of a meta without component', () => {
+    const Button = ({ label }: ButtonProps) => html`<button>${label}</button>`;
+
+    const meta = preview.type<{ args: ButtonProps }>().meta({
+      render: (args) => Button(args),
+      args: { disabled: false },
+    });
+
+    const Labelled = meta.story({ args: { label: 'good' } });
+    // @ts-expect-error label not provided ❌
+    const Default = meta.story();
+  });
+
+  it('❌ An element class as the custom args type requires every member of that class', () => {
+    const meta = preview.type<{ args: MyButton }>().meta({ component: 'my-button' });
+
+    // @ts-expect-error disabled and every member of LitElement not provided ❌
+    const Labelled = meta.story({ args: { label: 'good' } });
+  });
+});
+
 describe('Meta args are typed by the keys you provide', () => {
   const meta = preview.type<{ args: { label: string } }>().meta({
     component: 'my-card',

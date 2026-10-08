@@ -140,17 +140,14 @@ export {
   getEffectiveToolAvailability,
   getToolAvailability,
   isModuleGraphSupported,
-  isModuleGraphSupportedByBuilder,
 } from '../cli/skills/availability.ts';
-export type { GetToolAvailabilityOptions, ToolAvailability } from '../cli/skills/availability.ts';
+export type { ToolAvailability } from '../cli/skills/availability.ts';
 export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';
 export { isAddonVitestEnabled } from '../cli/skills/addon-vitest.ts';
 export { resolveSkillInputs } from '../cli/skills/inputs.ts';
 export type { SkillInputs } from '../cli/skills/inputs.ts';
 export { getManifestStatus } from '../cli/skills/manifest-status.ts';
 export type { ManifestFeatures, ManifestStatus } from '../cli/skills/manifest-status.ts';
-export { getReviewStatus } from '../cli/skills/review-status.ts';
-export type { GetReviewStatusOptions, ReviewStatus } from '../cli/skills/review-status.ts';
 
 export { analyzeTestResults } from '../shared/utils/analyze-test-results.ts';
 export type {

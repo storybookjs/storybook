@@ -1,8 +1,6 @@
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectPreviewOpenedInBrowser,
-  expectPreviewStoriesWithFinalLinks,
   expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
@@ -10,45 +8,29 @@ import {
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  isReviewEnabled,
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
 describe('editing ReviewCard to add date and optional onReport', () => {
-  const review = isReviewEnabled();
-
-  test('runs story tests after the change and finishes with them passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['reviewcard'] });
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['reviewcard'] });
   });
 
-  describe.runIf(review)('when review is enabled', () => {
-    test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-      expectDisplayReviewForVisualChange();
-    });
-
-    test('opens the review in the in-app browser', () => {
-      expectReviewOpenedInBrowser();
-    });
-
-    test('the review covers the edited ReviewCard component', () => {
-      expectStoryIdsInDisplayReview(['reviewcard']);
-    });
-
-    test('discovers stories through the workflow tools before publishing the review', () => {
-      expectStoryDiscoveryBeforeReview();
-    });
+  test('uses Storybook story instructions and publishes a display review', () => {
+    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectDisplayReviewForVisualChange();
   });
 
-  describe.runIf(!review)('when review is disabled', () => {
-    test('uses Storybook story instructions and previews the edited component', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions']);
-      expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
-    });
+  test('opens the review in the in-app browser', () => {
+    expectReviewOpenedInBrowser();
+  });
 
-    test('opens a story preview in the in-app browser', () => {
-      expectPreviewOpenedInBrowser();
-    });
+  test('the review covers the edited ReviewCard component', () => {
+    expectStoryIdsInDisplayReview(['reviewcard']);
+  });
+
+  test('discovers stories through the workflow tools before publishing the review', () => {
+    expectStoryDiscoveryBeforeReview();
   });
 
   describe('depending on the current agent and integration', () => {

@@ -16,23 +16,19 @@ describe('buildServerInstructions', () => {
     for (const devEnabled of bools)
       for (const testSupported of bools)
         for (const docsEnabled of bools)
-          for (const changeDetectionEnabled of bools)
-            for (const moduleGraphSupported of bools)
-              for (const reviewEnabled of bools) {
-                const options = {
-                  transport: 'mcp' as const,
-                  devEnabled,
-                  testSupported,
-                  docsEnabled,
-                  changeDetectionEnabled,
-                  moduleGraphSupported,
-                  reviewEnabled,
-                };
-                const length = buildServerInstructions(options).length;
-                expect
-                  .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
-                  .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
-              }
+          for (const moduleGraphSupported of bools) {
+            const options = {
+              transport: 'mcp' as const,
+              devEnabled,
+              testSupported,
+              docsEnabled,
+              moduleGraphSupported,
+            };
+            const length = buildServerInstructions(options).length;
+            expect
+              .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
+              .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
+          }
   });
 
   it('builds a coherent instruction set when all toolsets are enabled', () => {
@@ -41,8 +37,7 @@ describe('buildServerInstructions', () => {
       devEnabled: true,
       testSupported: true,
       docsEnabled: true,
-      changeDetectionEnabled: true,
-      reviewEnabled: true,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -78,8 +73,7 @@ describe('buildServerInstructions', () => {
       devEnabled: true,
       testSupported: false,
       docsEnabled: false,
-      changeDetectionEnabled: true,
-      reviewEnabled: true,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -95,123 +89,20 @@ describe('buildServerInstructions', () => {
     `);
   });
 
-  it('uses the legacy (pre-review) dev instructions when review is disabled', () => {
-    const instructions = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: false,
-      docsEnabled: false,
-      changeDetectionEnabled: true,
-    });
+  it.each([true, false])(
+    'names stories-find-by-component only when it is registered (%s)',
+    (moduleGraphSupported) => {
+      const instructions = buildServerInstructions({
+        transport: 'mcp',
+        devEnabled: true,
+        testSupported: true,
+        docsEnabled: true,
+        moduleGraphSupported,
+      });
 
-    // The released 0.6.0 dev section plus the shared-code trigger fixes
-    // ("anything that changes how the UI looks", preview the consumers'
-    // stories) — with `experimentalReview` off (the default) users get the
-    // proven pre-review workflow, while the review-flavored text is
-    // iterated on behind the flag.
-    expect(instructions).toMatchInlineSnapshot(`
-      "Follow these workflows when working with UI and/or Storybook.
-
-      ## UI Building and Story Writing Workflow
-
-      - Before creating or editing components or stories, call **get-storybook-story-instructions**.
-      - Treat its output as the source of truth for imports, story patterns, and testing conventions.
-      - After editing anything that changes how the UI looks — components, stories, styles, themes, colors, design tokens — call **stories-preview**, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.
-      - Include every returned preview URL in your final response."
-    `);
-  });
-
-  it('legacy dev instructions ignore the change-detection and module-graph flags', () => {
-    const legacy = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: false,
-      docsEnabled: false,
-    });
-
-    for (const flags of [
-      { changeDetectionEnabled: true },
-      { changeDetectionEnabled: false, moduleGraphSupported: true },
-      { changeDetectionEnabled: true, moduleGraphSupported: true },
-    ]) {
-      expect(
-        buildServerInstructions({
-          transport: 'mcp',
-          devEnabled: true,
-          testSupported: false,
-          docsEnabled: false,
-          reviewEnabled: false,
-          ...flags,
-        })
-      ).toBe(legacy);
+      expect(instructions.includes('stories-find-by-component')).toBe(moduleGraphSupported);
     }
-  });
-
-  it('feeds stories-find-by-component into the review when only the dependency graph is available', () => {
-    const instructions = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: false,
-      docsEnabled: false,
-      changeDetectionEnabled: false,
-      moduleGraphSupported: true,
-      reviewEnabled: true,
-    });
-
-    // With review enabled the after-change step must not end in
-    // stories-preview — discovery feeds review-create instead.
-    expect(instructions).toContain(
-      '- After editing anything that changes how the UI looks, call **stories-find-by-component** with the files you touched.'
-    );
-    expect(instructions).not.toContain('then **stories-preview** for their preview URLs');
-    expect(instructions).toContain('**stories-preview** is only for mid-loop iteration');
-  });
-
-  it('keeps the after-change step discovery-first when review is on without discovery tools', () => {
-    const instructions = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: false,
-      docsEnabled: false,
-      changeDetectionEnabled: false,
-      moduleGraphSupported: false,
-      reviewEnabled: true,
-    });
-
-    expect(instructions).toContain(
-      '- After editing anything that changes how the UI looks, identify the affected stories.'
-    );
-    expect(instructions).not.toContain('call **stories-preview** to retrieve preview URLs');
-  });
-
-  it('keeps the default (review off) instructions under the 2,048-char client truncation limit', () => {
-    const instructions = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: true,
-      docsEnabled: true,
-      changeDetectionEnabled: true,
-      reviewEnabled: false,
-    });
-
-    // Some MCP clients truncate server instructions at 2,048 characters; the
-    // default instruction set must always fit so nothing gets cut off.
-    expect(instructions.length).toBeLessThanOrEqual(2048);
-  });
-
-  it('does not mention review or discovery tooling anywhere when review is disabled', () => {
-    const instructions = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: true,
-      docsEnabled: false,
-      changeDetectionEnabled: true,
-      reviewEnabled: false,
-    });
-
-    expect(instructions).not.toContain('review-create');
-    expect(instructions).not.toContain('Mapping any input to story IDs');
-  });
+  );
 
   it('builds a coherent instruction set for docs only', () => {
     const instructions = buildServerInstructions({
@@ -219,6 +110,7 @@ describe('buildServerInstructions', () => {
       devEnabled: false,
       testSupported: false,
       docsEnabled: true,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -226,17 +118,12 @@ describe('buildServerInstructions', () => {
 
       ## Documentation Workflow
 
-      **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
+      **CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries; verify every prop via these tools, not source or types in node_modules.
 
-      1. Call **docs-list** once at the start of the task to discover available component and docs IDs.
-      2. Call **docs-show** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
-      3. Call **docs-show-story** for extra docs on a story variant not covered by the component docs.
+      1. Call **docs-list** once at task start for component and docs IDs.
+      2. Call **docs-show** with an \`id\` from that list for props and usage examples.
 
-      Only use properties explicitly documented or shown in example stories. Only reference IDs returned by these tools; never guess IDs.
-
-      ## Multi-Source Requests
-
-      - With multiple sources configured, **docs-list** returns entries from every source; pass \`storybookId\` to **docs-show** to scope one."
+      Only reference IDs returned by these tools — never guess; scope multi-source requests with \`storybookId\`."
     `);
   });
 
@@ -246,6 +133,7 @@ describe('buildServerInstructions', () => {
       devEnabled: false,
       testSupported: true,
       docsEnabled: false,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
@@ -254,8 +142,7 @@ describe('buildServerInstructions', () => {
       ## Validation Workflow
 
       - After editing anything that changes how the UI looks, run **test-run** — never a package.json test script.
-      - Use focused runs while iterating, then a broad pass before handoff when scope is unclear or wide.
-      - Fix failing tests; never report completion while they are failing."
+      - Never report completion while story tests are failing."
     `);
   });
 
@@ -265,6 +152,7 @@ describe('buildServerInstructions', () => {
       devEnabled: false,
       testSupported: false,
       docsEnabled: false,
+      moduleGraphSupported: true,
     });
 
     expect(instructions).toBe('');
@@ -277,8 +165,7 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
-        changeDetectionEnabled: true,
-        reviewEnabled: true,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('**npx storybook tools stories changed**');
@@ -291,30 +178,28 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('npx storybook skills write-story');
       expect(instructions).not.toContain('get-storybook-story-instructions');
     });
 
-    it.each([true, false])(
-      'points at the story instructions in the same document when they are inline (review %s)',
-      (reviewEnabled) => {
-        const instructions = buildServerInstructions({
-          transport: 'cli',
-          devEnabled: true,
-          testSupported: false,
-          docsEnabled: false,
-          reviewEnabled,
-          storyInstructionsInline: true,
-        });
+    it('points at the story instructions in the same document when they are inline', () => {
+      const instructions = buildServerInstructions({
+        transport: 'cli',
+        devEnabled: true,
+        testSupported: false,
+        docsEnabled: false,
+        moduleGraphSupported: true,
+        storyInstructionsInline: true,
+      });
 
-        expect(instructions).toContain(
-          '- Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.'
-        );
-        expect(instructions).not.toContain('npx storybook skills write-story');
-      }
-    );
+      expect(instructions).toContain(
+        '- Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.'
+      );
+      expect(instructions).not.toContain('npx storybook skills write-story');
+    });
 
     it('renders review, preview, and discovery references as CLI commands', () => {
       const instructions = buildServerInstructions({
@@ -322,9 +207,7 @@ describe('buildServerInstructions', () => {
         devEnabled: true,
         testSupported: false,
         docsEnabled: false,
-        changeDetectionEnabled: false,
         moduleGraphSupported: true,
-        reviewEnabled: true,
       });
 
       expect(instructions).toContain('**npx storybook tools stories find-by-component**');
@@ -341,7 +224,7 @@ describe('buildServerInstructions', () => {
         devEnabled: false,
         testSupported: false,
         docsEnabled: true,
-        reviewEnabled: true,
+        moduleGraphSupported: true,
       });
 
       expect(instructions).toContain('npx storybook tools docs list');

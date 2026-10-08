@@ -1,17 +1,15 @@
 import { getToolName } from '../../toolset-names.ts';
-import type { ToolsetCtx } from '../../toolset-definition.ts';
+
+const ref = getToolName({ transport: 'mcp' });
 
 /**
- * Server-level guidance for the docs tools, rendered per transport.
+ * Server instructions for an MCP server that only serves the docs tools (`@storybook/mcp`).
  *
  * This is the workflow an agent should follow across the three tools, which no single tool
- * description can state: discover ids first, then fetch, and never invent a prop. It lives with the
- * toolset so both MCP surfaces serve the same text, and names its tools through {@link getToolName} so the
- * prose cannot drift from what is registered.
+ * description can state: discover ids first, then fetch, and never invent a prop. It names its
+ * tools through {@link getToolName} so the prose cannot drift from what is registered.
  */
-export function getDocsToolsetInstructions(transport: ToolsetCtx['transport']): string {
-  const ref = getToolName({ transport });
-  return `## Documentation Workflow
+export const DOCS_TOOLSET_INSTRUCTIONS = `## Documentation Workflow
 
 **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
 
@@ -25,6 +23,3 @@ Only use properties explicitly documented or shown in example stories. Only refe
 
 - With multiple sources configured, **${ref('docs.list')}** returns entries from every source; pass \`storybookId\` to **${ref('docs.show')}** to scope one.
 `;
-}
-
-export const DOCS_TOOLSET_INSTRUCTIONS = getDocsToolsetInstructions('mcp');

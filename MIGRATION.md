@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Tag filtering API](#tag-filtering-api)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -8,6 +9,8 @@
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
+  - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -31,16 +34,24 @@
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
+  - [Internal toolset inputs must be strict objects](#internal-toolset-inputs-must-be-strict-objects)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
+  - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
+  - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
+  - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
+  - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
+  - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
+  - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -573,6 +584,27 @@
 
 ## From version 10.x to 11.0.0
 
+### Tag filtering API
+
+Storybook 11 removes the experimental and undocumented tag filtering names. They no longer work at runtime.
+
+| Removed | Replacement |
+| --- | --- |
+| `experimental_setFilter` | `setFilter` |
+| `experimental_setFilters` | `setFilters` |
+| `tags.<name>.excludeFromSidebar` | `tags.<name>.hideFromSidebar` |
+| `tags.<name>.excludeFromDocsStories` | `tags.<name>.hideFromAutodocs` |
+
+`setFilter(id, filter)` registers one sidebar filter. A story or docs entry is shown only when every registered filter passes. Call `setFilter(id, () => true)` to stop filtering for that id. `setFilters` registers several filters in one index rebuild.
+
+`hideFromSidebar` removes matching stories from the sidebar. Clearing the filter menu does not bring them back. `hideFromAutodocs` removes matching stories from autodocs pages.
+
+`hideFromFilterPanel` hides a tag from the filter menu and leaves the stories visible. A hidden tag can still be an active filter when `defaultFilterSelection` or the URL selects it. The menu then shows an active-filter count and no checkbox for that tag. Do not combine `hideFromFilterPanel` with a default or URL selection for the same tag.
+
+`sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
+
+`storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
 ### Addon `TAB` registration removed
 
 `addons.add` no longer accepts `type: types.TAB`. Storybook does not render addon tabs beside the canvas. This is an addon-author change. There is no automigration.
@@ -695,7 +727,7 @@ No automigration is needed. Existing boolean settings retain their meaning, and 
 
 The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
 
-With server-side docgen (`features.experimentalDocgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+With server-side docgen (`features.docgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
 
 ```ts
 // Before
@@ -722,6 +754,30 @@ export const Primary: Story = {
 - In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
 
 Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
+
+### `docgenServer` is stable and enabled by default
+
+The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, and for `@storybook/web-components-vite`.
+React and Vue 3 extract component metadata with TypeScript, so for them the default is only on when the `typescript` package is installed; a JavaScript project without it keeps builder docgen.
+Other frameworks keep builder docgen.
+
+The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
+You can also run it with `storybook automigrate docgen-server`.
+
+Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
+For React it reads props from TypeScript types and inline destructuring defaults.
+It does not read `propTypes` or `defaultProps`, so a component that declares its props only through `propTypes` shows no props, and defaults set through `defaultProps` are not shown.
+RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equivalent.
+Set `features.docgenServer: false` to keep builder extraction.
+For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
+
+### Builder docgen is deprecated
+
+Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
+This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
+Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
+Remove `docgenServer: false` to use server-side docgen.
 
 ### Node.js 22.12 or higher
 
@@ -1083,6 +1139,10 @@ If you implement toolsets using Storybook's internal open-service APIs, return u
 
 Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`. The `toolsCommandDimensions` and `wrapMethodTelemetry` helpers are no longer exported from `storybook/internal/tools`. The CLI and MCP adapters handle reporting for their own calls.
 
+### Internal toolset inputs must be strict objects
+
+If you implement toolsets using Storybook's internal open-service APIs, declare each method's valibot `input` with `v.strictObject` instead of `v.object` or `v.looseObject`. `defineToolset` now reports any other valibot input as a type error and throws when the toolset is defined, so a mistyped CLI flag or MCP argument is rejected instead of silently ignored.
+
 ### Internal `satisfies` helper removed
 
 The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
@@ -1143,6 +1203,46 @@ The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applie
 
 This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
 
+### `experimentalReview` feature flag removed
+
+The `features.experimentalReview` flag is removed, and Storybook no longer reads it.
+Agentic review is now on by default: in the Storybook UI, through `storybook tools`, in the Claude Code and Codex plugins, and in every MCP client connected to `@storybook/addon-mcp`.
+In Storybook 10, MCP clients other than the plugins only got the `review-create` tool with `experimentalReview: true`.
+If you had `experimentalReview: false`, review is now on for your project.
+Review can no longer be turned off, because the [`changeDetection` flag is removed](#changedetection-feature-flag-removed) as well.
+The Claude Code and Codex plugins and `storybook tools` now tell agents to end visual work with a review instead of preview links.
+
+The `remove-experimental-review` automigration deletes the flag from your main config, whether it is `true` or `false`.
+You can also run it with `storybook automigrate remove-experimental-review`.
+If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+A typed main config that still sets the flag fails type-checking until it is removed.
+`storybook upgrade --features` no longer accepts `experimentalReview`.
+
+### `changeDetection` feature flag removed
+
+The `features.changeDetection` flag is removed, and Storybook no longer reads it.
+[Change detection](https://storybook.js.org/docs/configure/user-interface/change-detection) is always on in `storybook dev`: the sidebar shows the new and modified statuses and the Review button, and agents get the `stories-changed` and `review-create` tools whenever the `dev` toolset is on.
+If you had `changeDetection: false`, change detection and agentic review are now on for your project.
+
+The flag existed as an escape hatch while change detection was new.
+If change detection makes your Storybook slower, please [open an issue](https://github.com/storybookjs/storybook/issues/new/choose) so we can fix it.
+
+The `remove-change-detection-flag` automigration deletes the flag from your main config, whether it is `true` or `false`.
+You can also run it with `storybook automigrate remove-change-detection-flag`.
+If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+It does not detect the flag when `features` is computed, for example by a function or a conditional, so remove it by hand there too.
+A typed main config that still sets the flag fails type-checking until it is removed.
+
+### `storybook ai` command removed
+
+The `storybook ai` command is removed. Run `npx storybook skills setup` instead of `npx storybook ai setup`. It prints the same project-aware setup instructions. Running `storybook ai` now prints this replacement and exits with code 1.
+
+When `skills setup` cannot produce the instructions (for example because it finds no Storybook configuration), it prints the reason to stderr and exits with code 1. `ai setup` exited with code 0 in that case.
+
+`skills setup` always prints to stdout, so replace `--output <path>` with a shell redirect, for example `npx storybook skills setup > storybook-setup.md`. It detects the package manager itself and has no `--package-manager` option.
+
+The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI_CLI` environment variable are removed as well. Use `npx storybook tools` instead, and run `npx storybook tools --help` to list the available tools.
+
 ### `--preview-url` and `--force-build-preview` removed
 
 Storybook 11 removes `--preview-url` and `--force-build-preview`. Those options pointed the canvas iframe at a custom URL and skipped compiling Storybook's own preview. The Angular builder `previewUrl` option is removed for the same reason.
@@ -1183,7 +1283,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
-With `features.experimentalDocgenServer`, `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item       | Runtime docgen key | Server docgen key |
@@ -1221,7 +1321,7 @@ render: (args) => html`<my-card>${unsafeHTML(args['actions-slot'])}</my-card>`,
 
 ### Web Components: the default render binds args by key
 
-With `features.experimentalDocgenServer`, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
+With server-side docgen, which is on by default, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
 It never reads argTypes or waits for docgen, so a story renders the same with or without the manifest, and in Vitest.
 
 | Arg key                                                     | Binding                                                      |
@@ -1274,6 +1374,260 @@ A decorator that calls element methods on the story result must read the element
   return result;
 },
 ```
+
+### SvelteKit: Require v3 and up
+
+Storybook 11 requires SvelteKit 3, and `@storybook/sveltekit` requires Vite 8, like SvelteKit 3 does. Upgrade SvelteKit before you upgrade Storybook. SvelteKit's migration tool does most of the work:
+
+```sh
+npx sv migrate sveltekit-3
+```
+
+For the details, see the [SvelteKit 3 migration guide](https://svelte.dev/docs/kit/migrating-to-sveltekit-3).
+
+`@storybook/sveltekit` changes with SvelteKit 3:
+
+- SvelteKit 3 removed `$app/stores`, so Storybook no longer mocks it, and `parameters.sveltekit_experimental.stores` is removed. Use `$app/state` in your components, and mock it with `parameters.sveltekit_experimental.state`:
+
+  ```diff
+   parameters: {
+     sveltekit_experimental: {
+  -    stores: {
+  -      page: { data: { test: 'passed' } },
+  -      updated: true,
+  -    },
+  +    state: {
+  +      page: { data: { test: 'passed' } },
+  +      updated: { current: true },
+  +    },
+     },
+   },
+  ```
+
+- Storybook serves the files in your SvelteKit `static` directory at the root, like SvelteKit does. If you added `static` to `staticDirs` for this, you can remove it.
+- The `$app/navigation` mock supports `refreshAll`. Mock it with `parameters.sveltekit_experimental.navigation.refreshAll`.
+- Static variables from `$app/env/public` work in Storybook. Dynamic variables are `undefined`, because Storybook has no server to provide them. This also applies to the deprecated `$env/dynamic/public` module, which used to work in development mode.
+- Storybook fails to load a story that imports `$app/env/private`, `$app/server` or the deprecated `$env/*/private` modules, so private values can't get into the browser. Mock the module that imports them with a [mock file](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules#mock-files).
+
+### Svelte CSF is built into the Svelte frameworks
+
+`@storybook/svelte-vite` and `@storybook/sveltekit` now include Svelte CSF, so you no longer need `@storybook/addon-svelte-csf`. Storybook doesn't start while the addon is still in `addons`.
+
+The `addon-svelte-csf-to-core` automigration runs when you upgrade:
+
+```sh
+npx storybook@latest upgrade
+```
+
+If you already upgraded to Storybook 11, run it on its own with `npx storybook automigrate addon-svelte-csf-to-core`. On Storybook 10 that command doesn't know the automigration yet.
+
+The automigration changes your stories and the files in your Storybook config directory. Change other files that import from `@storybook/addon-svelte-csf` by hand.
+
+In a monorepo, the automigration replaces the addon with your framework package in every `package.json` that lists it. If you migrate by hand, do the same: each package that imports Svelte CSF needs the framework package. If a package still lists the addon, your package manager installs Storybook 10 for it, because the addon needs `storybook@^10`, and imports from the framework package fail.
+
+Or migrate by hand:
+
+1. Remove `@storybook/addon-svelte-csf` from `addons` in `.storybook/main.js|ts`, and from your `package.json`.
+2. Import Svelte CSF from your framework package. The exports keep their names.
+
+```diff
+- import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
++ import { defineMeta, type Args } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+```
+
+The error codes stay the same. Their docs are in [`code/renderers/svelte/src/svelte-csf/ERRORS.md`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md).
+
+### Svelte CSF: legacy story syntax removed
+
+Svelte CSF supports only stories defined with `defineMeta`. Storybook 11 removes these parts of the legacy syntax:
+
+- The `<Meta>` component and `export const meta`
+- The `<Template>` component, and the `legacyTemplate` option that turned it on
+- The `let:args` and `let:context` directives on `<Story>`
+- The `id`, `autodocs` and `source` props on `<Story>`
+
+The automigration lists the story files that don't use `defineMeta`, and doesn't change them. It also lists the `defineMeta` stories that still use `let:args`, `let:context`, or the `id`, `autodocs` or `source` props. Migrate them by hand.
+
+<details>
+<summary>Migrate legacy stories to <code>defineMeta</code></summary>
+
+#### `<Meta>` component
+
+Before:
+
+```svelte
+<script>
+  import { Meta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+</script>
+
+<Meta title="Atoms/Button" component={Button} args={{ size: 'medium' }} />
+```
+
+After:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  });
+</script>
+```
+
+#### `export const meta`
+
+Before:
+
+```svelte
+<script module>
+  import { Story } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  export const meta = {
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  };
+</script>
+
+<Story name="Default" />
+```
+
+After:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  });
+</script>
+
+<Story name="Default" />
+```
+
+#### `let:args` and `let:context`
+
+Use a `template` snippet. Its first argument is the args, and its optional second argument is the story context.
+
+Before:
+
+```svelte
+<Story name="Default" let:args let:context>
+  <Button {...args} />
+  <div>Story name: {context.name}</div>
+</Story>
+```
+
+After:
+
+```svelte
+<Story name="Default">
+  {#snippet template(args, context)}
+    <Button {...args} />
+    <div>Story name: {context.name}</div>
+  {/snippet}
+</Story>
+```
+
+#### `<Template>` component
+
+A story without a template renders the component from `defineMeta`, with the args as props. So you can remove a `<Template>` that only renders the component.
+
+To share a template between stories, define a snippet at the top level of the file, and pass it to each story:
+
+```svelte
+{#snippet template(args)}
+  <Button {...args}>Click me</Button>
+{/snippet}
+
+<Story name="Primary" args={{ primary: true }} {template} />
+<Story name="Secondary" args={{ primary: false }} {template} />
+```
+
+To use the same template for all stories in the file, set it as `render` in `defineMeta`:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    render: template,
+  });
+</script>
+
+{#snippet template(args)}
+  <Button {...args}>Click me</Button>
+{/snippet}
+
+<Story name="Primary" args={{ primary: true }} />
+```
+
+A snippet that `render` references can't use declarations from a non-module `<script>`. See [Exporting snippets](https://svelte.dev/docs/svelte/snippet#Exporting-snippets) in the Svelte docs.
+
+For a static story that ignores args, set `asChild` on the story. The story then renders its children instead of the component:
+
+```svelte
+<Story name="Composed" asChild>
+  <ButtonGroup>
+    <Button>One</Button>
+    <Button>Two</Button>
+  </ButtonGroup>
+</Story>
+```
+
+#### `id`, `autodocs` and `source` props on `<Story>`
+
+Before:
+
+```svelte
+<Story id="Primary" name="Primary button" autodocs source="<Button primary />" />
+```
+
+After:
+
+```svelte
+<Story
+  exportName="Primary"
+  name="Primary button"
+  tags={['autodocs']}
+  parameters={{ docs: { source: { code: '<Button primary />' } } }}
+/>
+```
+
+- `id` → `exportName`
+- `autodocs` → add `'autodocs'` to `tags`
+- `source="…"` → `parameters.docs.source.code`. Remove a `source` prop without a value: Storybook generates the source from the story.
+
+</details>
+
+### Svelte CSF: stories files are indexed without preprocessors
+
+Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
+
+If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
 
 ## From version 10.5.x to 10.6.0
 

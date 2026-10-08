@@ -27,10 +27,12 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
+  /** Newest time (unix ms) a file change that advanced {@link graphRevision} was made. */
+  graphChangedAt: number;
   /**
    * Monotonic counter advanced on every processed file-change event, including out-of-graph
    * paths that do not advance {@link graphRevision}. Change detection watches this to rescan
-   * git; review staleness keeps watching {@link graphRevision} (in-graph only).
+   * git; review staleness watches {@link graphChangedAt} (in-graph only).
    */
   fileActivityRevision: number;
   /**
@@ -42,7 +44,7 @@ export type ModuleGraphServiceState = {
   latestChangedStoryFiles: string[];
   /**
    * Change-detection scan readiness. Distinct from {@link status}: the graph can be ready while
-   * scanning is disabled or has failed. `pending` is the value before the first scan settles.
+   * git is unusable or scanning has failed. `pending` is the value before the first scan settles.
    */
   changeDetectionReadiness: ChangeDetectionReadinessState;
 };

@@ -27,7 +27,7 @@ import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-an
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
+  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddonEntry[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta<TArgs = Args, TMetaArgKeys extends PropertyKey = never>(
@@ -40,11 +40,20 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   type<T>(): Preview<TRenderer & T>;
 }
 
-export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
+/**
+ * A typed addon created with `definePreviewAddon`, or a legacy preview annotations module namespace
+ * (`import * as addon from 'some-addon/preview'`). Legacy namespaces add no types to the preview.
+ */
+export type PreviewAddonEntry = PreviewAddon<never> | Record<string, unknown>;
+
+export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
+  T[number],
+  PreviewAddon<never>
+>[] extends PreviewAddon<infer C>[]
   ? C & { csf4: true }
   : never;
 
-export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   type TPreviewRenderer = TRenderer & InferTypes<Addons>;

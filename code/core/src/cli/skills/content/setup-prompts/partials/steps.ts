@@ -172,7 +172,7 @@ function missingVitestAddonNote(
     ${addVitest}
     \`\`\`
 
-    If adding it fails, undo what it added to \`package.json\` and \`${configDir}/main\`, run \`${build}\` instead to check that the stories compile, keep \`'needs-work'\` on every story file, and tell the user that story tests need \`${VITEST_ADDON}\`.
+    If adding it fails, undo what it added to \`package.json\` and \`${configDir}/main\`, run \`${build}\` instead to check that the stories compile, keep \`'needs-work'\` on every story file, tell the user that story tests need \`${VITEST_ADDON}\`, and skip the Vitest runs below.
   `;
 }
 

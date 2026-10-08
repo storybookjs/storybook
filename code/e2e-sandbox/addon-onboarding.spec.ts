@@ -25,7 +25,7 @@ test.describe('addon-onboarding', () => {
           __STORYBOOK_API__: typeof import('storybook/manager-api');
         }
       ).__STORYBOOK_API__;
-      await internal_universalChecklistStore.readyPromise;
+      await internal_universalChecklistStore.untilReady();
       internal_checklistStore.reset('onboardingSurvey');
     });
 

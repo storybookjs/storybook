@@ -72,6 +72,7 @@ export const sandbox: Task = {
       'serve',
       'chromatic',
       'bench',
+      'memory',
       'check-sandbox',
     ];
     const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);

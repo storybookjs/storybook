@@ -14,7 +14,8 @@ export type SkippableTask =
   | 'chromatic'
   | 'e2e-tests'
   | 'e2e-tests-dev'
-  | 'bench';
+  | 'bench'
+  | 'memory';
 
 export type TemplateKey =
   | keyof typeof baseTemplates

@@ -34,7 +34,7 @@ function getDocsReferenceSection(projectInfo: ProjectInfo): string {
     - Decorators: ${docsUrl('writing-stories/decorators')}
     - Args: ${docsUrl('writing-stories/args')}
     - Play functions: ${docsUrl('writing-stories/play-function')}
-    - Vitest integration: ${docsUrl('writing-tests/vitest-plugin')}
+    - Vitest integration: ${docsUrl('writing-tests/integrations/vitest-addon')}
 
     Fetch these URLs directly when you need guidance on Storybook APIs or patterns.
   `;

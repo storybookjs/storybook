@@ -5,142 +5,53 @@ import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../../project-info.ts';
 import { isReactProject } from '../../setup-utils/is-react-project.ts';
 import type { SetupInstructionsContext as InstructionsContext } from '../types.ts';
-import {
-  getInteractionPlayExample,
-  getMainConfigExample,
-  getPortalDecoratorExample,
-  getPreviewExample,
-  getStoryExample,
-} from './examples.ts';
+import { getCssCheckExample, getPreviewExample, getStoryExample } from './examples.ts';
 
-export function discoveryStepStrict(
-  projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
-): { title: string; body: string } {
+type Step = { title: string; body: string };
+
+const VITEST_ADDON = '@storybook/addon-vitest';
+
+function discoveryList(projectInfo: ProjectInfo, { tsx }: InstructionsContext, pages: string) {
   const isReact = isReactProject(projectInfo);
 
+  return dedent`
+    - \`index.html\`: stylesheets, fonts, and mount or portal roots not created by JS
+    - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`): providers wrapping \`<App />\`, root CSS imports` : 'application entry file: framework initialization, shared services or providers, root CSS imports'}
+    - ${isReact ? `\`App.${tsx}\` and provider or context files: router, providers, what they expose` : 'root component and shared state or services: router, what they expose'}
+    - root CSS: global styles, CSS variables, theme tokens
+    - ${isReact ? 'data hooks (`fetch(...)`, `useQuery`, `axios`)' : 'data fetching (network clients, services, query utilities)'}: base URL and endpoints called during render
+    - browser state read at render (\`localStorage\`, \`sessionStorage\`, cookies) and portal targets (${isReact ? '`createPortal(...)`' : 'content rendered outside the component root'})
+    - ${pages} real page or feature components, your source of truth for ${isReact ? 'JSX' : 'component usage'} patterns
+  `;
+}
+
+export function discoveryStepStrict(projectInfo: ProjectInfo, ctx: InstructionsContext): Step {
   return {
     title: 'Discover the runtime (≤12 reads)',
     body: dedent`
-      Identify, in this order, using Glob/Grep first then targeted Reads:
+      Find, in this order:
 
-    - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
-    - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports` : 'application entry file — framework initialization, shared services or providers, root CSS imports'}
-    - ${isReact ? `\`App.${tsx}\` — top-level layout, router usage, providers it consumes` : 'root component — top-level layout, router usage, shared state and services it consumes'}
-    - ${isReact ? 'providers / context files — what they expose' : 'shared state / service configuration — what it exposes'}
-    - root CSS — global styles, CSS variables, theme tokens (both JS-imported CSS **and** anything linked from \`index.html\`)
-    - ${isReact ? 'data hooks — `fetch(...)`, `useQuery`, `axios`, etc.' : 'data fetching — network clients, services, and query utilities'} (capture base URL + endpoints actually called during render)
-    - browser state actually read at render — \`localStorage\`/\`sessionStorage\`/cookie keys
-    - portal targets — ${isReact ? '`createPortal(...)` and the DOM ids it mounts to' : 'content rendered outside the component root and the DOM ids it targets'} (e.g. \`#modal-root\`)
-    - 1–2 real page or feature components (your story source-of-truth for ${isReact ? 'JSX' : 'component usage'} patterns)
+      ${discoveryList(projectInfo, ctx, '1–2')}
 
-    Stop reading once you can answer: *"What providers, CSS, browser state, and network calls must the preview supply for a typical page to render?"*
-  `,
+      Stop once you know which providers, CSS, browser state, and network calls the preview must supply.
+    `,
   };
 }
 
-export function discoveryStepRelaxed(
-  projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
-): { title: string; body: string } {
-  const isReact = isReactProject(projectInfo);
-
+export function discoveryStepRelaxed(projectInfo: ProjectInfo, ctx: InstructionsContext): Step {
   return {
     title: 'Discover the runtime (≤40 reads)',
     body: dedent`
-      Identify, in this order, using Glob/Grep first then targeted Reads:
+      Find, in this order:
 
-    - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
-    - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports` : 'application entry file — framework initialization, shared services or providers, root CSS imports'}
-    - ${isReact ? `\`App.${tsx}\` — top-level layout, router usage, providers it consumes` : 'root component — top-level layout, router usage, shared state and services it consumes'}
-    - ${isReact ? 'providers / context files — what they expose' : 'shared state / service configuration — what it exposes'}
-    - root CSS — global styles, CSS variables, theme tokens (both JS-imported CSS **and** anything linked from \`index.html\`)
-    - ${isReact ? 'data hooks — `fetch(...)`, `useQuery`, `axios`, etc.' : 'data fetching — network clients, services, and query utilities'} (capture base URL + endpoints actually called during render)
-    - browser state actually read at render — \`localStorage\`/\`sessionStorage\`/cookie keys
-    - portal targets — ${isReact ? '`createPortal(...)` and the DOM ids it mounts to' : 'content rendered outside the component root and the DOM ids it targets'} (e.g. \`#modal-root\`)
-    - 1–20 real page or feature components (your story source-of-truth for ${isReact ? 'JSX' : 'component usage'} patterns)
+      ${discoveryList(projectInfo, ctx, '1–20')}
 
-    Stop reading once you can answer: *"What providers, CSS, browser state, and network calls must the preview supply for a typical page to render? What surrounding context do components need to render?"*
-  `,
+      Stop once you know which providers, CSS, browser state, and network calls the preview must supply, and what surrounding context components need to render.
+    `,
   };
 }
 
-export function verifyStep(
-  projectInfo: ProjectInfo,
-  { packageManager, tsx }: InstructionsContext
-): { title: string; body: string } {
-  const vitestRunAll = getVitestStorybookRunCommand(packageManager);
-  const vitestRunFile = getVitestStorybookRunCommand(packageManager, `path/to/Foo.stories.${tsx}`);
-
-  return {
-    title: `Verify in one batch, then iterate only on failures`,
-    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
-
-    \`\`\`bash
-    ${vitestRunAll}
-    \`\`\`
-
-    Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager.getRunCommand('typecheck')}\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
-
-    For each failure:
-
-    1. Read the error.
-    2. If multiple stories share the failure, fix the shared preview setup, not the stories.
-    3. Re-run vitest **only for the affected file(s)**: \`${vitestRunFile}\`.
-    4. Repeat until the file passes, then move on. Cap retries at ~5 per file — if it still fails, leave \`'needs-work'\` tag to inform the user.
-    5. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
-
-    **After a file passes**, edit its meta and remove \`'needs-work'\` so its tags become \`['ai-generated']\`. Files you couldn't fix keep \`['ai-generated', 'needs-work']\` — move on, don't loop forever.`,
-  };
-}
-
-export function verifyWithAllowedFailureStep(
-  projectInfo: ProjectInfo,
-  { packageManager, tsx }: InstructionsContext
-): { title: string; body: string } {
-  const vitestRunAll = getVitestStorybookRunCommand(packageManager);
-  const vitestRunFile = getVitestStorybookRunCommand(packageManager, `path/to/Foo.stories.${tsx}`);
-
-  return {
-    title: `Verify in one batch, then iterate only on failures`,
-    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
-
-    \`\`\`bash
-    ${vitestRunAll}
-    \`\`\`
-
-    Then run the project's TypeScript check (use the script from \`package.json\` — typically \`tsc --noEmit\` or \`${packageManager.getRunCommand('typecheck')}\`). Read the raw output once; don't pipe it through repeated \`grep\`/\`head\` invocations to slice it.
-
-    For each failure:
-
-    1. Read the error.
-    2. If multiple stories share the failure, fix the shared preview setup, not the stories.
-    3. In subsequent runs, re-run Vitest **only for the affected file(s)**: \`${vitestRunFile}\`.
-    4. Fix any TypeScript issues needed for story files to pass, then re-run TS and Vitest only for those files. Repeat until files pass, or until you have tried 5 times.
-    5. If a story file still fails after those retries, leave the file tagged \`'needs-work'\` and move on — do not keep chasing project-wide TS errors caused by preserved \`'needs-work'\` files.
-    6. When you keep failing on a story, play function, etc., do not substitute it for easier content that contributes less to codebase understanding.
-    **After a file passes**, edit its meta and remove \`'needs-work'\` so its tags become \`['ai-generated']\`. Files you couldn't fix keep \`['ai-generated', 'needs-work']\` — move on, don't loop forever.`,
-  };
-}
-
-export function cleanupStep(
-  { needsUserOnboarding }: ProjectInfo,
-  ctx: InstructionsContext
-): { title: string; body: string } {
-  const onboardingInstructions = needsUserOnboarding
-    ? 'You must preserve the components, CSS, stories and MDX docs initially created by Storybook, as they are required for user onboarding in the UI.'
-    : 'Delete the components, CSS, stories and MDX docs initially created by Storybook only if you managed to write successful stories.';
-
-  return {
-    title: `Clean up`,
-    body: `Before finishing, remove debug code, broad mocks added during diagnosis, unused deps, and eval artifacts. ${onboardingInstructions}`,
-  };
-}
-
-export function monorepoStep(
-  projectInfo: ProjectInfo,
-  ctx: InstructionsContext
-): { title: string; body: string } {
+export function monorepoStep(projectInfo: ProjectInfo, ctx: InstructionsContext): Step {
   return {
     title: 'Monorepo preparation',
     body: dedent`Build any local monorepo dependencies identified during discovery, and keep track of existing errors in the codebase unrelated to the package changes you'll make.`,
@@ -150,242 +61,181 @@ export function monorepoStep(
 export function buildSharedPreviewStep(
   projectInfo: ProjectInfo,
   { configDir, tsx }: InstructionsContext
-): { title: string; body: string } {
+): Step {
   const isReact = isReactProject(projectInfo);
 
   return {
     title: 'Build the shared preview',
-    body: dedent`    Set up Storybook **once** so most stories work without per-story setup. **Edit the existing \`${configDir}/preview.${tsx}\`** (created by \`storybook init\`) — add to its existing config object, don't replace it. Add MSW only if a selected story makes network requests. Add MockDate only if a selected story's rendered output depends on the current date or time. Omit their imports and hooks otherwise.
+    body: dedent`
+      Edit \`${configDir}/preview.${tsx}\` once so most stories work without per-story setup${isReact ? ` (rename \`preview.ts\` to \`preview.tsx\` when you add JSX)` : ''}. Merge in only what the selected stories need; this example shows every optional piece:
 
-    The example below shows both optional paths. Merge only the pieces the selected stories need into what's already there:
+      ${getPreviewExample(projectInfo)}
 
-    ${getPreviewExample(projectInfo)}
-
-    Rules for the preview:
-
-    - ${isReact ? "Use the **real** provider tree and the **real** root CSS import. Don't invent providers." : "Use the **real** application setup and the **real** root CSS import. Configure shared services, plugins, routing, and state using the installed framework's setup APIs. Don't invent providers."}
-    - If the app's CSS is loaded via \`<link>\` in \`index.html\` (rather than imported in JS), import the same file from preview so stories render with the same styles.
-    - Seed only the specific browser-state keys the app actually reads. Do **not** clear all of \`localStorage\`/\`sessionStorage\`/cookies, and do not reset Storybook's own state.
-    - Use \`mockdate\` only when render output depends on the date.
-    - Do not mock \`window\`, \`document\`, \`navigator\`, observers, or \`fetch\` directly.
+      - ${isReact ? 'Use the **real** provider tree and the **real** root CSS import.' : "Use the **real** application setup and the **real** root CSS import, configured with the installed framework's setup APIs."} Don't invent providers. If the app's CSS is linked from \`index.html\`, import that file here.
+      - Seed only the browser-state keys the app reads. Don't clear storage or reset Storybook's own state.
+      - Don't mock \`window\`, \`document\`, \`navigator\`, observers, or \`fetch\` directly.
+      - If components portal into elements such as \`#modal-root\`, add a decorator that creates those elements before the story renders (not \`preview-body.html\`).
     `,
-  };
-}
-
-export function buildPortalStep(
-  projectInfo: ProjectInfo,
-  { configDir, tsx }: { configDir: string; tsx: string }
-): { title: string; body: string } {
-  const isReact = isReactProject(projectInfo);
-
-  return {
-    title: 'Portals (in a decorator, not \`preview-body.html\`)',
-    body: dedent`If you found ${isReact ? "`createPortal(..., document.getElementById('foo'))`" : 'content rendered into a separate DOM target'} in discovery, **add a decorator in \`${configDir}/preview.${tsx}\` that creates the portal root** before the story renders. Do not use \`preview-body.html\`.
-
-    ${getPortalDecoratorExample(projectInfo)}
-
-    Add this decorator to the \`decorators\` array of your preview config. Skip this step entirely if portals only target \`document.body\`.`,
   };
 }
 
 export function mswStep(
   projectInfo: ProjectInfo,
   { configDir, mockDateInstall, mswInstall, packageManager, ts }: InstructionsContext
-): { title: string; body: string } {
-  const mswInit = getMswInitCommand(packageManager);
+): Step {
   const mswAddonAdd = packageManager.getPackageCommand([
     'storybook',
     'add',
     'msw-storybook-addon@3',
   ]);
   const csfNextNote = projectInfo.hasCsfFactoryPreview
-    ? `
-
-    If \`storybook add\` injects \`import * as mswStorybookAddon from 'msw-storybook-addon/preview'\` and a \`mswStorybookAddon\` entry into your \`definePreview\` \`addons\`, remove both — that form breaks TypeScript inference for the entire preview. Register the addon with \`addonMsw()\` as shown below instead.
-`
+    ? ` If \`storybook add\` puts \`import * as mswStorybookAddon from 'msw-storybook-addon/preview'\` into your \`definePreview\` \`addons\`, replace it with \`addonMsw()\` as in the preview example: that form breaks type inference for the whole preview.`
     : '';
 
   return {
-    title: 'Add only the test infrastructure the selected stories need',
-    body: `If a selected story makes network requests during rendering or interaction, register \`msw-storybook-addon\` with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), install MSW, and generate the worker script:
+    title: 'Add MSW or MockDate only if a selected story needs it',
+    body: dedent`
+      If a selected story makes network requests, register the addon, install MSW, and generate the worker script:
 
-    \`\`\`bash
-    ${mswAddonAdd}
-    ${mswInstall}
-    ${mswInit}
-    \`\`\`
-${csfNextNote}
-    Make sure \`${configDir}/main.${ts}\` serves \`./public\`:
+      \`\`\`bash
+      ${mswAddonAdd}
+      ${mswInstall}
+      ${getMswInitCommand(packageManager)}
+      \`\`\`
 
-    ${getMainConfigExample(projectInfo)}
+      Serve the worker with \`staticDirs: ['../public']\` in \`${configDir}/main.${ts}\`, and put handlers for only the endpoints your stories hit in \`${configDir}/msw-handlers.${ts}\` (\`export const mswHandlers = [http.get(url, () => HttpResponse.json(data))]\`, imported from \`msw\`).${csfNextNote}
 
-    Put handlers in \`${configDir}/msw-handlers.${ts}\`. Cover only the endpoints your stories will exercise — no catch-alls.
+      If a selected story's output depends on the current date or time, run \`${mockDateInstall}\` and set the date in \`beforeEach\`.
 
-    \`\`\`${ts}
-    // ${configDir}/msw-handlers.${ts}
-    import { http, HttpResponse } from 'msw';
-
-    export const mswHandlers = [
-      http.get('https://api.example.com/products', () =>
-        HttpResponse.json({ items: [{ id: 'p1', name: 'Example', price: 42 }] })
-      ),
-    ];
-    \`\`\`
-
-    If a selected story's rendered output depends on the current date or time, install MockDate and configure it in \`beforeEach\`:
-
-    \`\`\`bash
-    ${mockDateInstall}
-    \`\`\`
-
-    If neither condition applies, skip this step. Do not create an empty MSW handler file or install unused dependencies.
-`,
+      Otherwise skip this step: don't install unused dependencies or create an empty handler file. Keep any MSW or MockDate setup the project already has.
+    `,
   };
 }
 
-export function writeStoriesStep(
-  projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
-): { title: string; body: string } {
+function writeStoriesBody(projectInfo: ProjectInfo, { tsx }: InstructionsContext, tagging: string) {
   const isReact = isReactProject(projectInfo);
 
-  return {
-    title: 'Write up to 10 story files (in one batch)',
-    body: dedent`
+  return dedent`
+    Pick up to 10 meaningful components, from reusable components up to pages. Skip subcomponents, hooks, contexts, helpers, and \`App\` when real pages exist. If a component already has stories, extend that file instead of writing a second one, and put the tags below on the stories you add rather than on its meta. Write \`*.stories.${tsx}\` files next to the components: ~3 stories per file, more only when real usage warrants it, with ${isReact ? 'JSX' : 'component usage'} patterns copied from real pages, routes, or tests.
 
-    This step has **two required deliverables**:
-
-    a. Up to 10 colocated \`*.stories.${tsx}\` files for meaningful targets in the codebase.
-    b. **Exactly one \`CssCheck\` story** added to one of those files (spec below). This step is not complete without it.
-
-    **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
-
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests.
-
-    **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes. This way, anything not yet verified — including stories you ran out of time to fix — stays correctly marked.
+    ${tagging} Show all imports explicitly. Don't add a custom \`title\` or new app components, and don't build large story-specific harnesses: fix the preview instead.
 
     ${getStoryExample(projectInfo)}
 
-    Story rules:
+    Add a \`play\` function only when it proves something the render doesn't: an interaction, async data arriving, a portal mounting, or state reflected in an aria attribute or a prop rendered as text. Variant-only stories get no \`play\`. Take \`canvas\`, \`userEvent\`, and \`canvasElement\` from the play arguments; import only \`expect\`, \`fn\`, and \`waitFor\` from \`storybook/test\`, plus \`within\` for portals, which you query through \`within(canvasElement.ownerDocument.body)\`.
 
-    - Start every meta with \`tags: ['ai-generated', 'needs-work']\`.
-    - Show all imports explicitly.
-    - Don't add a custom \`title\`.
-    - Don't build large story-specific harnesses — fix preview instead.
-    - Don't create new app components.
+    Add exactly **one** \`CssCheck\` story to the whole project. \`toBeVisible\` passes on an unstyled component, so assert a concrete computed style read from a component's source (a hex color, a Tailwind class, a theme variable) to prove the preview loaded the app's CSS:
 
-    **Substep b — add the single \`CssCheck\` story.** Before you finish this step, pick **one** visually distinctive component from the files you just wrote and add a \`CssCheck\` export to that file. Exactly **one** \`CssCheck\` across the whole project — not one per file. This step is not complete until the story exists.
+    ${getCssCheckExample(projectInfo)}
+  `;
+}
 
-    Why it's mandatory: \`toBeVisible\` passes on an unstyled component. A concrete \`getComputedStyle\` value is the only proof that the shared preview actually loaded the app's CSS — without it, you have no idea whether your stories are rendering correctly.
-
-    How: read a real styling value from the component's source (e.g. a hex color in ${isReact ? 'styled-components' : 'a stylesheet'}, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
-
-    \`\`\`${tsx}
-    export const CssCheck${projectInfo.language === 'ts' ? ': Story' : ''} = {
-      ${isReact ? "args: { children: 'Submit' }," : '...Primary,'}
-      play: async ({ canvas }) => {
-        const button = canvas.getByRole('button'${isReact ? ', { name: /submit/i }' : ''});
-        // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-        await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-      },
-    };
-    \`\`\`
-    `,
+export function writeStoriesStep(projectInfo: ProjectInfo, ctx: InstructionsContext): Step {
+  return {
+    title: 'Write up to 10 story files in one batch',
+    body: writeStoriesBody(
+      projectInfo,
+      ctx,
+      "Start every new meta with `tags: ['ai-generated', 'needs-work']`. You remove `'needs-work'` once the file's tests pass, so anything unverified stays marked."
+    ),
   };
 }
 
 export function writeStoriesWithAllowedFailuresStep(
   projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
-): { title: string; body: string } {
-  const isReact = isReactProject(projectInfo);
-
+  ctx: InstructionsContext
+): Step {
   return {
-    title: 'Write up to 10 story files (in one batch)',
-    body: dedent`
-
-    This step has **two required deliverables**:
-
-    a. Up to 10 colocated \`*.stories.${tsx}\` files for meaningful targets in the codebase.
-    b. **Exactly one \`CssCheck\` story** added to one of those files (spec below). This step is not complete without it.
-
-    **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
-
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests.
-
-    **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes, and you will leave the tag if the file is not fully functional at the end of your self-healing loop.
-
-    ${getStoryExample(projectInfo)}
-
-    Story rules:
-
-    - Start every meta with \`tags: ['ai-generated', 'needs-work']\`.
-    - Show all imports explicitly.
-    - Don't add a custom \`title\`.
-    - Don't build large story-specific harnesses — fix preview instead.
-    - Don't create new app components.
-
-    **Substep b — add the single \`CssCheck\` story.** Before you finish this step, pick **one** visually distinctive component from the files you just wrote and add a \`CssCheck\` export to that file. Exactly **one** \`CssCheck\` across the whole project — not one per file. This step is not complete until the story exists.
-
-    Why it's mandatory: \`toBeVisible\` passes on an unstyled component. A concrete \`getComputedStyle\` value is the only proof that the shared preview actually loaded the app's CSS — without it, you have no idea whether your stories are rendering correctly.
-
-    How: read a real styling value from the component's source (e.g. a hex color in ${isReact ? 'styled-components' : 'a stylesheet'}, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
-
-    \`\`\`${tsx}
-    export const CssCheck${projectInfo.language === 'ts' ? ': Story' : ''} = {
-      ${isReact ? "args: { children: 'Submit' }," : '...Primary,'}
-      play: async ({ canvas }) => {
-        const button = canvas.getByRole('button'${isReact ? ', { name: /submit/i }' : ''});
-        // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
-        await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
-      },
-    };
-    \`\`\`
-    `,
+    title: 'Write up to 10 story files in one batch',
+    body: writeStoriesBody(
+      projectInfo,
+      ctx,
+      "Start every new meta with `tags: ['ai-generated', 'needs-work']`. You remove `'needs-work'` once the file's tests pass, and leave it on any file that is not fully functional at the end of your self-healing loop."
+    ),
   };
 }
 
-export function interactionPlayStep(
-  projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
-): { title: string; body: string } {
+function missingVitestAddonNote(
+  { addons }: ProjectInfo,
+  { configDir, packageManager }: InstructionsContext
+): string | undefined {
+  if (addons.includes(VITEST_ADDON)) {
+    return undefined;
+  }
+  const addVitest = packageManager.getPackageCommand(['storybook', 'add', VITEST_ADDON, '--yes']);
+  const build = packageManager.getPackageCommand(['storybook', 'build']);
+
+  return dedent`
+    This project doesn't have \`${VITEST_ADDON}\` yet, which runs stories as tests. Add it before running them; a request to set up Storybook covers this:
+
+    \`\`\`bash
+    ${addVitest}
+    \`\`\`
+
+    If adding it fails, undo what it added to \`package.json\` and \`${configDir}/main\`, run \`${build}\` instead to check that the stories compile, keep \`'needs-work'\` on every story file, and tell the user that story tests need \`${VITEST_ADDON}\`.
+  `;
+}
+
+export function verifyStep(projectInfo: ProjectInfo, ctx: InstructionsContext): Step {
+  const { packageManager, tsx } = ctx;
+  const vitestRunFile = getVitestStorybookRunCommand(packageManager, `path/to/Foo.stories.${tsx}`);
+
   return {
-    title: `Add \`play\` functions only where they prove something non-trivial`,
-    body: dedent`
-    **Do not put a \`play\` on every story.** A \`play\` is worth writing only when it asserts something the rendered output alone doesn't already prove. Prefer one good \`play\` per file over five redundant ones.
+    title: 'Verify in one batch, then iterate only on failures',
+    body: [
+      missingVitestAddonNote(projectInfo, ctx),
+      dedent`
+      Run all new stories together, then the project's TypeScript check (its \`package.json\` script, such as \`${packageManager.getRunCommand('typecheck')}\`, or \`tsc --noEmit\`). Read each output once, whole:
 
-    Write a \`play\` when it can verify:
+      \`\`\`bash
+      ${getVitestStorybookRunCommand(packageManager)}
+      \`\`\`
 
-    - an **interaction** (form fill + submit, click → menu opens, tab change reveals panel)
-    - **async data** actually arrived from MSW (waiting for mocked content to replace a spinner)
-    - a **portal** rendered into the right root (query via \`canvasElement.ownerDocument\`)
-    - a **CSS-driven state** that matters semantically (e.g. theme color, disabled styling, layout that confirms the global stylesheet loaded)
-    - **accessibility** that the component is responsible for (correct role/label exposure)
+      For each failure, read the error; when several stories fail the same way, fix the shared preview. Re-run only the affected file (\`${vitestRunFile}\`) until it passes, at most ~5 times per file. Don't swap in easier stories that teach less about the codebase.
 
-    **Skip \`play\` entirely** when a story is just a static variant of the same component (different \`args\`, no new behavior). Repeating \`getByRole(...).toBeVisible()\` across \`Clear\`, \`Large\`, \`WithIcon\` etc. is redundant — the render itself already fails the test if the component throws or doesn't mount.
+      When a file passes, remove \`'needs-work'\` from the tags you added. Files you couldn't fix keep it; move on.
+    `,
+    ]
+      .filter(Boolean)
+      .join('\n\n'),
+  };
+}
 
-    **Smoke plays must prove something the render alone doesn't.** A play that does only \`await expect(canvas.getByRole('button')).toBeVisible()\` adds nothing — the render already failed if the button didn't mount. Acceptable smoke plays assert one of:
+export function verifyWithAllowedFailureStep(
+  projectInfo: ProjectInfo,
+  ctx: InstructionsContext
+): Step {
+  const { packageManager, tsx } = ctx;
+  const vitestRunFile = getVitestStorybookRunCommand(packageManager, `path/to/Foo.stories.${tsx}`);
 
-    - an **aria attribute reflecting state** (\`aria-expanded\`, \`aria-disabled\`, \`aria-checked\`, \`aria-current\`)
-    - a **prop value rendered as text or attribute** (e.g. \`args.label\` appears in the DOM, \`href\` matches \`args.to\`)
-    - **async content arriving** (\`findBy*\`, \`waitFor\` — proves the loader/MSW handler actually resolved)
-    - a **portal mounting in the right root** (queried via \`canvasElement.ownerDocument.body\`)
+  return {
+    title: 'Verify in one batch, then iterate only on failures',
+    body: [
+      missingVitestAddonNote(projectInfo, ctx),
+      dedent`
+      Run all new stories together, then the project's TypeScript check (its \`package.json\` script, such as \`${packageManager.getRunCommand('typecheck')}\`, or \`tsc --noEmit\`). Read each output once, whole:
 
-    If none of those apply, skip the \`play\` and rely on the render itself.
+      \`\`\`bash
+      ${getVitestStorybookRunCommand(packageManager)}
+      \`\`\`
 
-    Concretely, in a \`Button.stories.${tsx}\` with \`Primary\`, \`Clear\`, \`Large\`, \`WithIcon\`:
+      For each failure, read the error; when several stories fail the same way, fix the shared preview. Re-run TypeScript and Vitest only for the affected file(s) (\`${vitestRunFile}\`) until they pass, at most 5 times. If a file still fails, keep \`'needs-work'\` on it and move on: don't chase project-wide TypeScript errors caused by those files, and don't swap in easier stories that teach less about the codebase.
 
-    - \`Primary\` — keep one smoke \`play\` (one is enough for the file).
-    - \`Clear\`, \`Large\`, \`WithIcon\` — **no \`play\`**. They're variant-only stories.
+      When a file passes, remove \`'needs-work'\` from the tags you added.
+    `,
+    ]
+      .filter(Boolean)
+      .join('\n\n'),
+  };
+}
 
-    (The single \`CssCheck\` story for the whole project was added in Step 5 — don't add another one here.)
+export function cleanupStep({ needsUserOnboarding }: ProjectInfo, ctx: InstructionsContext): Step {
+  const exampleFiles = needsUserOnboarding
+    ? 'Keep the example components, CSS, stories, and MDX docs that `storybook init` generated: the onboarding in the Storybook UI needs them.'
+    : "If the project has the examples `storybook init` generates (a `src/stories/` folder with `Configure.mdx` next to `Button`, `Header`, and `Page`), delete that folder once your own stories pass. Don't delete any other stories.";
 
-    Imports & play context — get this right or vitest will fail in subtle ways:
-
-    - \`expect\` and \`waitFor\` come from \`'storybook/test'\` — import those.
-    - \`canvas\`, \`userEvent\`, and \`canvasElement\` come from the **play arguments**: \`async ({ canvas, userEvent, canvasElement }) => { ... }\`. **Do not** \`import { userEvent } from 'storybook/test'\` and **do not** write \`const canvas = within(canvasElement)\` — both are already provided.
-    - For **portal queries only**, query via \`canvasElement.ownerDocument.body\`. You may import \`within\` from \`'storybook/test'\` for that case (e.g. \`within(canvasElement.ownerDocument.body).findByTestId(...)\`). Don't use \`within\` for anything else.
-
-    ${getInteractionPlayExample(projectInfo)}`,
+  return {
+    title: 'Clean up',
+    body: `Remove debug code, mocks added during diagnosis, and dependencies you added but didn't use. ${exampleFiles}`,
   };
 }

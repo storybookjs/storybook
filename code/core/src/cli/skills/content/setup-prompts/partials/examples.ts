@@ -104,53 +104,6 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function getPortalDecoratorExample(projectInfo: ProjectInfo): string {
-  const { language } = projectInfo;
-  const tsx = ext(language, isReactProject(projectInfo));
-
-  return dedent`
-    \`\`\`${tsx}
-    // Add this entry to the \`decorators\` array of your preview config:
-    (Story) => {
-      for (const id of ['modal-root', 'drawer-root', 'toast-root']) {
-        if (!document.getElementById(id)) {
-          const el = document.createElement('div');
-          el.id = id;
-          document.body.appendChild(el);
-        }
-      }
-      return ${isReactProject(projectInfo) ? '<Story />' : 'Story()'};
-    }
-    \`\`\`
-  `;
-}
-
-export function getMainConfigExample(projectInfo: ProjectInfo): string {
-  const { configDir, language } = projectInfo;
-  const ts = ext(language, false);
-  const typeImport = getTypeImportSource(projectInfo);
-
-  if (language === 'js') {
-    return dedent`
-      \`\`\`js
-      // ${configDir}/main.js
-      const config = { staticDirs: ['../public'] };
-      export default config;
-      \`\`\`
-    `;
-  }
-
-  return dedent`
-    \`\`\`${ts}
-    // ${configDir}/main.${ts}
-    import type { StorybookConfig } from '${typeImport}';
-
-    const config: StorybookConfig = { staticDirs: ['../public'] };
-    export default config;
-    \`\`\`
-  `;
-}
-
 export function getStoryExample(projectInfo: ProjectInfo): string {
   if (!isReactProject(projectInfo)) {
     return dedent`
@@ -223,18 +176,19 @@ export function getStoryExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function getInteractionPlayExample(projectInfo: ProjectInfo): string {
+export function getCssCheckExample(projectInfo: ProjectInfo): string {
   const { language } = projectInfo;
-  const tsx = ext(language, isReactProject(projectInfo));
-  const typeAnnotation = language === 'ts' ? ': Story' : '';
+  const isReact = isReactProject(projectInfo);
+  const tsx = ext(language, isReact);
 
   return dedent`
     \`\`\`${tsx}
-    export const FilledForm${typeAnnotation} = {
-      play: async ({ canvas, userEvent }) => {
-        await userEvent.type(canvas.getByLabelText('email'), 'a@b.com', { delay: 50 });
-        await userEvent.click(canvas.getByRole('button', { name: /submit/i }));
-        await expect(await canvas.findByText(/welcome/i)).toBeVisible();
+    export const CssCheck${language === 'ts' ? ': Story' : ''} = {
+      ${isReact ? "args: { children: 'Submit' }," : '...Primary,'}
+      play: async ({ canvas }) => {
+        const button = canvas.getByRole('button'${isReact ? ', { name: /submit/i }' : ''});
+        // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
+        await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
       },
     };
     \`\`\`

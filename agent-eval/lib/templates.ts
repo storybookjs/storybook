@@ -12,6 +12,7 @@ import { isRecord } from './utils/type.ts';
 type FixturePackageJson = {
   evals?: {
     template?: unknown;
+    checkoutRegistry?: unknown;
   };
 };
 
@@ -118,6 +119,37 @@ const CHECKOUT_PACKAGES_DIR = 'local-packages';
 // Read by start-storybook-mcp.mjs to fail the install when npm took one of these from the registry.
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
+const CHECKOUT_REGISTRY_PORT = 4873;
+const CHECKOUT_REGISTRY_URL = `http://127.0.0.1:${CHECKOUT_REGISTRY_PORT}/`;
+const CHECKOUT_REGISTRY_SERVER_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'checkout-registry-server.mjs'
+);
+// Outside the project, so the agent never sees the tarballs and the project copy stays small.
+const CHECKOUT_REGISTRY_SANDBOX_DIR = '/tmp/agent-eval-registry';
+const CHECKOUT_REGISTRY_UPLOAD_DIR = '.agent-eval-registry';
+// Read by expectStorybookInstalledFromCheckout in an EVAL.ts.
+const CHECKOUT_REGISTRY_INFO_SANDBOX_PATH = path.posix.join(
+  '__agent_eval__',
+  'checkout-registry.json'
+);
+// The CLIs `create storybook` and `storybook upgrade` run, the React + Vite framework, and the
+// addons `create storybook` installs. `storybook upgrade` bumps every Storybook package a project
+// has, so the registry also serves the MCP addon, which agents add when they upgrade through a
+// published 10.x on the way to 11. The registry also serves the monorepo packages these depend on.
+const CHECKOUT_REGISTRY_PACKAGES = [
+  'create-storybook',
+  '@storybook/cli',
+  'storybook',
+  '@storybook/react-vite',
+  '@storybook/addon-a11y',
+  '@storybook/addon-docs',
+  '@storybook/addon-mcp',
+  '@storybook/addon-onboarding',
+  '@storybook/addon-vitest',
+  'eslint-plugin-storybook',
+];
 const execFileAsync = promisify(execFile);
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
@@ -187,9 +219,7 @@ export async function setupSandbox(
       Object.assign(files, await packCheckoutPackages(packages));
       files[CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH] = JSON.stringify(packages.map((pkg) => pkg.name));
       // Keeps the megabytes of tarballs out of the run's captured changes and saved results.
-      const gitignore = files['.gitignore'] ?? '';
-      files['.gitignore'] =
-        `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${CHECKOUT_PACKAGES_DIR}/\n`;
+      ignoreInGit(files, `${CHECKOUT_PACKAGES_DIR}/`);
       packedCheckout = true;
     }
   }
@@ -202,6 +232,8 @@ export async function setupSandbox(
       START_STORYBOOK_SCRIPT_SOURCE_PATH,
       'utf8'
     );
+    // The script's debug dumps land after the baseline commit and are not the agent's changes.
+    ignoreInGit(files, 'mcp-debug/');
   }
 
   await setupTemplateSandbox(sandbox, templateMetadata);
@@ -209,6 +241,29 @@ export async function setupSandbox(
 
   if (packedCheckout) {
     await decodeCheckoutPackages(sandbox);
+  }
+
+  if (packageJson.evals?.checkoutRegistry === true) {
+    await startCheckoutRegistry(sandbox, workspace);
+  }
+}
+
+function ignoreInGit(files: Record<string, string>, pattern: string): void {
+  const gitignore = files['.gitignore'] ?? '';
+  files['.gitignore'] =
+    `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${pattern}\n`;
+}
+
+// The harness commits the fixture before `setup` runs, so everything setup writes afterwards (the
+// template, skills, mocks, MCP config) would show up as the agent's own change: in `git status`, in
+// `storybook tools stories changed`, and in the files saved with the run. Call this last in `setup`.
+export async function commitSandboxBaseline(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    'git add -A && git commit -q --allow-empty -m "Set up the project"',
+  ]);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to commit the sandbox baseline: ${result.stderr || result.stdout}`);
   }
 }
 
@@ -664,12 +719,96 @@ export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]
       exclude: (name) => name === 'node_modules',
     })) {
       const content = await fs.readFile(path.join(sourceDir, manifestPath), 'utf8');
-      for (const pkg of await pointStorybookAtCheckout({ 'package.json': content }, workspace)) {
+      const manifestPackages = await pointStorybookAtCheckout(
+        { 'package.json': content },
+        workspace
+      );
+      const evals = (JSON.parse(content) as FixturePackageJson).evals;
+      if (evals?.checkoutRegistry === true) {
+        manifestPackages.push(...checkoutRegistryPackages(workspace));
+      }
+      for (const pkg of manifestPackages) {
         packages.set(pkg.name, pkg);
       }
     }
   }
   return [...packages.values()];
+}
+
+export function checkoutRegistryPackages(workspace: StorybookWorkspace): WorkspacePackage[] {
+  const packages = new Map<string, WorkspacePackage>();
+  const add = (name: string) => {
+    const pkg = workspace.get(name);
+    if (!pkg) {
+      throw new Error(`${name} is not a published package of this monorepo`);
+    }
+    if (!packages.has(name)) {
+      packages.set(name, pkg);
+      pkg.dependencies.forEach(add);
+    }
+  };
+  CHECKOUT_REGISTRY_PACKAGES.forEach(add);
+  return [...packages.values()];
+}
+
+// For evals whose agent installs Storybook itself (`evals.checkoutRegistry` in the fixture), so
+// `npm create storybook@next` and `npx storybook@next upgrade` install this checkout instead of the
+// published prerelease. The registry publishes the checkout under `next`, keeps `latest` on the
+// published release, and sends every other request on to npm.
+async function startCheckoutRegistry(
+  sandbox: Sandbox,
+  workspace: StorybookWorkspace
+): Promise<void> {
+  const packages = checkoutRegistryPackages(workspace);
+  const tarballs = await packCheckoutPackages(packages);
+  // Every published package of the monorepo carries the version of code/package.json.
+  const { version } = JSON.parse(
+    await fs.readFile(path.join(REPO_ROOT, 'code', 'package.json'), 'utf8')
+  ) as { version: string };
+
+  await sandbox.writeFiles({
+    ...Object.fromEntries(
+      Object.entries(tarballs).map(([tarballPath, tarball]) => [
+        path.posix.join(CHECKOUT_REGISTRY_UPLOAD_DIR, path.posix.basename(tarballPath)),
+        tarball,
+      ])
+    ),
+    [path.posix.join(CHECKOUT_REGISTRY_UPLOAD_DIR, 'registry.json')]: JSON.stringify({
+      version,
+      tarballs: Object.fromEntries(
+        packages.map((pkg) => [pkg.name, path.posix.basename(checkoutTarballPath(pkg.name))])
+      ),
+      workspacePackages: [...workspace.keys()],
+    }),
+    [path.posix.join(CHECKOUT_REGISTRY_UPLOAD_DIR, 'server.mjs')]: await fs.readFile(
+      CHECKOUT_REGISTRY_SERVER_SOURCE_PATH,
+      'utf8'
+    ),
+    [CHECKOUT_REGISTRY_INFO_SANDBOX_PATH]: JSON.stringify({ url: CHECKOUT_REGISTRY_URL, version }),
+  });
+
+  const ping = `curl -sf ${CHECKOUT_REGISTRY_URL}-/ping > /dev/null`;
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    [
+      'set -e',
+      `rm -rf ${CHECKOUT_REGISTRY_SANDBOX_DIR} && mkdir -p ${CHECKOUT_REGISTRY_SANDBOX_DIR}`,
+      `cd ${CHECKOUT_REGISTRY_UPLOAD_DIR}`,
+      `for f in *.base64; do base64 -d "$f" > "${CHECKOUT_REGISTRY_SANDBOX_DIR}/\${f%.base64}"; done`,
+      `mv registry.json server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR}/`,
+      `cd .. && rm -rf ${CHECKOUT_REGISTRY_UPLOAD_DIR}`,
+      // Restarted in a loop, because agents stop a hung Storybook with `killall node`.
+      `setsid bash -c 'while :; do node ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR} ${CHECKOUT_REGISTRY_PORT}; sleep 0.2; done' > ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log 2>&1 < /dev/null &`,
+      `for i in $(seq 1 100); do ${ping} && break; sleep 0.1; done`,
+      `${ping} || { cat ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log; exit 1; }`,
+      // User-level, so it applies wherever the agent runs npm and stays out of the project.
+      `npm config set registry ${CHECKOUT_REGISTRY_URL} --location=user`,
+    ].join('\n'),
+  ]);
+
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to start the checkout registry: ${result.stderr || result.stdout}`);
+  }
 }
 
 export async function compileCheckoutPackages(packages: WorkspacePackage[]): Promise<void> {

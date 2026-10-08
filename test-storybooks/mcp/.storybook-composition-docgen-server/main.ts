@@ -9,7 +9,6 @@ import baseConfig from '../.storybook/main';
 const config = defineMain({
 	...baseConfig,
 	features: {
-		changeDetection: true,
 		componentsManifest: true,
 		docgenServer: true,
 	},

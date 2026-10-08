@@ -30,7 +30,6 @@ const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
 type AgentContext = {
   agent?: unknown;
   integration?: unknown;
-  review?: unknown;
 };
 
 type EvalContext = {
@@ -38,8 +37,6 @@ type EvalContext = {
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
-  /** Whether the sandbox runs review-on; see isReviewEnabledFor in lib/templates.ts. */
-  review: boolean;
 };
 
 type AgentEvalResults = {
@@ -77,15 +74,7 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  return { agent, integration, review: agentContext.review === true };
-}
-
-// Review mode of this run (see isReviewEnabledFor in lib/templates.ts).
-// EVAL.ts files branch on this — with review on, visual work must end in a
-// published review-create; with review off, review-create is not even exposed
-// and the workflow ends in stories-preview links.
-export function isReviewEnabled(): boolean {
-  return getEvalContext().review;
+  return { agent, integration };
 }
 
 export function getTranscript(agent = getEvalContext().agent): Transcript {
@@ -154,51 +143,6 @@ export function expectDisplayReviewForVisualChange(): void {
 
   expectValidDisplayReviewPayload(displayReview.input);
   expectFinalResponseSharesReviewLink();
-}
-
-// Review-off counterpart of expectDisplayReviewForVisualChange:
-// review-create is not registered, so visual work must end in
-// stories-preview calls and the final response must share the preview URLs.
-// `covering` requires each substring to appear in some stories-preview story
-// input (storyId, exportName, or story path); `coveringAnyOf` requires at
-// least one of the substrings instead.
-export function expectPreviewStoriesWithFinalLinks(options?: {
-  covering?: string[];
-  coveringAnyOf?: string[];
-}): void {
-  expectWorkflowCalls(['stories-preview']);
-
-  const storyInputs = getWorkflowCalls('stories-preview').flatMap((call) =>
-    getStoryInputs(call.input)
-  );
-  const inputCovers = (substring: string) =>
-    storyInputs.some((input) =>
-      JSON.stringify(input).toLowerCase().includes(substring.toLowerCase())
-    );
-
-  for (const substring of options?.covering ?? []) {
-    expect(
-      inputCovers(substring),
-      `Expected a stories-preview story input covering "${substring}". Received: ${JSON.stringify(storyInputs)}`
-    ).toBe(true);
-  }
-
-  const anyOf = options?.coveringAnyOf ?? [];
-  if (anyOf.length > 0) {
-    expect(
-      anyOf.some(inputCovers),
-      `Expected a stories-preview story input covering one of ${JSON.stringify(anyOf)}. Received: ${JSON.stringify(storyInputs)}`
-    ).toBe(true);
-  }
-
-  const finalMessage = getFinalAssistantMessage() ?? '';
-  expect(finalMessage, 'Final response must include a story preview link').toMatch(
-    STORY_PREVIEW_URL_PATTERN
-  );
-  expect(
-    finalMessage,
-    'Final response must not link to the Storybook review page when review is disabled'
-  ).not.toMatch(/[?&]path=\/review\//);
 }
 
 // Trigger correctness: a pure non-visual refactor must NOT publish a review,
@@ -409,12 +353,6 @@ function isLocalDevServerUrl(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-const STORY_PREVIEW_URL_PATTERN = /[?&]path=\/story\/|\/iframe\.html\?id=/;
-
-function isLocalStoryPreviewUrl(value: string): boolean {
-  return isLocalDevServerUrl(value) && STORY_PREVIEW_URL_PATTERN.test(value);
 }
 
 // Story IDs must come from a discovery tool (stories-changed, or the
@@ -1065,35 +1003,11 @@ const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
 // example to check that Storybook runs) does not qualify, while a re-publish
 // updates the already open review page in place.
 export function expectReviewOpenedInBrowser(): void {
-  expectOpenedInBrowserAfter({
-    workflowName: 'review-create',
-    target: 'the review page',
-    isTargetUrl: (url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url),
-  });
-}
-
-// With review off the workflow ends in stories-preview links. The agent may
-// preview again while iterating, so any navigation after the first preview
-// call counts.
-export function expectPreviewOpenedInBrowser(): void {
-  expectOpenedInBrowserAfter({
-    workflowName: 'stories-preview',
-    target: 'a story preview',
-    isTargetUrl: isLocalStoryPreviewUrl,
-  });
-}
-
-function expectOpenedInBrowserAfter(options: {
-  workflowName: string;
-  target: string;
-  isTargetUrl: (url: string) => boolean;
-}): void {
-  const { workflowName, target, isTargetUrl } = options;
-  const steps = getBrowserStepsAroundWorkflowCalls(workflowName);
+  const steps = getBrowserStepsAroundWorkflowCalls('review-create');
   const workflowCall = steps.indexOf(WORKFLOW_CALLED);
   if (workflowCall === -1) {
     expect.fail(
-      `Expected a successful ${workflowName} call before the in-app browser check, but the transcript holds none.`
+      'Expected a successful review-create call before the in-app browser check, but the transcript holds none.'
     );
   }
   const navigations = steps
@@ -1102,11 +1016,11 @@ function expectOpenedInBrowserAfter(options: {
 
   expect(
     navigations.length,
-    `Expected the agent to open a URL in the in-app browser after ${workflowName} (a navigate / preview_start call, or a Codex goto), but the transcript holds no such browser navigation. Every experiment must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).`
+    `Expected the agent to open a URL in the in-app browser after review-create (a navigate / preview_start call, or a Codex goto), but the transcript holds no such browser navigation. Every experiment must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).`
   ).toBeGreaterThan(0);
   expect(
-    navigations.some(isTargetUrl),
-    `Expected an in-app browser navigation to ${target} on the local dev server after ${workflowName}. Navigated to:\n${navigations.join('\n')}`
+    navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
+    `Expected an in-app browser navigation to the review page on the local dev server after review-create. Navigated to:\n${navigations.join('\n')}`
   ).toBe(true);
 }
 

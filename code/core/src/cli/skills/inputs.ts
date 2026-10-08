@@ -1,11 +1,7 @@
 import type { Options } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
 
-import {
-  getToolAvailability,
-  type GetToolAvailabilityOptions,
-  type ToolAvailability,
-} from './availability.ts';
+import { getToolAvailability, type ToolAvailability } from './availability.ts';
 import { frameworkToRendererMap } from './content/framework-renderer.ts';
 
 export type SkillInputs = ToolAvailability & { framework: string; renderer?: string };
@@ -15,12 +11,9 @@ export type SkillInputs = ToolAvailability & { framework: string; renderer?: str
  * from the target Storybook's presets. Both the skills CLI and addon-mcp fill builder inputs from
  * this, so the two channels cannot drift.
  */
-export async function resolveSkillInputs(
-  options: Options,
-  opts: GetToolAvailabilityOptions = {}
-): Promise<SkillInputs> {
+export async function resolveSkillInputs(options: Options): Promise<SkillInputs> {
   const [availability, frameworkPreset] = await Promise.all([
-    getToolAvailability(options, opts),
+    getToolAvailability(options),
     options.presets.apply('framework'),
   ]);
   const framework = extractFrameworkPackageName(

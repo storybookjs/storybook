@@ -161,12 +161,7 @@ export async function storybookDevServer(
 
   resolveChangeDetectionAdapter(adapter);
 
-  const isChangeDetectionStatusEnabled = features.changeDetection !== false;
-  if (isChangeDetectionStatusEnabled) {
-    changeDetectionService.start(true);
-  } else {
-    changeDetectionService.start(false);
-  }
+  changeDetectionService.start();
 
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);

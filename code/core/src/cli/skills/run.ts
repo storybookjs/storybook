@@ -222,16 +222,13 @@ function withCommandReference(
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
-  const { reviewEnabled } = inputs;
   if (id === 'stories') {
     const workflow = buildServerInstructions({
       transport: 'cli',
       devEnabled: true,
       testSupported: inputs.testSupported,
       docsEnabled: inputs.docsEnabledForCli,
-      changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
-      reviewEnabled,
       storyInstructionsInline: true,
     });
     return `${workflow}\n\n${assemble('write-story', inputs)}`;
@@ -240,8 +237,6 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     transport: 'cli',
     framework: inputs.framework,
     renderer: inputs.renderer,
-    changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     docsEnabled: inputs.docsEnabledForCli,

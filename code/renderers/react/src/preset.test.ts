@@ -16,11 +16,10 @@ describe('optimizeViteDeps', () => {
   });
 
   it('includes react/jsx-runtime', () => {
-    // Vite plugins such as vite-plugin-svgr emit `react/jsx-runtime` imports while transforming
-    // non-JS files (e.g. `.svg`). The dependency scan does not run those transforms, so the import
-    // is only discovered mid-run, which re-optimizes React and loads a second copy of it.
-    // @vitejs/plugin-react includes it for regular Vite apps, but frameworks like nextjs-vite do not
-    // use that plugin. If this test fails, add 'react/jsx-runtime' back to optimizeViteDeps.
+    // Plugins such as vite-plugin-svgr emit `react/jsx-runtime` imports while transforming non-JS
+    // files. The dependency scan does not run those transforms, so the import is only found
+    // mid-run and a second copy of React gets loaded.
+    // If this test fails, add 'react/jsx-runtime' back to the optimizeViteDeps array in preset.ts.
     expect(optimizeViteDeps).toContain('react/jsx-runtime');
   });
 });

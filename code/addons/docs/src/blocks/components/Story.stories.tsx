@@ -27,7 +27,7 @@ type ExtendedStoryProps = Omit<StoryProps, 'story'> & {
   storyExport: ModuleExport;
 };
 
-const meta: Meta<ExtendedStoryProps> = {
+const meta = {
   // @ts-expect-error getting too complex with props
   component: StoryComponent,
   parameters: {
@@ -47,10 +47,10 @@ const meta: Meta<ExtendedStoryProps> = {
     // @ts-expect-error getting too complex with props
     return <StoryComponent {...args} story={resolved.story} />;
   },
-};
+} satisfies Meta<ExtendedStoryProps>;
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<ExtendedStoryProps>>;
 
 export const Loading = {
   globals: { sb_theme: 'side-by-side' },

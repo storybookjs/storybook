@@ -7,8 +7,8 @@
  * against the definitions it ships with.
  *
  * The `test` toolset is owned by `@storybook/addon-vitest` and is intentionally not registered
- * here. Cover it in the addon's own unit tests; MCP tests that need a `test` toolset register a
- * local stub in the test file.
+ * here. Cover it in the addon's own unit tests; MCP tests that need a `test` toolset register one
+ * in the test file.
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
@@ -23,10 +23,7 @@ import {
 
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 
-export function registerCoreToolsetsForTest({
-  index = EMPTY_INDEX,
-  reviewEnabled = true,
-}: { index?: StoryIndex; reviewEnabled?: boolean } = {}) {
+export function registerCoreToolsetsForTest({ index = EMPTY_INDEX }: { index?: StoryIndex } = {}) {
   clearToolsetRegistry();
 
   const storyIndex = { getIndex: async () => index };
@@ -39,7 +36,6 @@ export function registerCoreToolsetsForTest({
         getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
       },
       changeStatuses: { getAll: () => ({}) },
-      reviewEnabled,
     })
   );
   registerToolset(reviewToolset);

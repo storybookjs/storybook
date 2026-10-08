@@ -11,44 +11,13 @@ import {
   applyPublishedReview,
 } from './state-transitions.ts';
 
-type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
-
-/**
- * Default subscription to the `core/module-graph` open service. The review goes stale when any
- * file in the story module graph changes (the service's revision only advances for in-graph
- * changes, so unrelated file edits never trip it). The `services` preset registers the module
- * graph before the review service, so the lookup succeeds synchronously here; if it's unavailable
- * (e.g. a builder without module-graph support), staleness simply never triggers.
- */
-const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
-  try {
-    const service = getService<ModuleGraphService>('core/module-graph', { internal: true });
-    // Omit the input to watch the entire graph. The initial emission carries revision 0 (or the
-    // current revision at subscribe time); only subsequent advances represent a change after the
-    // review was cached.
-    return service.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
-      if (revision !== undefined && revision > 0) {
-        onChange();
-      }
-    });
-  } catch {
-    // Module graph unavailable (e.g. builder without support); no staleness.
-    return () => {};
-  }
-};
-
 export interface RegisterReviewServiceOptions {
   getIndex: () => Promise<StoryIndex>;
-  /** Override the module-graph-change subscription. Used by tests. */
-  subscribeToModuleGraphChanges?: SubscribeToModuleGraphChanges;
 }
 
 /** Registers the stateful `core/review` service in the server realm. */
-export function registerReviewService({
-  getIndex,
-  subscribeToModuleGraphChanges = defaultSubscribeToModuleGraphChanges,
-}: RegisterReviewServiceOptions): ReviewService {
-  const service = registerService(reviewServiceDef, {
+export function registerReviewService({ getIndex }: RegisterReviewServiceOptions): ReviewService {
+  return registerService(reviewServiceDef, {
     commands: {
       setReview: {
         handler: async (input, ctx) => {
@@ -77,9 +46,9 @@ export function registerReviewService({
         },
       },
       markStale: {
-        handler: async (_input, ctx) => {
+        handler: async (change, ctx) => {
           ctx.self.setState((state) => {
-            applyMarkStale(state, Date.now());
+            applyMarkStale(state, change);
           });
         },
       },
@@ -92,13 +61,14 @@ export function registerReviewService({
       },
     },
   });
+}
 
-  // The subscription is process-lifetime by design: the service registers once per dev-server
-  // process and there is no teardown phase to return it to. The grace window is enforced inside
-  // `markStale`, so graph changes are always forwarded.
-  subscribeToModuleGraphChanges(() => {
-    void service.commands.markStale(undefined);
+export function subscribeReviewToModuleGraphChanges(): void {
+  const review = getService<ReviewService>('core/review', { internal: true });
+  const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
+  moduleGraph.queries.graphChangedAt.subscribe(undefined, ({ data: changedAt }) => {
+    if (changedAt !== undefined) {
+      void review.commands.markStale({ changedAt });
+    }
   });
-
-  return service;
 }

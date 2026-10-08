@@ -78,6 +78,10 @@ The important signal for this package is that `plugin:storybook:storybook` appea
 
 To test in Claude Desktop, restart Claude Desktop after installing or updating the plugin, open a new Code session in any project, and check that the Storybook skills are available from the `+` menu.
 
+## Skills
+
+The skills in `skills/` are the only copy a maintainer edits. The Codex plugin's skills are rendered from them, so after editing a skill run `yarn nx compile claude-plugin` from the repository root and commit the rendered files under `code/lib/codex-plugin/plugins/storybook/skills`. The plugin test fails while the committed Codex skills are stale.
+
 ## Scripts
 
 - `validate`: Validate this package's marketplace and plugin manifests.

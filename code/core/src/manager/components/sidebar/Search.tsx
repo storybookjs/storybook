@@ -164,8 +164,8 @@ export type SearchProps = {
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
-  searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
+  belowSearchContent?: ReactNode;
 };
 
 export const Search = React.memo<SearchProps>(function Search({
@@ -174,8 +174,8 @@ export const Search = React.memo<SearchProps>(function Search({
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
-  searchBarContent,
   searchFieldContent,
+  belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -532,8 +532,8 @@ export const Search = React.memo<SearchProps>(function Search({
                   {searchFieldContent}
                 </Actions>
               </SearchField>
-              {searchBarContent}
             </SearchBar>
+            {!isOpen && belowSearchContent}
             <FocusContainer tabIndex={0} id="storybook-explorer-menu">
               {children({
                 query: input,

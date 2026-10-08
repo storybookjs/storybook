@@ -16,6 +16,7 @@ import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+import type { Addon_StorySortParameterV7 } from './addons.ts';
 
 export type {
   DocgenError,
@@ -224,7 +225,6 @@ export interface LoadOptions {
   outputDir?: string;
   configDir?: string;
   cacheKey?: string;
-  ignorePreview?: boolean;
   extendServer?: (server: HttpServer) => void;
 }
 
@@ -239,9 +239,6 @@ export interface CLIBaseOptions {
 
 export interface CLIOptions extends CLIBaseOptions {
   port?: number;
-  ignorePreview?: boolean;
-  previewUrl?: string;
-  forceBuildPreview?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
@@ -265,7 +262,6 @@ export interface CLIOptions extends CLIBaseOptions {
 
 export interface BuilderOptions {
   configType?: 'DEVELOPMENT' | 'PRODUCTION';
-  ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
   docsMode?: boolean;
@@ -416,8 +412,18 @@ type Tag = string;
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
   defaultFilterSelection?: 'include' | 'exclude' | undefined;
-  excludeFromSidebar: boolean;
-  excludeFromDocsStories: boolean;
+  /** Hide stories with this tag from the sidebar. The filter menu cannot bring them back. */
+  hideFromSidebar?: boolean;
+  /** Hide stories with this tag from autodocs pages. */
+  hideFromAutodocs?: boolean;
+  /**
+   * Hide this tag from the sidebar filter menu. Stories stay visible unless another option hides
+   * them.
+   *
+   * A hidden tag can still be an active filter through `defaultFilterSelection` or the URL. The menu
+   * then shows an active-filter count and no checkbox. Avoid that combination.
+   */
+  hideFromFilterPanel?: boolean;
 }
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
@@ -473,7 +479,9 @@ export interface ComponentsManifest {
       | 'react-component-meta'
       | 'vue-component-meta'
       | 'angular-component-meta'
-      | 'compodoc';
+      | 'compodoc'
+      | 'custom-elements-manifest'
+      | 'svelte2tsx';
     durationMs: number;
   };
 }
@@ -578,13 +586,6 @@ export interface StorybookFeatures {
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
    *
-   * Apply decorators from preview.js before decorators from addons or frameworks
-   */
-  legacyDecoratorFileOrder?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
    * Disallow implicit actions during rendering. This will be the default in Storybook 8.
    *
    * This will make sure that your story renders the same no matter if docgen is enabled or not.
@@ -622,7 +623,10 @@ export interface StorybookFeatures {
   /**
    * Enable component manifest generation for MCP and other tooling integrations.
    *
-   * @default false
+   * `@storybook/react`, `@storybook/vue3`, and `@storybook/angular-vite` default this to `true`.
+   * Set it to `false` to opt out.
+   *
+   * @default false // `true` for React, Vue 3, and `@storybook/angular-vite`
    */
   componentsManifest?: boolean;
 
@@ -649,36 +653,16 @@ export interface StorybookFeatures {
   experimentalCodeExamples?: boolean;
 
   /**
-   * Enable the experimental docgen open service.
+   * Enable server-side component metadata extraction.
    *
    * When true, Storybook registers the `core/docgen` service in the open-service registry and
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
-   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
-   * back to Compodoc.
-   *
-   * @default false // `true` when the framework is `@storybook/angular-vite`
-   * @experimental This feature is in early development and may change significantly in future releases.
+   * @default true when a preset that ships an `experimental_docgenProvider` exports
+   *   `isDocgenProviderEnabled`
    */
-  experimentalDocgenServer?: boolean;
-
-  /**
-   * Enable change detection
-   * @default true
-   */
-  changeDetection?: boolean;
-
-  /**
-   * Enable the agentic review workflow: the review UI in the manager and the server-side review
-   * channel that MCP tooling (e.g. `@storybook/addon-mcp`) uses to push curated reviews of code
-   * changes. Builds on change detection, so `changeDetection` must also be enabled.
-   *
-   * @default false
-   * @experimental This feature is in early development and may change significantly in future releases.
-   */
-  experimentalReview?: boolean;
+  docgenServer?: boolean;
 }
 
 export interface StorybookConfigRaw {
@@ -701,6 +685,8 @@ export interface StorybookConfigRaw {
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: StorybookFeatures;
+
+  storySorts?: Addon_StorySortParameterV7[];
 
   build?: TestBuildConfig;
 
@@ -796,6 +782,13 @@ export interface StorybookConfig {
   staticDirs?: PresetValue<StorybookConfigRaw['staticDirs']>;
   logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
   features?: PresetValue<StorybookConfigRaw['features']>;
+
+  /**
+   * Sort the stories in the sidebar. Each sorter is a comparator function, a sort object such as `{
+   * order: ['Intro', '*'] }`, or an order array, and breaks the ties of the sorters before it.
+   * Presets add their sorters with `(sorters) => [...sorters, sorter]`.
+   */
+  storySorts?: PresetValue<StorybookConfigRaw['storySorts']>;
 
   build?: PresetValue<StorybookConfigRaw['build']>;
 

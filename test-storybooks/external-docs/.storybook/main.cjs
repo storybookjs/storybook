@@ -23,5 +23,6 @@ const config = {
     previewMdx2: true,
   },
   framework: '@storybook/react-webpack5',
+  storySorts: [{ order: ['Examples', 'Docs', 'Demo'] }],
 };
 module.exports = config;

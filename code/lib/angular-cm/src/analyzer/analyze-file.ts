@@ -11,13 +11,22 @@ import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from 
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
-export function analyzeSourceFile(
+/** A context over one source file; shared between the file's analysis and its argTypes extraction. */
+export function analyzerContext(
   ts: typeof tsModule,
   sourceFile: tsModule.SourceFile,
   checker: tsModule.TypeChecker
+): AnalyzerContext {
+  return { ts, checker, types: new TypeIndex(ts, checker), sourceFile };
+}
+
+export function analyzeSourceFile(
+  ts: typeof tsModule,
+  sourceFile: tsModule.SourceFile,
+  checker: tsModule.TypeChecker,
+  context: AnalyzerContext = analyzerContext(ts, sourceFile, checker)
 ): AngularFileMeta {
-  const types = new TypeIndex(ts, checker);
-  const ctx: AnalyzerContext = { ts, checker, types };
+  const ctx = context;
   const meta: AngularFileMeta = {
     components: [],
     directives: [],
@@ -29,7 +38,7 @@ export function analyzeSourceFile(
 
   for (const statement of sourceFile.statements) {
     if (ts.isEnumDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) {
-      types.addDeclaration(statement);
+      ctx.types.addDeclaration(statement);
       continue;
     }
     if (!ts.isClassDeclaration(statement) || !statement.name) {
@@ -108,7 +117,7 @@ export function analyzeSourceFile(
     }
   }
 
-  meta.miscellaneous = types.toMiscellaneous();
+  meta.miscellaneous = ctx.types.toMiscellaneous();
   return meta;
 }
 
@@ -145,15 +154,41 @@ const decoratorStandalone = (
   ctx: AnalyzerContext,
   metadata: tsModule.ObjectLiteralExpression
 ): boolean | undefined => {
-  const standalone = objectProperty(ctx, metadata, 'standalone');
-  const value = standalone && resolveInitializer(ctx, standalone);
-  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
-    return true;
+  let standalone: boolean | undefined = true;
+
+  for (const property of metadata.properties) {
+    if (ctx.ts.isSpreadAssignment(property)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isComputedPropertyName(property.name)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isShorthandPropertyAssignment(property)) {
+      if (property.name.text === 'standalone') {
+        standalone = undefined;
+      }
+      continue;
+    }
+    if (
+      !ctx.ts.isPropertyAssignment(property) ||
+      (!ctx.ts.isIdentifier(property.name) && !ctx.ts.isStringLiteralLike(property.name)) ||
+      property.name.text !== 'standalone'
+    ) {
+      continue;
+    }
+
+    const value = resolveInitializer(ctx, property.initializer);
+    standalone =
+      value?.kind === ctx.ts.SyntaxKind.TrueKeyword
+        ? true
+        : value?.kind === ctx.ts.SyntaxKind.FalseKeyword
+          ? false
+          : undefined;
   }
-  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
-    return false;
-  }
-  return undefined;
+
+  return standalone;
 };
 
 // A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial

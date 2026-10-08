@@ -1,17 +1,35 @@
+import { relative } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { resolveSkillsIntent, runSkillsCommand } from './run.ts';
+
+const toolset = (id: string, methodNames: string[]): ToolsetCatalogEntry => ({
+  id,
+  description: `${id} tools.`,
+  methods: methodNames.map((methodName) => ({
+    ref: `${id}.${methodName}` as ToolsetMethodId,
+    title: methodName,
+    description: `Describes ${id}.${methodName}.`,
+    requiresDevServer: false,
+    input: { type: 'object', properties: {} },
+  })),
+});
+
+const describedTools = (output: string) =>
+  [...output.matchAll(/^Usage: npx storybook tools (.+) \[--key value \.\.\.\]$/gm)].map(
+    ([, command]) => command
+  );
 
 const deps = () => ({
   loadStorybook: vi.fn().mockResolvedValue({ presets: { apply: vi.fn() } }),
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
     renderer: '@storybook/react',
-    changeDetectionEnabled: true,
     moduleGraphSupported: true,
-    reviewEnabled: false,
-    reviewEnabledForCli: true,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,
@@ -20,10 +38,19 @@ const deps = () => ({
     a11yEnabled: false,
     docgenServer: false,
   }),
-  getProjectInfo: vi.fn().mockResolvedValue({ ok: true, projectInfo: {} }),
+  getProjectInfo: vi.fn().mockResolvedValue({
+    ok: true,
+    projectInfo: { rendererPackage: '@storybook/react', builderPackage: '@storybook/builder-vite' },
+  }),
   getSetupMarkdown: vi
     .fn()
     .mockResolvedValue({ markdown: '# Storybook Setup', prompt: 'optimized-tests' }),
+  describeToolsets: vi.fn(() => [
+    toolset('stories', ['preview', 'changed', 'findByComponent']),
+    toolset('review', ['create']),
+    toolset('docs', ['list', 'show', 'showStory']),
+    toolset('test', ['run']),
+  ]),
 });
 
 describe('resolveSkillsIntent', () => {
@@ -118,6 +145,27 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('npx storybook tools stories changed');
   });
 
+  it('stories carries the write-story text and ends with a reference of the tools it names', async () => {
+    const d = deps();
+    const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+    const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+
+    expect(stories.output).toContain(writeStory.output.split('# Command reference')[0]);
+    expect(describedTools(stories.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
+  });
+
+  it('--all prints the write-story text once', async () => {
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
+  });
+
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
@@ -125,6 +173,95 @@ describe('runSkillsCommand', () => {
     expect(result.output).toBe('# Storybook Setup');
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
+
+  it('reports the setup run only when the setup skill itself was requested', async () => {
+    const setup = await runSkillsCommand({ tokens: ['setup'], target: {} }, deps());
+    const all = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(setup.setupRun).toEqual({
+      projectInfo: {
+        rendererPackage: '@storybook/react',
+        builderPackage: '@storybook/builder-vite',
+      },
+      prompt: 'optimized-tests',
+    });
+    expect(all.setupRun).toBeUndefined();
+  });
+
+  it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
+    'setup accepts renderer %s',
+    async (rendererPackage) => {
+      const d = deps();
+      const projectInfo = { rendererPackage, builderPackage: '@storybook/builder-vite' };
+      d.getProjectInfo.mockResolvedValue({ ok: true, projectInfo });
+
+      const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toBe('# Storybook Setup');
+      expect(d.getSetupMarkdown).toHaveBeenCalledWith(projectInfo);
+    }
+  );
+
+  it.each([
+    '@storybook/svelte',
+    '@storybook/preact',
+    '@storybook/html',
+    '@storybook/web-components',
+    '@storybook/solid',
+    '@storybook/react-native',
+    '@custom/renderer',
+    null,
+  ])('setup rejects unsupported renderer %s', async (rendererPackage) => {
+    const d = deps();
+    d.getProjectInfo.mockResolvedValue({
+      ok: true,
+      projectInfo: { rendererPackage, builderPackage: '@storybook/builder-vite' },
+    });
+
+    const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errorOutput).toContain('only available for React, Angular, and Vue projects');
+    expect(d.getSetupMarkdown).not.toHaveBeenCalled();
+  });
+
+  it('--all rejects an unsupported setup renderer without emitting partial instructions', async () => {
+    const d = deps();
+    d.getProjectInfo.mockResolvedValue({
+      ok: true,
+      projectInfo: {
+        rendererPackage: '@storybook/svelte',
+        builderPackage: '@storybook/builder-vite',
+      },
+    });
+
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, d);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errorOutput).toContain('only available for React, Angular, and Vue projects');
+    expect(d.getSetupMarkdown).not.toHaveBeenCalled();
+  });
+
+  it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
+    'setup rejects renderer %s without the Vite builder',
+    async (rendererPackage) => {
+      const d = deps();
+      d.getProjectInfo.mockResolvedValue({
+        ok: true,
+        projectInfo: { rendererPackage, builderPackage: '@storybook/builder-webpack5' },
+      });
+
+      const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.output).toBe('');
+      expect(result.errorOutput).toContain('using the Vite builder');
+      expect(d.getSetupMarkdown).not.toHaveBeenCalled();
+    }
+  );
 
   it('setup reports the probe failure message and exits nonzero', async () => {
     const d = deps();
@@ -139,8 +276,14 @@ describe('runSkillsCommand', () => {
     const target = { cwd: '/some/other/project', configDir: 'custom-storybook' };
     await runSkillsCommand({ tokens: ['setup'], target }, d);
     expect(d.getProjectInfo).toHaveBeenCalledWith({
-      configDir: resolveStorybookConfigDir(target),
+      configDir: relative(process.cwd(), resolveStorybookConfigDir(target)),
     });
+  });
+
+  it('setup probes `--config-dir .` as the project directory itself', async () => {
+    const d = deps();
+    await runSkillsCommand({ tokens: ['setup'], target: { configDir: '.' } }, d);
+    expect(d.getProjectInfo).toHaveBeenCalledWith({ configDir: '.' });
   });
 
   it('reports a clean one-line message when loading the target Storybook fails, no stack trace', async () => {

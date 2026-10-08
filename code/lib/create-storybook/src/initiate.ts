@@ -1,6 +1,11 @@
 import { resolve } from 'node:path';
 
-import { ProjectType } from 'storybook/internal/cli';
+import {
+  ProjectType,
+  installSkills,
+  supportsSkills,
+  supportsAiSetup,
+} from 'storybook/internal/cli';
 import {
   HandledError,
   PackageManagerName,
@@ -42,6 +47,7 @@ async function checkFeatureSupport(
   renderer: SupportedRenderer
 ): Promise<{
   isTestFeatureAvailable: boolean;
+  isAiAvailable: boolean;
   isAiSetupAvailable: boolean;
 }> {
   const featureService = new FeatureCompatibilityService(packageManager);
@@ -52,11 +58,10 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
-
   return {
     isTestFeatureAvailable: result.compatible,
-    isAiSetupAvailable: aiSetup,
+    isAiAvailable: supportsSkills(renderer, framework),
+    isAiSetupAvailable: supportsAiSetup(renderer, builder, framework),
   };
 }
 
@@ -102,7 +107,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { isTestFeatureAvailable, isAiSetupAvailable } = await checkFeatureSupport(
+  const { isTestFeatureAvailable, isAiAvailable, isAiSetupAvailable } = await checkFeatureSupport(
     packageManager,
     framework,
     builder,
@@ -118,8 +123,16 @@ export async function doInitiate(options: CommandOptions): Promise<
     isTestFeatureAvailable,
     // Skip AI feature recommendation when scaffolding into an empty directory,
     // since the user hasn't yet committed to a project setup where AI tooling adds value.
-    isAiSetupAvailable: isAiSetupAvailable && !isEmptyProject,
+    isAiAvailable: isAiAvailable && !isEmptyProject,
+    isAiSetupAvailable,
   });
+
+  if (selectedFeatures.has(Feature.AI) && !isAiAvailable) {
+    logger.warn(
+      'The AI features are not available for this framework yet, so the Storybook skills are not installed.'
+    );
+    selectedFeatures.delete(Feature.AI);
+  }
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
 
@@ -164,8 +177,15 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  // Step 8: Print final summary
+  // Step 8: Install the official Storybook skills for AI agents
   const hasAiFeature = selectedFeatures.has(Feature.AI);
+  if (hasAiFeature) {
+    await telemetryService.trackSkills(
+      await installSkills({ packageManager, source: 'ai-feature' })
+    );
+  }
+
+  // Step 9: Print final summary
   if (configDir && isAiSetupAvailable) {
     // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on
@@ -186,14 +206,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     }).catch(() => {});
   }
   await executeFinalization({
-    showAgentFollowUp: !!options.agent && hasAiFeature,
-    showAiInstructions: hasAiFeature,
+    showAgentFollowUp: !!options.agent && hasAiFeature && isAiSetupAvailable,
+    showAiInstructions: hasAiFeature && isAiSetupAvailable,
     logfile: options.logfile,
     storybookCommand,
     setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'setup']),
   });
 
-  // Step 9: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
+  // Step 10: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser, configDir);
 
   // Signal dev to redirect to onboarding on first run

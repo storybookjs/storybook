@@ -4,6 +4,7 @@ export {
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';
+export { authoredSource, type AuthoredSource } from './authored-source.ts';
 export {
   collectImportBindings,
   importedName,
@@ -39,6 +40,7 @@ export {
 } from './resolve-story-args.ts';
 export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
 export {
+  csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
   keyOf,
@@ -49,5 +51,8 @@ export {
   resolveReturnedObjectExpression,
   returnedExpression,
   returnedExpressionPath,
+  templateParts,
   unwrapExpression,
+  withoutTypeCalls,
+  type TemplateParts,
 } from './utils.ts';

@@ -17,7 +17,7 @@ We sincerely appreciate the dedication and effort addon creators put into keepin
   action={{
     label: 'Copy prompt',
     event: 'copy_addon_migration_prompt',
-    copy: 'In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using https://storybook.js.org/docs/11/addons/addon-migration-guide.md. Addon repositories usually contain a local Storybook instance. Migrate it using https://storybook.js.org/docs/11/releases/migration-guide.md. In case the local repository does not align well with the content of the migration guide, use the https://github.com/storybookjs/addon-kit repository as a reference implementation. Create a PR for the user to review.',
+    copy: 'In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using [addon migration guide](https://storybook.js.org/docs/11/addons/addon-migration-guide.md). Addon repositories usually contain a local Storybook instance. Migrate it using [Storybook migration guide](https://storybook.js.org/docs/11/releases/migration-guide.md). In case the local repository does not align well with the content of the migration guide, use the [Addon Kit](https://github.com/storybookjs/addon-kit) repository as a reference implementation. Create a PR for the user to review.',
   }}
 >
   Use this prompt with your AI assistant to migrate your addon.
@@ -70,7 +70,7 @@ Here are the changes in version 11.0 that impact addon development.
 
 #### Node.js
 
-Storybook 11's minimum supported version is now 22.12. Update the types package in your `package.json` to `^22.12.0`.
+Storybook 11 targets Node.js 22.12 or higher. See the [Node.js migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2212-or-higher) for environment updates and prerelease support. Update the types package in your `package.json` to `^22.12.0`.
 
 ```diff title="package.json"
 -    "@types/node": "^20",
@@ -102,7 +102,7 @@ Change your CI to build and test your addon against this version and more recent
 
 #### TypeScript
 
-The minimum supported TypeScript version is now 5. Update your TypeScript dependency and remove deprecated configuration from your `tsconfig.json`.
+The minimum supported TypeScript version is now 5.9. Update your TypeScript dependency and remove deprecated configuration from your `tsconfig.json`.
 
 ```diff title="tsconfig.json"
      "target": "esnext",
@@ -110,8 +110,14 @@ The minimum supported TypeScript version is now 5. Update your TypeScript depend
      ...
      "lib": ["esnext", "dom", "dom.iterable"],
 -    "baseUrl": ".",
-     "rootDir": "."
+    "rootDir": "."
 ```
+
+#### Preact
+
+If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.8.0 || >=11.0.0-0` because Storybook relies on `preact/compat/client` roots with `unmount()` support. Preact 10.7.1 roots don't provide that method, which Storybook needs for cleanup and root recreation.
+
+The official Preact framework is `@storybook/preact-vite`. The same minimum applies to custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack.
 
 ### CSF Next support
 
@@ -150,11 +156,54 @@ export default definePreview({
 
 ### Addon API changes
 
+#### Manager layout configuration
+
+Move deprecated top-level `addons.setConfig` layout options into `layout`, and move `enableShortcuts` into `ui`. The old top-level values are no longer applied. See the [setConfig migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed) for an example and automigration instructions.
+
+#### Internal API changes
+
+If your addon imports internal Storybook APIs, review these additional changes:
+
+- [Removed WebSocket heartbeat controls](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-websocket-heartbeat-controls-removed)
+- [Removed Vitest workspace configuration helper](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
+- [Toolset telemetry returned with the outcome](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-toolset-telemetry-now-returns-with-the-outcome)
+
+#### `@storybook/react-dom-shim` removed
+
+Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. If your addon receives it only through another Storybook package, upgrade all Storybook dependencies together and don't add a replacement dependency. In a monorepo, update every workspace that declares Storybook packages in the same install.
+
+There is no automigration for explicit dependencies or imports because Storybook cannot determine whether addon code depends on the shim's rendering lifecycle. If your addon lists it explicitly, search the entire addon workspace for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. Remove exact literal `@storybook/react-dom-shim/preset` entries and exact aliases that exist only for the shim. Review dynamic or computed configuration, regular-expression aliases, and custom wrappers manually.
+
+There is no supported public import that replaces `renderElement` or `unmountElement`, and Storybook 11 does not provide a `storybook/internal/react-dom-client` entry. A direct `createRoot(container).render(element)` replacement is also incomplete because it doesn't preserve root reuse, unmount and recreation, initial root options, or awaitable commit and `act` behavior. Code that renders React elements must own those lifecycle and completion semantics.
+
+See the [`@storybook/react-dom-shim` migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookreact-dom-shim-removed) for the full migration contract.
+
 #### Tab UI type removed
 
-The `TAB` addon UI type has been removed. It was not possible for us to build an accessible keyboard navigation experience in the Storybook toolbar with tabs present in the toolbar.
+`type: types.TAB` has been removed. Storybook no longer renders addon tabs beside the canvas.
 
-Addons may now only create `PANEL`, `TOOL` or `TOOLEXTRA` types. We recommend you replace any existing use of this type by a `PANEL`, or by a `TOOL` that opens a `Modal`.
+Register the same UI as a panel:
+
+```diff title="manager.js"
+ import { addons, types } from 'storybook/manager-api';
+
+ addons.register('my-addon', () => {
+   addons.add('my-addon/panel', {
+-    type: types.TAB,
+-    title: 'My Addon',
+-    render: () => <div>Hello World</div>,
++    type: types.PANEL,
++    title: 'My Addon',
++    render: ({ active }) => (active ? <div>Hello World</div> : null),
+   });
+ });
+```
+
+A panel stays next to the story. A tab replaced the canvas. If the UI is a short-lived action rather than a persistent view, register a `TOOL` that opens a `Modal` instead.
+
+`match` no longer receives `tabId`. Remove checks such as `!tabId` or `tabId === 'my-addon/tab'`, and use `viewMode` when a tool should appear only for stories or docs.
+
+`parameters.previewTabs` and `layout.showTabs` no longer change the manager. The `tabs` URL parameter is ignored.
 
 #### Changes to story index
 

@@ -36,7 +36,7 @@ import {
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
 // The shared setup stubs the logger; these tests assert what the real one prints.
-vi.mock('storybook/internal/node-logger', async (importOriginal) => importOriginal());
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const CONFIG_DIR = '/repo/.storybook';
 

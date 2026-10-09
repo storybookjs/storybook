@@ -1,0 +1,7 @@
+.counter {
+  border: 2px solid rebeccapurple;
+  border-radius: 4px;
+  background: lavender;
+  padding: 4px 12px;
+  font: inherit;
+}

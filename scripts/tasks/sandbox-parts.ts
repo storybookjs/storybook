@@ -20,7 +20,7 @@ import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
 import { readConfig as csfReadConfig, writeConfig } from '../../code/core/src/csf-tools/index.ts';
 
-import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import type { Template, TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
 import { executeCLIStep, steps } from '../utils/cli-step.ts';
@@ -205,6 +205,12 @@ function setPluginParam(
 }
 
 const logger = console;
+
+// Whether the sandbox gets the template stories of core, its renderer and its addons
+const usesCoreTemplateStories = (template: Template) =>
+  template.expected.renderer.startsWith('@storybook/') &&
+  template.expected.renderer !== '@storybook/server' &&
+  !template.modifications?.frameworkStoriesOnly;
 
 export const essentialsAddons = [
   'actions',
@@ -733,15 +739,13 @@ export const addStories: Task['run'] = async (
     (await projectTypeService.detectLanguage()) === SupportedLanguage.JAVASCRIPT
   );
 
-  const isCoreRenderer =
-    template.expected.renderer.startsWith('@storybook/') &&
-    template.expected.renderer !== '@storybook/server';
+  const withCoreTemplateStories = usesCoreTemplateStories(template);
 
   const sandboxSpecificStoriesFolder =
     template.modifications?.storiesVariant ?? key.replaceAll('/', '-');
   const storiesVariantFolder = getStoriesFolderWithVariant(sandboxSpecificStoriesFolder);
 
-  if (isCoreRenderer) {
+  if (withCoreTemplateStories) {
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
     await ensureSymlinkOrCopy(
@@ -813,7 +817,7 @@ export const addStories: Task['run'] = async (
     }
   }
 
-  if (isCoreRenderer) {
+  if (withCoreTemplateStories) {
     // Add stories for lib/preview-api (and addons below). NOTE: these stories will be in the
     // template-stories folder and *not* processed by the framework build config (instead by esbuild-loader)
     await linkPackageStories(await workspacePath('core package', 'storybook'), {
@@ -870,7 +874,7 @@ export const addStories: Task['run'] = async (
       .map(async (addon) => workspacePath('addon', `@storybook/addon-${addon}`))
   );
 
-  if (isCoreRenderer) {
+  if (withCoreTemplateStories) {
     const existingStories = await filterExistsInCodeDir(addonDirs, join('template', 'stories'));
     for (const packageDir of existingStories) {
       await linkPackageStories(packageDir, { mainConfig, cwd, disableDocs, skipMocking });
@@ -1013,7 +1017,9 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     }
   }
 
-  if (template.modifications?.useCsfFactory) {
+  const withCoreTemplateStories = usesCoreTemplateStories(template);
+
+  if (template.modifications?.useCsfFactory && withCoreTemplateStories) {
     const storiesDir = (await pathExists(join(sandboxDir, 'src/stories')))
       ? '../src/stories/components'
       : '../stories/components';
@@ -1032,11 +1038,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.set(['tags'], ['vitest']);
   }
 
-  const isCoreRenderer =
-    template.expected.renderer.startsWith('@storybook/') &&
-    template.expected.renderer !== '@storybook/server';
-
-  if (template.modifications?.skipMocking || !isCoreRenderer) {
+  if (template.modifications?.skipMocking || !withCoreTemplateStories) {
     await writeConfig(previewConfig);
     return;
   }

@@ -5,7 +5,6 @@ import { extractModuleNodes } from './module-nodes.ts';
 import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
 
 import { getSvelteAST } from '../../ast.ts';
-import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
 describe(extractModuleNodes.name, () => {
   it('fails when module tag not found', async ({ expect }) => {
@@ -27,7 +26,7 @@ describe(extractModuleNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
       ]
     `);
   });
@@ -51,7 +50,7 @@ describe(extractModuleNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
       ]
     `);
   });
@@ -78,7 +77,7 @@ describe(extractModuleNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -105,7 +104,7 @@ describe(extractModuleNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -257,7 +256,7 @@ describe(extractModuleNodes.name, () => {
 
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-        More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
+        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
         ]
       `);
     });

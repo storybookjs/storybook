@@ -6,8 +6,6 @@ import { extractCompiledASTNodes } from './nodes.ts';
 
 import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
 
-import { StorybookSvelteCSFError } from '../../../utils/error.ts';
-
 function getCompiledAST(moduleScript: string) {
   const { js } = compile(
     `<script module>
@@ -65,7 +63,7 @@ describe(extractCompiledASTNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
       ]
     `);
   });

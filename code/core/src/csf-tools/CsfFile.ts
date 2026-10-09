@@ -780,12 +780,14 @@ export class CsfFile {
                   let storyNode: t.Node | undefined = decl;
                   let storyIsFactory = false;
                   const unwrappedDecl = decl && unwrapExpression(decl);
-                  if (unwrappedDecl && isCsfFactoryCall(unwrappedDecl)) {
+                  if (self._metaIsFactory && unwrappedDecl && isCsfFactoryCall(unwrappedDecl)) {
                     storyIsFactory = true;
                     storyNode = unwrappedDecl.arguments[0];
                   }
-                  // A story imported from another file has no initializer here
-                  if (self._metaIsFactory && decl && !storyIsFactory) {
+                  // A story from another file is kept: its declaration isn't in this file
+                  const isImported =
+                    !!node.source || path.scope.getBinding(localName)?.kind === 'module';
+                  if (self._metaIsFactory && !storyIsFactory && !isImported) {
                     return;
                   }
                   if (t.isObjectExpression(storyNode)) {

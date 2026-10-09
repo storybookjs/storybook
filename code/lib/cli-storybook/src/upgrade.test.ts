@@ -342,11 +342,11 @@ describe('toUpgradedDependencies', () => {
 
     it('keeps the latest version of a satellite whose next tag is older', async () => {
       vi.mocked(mockPackageManager.latestVersion).mockImplementation(async (packageName: string) =>
-        packageName === '@storybook/addon-svelte-csf@next' ? '5.0.0-next.30' : '5.1.4'
+        packageName === '@storybook/addon-designs@next' ? '5.0.0-next.30' : '5.1.4'
       );
 
       const result = await generateUpgradeSpecs(
-        { '@storybook/addon-svelte-csf': '^5.1.2' },
+        { '@storybook/addon-designs': '^5.1.2' },
         {
           packageManager: mockPackageManager,
           isCanary: false,
@@ -357,7 +357,7 @@ describe('toUpgradedDependencies', () => {
         }
       );
 
-      expect(result).toEqual(['@storybook/addon-svelte-csf@^5.1.4']);
+      expect(result).toEqual(['@storybook/addon-designs@^5.1.4']);
     });
 
     it('should handle errors when fetching satellite dependencies', async () => {

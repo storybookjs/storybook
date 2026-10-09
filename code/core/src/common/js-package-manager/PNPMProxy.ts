@@ -253,7 +253,7 @@ export class PNPMProxy extends JsPackageManager {
     return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
   }
 
-  override upgradeCatalogEntries(
+  override writeCatalogUpgrades(
     specifiers: string[],
     declared: Partial<Record<string, string>>
   ): string[] {

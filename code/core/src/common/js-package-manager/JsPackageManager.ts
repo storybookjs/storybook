@@ -333,11 +333,12 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Apply `name@version` upgrade specifiers to dependencies that `declared` references through a
-   * package manager catalog, and return the specifiers that still belong in package.json. Only pnpm
-   * has catalogs, so the base implementation returns every specifier.
+   * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
+   * catalog into the catalog file, and return the remaining specifiers for package.json. Only
+   * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every
+   * specifier.
    */
-  public upgradeCatalogEntries(
+  public writeCatalogUpgrades(
     specifiers: string[],
     _declared: Partial<Record<string, string>>
   ): string[] {

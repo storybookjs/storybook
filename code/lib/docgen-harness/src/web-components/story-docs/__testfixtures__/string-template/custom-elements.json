@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "string-template.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Plain element for untagged string templates.",
+          "name": "StringTemplate",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "string-template",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "StringTemplate",
+          "declaration": {
+            "name": "StringTemplate",
+            "module": "string-template.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "string-template",
+          "declaration": {
+            "name": "StringTemplate",
+            "module": "string-template.js"
+          }
+        }
+      ]
+    }
+  ]
+}

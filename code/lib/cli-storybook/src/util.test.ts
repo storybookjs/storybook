@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { UpgradeOptions } from './upgrade.ts';
-import { getProjects } from './util.ts';
+import { findStorybookProjects, getProjects } from './util.ts';
 
 let root: string;
 
@@ -19,12 +19,26 @@ const createFixture = (files: Record<string, string>) => {
   }
 };
 
-describe('getProjects', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    rmSync(root, { recursive: true, force: true });
-  });
+afterEach(() => {
+  vi.restoreAllMocks();
+  rmSync(root, { recursive: true, force: true });
+});
 
+describe('findStorybookProjects', () => {
+  it('ignores .storybook directories inside node_modules, whatever the .gitignore says', async () => {
+    createFixture({
+      '.gitignore': '**/**/node_modules/\n',
+      'packages/ui/.storybook/main.ts': 'export default {};',
+      'node_modules/@nx/storybook/files/project-files/.storybook/main.ts': 'export default {};',
+    });
+
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
+    ]);
+  });
+});
+
+describe('getProjects', () => {
   it('asks for --config-dir instead of prompting when --yes finds no .storybook directory', async () => {
     createFixture({ 'storybook/main.ts': 'export default {};' });
     vi.spyOn(process, 'cwd').mockReturnValue(root);

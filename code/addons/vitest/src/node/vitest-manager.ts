@@ -1,12 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import type {
-  CoverageOptions,
-  ResolvedCoverageOptions,
-  TestProject,
-  TestSpecification,
-  Vitest,
-} from 'vitest/node';
+import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
@@ -44,6 +38,8 @@ const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 export class VitestManager {
   vitest: Vitest | null = null;
 
+  private testNameSeparator = ' ';
+
   vitestStartupCounter = 0;
 
   vitestRestartPromise: Promise<void> | null = null;
@@ -53,13 +49,13 @@ export class VitestManager {
   constructor(private testManager: TestManager) {}
 
   async startVitest({ coverage }: { coverage: boolean }) {
-    const { createVitest } = await import('vitest/node');
+    const { createVitest, version } = await import('vitest/node');
+    this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
       },
     ];
     const coverageOptions = (
@@ -159,7 +155,11 @@ export class VitestManager {
     }
 
     try {
-      await this.vitest.init();
+      if (typeof this.vitest.standalone === 'function') {
+        await this.vitest.standalone();
+      } else {
+        await this.vitest.init();
+      }
     } catch (e: any) {
       let message = 'Failed to initialize Vitest';
       const isV8 = e.message?.includes('@vitest/coverage-v8');
@@ -261,7 +261,7 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${escapeRegExp(getTestName(parentStory.name))} ${escapeRegExp(story.name)}$`;
+      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
     return `^${escapeRegExp(story.name)}$`;

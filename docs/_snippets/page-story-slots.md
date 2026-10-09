@@ -33,9 +33,9 @@ import preview from '../.storybook/preview';
 
 import { Page } from './page.component';
 
-type PagePropsAndCustomArgs = Page & { footer?: string };
+type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: ({ footer, ...args }) => ({
     props: args,
@@ -248,15 +248,13 @@ export const Primary = {
 ```
 
 ```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import type { ComponentPropsAndSlots } from '@storybook/vue3-vite';
-
 import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
 
-type PagePropsAndCustomArgs = ComponentPropsAndSlots<typeof Page> & { footer?: string };
+type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: (args) => ({
     components: { Page },
@@ -405,11 +403,9 @@ import preview from '../.storybook/preview';
 
 import { Page } from './Page';
 
-type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & {
-  footer?: string;
-};
+type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Page,
   render: ({ footer, ...args }) => (
     <Page {...args}>

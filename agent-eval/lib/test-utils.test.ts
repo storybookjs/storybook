@@ -1,17 +1,17 @@
-import { readFileSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+vi.mock('node:child_process', { spy: true });
 vi.mock('node:fs', { spy: true });
 
 import {
   expectDevServerLeftRunning,
-  expectPreviewOpenedInBrowser,
   expectReviewOpenedInBrowser,
   findDevServerKillCommands,
   parseCodexBrowserNavigations,
   parseWorkflowToolResults,
-  selectFinalRunStoryTestsReport,
 } from './test-utils.ts';
 
 describe('parseWorkflowToolResults', () => {
@@ -304,32 +304,238 @@ describe('parseWorkflowToolResults', () => {
   });
 });
 
-describe('selectFinalRunStoryTestsReport', () => {
-  const passingReport = {
-    output: '## Passing Stories\n\n- example-button--primary',
-    isError: false,
-  };
+describe('expectStoryTestsRanAndPassed', () => {
+  // Verbatim from cc-plugin-opus-5.5-medium 808 (2026-10-04): the agent's own
+  // output of this run is grep lines plus the last 40 lines of the JSON.
+  const tailCutTestRun =
+    'grep -n "olor" src/components/StatusPill.tsx src/components/Badge.tsx; npx storybook tools test run --json 2>&1 | tail -40';
 
-  test('skips trailing shell-filtered fragments and picks the last real report', () => {
-    const filteredFragment = { output: 'exit-check-done', isError: false };
-    const failedGrep = { output: '', isError: true };
+  function testRunDocument(
+    statuses: Record<string, string>,
+    a11yReports: Record<string, { violations: { id: string }[] }[]> = {}
+  ): string {
+    const componentTestStatuses = Object.entries(statuses).map(([storyId, value]) => ({
+      storyId,
+      value,
+      typeId: 'storybook/component-test',
+      title: '',
+      description: '',
+    }));
+    const result = { componentTestStatuses, a11yReports, unhandledErrors: [] };
+    return `${JSON.stringify({ status: 'completed', a11y: true, result }, null, 2)}\n`;
+  }
 
-    expect(selectFinalRunStoryTestsReport([passingReport, filteredFragment, failedGrep])).toBe(
-      passingReport
+  function givenRun(options: {
+    commands: string[];
+    stdout: string;
+    transcript?: string;
+    exitCode?: number;
+  }) {
+    vi.mocked(existsSync).mockReturnValue(false);
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === '__agent_eval__/transcript.txt') {
+        return options.transcript ?? '';
+      }
+      if (String(path) === '__agent_eval__/agent.json') {
+        return JSON.stringify({ agent: 'claude-code', integration: 'plugin' });
+      }
+      if (String(path) === '__agent_eval__/results.json') {
+        return JSON.stringify({
+          o11y: { shellCommands: options.commands.map((command) => ({ command })) },
+        });
+      }
+      throw new Error(`Unexpected readFileSync path: ${String(path)}`);
+    }) as typeof readFileSync);
+    vi.mocked(execFile).mockImplementation(((
+      _file: string,
+      _args: string[],
+      _options: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void
+    ) => {
+      const error = options.exitCode
+        ? Object.assign(new Error('Command failed'), { code: options.exitCode })
+        : null;
+      callback(error, options.stdout, 'npm warn exec storybook');
+    }) as unknown as typeof execFile);
+  }
+
+  // test-utils caches the parsed transcript and the sandbox run per module.
+  async function loadTestUtils() {
+    vi.resetModules();
+    return import('./test-utils.ts');
+  }
+
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
+    vi.mocked(existsSync).mockRestore();
+    vi.mocked(writeFileSync).mockRestore();
+    vi.mocked(execFile).mockRestore();
+  });
+
+  test('judges the tests by a run in the sandbox, not by the tail-cut transcript output', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({
+        'example-badge--accent': 'status-value:success',
+        'example-statuspill--active': 'status-value:success',
+      }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+
+    expect(execFile).toHaveBeenCalledWith(
+      'npx',
+      ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
+      expect.objectContaining({ cwd: '.' }),
+      expect.any(Function)
     );
   });
 
-  test('prefers a later real report over an earlier one', () => {
-    const failingReport = { output: '## Failing Stories\n\n### a--c', isError: false };
+  test('points vitest.config.ts back at the Storybook config for the run, then restores it', async () => {
+    const evalConfig = "export default defineConfig({ test: { include: ['EVAL.ts'] } });";
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const readRun = vi.mocked(readFileSync).getMockImplementation()!;
+    vi.mocked(readFileSync).mockImplementation(((path: unknown, ...rest: unknown[]) =>
+      String(path) === 'vitest.config.ts'
+        ? evalConfig
+        : (readRun as (...args: unknown[]) => unknown)(path, ...rest)) as typeof readFileSync);
+    vi.mocked(existsSync).mockImplementation(
+      (path) => path === 'vitest.storybook.config.ts' || path === 'vitest.config.ts'
+    );
+    const writes: string[] = [];
+    vi.mocked(writeFileSync).mockImplementation((_path, content) => {
+      writes.push(`${String(_path)}: ${String(content)}`);
+    });
+    const { runStoryTestsInSandbox } = await loadTestUtils();
 
-    expect(selectFinalRunStoryTestsReport([passingReport, failingReport])).toBe(failingReport);
+    await runStoryTestsInSandbox();
+
+    expect(writes).toEqual([
+      "vitest.config.ts: export { default } from './vitest.storybook.config.ts';\n",
+      `vitest.config.ts: ${evalConfig}`,
+    ]);
+    expect(vi.mocked(writeFileSync).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(execFile).mock.invocationCallOrder[0]!
+    );
   });
 
-  test('falls back to the raw last result when no output is recognizable', () => {
-    const errorResult = { output: 'Error: dev server unreachable', isError: true };
+  test('runs the sandbox tests once per project directory', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({ 'example-callout--default': 'status-value:success' }),
+    });
+    const { runStoryTestsInSandbox } = await loadTestUtils();
 
-    expect(selectFinalRunStoryTestsReport([errorResult])).toBe(errorResult);
-    expect(selectFinalRunStoryTestsReport([])).toBeUndefined();
+    await runStoryTestsInSandbox('packages/ui');
+    await runStoryTestsInSandbox('packages/ui');
+
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(execFile).toHaveBeenCalledWith(
+      'npx',
+      expect.any(Array),
+      expect.objectContaining({ cwd: 'packages/ui' }),
+      expect.any(Function)
+    );
+  });
+
+  test("fails when the agent's own last run was red, even if the sandbox run passes", async () => {
+    const lastRun = [
+      {
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'tool_use',
+              id: 'toolu_1',
+              name: 'Bash',
+              input: { command: 'npx storybook tools test run' },
+            },
+          ],
+        },
+      },
+      {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'toolu_1',
+              content: '## Failing Stories\n\n### example-button--primary',
+            },
+          ],
+        },
+      },
+    ];
+    givenRun({
+      commands: ['npx storybook tools test run'],
+      stdout: testRunDocument({ 'example-button--primary': 'status-value:success' }),
+      transcript: lastRun.map((event) => JSON.stringify(event)).join('\n'),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/agent's last test run/);
+  });
+
+  test('fails when the sandbox run reports a failing story', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({
+        'example-badge--accent': 'status-value:success',
+        'example-statuspill--active': 'status-value:error',
+      }),
+      exitCode: 1,
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/must not report failing stories/);
+  });
+
+  test('matches covering only against the passing story ids', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument(
+        { 'example-input--default': 'status-value:success' },
+        { 'example-input--default': [{ violations: [{ id: 'button-name' }] }] }
+      ),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed({ covering: ['button'] })).rejects.toThrow(
+      /must cover the changed component/
+    );
+  });
+
+  test('fails when the sandbox run prints no test-run document', async () => {
+    givenRun({ commands: [tailCutTestRun], stdout: 'Error: no Storybook found' });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/must complete/);
+  });
+
+  test('fails when the agent never ran the tests, even if they pass', async () => {
+    givenRun({
+      commands: ['npm run typecheck'],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/Expected test-run to be called/);
+  });
+
+  test('lets the agent skip the tests with requireAgentRun false, but still runs them in the sandbox', async () => {
+    givenRun({
+      commands: ['npm run typecheck'],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expectStoryTestsRanAndPassed({ requireAgentRun: false, covering: ['badge'] });
+
+    expect(execFile).toHaveBeenCalled();
   });
 });
 
@@ -433,162 +639,12 @@ describe('expectDevServerLeftRunning', () => {
   test('fails loud when integration is mcp', () => {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent: 'claude-code', integration: 'mcp', review: false });
+        return JSON.stringify({ agent: 'claude-code', integration: 'mcp' });
       }
       throw new Error(`Unexpected readFileSync path in fail-loud helper test: ${String(path)}`);
     }) as typeof readFileSync);
 
     expect(() => expectDevServerLeftRunning()).toThrow(/only for plugin.*integration=mcp/);
-  });
-});
-
-describe('expectPreviewOpenedInBrowser', () => {
-  function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
-    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
-      if (String(path) === '__agent_eval__/agent.json') {
-        return JSON.stringify({ agent: options.agent, integration: 'mcp', review: false });
-      }
-      if (String(path) === '__agent_eval__/transcript.txt') {
-        return options.transcript.join('\n');
-      }
-      throw new Error(`Unexpected readFileSync path in browser assertion test: ${String(path)}`);
-    }) as typeof readFileSync);
-  }
-
-  function claudeToolUseLine(name: string, input: Record<string, unknown>): string {
-    return JSON.stringify({
-      type: 'assistant',
-      message: { content: [{ type: 'tool_use', id: 'toolu_1', name, input }] },
-    });
-  }
-
-  function codexItemLine(item: Record<string, unknown>): string {
-    return JSON.stringify({ type: 'item.completed', item });
-  }
-
-  function codexGotoLine(url: string): string {
-    return codexItemLine({
-      type: 'mcp_tool_call',
-      server: 'node_repl',
-      tool: 'js',
-      status: 'completed',
-      error: null,
-      arguments: { code: `await tab.goto('${url}');` },
-    });
-  }
-
-  function codexStoriesPreviewLine(status: 'completed' | 'failed'): string {
-    return codexItemLine({
-      type: 'mcp_tool_call',
-      server: 'storybook',
-      tool: 'stories-preview',
-      arguments: {},
-      status,
-      error: status === 'failed' ? { message: 'No story found' } : null,
-    });
-  }
-
-  const claudeStoriesPreview = claudeToolUseLine('mcp__storybook-dev-mcp__stories-preview', {
-    stories: [{ storyId: 'button--primary' }],
-  });
-  const storyUrl = 'http://localhost:6006/?path=/story/button--primary';
-
-  beforeEach(() => {
-    vi.mocked(readFileSync).mockReset();
-  });
-
-  afterEach(() => {
-    vi.mocked(readFileSync).mockRestore();
-  });
-
-  test('passes on a Claude navigation to a story after the first stories-preview', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeStoriesPreview,
-        claudeToolUseLine('mcp__Browser__navigate', { url: storyUrl }),
-        claudeStoriesPreview,
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude browser_batch that navigates to a story', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeStoriesPreview,
-        claudeToolUseLine('mcp__Browser__browser_batch', {
-          actions: [
-            { name: 'navigate', input: { url: storyUrl } },
-            { name: 'computer', input: { action: 'screenshot' } },
-          ],
-        }),
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeStoriesPreview,
-        claudeToolUseLine('mcp__Browser__browser_batch', {
-          actions: [{ name: 'mcp__Browser__navigate', input: { url: storyUrl } }],
-        }),
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('ignores a navigation before stories-preview', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeToolUseLine('mcp__Browser__navigate', { url: storyUrl }),
-        claudeStoriesPreview,
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-  });
-
-  test('passes on a Codex goto of an iframe story preview', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [
-        codexStoriesPreviewLine('completed'),
-        codexGotoLine('http://127.0.0.1:6006/iframe.html?id=button--primary'),
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('ignores a failed Codex stories-preview', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [codexStoriesPreviewLine('failed'), codexGotoLine(storyUrl)],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).toThrow(/successful stories-preview/);
-  });
-
-  test.each([
-    ['the review page', 'http://localhost:6006/?path=/review/'],
-    ['the bare Storybook origin', 'http://localhost:6006/'],
-    ['the app dev server', 'http://localhost:3000/'],
-  ])('fails when the browser opened %s instead of a story', (_label, url) => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [codexStoriesPreviewLine('completed'), codexGotoLine(url)],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).toThrow(/a story preview on the local dev server/);
   });
 });
 
@@ -599,7 +655,7 @@ describe('expectReviewOpenedInBrowser', () => {
   function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent: options.agent, integration: 'plugin', review: true });
+        return JSON.stringify({ agent: options.agent, integration: 'plugin' });
       }
       if (String(path) === transcriptPath) {
         return options.transcript.join('\n');
@@ -673,6 +729,42 @@ describe('expectReviewOpenedInBrowser', () => {
 
   test('passes on a Claude navigate to the review page', () => {
     mockSandbox({ agent: 'claude-code', transcript: [claudeReviewCreate, claudeOpenReview] });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch that navigates to the review page', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            { name: 'navigate', input: { url: 'http://localhost:6006/?path=/review/' } },
+            { name: 'computer', input: { action: 'screenshot' } },
+          ],
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            {
+              name: 'mcp__Browser__navigate',
+              input: { url: 'http://localhost:6006/?path=/review/' },
+            },
+          ],
+        }),
+      ],
+    });
 
     expect(() => expectReviewOpenedInBrowser()).not.toThrow();
   });

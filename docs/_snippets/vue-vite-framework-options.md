@@ -1,5 +1,8 @@
 ```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 3"
 export default {
+  features: {
+    docgenServer: false,
+  },
   framework: {
     name: '@storybook/vue3-vite',
     options: {
@@ -13,6 +16,9 @@ export default {
 import type { StorybookConfig } from '@storybook/vue3-vite';
 
 const config: StorybookConfig = {
+  features: {
+    docgenServer: false,
+  },
   framework: {
     name: '@storybook/vue3-vite',
     options: {
@@ -28,6 +34,9 @@ export default config;
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
+  features: {
+    docgenServer: false,
+  },
   framework: {
     name: '@storybook/vue3-vite',
     options: {
@@ -43,6 +52,9 @@ export default defineMain({
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
+  features: {
+    docgenServer: false,
+  },
   framework: {
     name: '@storybook/vue3-vite',
     options: {

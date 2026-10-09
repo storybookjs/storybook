@@ -22,7 +22,7 @@ export function initAIAnalyticsChannel(
   options: Options,
   getStoryIndexGeneratorPromise?: () => Promise<StoryIndexGenerator> | undefined
 ) {
-  /** Send analytics about the ai setup workflow when requested*/
+  /** Send analytics about the `skills setup` workflow when requested*/
   channel.on(AI_SETUP_ANALYTICS_REQUEST, async () => {
     const stats: {
       fileCount?: number;
@@ -38,12 +38,12 @@ export function initAIAnalyticsChannel(
       const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
       runId = await getAiSetupRunId(options.configDir);
 
-      // Only run if sb ai setup has been called
+      // Only run if `storybook skills setup` has been called
       if (!lastAISetup) {
         return;
       }
 
-      // Already ran once for this project and `ai setup` session — never run again
+      // Already ran once for this project and `skills setup` session — never run again
       if (
         lastSetupStoryScoringRun &&
         lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId

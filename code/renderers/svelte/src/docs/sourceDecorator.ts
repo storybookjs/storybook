@@ -37,15 +37,6 @@ const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
-/**
- * Transform a key/value to a svelte declaration as string.
- *
- * Default values are ommited
- *
- * @param key Key
- * @param value Value
- * @param argTypes Component ArgTypes
- */
 function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string | null {
   if (value === undefined || value === null) {
     return null;
@@ -53,12 +44,6 @@ function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string |
 
   const argType = argTypes[key];
 
-  // default value ?
-  if (argType && argType.defaultValue === value) {
-    return null;
-  }
-
-  // event should be skipped
   if (argType && argType.action) {
     return null;
   }

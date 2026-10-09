@@ -19,27 +19,25 @@ function previewReviewNudge(ctx: ToolsetCtx): string {
   return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
 }
 
-const PREVIEW_BROWSER_NUDGE =
-  "Open the preview URL that best shows the result in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.";
+export function previewInstructions(
+  stories: PreviewStoriesOutput['stories'],
+  ctx: ToolsetCtx
+): string | undefined {
+  // An all-error result has nothing to curate or open, so the nudge only applies once a URL resolved.
+  if (!stories.some((story) => 'previewUrl' in story)) {
+    return undefined;
+  }
+  return previewReviewNudge(ctx);
+}
 
 /**
  * Splits a preview result into the text blocks a consumer shows.
  *
  * MCP renders one block per URL; the CLI adapter joins the blocks into one document.
  */
-export function formatPreviewStories(
-  { stories }: PreviewStoriesOutput,
-  ctx: ToolsetCtx,
-  { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
-): string[] {
+export function formatPreviewStories({ stories, instructions }: PreviewStoriesOutput): string[] {
   const blocks = stories.map((story) => ('error' in story ? story.error : story.previewUrl));
-
-  // An all-error result has nothing to curate or open, so the nudges only apply once a URL resolved.
-  if (stories.some((story) => 'previewUrl' in story)) {
-    blocks.push(reviewEnabled ? previewReviewNudge(ctx) : PREVIEW_BROWSER_NUDGE);
-  }
-
-  return blocks;
+  return instructions ? [...blocks, instructions] : blocks;
 }
 
 const BANNER_INLINE_LIMIT = 3;
@@ -85,8 +83,7 @@ function formatPartialCoverageHint(unreachable: string[], ctx: ToolsetCtx): stri
 
 export function formatChangedStories(
   { stories, counts, unreachableFiles }: ChangedStoriesOutput,
-  ctx: ToolsetCtx,
-  { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
+  ctx: ToolsetCtx
 ): string {
   if (stories.length === 0) {
     return `No new, modified, or related stories detected.${formatUnreachableHint(unreachableFiles, ctx)}`;
@@ -102,9 +99,7 @@ export function formatChangedStories(
 
   // Front-loaded like the banner: host-side output caps can cut the tail of a long story list, and
   // this next step is what keeps agents from ending visual work at preview URLs.
-  if (reviewEnabled) {
-    text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
-  }
+  text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
 
   const serializeStory = ({
     storyId,

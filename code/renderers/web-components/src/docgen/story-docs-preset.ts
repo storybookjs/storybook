@@ -1,9 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
-import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { getService } from 'storybook/internal/core-server';
+import { createWorkerGatedStoryDocsProvider, getService } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
-import type { DocgenProviderDescriptor, StoryDocsProviderPreset } from 'storybook/internal/types';
 
 import type { WebComponentsDocgenPayload } from './component-docgen/build-docgen.ts';
 import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
@@ -30,43 +28,8 @@ const getDocgenPayload = async (
   }
 };
 
-export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
-  nextStoryDocs,
-  options
-) => {
-  const descriptors = await options.presets.apply<DocgenProviderDescriptor[]>(
-    'experimental_docgenProvider',
-    []
-  );
-  const worker = fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER));
-  const active = descriptors.some((descriptor) => descriptor.moduleSpecifier === worker);
-
-  if (!active) {
-    return nextStoryDocs;
-  }
-
-  return async (input) => {
-    const storyImportPath = getStoryImportPathFromEntry(input.entry);
-    if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
-      return nextStoryDocs(input);
-    }
-
-    let ours;
-    try {
-      ours = await buildStoryDocsPayload(input, { getDocgenPayload });
-    } catch (error) {
-      logger.debug(
-        `Web Components story snippets are unavailable for ${storyImportPath}: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-      return nextStoryDocs(input);
-    }
-
-    if (!ours) {
-      return nextStoryDocs(input);
-    }
-    const downstream = await nextStoryDocs(input);
-    return { ...downstream, ...ours };
-  };
-};
+export const experimental_storyDocsProvider = createWorkerGatedStoryDocsProvider({
+  label: 'Web Components',
+  docgenWorker: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
+  build: (input) => buildStoryDocsPayload(input, { getDocgenPayload }),
+});

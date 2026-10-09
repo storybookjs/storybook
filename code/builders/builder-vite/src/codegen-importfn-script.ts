@@ -36,11 +36,23 @@ export function generateImportFnScriptCode(index: StoryIndex): string {
     }
   );
 
+  // Safari resolves a second import() of a module that is still in its top-level await at once,
+  // with the exports of the module undefined: https://bugs.webkit.org/show_bug.cgi?id=242740. So
+  // the import of a story file that is still loading is shared.
   return dedent`
     const importers = ${genObjectFromRawEntries(objectEntries)};
 
+    const loading = new Map();
+
     export async function importFn(path) {
-      return await importers[path]();
+      let loaded = loading.get(path);
+      if (!loaded) {
+        loaded = importers[path]();
+        loading.set(path, loaded);
+        const done = () => loading.delete(path);
+        loaded.then(done, done);
+      }
+      return await loaded;
     }
   `;
 }

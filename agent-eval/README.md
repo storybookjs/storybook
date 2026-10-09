@@ -37,7 +37,7 @@ yarn eval:dry
 
 ### Run Experiments
 
-Run all configured experiments:
+Run the default experiments:
 
 ```bash
 yarn eval
@@ -65,18 +65,20 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_ALL=1` run (12 workflow evals × 4 experiments + 4
-lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
-tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
-lifecycle eval). The budget guardrail is **$75 per full run** — check the
+A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
+lifecycle evals × 2 plugin experiments) costs roughly **$6** in agent
+tokens at the averages measured in October 2026 (under $0.01 per eval on Haiku 5.5 low, and about
+$0.05–0.17 per eval on GPT-6.1-Sol low and the medium MCP experiments). The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
 The 9xx evals are a trimmed MCP-only set for shapes the 8xx line does not
 cover (async mocks, story drift, tool params, preview-by-path/id, vitest CLI).
 They never run on the default `next` matrix; under `EVAL_STORYBOOK_LATEST=1`
-they become the active line (default smoke: `908-run-story-tests`). See
-`lib/experiment.ts`. Twins of 8xx scenarios were removed.
+they become the active line (default smoke: `908-run-story-tests`), and
+`EVAL_ONLY` accepts only 9xx names: the 8xx and 82x evals assert the current
+workflow, which the stable release does not have. See `lib/experiment.ts`.
+Twins of 8xx scenarios were removed.
 
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
 effort explicitly, so a CLI default change cannot silently change what runs.
@@ -122,21 +124,21 @@ the documentation tooling) regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
-Review mode follows the installed Storybook. On the checkout, review is
-available on every surface, so the plugin and MCP experiments both run — and
-assert — the review workflow (review-create published, review section in the
-final response). The stable release that `EVAL_STORYBOOK_LATEST=1` installs
-offers review to the plugins only, so MCP experiments run review-off there
-(stories-preview links, no review-create) until Storybook 11 is `latest`.
-
 Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
-- `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`.
 - `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
-- `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+- `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+
+These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Four more plugin experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
+
+- `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
+- `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
+- `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
+- `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort). Its Codex system prompt says not to run tests unless asked, so evals do not require it to run the story tests itself.
 
 ## Running evals in CI
 

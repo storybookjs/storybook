@@ -198,9 +198,9 @@ describe('web-components legacy baselines', () => {
   });
 });
 
-describe('web-components default render with experimentalDocgenServer', () => {
+describe('web-components default render with docgenServer', () => {
   beforeEach(() => {
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
   });
 
   it.each(fixtureCases)('%s', async (fixtureCase) => {

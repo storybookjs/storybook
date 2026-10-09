@@ -393,7 +393,7 @@ describe('ghostStoriesChannel', () => {
 
       it('should run discovery again when ghost stories ran but ai-setup scoring runId is from an older session', async () => {
         mockChannel.addListener(GHOST_STORIES_RESPONSE, ghostStoriesEventListener);
-        // Ghost stories has run before, but a new `ai setup` session has started
+        // Ghost stories has run before, but a new `skills setup` session has started
         // (scoring runId is from session-A, ai-setup runId is now session-B)
         vi.mocked(mockTelemetry.getLastEvents).mockResolvedValue({
           'ghost-stories': { timestamp: Date.now(), body: {} },

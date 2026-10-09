@@ -210,7 +210,8 @@ describe('shortcut', () => {
       expect(keyToSymbol('Enter')).toBe('');
       expect(keyToSymbol('Backspace')).toBe('');
       expect(keyToSymbol('Esc')).toBe('');
-      expect(keyToSymbol('escape')).toBe('');
+      // 'escape' falls through to the uppercase default; nothing binds it as a shortcut anymore.
+      expect(keyToSymbol('escape')).toBe('ESCAPE');
       expect(keyToSymbol(' ')).toBe('SPACE');
       expect(keyToSymbol('ArrowUp')).toBe('↑');
       expect(keyToSymbol('ArrowDown')).toBe('↓');

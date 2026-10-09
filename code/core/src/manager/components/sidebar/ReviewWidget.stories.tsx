@@ -153,13 +153,7 @@ const meta = {
       return (
         <MemoryRouter initialEntries={['/']}>
           <ManagerContext.Provider value={makeManagerContext(options)}>
-            {/* withReviewProvider: false models the review feature being disabled:
-                no provider is mounted and consumers see the context default. */}
-            {parameters?.withReviewProvider === false ? (
-              content
-            ) : (
-              <ReviewProvider>{content}</ReviewProvider>
-            )}
+            <ReviewProvider>{content}</ReviewProvider>
           </ManagerContext.Provider>
         </MemoryRouter>
       );
@@ -289,25 +283,6 @@ export const DismissReview: Story = {
     await waitFor(() => expect(canvas.queryByText('Quick review')).toBeNull());
     // A tab that never entered the review stays where it is.
     await expect(canvas.getByTestId('router-path')).toHaveTextContent('/');
-  },
-};
-
-export const FeatureOffRendersNothing: Story = {
-  parameters: {
-    withReviewProvider: false,
-    contextOptions: {
-      storyIds: ['s1'],
-    },
-  },
-  beforeEach: async () => {
-    eventListeners.clear();
-    // Even with an active review in the service, no provider means consumers
-    // read the context default: the widget renders nothing.
-    await reviewService.commands.setReview(buildReviewPayload('Hidden review', ['s1']));
-    return setReviewingStatuses(['s1']);
-  },
-  play: async ({ canvas }) => {
-    await expect(canvas.queryByText('Quick review')).toBeNull();
   },
 };
 

@@ -634,7 +634,7 @@ describe('module-graph open service', () => {
     it('returns serialized change-detection readiness from the injected getter', async () => {
       const getChangeDetectionReadiness = vi.fn(async () => ({
         status: 'unavailable' as const,
-        reason: 'disabled',
+        reason: 'not a git repository',
       }));
 
       const runtime = registerModuleGraphService({
@@ -646,11 +646,11 @@ describe('module-graph open service', () => {
 
       await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
         status: 'unavailable',
-        reason: 'disabled',
+        reason: 'not a git repository',
       });
       expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
         status: 'unavailable',
-        reason: 'disabled',
+        reason: 'not a git repository',
       });
       expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
     });

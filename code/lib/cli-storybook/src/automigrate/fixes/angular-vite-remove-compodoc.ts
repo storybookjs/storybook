@@ -10,14 +10,11 @@ import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import { countReferences, removeTopLevelCall } from '../helpers/preview-call.ts';
+import { findWorkspaceFiles, readJsonFile } from '../helpers/workspace-files.ts';
 import type { FixTransform } from '../pipeline.ts';
 import type { Fix } from '../types.ts';
-import {
-  findWorkspaceFiles,
-  findWorkspaceJsonFiles,
-  getTargetGroups,
-  readJsonFile,
-} from './angular-workspace.ts';
+import { findWorkspaceJsonFiles, getTargetGroups } from './angular-workspace.ts';
 
 const COMPODOC_PACKAGE = '@compodoc/compodoc';
 const SET_COMPODOC_JSON = 'setCompodocJson';
@@ -235,8 +232,10 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       return null;
     }
 
-    // An explicit opt-out means the user still runs Compodoc, so their setup has to stay.
-    if (mainConfig.features?.experimentalDocgenServer === false) {
+    // Checks run before `docgen-server` renames the flag, so an unmigrated config still has it.
+    const features: { docgenServer?: boolean; experimentalDocgenServer?: boolean } =
+      mainConfig.features ?? {};
+    if ((features.docgenServer ?? features.experimentalDocgenServer) === false) {
       return null;
     }
 
@@ -405,93 +404,27 @@ const removeCompodocOverrides = async (
   }
 };
 
-const manualRemovalHint = (previewConfigPath: string, reason: string) =>
+const manualRemovalHint = (previewConfigPath: string, reason: string): void =>
   logger.warn(
     `Left the Compodoc wiring in ${previewConfigPath} alone: ${reason}. ` +
       `Compodoc has no effect anymore, so remove what is left there by hand when convenient: ` +
       `a documentation.json import on its own still ships in your bundle.`
   );
 
-const countReferences = (program: t.Program, name: string): number => {
-  let references = 0;
-  traverse(t.file(program), {
-    Identifier(path) {
-      if (path.node.name !== name || path.parentPath?.isImportDefaultSpecifier()) {
-        return;
-      }
-      if (path.isReferencedIdentifier()) {
-        references += 1;
-      }
-    },
-  });
-  return references;
-};
-
-/**
- * Strips the top-level `setCompodocJson` call and the imports that exist only to feed it.
- *
- * Real previews wrap the call in a helper or pre-process the JSON before handing it over
- * (`vmware-clarity/ng-clarity` does both). Rewriting those safely is not worth the risk, so
- * anything that is not a plain top-level call is reported and left untouched. Imports survive
- * while any other code still reads them.
- */
 const removePreviewWiring = (preview: ConfigFile, previewConfigPath: string): void => {
-  const program = preview._ast.program;
-
-  const callsToDrop = program.body.filter(
-    (node) =>
-      t.isExpressionStatement(node) &&
-      t.isCallExpression(node.expression) &&
-      t.isIdentifier(node.expression.callee, { name: SET_COMPODOC_JSON })
-  );
-
-  if (callsToDrop.length === 0) {
+  const reason = removeTopLevelCall(preview._ast.program, {
+    callee: SET_COMPODOC_JSON,
+    calleeSources: new Set([ADDON_DOCS_ANGULAR]),
+  });
+  if (reason) {
     manualRemovalHint(
       previewConfigPath,
-      countReferences(program, SET_COMPODOC_JSON) > 0
-        ? `${SET_COMPODOC_JSON} is not called at the top level`
+      countReferences(preview._ast.program, SET_COMPODOC_JSON) > 0
+        ? reason
         : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
     );
     return;
   }
 
-  const withoutCalls = t.program(program.body.filter((node) => !callsToDrop.includes(node)));
-  if (countReferences(withoutCalls, SET_COMPODOC_JSON) > 0) {
-    manualRemovalHint(previewConfigPath, `${SET_COMPODOC_JSON} is still used elsewhere`);
-    return;
-  }
-
-  const droppableImportNames = new Set(
-    callsToDrop.flatMap((node) => {
-      const [argument] = ((node as t.ExpressionStatement).expression as t.CallExpression).arguments;
-      return t.isIdentifier(argument) && countReferences(withoutCalls, argument.name) === 0
-        ? [argument.name]
-        : [];
-    })
-  );
-
-  const isDroppableSpecifier = (
-    declaration: t.ImportDeclaration,
-    specifier: t.ImportDeclaration['specifiers'][number]
-  ) =>
-    declaration.source.value === ADDON_DOCS_ANGULAR
-      ? specifier.local.name === SET_COMPODOC_JSON
-      : droppableImportNames.has(specifier.local.name);
-
-  const remaining: t.Statement[] = [];
-  for (const node of withoutCalls.body) {
-    // A declaration without specifiers is imported for its side effects, so it stays as it is.
-    if (t.isImportDeclaration(node) && node.specifiers.length > 0) {
-      node.specifiers = node.specifiers.filter(
-        (specifier) => !isDroppableSpecifier(node, specifier)
-      );
-      if (node.specifiers.length === 0) {
-        continue;
-      }
-    }
-    remaining.push(node);
-  }
-
-  program.body = remaining;
   logger.debug(`Removed the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`);
 };

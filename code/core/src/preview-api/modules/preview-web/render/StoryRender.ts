@@ -84,7 +84,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     public channel: Channel,
     public store: StoryStore<TRenderer>,
     private renderToScreen: RenderToCanvas<TRenderer>,
-    private callbacks: RenderContextCallbacks<TRenderer> & { showStoryDuringRender?: () => void },
+    private callbacks: RenderContextCallbacks<TRenderer> & {
+      showStoryDuringRender?: () => void;
+    },
     public id: StoryId,
     public viewMode: StoryContext<TRenderer>['viewMode'],
     public renderOptions: StoryRenderOptions = { autoplay: true, forceInitialArgs: false },
@@ -272,10 +274,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       const renderContext: RenderContext<TRenderer> = {
         componentId,
         title,
-        kind: title,
         id,
         name,
-        story: name,
         tags,
         ...this.callbacks,
         showError: (error) => {

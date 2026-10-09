@@ -17,7 +17,6 @@ import type {
   StoryContextForRender as StoryContextForFramework,
   StoryFn as StoryFnForFramework,
   StoryId,
-  StoryKind,
   StoryName,
 } from './csf.ts';
 import type { IndexEntry } from './indexer.ts';
@@ -121,7 +120,6 @@ export type Addon_MakeDecoratorResult = (...args: any) => any;
 
 export interface Addon_AddStoryArgs<StoryFnReturnType = unknown> {
   id: StoryId;
-  kind: StoryKind;
   name: StoryName;
   storyFn: Addon_StoryFn<StoryFnReturnType>;
   parameters: Parameters;
@@ -140,7 +138,6 @@ export type Addon_ClientApiReturnFn<StoryFnReturnType = unknown> = (
 ) => Addon_StoryApi<StoryFnReturnType>;
 
 export interface Addon_StoryApi<StoryFnReturnType = unknown> {
-  kind: StoryKind;
   add: (
     storyName: StoryName,
     storyFn: Addon_StoryFn<StoryFnReturnType>,

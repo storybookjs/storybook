@@ -7,7 +7,6 @@ import type {
   Globals,
   Parameters,
   StoryId,
-  StoryKind,
 } from './csf.ts';
 
 // The data received on the (legacy) `setStories` event
@@ -16,7 +15,6 @@ export interface SetStoriesStory {
   name: string;
   refId?: string;
   componentId?: ComponentId;
-  kind: StoryKind;
   parameters: {
     fileName: string;
     options: {

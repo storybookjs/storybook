@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react';
 import React, { PureComponent } from 'react';
 
-import type { ComponentTitle, StoryKind, StoryName } from 'storybook/internal/types';
+import type { ComponentTitle, StoryName } from 'storybook/internal/types';
 
 import { hrefTo, navigate } from '../../utils.ts';
 
@@ -22,7 +22,7 @@ const cancelled = (e: MouseEvent<HTMLAnchorElement>, cb = (_e: any) => {}) => {
 };
 
 interface Props {
-  kind?: StoryKind;
+  kind?: ComponentTitle;
   title?: ComponentTitle;
   story?: StoryName;
   name?: StoryName;

@@ -5,8 +5,6 @@ import type {
   API_RefStoryRuntimeData,
   API_Refs,
   API_SetRefData,
-  API_StoryMapper,
-  SetStoriesStoryData,
   StoryIndex,
 } from 'storybook/internal/types';
 
@@ -14,10 +12,7 @@ import { global } from '@storybook/global';
 
 import { dedent } from 'ts-dedent';
 
-import {
-  transformSetStoriesStoryDataToPreparedStoryIndex,
-  transformStoryIndexToStoriesHash,
-} from '../lib/stories.ts';
+import { transformStoryIndexToStoriesHash } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 
 const { location, fetch } = global;
@@ -92,10 +87,6 @@ export const getSourceType = (source: string, refId?: string) => {
     return ['external', sourceFull];
   }
   return [null, null];
-};
-
-export const defaultStoryMapper: API_StoryMapper = (b: any, a: any) => {
-  return { ...a, kind: a.kind.replace('|', '/') };
 };
 
 const addRefIds = (input: API_IndexHash, ref: API_ComposedRef): API_IndexHash => {
@@ -183,20 +174,6 @@ const parseUrl = (url: string): UrlParseResult => {
     url: cleanUrl,
     authorization,
   };
-};
-
-const map = (
-  input: SetStoriesStoryData,
-  ref: API_ComposedRef,
-  options: { storyMapper?: API_StoryMapper }
-): SetStoriesStoryData => {
-  const { storyMapper } = options;
-  if (storyMapper) {
-    return Object.entries(input).reduce((acc, [id, item]) => {
-      return { ...acc, [id]: storyMapper(ref, item) };
-    }, {} as SetStoriesStoryData);
-  }
-  return input;
 };
 
 export const init: ModuleFn<SubAPI, SubState> = (
@@ -333,15 +310,10 @@ export const init: ModuleFn<SubAPI, SubState> = (
       let index: API_IndexHash | undefined;
       let filteredIndex: API_IndexHash | undefined;
       const { filters } = store.getState();
-      const { storyMapper = defaultStoryMapper } = provider.getConfig();
       const ref = api.getRefs()[id];
 
       if (storyIndex || setStoriesData) {
-        internal_index = setStoriesData
-          ? transformSetStoriesStoryDataToPreparedStoryIndex(
-              map(setStoriesData, ref, { storyMapper })
-            )
-          : storyIndex;
+        internal_index = storyIndex;
 
         // @ts-expect-error (could be undefined)
         filteredIndex = transformStoryIndexToStoriesHash(storyIndex, {

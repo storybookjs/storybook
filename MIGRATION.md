@@ -807,6 +807,24 @@ export const Primary: Story = {
 
 Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
 
+### Deprecated CSF and manager type aliases removed
+
+Six deprecated type aliases from earlier Storybook versions are removed. If your code imports any of them from `storybook` (via `storybook/internal/csf`, `storybook/internal/types`, or `storybook/manager-api`), switch to the supported replacement:
+
+| Deprecated              | Replacement             |
+| ----------------------- | ----------------------- |
+| `StoryKind`             | `ComponentTitle`        |
+| `StoryIdentifier.kind`  | `StoryIdentifier.title` |
+| `StoryIdentifier.story` | `StoryIdentifier.name`  |
+| `AnyFramework`          | `Renderer`              |
+| `StoryContextForLoaders`  | `StoryContext`          |
+| `PlayFunctionContext`     | `StoryContext`          |
+| `StoriesHash`             | `IndexHash`             |
+
+Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`.
+
+The manager no longer accepts the pre-Storybook 3 wire format either: `SELECT_STORY` payloads are resolved from `storyId` or `title`/`name` only, and composed refs must publish a story index (`stories.json`) instead of a legacy `setStories` payload.
+
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.

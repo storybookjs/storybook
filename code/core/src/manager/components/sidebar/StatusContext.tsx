@@ -7,13 +7,13 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import type { StoriesHash } from 'storybook/manager-api';
+import type { IndexHash } from 'storybook/manager-api';
 
 import type { Item } from '../../container/Sidebar.tsx';
 import { getDescendantIds } from '../../utils/tree.ts';
 
 export const StatusContext = createContext<{
-  data?: StoriesHash;
+  data?: IndexHash;
   allStatuses?: StatusesByStoryIdAndTypeId;
   groupStatus?: Record<StoryId, StatusValue>;
 }>({});

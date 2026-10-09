@@ -42,7 +42,6 @@ import type {
   StatusValue,
   StoryId,
   StoryIndex,
-  StoryKind,
   StoryName,
   StoryPreparedPayload,
   Tag,
@@ -1263,16 +1262,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     function handler(
       this: any,
       {
-        kind,
-        title = kind,
-        story,
-        name = story,
+        title,
+        name,
         storyId,
         ...rest
       }: {
-        kind?: StoryKind;
         title?: ComponentTitle;
-        story?: StoryName;
         name?: StoryName;
         storyId: string;
         viewMode: API_ViewMode;

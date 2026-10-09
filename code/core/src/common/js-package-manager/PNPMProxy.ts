@@ -60,8 +60,6 @@ const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
 
-  addArgs: string[] | undefined;
-
   /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
   #pnpmVersion: string | null | undefined;
 
@@ -114,15 +112,12 @@ export class PNPMProxy extends JsPackageManager {
     return version != null && gte(version, minimum);
   }
 
-  getAddArgs(): string[] {
-    if (!this.addArgs) {
-      this.addArgs = [];
-
-      if (this.detectWorkspaceRoot()) {
-        this.addArgs.push('-w');
-      }
-    }
-    return this.addArgs;
+  /**
+   * `pnpm add` at a workspace root needs `-w` (pnpm 8 and 9 reject it otherwise), but `pnpm install
+   * -w` skips every other workspace project from pnpm 9 on.
+   */
+  getInstallArgs(command: 'install' | 'add'): string[] {
+    return command === 'add' && this.detectWorkspaceRoot() ? ['-w'] : [];
   }
 
   getPackageCommand(args: string[]): string {
@@ -371,7 +366,7 @@ export class PNPMProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...(options?.force ? ['--force'] : [])],
+      args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
@@ -506,7 +501,7 @@ export class PNPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    const commandArgs = ['add', ...args, ...this.getAddArgs()];
+    const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
     return executeCommand({
       command: 'pnpm',

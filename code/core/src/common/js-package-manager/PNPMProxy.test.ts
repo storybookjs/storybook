@@ -199,6 +199,20 @@ describe('PNPM Proxy', () => {
         })
       );
     });
+
+    it('adds to the root project from the workspace root', async () => {
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '9.15.9' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['add', '-D', 'storybook', '-w'],
+        })
+      );
+    });
   });
 
   describe('removeDependencies', () => {

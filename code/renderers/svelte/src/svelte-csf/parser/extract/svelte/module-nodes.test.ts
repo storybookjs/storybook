@@ -153,8 +153,7 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
       callee: { name: 'defineMeta' },
     });
-    expect(nodes.storyIdentifier).toBeDefined();
-    expect(nodes.storyIdentifier.name).toBe('Story');
+    expect(nodes.storyNames).toEqual(['Story']);
   });
 
   it('extracts module nodes with renamed identifiers', async ({ expect }) => {
@@ -173,7 +172,7 @@ describe(extractModuleNodes.name, () => {
       callee: { name: 'dm' },
     });
     expect(nodes.defineMetaVariableDeclaration).toBeDefined();
-    expect(nodes.storyIdentifier.name).toBe('S');
+    expect(nodes.storyNames).toEqual(['S']);
   });
 
   it.for(SVELTE_CSF_IMPORT_SOURCES)(
@@ -290,7 +289,7 @@ describe(extractModuleNodes.name, () => {
 
       expect(nodes.isFactory).toBe(true);
       expect(nodes.metaIdentifier).toBeUndefined();
-      expect(nodes.storyIdentifier.name).toBe('Story');
+      expect(nodes.storyNames).toEqual(['Story']);
     });
 
     it('extracts the nodes of a meta variable', async ({ expect }) => {
@@ -308,7 +307,60 @@ describe(extractModuleNodes.name, () => {
 
       expect(nodes.isFactory).toBe(true);
       expect(nodes.metaIdentifier?.name).toBe('meta');
-      expect(nodes.storyIdentifier.name).toBe('S');
+      expect(nodes.storyNames).toEqual(['S']);
+    });
+
+    it('extracts the Story components of meta.type<>()', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module lang="ts">
+            import preview from '#.storybook/preview';
+            const meta = preview.meta({});
+            const { Story } = meta;
+            const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+            const { Story: SizeStory } = meta
+              .type<{ args: { icon: string } }>()
+              .type<{ args: { size: number } }>();
+            const { Story: OtherStory } = other.type<{ args: { icon: string } }>();
+          </script>
+        `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.storyNames).toEqual(['Story', 'IconStory', 'SizeStory']);
+    });
+
+    it('extracts the nodes of preview.type<>().meta()', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module lang="ts">
+            import preview from '#.storybook/preview';
+            const { Story } = preview.type<{ args: { theme: string } }>().meta({});
+          </script>
+        `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.isFactory).toBe(true);
+      expect(nodes.storyNames).toEqual(['Story']);
+    });
+
+    it('extracts a Story component of meta.type<>() alone', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module lang="ts">
+            import preview from '#.storybook/preview';
+            const meta = preview.meta({});
+            const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+          </script>
+        `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.storyNames).toEqual(['IconStory']);
     });
 
     it('fails when Story is not destructured from the meta', async ({ expect }) => {
@@ -420,7 +472,7 @@ describe(extractModuleNodes.name, () => {
 
       const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.storyIdentifier.name).toBe('Story');
+      expect(nodes.storyNames).toEqual(['Story']);
     });
   });
 });

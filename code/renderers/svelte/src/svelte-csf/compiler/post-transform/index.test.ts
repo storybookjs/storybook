@@ -486,11 +486,187 @@ describe('CSF factories', () => {
       <Story name="Primary" args={{ label: 'Primary', theme: 'dark' }} />
     `);
 
-    expect(output).toContain(dedent`
+    expect(output).toMatchInlineSnapshot(`
+      "import 'svelte/internal/disclose-version';
+      import 'svelte/internal/flags/legacy';
+
+      Button_stories[$.FILENAME] = 'Button.stories.svelte';
+
+      import preview from '#.storybook/preview';
+      import Button from './Button.svelte';
+      import * as $ from 'svelte/internal/client';
+
       const $__meta = preview.type().meta({ component: Button });
       const { Story } = $__meta;
+
+      function Button_stories($$anchor, $$props) {
+      	$.check_target(new.target);
+      	$.push($$props, false, Button_stories);
+
+      	var $$exports = { ...$.legacy_api() };
+
+      	$.init();
+
+      	$.add_svelte_meta(
+      		() => Story($$anchor, {
+      			name: 'Primary',
+      			args: { label: 'Primary', theme: 'dark' },
+      			parameters: {
+      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      			}
+      		}),
+      		'component',
+      		Button_stories,
+      		8,
+      		0,
+      		{ componentTag: 'Story' }
+      	);
+
+      	return $.pop($$exports);
+      }
+      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+
+      const $__stories = createRuntimeStories(Button_stories, $__meta.input);
+
+      export const __namedExportsOrder = ["Primary"];
+
+      const $__Primary = $__meta.story({
+      	...$__stories["Primary"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export { $__Primary as Primary };"
     `);
-    expect(output).toContain('const $__Primary = $__meta.story({');
+  });
+
+  it('creates the stories of the Story components from meta.type<>()', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module lang="ts">
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const meta = preview.meta({ component: Button });
+        const { Story } = meta;
+        const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary' }} />
+
+      <IconStory name="Icon" args={{ label: 'Icon', icon: 'star' }}>
+        {#snippet template({ icon, ...args })}
+          <Button {...args} label={icon} />
+        {/snippet}
+      </IconStory>
+    `);
+
+    expect(output).toMatchInlineSnapshot(`
+      "import 'svelte/internal/disclose-version';
+      import 'svelte/internal/flags/legacy';
+
+      Button_stories[$.FILENAME] = 'Button.stories.svelte';
+
+      import preview from '#.storybook/preview';
+      import Button from './Button.svelte';
+      import * as $ from 'svelte/internal/client';
+
+      const meta = preview.meta({ component: Button });
+      const { Story } = meta;
+      const { Story: IconStory } = meta.type();
+      var root = $.add_locations($.from_html(\`<!> <!>\`, 1), Button_stories[$.FILENAME], []);
+
+      function Button_stories($$anchor, $$props) {
+      	$.check_target(new.target);
+      	$.push($$props, false, Button_stories);
+
+      	var $$exports = { ...$.legacy_api() };
+
+      	$.init();
+
+      	var fragment = root();
+      	var node = $.first_child(fragment);
+
+      	$.add_svelte_meta(
+      		() => Story(node, {
+      			name: 'Primary',
+      			args: { label: 'Primary' },
+      			parameters: {
+      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      			}
+      		}),
+      		'component',
+      		Button_stories,
+      		10,
+      		0,
+      		{ componentTag: 'Story' }
+      	);
+
+      	var node_1 = $.sibling(node, 2);
+
+      	{
+      		const template = $.wrap_snippet(Button_stories, function ($$anchor, $$arg0) {
+      			$.validate_snippet_args(...arguments);
+
+      			let icon = () => $$arg0?.().icon;
+
+      			icon();
+
+      			let args = () => $.exclude_from_object($$arg0?.(), ['icon']);
+
+      			args();
+
+      			$.add_svelte_meta(
+      				() => Button($$anchor, $.spread_props(args, {
+      					get label() {
+      						return icon();
+      					}
+      				})),
+      				'component',
+      				Button_stories,
+      				14,
+      				4,
+      				{ componentTag: 'Button' }
+      			);
+      		});
+
+      		$.add_svelte_meta(
+      			() => IconStory(node_1, {
+      				name: 'Icon',
+      				args: { label: 'Icon', icon: 'star' },
+      				template,
+      				$$slots: { template: true },
+      				parameters: {
+      					__svelteCsf: { rawCode: "<Button {...args} label={icon} />" }
+      				}
+      			}),
+      			'component',
+      			Button_stories,
+      			12,
+      			0,
+      			{ componentTag: 'IconStory' }
+      		);
+      	}
+
+      	$.append($$anchor, fragment);
+      	return $.pop($$exports);
+      }
+      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+
+      const $__stories = createRuntimeStories(Button_stories, meta.input);
+
+      export const __namedExportsOrder = ["Primary", "Icon"];
+
+      const $__Primary = meta.story({
+      	...$__stories["Primary"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      const $__Icon = meta.story({
+      	...$__stories["Icon"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export { $__Primary as Primary, $__Icon as Icon };"
+    `);
   });
 
   it('uses the meta variable of the file', async ({ expect }) => {

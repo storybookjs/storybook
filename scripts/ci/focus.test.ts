@@ -52,8 +52,10 @@ describe('selectFocusSandbox', () => {
 });
 
 describe('selectChromaticSiblings', () => {
-  it('selects every other React template with a Chromatic build in the PR workflow', () => {
-    expect(selectChromaticSiblings('react-vite/default-ts')).toEqual([
+  it('selects every other React Chromatic template when the React renderer changed', () => {
+    expect(
+      selectChromaticSiblings('react-vite/default-ts', ['code/renderers/react/src/render.ts'])
+    ).toEqual([
       'nextjs/default-ts',
       'nextjs-vite/default-ts',
       'bench/react-vite-default-ts-test-build',
@@ -64,24 +66,34 @@ describe('selectChromaticSiblings', () => {
     ]);
   });
 
-  it('selects PR-workflow siblings for a focused template outside the PR workflow', () => {
-    expect(selectChromaticSiblings('react-native-web-vite/expo-ts')).toContain(
-      'react-vite/default-ts'
-    );
+  it.each([
+    ['core', 'code/core/src/manager/App.tsx'],
+    ['a builder', 'code/builders/builder-vite/src/index.ts'],
+    ['the React Vite framework', 'code/frameworks/react-vite/src/preset.ts'],
+  ])('selects nothing when only %s changed', (_, changedFile) => {
+    expect(selectChromaticSiblings('react-vite/default-ts', [changedFile])).toEqual([]);
   });
 
-  it('selects templates with the same renderer under a different framework', () => {
-    expect(selectChromaticSiblings('svelte-vite/default-ts')).toEqual(['svelte-kit/skeleton-ts']);
+  it('selects the renderer siblings when a framework change picked the focused sandbox', () => {
+    const siblings = selectChromaticSiblings('nextjs/default-ts', [
+      'code/frameworks/nextjs/src/preset.ts',
+      'code/renderers/react/src/render.ts',
+    ]);
+
+    expect(siblings).toContain('react-vite/default-ts');
+    expect(siblings).not.toContain('nextjs/default-ts');
   });
 
-  it('selects nothing when no other PR-workflow template shares the renderer', () => {
-    expect(selectChromaticSiblings('angular-vite/default-ts')).toEqual([]);
+  it('selects templates with the changed renderer under a different framework', () => {
+    expect(
+      selectChromaticSiblings('svelte-vite/default-ts', ['code/renderers/svelte/src/render.ts'])
+    ).toEqual(['svelte-kit/skeleton-ts']);
   });
 });
 
 describe('defineFocusJob', () => {
   it('puts the complete focused workflow in one xlarge job', () => {
-    const job = defineFocusJob('react-vite/default-ts');
+    const job = defineFocusJob('react-vite/default-ts', []);
 
     expect(job.requires).toEqual([]);
     const implementation = job.implementation('focus');
@@ -131,7 +143,9 @@ describe('defineFocusJob', () => {
   });
 
   it('builds every sibling and runs Chromatic on it after the tests pass', () => {
-    const implementation = defineFocusJob('svelte-vite/default-ts').implementation('focus');
+    const implementation = defineFocusJob('svelte-vite/default-ts', [
+      'svelte-kit/skeleton-ts',
+    ]).implementation('focus');
 
     if ('type' in implementation) {
       throw new Error('The focus job must have executable steps');
@@ -162,7 +176,7 @@ describe('defineFocusJob', () => {
   });
 
   it('rejects a sandbox that skips a required focused task', () => {
-    expect(() => defineFocusJob('react-webpack/18-ts')).toThrow(
+    expect(() => defineFocusJob('react-webpack/18-ts', [])).toThrow(
       'react-webpack/18-ts does not support every task required by focused CI'
     );
   });

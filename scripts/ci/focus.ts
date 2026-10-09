@@ -56,14 +56,25 @@ export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey
   return DEFAULT_FOCUS_SANDBOX;
 }
 
-/** Select the same-renderer templates the regular PR workflow runs Chromatic on. */
-export function selectChromaticSiblings(template: TemplateKey): TemplateKey[] {
-  const { renderer } = allTemplates[template].expected;
+/** Select the PR-workflow Chromatic templates whose renderer source changed. */
+export function selectChromaticSiblings(
+  template: TemplateKey,
+  changedFiles: readonly string[]
+): TemplateKey[] {
+  const changedRenderers = new Set(
+    Object.values(allTemplates)
+      .filter(({ focusPathPrefixes }) => {
+        const prefix = focusPathPrefixes?.renderer;
+
+        return prefix !== undefined && changedFiles.some((file) => file.startsWith(prefix));
+      })
+      .map(({ expected }) => expected.renderer)
+  );
 
   return normal.filter(
     (sibling) =>
       sibling !== template &&
-      allTemplates[sibling].expected.renderer === renderer &&
+      changedRenderers.has(allTemplates[sibling].expected.renderer) &&
       !allTemplates[sibling].skipTasks?.includes('chromatic')
   );
 }
@@ -78,12 +89,12 @@ export function getChangedFiles(baseRef: string): string[] {
 
 const FOCUS_TEST_STATUS = '/tmp/storybook-focus-tests.status';
 
-export function defineFocusJob(template: TemplateKey) {
+export function defineFocusJob(template: TemplateKey, chromaticSiblings: readonly TemplateKey[]) {
   if (!supportsFocusTasks(template)) {
     throw new Error(`${template} does not support every task required by focused CI`);
   }
 
-  const chromaticTemplates = [template, ...selectChromaticSiblings(template)];
+  const chromaticTemplates = [template, ...chromaticSiblings];
 
   return defineJob('CI focus', () => ({
     executor: {
@@ -167,12 +178,10 @@ export function defineFocusJob(template: TemplateKey) {
           command: `yarn task e2e-tests --template ${template} --no-link -s e2e-tests --junit`,
         },
       },
-      ...chromaticTemplates
-        .slice(1)
-        .flatMap((sibling) => [
-          ...getSandboxSetupSteps(sibling),
-          ...getCreateSandboxSteps(sibling),
-        ]),
+      ...chromaticSiblings.flatMap((sibling) => [
+        ...getSandboxSetupSteps(sibling),
+        ...getCreateSandboxSteps(sibling),
+      ]),
       {
         run: {
           name: 'Copy sandboxes for Chromatic',

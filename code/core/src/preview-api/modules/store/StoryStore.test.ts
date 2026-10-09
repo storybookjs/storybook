@@ -379,7 +379,6 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "a",
             },
-            "kind": "Component One",
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
@@ -396,7 +395,6 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
-            "story": "A",
             "storyGlobals": {},
             "storyId": "component-one--a",
             "subcomponents": undefined,
@@ -577,7 +575,6 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "a",
             },
-            "kind": "Component One",
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
@@ -594,7 +591,6 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
-            "story": "A",
             "storyGlobals": {},
             "storyId": "component-one--a",
             "subcomponents": undefined,
@@ -644,7 +640,6 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "b",
             },
-            "kind": "Component One",
             "name": "B",
             "parameters": {
               "__isArgsStory": false,
@@ -661,7 +656,6 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
-            "story": "B",
             "storyGlobals": {},
             "storyId": "component-one--b",
             "subcomponents": undefined,
@@ -710,7 +704,6 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "c",
             },
-            "kind": "Component Two",
             "name": "C",
             "parameters": {
               "__isArgsStory": false,
@@ -727,7 +720,6 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
-            "story": "C",
             "storyGlobals": {},
             "storyId": "component-two--c",
             "subcomponents": undefined,

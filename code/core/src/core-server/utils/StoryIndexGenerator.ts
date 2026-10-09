@@ -122,6 +122,12 @@ export class StoryIndexGenerator {
 
   private invalidationListeners: Set<() => void> = new Set();
 
+  // Lets a build that raced with a file change skip caching its result
+  private invalidationCount = 0;
+
+  // Counts invalidations per file, so an extraction that raced with one is not saved
+  private fileInvalidations: Map<Path, number> = new Map();
+
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
     public readonly options: StoryIndexGeneratorOptions
@@ -263,9 +269,20 @@ export class StoryIndexGenerator {
               return;
             }
 
+            const invalidations = this.fileInvalidations.get(absolutePath) ?? 0;
+            // If the file changed while it was being extracted, keep it empty so it is extracted again
+            const changedMeanwhile = () =>
+              (this.fileInvalidations.get(absolutePath) ?? 0) !== invalidations;
+
             try {
-              entry[absolutePath] = await updater(specifier, absolutePath, entry[absolutePath]);
+              const result = await updater(specifier, absolutePath, entry[absolutePath]);
+              if (!changedMeanwhile()) {
+                entry[absolutePath] = result;
+              }
             } catch (err) {
+              if (changedMeanwhile()) {
+                return;
+              }
               const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
 
               entry[absolutePath] = {
@@ -283,6 +300,16 @@ export class StoryIndexGenerator {
     );
   }
 
+  private hasEmptyStoryFiles() {
+    return Array.from(this.specifierToCache.values()).some((cache) =>
+      Object.entries(cache).some(([absolutePath, entry]) => !entry && !this.isDocsMdx(absolutePath))
+    );
+  }
+
+  private markInvalidated(absolutePath: Path) {
+    this.fileInvalidations.set(absolutePath, (this.fileInvalidations.get(absolutePath) ?? 0) + 1);
+  }
+
   isDocsMdx(absolutePath: Path) {
     return /(?<!\.stories)\.mdx$/i.test(absolutePath);
   }
@@ -296,14 +323,22 @@ export class StoryIndexGenerator {
     // process the docs files. The reason for this is that the docs
     // files may use the `<Meta of={XStories} />` syntax, which requires
     // that the story file that contains the meta be processed first.
-    await this.updateExtracted(async (specifier, absolutePath) =>
-      this.isDocsMdx(absolutePath)
-        ? false
-        : this.extractStories(specifier, absolutePath, projectTags)
-    );
+    const extractStoryFiles = () =>
+      this.updateExtracted(async (specifier, absolutePath) =>
+        this.isDocsMdx(absolutePath)
+          ? false
+          : this.extractStories(specifier, absolutePath, projectTags)
+      );
+    await extractStoryFiles();
+
+    // A story file that changed during the pass above is empty again, so extract it
+    // before the docs files that may depend on it. Stop after a few tries.
+    for (let retry = 0; retry < 3 && this.hasEmptyStoryFiles(); retry += 1) {
+      await extractStoryFiles();
+    }
 
     await this.updateExtracted(async (specifier, absolutePath) =>
-      this.extractDocs(specifier, absolutePath, projectTags)
+      this.isDocsMdx(absolutePath) ? this.extractDocs(specifier, absolutePath, projectTags) : false
     );
 
     const statsSummary = {} as IndexStatsSummary;
@@ -751,6 +786,7 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
+    const invalidationCount = this.invalidationCount;
     const previewCode = await this.getPreviewCode();
     const projectTags = this.getProjectTags(previewCode);
 
@@ -791,18 +827,21 @@ export class StoryIndexGenerator {
         combineStorySorts(this.options.storySorts ?? [])
       );
 
-      this.lastStats = stats;
-      this.lastIndex = {
-        v: 5,
-        entries: sorted,
-      };
+      const storyIndex: StoryIndex = { v: 5, entries: sorted };
+      if (invalidationCount === this.invalidationCount) {
+        this.lastStats = stats;
+        this.lastIndex = storyIndex;
+      }
 
-      return { storyIndex: this.lastIndex, stats: this.lastStats };
+      return { storyIndex, stats };
     } catch (err) {
-      this.lastError = err == null || err instanceof Error ? err : undefined;
-      invariant(this.lastError);
-      logger.warn(`🚨 ${this.lastError.toString()}`);
-      throw this.lastError;
+      const error = err == null || err instanceof Error ? err : undefined;
+      invariant(error);
+      if (invalidationCount === this.invalidationCount) {
+        this.lastError = error;
+      }
+      logger.warn(`🚨 ${error.toString()}`);
+      throw error;
     }
   }
 
@@ -810,10 +849,12 @@ export class StoryIndexGenerator {
     this.specifierToCache.forEach((cache) => {
       Object.keys(cache).forEach((key) => {
         cache[key] = false;
+        this.markInvalidated(key);
       });
     });
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidationCount += 1;
     this.invalidationListeners.forEach((listener) => listener());
   }
 
@@ -845,11 +886,13 @@ export class StoryIndexGenerator {
             invalidated.add(dep);
 
             otherCache[dep] = false;
+            this.markInvalidated(dep);
           }
         });
       });
     }
 
+    this.markInvalidated(absolutePath);
     if (removed) {
       if (cacheEntry && cacheEntry.type === 'docs') {
         const absoluteImports = cacheEntry.storiesImports.map((p) =>
@@ -866,6 +909,7 @@ export class StoryIndexGenerator {
     }
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidationCount += 1;
     this.invalidationListeners.forEach((listener) => listener());
   }
 

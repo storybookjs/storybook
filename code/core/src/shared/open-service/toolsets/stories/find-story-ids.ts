@@ -133,15 +133,14 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
       path.posix.relative(normalizedCwd, normalizedAbsolutePath)
     );
 
-    const fileEntries = entriesList.filter(
+    // Test entries carry their parent story's export name and can share a story's name.
+    const fileStories = entriesList.filter(
       (entry): entry is StoryIndexEntry =>
-        entry.type === 'story' && normalizeImportPath(entry.importPath) === relativePath
+        isNonTestStory(entry) && normalizeImportPath(entry.importPath) === relativePath
     );
-    const fileStories = fileEntries.filter(isNonTestStory);
-    // A test entry carries its parent story's export name, so only stories match on it.
     const foundEntry =
       fileStories.find((entry) => entry.exportName === exportName) ??
-      fileEntries.find((entry) =>
+      fileStories.find((entry) =>
         [explicitStoryName, storyNameFromExport(exportName)].includes(entry.name)
       );
 

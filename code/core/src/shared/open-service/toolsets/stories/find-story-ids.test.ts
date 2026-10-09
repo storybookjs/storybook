@@ -192,6 +192,32 @@ describe('findStoryIds', () => {
     ]);
   });
 
+  it('matches an explicit story name on the story, not on a test with that name', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--primary:small': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--primary:small',
+          name: 'Small',
+        },
+        'button--small': { ...primaryStory, id: 'button--small', name: 'Small' },
+      },
+    };
+    const stories: StoryInput[] = [
+      {
+        exportName: 'SmallButton',
+        explicitStoryName: 'Small',
+        absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+      },
+    ];
+
+    expect(findStoryIds(index, stories)).toEqual([
+      { entry: index.entries['button--small'], input: stories[0] },
+    ]);
+  });
+
   it('suggests an ID of another component only when it is a few edits away', () => {
     const [nearMiss, farMiss] = findStoryIds(mockStoryIndex, [
       { storyId: 'inputs--default' },

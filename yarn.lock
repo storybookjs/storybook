@@ -10624,7 +10624,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     "@types/react": "npm:^19.2.18"
     typescript: "npm:^6.0.3"
-    vitest-plugin-rsc: "https://pkg.pr.new/vitest-plugin-rsc@0d2d720"
+    vitest-plugin-rsc: "https://pkg.pr.new/vitest-plugin-rsc@d3b873d"
   peerDependencies:
     "@next/routing": ^16.4.0
     "@storybook/addon-docs": "workspace:^"
@@ -36697,9 +36697,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@0d2d720":
+"vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@d3b873d":
   version: 0.3.0
-  resolution: "vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@0d2d720"
+  resolution: "vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@d3b873d"
   dependencies:
     "@jridgewell/gen-mapping": "npm:^0.3.13"
     "@vitejs/plugin-rsc": "npm:0.5.36"
@@ -36719,7 +36719,7 @@ __metadata:
       optional: true
     vitest:
       optional: true
-  checksum: 10c0/6baa1097fe4093c17ab42eafbdefa7f61d701b38b3ed9094b0d347a6209e724e7375f2f1011da9ea2fe743e560de9f6f9faea443aba3ccf03eb3666d598805f4
+  checksum: 10c0/debe985f536587feb7b5a90ac9ea44096200abcec98ecf4c6f0c9f37ec2ad09bf2e7091a8c966503543baf3773035dbd73271ee8bd97f8ede314990102bdc285
   languageName: node
   linkType: hard
 

@@ -142,12 +142,16 @@ export function getAbsolutePathWrapperAsCallExpression(
   isConfigTypescript: boolean,
   names = { dirname: 'dirname', fileURLToPath: 'fileURLToPath' }
 ): t.FunctionDeclaration {
+  let parameter = 'value';
+  while (Object.values(names).includes(parameter)) {
+    parameter = `_${parameter}`;
+  }
   const functionDeclaration = {
     ...t.functionDeclaration(
       t.identifier(PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME),
       [
         {
-          ...t.identifier('value'),
+          ...t.identifier(parameter),
           ...(isConfigTypescript
             ? { typeAnnotation: t.tsTypeAnnotation(t.tSStringKeyword()) }
             : {}),
@@ -168,7 +172,7 @@ export function getAbsolutePathWrapperAsCallExpression(
                       t.templateElement({ raw: '' }),
                       t.templateElement({ raw: '/package.json' }, true),
                     ],
-                    [t.identifier('value')]
+                    [t.identifier(parameter)]
                   ),
                 ]
               ),
@@ -223,7 +227,7 @@ const topLevelNames = (node: t.Node): string[] => {
     return topLevelNames(node.declaration);
   }
   if (t.isVariableDeclaration(node)) {
-    return node.declarations.flatMap(({ id }) => (t.isIdentifier(id) ? [id.name] : []));
+    return node.declarations.flatMap(({ id }) => Object.keys(t.getBindingIdentifiers(id)));
   }
   if ((t.isFunctionDeclaration(node) || t.isClassDeclaration(node)) && node.id) {
     return [node.id.name];
@@ -239,7 +243,10 @@ const topLevelNames = (node: t.Node): string[] => {
 export function ensureNamedImport(config: ConfigFile, imported: string, source: string) {
   const { body } = config._ast.program;
   for (const node of body) {
-    if (t.isImportDeclaration(node) && node.source.value === source) {
+    if (
+      t.isImportDeclaration(node) &&
+      node.source.value.replace(/^node:/, '') === source.replace(/^node:/, '')
+    ) {
       const existing = node.specifiers.find(
         (specifier) =>
           t.isImportSpecifier(specifier) &&

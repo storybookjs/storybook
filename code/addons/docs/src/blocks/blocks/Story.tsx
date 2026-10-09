@@ -112,6 +112,7 @@ export const getStoryProps = <TFramework extends Renderer>(
     height,
 
     primary: !!props.__primary,
+    channel: context.channel,
   };
 };
 

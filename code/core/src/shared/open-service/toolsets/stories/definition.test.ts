@@ -74,7 +74,10 @@ const git = { getChangedFiles, getRepoRoot };
 const changeStatuses = { getAll: getStatuses };
 const storybookDirs = {
   configDir: resolve(storybookWorkingDir, '.storybook'),
-  getStaticDirs: async () => [resolve(storybookWorkingDir, 'public')],
+  getStaticDirs: async () => [
+    resolve(storybookWorkingDir, 'public'),
+    resolve(storybookWorkingDir, '.storybook/static'),
+  ],
 };
 
 let statusesFixture: Record<string, Record<string, unknown>>;
@@ -435,6 +438,9 @@ describe('stories.changed', () => {
         'packages/ui/.storybook/main.ts',
         'packages/ui/.storybook/manager.ts',
         'packages/ui/.storybook/tsconfig.json',
+        'packages/ui/.storybook/preview.test.ts',
+        'packages/ui/.storybook/env.d.ts',
+        'packages/ui/.storybook/static/mockServiceWorker.js',
       ]),
       new: new Set([
         'packages/ui/.storybook/decorators.tsx',

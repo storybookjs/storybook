@@ -82,6 +82,9 @@ export async function detectChangedFilesOutsideStories({
   const changedConfigFiles: string[] = [];
   const candidates: string[] = [];
   for (const file of new Set([...changedFiles.changed, ...changedFiles.new])) {
+    if (staticDirs.some((dir) => dir !== '' && isWithin(file, dir))) {
+      continue;
+    }
     const name = basename(file);
     if (configDir !== '' && isWithin(file, configDir)) {
       const appliesToEveryStory =
@@ -101,8 +104,7 @@ export async function detectChangedFilesOutsideStories({
         (isRootLevel(file, projectDir) || !isWithin(file, projectDir))
       ) &&
       !file.split('/').some((segment) => segment.startsWith('.') || segment === 'node_modules') &&
-      !isTestOrScriptPath(file, projectDir) &&
-      !staticDirs.some((dir) => dir !== '' && isWithin(file, dir));
+      !isTestOrScriptPath(file, projectDir);
     if (couldRender) {
       candidates.push(file);
     }

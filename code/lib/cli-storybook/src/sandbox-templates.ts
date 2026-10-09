@@ -798,6 +798,23 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
+  'preact-vite/10-ts': {
+    name: 'Preact v10 (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string', 'preact@^10'],
+      resolutions: {
+        preact: 'npm:preact@^10',
+      },
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
   /** This is currently broken, we generate components and stories that do not work */
   // 'qwik-vite/default-ts': {
   //   name: 'Qwik CLI Latest (Vite | TypeScript)',
@@ -1068,6 +1085,7 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
+  'preact-vite/10-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',

@@ -2,25 +2,19 @@ import { types as t, traverse } from 'storybook/internal/babel';
 import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import path from 'path';
-
 import type { FileInfo } from '../../automigrate/codemod.ts';
-import { addImportToTop } from './csf-factories-utils.ts';
+import {
+  type PreviewImportOptions,
+  addImportToTop,
+  getPreviewImportPath,
+  reuseDisallowList,
+} from './csf-factories-utils.ts';
+import { findSvelteCsfNonStoryExports } from './svelte-csf-to-csf-factory.ts';
 import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
 import { wrapArgsMocks } from './wrap-args-mocks.ts';
 
-// Name of properties that should not be renamed to `Story.input.xyz`
-const reuseDisallowList = ['play', 'run', 'extends', 'story'];
-
-type Options =
-  | { useSubPathImports: true; previewConfigPath?: string }
-  | { useSubPathImports: false; previewConfigPath: string };
-
-export async function storyToCsfFactory(
-  info: FileInfo,
-  { previewConfigPath, useSubPathImports }: Options
-) {
+export async function storyToCsfFactory(info: FileInfo, options: PreviewImportOptions) {
   let csf;
   try {
     csf = loadCsf(info.source, { makeTitle: () => 'FIXME' });
@@ -57,23 +51,7 @@ export async function storyToCsfFactory(
       n.declarations.some((declaration) => t.isIdentifier(declaration.id, { name: 'preview' }))
   );
 
-  let previewPath = '#.storybook/preview';
-  if (!useSubPathImports) {
-    // calculate relative path from story file to preview file
-    const relativePath = path.relative(path.dirname(info.path), previewConfigPath);
-    const { dir, name } = path.parse(relativePath);
-
-    // Construct the path manually and replace Windows backslashes
-    previewPath = `${dir ? `${dir}/` : ''}${name}`;
-
-    // account for stories in the same path as preview file
-    if (!previewPath.startsWith('.')) {
-      previewPath = `./${previewPath}`;
-    }
-
-    // Convert Windows backslashes to forward slashes
-    previewPath = previewPath.replace(/\\/g, '/');
-  }
+  const previewPath = getPreviewImportPath(info.path, options);
 
   let sbConfigImportName = hasRootLevelConfig ? 'storybookPreview' : 'preview';
 
@@ -98,6 +76,8 @@ export async function storyToCsfFactory(
    */
   const namespaceStoryImports = new Set<string>(); // import * as X
   const namedStoryImports = new Set<string>(); // import { X } or import X
+  // The exports of an imported Svelte CSF file that are not stories, by namespace import
+  const nonStoryExports = new Map<string, string[]>();
 
   programNode.body.forEach((node) => {
     if (t.isImportDeclaration(node)) {
@@ -105,16 +85,27 @@ export async function storyToCsfFactory(
 
       // Check if this import is from a .stories file
       // Matches: ./Button.stories, ../components/Card.stories.tsx, etc.
-      const isStoryFileImport = /\.stories(\.(ts|tsx|js|jsx|mjs|mts))?$/.test(importPath);
+      const isStoryFileImport = /\.stories(\.(ts|tsx|js|jsx|mjs|mts|svelte))?$/.test(importPath);
 
       if (isStoryFileImport) {
+        const nonStories = findSvelteCsfNonStoryExports(info.path, importPath);
         // Collect all imported names from this story file
         node.specifiers.forEach((specifier) => {
+          if (!t.isImportSpecifier(specifier)) {
+            nonStoryExports.set(specifier.local.name, nonStories);
+          }
           if (t.isImportNamespaceSpecifier(specifier)) {
             // import * as BaseStories from './Button.stories'
             // BaseStories.Primary is a story, so we need: BaseStories.Primary.input
             namespaceStoryImports.add(specifier.local.name);
-          } else if (t.isImportSpecifier(specifier)) {
+          } else if (
+            t.isImportSpecifier(specifier) &&
+            !nonStories.includes(
+              t.isIdentifier(specifier.imported)
+                ? specifier.imported.name
+                : specifier.imported.value
+            )
+          ) {
             // import { Primary } from './Button.stories'
             // Primary itself is a story, so we need: Primary.input
             namedStoryImports.add(specifier.local.name);
@@ -329,7 +320,8 @@ export async function storyToCsfFactory(
         if (
           t.isIdentifier(importName) &&
           storyFileImports.has(importName.name) &&
-          t.isIdentifier(storyName)
+          t.isIdentifier(storyName) &&
+          !nonStoryExports.get(importName.name)?.includes(storyName.name)
         ) {
           // Skip if already transformed: BaseStories.Primary.input.args
           // This check prevents infinite loops when the traverser revisits modified nodes
@@ -404,6 +396,9 @@ export async function storyToCsfFactory(
       // Pattern: SpreadElement containing MemberExpression { object: Identifier("BaseStories"), property: Identifier("Secondary") }
       if (t.isIdentifier(innerObject) && namespaceStoryImports.has(innerObject.name)) {
         const storyName = node.property;
+        const isNonStoryExport =
+          t.isIdentifier(storyName) &&
+          !!nonStoryExports.get(innerObject.name)?.includes(storyName.name);
 
         // Skip if this is already .input
         if (t.isIdentifier(storyName, { name: 'input' })) {
@@ -412,7 +407,7 @@ export async function storyToCsfFactory(
 
         // Check if parent is a SpreadElement (...BaseStories.Secondary)
         const parent = nodePath.parent;
-        if (t.isSpreadElement(parent)) {
+        if (t.isSpreadElement(parent) && !isNonStoryExport) {
           // Transform: ...BaseStories.Secondary → ...BaseStories.Secondary.input
           nodePath.replaceWith(t.memberExpression(node, t.identifier('input')));
           nodePath.skip();

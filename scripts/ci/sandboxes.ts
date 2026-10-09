@@ -84,6 +84,47 @@ export function getGenerateSandboxSteps(template: TemplateKey) {
   ];
 }
 
+/** Expects Verdaccio and the event collector to be running. */
+export function getCreateSandboxSteps(template: TemplateKey) {
+  const id = toId(template);
+
+  return [
+    ...getGenerateSandboxSteps(template),
+    {
+      run: {
+        name: `Create sandbox ${template}`,
+        command: `yarn task sandbox --template ${template} --no-link -s sandbox --debug`,
+        environment: {
+          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
+          STORYBOOK_TELEMETRY_DEBUG: 1,
+          STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+        },
+      },
+    },
+    /**
+     * Due to the way we create sandboxes, a unique situation arises where a sveltekit
+     * cache-config-file is missing. This generates it.
+     */
+    ...(id.includes('svelte-kit')
+      ? [
+          {
+            run: {
+              name: 'Run prepare',
+              working_directory: `${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}`,
+              command: `yarn prepare`,
+            },
+          },
+        ]
+      : []),
+    {
+      run: {
+        name: `Build sandbox ${template}`,
+        command: `yarn task build --template ${template} --no-link -s build`,
+      },
+    },
+  ];
+}
+
 /**
  * The dev-mode e2e jobs are the workflow tail. xlarge (8 vCPUs) with 6
  * Playwright workers cuts their test phase ~38% vs large/3, but doubles the
@@ -216,39 +257,7 @@ export function defineSandboxFlow(key: TemplateKey) {
             ].join('\n'),
           },
         },
-        ...getGenerateSandboxSteps(key),
-        {
-          run: {
-            name: 'Create Sandbox',
-            command: `yarn task sandbox --template ${key} --no-link -s sandbox --debug`,
-            environment: {
-              STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
-              STORYBOOK_TELEMETRY_DEBUG: 1,
-              STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-            },
-          },
-        },
-        /**
-         * Due to the way we create sandboxes, a unique situation arises where a sveltekit
-         * cache-config-file is missing. This generates it.
-         */
-        ...(id.includes('svelte-kit')
-          ? [
-              {
-                run: {
-                  name: 'Run prepare',
-                  working_directory: `${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}`,
-                  command: `yarn prepare`,
-                },
-              },
-            ]
-          : []),
-        {
-          run: {
-            name: 'Build storybook',
-            command: `yarn task build --template ${key} --no-link -s build`,
-          },
-        },
+        ...getCreateSandboxSteps(key),
         ...getDocgenBaselineSteps(key),
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.packSandbox(id),

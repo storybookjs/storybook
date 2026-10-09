@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { defineFocusJob, selectFocusSandbox } from './focus.ts';
+import { defineFocusJob, selectChromaticSiblings, selectFocusSandbox } from './focus.ts';
 
 describe('selectFocusSandbox', () => {
   it.each([
@@ -51,6 +51,34 @@ describe('selectFocusSandbox', () => {
   });
 });
 
+describe('selectChromaticSiblings', () => {
+  it('selects every other React template with a Chromatic build in the PR workflow', () => {
+    expect(selectChromaticSiblings('react-vite/default-ts')).toEqual([
+      'nextjs/default-ts',
+      'nextjs-vite/default-ts',
+      'bench/react-vite-default-ts-test-build',
+      'bench/react-webpack-18-ts-test-build',
+      'react-rsbuild/default-ts',
+      'tanstack-react-router/default-ts',
+      'tanstack-react-start/default-ts',
+    ]);
+  });
+
+  it('selects PR-workflow siblings for a focused template outside the PR workflow', () => {
+    expect(selectChromaticSiblings('react-native-web-vite/expo-ts')).toContain(
+      'react-vite/default-ts'
+    );
+  });
+
+  it('selects templates with the same renderer under a different framework', () => {
+    expect(selectChromaticSiblings('svelte-vite/default-ts')).toEqual(['svelte-kit/skeleton-ts']);
+  });
+
+  it('selects nothing when no other PR-workflow template shares the renderer', () => {
+    expect(selectChromaticSiblings('angular-vite/default-ts')).toEqual([]);
+  });
+});
+
 describe('defineFocusJob', () => {
   it('puts the complete focused workflow in one xlarge job', () => {
     const job = defineFocusJob('react-vite/default-ts');
@@ -84,21 +112,52 @@ describe('defineFocusJob', () => {
             command: ['corepack enable', 'which yarn', 'yarn --version'].join('\n'),
           }),
         },
-        { run: expect.objectContaining({ name: 'Create sandbox' }) },
-        { run: expect.objectContaining({ name: 'Build sandbox' }) },
+        { run: expect.objectContaining({ name: 'Create sandbox react-vite/default-ts' }) },
+        { run: expect.objectContaining({ name: 'Build sandbox react-vite/default-ts' }) },
         { run: expect.objectContaining({ name: 'Run dev E2E tests' }) },
         { run: expect.objectContaining({ name: 'Run build E2E tests' }) },
         {
           run: expect.objectContaining({
-            name: 'Copy sandbox for Chromatic',
+            name: 'Copy sandboxes for Chromatic',
             command: expect.stringContaining(
               'rm -rf /tmp/project/sandbox/react-vite-default-ts/.git'
             ),
           }),
         },
-        { run: expect.objectContaining({ name: 'Run Chromatic' }) },
+        { run: expect.objectContaining({ name: 'Run Chromatic react-vite/default-ts' }) },
         { run: expect.objectContaining({ name: 'Wait for tests' }) },
       ])
+    );
+  });
+
+  it('builds every sibling and runs Chromatic on it after the tests pass', () => {
+    const implementation = defineFocusJob('svelte-vite/default-ts').implementation('focus');
+
+    if ('type' in implementation) {
+      throw new Error('The focus job must have executable steps');
+    }
+
+    const runSteps = implementation.steps.flatMap((step) => {
+      const { run } = step as { run?: { name: string; command?: string } };
+      return run ? [run] : [];
+    });
+    const stepNames = runSteps.map(({ name }) => name);
+
+    expect(stepNames).toEqual(
+      expect.arrayContaining([
+        'Generate Sandbox',
+        'Run prepare',
+        'Build sandbox svelte-kit/skeleton-ts',
+      ])
+    );
+    expect(stepNames.indexOf('Build sandbox svelte-kit/skeleton-ts')).toBeLessThan(
+      stepNames.indexOf('Copy sandboxes for Chromatic')
+    );
+    expect(stepNames.indexOf('Wait for tests')).toBeLessThan(
+      stepNames.indexOf('Run Chromatic svelte-kit/skeleton-ts')
+    );
+    expect(runSteps.find(({ name }) => name === 'Copy sandboxes for Chromatic')?.command).toContain(
+      'rm -rf /tmp/project/sandbox/svelte-kit-skeleton-ts/.git'
     );
   });
 

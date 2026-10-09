@@ -4,12 +4,13 @@ import { join } from 'node:path';
 import {
   allTemplates,
   type FocusPathKind,
+  normal,
   type SkippableTask,
   type Template,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { installWithCache } from './common-jobs.ts';
-import { getGenerateSandboxSteps, getSandboxSetupSteps } from './sandboxes.ts';
+import { getCreateSandboxSteps, getSandboxSetupSteps } from './sandboxes.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WORKING_DIR } from './utils/constants.ts';
 import { artifact, git, npm, server, testResults, toId, verdaccio } from './utils/helpers.ts';
 import { defineJob } from './utils/types.ts';
@@ -55,6 +56,18 @@ export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey
   return DEFAULT_FOCUS_SANDBOX;
 }
 
+/** Select the same-renderer templates the regular PR workflow runs Chromatic on. */
+export function selectChromaticSiblings(template: TemplateKey): TemplateKey[] {
+  const { renderer } = allTemplates[template].expected;
+
+  return normal.filter(
+    (sibling) =>
+      sibling !== template &&
+      allTemplates[sibling].expected.renderer === renderer &&
+      !allTemplates[sibling].skipTasks?.includes('chromatic')
+  );
+}
+
 export function getChangedFiles(baseRef: string): string[] {
   return execFileSync('git', ['diff', '--name-only', `${baseRef}...HEAD`, '--'], {
     encoding: 'utf8',
@@ -70,7 +83,7 @@ export function defineFocusJob(template: TemplateKey) {
     throw new Error(`${template} does not support every task required by focused CI`);
   }
 
-  const sandboxId = toId(template);
+  const chromaticTemplates = [template, ...selectChromaticSiblings(template)];
 
   return defineJob('CI focus', () => ({
     executor: {
@@ -119,24 +132,7 @@ export function defineFocusJob(template: TemplateKey) {
           command: ['corepack enable', 'which yarn', 'yarn --version'].join('\n'),
         },
       },
-      ...getGenerateSandboxSteps(template),
-      {
-        run: {
-          name: 'Create sandbox',
-          command: `yarn task sandbox --template ${template} --no-link -s sandbox --debug`,
-          environment: {
-            STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
-            STORYBOOK_TELEMETRY_DEBUG: 1,
-            STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-          },
-        },
-      },
-      {
-        run: {
-          name: 'Build sandbox',
-          command: `yarn task build --template ${template} --no-link -s build`,
-        },
-      },
+      ...getCreateSandboxSteps(template),
       {
         run: {
           name: 'Start sandbox in dev mode',
@@ -171,12 +167,20 @@ export function defineFocusJob(template: TemplateKey) {
           command: `yarn task e2e-tests --template ${template} --no-link -s e2e-tests --junit`,
         },
       },
+      ...chromaticTemplates
+        .slice(1)
+        .flatMap((sibling) => [
+          ...getSandboxSetupSteps(sibling),
+          ...getCreateSandboxSteps(sibling),
+        ]),
       {
         run: {
-          name: 'Copy sandbox for Chromatic',
+          name: 'Copy sandboxes for Chromatic',
           command: [
             `cp ${join(LINUX_ROOT_DIR, SANDBOX_DIR)} ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
-            `rm -rf ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', sandboxId, '.git')}`,
+            ...chromaticTemplates.map(
+              (key) => `rm -rf ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', toId(key), '.git')}`
+            ),
           ].join('\n'),
         },
       },
@@ -201,22 +205,25 @@ export function defineFocusJob(template: TemplateKey) {
           ].join('\n'),
         },
       },
-      {
+      ...chromaticTemplates.map((key) => ({
         run: {
-          name: 'Run Chromatic',
-          command: `yarn task chromatic --template ${template} --no-link -s chromatic`,
+          name: `Run Chromatic ${key}`,
+          command: `yarn task chromatic --template ${key} --no-link -s chromatic`,
           environment: {
             STORYBOOK_SANDBOX_ROOT: './sandbox',
           },
         },
-      },
+      })),
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
       artifact.persist(
         join(LINUX_ROOT_DIR, WORKING_DIR, 'code', 'playwright-results'),
         'playwright-results'
       ),
       testResults.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results')),
-      artifact.persist(join(LINUX_ROOT_DIR, SANDBOX_DIR, sandboxId, 'debug-storybook.log'), 'logs'),
+      artifact.persist(
+        join(LINUX_ROOT_DIR, SANDBOX_DIR, toId(template), 'debug-storybook.log'),
+        'logs'
+      ),
     ],
   }));
 }

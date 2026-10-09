@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-storybook-nextjs",
-  "version": "11.0.0-alpha.4",
+  "version": "11.0.0-alpha.5",
   "description": "Vite plugin that enables Next.js features in Vite and Storybook",
   "keywords": [
     "vite-plugin",

@@ -364,7 +364,10 @@ Accessibility: 2 stories checked; 1 without violations; 1 failing the run.`);
         })
       );
 
-      expect((await runForMcp()).markdown).toBe(`## Passing Stories
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`## Passing Stories
 
 - button--primary
 
@@ -477,7 +480,10 @@ Accessibility: skipped (a11y: false).`);
         })
       );
 
-      expect((await runForMcp()).markdown).toBe(`## Unhandled Errors
+      const outcome = await runForMcp();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`## Unhandled Errors
 
 ### ReferenceError
 

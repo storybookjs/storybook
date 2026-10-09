@@ -8,14 +8,17 @@ import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types.ts';
 
-export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {
+export const getActualPackageVersions = async (
+  packages: Record<string, Partial<Dependency>>,
+  cwd = process.cwd()
+) => {
   const packageNames = Object.keys(packages);
-  return Promise.all(packageNames.map(getActualPackageVersion));
+  return Promise.all(packageNames.map((packageName) => getActualPackageVersion(packageName, cwd)));
 };
 
-export const getActualPackageVersion = async (packageName: string) => {
+export const getActualPackageVersion = async (packageName: string, cwd = process.cwd()) => {
   try {
-    const packageJson = await getActualPackageJson(packageName);
+    const packageJson = await getActualPackageJson(packageName, cwd);
     return {
       name: packageJson?.name || packageName,
       version: packageJson?.version || null,
@@ -29,9 +32,10 @@ export const getActualPackageVersion = async (packageName: string) => {
 };
 
 export const getActualPackageJson = async (
-  packageName: string
+  packageName: string,
+  cwd = process.cwd()
 ): Promise<PackageJson | undefined> => {
-  const resolvedPackageJsonPath = resolvePackageJsonPath(packageName);
+  const resolvedPackageJsonPath = resolvePackageJsonPath(packageName, cwd);
   if (!resolvedPackageJsonPath) {
     return undefined;
   }
@@ -54,26 +58,25 @@ const attempt = <T>(fn: () => T): T | undefined => {
 };
 
 /**
- * Resolves the package.json of a package as installed for the project in the current working
- * directory. Resolution must be anchored to the project rather than to this module: when the
- * Storybook CLI runs from outside the project (e.g. via `npx`), module-relative resolution finds
- * the CLI's own dependency tree instead of the project's.
+ * Resolves the package.json of a package as installed for the project directory. Resolution must
+ * be anchored to the project rather than to this module: when the Storybook CLI runs from outside
+ * the project (e.g. via `npx`), module-relative resolution finds the CLI's own dependency tree.
  */
-const resolvePackageJsonPath = (packageName: string): string | undefined => {
-  const projectRequire = createRequire(join(process.cwd(), 'package.json'));
+const resolvePackageJsonPath = (packageName: string, cwd: string): string | undefined => {
+  const projectRequire = createRequire(join(cwd, 'package.json'));
   return (
     attempt(() => projectRequire.resolve(`${packageName}/package.json`)) ??
     attempt(() => pkg.up({ cwd: projectRequire.resolve(packageName) }) || undefined) ??
-    findPackageJsonInNodeModules(packageName)
+    findPackageJsonInNodeModules(packageName, cwd)
   );
 };
 
 /**
  * Fallback for packages whose exports map hides both `./package.json` and any require-able entry:
- * walk up from the current working directory looking for `node_modules/<name>/package.json`.
+ * walk up from the project directory looking for `node_modules/<name>/package.json`.
  */
-const findPackageJsonInNodeModules = (packageName: string): string | undefined => {
-  for (let dir = process.cwd(); ; dir = dirname(dir)) {
+const findPackageJsonInNodeModules = (packageName: string, cwd: string): string | undefined => {
+  for (let dir = cwd; ; dir = dirname(dir)) {
     const candidate = join(dir, 'node_modules', packageName, 'package.json');
     if (existsSync(candidate)) {
       return candidate;

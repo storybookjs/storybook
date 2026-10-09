@@ -78,7 +78,8 @@ export function getSafeVersionSpecifier(version?: string): string | null {
 }
 
 export async function analyzeEcosystemPackages(
-  packageJson: PackageJson
+  packageJson: PackageJson,
+  cwd = process.cwd()
 ): Promise<KnownPackagesList> {
   const allDependencies = {
     ...packageJson?.dependencies,
@@ -108,7 +109,8 @@ export async function analyzeEcosystemPackages(
     const result = Object.fromEntries(
       await Promise.all(
         pickMatches(packages).map(async (dep) => {
-          const resolved = (await getActualPackageVersion(dep))?.version ?? allDependencies[dep];
+          const resolved =
+            (await getActualPackageVersion(dep, cwd))?.version ?? allDependencies[dep];
 
           const version = getSafeVersionSpecifier(resolved);
           return [dep, version];

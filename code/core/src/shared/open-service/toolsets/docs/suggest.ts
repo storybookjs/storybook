@@ -6,6 +6,7 @@ export type DocsListedEntry = { id: string; name: string; storybookId?: string }
 
 const MAX_SUGGESTIONS = 5;
 const SAME_ID_SCORE = Number.MAX_SAFE_INTEGER;
+const SAME_COMPONENT_SCORE = SAME_ID_SCORE - 1;
 // A whole name spelled out by the id outweighs any single shared word.
 const NAME_SCORE = 2;
 
@@ -20,9 +21,8 @@ function tokenize(value: string): Set<string> {
   return new Set([...words, words.join('')]);
 }
 
-// The listed entries closest to an id that resolved to nothing, best first.
 export function suggestEntries(id: string, candidates: DocsListedEntry[]): DocsListedEntry[] {
-  // A story id (`button--primary`) is matched by its component part.
+  // A story id (`button--primary`) also matches its component.
   const componentId = id.split('--')[0];
 
   // Agents glue the source onto the id (`reshaped-button`), so a word that is a source id is not
@@ -42,8 +42,11 @@ export function suggestEntries(id: string, candidates: DocsListedEntry[]): DocsL
   const distinctive = [...wanted].filter((token) => (idCountByToken.get(token) ?? 0) <= maxIdCount);
 
   const scoreOf = (candidate: DocsListedEntry) => {
-    if (candidate.id === componentId) {
+    if (candidate.id === id) {
       return SAME_ID_SCORE;
+    }
+    if (candidate.id === componentId) {
+      return SAME_COMPONENT_SCORE;
     }
     const candidateTokens = new Set([...tokenize(candidate.id), ...tokenize(candidate.name)]);
     const sharedWords = distinctive.filter((token) => candidateTokens.has(token)).length;

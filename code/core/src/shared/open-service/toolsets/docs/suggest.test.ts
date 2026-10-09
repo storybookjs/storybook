@@ -80,6 +80,19 @@ describe('suggestEntries', () => {
     ]);
   });
 
+  it('ranks a docs id in other sources above the component it starts with', () => {
+    const intro = ['a', 'b'].map((storybookId) => ({
+      id: 'button--docs',
+      name: 'Docs',
+      storybookId,
+    }));
+    const button = ['a', 'b'].map((storybookId) => ({ id: 'button', name: 'Button', storybookId }));
+
+    expect(
+      suggestEntries('button--docs', [...button, ...intro, { id: 'card', name: 'Card' }])
+    ).toEqual([...intro, ...button]);
+  });
+
   it('keeps the source of each suggestion', () => {
     expect(suggestEntries('switch', candidates)).toEqual([
       { id: 'components-switch', name: 'Switch', storybookId: 'reshaped' },

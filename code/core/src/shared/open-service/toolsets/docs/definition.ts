@@ -312,7 +312,6 @@ const storybookIdField = {
 
 type SourceAccess = { storybookId?: string; access: DocsAccess };
 
-// Every component and docs entry a source lists, or none when the source cannot be read.
 async function listEntries({ storybookId, access }: SourceAccess): Promise<DocsListedEntry[]> {
   const manifests = await access.list({ withStoryIds: false }).catch(() => undefined);
   return [
@@ -432,8 +431,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     : [{ access: docsAccess! }];
 
   // An id the requested source does not have is shown from the one other source that has it.
-  // Otherwise the closest listed entries are suggested. A source that fails to answer is not asked
-  // again, as a listing skips it too.
+  // Otherwise the closest listed entries are suggested. A source whose lookup failed is left out of
+  // the suggestions.
   const recoverMissedId = async (
     id: string,
     requestedStorybookId: string | undefined

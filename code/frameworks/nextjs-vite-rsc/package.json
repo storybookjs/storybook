@@ -77,7 +77,7 @@
   ],
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
-    "vitest-plugin-rsc": "https://pkg.pr.new/vitest-plugin-rsc@98467dd"
+    "vitest-plugin-rsc": "https://pkg.pr.new/vitest-plugin-rsc@3b17097"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",

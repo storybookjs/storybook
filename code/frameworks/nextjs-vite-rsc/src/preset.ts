@@ -173,21 +173,6 @@ const docsRendererFile = fileURLToPath(
   import.meta.resolve('@storybook/nextjs-vite-rsc/internal/docs-renderer')
 );
 
-// The modules of the framework that are code of the browser layer. In dev, Vite gives a module of
-// `node_modules` a version query, like `?v=1a2b3c4d`, and the plugin leaves a module with a query
-// alone: in the preview, they keep their path.
-const browserLayerModules = [
-  '@storybook/nextjs-vite-rsc/internal/client-story',
-  '@storybook/nextjs-vite-rsc/internal/docs-renderer',
-];
-const browserLayerModulesByPath: Plugin = {
-  name: 'nextjs-vite-rsc:browser-layer-modules-by-path',
-  enforce: 'pre',
-  applyToEnvironment: (environment) => environment.name === layerEnvironments.rsc,
-  resolveId: (source) =>
-    browserLayerModules.includes(source) ? fileURLToPath(import.meta.resolve(source)) : undefined,
-};
-
 export const viteFinal: ViteFinal = async (config, options) => {
   const root = config.root ?? process.cwd();
   const packages = await storybookPackages(options);
@@ -218,7 +203,6 @@ export const viteFinal: ViteFinal = async (config, options) => {
     plugins: [
       ...(config.plugins ?? []),
       withoutReactAliases,
-      browserLayerModulesByPath,
       ...(docs ? [docsInTheBrowserLayer(root), withoutDocsDependencies] : []),
       project(options.configDir),
       vitestPluginRSC(),

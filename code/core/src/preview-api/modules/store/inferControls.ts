@@ -65,6 +65,8 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
     case 'function':
     case 'symbol':
       return null;
+    case 'node':
+      return { control: { type: 'text' } };
     default:
       return { control: { type: options ? 'select' : 'object' } };
   }

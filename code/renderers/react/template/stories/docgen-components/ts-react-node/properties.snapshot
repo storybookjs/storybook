@@ -1,0 +1,55 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "children",
+      "required": true,
+      "sbType": {
+        "name": "other",
+        "raw": "React.ReactNode",
+        "value": "ReactReactNode",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "ReactReactNode",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "icon",
+      "required": true,
+      "sbType": {
+        "name": "other",
+        "raw": "React.ReactElement",
+        "value": "ReactReactElement",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "ReactReactElement",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "nodes",
+      "required": true,
+      "sbType": {
+        "name": "array",
+        "raw": "React.ReactNode[]",
+        "value": [
+          {
+            "name": "other",
+            "raw": "React.ReactNode",
+            "value": "ReactReactNode",
+          },
+        ],
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "React.ReactNode[]",
+      },
+    },
+  ],
+}

@@ -19,6 +19,7 @@ const functionType: SBType = { name: 'function' };
 const numArrayType: SBType = { name: 'array', value: numberType };
 const boolObjectType: SBType = { name: 'object', value: { bool: booleanType } };
 const reactNodeType: SBType = { name: 'other', value: 'ReactNode' };
+const nodeType: SBType = { name: 'node', renderer: 'react' };
 const otherUnionType: SBType = { name: 'other', value: 'small | default' };
 
 vi.mock('storybook/internal/client-logger');
@@ -149,6 +150,18 @@ describe('mapArgsToTypes', () => {
       {}
     );
     expect(mapArgsToTypes({ a: new Date() }, { a: { type: otherUnionType } })).toStrictEqual({});
+  });
+
+  // Node props (e.g. children: React.ReactNode) serialize like `other`: strings typed into
+  // their text control must survive the URL round-trip; non-primitives stay dropped.
+  it('passes primitives for node types', () => {
+    expect(mapArgsToTypes({ a: 'Hello' }, { a: { type: nodeType } })).toStrictEqual({
+      a: 'Hello',
+    });
+    expect(mapArgsToTypes({ a: 42 }, { a: { type: nodeType } })).toStrictEqual({ a: 42 });
+    expect(mapArgsToTypes({ a: true }, { a: { type: nodeType } })).toStrictEqual({ a: true });
+    expect(mapArgsToTypes({ a: { foo: 'bar' } }, { a: { type: nodeType } })).toStrictEqual({});
+    expect(mapArgsToTypes({ a: new Date() }, { a: { type: nodeType } })).toStrictEqual({});
   });
 
   it('deeply maps objects', () => {

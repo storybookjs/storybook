@@ -189,7 +189,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get(path: readonly string[]): t.Expression | undefined {
-    const editor = this._editor();
+    const editor = this._editor('read');
     return editor.ok ? editor.object.get(path) : undefined;
   }
 
@@ -206,7 +206,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   getValue(path: readonly string[]): CsfValue {
-    const editor = this._editor();
+    const editor = this._editor('read');
     return editor.ok ? editor.object.getValue(path) : undefined;
   }
 
@@ -311,15 +311,16 @@ export class ConfigFile implements CsfObject {
   }
 
   _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
-    const editor = this._editor();
+    const editor = this._editor('mutate');
     return editor.ok === true
       ? operation(editor.object)
       : { ok: false, changed: false, diagnostic: editor.diagnostic };
   }
 
-  _editor() {
+  _editor(mode: 'read' | 'mutate') {
     const editor = createConfigObject(
       this,
+      mode,
       (diagnostic) => this._mutationDiagnostics.push(diagnostic),
       () => {
         this._changed = true;

@@ -100,6 +100,7 @@ describe('ConfigFile mutations', () => {
     'const tags = ["autodocs"]; export default { tags };',
     'const tags = ["autodocs"]; module.exports = { tags };',
     'const values = ["autodocs"]; export { values as tags };',
+    'const preview = { tags: ["autodocs"] }; export const argTypesEnhancers = []; export default preview;',
   ])('reads literal values from %s', (source) => {
     const config = loadConfig(source).parse();
     expect(config.getValue(['tags'])).toEqual(['autodocs']);

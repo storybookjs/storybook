@@ -59,6 +59,7 @@ describe('StoryIndexGenerator', () => {
     'export default { tags: ["autodocs"] };',
     'const tags = ["autodocs"]; export default { tags };',
     'const preview = { tags: ["autodocs"] }; export const argTypesEnhancers = []; export default preview;',
+    'const base = ["autodocs"]; export default { tags: [...base] };',
   ])('reads project tags statically from %s', (source) => {
     const generator = new StoryIndexGenerator([], options);
     expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST, 'autodocs']);

@@ -49,6 +49,7 @@ const isExportReference = (reference: NodePath): boolean => {
 
 export function createConfigObject(
   config: ConfigFile,
+  mode: 'read' | 'mutate',
   report: (diagnostic: CsfMutationDiagnostic) => void,
   markChanged: () => void
 ): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
@@ -95,7 +96,10 @@ export function createConfigObject(
       const root = pathForNode(program, config._exportsObject);
       if (root) {
         const declaration = root.findParent((parent) => parent.isVariableDeclarator());
-        if (Object.values(config._exportDecls).some((exported) => exported !== declaration?.node)) {
+        if (
+          mode === 'mutate' &&
+          Object.values(config._exportDecls).some((exported) => exported !== declaration?.node)
+        ) {
           reject(
             root.node,
             'ambiguous-binding',

@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { normalizeStoryPath } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
+import type { IndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import leven from 'leven';
 
@@ -39,27 +39,37 @@ function normalizeImportPath(importPath: string): string {
 const MAX_SUGGESTIONS = 3;
 const MAX_FILE_STORIES = 5;
 
+function isStory(entry: IndexEntry): entry is StoryIndexEntry {
+  return entry.type === 'story' && entry.subtype !== 'test';
+}
+
 // Agents guess IDs from story names (`--error` for an `ErrorState` story named "Error"), so the
-// same component's stories come first, those whose name overlaps the guess before the rest.
+// same component's stories come first, those whose name overlaps the guess before the rest. A
+// guess without the title prefix (`button--primary` for `example-button--primary`) counts as the
+// same component.
 function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
-  const [componentId, storyName = ''] = storyId.split('--');
+  const [componentId, guessedSlug = ''] = storyId.split('--');
+  const maxDistance = storyId.length / 3;
   return entries
-    .filter((entry) => entry.type === 'story')
-    .map((entry) => {
-      const [entryComponentId, entryStoryName = ''] = entry.id.split('--');
-      const sameComponent = entryComponentId === componentId;
-      return {
-        id: entry.id,
-        sameComponent,
-        overlapsGuess:
-          sameComponent &&
-          storyName !== '' &&
-          entryStoryName !== '' &&
-          (entryStoryName.includes(storyName) || storyName.includes(entryStoryName)),
-        distance: leven(storyId, entry.id),
-      };
+    .filter(isStory)
+    .flatMap((entry) => {
+      const [entryComponentId, entrySlug = ''] = entry.id.split('--');
+      const sameComponent =
+        entryComponentId === componentId || entryComponentId.endsWith(`-${componentId}`);
+      if (!sameComponent && Math.abs(entry.id.length - storyId.length) > maxDistance) {
+        return [];
+      }
+      const distance = leven(storyId, entry.id);
+      if (!sameComponent && distance > maxDistance) {
+        return [];
+      }
+      const overlapsGuess =
+        sameComponent &&
+        guessedSlug !== '' &&
+        entrySlug !== '' &&
+        (entrySlug.includes(guessedSlug) || guessedSlug.includes(entrySlug));
+      return [{ id: entry.id, sameComponent, overlapsGuess, distance }];
     })
-    .filter(({ sameComponent, distance }) => sameComponent || distance <= storyId.length / 3)
     .sort(
       (a, b) =>
         Number(b.sameComponent) - Number(a.sameComponent) ||
@@ -67,7 +77,18 @@ function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
         a.distance - b.distance
     )
     .slice(0, MAX_SUGGESTIONS)
-    .map(({ id }) => `"${id}"`);
+    .map(({ id }) => id);
+}
+
+function describeClosestFileStories(fileStories: StoryIndexEntry[], guessedName: string): string {
+  const closest = fileStories
+    .map((entry) => ({ entry, distance: leven(guessedName, entry.name) }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, MAX_FILE_STORIES)
+    .map(({ entry }) => `"${entry.id}" (named "${entry.name}")`);
+  const more =
+    fileStories.length > closest.length ? ` (+${fileStories.length - closest.length} more)` : '';
+  return `Closest stories in that file: ${closest.join(', ')}${more}. Pass one of these IDs as { storyId } instead`;
 }
 
 /**
@@ -94,7 +115,9 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
           input: storyInput,
           errorMessage:
             `No story found for story ID "${storyInput.storyId}"` +
-            (suggestions.length > 0 ? `. Did you mean ${suggestions.join(', ')}?` : ''),
+            (suggestions.length > 0
+              ? `. Did you mean ${suggestions.map((id) => `"${id}"`).join(', ')}?`
+              : ''),
         });
       }
 
@@ -109,11 +132,16 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
     );
 
     const fileEntries = entriesList.filter(
-      (entry) => entry.type === 'story' && normalizeImportPath(entry.importPath) === relativePath
+      (entry): entry is StoryIndexEntry =>
+        entry.type === 'story' && normalizeImportPath(entry.importPath) === relativePath
     );
-    const foundEntry = fileEntries.find((entry) =>
-      [explicitStoryName, storyNameFromExport(exportName)].includes(entry.name)
-    );
+    const fileStories = fileEntries.filter(isStory);
+    // A test entry carries its parent story's export name, so only stories match on it.
+    const foundEntry =
+      fileStories.find((entry) => entry.exportName === exportName) ??
+      fileEntries.find((entry) =>
+        [explicitStoryName, storyNameFromExport(exportName)].includes(entry.name)
+      );
 
     if (foundEntry) {
       result.push({
@@ -121,25 +149,16 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
         input: storyInput,
       });
     } else {
-      let errorMessage = `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}"`;
-      if (fileEntries.length > 0) {
-        const guessedName = explicitStoryName ?? storyNameFromExport(exportName);
-        const closest = fileEntries
-          .toSorted((a, b) => leven(guessedName, a.name) - leven(guessedName, b.name))
-          .slice(0, MAX_FILE_STORIES);
-        const more =
-          fileEntries.length > closest.length
-            ? ` (+${fileEntries.length - closest.length} more)`
-            : '';
-        errorMessage += `. Closest stories in that file: ${closest
-          .map((entry) => `"${entry.id}" (named "${entry.name}")`)
-          .join(', ')}${more}. Pass one of these IDs as { storyId } instead`;
-      } else if (!explicitStoryName) {
-        errorMessage += ` (did you forget to pass the explicit story name?)`;
-      }
+      const hint =
+        fileStories.length > 0
+          ? describeClosestFileStories(
+              fileStories,
+              explicitStoryName ?? storyNameFromExport(exportName)
+            )
+          : 'Storybook has no stories indexed for that file; check the path, and that the file matches the `stories` globs in the Storybook config';
       result.push({
         input: storyInput,
-        errorMessage,
+        errorMessage: `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}". ${hint}`,
       });
     }
   }

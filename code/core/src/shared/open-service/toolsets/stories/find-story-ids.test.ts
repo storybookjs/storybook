@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { findStoryIds } from './find-story-ids.ts';
 import type { StoryInput } from './story-input.ts';
@@ -38,6 +38,8 @@ describe('findStoryIds', () => {
       },
     },
   };
+
+  const primaryStory = mockStoryIndex.entries['button--primary'] as StoryIndexEntry;
 
   const ordersIndex: StoryIndex = {
     v: 5,
@@ -102,6 +104,25 @@ describe('findStoryIds', () => {
     );
   });
 
+  it('suggests the same component when the guess lacks the title prefix', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'example-button--primary': {
+          ...primaryStory,
+          id: 'example-button--primary',
+          title: 'Example/Button',
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--primary' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--primary". Did you mean "example-button--primary"?'
+    );
+  });
+
   it('suggests an ID of another component only when it is a few edits away', () => {
     const [nearMiss, farMiss] = findStoryIds(mockStoryIndex, [
       { storyId: 'inputs--default' },
@@ -147,7 +168,27 @@ describe('findStoryIds', () => {
     ]);
   });
 
-  it('hints about explicitStoryName when path+exportName miss', () => {
+  it('finds a story by exportName when the story has a custom name', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--primary': {
+          ...primaryStory,
+          name: 'Main button',
+          exportName: 'Primary',
+        },
+      },
+    };
+    const stories: StoryInput[] = [
+      { exportName: 'Primary', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ];
+
+    expect(findStoryIds(index, stories)).toEqual([
+      { entry: index.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
+  it('says when the index has no stories for the file', () => {
     const stories: StoryInput[] = [
       {
         exportName: 'NonExistent',
@@ -157,8 +198,8 @@ describe('findStoryIds', () => {
 
     const result = findStoryIds(mockStoryIndex, stories);
 
-    expect((result[0] as { errorMessage: string }).errorMessage).toContain(
-      'did you forget to pass the explicit story name?'
+    expect((result[0] as { errorMessage: string }).errorMessage).toBe(
+      `No story found for export name "NonExistent" with absolute file path "${process.cwd()}/src/NonExistent.stories.tsx". Storybook has no stories indexed for that file; check the path, and that the file matches the \`stories\` globs in the Storybook config`
     );
   });
 
@@ -172,20 +213,45 @@ describe('findStoryIds', () => {
     );
   });
 
-  it('omits the hint when explicitStoryName was provided but not found', () => {
-    const stories: StoryInput[] = [
-      {
-        exportName: 'NonExistent',
-        explicitStoryName: 'NonExistent',
-        absoluteStoryPath: `${process.cwd()}/src/NonExistent.stories.tsx`,
+  it('lists only stories, the closest five, when the export name misses', () => {
+    const story = primaryStory;
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--docs': {
+          type: 'docs',
+          id: 'button--docs',
+          name: 'Docs',
+          title: 'Button',
+          importPath: story.importPath,
+          storiesImports: [],
+        },
+        'button--small:renders': {
+          ...story,
+          subtype: 'test',
+          id: 'button--small:renders',
+          name: 'Small',
+        },
+        ...Object.fromEntries(
+          ['Small', 'Medium', 'Large', 'Huge', 'Tiny', 'Disabled'].map((name) => [
+            `button--${name.toLowerCase()}`,
+            { ...story, id: `button--${name.toLowerCase()}`, name },
+          ])
+        ),
       },
-    ];
+    };
 
-    const result = findStoryIds(mockStoryIndex, stories);
+    const [result] = findStoryIds(index, [
+      { exportName: 'Smal', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
 
-    expect((result[0] as { errorMessage: string }).errorMessage).not.toContain(
-      'did you forget to pass the explicit story name?'
+    const { errorMessage } = result as { errorMessage: string };
+    expect(errorMessage).toContain(
+      'Closest stories in that file: "button--small" (named "Small"), '
     );
+    expect(errorMessage.match(/"button--[a-z]+" \(named/g)).toHaveLength(5);
+    expect(errorMessage).toContain(' (+1 more). Pass one of these IDs');
+    expect(errorMessage).not.toMatch(/button--docs|:renders/);
   });
 
   it('preserves input order for mixed found and not found results', () => {

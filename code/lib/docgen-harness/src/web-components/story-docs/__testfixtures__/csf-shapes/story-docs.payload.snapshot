@@ -26,8 +26,13 @@
     "webcomponentsstorydocs-csf-shapes--listener": {
       "id": "webcomponentsstorydocs-csf-shapes--listener",
       "name": "Listener",
-      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "warning": "Incomplete snippet: listeners the HTML snippet cannot express: `shape-change-event`, `onShapeChange`.",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
     },
     "webcomponentsstorydocs-csf-shapes--parts-and-css": {
       "id": "webcomponentsstorydocs-csf-shapes--parts-and-css",

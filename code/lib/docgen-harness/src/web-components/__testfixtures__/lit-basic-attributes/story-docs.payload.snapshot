@@ -18,12 +18,6 @@
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "warning": "Incomplete snippet: `args => html`<lit-basic-attributes
-      label=${args.label}
-      count=${args.count}
-      ?disabled=${args.disabled}
-      ?is-open=${args.isOpen}
-    ></lit-basic-attributes>`` could not be resolved statically.",
     },
   },
 }

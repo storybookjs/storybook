@@ -25,13 +25,12 @@ const storyDocsFixturesDir = join(
 const DECLARED_OMISSIONS: Record<string, readonly string[]> = {
   'vanilla-multi-definition/ArgsDefaultRender': ['beta-label'],
   'vanilla-multi-definition/DomNode': ['beta-label'],
-  'vanilla-multi-definition/LitTemplate': ['beta-label'],
 };
 
 const listFixtureCases = (dir: string): string[] =>
   existsSync(dir)
     ? readdirSync(dir, { withFileTypes: true })
-        .filter((entry) => entry.isDirectory())
+        .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
         .map((entry) => entry.name)
         .sort()
     : [];

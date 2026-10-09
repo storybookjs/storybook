@@ -76,15 +76,31 @@ Light mode is only supported when the `Source` block is rendered independently. 
 
 </Callout>
 
-<If renderer={['angular', 'react', 'html', 'web-components' ]}>
+<If renderer={['angular', 'html', 'web-components' ]}>
 
 ### `excludeDecorators`
 
 Type: `boolean`
 
-Default: `parameters.docs.source.excludeDecorators`
+Parameter: `parameters.docs.source.excludeDecorators`
 
 Determines if [decorators](../../writing-stories/decorators.mdx) are rendered in the source code snippet.
+
+<Callout variant="info" icon="💡">
+
+`excludeDecorators` is a parameter only. It can't be passed as a prop to the `Source` block. The snippet is generated when the story renders, so set it at the [story](../../writing-stories/parameters.mdx#story-parameters), [component](../../writing-stories/parameters.mdx#component-parameters) or [project](../../writing-stories/parameters.mdx#global-parameters) level. Every `Source` block for the same story shows the same generated snippet, unless the block sets [`code`](#code) or [`transform`](#transform).
+
+</Callout>
+
+</If>
+
+<If renderer="react">
+
+<Callout variant="info" icon="💡">
+
+In React, decorators are always left out of the source snippet, and the `parameters.docs.source.excludeDecorators` parameter has no effect. See the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameter-docssourceexcludedecorators-has-no-effect-in-react).
+
+</Callout>
 
 </If>
 

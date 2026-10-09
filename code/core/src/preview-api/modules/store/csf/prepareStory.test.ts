@@ -106,6 +106,20 @@ describe('prepareStory', () => {
 
       expect(tags).toEqual([Tag.DEV, Tag.TEST]);
     });
+
+    it('applies negated tags without keeping them', () => {
+      const { tags } = prepareStory(
+        { id, name, tags: ['!component-1', '!dev'], moduleExport },
+        {
+          id,
+          title,
+          tags: ['component-1', 'component-2'],
+        },
+        { render }
+      );
+
+      expect(tags).toEqual([Tag.TEST, 'component-2']);
+    });
   });
 
   describe('parameters', () => {

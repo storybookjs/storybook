@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { combineTags, isExportStory, storyNameFromExport, toId } from './index.ts';
+import {
+  combineFinalTags,
+  combineTags,
+  isExportStory,
+  storyNameFromExport,
+  toId,
+} from './index.ts';
 
 describe('toId', () => {
   const testCases: [string, string, string | undefined, string][] = [
@@ -106,9 +112,35 @@ describe('combineTags', () => {
       ['a', 'b', 'b'],
       ['a', 'b'],
     ],
-    [['a', 'b', '!b'], ['a']],
+    [
+      ['a', 'b', '!b'],
+      ['a', '!b'],
+    ],
     [['b', '!b', 'b'], ['b']],
+    [['!b', 'b'], ['b']],
+    [
+      ['!a', '!b', 'c'],
+      ['!a', '!b', 'c'],
+    ],
+    [['a', '!a', '!a'], ['!a']],
   ])('combineTags(%o) -> %o', (tags, expected) => {
     expect(combineTags(...tags)).toEqual(expected);
+  });
+});
+
+describe('combineFinalTags', () => {
+  it.each([
+    [[], []],
+    [
+      ['a', 'b'],
+      ['a', 'b'],
+    ],
+    [['a', 'b', '!b'], ['a']],
+    [['b', '!b', 'b'], ['b']],
+    [['!b', 'b'], ['b']],
+    [['!a', '!b', 'c'], ['c']],
+    [['a', '!a', '!a'], []],
+  ])('combineFinalTags(%o) -> %o', (tags, expected) => {
+    expect(combineFinalTags(...tags)).toEqual(expected);
   });
 });

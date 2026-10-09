@@ -198,6 +198,20 @@ describe('test function', () => {
   });
 });
 
+describe('extend', () => {
+  test('keeps negated tags for prepareStory to apply', () => {
+    const base = meta.story({});
+    const extended = base.extend({ tags: ['!autodocs', '!dev'] });
+    expect(extended.input.tags).toEqual(['!autodocs', '!dev']);
+  });
+
+  test('concatenates the base tags and the extension tags as written', () => {
+    const base = meta.story({ tags: ['a', 'b'] });
+    const extended = base.extend({ tags: ['!a', 'c'] });
+    expect(extended.input.tags).toEqual(['b', '!a', 'c']);
+  });
+});
+
 describe('definePreview composed', () => {
   test('composes the core annotations exactly once and marks the result', () => {
     const previewFactory = definePreview({ renderToCanvas: () => {} });

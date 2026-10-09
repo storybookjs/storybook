@@ -2499,7 +2499,7 @@ __metadata:
 
 "@storybook/addon-docs@file:../../code/addons/docs::locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A.":
   version: 11.0.0-alpha.4
-  resolution: "@storybook/addon-docs@file:../../code/addons/docs#../../code/addons/docs::hash=3a1c90&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
+  resolution: "@storybook/addon-docs@file:../../code/addons/docs#../../code/addons/docs::hash=e01909&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
   dependencies:
     "@mdx-js/react": "npm:^3.0.0"
     "@storybook/icons": "npm:^2.0.2"
@@ -2513,19 +2513,19 @@ __metadata:
   peerDependenciesMeta:
     "@types/react":
       optional: true
-  checksum: 10c0/8017e91bf75facac94a7305670b5401b3a9a4f02d426e108c1955ac061e4d8ab38566d819f5b2435310b0b35178341589729578906cf5d6628c4a8020faf7b40
+  checksum: 10c0/99c69442244094f956ba48745cd42fe768d3e6e49a52f499b1a73d0ff0d6018ac37a8e7dcb6fc8f04d18a850125c1dcdd07bbcac11ede91f032389c1f77a2523
   languageName: node
   linkType: hard
 
 "@storybook/builder-vite@file:../../code/builders/builder-vite::locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A.":
   version: 11.0.0-alpha.4
-  resolution: "@storybook/builder-vite@file:../../code/builders/builder-vite#../../code/builders/builder-vite::hash=9811ab&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
+  resolution: "@storybook/builder-vite@file:../../code/builders/builder-vite#../../code/builders/builder-vite::hash=2d2787&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
   dependencies:
     ts-dedent: "npm:^2.0.0"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/905f68ce808d5353a193093bb425984198c4169b33794b681e57ac1739744ecd840000d17d6b0f9aa07cad17f682a99832f3bb8fe0777a83fe32aa4ca102be98
+  checksum: 10c0/251075e68bbed9a97329478f7f416bd487686aa61cf30ec265e751873e6b8f70a7517b75d09c006a5889f901b94ceec35b6d5fea619f2c8dfbfa3e942d5724e5
   languageName: node
   linkType: hard
 
@@ -2547,10 +2547,10 @@ __metadata:
 
 "@storybook/nextjs-vite-rsc@file:../../code/frameworks/nextjs-vite-rsc::locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A.":
   version: 11.0.0-alpha.4
-  resolution: "@storybook/nextjs-vite-rsc@file:../../code/frameworks/nextjs-vite-rsc#../../code/frameworks/nextjs-vite-rsc::hash=199e48&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
+  resolution: "@storybook/nextjs-vite-rsc@file:../../code/frameworks/nextjs-vite-rsc#../../code/frameworks/nextjs-vite-rsc::hash=e6c323&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
   dependencies:
     "@storybook/builder-vite": "workspace:*"
-    vitest-plugin-rsc: "https://pkg.pr.new/vitest-plugin-rsc@3b17097"
+    vitest-plugin-rsc: "https://pkg.pr.new/vitest-plugin-rsc@0d2d720"
   peerDependencies:
     "@next/routing": ^16.4.0
     "@storybook/addon-docs": "workspace:^"
@@ -2562,7 +2562,7 @@ __metadata:
   peerDependenciesMeta:
     "@storybook/addon-docs":
       optional: true
-  checksum: 10c0/3ffbb95b20884bfbd12a5c3b8c521db8d400cb2c1a6ebf4534b300ec469f544da8ad7047e5ffe19d61f1a6a3ceb80df9aae8e60e54df61f747acd0e04e859493
+  checksum: 10c0/77bd853e305ce2ac44ccf4434980a3d7f875df6cb5c526237af3836f5a65aa46933299c2b39a0ad410f255dc4118576c16f5ee37aa95c35f22d011eb1a6af90a
   languageName: node
   linkType: hard
 
@@ -7213,7 +7213,7 @@ __metadata:
 
 "storybook@file:../../code/core::locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A.":
   version: 11.0.0-alpha.4
-  resolution: "storybook@file:../../code/core#../../code/core::hash=6ec6c1&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
+  resolution: "storybook@file:../../code/core#../../code/core::hash=1ab282&locator=%40storybook%2Ftest-storybook-nextjs-vite-rsc-notes%40workspace%3A."
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^2.0.2"
@@ -7246,7 +7246,7 @@ __metadata:
       optional: true
   bin:
     storybook: ./dist/bin/dispatcher.js
-  checksum: 10c0/3c91c2bd18da016a8b76dc5662a0c0bc823928d7b28a6774bd4f4bfdb58a50dab754c711ac8a29dff4ccc948d986311ca7133dbaf8b1b1923218926162a8ebec
+  checksum: 10c0/04442d3cf9ee32ee6be25953a5b0f0398bbc0206feb54559fa9dd2562ed56998bcd9b967ff8c797ce4332621b87d72fc04fe7cf84881fd895948e6d2e7796264
   languageName: node
   linkType: hard
 
@@ -7789,9 +7789,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@3b17097":
+"vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@0d2d720":
   version: 0.3.0
-  resolution: "vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@3b17097"
+  resolution: "vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@0d2d720"
   dependencies:
     "@jridgewell/gen-mapping": "npm:^0.3.13"
     "@vitejs/plugin-rsc": "npm:0.5.36"
@@ -7811,7 +7811,7 @@ __metadata:
       optional: true
     vitest:
       optional: true
-  checksum: 10c0/1a584ffe90b64824165f1836ae9732d06e4fa16c28918af0fcbc8a7e8cb1b105d46a16cda67fcedce3d7bd2bbe86d4013f161cdaf8f22e6a34b6193330788503
+  checksum: 10c0/6baa1097fe4093c17ab42eafbdefa7f61d701b38b3ed9094b0d347a6209e724e7375f2f1011da9ea2fe743e560de9f6f9faea443aba3ccf03eb3666d598805f4
   languageName: node
   linkType: hard
 

@@ -1,0 +1,72 @@
+{
+  "id": "webcomponentsstorydocs-csf-shapes",
+  "name": "csf-shapes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-csf-shapes--authored-code": {
+      "id": "webcomponentsstorydocs-csf-shapes--authored-code",
+      "name": "Authored Code",
+      "snippet": "<csf-shapes label="authored"></csf-shapes>",
+    },
+    "webcomponentsstorydocs-csf-shapes--authored-disabled": {
+      "id": "webcomponentsstorydocs-csf-shapes--authored-disabled",
+      "name": "Authored Disabled",
+    },
+    "webcomponentsstorydocs-csf-shapes--imported-items": {
+      "id": "webcomponentsstorydocs-csf-shapes--imported-items",
+      "name": "Imported Items",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
+    },
+    "webcomponentsstorydocs-csf-shapes--imported-label": {
+      "id": "webcomponentsstorydocs-csf-shapes--imported-label",
+      "name": "Imported Label",
+      "warning": "No static snippet: `importedLabel` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-csf-shapes--listener": {
+      "id": "webcomponentsstorydocs-csf-shapes--listener",
+      "name": "Listener",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "warning": "Incomplete snippet: listeners the HTML snippet cannot express: `shape-change-event`, `onShapeChange`.",
+    },
+    "webcomponentsstorydocs-csf-shapes--parts-and-css": {
+      "id": "webcomponentsstorydocs-csf-shapes--parts-and-css",
+      "name": "Parts And Css",
+      "snippet": "<style>
+  csf-shapes::part(panel) { color: red; }
+  csf-shapes:state(active) { outline: 1px solid; }
+</style>
+<csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
+    },
+    "webcomponentsstorydocs-csf-shapes--render-fallback": {
+      "id": "webcomponentsstorydocs-csf-shapes--render-fallback",
+      "name": "Render Fallback",
+      "snippet": "<csf-shapes label="Fallback"></csf-shapes>",
+      "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-csf-shapes--slots": {
+      "id": "webcomponentsstorydocs-csf-shapes--slots",
+      "name": "Slots",
+      "snippet": "<csf-shapes label="Meta">
+  Body <b>text</b>
+  <button slot="actions">Go</button>
+</csf-shapes>",
+    },
+    "webcomponentsstorydocs-csf-shapes--spread-args": {
+      "id": "webcomponentsstorydocs-csf-shapes--spread-args",
+      "name": "Spread Args",
+      "snippet": "<csf-shapes label="Shared" count="2"></csf-shapes>",
+    },
+    "webcomponentsstorydocs-csf-shapes--unknown-arg": {
+      "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
+      "name": "Unknown Arg",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
+    },
+    "webcomponentsstorydocs-csf-shapes--unset": {
+      "id": "webcomponentsstorydocs-csf-shapes--unset",
+      "name": "Unset",
+      "snippet": "<csf-shapes disabled></csf-shapes>",
+    },
+  },
+}

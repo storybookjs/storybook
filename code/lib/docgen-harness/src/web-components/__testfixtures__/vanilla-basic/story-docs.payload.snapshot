@@ -1,0 +1,28 @@
+{
+  "id": "webcomponentsfixtures-vanilla-basic",
+  "name": "vanilla-basic",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-vanilla-basic--args-default-render": {
+      "id": "webcomponentsfixtures-vanilla-basic--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
+    },
+    "webcomponentsfixtures-vanilla-basic--dom-node": {
+      "id": "webcomponentsfixtures-vanilla-basic--dom-node",
+      "name": "Dom Node",
+      "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('vanilla-basic'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } return el; }` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-vanilla-basic--lit-template": {
+      "id": "webcomponentsfixtures-vanilla-basic--lit-template",
+      "name": "Lit Template",
+      "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
+      "warning": "Incomplete snippet: `args => html`<vanilla-basic
+      label=${args.label}
+      count=${args.count}
+      ?disabled=${args.disabled}
+    ></vanilla-basic>`` could not be resolved statically.",
+    },
+  },
+}

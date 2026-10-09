@@ -5,7 +5,7 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { renderCommandReference } from './command-reference.ts';
-import { buildServerInstructions } from './content/build-server-instructions.ts';
+import { buildStoriesSkill } from './content/build-stories-skill.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
@@ -107,9 +107,7 @@ export async function runSkillsCommand(
     return { output: '', errorOutput: intent.message, exitCode: 1 };
   }
   try {
-    // `stories` carries the `write-story` text, so `--all` does not print it a second time.
-    const ids =
-      intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
+    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
     const { docs, setupRun } = await serveSkills(
       ids,
       resolveStorybookConfigDir(input.target),
@@ -217,31 +215,30 @@ function withCommandReference(
   toolsets: ToolsetCatalogEntry[]
 ): string {
   const text = assemble(id, inputs);
+  if (id === 'stories') {
+    return text;
+  }
   const reference = renderCommandReference(text, toolsets);
   return reference ? `${text.trimEnd()}\n\n${reference}` : text;
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
-  const { reviewEnabled } = inputs;
   if (id === 'stories') {
-    const workflow = buildServerInstructions({
-      transport: 'cli',
-      devEnabled: true,
-      testSupported: inputs.testSupported,
+    return buildStoriesSkill({
+      framework: inputs.framework,
+      csfFactories: inputs.csfFactories,
+      previewFile: inputs.previewFile,
+      typescript: inputs.typescript,
       docsEnabled: inputs.docsEnabledForCli,
-      changeDetectionEnabled: inputs.changeDetectionEnabled,
+      testSupported: inputs.testSupported,
+      a11yEnabled: inputs.a11yEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
-      reviewEnabled,
-      storyInstructionsInline: true,
     });
-    return `${workflow}\n\n${assemble('write-story', inputs)}`;
   }
   return buildStoryInstructions({
     transport: 'cli',
     framework: inputs.framework,
     renderer: inputs.renderer,
-    changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     docsEnabled: inputs.docsEnabledForCli,

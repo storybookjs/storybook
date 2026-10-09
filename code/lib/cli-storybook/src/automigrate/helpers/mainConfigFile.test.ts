@@ -1,81 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { loadConfig, readConfig, writeConfig } from 'storybook/internal/csf-tools';
-
-import {
-  getBuilderPackageName,
-  getFrameworkPackageName,
-  getRendererName,
-  updateMainConfig,
-} from './mainConfigFile.ts';
-
-describe('getBuilderPackageName', () => {
-  it('should return null when mainConfig is undefined or null', () => {
-    const packageName = getBuilderPackageName(undefined);
-    expect(packageName).toBeNull();
-
-    // @ts-expect-error (Argument of type 'null' is not assignable)
-    const packageName2 = getBuilderPackageName(null);
-    expect(packageName2).toBeNull();
-  });
-
-  it('should return null when builder package name or path is not found', () => {
-    const mainConfig = {};
-
-    const packageName = getBuilderPackageName(mainConfig as any);
-    expect(packageName).toBeNull();
-  });
-
-  it('should return builder package name when core.builder is a string', () => {
-    const builderPackage = '@storybook/builder-webpack5';
-    const mainConfig = {
-      core: {
-        builder: builderPackage,
-      },
-    };
-
-    const packageName = getBuilderPackageName(mainConfig as any);
-    expect(packageName).toBe(builderPackage);
-  });
-
-  it('should return builder package name when core.builder.name contains valid builder package name', () => {
-    const builderPackage = '@storybook/builder-webpack5';
-    const packageNameOrPath = `/path/to/${builderPackage}`;
-    const mainConfig = {
-      core: {
-        builder: { name: packageNameOrPath },
-      },
-    };
-
-    const packageName = getBuilderPackageName(mainConfig as any);
-    expect(packageName).toBe(builderPackage);
-  });
-
-  it('should return builder package name when core.builder.name contains windows backslash paths', () => {
-    const builderPackage = '@storybook/builder-webpack5';
-    const packageNameOrPath = 'c:\\path\\to\\@storybook\\builder-webpack5';
-    const mainConfig = {
-      core: {
-        builder: { name: packageNameOrPath },
-      },
-    };
-
-    const packageName = getBuilderPackageName(mainConfig as any);
-    expect(packageName).toBe(builderPackage);
-  });
-
-  it(`should return package name or path when core.builder doesn't contain the name of a valid builder package`, () => {
-    const packageNameOrPath = '@my-org/storybook-builder';
-    const mainConfig = {
-      core: {
-        builder: packageNameOrPath,
-      },
-    };
-
-    const packageName = getBuilderPackageName(mainConfig as any);
-    expect(packageName).toBe(packageNameOrPath);
-  });
-});
+import { getFrameworkPackageName, getRendererName } from './mainConfigFile.ts';
 
 describe('getFrameworkPackageName', () => {
   it('should return null when mainConfig is undefined or null', () => {
@@ -189,45 +114,5 @@ describe('getRendererName', () => {
 
     const rendererName = getRendererName(mainConfig as any);
     expect(rendererName).toBeUndefined();
-  });
-});
-
-vi.mock('storybook/internal/csf-tools', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/csf-tools')>()),
-  readConfig: vi.fn(),
-  writeConfig: vi.fn(),
-}));
-
-describe('updateMainConfig', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it.each([false, true])(
-    'writes successful mutations only outside dry runs (%s)',
-    async (dryRun) => {
-      const config = loadConfig("export default { addons: ['addon'] };").parse();
-      vi.mocked(readConfig).mockResolvedValue(config);
-
-      await updateMainConfig({ mainConfigPath: 'main.ts', dryRun }, (main) => {
-        main.rename(['addons'], 'deviceAddons');
-      });
-
-      expect(writeConfig).toHaveBeenCalledTimes(dryRun ? 0 : 1);
-      expect(config.get(['deviceAddons'])).toMatchObject({ type: 'ArrayExpression' });
-    }
-  );
-
-  it('does not write a partial migration after an occupied destination', async () => {
-    vi.mocked(readConfig).mockResolvedValue(
-      loadConfig(
-        "export default { docs: {}, addons: ['old'], deviceAddons: ['existing'] };"
-      ).parse()
-    );
-
-    await updateMainConfig({ mainConfigPath: 'main.ts', dryRun: false }, (main) => {
-      main.remove(['docs']);
-      main.rename(['addons'], 'deviceAddons');
-    });
-
-    expect(writeConfig).not.toHaveBeenCalled();
   });
 });

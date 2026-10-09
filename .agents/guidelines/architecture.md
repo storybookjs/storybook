@@ -1,6 +1,6 @@
 # Architecture
 
-This document is canonical for repo structure and architecture: renderer vs builder vs framework, the core package layout, key flows, open services and toolsets, and agent-facing skills. `AGENTS.md` owns the pointer to this file and the kickstart commands.
+This document is canonical for repo structure and architecture: renderer vs builder vs framework, the core package layout, key flows, open services and toolsets, and agent-facing skills. `AGENTS.md` owns the pointer to this file.
 
 ## Repository Structure
 
@@ -89,6 +89,9 @@ the fields to change and provide migration-specific error guidance.
   toolsets, as addon-vitest does for `test`.
 - Register services and toolsets from the same `services` preset hook and behind the same feature
   gate. Missing or duplicate registrations fail loudly.
+- The tools CLI applies `services` too, so subscriptions that execute commands start from
+  `experimental_devServer`, not at registration. `experimental_devServer` applies and awaits
+  `services` first. See "Server Registration Flow" in the open-service README.
 - The tools CLI consumes `storybook/internal/tools` (`createTools`). Default mode is
   attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
   failure. `--attach` requires attachment; `--no-attach` forces local. When several running
@@ -99,10 +102,19 @@ the fields to change and provide migration-specific error guidance.
   registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and
   `code/core/src/cli/tools/architecture.md` before changing attachment, the SDK, or the tools CLI.
 
+### Docgen server
+
+- `features.docgenServer` defaults to `true` when any loaded preset exports `experimental_docgenProvider`, and the main config overrides it.
+  Today that is the React and Vue 3 renderer presets and `@storybook/angular-vite`.
+- Ship a provider by exporting `experimental_docgenProvider` from a preset; do not add framework defaults or allowlists.
+  A provider must not read `features.docgenServer`: only consumers gate on it.
+- Svelte and Web Components keep their providers unexported until they ship.
+- The `docgen-server` automigration only renames `experimentalDocgenServer`; legacy React and Vue extractor settings are not preserved.
+  Angular `compodoc: false` controls only the legacy Compodoc run and is not a server opt-out.
+
 ## Agent-facing skills
 
 - `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
 - Pure content lives in `code/core/src/cli/skills/content/` and is exported through
   `storybook/internal/skills`; addon-mcp consumes the same builders.
-- Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
-  `core-server`. Lint rules enforce both boundaries.
+- Keep `cli/skills/content/**` independent of `core-server`. A lint rule enforces the boundary.

@@ -78,13 +78,8 @@ let cliCtx: ToolsetCtx;
 let mcpCtx: ToolsetCtx;
 let toolset: StoriesToolset;
 
-function createToolset({ reviewEnabled = false } = {}): StoriesToolset {
-  return createStoriesToolset({
-    storyIndex,
-    git,
-    changeStatuses,
-    reviewEnabled,
-  });
+function createToolset(): StoriesToolset {
+  return createStoriesToolset({ storyIndex, git, changeStatuses });
 }
 
 function runPreview(
@@ -172,6 +167,7 @@ describe('stories.preview', () => {
     expect(outcome.ok).toBe(true);
     expect(outcome.data).toEqual({
       stories: [{ title: 'Button', name: 'Primary', previewUrl }],
+      instructions: expect.stringContaining('publish the review with'),
     });
     expect(getIndex).toHaveBeenCalledOnce();
   });
@@ -208,35 +204,46 @@ describe('stories.preview', () => {
   });
 
   describe('rendering', () => {
-    it('returns the same text blocks for the CLI as for MCP', async () => {
+    it('names the review tool as a CLI command for the CLI', async () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }]);
-      const mcpOutcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toEqual([previewUrl]);
-      expect(outcome.markdown).toEqual(mcpOutcome.markdown);
+      expect(outcome.markdown).toEqual([
+        previewUrl,
+        expect.stringContaining('publish the review with **npx storybook tools review create**'),
+      ]);
     });
 
-    it('returns one text block per URL for MCP', async () => {
+    it('names no harness-specific browser tool in its description or result', async () => {
+      const description = resolveToolsetDescription(toolset.methods.preview.description, mcpCtx);
       const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toEqual([previewUrl]);
+      for (const harnessTool of [
+        'preview_eval',
+        'preview_start',
+        'Claude_Browser',
+        'browser_navigate',
+        'node_repl',
+      ]) {
+        expect(description).not.toContain(harnessTool);
+        expect(String(outcome.markdown)).not.toContain(harnessTool);
+      }
     });
 
-    it('appends a review nudge for MCP once a URL resolved and reviews exist', async () => {
-      const withReviews = createToolset({ reviewEnabled: true });
-      const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx, withReviews);
+    it('appends a review nudge for MCP once a URL resolved', async () => {
+      const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
       expect(outcome.markdown).toEqual([
         previewUrl,
         'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.',
       ]);
+      expect(outcome.data.instructions).toContain('publish the review with **review-create**');
     });
 
-    it('leaves an all-error result unnudged, since there is nothing to curate', async () => {
-      const withReviews = createToolset({ reviewEnabled: true });
-      const outcome = await runPreview([{ storyId: 'gone--story' }], mcpCtx, withReviews);
+    it('leaves an all-error result unnudged, since there is nothing to curate or open', async () => {
+      const outcome = await runPreview([{ storyId: 'gone--story' }], mcpCtx);
 
       expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
+      expect(outcome.data.instructions).toBeUndefined();
     });
   });
 });
@@ -283,13 +290,20 @@ describe('stories.changed', () => {
   });
 
   it('rejects when change detection is not ready even if the graph is', async () => {
-    changeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'disabled' });
+    changeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'git timed out' });
 
     const error = await runChanged().catch((reason: unknown) => reason);
 
     expect(error).toBeInstanceOf(OpenServiceModuleGraphUnavailableError);
-    expect((error as Error).message).toContain('change detection is disabled');
+    expect((error as Error).message).toContain('change detection is unavailable: git timed out');
     expect(getStatuses).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the statuses cannot be read rather than reporting zero changes', async () => {
+    const unsynced = new Error('status store did not sync');
+    getStatuses.mockRejectedValue(unsynced);
+
+    await expect(runChanged()).rejects.toBe(unsynced);
   });
 
   it('degrades to "no changes detected" when git is unusable, as the pre-toolset tool did', async () => {
@@ -340,9 +354,7 @@ describe('stories.changed', () => {
   });
 
   describe('rendering', () => {
-    // Byte parity holds outside the coverage hint, whose tool reference legitimately renders as
-    // the CLI command on one transport and the MCP tool name on the other (getToolName).
-    it('renders the same bucketed report for the CLI as for MCP', async () => {
+    it('renders the same bucketed report for the CLI as for MCP, apart from tool names', async () => {
       markChanged('button--primary', 'status-value:new');
       markReachable(themePath);
       const outcome = await runChanged();
@@ -351,27 +363,15 @@ describe('stories.changed', () => {
       expect(outcome.markdown).toContain(
         'Detected 1 changed story (1 new, 0 modified, 0 related).'
       );
-      expect(outcome.markdown).toBe(mcpOutcome.markdown);
-    });
-
-    it('buckets stories by status for MCP', async () => {
-      markChanged('button--primary', 'status-value:new');
-      markReachable(themePath);
-      const outcome = await runChanged(mcpCtx);
-
       expect(outcome.markdown).toBe(
-        `Detected 1 changed story (1 new, 0 modified, 0 related).
-
-New stories:
-- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
+        String(mcpOutcome.markdown).replaceAll('review-create', 'npx storybook tools review create')
       );
     });
 
-    it('points MCP at the review tool as the next step when reviews are enabled', async () => {
+    it('points MCP at the review tool as the next step', async () => {
       markChanged('button--primary', 'status-value:new');
       markReachable(themePath);
-      const withReviews = createToolset({ reviewEnabled: true });
-      const outcome = await runChanged(mcpCtx, withReviews);
+      const outcome = await runChanged(mcpCtx);
 
       expect(outcome.markdown).toBe(
         `Detected 1 changed story (1 new, 0 modified, 0 related).
@@ -391,6 +391,8 @@ New stories:
         `⚠ Coverage gap: 1 modified file unreachable from any story (${changedThemeFile}) — full sanity-check note at end of this response.
 
 Detected 1 changed story (1 new, 0 modified, 0 related).
+
+Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.
 
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
@@ -521,46 +523,27 @@ describe('descriptions', () => {
     );
   });
 
-  it('makes preview the end of visual work when no review page exists', () => {
+  it('describes preview as a mid-loop tool', () => {
     expect(resolveToolsetDescription(toolset.methods.preview.description, mcpCtx))
-      .toBe(`Use this tool to get one or more Storybook preview URLs.
-Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
-Include each returned preview URL in your final user-facing response so users can open them directly.`);
-  });
-
-  it('demotes preview to a mid-loop tool when reviews are enabled', () => {
-    const withReviews = createToolset({ reviewEnabled: true });
-
-    expect(resolveToolsetDescription(withReviews.methods.preview.description, mcpCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
 Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.`);
 
-    expect(resolveToolsetDescription(withReviews.methods.preview.description, cliCtx))
+    expect(resolveToolsetDescription(toolset.methods.preview.description, cliCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
 Do not end visual work or browse requests with these links — publish a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
   });
 
-  it('keeps review-create out of the static preview output schema in both review modes', () => {
-    const withoutReviews = createToolset({ reviewEnabled: false });
-    const withReviews = createToolset({ reviewEnabled: true });
-
-    for (const target of [withoutReviews, withReviews]) {
-      const serialized = JSON.stringify(
-        toJsonSchema(target.methods.preview.output as never, { errorMode: 'ignore' })
-      );
-      expect(serialized).not.toContain('review-create');
-      expect(serialized).toContain('Direct URL to open the story preview');
-    }
+  it('keeps review-create out of the static preview output schema', () => {
+    const serialized = JSON.stringify(
+      toJsonSchema(toolset.methods.preview.output as never, { errorMode: 'ignore' })
+    );
+    expect(serialized).not.toContain('review-create');
+    expect(serialized).toContain('Direct URL to open the story preview');
   });
 
-  it('offers the review page as a hand-off target only when reviews are enabled', () => {
-    const withReviews = createToolset({ reviewEnabled: true });
-
-    expect(
-      resolveToolsetDescription(withReviews.methods.findByComponent.description, mcpCtx)
-    ).toContain('hand these to stories-preview or review-create');
+  it('offers the review page as a hand-off target', () => {
     expect(
       resolveToolsetDescription(toolset.methods.findByComponent.description, mcpCtx)
-    ).toContain('hand these to stories-preview instead of guessing');
+    ).toContain('hand these to stories-preview or review-create');
   });
 });

@@ -279,7 +279,6 @@ describe('toUpgradedDependencies', () => {
         storiesPaths: [],
         versionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
         versionInstalled: '10.0.0',
-        hasCsfFactoryPreview: false,
       });
 
       const results = await collectProjects({ force: true } as any, ['.storybook'], () => {});
@@ -299,7 +298,6 @@ describe('toUpgradedDependencies', () => {
       const deps = {
         '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
-        '@storybook/test-runner': '^8.0.0',
         '@chromatic-com/storybook': '~3.0.0',
       };
 
@@ -315,7 +313,6 @@ describe('toUpgradedDependencies', () => {
       expect(result).toEqual([
         '@storybook/react@9.0.0',
         '@storybook/addon-designs@8.0.0',
-        '@storybook/test-runner@^9.0.0',
         '@chromatic-com/storybook@~3.0.0',
       ]);
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
@@ -341,6 +338,26 @@ describe('toUpgradedDependencies', () => {
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'
       );
+    });
+
+    it('keeps the latest version of a satellite whose next tag is older', async () => {
+      vi.mocked(mockPackageManager.latestVersion).mockImplementation(async (packageName: string) =>
+        packageName === '@storybook/addon-svelte-csf@next' ? '5.0.0-next.30' : '5.1.4'
+      );
+
+      const result = await generateUpgradeSpecs(
+        { '@storybook/addon-svelte-csf': '^5.1.2' },
+        {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIExactLatest: false,
+          isCLIExactPrerelease: true,
+          isCLIPrerelease: true,
+        }
+      );
+
+      expect(result).toEqual(['@storybook/addon-svelte-csf@^5.1.4']);
     });
 
     it('should handle errors when fetching satellite dependencies', async () => {
@@ -404,7 +421,6 @@ describe('collectProjects', () => {
       packageManager,
       storiesPaths: [],
       versionInstalled: '8.0.0',
-      hasCsfFactoryPreview: false,
     } as unknown as Awaited<ReturnType<typeof getStorybookData>>);
 
     const results = await collectProjects(

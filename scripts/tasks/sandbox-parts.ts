@@ -11,6 +11,7 @@ import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { dedent } from 'ts-dedent';
 
 import { SupportedLanguage } from 'storybook/internal/types';
 import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
@@ -239,7 +240,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
 
 export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, debug }) => {
   const cwd = sandboxDir;
-  await installYarn2({ cwd, dryRun, debug });
+  await installYarn2({ cwd, dryRun, debug, key });
 
   if (link) {
     await executeCLIStep(steps.link, {
@@ -473,7 +474,7 @@ function addStoriesEntry(
   mainConfig: ConfigFile,
   path: string,
   disableDocs: boolean,
-  skipMocking: boolean
+  skipMocking: boolean | undefined
 ) {
   const stories = mainConfig.getValue(['stories']) as string[];
 
@@ -513,7 +514,7 @@ async function linkPackageStories(
     cwd: string;
     linkInDir?: string;
     disableDocs: boolean;
-    skipMocking: boolean;
+    skipMocking?: boolean;
   },
   variant?: string
 ) {
@@ -971,7 +972,9 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   }
 
   logger.log('📝 Adding static dirs');
-  const publicDir = join(sandboxDir, 'public');
+  // SvelteKit sets Vite's public directory to its `static` directory
+  const publicDirName = key.startsWith('svelte-kit/') ? 'static' : 'public';
+  const publicDir = join(sandboxDir, publicDirName);
   const storybookStaticDir = join(sandboxDir, '.storybook', 'static');
   await mkdir(publicDir, { recursive: true });
   await mkdir(storybookStaticDir, { recursive: true });
@@ -985,7 +988,7 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   await writeFile(join(storybookStaticDir, 'override.txt'), 'from storybook');
 
   const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
-  mainConfig.set(['staticDirs'], [{ from: '../public', to: '/foo' }, './static']);
+  mainConfig.set(['staticDirs'], [{ from: `../${publicDirName}`, to: '/foo' }, './static']);
   await writeConfig(mainConfig);
 };
 
@@ -999,7 +1002,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   // wiring an opting-out user adds by hand.
   if (template.expected.framework === '@storybook/angular-vite') {
     const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
-    if (mainConfig.getValue(['features', 'experimentalDocgenServer']) === false) {
+    if (mainConfig.getValue(['features', 'docgenServer']) === false) {
       previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
       previewConfig.setImport('docJson', '../documentation.json');
       previewConfig._ast.program.body.push(
@@ -1076,6 +1079,7 @@ export async function setImportMap(cwd: string) {
   const packageJson = await readJson(join(cwd, 'package.json'));
 
   packageJson.imports = {
+    ...packageJson.imports,
     '#utils': {
       storybook: './template-stories/core/utils.mock.ts',
       default: './template-stories/core/utils.ts',
@@ -1197,6 +1201,22 @@ async function prepareSvelteKitSandbox(cwd: string) {
   });
 
   await writeConfig(viteConfig);
+
+  // Env fixture for the SvelteKit `$app/env/public` stories
+  await writeFile(
+    join(cwd, 'src', 'env.ts'),
+    dedent`
+      import { defineEnvVars } from '@sveltejs/kit/env';
+
+      export const variables = defineEnvVars({
+        STORYBOOK_STATIC_PUBLIC: {
+          public: true,
+          static: true,
+          schema: (value) => value ?? 'static public value',
+        },
+      });
+    `
+  );
 }
 
 /**

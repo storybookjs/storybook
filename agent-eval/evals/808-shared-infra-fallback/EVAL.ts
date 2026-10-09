@@ -1,16 +1,15 @@
 import {
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
-  expectPreviewStoriesWithFinalLinks,
+  expectDevServerLeftRunning,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
-  isReviewEnabled,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
@@ -18,18 +17,15 @@ import { describe, expect, test } from 'vitest';
 describe('changing a shared accent token and surfacing consumer stories', () => {
   // The edited token file has no stories of its own, so the run must surface
   // the stories of its *consumers* (Badge and StatusPill).
-  const review = isReviewEnabled();
 
-  // Skipped for Codex+MCP with review on: edits the token file and ends the
-  // turn with zero MCP calls (~every other run). Codex surfaces MCP server
-  // instructions only as the tool namespace description, so for an edit it
-  // judges trivial it never reads the storybook namespace. Review-off and
-  // Codex+plugin runs pass consistently. Seen in three local runs on
-  // 2026-07-03. Re-enable when the review-on workflow reliably reaches Codex
-  // at turn start.
+  // Skipped for Codex+MCP: edits the token file and ends the turn with zero
+  // MCP calls (~every other run). Codex surfaces MCP server instructions only
+  // as the tool namespace description, so for an edit it judges trivial it
+  // never reads the storybook namespace. Codex+plugin runs pass consistently.
+  // Seen in three local runs on 2026-07-03. Re-enable when the workflow
+  // reliably reaches Codex at turn start.
   const evalContext = getEvalContext();
-  const codexMcpReviewGap =
-    review && evalContext.agent === 'codex' && evalContext.integration === 'mcp';
+  const codexMcpGap = evalContext.agent === 'codex' && evalContext.integration === 'mcp';
 
   // The fallback assertions only count if the token change was actually done.
   test('changes the accent color token', () => {
@@ -38,16 +34,23 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test.skipIf(codexMcpReviewGap)(
+  test.skipIf(codexMcpGap)(
     'runs story tests after the change and finishes with them passing',
-    () => {
-      expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+    async () => {
+      await expectStoryTestsRanAndPassed({
+        requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+        covering: ['badge', 'statuspill'],
+      });
     }
   );
 
-  describe.runIf(review && !codexMcpReviewGap)('when review is enabled', () => {
+  describe.skipIf(codexMcpGap)('reviewing the visual token change', () => {
     test('publishes a display review for the visual token change', () => {
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('the review surfaces the consumer stories, not the token file', () => {
@@ -81,31 +84,18 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     });
   });
 
-  describe.runIf(!review)('when review is disabled', () => {
-    // Any-of rather than both: the review-off instructions say to preview
-    // "selected" storyIds from the discovery results, so surfacing one
-    // consumer's stories is a legitimate selection.
-    test('previews the consumer stories for the visual token change', () => {
-      expectPreviewStoriesWithFinalLinks({ coveringAnyOf: ['badge', 'statuspill'] });
-    });
-  });
-
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
       expectSkillInvoked('stories');
     });
 
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
       () => {
-        expectValidStorybookLaunchConfig();
+        expectDevServerLeftRunning();
       }
     );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
-      expectPreviewBrowserStarted();
-    });
   });
 });

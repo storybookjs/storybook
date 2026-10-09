@@ -1,10 +1,10 @@
 import addonDocs from "@storybook/addon-docs";
 import { createElement } from "react";
-import { PGlite } from "@electric-sql/pglite";
 import { definePreview } from "@storybook/nextjs-vite-rsc";
 import { drizzle } from "drizzle-orm/pglite";
 import { setupWorker } from "msw/browser";
 import { mocked, sb } from "storybook/test";
+import { resetDatabase } from "#.storybook/database.ts";
 import { fontVariables } from "#app/fonts.ts";
 import * as schema from "#db/schema.ts";
 import { nextCacheProbeFetchHandler } from "#components/next-cache-msw.ts";
@@ -32,21 +32,9 @@ const { resetDb } = dbModule as typeof import("#lib/__mocks__/db.ts");
 const { setCurrentUser } = authSessionModule as typeof import("#lib/__mocks__/auth-session.ts");
 const { deleteFlashCookies } = flashCookieModule as typeof import("#lib/__mocks__/flash-cookie.ts");
 
-// The SQL of the schema, from main.ts.
-declare const __SCHEMA_SQL__: string;
-
-// One database with the schema, which every story gets a clone of, and the
-// service that the cache probe fetches from: made once a story needs them.
-let base: Promise<PGlite> | undefined;
-let current: PGlite | undefined;
+// The service that the cache probe fetches from: started once a story needs it.
 const worker = setupWorker(...nextCacheProbeFetchHandler);
 let started: Promise<unknown> | undefined;
-
-async function createBase() {
-  const db = await PGlite.create("memory://");
-  await db.exec(__SCHEMA_SQL__);
-  return db;
-}
 
 export default definePreview({
   addons: [addonDocs()],
@@ -77,15 +65,7 @@ export default definePreview({
     for (const spy of Object.values(auth.api)) mocked(spy).mockReset();
     setCurrentUser(null);
     deleteFlashCookies();
-    // The database of the render before. Storybook runs `beforeEach` again
-    // when the args of a story change, and the framework renders the story
-    // again in place: from here on, its page reads the database made here.
-    if (current && !current.closed) await current.close();
-    const clone = await (await (base ??= createBase())).clone();
-    if (!(clone instanceof PGlite)) {
-      throw new TypeError("Expected PGlite.clone() to return a PGlite instance");
-    }
-    current = clone;
-    resetDb(drizzle(clone, { schema }));
+    // The one database of the tab, emptied: see database.ts.
+    resetDb(drizzle(await resetDatabase(), { schema }));
   },
 });

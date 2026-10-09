@@ -3093,6 +3093,33 @@ describe('CsfFile', () => {
         expect(Object.keys(parsed._stories)).toEqual(['A']);
       });
 
+      it('reads factory stories exported with export specifiers', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            const $__Button = meta.story({ tags: ['a'] });
+            const $__Typed = meta.story({ tags: ['b'] }) satisfies ReturnType<typeof meta.story>;
+            const someHelper = () => {};
+            export { $__Button as Button, $__Typed as Typed, someHelper };
+            export { Other } from './Other.stories';
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([
+          { name: 'Button', tags: ['a'], factory: true },
+          { name: 'Typed', tags: ['b'], factory: true },
+          { name: 'Other', tags: undefined, factory: undefined },
+        ]);
+      });
+
       it('excludeStories still works with factories', () => {
         const parsed = loadCsf(
           dedent`

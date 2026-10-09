@@ -30,7 +30,9 @@ describe(extractCompiledASTNodes.name, () => {
 
       const nodes = await extractCompiledASTNodes({ ast });
 
-      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+        callee: { name: 'defineMeta' },
+      });
     }
   );
 
@@ -45,7 +47,9 @@ describe(extractCompiledASTNodes.name, () => {
 
     const nodes = await extractCompiledASTNodes({ ast });
 
-    expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
   });
 
   it('fails with only a namespace import of @storybook/svelte', async ({ expect }) => {
@@ -66,5 +70,31 @@ describe(extractCompiledASTNodes.name, () => {
       More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
       ]
     `);
+  });
+  it('finds preview.meta()', async ({ expect }) => {
+    const ast = getCompiledAST(`
+      import preview from '#.storybook/preview';
+      const { Story } = preview.meta({});
+    `);
+
+    const nodes = await extractCompiledASTNodes({ ast });
+
+    expect(nodes.isFactory).toBe(true);
+    expect(nodes.metaIdentifier).toBeUndefined();
+    expect(nodes.storyIdentifier.name).toBe('Story');
+  });
+
+  it('finds the meta variable of preview.meta()', async ({ expect }) => {
+    const ast = getCompiledAST(`
+      import config from '../.storybook/preview.ts';
+      const meta = config.meta({});
+      const { Story: S } = meta;
+    `);
+
+    const nodes = await extractCompiledASTNodes({ ast });
+
+    expect(nodes.isFactory).toBe(true);
+    expect(nodes.metaIdentifier?.name).toBe('meta');
+    expect(nodes.storyIdentifier.name).toBe('S');
   });
 });

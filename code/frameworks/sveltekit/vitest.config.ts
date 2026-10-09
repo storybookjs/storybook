@@ -5,6 +5,6 @@ import { vitestCommonConfig } from '../../vitest.shared.ts';
 export default mergeConfig(
   vitestCommonConfig,
   defineConfig({
-    // Add custom config here
+    plugins: [import('@sveltejs/vite-plugin-svelte').then(({ svelte }) => svelte())],
   })
 );

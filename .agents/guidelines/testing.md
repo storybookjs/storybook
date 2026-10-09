@@ -18,6 +18,8 @@ This document is canonical for testing practice: which kind of test to write, ho
 | Smoke checks              | `yarn task smoke-test --start-from auto`                                                                         |
 | Tools attach coverage     | `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` (same checkout as the running internal UI) |
 
+Fork CI compiles with `--no-link` before unit tests to generate the declarations required by distribution contract tests.
+
 When writing tests for components:
 
 - Add or update `<Component>.stories.tsx` with stories covering each behavior; use `play` functions with `expect`, `userEvent`, `within` from `storybook/test`

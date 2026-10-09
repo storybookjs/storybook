@@ -191,5 +191,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "11.0.0-alpha.6"
 }

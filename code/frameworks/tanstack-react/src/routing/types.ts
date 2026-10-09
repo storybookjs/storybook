@@ -37,10 +37,12 @@ type StoryRouteSearch<TRoute> =
   IsAppRouteTree<TRoute> extends true
     ? Record<string, unknown>
     : TRoute extends FileRoutesByPath[keyof FileRoutesByPath]
-      ? TRoute['preLoaderRoute'] extends { types: { allSearch: infer A } }
+      ? TRoute['preLoaderRoute'] extends { types: { fullSearchSchemaInput: infer A } }
         ? A
         : never
-      : Record<string, unknown>;
+      : TRoute extends AnyRoute
+        ? TRoute['types']['fullSearchSchemaInput']
+        : Record<string, unknown>;
 
 export type StoryRouteFileOptions<TRoute = undefined> =
   IsRoute<TRoute> extends true

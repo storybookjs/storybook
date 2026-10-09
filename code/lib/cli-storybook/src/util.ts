@@ -14,6 +14,7 @@ import {
 } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
+  UpgradeStorybookConfigDirNotFoundError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -224,14 +225,6 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
     });
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
-
-    if (storybookDirs.length === 0) {
-      const answer = await prompt.text({
-        message:
-          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
-      });
-      return [answer];
-    }
 
     return storybookDirs;
   } catch (error) {
@@ -713,6 +706,18 @@ export const getProjects = async (
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
     }
+    if (detectedConfigDirs.length === 0) {
+      task.stop('No .storybook directory found');
+      if (options.yes) {
+        throw new UpgradeStorybookConfigDirNotFoundError();
+      }
+      const configDir = await prompt.text({
+        message:
+          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
+      });
+      detectedConfigDirs = [configDir];
+      task.start('Detecting projects...');
+    }
 
     let count = 0;
     const projects = await collectProjects(options, detectedConfigDirs, () =>
@@ -756,7 +761,9 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    if (!(error instanceof HandledError)) {
+    if (
+      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
+    ) {
       logger.error('Failed to get projects');
     }
 

@@ -6,6 +6,7 @@ import {
   OpenServiceDocgenMissingComponentError,
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
+import { selectManifestEntries } from '../../services/docgen/server.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
 import { createServiceDocsAccess } from './access-service.ts';
 
@@ -113,6 +114,7 @@ const mdxForComponent = vi.fn();
 
 const services: Record<string, unknown> = {
   'core/docgen': {
+    commands: { resolveManifestEntries: async () => selectManifestEntries(index) },
     queries: {
       docgenForAllComponents: { loaded: docgenForAllComponents },
       docgen: { loaded: docgen },
@@ -131,11 +133,7 @@ let index: StoryIndex;
 let mdxAvailable: boolean;
 let getService: ToolsetGetService;
 
-const createAccess = () =>
-  createServiceDocsAccess({
-    storyIndex: { getIndex: async () => index },
-    getService,
-  });
+const createAccess = () => createServiceDocsAccess({ getService });
 
 beforeEach(() => {
   vi.clearAllMocks();

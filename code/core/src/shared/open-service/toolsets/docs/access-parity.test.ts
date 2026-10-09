@@ -13,6 +13,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { describe, expect, it } from 'vitest';
 
 import { Tag } from '../../../constants/tags.ts';
+import { selectManifestEntries } from '../../services/docgen/server.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 import {
   buildComponentsRefManifest,
@@ -101,6 +102,7 @@ const mdxPayload = {
 function serviceToolset() {
   const services: Record<string, object> = {
     'core/docgen': {
+      commands: { resolveManifestEntries: async () => selectManifestEntries(storyIndex) },
       queries: {
         docgenForAllComponents: { loaded: async () => ({ button: docgenPayload }) },
         docgen: {
@@ -129,7 +131,6 @@ function serviceToolset() {
 
   return createDocsToolset({
     docsAccess: createServiceDocsAccess({
-      storyIndex: { getIndex: async () => storyIndex },
       getService: ((id: string) => services[id]) as never,
     }),
   });
@@ -269,6 +270,9 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
   function devAccess() {
     const services: Record<string, object> = {
       'core/docgen': {
+        commands: {
+          resolveManifestEntries: async () => selectManifestEntries(componentlessIndex),
+        },
         queries: {
           docgenForAllComponents: { loaded: async () => ({}) },
           docgen: { loaded: async () => undefined },
@@ -288,7 +292,6 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
     };
 
     return createServiceDocsAccess({
-      storyIndex: { getIndex: async () => componentlessIndex },
       getService: ((id: string) => services[id]) as never,
     });
   }

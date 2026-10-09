@@ -15,7 +15,6 @@ import { resolveCompositionSources } from './auth/resolve-composition-sources.ts
 import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -49,7 +48,6 @@ export const experimental_devServer: PresetPropertyFn<
   const localAccess =
     rawAvailability.docgenServer && refs.length > 0
       ? createLocalDocsAccess({
-          storyIndex: { getIndex: () => getStoryIndex(options) },
           getManifests: () => loadManifests(options.presets),
         })
       : undefined;

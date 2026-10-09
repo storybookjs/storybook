@@ -89,7 +89,6 @@ test('matches an asserted default component ahead of a different file default ex
     'Button.tsx'
   );
 
-  expect(button[0].exportName).toBeUndefined();
   const match = getMatchingDocgen([...skeleton, ...button], {
     componentName: 'Button',
     importName: 'default',
@@ -174,6 +173,19 @@ describe('parseWithReactDocgen exportName coverage', () => {
       ]
     `);
   });
+
+  test.each(['export default Foo as FooType;', 'export default (Foo as FooType);'])(
+    'type-wrapped default export identifier: %s',
+    async (exportStatement) => {
+      const code = dedent /* tsx */ `
+      const Foo = () => <div/>;
+      type FooType = typeof Foo;
+      ${exportStatement}
+    `;
+      const [docgen] = await parse(code);
+      expect(docgen.exportName).toBe('default');
+    }
+  );
 
   test('named export: export const Foo = ...', async () => {
     const code = dedent /* tsx */ `

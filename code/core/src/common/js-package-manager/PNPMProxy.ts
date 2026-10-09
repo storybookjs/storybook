@@ -60,7 +60,7 @@ const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
 
-  installArgs: string[] | undefined;
+  addArgs: string[] | undefined;
 
   /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
   #pnpmVersion: string | null | undefined;
@@ -114,15 +114,15 @@ export class PNPMProxy extends JsPackageManager {
     return version != null && gte(version, minimum);
   }
 
-  getInstallArgs(): string[] {
-    if (!this.installArgs) {
-      this.installArgs = [];
+  getAddArgs(): string[] {
+    if (!this.addArgs) {
+      this.addArgs = [];
 
       if (this.detectWorkspaceRoot()) {
-        this.installArgs.push('-w');
+        this.addArgs.push('-w');
       }
     }
-    return this.installArgs;
+    return this.addArgs;
   }
 
   getPackageCommand(args: string[]): string {
@@ -371,7 +371,6 @@ export class PNPMProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return executeCommand({
       command: 'pnpm',
-      // `-w` would make pnpm 12 install only the workspace root project.
       args: ['install', ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
@@ -507,7 +506,7 @@ export class PNPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    const commandArgs = ['add', ...args, ...this.getInstallArgs()];
+    const commandArgs = ['add', ...args, ...this.getAddArgs()];
 
     return executeCommand({
       command: 'pnpm',

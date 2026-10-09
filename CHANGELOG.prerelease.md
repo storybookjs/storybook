@@ -1,3 +1,35 @@
+## 11.0.0-alpha.5
+
+- Addon Vitest: Support Vitest 5 - [#36671](https://github.com/storybookjs/storybook/pull/36671), thanks @PaulMest!
+- Builder-Webpack5: Bump webpack-dev-middleware to 8.3.0 (GHSA-g84c-rxfj-3j2c) - [#36521](https://github.com/storybookjs/storybook/pull/36521), thanks @afilichev-SW!
+- CLI: Fail upgrade --yes with a hint instead of prompting for a config dir - [#36545](https://github.com/storybookjs/storybook/pull/36545), thanks @valentinpalkovic!
+- CLI: Install every pnpm workspace project after an upgrade - [#36543](https://github.com/storybookjs/storybook/pull/36543), thanks @valentinpalkovic!
+- CLI: Keep a license header first when editing config and setup files - [#36547](https://github.com/storybookjs/storybook/pull/36547), thanks @valentinpalkovic!
+- CLI: Keep scoped package families on one major when upgrading related dependencies - [#36551](https://github.com/storybookjs/storybook/pull/36551), thanks @valentinpalkovic!
+- CLI: Never downgrade a satellite addon to its next tag - [#36550](https://github.com/storybookjs/storybook/pull/36550), thanks @valentinpalkovic!
+- CLI: Remove the storybook ai command - [#36617](https://github.com/storybookjs/storybook/pull/36617), thanks @kasperpeulen!
+- CLI: Rename the dirname import when main config declares its own - [#36540](https://github.com/storybookjs/storybook/pull/36540), thanks @valentinpalkovic!
+- CLI: Shorten the stories skill to one inline workflow - [#36629](https://github.com/storybookjs/storybook/pull/36629), thanks @kasperpeulen!
+- CLI: Show the Svelte CSF automigration's details in upgrade, and find more legacy syntax - [#36620](https://github.com/storybookjs/storybook/pull/36620), thanks @JReinhold!
+- Core: Accept legacy addon namespaces in CSF factories - [#35658](https://github.com/storybookjs/storybook/pull/35658), thanks @wanxiankai!
+- Core: Remove changeDetection feature flag - [#36628](https://github.com/storybookjs/storybook/pull/36628), thanks @kasperpeulen!
+- Core: Remove legacy highlight object format (SB-2018) - [#36662](https://github.com/storybookjs/storybook/pull/36662), thanks @obvious-autobuild!
+- Core: Remove the create-new-story button from the sidebar - [#36674](https://github.com/storybookjs/storybook/pull/36674), thanks @Sidnioulz!
+- Core: Remove viewport.defaultViewport parameter and responsiveViewport export - [#36663](https://github.com/storybookjs/storybook/pull/36663), thanks @obvious-autobuild!
+- Core: Stop warning on process ancestry cycles - [#36643](https://github.com/storybookjs/storybook/pull/36643), thanks @ghengeveld!
+- Core: Wait for the status store to sync in attached `stories changed` - [#36627](https://github.com/storybookjs/storybook/pull/36627), thanks @kasperpeulen!
+- Docgen: Stabilize docgenServer and enable it wherever a provider exists - [#36401](https://github.com/storybookjs/storybook/pull/36401), thanks @valentinpalkovic!
+- Docs: Stop double-quoting string defaults from server docgen - [#36535](https://github.com/storybookjs/storybook/pull/36535), thanks @valentinpalkovic!
+- Manager: Rework keyboard shortcut handling and Escape layering - [#36217](https://github.com/storybookjs/storybook/pull/36217), thanks @Sidnioulz!
+- Node logger: Keep task logs short and from erasing the output above them - [#36548](https://github.com/storybookjs/storybook/pull/36548), thanks @valentinpalkovic!
+- Preact: Support Preact 11 - [#36526](https://github.com/storybookjs/storybook/pull/36526), thanks @ghengeveld!
+- React Native Web: Fix TypeScript 6 peer conflict - [#36445](https://github.com/storybookjs/storybook/pull/36445), thanks @valentinpalkovic!
+- Skills: Remove the legacy instruction templates - [#36616](https://github.com/storybookjs/storybook/pull/36616), thanks @kasperpeulen!
+- SvelteKit: Support SvelteKit 3 and drop SvelteKit 2 - [#36610](https://github.com/storybookjs/storybook/pull/36610), thanks @JReinhold!
+- Themes: Remove deprecated useThemeParameters helper - [#36537](https://github.com/storybookjs/storybook/pull/36537), thanks @valentinpalkovic!
+- WC: Generate story snippet from html templates - [#36650](https://github.com/storybookjs/storybook/pull/36650), thanks @huang-julien!
+- WC: Generate story snippets from args and the manifest - [#36599](https://github.com/storybookjs/storybook/pull/36599), thanks @huang-julien!
+
 ## 11.0.0-alpha.4
 
 - Angular: Preserve unknown standalone metadata in story-docs snippets - [#36015](https://github.com/storybookjs/storybook/pull/36015), thanks @dvmhmdsd!

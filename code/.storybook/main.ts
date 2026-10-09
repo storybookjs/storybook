@@ -55,6 +55,10 @@ const config = defineMain({
       titlePrefix: 'component-testing',
     },
     {
+      directory: '../core/src/toolbar',
+      titlePrefix: 'toolbar',
+    },
+    {
       directory: '../core/src/controls/components',
       titlePrefix: 'controls',
     },

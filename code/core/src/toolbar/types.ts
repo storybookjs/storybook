@@ -1,6 +1,6 @@
-import type { InputType } from 'storybook/internal/types';
+import type { ComponentType, SVGAttributes } from 'react';
 
-import type { IconsProps } from '../components/components/icon/icon.tsx';
+import type { InputType } from 'storybook/internal/types';
 
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
 
@@ -13,9 +13,28 @@ export interface ToolbarShortcutConfig {
 
 export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig>;
 
+/**
+ * The props accepted by the icon components exported from `@storybook/icons`.
+ *
+ * The package exports only the individual icon components, not their props type, so the shape is
+ * mirrored here.
+ */
+type ToolbarIconProps = SVGAttributes<SVGElement> & {
+  children?: never;
+  color?: string;
+  size?: number;
+};
+
+/**
+ * An icon component individually imported from `@storybook/icons`, e.g. `CircleHollowIcon`.
+ * Legacy string icon names are no longer supported.
+ */
+export type ToolbarIconType = ComponentType<ToolbarIconProps>;
+
 export interface ToolbarItem {
   value?: string;
-  icon?: IconsProps['icon'];
+  /** Icon component from `@storybook/icons`, e.g. `import { CircleHollowIcon } from '@storybook/icons'` */
+  icon?: ToolbarIconType;
   right?: string;
   title?: string;
   hideIcon?: boolean;
@@ -25,8 +44,8 @@ export interface ToolbarItem {
 export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
-  /** Choose an icon to show for this toolbar item */
-  icon?: IconsProps['icon'];
+  /** Icon component from `@storybook/icons` shown next to the toolbar title */
+  icon?: ToolbarIconType;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;
   items: ToolbarItem[];

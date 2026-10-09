@@ -27,14 +27,24 @@ describe(svelteCsf.name, () => {
     expect(handler()).toBe(svelteCsfRuntimeStoriesPath);
   });
 
-  it('only transforms stories files', () => {
+  it('only transforms stories files and their styles', () => {
     const { filter } = svelteCsf().transform as Handler<unknown>;
 
     expect(filter.id.test('/project/src/Button.stories.svelte')).toBe(true);
-    expect(filter.id.test('/project/src/Button.svelte')).toBe(false);
     expect(filter.id.test('/project/src/Button.stories.svelte?svelte&type=style&lang.css')).toBe(
-      false
+      true
     );
+    expect(filter.id.test('/project/src/Button.svelte')).toBe(false);
+    expect(filter.id.test('/project/src/Button.svelte?svelte&type=style&lang.css')).toBe(false);
+  });
+
+  it('keeps the styles of a stories file while the stories file is used, not only its default export', () => {
+    const { handler } = svelteCsf().transform as Handler<(code: string, id: string) => unknown>;
+
+    expect(handler('', '/project/src/Button.stories.svelte?svelte&type=style&lang.css')).toEqual({
+      code: '',
+      meta: { vite: { cssScopeTo: ['/project/src/Button.stories.svelte', undefined] } },
+    });
   });
 
   it('passes the preprocessors that vite-plugin-svelte resolved, including its inline options', async () => {

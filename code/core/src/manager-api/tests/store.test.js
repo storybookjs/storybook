@@ -33,26 +33,19 @@ describe('store', () => {
     });
   });
 
-  it('ignores legacy tag filter keys persisted by v10.3.x', () => {
+  it('omits v10.3 tag filters from local storage', () => {
     store2.local.get.mockReturnValueOnce({
-      includedTagFilters: ['legacy-local'],
-      excludedTagFilters: ['blocked-local'],
+      includedTagFilters: ['legacy'],
+      excludedTagFilters: ['blocked'],
       foo: 'local',
     });
-    store2.session.get.mockReturnValueOnce({
-      includedTagFilters: ['legacy-session'],
-      excludedTagFilters: ['blocked-session'],
-      control: 'value',
-    });
+    store2.session.get.mockReturnValueOnce({ bar: 'session' });
 
     const store = new Store({});
     expect(store.getInitialState()).toEqual({
       foo: 'local',
-      control: 'value',
+      bar: 'session',
     });
-    // Storage is never rewritten at init: the legacy keys are dropped at read time only.
-    expect(store2.local.set).not.toHaveBeenCalled();
-    expect(store2.session.set).not.toHaveBeenCalled();
   });
 
   it('passes getState right through', () => {

@@ -24,13 +24,6 @@ function update(storage: StoreAPI, patch: Patch) {
   return set(storage, { ...previous, ...patch });
 }
 
-// Tag-filter state has lived in the URL since v10.4.0. Never re-adopt the keys
-// v10.3.x wrote to local/session storage — see the boundary comment in getInitialState.
-function dropLegacyTagFilters(persisted: Patch): Patch {
-  const { includedTagFilters: _i, excludedTagFilters: _e, ...rest } = persisted;
-  return rest;
-}
-
 type GetState = () => State;
 type SetState = (a: any, b: any) => any;
 
@@ -82,15 +75,13 @@ export default class Store {
   // The assumption is that this will be called once, to initialize the React state
   // when the module is instantiated
   getInitialState(base: State) {
-    // Version boundary (SB-2022): tag-filter state lives in the URL since v10.4.0.
-    // Only v10.3.x persisted includedTagFilters/excludedTagFilters to browser storage
-    // (persistence: 'permanent' → local). These keys are never adopted, on any upgrade
-    // path: dropping them at read time here is what keeps them out of the array-union
-    // deep merge in root.tsx, which would otherwise reactivate v10.3-era filters on
-    // every load. This strip replaces the one-time storage-rewrite migration that
-    // shipped in v10.4.0; it is permanent, not version-gated.
-    const local = dropLegacyTagFilters(get(store.local));
-    const session = dropLegacyTagFilters(get(store.session));
+    // TODO: Remove in SB 12
+    const {
+      includedTagFilters: _included,
+      excludedTagFilters: _excluded,
+      ...local
+    } = get(store.local);
+    const session = get(store.session);
     // We don't only merge at the very top level (the same way as React setState),
     // when you set keys, so it makes sense to do the same in combining the two storage modes
     // Really, you shouldn't store the same key in both places

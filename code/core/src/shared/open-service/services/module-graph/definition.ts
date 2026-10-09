@@ -188,37 +188,6 @@ export const moduleGraphServiceDef = defineService({
         storyFiles: ctx.self.state.latestChangedStoryFiles,
       }),
     },
-    /** @deprecated Use {@link status} instead. */
-    getStatus: {
-      description: 'Deprecated alias for `status`. Use `status` instead.',
-      input: noInputSchema,
-      output: moduleGraphStatusSchema,
-      handler: (input, ctx) => ctx.self.queries.status.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.status.loaded(input);
-      },
-    },
-    /** @deprecated Use {@link graphRevision} instead. */
-    getGraphRevision: {
-      description: 'Deprecated alias for `graphRevision`. Use `graphRevision` instead.',
-      input: v.optional(
-        v.object({
-          storyFiles: v.array(
-            v.pipe(
-              v.string(),
-              v.description(
-                'Story file to scope the watch to. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`. Pass an empty array to watch nothing (returns 0).'
-              )
-            )
-          ),
-        })
-      ),
-      output: v.number(),
-      handler: (input, ctx) => ctx.self.queries.graphRevision.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.graphRevision.loaded(input);
-      },
-    },
   },
   commands: {
     _applyGraphSnapshot: {

@@ -13,6 +13,7 @@ import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.t
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
+import { svelteCsfToCsfFactory } from './helpers/svelte-csf-to-csf-factory.ts';
 
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
@@ -25,7 +26,7 @@ async function runStoriesCodemod(options: {
   const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
   try {
     const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
+    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
 
     if (!glob && inSandbox) {
       // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
@@ -44,9 +45,14 @@ async function runStoriesCodemod(options: {
       args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
     });
 
-    await runCodemod(globString, (info) => storyToCsfFactory(info, codemodOptions), {
-      dryRun,
-    });
+    await runCodemod(
+      globString,
+      async (info) =>
+        info.path.endsWith('.svelte')
+          ? svelteCsfToCsfFactory(info, codemodOptions)
+          : storyToCsfFactory(info, codemodOptions),
+      { dryRun }
+    );
   } catch (err: any) {
     if (err.message === 'No files matched') {
       await runStoriesCodemod(options);

@@ -148,6 +148,9 @@ export function addImportToTop(programNode: t.Program, importDecl: t.ImportDecla
   programNode.body.unshift(importDecl);
 }
 
+// Story properties that a story file reads directly, not from `Story.input`
+export const reuseDisallowList = ['play', 'run', 'extends', 'story'];
+
 export type PreviewImportOptions =
   | { useSubPathImports: true; previewConfigPath?: string }
   | { useSubPathImports: false; previewConfigPath: string };

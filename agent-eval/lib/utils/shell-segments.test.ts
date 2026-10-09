@@ -5,7 +5,7 @@ import { splitCommandSegments } from './shell-segments.ts';
 describe('splitCommandSegments', () => {
   it('returns one segment for a plain command', () => {
     expect(splitCommandSegments('ls /workspace/src')).toEqual([
-      { tokens: ['ls', '/workspace/src'], redirectTarget: null, piped: false },
+      { tokens: ['ls', '/workspace/src'], redirectTarget: null, piped: false, heredocs: [] },
     ]);
   });
 
@@ -20,6 +20,27 @@ describe('splitCommandSegments', () => {
     expect(segments).toHaveLength(2);
     expect(segments[0]?.piped).toBe(false);
     expect(segments[1]).toMatchObject({ tokens: ['tail', '-20'], piped: true });
+  });
+
+  it('ends a pipeline at a line break', () => {
+    const segments = splitCommandSegments('npx tsc | tail -20\nls src');
+    expect(segments.map((segment) => segment.piped)).toEqual([false, true, false]);
+  });
+
+  it('continues a pipeline across a line break after the pipe', () => {
+    const segments = splitCommandSegments('npx tsc |\n  tail -20');
+    expect(segments[1]).toMatchObject({ tokens: ['tail', '-20'], piped: true });
+  });
+
+  it('treats quoted operators as text', () => {
+    expect(splitCommandSegments('grep -n ">" src/a.ts; grep "|" b.ts')).toEqual([
+      { tokens: ['grep', '-n', '>', 'src/a.ts'], redirectTarget: null, piped: false, heredocs: [] },
+      { tokens: ['grep', '|', 'b.ts'], redirectTarget: null, piped: false, heredocs: [] },
+    ]);
+  });
+
+  it('captures a quoted redirect target', () => {
+    expect(splitCommandSegments('cat > "out file.txt"')[0]?.redirectTarget).toBe('out file.txt');
   });
 
   it('only the segment immediately after a pipe is piped, not later ones', () => {
@@ -63,25 +84,46 @@ describe('splitCommandSegments', () => {
     expect(segments[0]?.tokens).toEqual(['npx', 'tsc']);
   });
 
-  it('separates commands split across lines', () => {
-    // Anything after a heredoc lands on its own line; without newline handling
-    // it would be absorbed into the preceding command.
-    const segments = splitCommandSegments('cat > a.ts <<EOF\nbody\nEOF\nnpx vitest run');
-    expect(segments.map((segment) => segment.tokens[0])).toEqual(['cat', 'npx']);
-  });
-
   it('rejoins backslash continuations into one command', () => {
     const segments = splitCommandSegments('npx vitest run \\\n  --config vitest.config.ts');
     expect(segments).toHaveLength(1);
     expect(segments[0]?.tokens).toEqual(['npx', 'vitest', 'run', '--config', 'vitest.config.ts']);
   });
 
-  it('strips heredoc bodies so their contents are not parsed as commands', () => {
+  it('keeps heredoc bodies out of the tokens and on the segment that reads them', () => {
     const command =
       "cat > /tmp/t.tsx <<'EOF'\nimport { render } from 'x'\nrm -rf /\nEOF\nls /workspace";
+    expect(splitCommandSegments(command)).toEqual([
+      {
+        tokens: ['cat'],
+        redirectTarget: '/tmp/t.tsx',
+        piped: false,
+        heredocs: ["import { render } from 'x'\nrm -rf /"],
+      },
+      { tokens: ['ls', '/workspace'], redirectTarget: null, piped: false, heredocs: [] },
+    ]);
+  });
+
+  it.each([
+    ['an escaped delimiter', 'cat > a.sh <<\\EOF\nrm -rf /\nEOF\nls'],
+    ['a partly quoted delimiter', 'cat > a.sh <<E"OF"\nrm -rf /\nEOF\nls'],
+  ])('keeps the body of a heredoc with %s out of the tokens', (_, command) => {
     const segments = splitCommandSegments(command);
-    expect(segments.some((segment) => segment.tokens[0] === 'rm')).toBe(false);
-    expect(segments.some((segment) => segment.tokens[0] === 'ls')).toBe(true);
+    expect(segments.some((segment) => segment.tokens.includes('rm'))).toBe(false);
+    expect(segments.at(-1)?.tokens).toEqual(['ls']);
+  });
+
+  it('reads a heredoc closed by `EOF)` as the value of its substitution', () => {
+    const segments = splitCommandSegments('x="$(cat <<EOF\nrm -rf /\nEOF)"\nls');
+    expect(segments.map((segment) => segment.tokens)).toEqual([['x=rm -rf /'], ['ls']]);
+  });
+
+  it('keeps a quoted argument that spans lines as one token', () => {
+    const segments = splitCommandSegments("node -e '\nconst a = 1;\nrm(a)\n' && ls");
+    expect(segments.map((segment) => segment.tokens)).toEqual([
+      ['node', '-e', '\nconst a = 1;\nrm(a)\n'],
+      ['ls'],
+    ]);
   });
 
   // `<<-` strips leading tabs from the terminator as well as the body, so a
@@ -94,11 +136,11 @@ describe('splitCommandSegments', () => {
     expect(segments.some((segment) => segment.tokens.includes('rm'))).toBe(false);
   });
 
-  it('still requires the terminator to own its line', () => {
-    // `EOF` here is the tail of a body line, not the terminator, so the heredoc
-    // is unterminated and nothing is stripped.
-    const segments = splitCommandSegments('cat > file.sh <<EOF\necho not EOF');
-    expect(segments.some((segment) => segment.tokens.includes('<<HEREDOC'))).toBe(false);
+  it('reads an unterminated heredoc to the end of the command, as bash does', () => {
+    // `EOF` here is the tail of a body line, not the terminator.
+    expect(splitCommandSegments('cat > file.sh <<EOF\necho not EOF')).toEqual([
+      { tokens: ['cat'], redirectTarget: 'file.sh', piped: false, heredocs: ['echo not EOF'] },
+    ]);
   });
 
   it('keeps a quoted sed expression as a single token', () => {

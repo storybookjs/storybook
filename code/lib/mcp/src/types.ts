@@ -93,7 +93,7 @@ export type StorybookContext = {
   ) => void | Promise<void>;
   /**
    * Optional in-process resolver for a single component or docs entry, used in
-   * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
+   * Storybook's dev server when `docgenServer` is enabled. When set,
    * single-entry tools (`docs-show`, `docs-show-story`) call
    * this instead of fetching the (potentially all-component) manifest index, so a
    * single lookup never triggers docgen extraction for every component.
@@ -146,7 +146,7 @@ export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /**
  * Open-service payload contracts (the "core format") that Storybook's
- * `experimentalDocgenServer` mode produces. `@storybook/mcp` adapts these into its
+ * `docgenServer` mode produces. `@storybook/mcp` adapts these into its
  * internal {@link ComponentManifest}/{@link Doc} shapes in one place
  * (`adaptCoreComponent`/`adaptCoreDoc`). Defined structurally (not as schemas) so
  * the addon can build them in-process without importing Storybook core.

@@ -5,6 +5,7 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 
 import { resolve } from 'node:path';
 
+import { buildApiDescription } from './api-description.ts';
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
 import type { CemSnapshot } from './manifest/cem-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
@@ -95,6 +96,7 @@ export function buildDocgenPayload(
     summary,
     jsDocTags,
     argTypes: mapArgTypes(found.declaration, context.typeProperty),
+    apiDescription: buildApiDescription(found.declaration, context.typeProperty),
     renderer: 'web-components',
     ...(found.warning ? { warning: found.warning } : {}),
     customElementsManifest: {

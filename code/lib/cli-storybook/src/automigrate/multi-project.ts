@@ -209,6 +209,20 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
 };
 
+// A fix's prompt can say more with its check result, such as the files it changes, than the
+// one-line hint in the selection shows.
+export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult[]) => {
+  for (const { fix, reports } of automigrations) {
+    const hint = fix.prompt();
+    for (const { result, status, project } of reports) {
+      const details = status === 'check_succeeded' ? fix.prompt(result) : hint;
+      if (details !== hint) {
+        logger.logBox(details, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
+      }
+    }
+  }
+};
+
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
@@ -229,6 +243,7 @@ export async function promptForAutomigrations(
 
   if (options.dryRun) {
     logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
+    logAutomigrationDetails(automigrations);
     return [];
   }
 
@@ -237,7 +252,19 @@ export async function promptForAutomigrations(
       ({ fix }) =>
         preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
     );
-    logSelection('Running all detected automigrations:', selected);
+    const optIn = automigrations.filter((am) => !selected.includes(am));
+    logSelection(
+      optIn.length > 0
+        ? 'Running these detected automigrations:'
+        : 'Running all detected automigrations:',
+      selected
+    );
+    if (optIn.length > 0) {
+      logSelection(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):',
+        optIn
+      );
+    }
     return selected;
   }
 
@@ -324,6 +351,8 @@ export async function runAutomigrationsForProjects(
       }
     }
   }
+
+  logAutomigrationDetails(applicableAutomigrations);
 
   // Run automigrations for each project
   let projectIndex = 0;
@@ -500,7 +529,7 @@ export async function runAutomigrations(
       logger.warn(
         checkFailed
           ? `Skipping --features ${name}: the '${fixId}' migration check failed. Run with --debug for details.`
-          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config, unsupported by your Storybook version, or missing a prerequisite.`
+          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config or unsupported by your framework or Storybook version.`
       );
     });
 

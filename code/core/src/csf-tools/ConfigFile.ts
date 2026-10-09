@@ -30,17 +30,20 @@ export interface CallArgumentsOptions {
   moduleNames: Iterable<string>;
 }
 
+// Only logged: a mutation of such an export fails with a diagnostic of its own.
 const getCsfParsingErrorMessage = ({
+  fileName,
   expectedType,
   foundType,
   node,
 }: {
+  fileName: string | undefined;
   expectedType: string;
   foundType: string | undefined;
   node: any | undefined;
 }) => {
   return dedent`
-      CSF Parsing error: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
+      CSF Parsing error in ${fileName ?? 'a config file'}: Expected '${expectedType}' but found '${foundType}' instead in '${node?.type}'.
     `;
 };
 
@@ -126,6 +129,43 @@ const _findVarDeclarator = (
 const _findVarInitialization = (identifier: string, program: t.Program) => {
   const declarator = _findVarDeclarator(identifier, program);
   return declarator?.init;
+};
+
+type RecastComment = t.Comment & { leading?: boolean };
+type CommentedStatement = t.Statement & { comments?: RecastComment[] };
+
+const NEXT_LINE_DIRECTIVE =
+  /^\s*(@ts-(expect-error|ignore)|[a-z]+-disable-next-line|prettier-ignore|biome-ignore)\b/;
+
+/**
+ * Return the leading comments of a program's first statement that form the file header. A
+ * directive that applies only to that statement, such as `@ts-expect-error`, ends the header.
+ */
+export const getHeaderComments = (statement: t.Statement | undefined): RecastComment[] => {
+  const comments = (statement as CommentedStatement | undefined)?.comments ?? [];
+  const leading = comments.filter((comment) => comment.leading);
+  const directive = leading.findIndex(({ value }) => NEXT_LINE_DIRECTIVE.test(value));
+  return directive === -1 ? leading : leading.slice(0, directive);
+};
+
+// A license header has to stay first: add below the existing imports, or take the header over
+// when there are none.
+const prependStatement = (program: t.Program, statement: t.Statement) => {
+  const first: CommentedStatement | undefined = program.body[0];
+  const header = getHeaderComments(first);
+  if (!first || !header.length) {
+    program.body.unshift(statement);
+    return;
+  }
+  const firstNonImport = program.body.findIndex((node) => !t.isImportDeclaration(node));
+  const index = firstNonImport === -1 ? program.body.length : firstNonImport;
+  if (index === 0) {
+    const notHeader = (comment: t.Comment) => !header.includes(comment);
+    first.comments = first.comments?.filter(notHeader);
+    first.leadingComments = first.leadingComments?.filter(notHeader);
+    Object.assign(statement, { comments: header, leadingComments: header });
+  }
+  program.body.splice(index, 0, statement);
 };
 
 export class ConfigFile implements CsfObject {
@@ -419,8 +459,9 @@ export class ConfigFile implements CsfObject {
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);
           } else {
-            logger.warn(
+            logger.debug(
               getCsfParsingErrorMessage({
+                fileName: self.fileName,
                 expectedType: 'ObjectExpression',
                 foundType: decl?.type,
                 node: decl || node.declaration,
@@ -486,8 +527,9 @@ export class ConfigFile implements CsfObject {
               }
             });
           } else {
-            logger.warn(
+            logger.debug(
               getCsfParsingErrorMessage({
+                fileName: self.fileName,
                 expectedType: 'VariableDeclaration',
                 foundType: node.declaration?.type,
                 node: node.declaration,
@@ -520,8 +562,9 @@ export class ConfigFile implements CsfObject {
                   }
                 });
               } else {
-                logger.warn(
+                logger.debug(
                   getCsfParsingErrorMessage({
+                    fileName: self.fileName,
                     expectedType: 'ObjectExpression',
                     foundType: exportObject?.type,
                     node: exportObject,
@@ -1065,7 +1108,8 @@ export class ConfigFile implements CsfObject {
     if (typeof importSpecifier === 'string') {
       // If the import declaration with the given source exists
       const addDefaultRequireSpecifier = () => {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.variableDeclaration('const', [
             t.variableDeclarator(
               t.identifier(importSpecifier),
@@ -1095,7 +1139,8 @@ export class ConfigFile implements CsfObject {
         }
       });
     } else {
-      this._ast.program.body.unshift(
+      prependStatement(
+        this._ast.program,
         t.variableDeclaration('const', [
           t.variableDeclarator(
             t.objectPattern(
@@ -1198,7 +1243,7 @@ export class ConfigFile implements CsfObject {
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {
       if (!importDeclaration) {
-        this._ast.program.body.unshift(t.importDeclaration([], t.stringLiteral(fromImport)));
+        prependStatement(this._ast.program, t.importDeclaration([], t.stringLiteral(fromImport)));
       }
       // Handle default imports e.g. import foo from 'bar'
     } else if (typeof importSpecifier === 'string') {
@@ -1209,7 +1254,8 @@ export class ConfigFile implements CsfObject {
           );
         }
       } else {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.importDeclaration(
             [t.importDefaultSpecifier(t.identifier(importSpecifier))],
             t.stringLiteral(fromImport)
@@ -1225,7 +1271,8 @@ export class ConfigFile implements CsfObject {
           }
         });
       } else {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.importDeclaration(
             importSpecifier.map(getNewImportSpecifier),
             t.stringLiteral(fromImport)
@@ -1241,7 +1288,8 @@ export class ConfigFile implements CsfObject {
           );
         }
       } else {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.importDeclaration(
             [t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))],
             t.stringLiteral(fromImport)

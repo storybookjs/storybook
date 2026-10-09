@@ -41,7 +41,7 @@ const clearCurrentTaskLog = () => {
 // Clack counts the terminal rows of a task log line by its length including color codes, and erases
 // that many rows on the next update. Drop the colors of a line whose codes push it onto an extra row,
 // or the erase reaches into the output above the log.
-const withCountableRows = (message: string) => {
+const formatTaskLogMessage = (message: string) => {
   const columns = process.stdout.columns || 80;
   const rows = (length: number) => Math.ceil((length + 3) / columns);
   return message
@@ -148,7 +148,7 @@ export class ClackPromptProvider extends PromptProvider {
     return {
       message: (message) => {
         logTracker.addLog('info', `${taskId}: ${message}`);
-        task.message(withCountableRows(message));
+        task.message(formatTaskLogMessage(message));
       },
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);

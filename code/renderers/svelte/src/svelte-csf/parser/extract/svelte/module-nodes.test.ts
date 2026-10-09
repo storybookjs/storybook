@@ -5,7 +5,6 @@ import { extractModuleNodes } from './module-nodes.ts';
 import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
 
 import { getSvelteAST } from '../../ast.ts';
-import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
 describe(extractModuleNodes.name, () => {
   it('fails when module tag not found', async ({ expect }) => {
@@ -17,7 +16,7 @@ describe(extractModuleNodes.name, () => {
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<path not specified>'
       does not have a module context (<script module> ... </script>).
 
-      defineMeta(...) should be called inside a module script tag, like so:
+      defineMeta(...) or preview.meta(...) should be called inside a module script tag, like so:
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
@@ -26,8 +25,9 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
       ]
     `);
   });
@@ -39,7 +39,7 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
-      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit" inside the module context.
+      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or the preview from .storybook/preview, inside the module context.
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 
@@ -50,8 +50,9 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
       ]
     `);
   });
@@ -67,7 +68,7 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<path not specified>'
-      does not store the result of calling defineMeta(). While defineMeta() might have been called,
+      does not store the result of calling defineMeta() or preview.meta(). While it might have been called,
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
@@ -77,8 +78,9 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -94,7 +96,7 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004 (MissingDefineMetaVariableDeclarationError): The file '<path not specified>'
-      does not store the result of calling defineMeta(). While defineMeta() might have been called,
+      does not store the result of calling defineMeta() or preview.meta(). While it might have been called,
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
@@ -104,8 +106,9 @@ describe(extractModuleNodes.name, () => {
       </script>
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+      With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -147,9 +150,9 @@ describe(extractModuleNodes.name, () => {
 
     const nodes = await extractModuleNodes({ module });
 
-    expect(nodes.defineMetaImport).toBeDefined();
-    expect(nodes.defineMetaImport.imported.name).toBe('defineMeta');
-    expect(nodes.defineMetaVariableDeclaration).toBeDefined();
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
     expect(nodes.storyIdentifier).toBeDefined();
     expect(nodes.storyIdentifier.name).toBe('Story');
   });
@@ -166,7 +169,9 @@ describe(extractModuleNodes.name, () => {
 
     const nodes = await extractModuleNodes({ module });
 
-    expect(nodes.defineMetaImport.local.name).toBe('dm');
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'dm' },
+    });
     expect(nodes.defineMetaVariableDeclaration).toBeDefined();
     expect(nodes.storyIdentifier.name).toBe('S');
   });
@@ -185,7 +190,9 @@ describe(extractModuleNodes.name, () => {
 
       const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+        callee: { name: 'defineMeta' },
+      });
     }
   );
 
@@ -203,7 +210,9 @@ describe(extractModuleNodes.name, () => {
 
       const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+        callee: { name: 'defineMeta' },
+      });
     });
 
     it('ignores other named imports', async ({ expect }) => {
@@ -219,7 +228,9 @@ describe(extractModuleNodes.name, () => {
 
       const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+        callee: { name: 'defineMeta' },
+      });
     });
 
     it('allows a namespace import next to a named defineMeta import', async ({ expect }) => {
@@ -235,7 +246,9 @@ describe(extractModuleNodes.name, () => {
 
       const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+        callee: { name: 'defineMeta' },
+      });
     });
 
     it('fails with only a namespace import', async ({ expect }) => {
@@ -257,9 +270,157 @@ describe(extractModuleNodes.name, () => {
 
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-        More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
+        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
         ]
       `);
+    });
+  });
+  describe('CSF factories', () => {
+    it('extracts the nodes of preview.meta()', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import preview from '#.storybook/preview';
+            const { Story } = preview.meta({});
+          </script>
+        `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.isFactory).toBe(true);
+      expect(nodes.metaIdentifier).toBeUndefined();
+      expect(nodes.storyIdentifier.name).toBe('Story');
+    });
+
+    it('extracts the nodes of a meta variable', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import preview from '#.storybook/preview';
+            const meta = preview.meta({});
+            const { Story: S } = meta;
+          </script>
+        `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.isFactory).toBe(true);
+      expect(nodes.metaIdentifier?.name).toBe('meta');
+      expect(nodes.storyIdentifier.name).toBe('S');
+    });
+
+    it('fails when Story is not destructured from the meta', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import preview from '#.storybook/preview';
+            const meta = preview.meta({});
+          </script>
+        `,
+      });
+
+      await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0005 (NoStoryComponentDestructuredError): The file '<path not specified>'
+        does not destructure the Story component from the 'preview.meta({ ... })' function call.
+        eg.:
+
+        <script module>
+          import { defineMeta } from "@storybook/svelte-vite";
+          
+          const { Story } = defineMeta({});
+        </script>
+
+        In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
+        With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
+
+        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0005
+        ]
+      `);
+    });
+
+    it('fails when a file calls defineMeta() and preview.meta()', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import { defineMeta } from '@storybook/svelte';
+            import preview from '#.storybook/preview';
+            const { Story } = defineMeta({});
+            const { Story: FactoryStory } = preview.meta({});
+          </script>
+        `,
+      });
+
+      await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010 (MixedMetaError): The file '<path not specified>'
+        calls both defineMeta() and preview.meta(). A stories file can only have one meta.
+        Use preview.meta() for CSF factories, or defineMeta() otherwise.
+
+        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010
+        ]
+      `);
+    });
+
+    it('fails when a file calls preview.meta() twice', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import preview from '#.storybook/preview';
+            const { Story } = preview.meta({});
+            const meta = preview.meta({});
+            const { Story: OtherStory } = meta;
+          </script>
+        `,
+      });
+
+      await expect(extractModuleNodes({ module })).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012'
+      );
+    });
+
+    it('fails when preview is not imported from a preview file', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import preview from '../storybook-config';
+            const { Story } = preview.meta({});
+          </script>
+        `,
+      });
+
+      await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
+        [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011 (PreviewNotImportedError): The file '<path not specified>'
+        calls preview.meta(), but it doesn't import preview from the preview file of Storybook. Import it like so:
+
+        <script module>
+          import preview from '#.storybook/preview';
+
+          const { Story } = preview.meta({});
+        </script>
+
+        The import path must end with '/preview', with or without a file extension.
+
+        More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011
+        ]
+      `);
+    });
+
+    it('ignores a .meta() call on another object', async ({ expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+          <script module>
+            import { z } from 'zod';
+            import preview from '#.storybook/preview';
+            const schema = z.string().meta({});
+            const { Story } = preview.meta({});
+          </script>
+        `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.storyIdentifier.name).toBe('Story');
     });
   });
 });

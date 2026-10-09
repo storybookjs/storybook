@@ -3093,6 +3093,57 @@ describe('CsfFile', () => {
         expect(Object.keys(parsed._stories)).toEqual(['A']);
       });
 
+      it('reads factory stories exported with export specifiers', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            const $__Button = meta.story({ tags: ['a'] });
+            const $__Typed = meta.story({ tags: ['b'] }) satisfies ReturnType<typeof meta.story>;
+            const someHelper = () => {};
+            function helperFunction() {}
+            class HelperClass {}
+            export { $__Button as Button, $__Typed as Typed, someHelper, helperFunction, HelperClass };
+            export { Other } from './Other.stories';
+            import { Imported } from './Imported.stories';
+            export { Imported };
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([
+          { name: 'Button', tags: ['a'], factory: true },
+          { name: 'Typed', tags: ['b'], factory: true },
+          { name: 'Other', tags: undefined, factory: undefined },
+          { name: 'Imported', tags: undefined, factory: undefined },
+        ]);
+      });
+
+      it('reads a .story() call behind an export specifier as a plain story in a non-factory file', () => {
+        const parsed = loadCsf(
+          dedent`
+            export default { title: 'foo' };
+            const Local = api.story({ tags: ['a'] });
+            export { Local as Story };
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(
+          parsed.stories.map(({ name, tags, __stats }) => ({
+            name,
+            tags,
+            factory: __stats.factory,
+          }))
+        ).toEqual([{ name: 'Story', tags: undefined, factory: undefined }]);
+      });
+
       it('excludeStories still works with factories', () => {
         const parsed = loadCsf(
           dedent`

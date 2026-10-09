@@ -331,3 +331,231 @@ describe(transformStoriesCode.name, () => {
     expect(output).toContain('__svelteCsf');
   });
 });
+
+describe('CSF factories', () => {
+  async function transform(originalCode: string) {
+    const filename = 'Button.stories.svelte';
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
+    const code = new MagicString(compiledCode);
+
+    await transformStoriesCode({
+      code,
+      nodes: {
+        svelte: await extractSvelteASTNodes({
+          ast: getSvelteAST({ code: originalCode, filename }),
+          filename,
+        }),
+        compiled: await extractCompiledASTNodes({ ast: parseAst(compiledCode), filename }),
+      },
+      filename,
+      originalCode,
+    });
+
+    return code.toString();
+  }
+
+  it('names the meta and creates the stories with meta.story()', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        /** Description of the component */
+        const { Story } = preview.meta({ component: Button, args: { primary: true } });
+      </script>
+
+      <!-- Description of the story -->
+      <Story name="Primary" args={{ label: 'Primary' }} tags={['autodocs']} />
+
+      <Story name="Button">
+        {#snippet template(args)}
+          <Button {...args} />
+        {/snippet}
+      </Story>
+    `);
+
+    expect(output).toMatchInlineSnapshot(`
+      "import 'svelte/internal/disclose-version';
+      import 'svelte/internal/flags/legacy';
+
+      Button_stories[$.FILENAME] = 'Button.stories.svelte';
+
+      import preview from '#.storybook/preview';
+      import Button from './Button.svelte';
+      import * as $ from 'svelte/internal/client';
+
+      const $__meta = preview.meta({
+      	component: Button,
+      	args: { primary: true },
+      	parameters: {
+      		docs: {
+      			description: { component: "Description of the component" }
+      		}
+      	}
+      });
+      const { Story } = $__meta;
+      var root = $.add_locations($.from_html(\`<!> <!>\`, 1), Button_stories[$.FILENAME], []);
+
+      function Button_stories($$anchor, $$props) {
+      	$.check_target(new.target);
+      	$.push($$props, false, Button_stories);
+
+      	var $$exports = { ...$.legacy_api() };
+
+      	$.init();
+
+      	var fragment = root();
+      	var node = $.first_child(fragment);
+
+      	$.add_svelte_meta(
+      		() => Story(node, {
+      			name: 'Primary',
+      			args: { label: 'Primary' },
+      			tags: ['autodocs'],
+      			parameters: {
+      				docs: {
+      					description: { story: "Description of the story" }
+      				},
+      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      			}
+      		}),
+      		'component',
+      		Button_stories,
+      		10,
+      		0,
+      		{ componentTag: 'Story' }
+      	);
+
+      	var node_1 = $.sibling(node, 2);
+
+      	{
+      		const template = $.wrap_snippet(Button_stories, function ($$anchor, args = $.noop) {
+      			$.validate_snippet_args(...arguments);
+      			$.add_svelte_meta(() => Button($$anchor, $.spread_props(args)), 'component', Button_stories, 14, 4, { componentTag: 'Button' });
+      		});
+
+      		$.add_svelte_meta(
+      			() => Story(node_1, {
+      				name: 'Button',
+      				template,
+      				$$slots: { template: true },
+      				parameters: {
+      					__svelteCsf: { rawCode: "<Button {...args} />" }
+      				}
+      			}),
+      			'component',
+      			Button_stories,
+      			12,
+      			0,
+      			{ componentTag: 'Story' }
+      		);
+      	}
+
+      	$.append($$anchor, fragment);
+      	return $.pop($$exports);
+      }
+      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+
+      const $__stories = createRuntimeStories(Button_stories, $__meta.input);
+
+      export const __namedExportsOrder = ["Primary", "Button"];
+
+      const $__Primary = $__meta.story({
+      	...$__stories["Primary"],
+      	tags: ['autodocs', "svelte-csf-v5"]
+      });
+
+      const $__Button = $__meta.story({
+      	...$__stories["Button"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export { $__Primary as Primary, $__Button as Button };"
+    `);
+  });
+
+  it('names the meta from preview.type<>().meta()', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module lang="ts">
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.type<{ args: { theme: string } }>().meta({ component: Button });
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary', theme: 'dark' }} />
+    `);
+
+    expect(output).toContain(dedent`
+      const $__meta = preview.type().meta({ component: Button });
+      const { Story } = $__meta;
+    `);
+    expect(output).toContain('const $__Primary = $__meta.story({');
+  });
+
+  it('uses the meta variable of the file', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module>
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const meta = preview.meta({ component: Button });
+        const { Story } = meta;
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary' }} />
+    `);
+
+    expect(output).toMatchInlineSnapshot(`
+      "import 'svelte/internal/disclose-version';
+      import 'svelte/internal/flags/legacy';
+
+      Button_stories[$.FILENAME] = 'Button.stories.svelte';
+
+      import preview from '#.storybook/preview';
+      import Button from './Button.svelte';
+      import * as $ from 'svelte/internal/client';
+
+      const meta = preview.meta({ component: Button });
+      const { Story } = meta;
+
+      function Button_stories($$anchor, $$props) {
+      	$.check_target(new.target);
+      	$.push($$props, false, Button_stories);
+
+      	var $$exports = { ...$.legacy_api() };
+
+      	$.init();
+
+      	$.add_svelte_meta(
+      		() => Story($$anchor, {
+      			name: 'Primary',
+      			args: { label: 'Primary' },
+      			parameters: {
+      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      			}
+      		}),
+      		'component',
+      		Button_stories,
+      		9,
+      		0,
+      		{ componentTag: 'Story' }
+      	);
+
+      	return $.pop($$exports);
+      }
+      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+
+      const $__stories = createRuntimeStories(Button_stories, meta.input);
+
+      export const __namedExportsOrder = ["Primary"];
+
+      const $__Primary = meta.story({
+      	...$__stories["Primary"],
+      	tags: ["svelte-csf-v5"]
+      });
+
+      export { $__Primary as Primary };"
+    `);
+  });
+});

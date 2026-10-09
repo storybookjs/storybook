@@ -24,14 +24,15 @@ async function runStoriesCodemod(options: {
   glob: string | undefined;
 }) {
   const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
+  const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
+  const promptsForGlob = !glob && !inSandbox && !yes;
   try {
-    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
     let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
 
     if (!glob && inSandbox) {
       // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
       globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
-    } else if (!glob && !yes) {
+    } else if (promptsForGlob) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
@@ -54,7 +55,8 @@ async function runStoriesCodemod(options: {
       { dryRun }
     );
   } catch (err: any) {
-    if (err.message === 'No files matched') {
+    // Ask for another glob. Without a prompt, the same glob would match nothing again.
+    if (err.message === 'No files matched' && promptsForGlob) {
       await runStoriesCodemod(options);
     } else {
       throw err;

@@ -23,6 +23,32 @@ export function screenFollowsTheBody(): void {
   new MutationObserver(follow).observe(document.documentElement, { childList: true });
 }
 
+// Chromatic captures a story in a document that has Storybook's root, `#storybook-root`, and fails
+// with "Missing root element on page" without one. It captures what is in the `<body>`, with the
+// content of the root in place of the root. A page of the app gets a `<body>` of its own, also when
+// a story navigates to one, so that body gets an empty root at its end: the snapshot is the page.
+// React leaves alone what follows the app in `<body>` when it hydrates it. It is added again when
+// something removes it, and the body of the preview has the root of its own back once the page is
+// left. A root element that `renderToCanvas()` could name, which Chromatic reads, would replace this.
+export function rootFollowsTheBody(): void {
+  let body: HTMLElement | undefined;
+  const follow = () => {
+    if (!document.getElementById('storybook-root')) {
+      const root = document.createElement('div');
+      root.id = 'storybook-root';
+      root.hidden = true;
+      document.body.append(root);
+    }
+    if (document.body !== body) {
+      body = document.body;
+      observer.observe(body, { childList: true });
+    }
+  };
+  const observer = new MutationObserver(follow);
+  observer.observe(document.documentElement, { childList: true });
+  follow();
+}
+
 // A page story owns the document, so its play function looks in the page. A `canvasElement` that
 // `renderToCanvas()` answers with would replace this.
 export function canvasIsThePage(context: object): void {

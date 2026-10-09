@@ -7,7 +7,11 @@ import { clientFileOf, setNodeFiles } from 'vitest-plugin-rsc/nextjs/internal';
 import { cleanup, clientNode, renderServer } from 'vitest-plugin-rsc/nextjs/testing-library';
 
 import { storyOf } from './csf-next.ts';
-import { canvasIsThePage, screenFollowsTheBody } from './storybook-internals.ts';
+import {
+  canvasIsThePage,
+  rootFollowsTheBody,
+  screenFollowsTheBody,
+} from './storybook-internals.ts';
 import type { NextJsParameters } from './types.ts';
 
 type StoryContext = {
@@ -82,6 +86,7 @@ function setUp(): string {
   if (previewPath === undefined) {
     previewPath = window.location.pathname;
     screenFollowsTheBody();
+    rootFollowsTheBody();
   }
   return previewPath;
 }

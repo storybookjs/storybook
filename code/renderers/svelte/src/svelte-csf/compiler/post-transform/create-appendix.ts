@@ -26,6 +26,9 @@ export async function createAppendix(params: Params) {
   const { code, nodes, filename } = params;
   const { compiled, svelte } = nodes;
   const { storiesFunctionDeclaration } = compiled;
+  const factoryMeta = compiled.isFactory
+    ? (compiled.metaIdentifier ?? createASTIdentifier(STORYBOOK_META_IDENTIFIER))
+    : undefined;
 
   const storiesIdentifiers = getStoriesIdentifiers({
     nodes: svelte,
@@ -33,6 +36,7 @@ export async function createAppendix(params: Params) {
   });
   const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
     storiesFunctionDeclaration,
+    factoryMeta,
     filename,
   });
   const storiesVariableDeclarations = storiesIdentifiers.map(({ exportName }, idx) =>
@@ -45,6 +49,7 @@ export async function createAppendix(params: Params) {
           storyComponents: params.nodes.svelte.storyComponents,
           idx,
         }),
+        factoryMeta,
       },
     })
   );
@@ -55,7 +60,8 @@ export async function createAppendix(params: Params) {
     body: [
       createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
-      createExportDefaultMeta(),
+      // A CSF factories file has no default export: core finds the meta through the stories
+      ...(factoryMeta ? [] : [createExportDefaultMeta()]),
       createExportOrderVariableDeclaration({ storiesIdentifiers, filename }),
       ...storiesVariableDeclarations,
       createNamedExportStories({ storiesIdentifiers }),

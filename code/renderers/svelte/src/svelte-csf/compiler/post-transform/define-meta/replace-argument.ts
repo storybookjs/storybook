@@ -26,12 +26,7 @@ export function replaceDefineMetaArgument(params: Params): ESTreeAST.ObjectExpre
 
   const declaration = params.nodes.compiled.defineMetaVariableDeclaration.declarations[0];
 
-  if (
-    !declaration ||
-    declaration.init?.type !== 'CallExpression' ||
-    declaration?.init?.callee.type !== 'Identifier' ||
-    declaration?.init?.callee.name !== params.nodes.compiled.defineMetaImport.local.name
-  ) {
+  if (declaration?.init?.type !== 'CallExpression') {
     throw new NoDestructuredDefineMetaCallError({
       defineMetaVariableDeclarator: declaration,
       filename: params.filename,

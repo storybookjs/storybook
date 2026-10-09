@@ -42,22 +42,20 @@ export function extractDefineMetaPropertiesNodes<
 }
 
 /**
- * `defineMeta` accepts only one argument - an {@link ObjectExpression},
+ * `defineMeta` and `preview.meta` accept only one argument - an {@link ObjectExpression},
  * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
  */
 export function getDefineMetaFirstArgumentObjectExpression(
   options: Pick<Options<Array<keyof ComponentAnnotations<Cmp>>>, 'filename' | 'nodes'>
 ): ESTreeAST.ObjectExpression {
   const { nodes, filename } = options;
-  const { defineMetaVariableDeclaration, defineMetaImport } = nodes;
+  const { defineMetaVariableDeclaration } = nodes;
   const { declarations } = defineMetaVariableDeclaration;
   const declaration = declarations[0];
   const { init } = declaration;
 
   if (
     init?.type === 'CallExpression' &&
-    init.callee.type === 'Identifier' &&
-    init.callee.name === defineMetaImport.local.name && // NOTE: the callee.name could be renamed by user
     init.arguments.length === 1 &&
     init.arguments[0].type === 'ObjectExpression'
   ) {

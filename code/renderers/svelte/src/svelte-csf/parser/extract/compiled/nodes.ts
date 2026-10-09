@@ -1,4 +1,4 @@
-import { findDefineMetaImport } from '../../../utils/import-source.ts';
+import { findMeta, findMetaImports, hasMetaImport } from '../../../utils/import-source.ts';
 import type { ParseAst } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
@@ -18,16 +18,16 @@ import { DefaultOrNamespaceImportUsedError } from '../../../utils/error/parser/e
  * Powered by `rollup`'s internal [`this.parse()`](https://rollupjs.org/plugin-development/#this-parse)
  */
 export interface CompiledASTNodes {
+  /** `true` when the meta comes from `preview.meta()`, which creates a CSF factories meta. */
+  isFactory: boolean;
   /**
-   * Import specifier for `defineMeta`, imported from one of `SVELTE_CSF_IMPORT_SOURCES`.
-   * Could be renamed - e.g. `import { defineMeta } from "@storybook/svelte"`
-   */
-  defineMetaImport: ESTreeAST.ImportSpecifier;
-  /**
-   * Variable declaration: `const { Story } = defineMeta({ })`
-   * Could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
+   * Variable declaration with the meta call: `const { Story } = defineMeta({ })`, or
+   * `preview.meta({ })` in place of `defineMeta({ })`. It can also be `const meta =
+   * preview.meta({ })`, followed by `const { Story } = meta`.
    */
   defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
+  /** `meta` in `const meta = preview.meta({ })`. */
+  metaIdentifier?: ESTreeAST.Identifier;
   /**
    * Store the `export default declaration`, we will need to remove it later.
    * Why? Storybook expects `export default meta`, instead of what `@sveltejs/vite-plugin-svelte` will produce.
@@ -43,10 +43,6 @@ export interface CompiledASTNodes {
    */
   storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;
 }
-
-const AST_NODES_NAMES = {
-  Story: 'Story',
-} as const;
 
 interface Params {
   // Rollup's AST has its own copy of the ESTree types
@@ -66,35 +62,11 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   const state: Partial<CompiledASTNodes> & {
     potentialStoriesFunctionDeclaration: ESTreeAST.FunctionDeclaration[];
   } = { potentialStoriesFunctionDeclaration: [] };
-  const imports = findDefineMetaImport((ast as ESTreeAST.Program).body);
-  state.defineMetaImport = imports.defineMetaImport;
+  const { body } = ast as ESTreeAST.Program;
+  const imports = findMetaImports(body);
+  const meta = findMeta(body, imports, filename);
+
   const visitors: Visitors<ESTreeAST.Node | ESTreeAST.Comment, typeof state> = {
-    VariableDeclaration(node, { state }) {
-      const { declarations } = node;
-      const declaration = declarations[0];
-      const { id, init } = declaration;
-
-      if (
-        id.type === 'ObjectPattern' &&
-        init?.type === 'CallExpression' &&
-        init.callee.type === 'Identifier' &&
-        init.callee.name === state.defineMetaImport?.local.name
-      ) {
-        state.defineMetaVariableDeclaration = node;
-
-        for (const property of id.properties) {
-          if (
-            property.type === 'Property' &&
-            property.key.type === 'Identifier' &&
-            property.key.name === AST_NODES_NAMES.Story &&
-            property.value.type === 'Identifier'
-          ) {
-            state.storyIdentifier = property.value;
-          }
-        }
-      }
-    },
-
     FunctionDeclaration(node, { state }) {
       state.potentialStoriesFunctionDeclaration.push(node);
     },
@@ -123,15 +95,9 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
 
   walk(ast as ESTreeAST.Program, state, visitors);
 
-  const {
-    defineMetaImport,
-    defineMetaVariableDeclaration,
-    exportDefault,
-    storyIdentifier,
-    storiesFunctionDeclaration,
-  } = state;
+  const { exportDefault, storiesFunctionDeclaration } = state;
 
-  if (!defineMetaImport) {
+  if (!hasMetaImport(imports)) {
     if (imports.hasDefaultOrNamespaceImport) {
       throw new DefaultOrNamespaceImportUsedError(filename);
     }
@@ -139,7 +105,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     throw new MissingImportedDefineMetaError(filename);
   }
 
-  if (!defineMetaVariableDeclaration) {
+  if (!meta) {
     throw new MissingDefineMetaVariableDeclarationError(filename);
   }
 
@@ -147,7 +113,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     throw new NoExportDefaultError(filename);
   }
 
-  if (!storyIdentifier) {
+  if (!meta.storyIdentifier) {
     throw new NoStoryIdentifierFoundError(filename);
   }
 
@@ -156,10 +122,11 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   }
 
   return {
-    defineMetaImport,
-    defineMetaVariableDeclaration,
+    isFactory: meta.isFactory,
+    defineMetaVariableDeclaration: meta.declaration,
+    metaIdentifier: meta.metaIdentifier,
     exportDefault,
-    storyIdentifier,
+    storyIdentifier: meta.storyIdentifier,
     storiesFunctionDeclaration,
   };
 }

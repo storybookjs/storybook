@@ -15,15 +15,16 @@ import type {
 import type { Component, ComponentProps } from 'svelte';
 import type { SetOptional, Simplify } from 'type-fest';
 
-import type { SvelteRenderer } from './types.ts';
+import type { SvelteRenderer, SvelteTypes } from './types.ts';
 import type { StoryComponent } from './svelte-csf/types.ts';
+import type { SvelteCsfStoryProps } from './preview.ts';
 
 export type { ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 
 /**
  * Without a type argument, the args of a story: a record of arg names to values.
  *
- * With the `Story` component from `defineMeta`, the args of that story.
+ * With the `Story` component from `defineMeta` or `preview.meta`, the args of that story.
  *
  * @example
  * ```svelte
@@ -37,7 +38,9 @@ export type Args<TStoryCmp = never> = [TStoryCmp] extends [never]
   : // The component type is `any`: `Component` props are contravariant, so matching on `Cmp` infers nothing
     TStoryCmp extends StoryComponent<infer TArgs extends Record<string, any>, any>
     ? TArgs
-    : never;
+    : TStoryCmp extends Component<SvelteCsfStoryProps<infer T extends SvelteTypes, any>>
+      ? T['args']
+      : never;
 
 /**
  * Metadata to configure the stories for a component.

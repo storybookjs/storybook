@@ -160,6 +160,22 @@ test.describe('addon-docs', () => {
     await expect(storiesCode).toContainText('Basic');
   });
 
+  test('controls update a story rendered in an iframe', async ({ page }) => {
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('addons/docs/docspage/iframe', 'docs');
+    const root = sbPage.previewRoot();
+
+    const storyFrame = root.locator('.sbdocs-preview iframe').first().contentFrame();
+    const button = storyFrame.locator('#storybook-root button');
+    await expect(button).toHaveText('Rendered in iframe');
+
+    const labelControl = root.locator('textarea[name=label]');
+    await labelControl.fill('Changed');
+    await labelControl.blur();
+
+    await expect(button).toHaveText('Changed');
+  });
+
   // Regression test for #28333: `useArgs` called from a story rendered in a <Stories>
   // block must update that story, not the page's primary story. The <Stories> renders
   // never re-render on their own arg changes, so the only live render is the primary.

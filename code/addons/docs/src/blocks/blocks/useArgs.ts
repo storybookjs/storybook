@@ -23,10 +23,12 @@ export const useArgsIfDefined = (
   story: PreparedStory | void,
   context: DocsContextProps
 ): [Args, (args: Args) => void, (argNames?: string[]) => void] | void => {
-  const storyContext = story ? context.getStoryContext(story) : { args: {} };
+  const storyContext = story ? context.getStoryContext(story) : { unmappedArgs: {} };
   const { id: storyId } = story || { id: 'none' };
 
-  const [args, setArgs] = useState(storyContext.args);
+  // The context's `args` are the rendered args: `argTypes.mapping` applied and hidden conditional
+  // args removed. The store and `STORY_ARGS_UPDATED` carry the unmapped args, so start from those.
+  const [args, setArgs] = useState<Args>(storyContext.unmappedArgs);
   useEffect(() => {
     const onArgsUpdated = (changed: { storyId: string; args: Args }) => {
       if (changed.storyId === storyId) {

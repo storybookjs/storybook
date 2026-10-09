@@ -2,6 +2,7 @@ import type { ComponentProps, FC } from 'react';
 import React, { useContext } from 'react';
 
 import type {
+  Args,
   ModuleExport,
   ModuleExports,
   PreparedStory,
@@ -13,6 +14,7 @@ import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { useArgsIfDefined } from './useArgs';
 import { useStory } from './useStory';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -76,7 +78,8 @@ export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryI
 export const getStoryProps = <TFramework extends Renderer>(
   props: StoryParameters,
   story: PreparedStory<TFramework>,
-  context: DocsContextProps<TFramework>
+  context: DocsContextProps<TFramework>,
+  args?: Args
 ): PureStoryProps => {
   const { parameters = {} } = story || {};
   const { docs = {} } = parameters;
@@ -110,7 +113,7 @@ export const getStoryProps = <TFramework extends Renderer>(
     story: story as any,
     inline: false,
     height,
-
+    args: props.__forceInitialArgs ? undefined : args,
     primary: !!props.__primary,
   };
 };
@@ -119,12 +122,13 @@ const StoryImpl: FC<StoryProps> = (props = { __forceInitialArgs: false, __primar
   const context = useContext(DocsContext);
   const storyId = getStoryId(props, context);
   const story = useStory(storyId, context);
+  const argsState = useArgsIfDefined(story, context);
 
   if (!story) {
     return <StorySkeleton />;
   }
 
-  const storyProps = getStoryProps(props, story, context);
+  const storyProps = getStoryProps(props, story, context, argsState?.[0]);
   if (!storyProps) {
     return null;
   }

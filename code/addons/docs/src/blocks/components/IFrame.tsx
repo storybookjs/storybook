@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import React, { Component } from 'react';
 
 const { window: globalWindow } = globalThis;
@@ -5,6 +6,7 @@ const { window: globalWindow } = globalThis;
 interface IFrameProps {
   id: string;
   key?: string;
+  iframeRef?: Ref<HTMLIFrameElement>;
   title: string;
   src: string;
   allowFullScreen: boolean;
@@ -46,9 +48,10 @@ export class IFrame extends Component<IFrameProps> {
   }
 
   render() {
-    const { id, title, src, allowFullScreen, scale, ...rest } = this.props;
+    const { id, iframeRef, title, src, allowFullScreen, scale, ...rest } = this.props;
     return (
       <iframe
+        ref={iframeRef}
         id={id}
         title={title}
         src={src}

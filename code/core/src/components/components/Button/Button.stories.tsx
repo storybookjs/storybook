@@ -2,7 +2,7 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, fn } from 'storybook/test';
+import { expect, fn, screen } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview.tsx';
@@ -30,6 +30,15 @@ export const IconButton = meta.story({
     children: <FaceHappyIcon />,
     padding: 'small',
     variant: 'ghost',
+  },
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
+    await expect(button).not.toHaveAccessibleDescription();
+    await userEvent.keyboard('{Escape}');
   },
 });
 
@@ -433,6 +442,15 @@ export const Tooltip = meta.story({
     ariaLabel: false,
     children: 'Button',
     tooltip: 'A button can be pressed to perform an action',
+  },
+  play: async ({ args, canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+
+    await userEvent.hover(button);
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent(args.tooltip!);
+    await expect(button).toHaveAccessibleName('Button');
+    await expect(button).not.toHaveAccessibleDescription();
+    await userEvent.unhover(button);
   },
 });
 

@@ -1,10 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { relative, resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type JsPackageManager, removeAddon } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { type JsPackageManager, getProjectRoot, removeAddon } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { fs, vol } from 'memfs';
@@ -59,6 +58,9 @@ const write = (path: string, content: string) => {
 const readWritten = () =>
   Object.fromEntries([...written].map((path) => [path, fs.readFileSync(path, 'utf8')]));
 
+// File lists show paths relative to the project root.
+const listed = (path: string) => `- ${relative(resolve('/project'), path)}`;
+
 const STORY_FILE = dedent`
   <script module>
     import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -95,8 +97,12 @@ describe('addon-svelte-csf-to-core', () => {
       files: createFixFiles().files,
     } as unknown as CheckOptions);
 
+  // The prompt that `storybook automigrate` and `upgrade` show for the last migration.
+  let shownPrompt = '';
+
   const migrate = async (config: Partial<StorybookConfigRaw> = mainConfig) => {
     const result = await check(config);
+    shownPrompt = addonSvelteCsfToCore.prompt(result!);
     await runFix(addonSvelteCsfToCore, {
       result,
       packageManager,
@@ -114,8 +120,8 @@ describe('addon-svelte-csf-to-core', () => {
     written.clear();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(removeAddon).mockResolvedValue(undefined);
+    vi.mocked(getProjectRoot).mockReturnValue(resolve('/project'));
     vi.mocked(packageManager.getAllDependencies).mockReturnValue({
       '@storybook/addon-svelte-csf': '^5.1.5',
     });
@@ -130,7 +136,7 @@ describe('addon-svelte-csf-to-core', () => {
         mainConfigPath: MAIN,
         importFiles: [STORY],
         legacyStoryFiles: [],
-        legacyTemplate: false,
+        legacySyntax: {},
       });
     });
 
@@ -148,15 +154,6 @@ describe('addon-svelte-csf-to-core', () => {
 
       expect(result).toMatchObject({ mainConfigPath: undefined, importFiles: [STORY] });
       expect(addonSvelteCsfToCore.prompt(result!)).not.toContain(MAIN);
-    });
-
-    it('reports the legacyTemplate option', async () => {
-      const result = await check({
-        framework: '@storybook/sveltekit',
-        addons: [{ name: '@storybook/addon-svelte-csf', options: { legacyTemplate: true } }],
-      });
-
-      expect(result?.legacyTemplate).toBe(true);
     });
 
     it('reports Svelte CSF stories without defineMeta as legacy stories', async () => {
@@ -191,8 +188,8 @@ describe('addon-svelte-csf-to-core', () => {
 
       const prompt = addonSvelteCsfToCore.prompt((await check())!);
 
-      expect(prompt).toContain(`besides package.json:\n- ${MAIN}\n- ${STORY}`);
-      expect(prompt).toContain(`by hand:\n- ${LEGACY_STORY}`);
+      expect(prompt).toContain(`besides package.json:\n${listed(MAIN)}\n${listed(STORY)}`);
+      expect(prompt).toContain(`by hand:\n${listed(LEGACY_STORY)} (no defineMeta)`);
     });
 
     it('lists the main config once when it also imports the addon', async () => {
@@ -204,7 +201,7 @@ describe('addon-svelte-csf-to-core', () => {
 
       const prompt = addonSvelteCsfToCore.prompt((await check())!);
 
-      expect(prompt.split(`- ${MAIN}`)).toHaveLength(2);
+      expect(prompt.split(listed(MAIN))).toHaveLength(2);
     });
   });
 
@@ -279,7 +276,7 @@ describe('addon-svelte-csf-to-core', () => {
       const files = await migrate();
 
       expect(files[LEGACY_STORY]).toBe(legacyStory);
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(`- ${LEGACY_STORY}`));
+      expect(shownPrompt).toContain(listed(LEGACY_STORY));
     });
 
     it('replaces the addon with the framework package in every package.json', async () => {
@@ -407,29 +404,73 @@ describe('addon-svelte-csf-to-core', () => {
       expect(files[DECORATORS]).toBe("export const addons = ['@storybook/addon-svelte-csf'];");
     });
 
-    it('warns about the legacy syntax when legacyTemplate is set', async () => {
+    it('does not list legacy syntax for the legacyTemplate option alone', async () => {
       await migrate({
         framework: '@storybook/sveltekit',
         addons: [{ name: '@storybook/addon-svelte-csf', options: { legacyTemplate: true } }],
       });
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('removes the legacy Svelte CSF syntax')
-      );
+      expect(shownPrompt).not.toContain('legacy Svelte CSF syntax');
     });
 
-    it('lists the legacy stories in the warning', async () => {
+    it('lists defineMeta stories that still use legacy Story syntax, and rewrites their imports', async () => {
+      write(
+        STORY,
+        dedent`
+          <script module>
+            import { defineMeta } from '@storybook/addon-svelte-csf';
+            const { Story } = defineMeta({});
+          </script>
+
+          <Story name="A" let:args><Button {...args} /></Story>
+          <Story
+            id="b"
+            name="B"
+            autodocs
+            args={{ label: 'a > b' }}
+          />
+          <Story name="C" {source} />
+        `
+      );
+
+      const files = await migrate();
+
+      expect(files[STORY]).toContain("from '@storybook/sveltekit'");
+      expect(shownPrompt).toContain(`${listed(STORY)} (let:args, id, autodocs, source)`);
+    });
+
+    it.each([
+      ['a prop value named like a legacy prop', '<Story name={source} args={{ id: 1 }} />'],
+      ['an unquoted value', '<Story name=autodocs />'],
+      ['another component', '<StoryGrid id="grid" autodocs />'],
+      ['a comment', '<!-- <Story id="old" autodocs /> -->\n<Story name="A" />'],
+      [
+        'a snippet parameter',
+        '<Story name="A">{#snippet template(args, context)}<p>{args.id}</p>{/snippet}</Story>',
+      ],
+    ])('does not report legacy Story syntax for %s', async (_, markup) => {
+      write(
+        STORY,
+        `<script module>\n  import { defineMeta } from '@storybook/addon-svelte-csf';\n  const { Story } = defineMeta({});\n</script>\n\n${markup}\n`
+      );
+
+      await migrate();
+
+      expect(shownPrompt).not.toContain('legacy Svelte CSF syntax');
+    });
+
+    it('lists the legacy stories in the prompt', async () => {
       write(LEGACY_STORY, LEGACY_STORY_FILE);
 
       await migrate();
 
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(`- ${LEGACY_STORY}`));
+      expect(shownPrompt).toContain(listed(LEGACY_STORY));
     });
 
-    it('does not warn without legacy stories', async () => {
+    it('does not list legacy stories when there are none', async () => {
       await migrate();
 
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(shownPrompt).not.toContain('legacy Svelte CSF syntax');
     });
   });
 });

@@ -53,8 +53,6 @@ function registerTestToolsetThrowing(error: Error) {
 function availabilityWith(overrides: Partial<ToolAvailability> = {}): ToolAvailability {
   return {
     moduleGraphSupported: false,
-    changeDetectionEnabled: false,
-    reviewEnabled: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,
@@ -103,7 +101,7 @@ describe('a broken tool definition', () => {
     expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('test-run'));
   });
 
-  it('is dropped from the storybook ai metadata instead of failing the build', () => {
+  it('is dropped from the tool metadata instead of throwing', () => {
     const metadata = getAddonToolMetadata(context);
     const names = metadata.map((tool) => tool.name);
 

@@ -6,7 +6,7 @@
 // `yarn task build --template <template> --start-from auto`:
 //   yarn baselines:sandbox                              # verify every server-docgen template
 //   yarn baselines:sandbox --update                     # re-record after reviewing the diff
-//   yarn baselines:sandbox --template angular-vite/docgen-server-ts
+//   yarn baselines:sandbox --template angular-vite/default-ts
 import {
   existsSync,
   mkdirSync,
@@ -125,8 +125,8 @@ function main(): void {
   if (templates.length === 0) {
     // Silence here would read as "everything passed" while nothing had been checked.
     console.error(
-      'No sandbox template enables server docgen, so there is nothing to baseline. Set ' +
-        'features.docgenServer and features.componentsManifest on a template first.'
+      'No sandbox template enables server docgen, so there is nothing to baseline. Use a ' +
+        'supported default-on framework and enable features.componentsManifest first.'
     );
     process.exitCode = 1;
     return;

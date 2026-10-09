@@ -1,0 +1,11 @@
+<lit-template-shapes>
+  <button>Go</button>
+</lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>
+
+warning: Incomplete snippet: listeners not shown: `@click`.

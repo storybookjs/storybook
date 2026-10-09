@@ -14,6 +14,7 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import type { types as t } from 'storybook/internal/babel';
+import { getHeaderComments } from 'storybook/internal/csf-tools';
 
 import { findFilesUp } from '../../util.ts';
 import type { Fix } from '../types.ts';
@@ -400,6 +401,7 @@ export function transformSetupFile(
     return unsupportedAnnotation(node);
   };
 
+  const [firstStatement] = program.body;
   const removedStatements = new Set<t.Statement>();
   const capturedNames = new Set<string>();
   const annotationNames = new Set<string>();
@@ -488,7 +490,17 @@ export function transformSetupFile(
     return { kind: 'empty' };
   }
 
+  keepHeader(firstStatement, program.body[0]);
   return { kind: 'rewritten', code: root.toSource(PRINT_OPTIONS) };
+}
+
+function keepHeader(removed: t.Statement | undefined, first: t.Statement) {
+  const header = getHeaderComments(removed);
+  if (removed === first || !header.length) {
+    return;
+  }
+  const commented = first as { comments?: t.Comment[] };
+  commented.comments = [...header, ...(commented.comments ?? [])];
 }
 
 function resolvesToPreview(importSource: string, options: TransformOptions) {

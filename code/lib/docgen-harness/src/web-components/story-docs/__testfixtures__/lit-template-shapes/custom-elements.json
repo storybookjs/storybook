@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-template-shapes.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Lit element for template snippet shapes.",
+          "name": "LitTemplateShapes",
+          "slots": [
+            {
+              "description": "Default content.",
+              "name": ""
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "attribute": "count"
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "attribute": "disabled"
+            },
+            {
+              "kind": "field",
+              "name": "items",
+              "type": {
+                "text": "unknown[]"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "heading"
+            },
+            {
+              "kind": "field",
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "attribute": "open"
+            }
+          ],
+          "events": [
+            {
+              "name": "shape-change",
+              "type": {
+                "text": "CustomEvent"
+              }
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            },
+            {
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "fieldName": "count"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "disabled"
+            },
+            {
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "heading"
+            },
+            {
+              "name": "open",
+              "type": {
+                "text": "boolean"
+              },
+              "fieldName": "open"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "lit-template-shapes",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitTemplateShapes",
+          "declaration": {
+            "name": "LitTemplateShapes",
+            "module": "lit-template-shapes.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-template-shapes",
+          "declaration": {
+            "name": "LitTemplateShapes",
+            "module": "lit-template-shapes.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

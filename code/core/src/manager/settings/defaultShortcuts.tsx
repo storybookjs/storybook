@@ -16,7 +16,6 @@ export const defaultShortcuts: State['shortcuts'] = {
   nextStory: ['alt', 'ArrowRight'],
   shortcutsPage: ['ctrl', 'shift', ','],
   aboutPage: [','],
-  escape: ['escape'],
   collapseAll: ['ctrl', 'shift', 'ArrowUp'],
   expandAll: ['ctrl', 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],

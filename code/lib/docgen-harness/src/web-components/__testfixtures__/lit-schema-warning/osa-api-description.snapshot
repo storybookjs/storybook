@@ -1,0 +1,8 @@
+## Attributes
+
+```
+export type LitSchemaWarningAttributes = {
+  label?: string = 'Label';
+  count?: number = 0;
+}
+```

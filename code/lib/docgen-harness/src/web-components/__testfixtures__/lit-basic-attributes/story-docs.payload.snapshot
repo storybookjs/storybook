@@ -1,0 +1,29 @@
+{
+  "id": "webcomponentsfixtures-lit-basic-attributes",
+  "name": "lit-basic-attributes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-basic-attributes--args-default-render": {
+      "id": "webcomponentsfixtures-lit-basic-attributes--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
+    },
+    "webcomponentsfixtures-lit-basic-attributes--dom-node": {
+      "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
+      "name": "Dom Node",
+      "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-lit-basic-attributes--lit-template": {
+      "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
+      "name": "Lit Template",
+      "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
+      "warning": "Incomplete snippet: `args => html`<lit-basic-attributes
+      label=${args.label}
+      count=${args.count}
+      ?disabled=${args.disabled}
+      ?is-open=${args.isOpen}
+    ></lit-basic-attributes>`` could not be resolved statically.",
+    },
+  },
+}

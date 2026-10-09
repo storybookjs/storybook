@@ -1,13 +1,7 @@
 /* eslint-env browser */
 import { MIN_TOUCH_AREA_SIZE } from './constants.ts';
 import { type IconName, iconPaths } from './icons.ts';
-import type {
-  Box,
-  ClickEventDetails,
-  Highlight,
-  HighlightOptions,
-  RawHighlightOptions,
-} from './types.ts';
+import type { Box, ClickEventDetails, Highlight, HighlightOptions } from './types.ts';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
@@ -67,23 +61,7 @@ export const createIcon = (name: IconName) =>
     )
   );
 
-export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
-  if ('elements' in options) {
-    // Legacy format
-    const { elements, color, style } = options;
-    return {
-      id: undefined,
-      priority: 0,
-      selectors: elements,
-      styles: {
-        outline: `2px ${style} ${color}`,
-        outlineOffset: '2px',
-        boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
-      },
-      menu: undefined,
-    };
-  }
-
+export const normalizeOptions = (options: HighlightOptions): Highlight => {
   const { menu, ...rest } = options;
   return {
     id: undefined,

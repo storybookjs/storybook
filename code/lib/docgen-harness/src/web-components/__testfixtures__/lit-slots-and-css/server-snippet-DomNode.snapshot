@@ -1,0 +1,3 @@
+<lit-slots-and-css heading="Projected"></lit-slots-and-css>
+
+warning: Incomplete snippet: `args => { const el = document.createElement('lit-slots-and-css'); el.setAttribute('heading', String(args.heading)); const body = document.createElement('p'); body.textContent = 'Default slot content'; const action = document.createElement('button'); action.slot = 'actions'; action.textContent = 'Confirm'; el.append(body, action); return el; }` could not be resolved statically.

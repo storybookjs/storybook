@@ -19,12 +19,12 @@ describe('upgrading Storybook from version 9', () => {
     expectShellCommandMatching(/storybook(@\S+)?\s+upgrade/);
   });
 
-  // The plugin requires Storybook >= 10.5 (or `next` while 10.5 is unreleased),
+  // The plugin requires Storybook >= 11.0 (or `next` while 11.0 is unreleased),
   // so an under-upgrade (e.g. landing on 10.0.0 or the 10.4.x stable) must not
-  // count. Prerelease specs like 10.5.0-beta.0 parse as (10,5,0) and satisfy
+  // count. Prerelease specs like 11.0.0-alpha.2 parse as (11,0,0) and satisfy
   // the floor. Bump alongside future requirement changes.
   test('upgrades the Storybook packages to the plugin-required release', () => {
-    expectStorybookDependenciesAtLeast('10.5.0', ['storybook', '@storybook/react-vite'], {
+    expectStorybookDependenciesAtLeast('11.0.0', ['storybook', '@storybook/react-vite'], {
       // Storybook 10 absorbs @storybook/react — a correct upgrade removes it,
       // but a stale seeded copy left behind must fail the floor.
       ifPresent: ['@storybook/react'],

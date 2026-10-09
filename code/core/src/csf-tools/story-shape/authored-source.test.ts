@@ -4,16 +4,13 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { authoredSource } from './story-docs-source.ts';
+import { authoredSource } from './authored-source.ts';
 
 const authoredSourceOf = (source: string, exportName = 'Default') => {
   const csf = loadCsf(source, { makeTitle: () => 'Example/Button' }).parse();
   const resolver = createStoryArgsResolver(csf);
   const resolved = resolver.resolve(exportName);
-  return authoredSource(
-    { members: resolved.storyMembers, metaMembers: resolved.metaMembers },
-    resolver.ctx
-  );
+  return authoredSource(resolved, resolver.ctx);
 };
 
 describe('authoredSource', () => {

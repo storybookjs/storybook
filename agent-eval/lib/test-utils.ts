@@ -29,11 +29,14 @@ const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
 
 type AgentContext = {
   agent?: unknown;
+  model?: unknown;
   integration?: unknown;
 };
 
 type EvalContext = {
   agent: string;
+  // Such as `gpt-6-luna?reasoningEffort=low`; absent when the experiment passes none.
+  model?: string;
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
@@ -57,7 +60,7 @@ export type StoryInputExpectation = {
 
 export function getEvalContext(): EvalContext {
   const agentContext = readAgentContext();
-  const { agent, integration } = agentContext;
+  const { agent, model, integration } = agentContext;
 
   if (typeof agent !== 'string') {
     throw new Error(
@@ -74,7 +77,13 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  return { agent, integration };
+  return { agent, ...(typeof model === 'string' && { model }), integration };
+}
+
+// Codex's system prompt for GPT-6 Luna alone says "Do not add or run tests unless the user asks
+// you to test or verify implementation."
+export function modelRunsTestsOnlyWhenAsked(): boolean {
+  return getEvalContext().model?.startsWith('gpt-6-luna') === true;
 }
 
 export function getTranscript(agent = getEvalContext().agent): Transcript {
@@ -392,11 +401,16 @@ export type WorkflowToolResult = {
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
+// `requireAgentRun: false` lets the agent skip the tests, for a model that runs
+// them only when asked; a run it did make must still not end red.
 export async function expectStoryTestsRanAndPassed(options?: {
   covering?: string[];
   cwd?: string;
+  requireAgentRun?: boolean;
 }): Promise<void> {
-  expectWorkflowCalls(['test-run']);
+  if (options?.requireAgentRun !== false) {
+    expectWorkflowCalls(['test-run']);
+  }
   expect(
     getWorkflowToolResults('test-run').at(-1)?.output ?? '',
     "The agent's last test run must not report failing stories or unhandled errors"

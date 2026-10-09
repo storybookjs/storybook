@@ -5,7 +5,6 @@ import { logger } from 'storybook/internal/node-logger';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import { dirname, relative, resolve } from 'pathe';
-import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
@@ -56,23 +55,23 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
       return null;
     }
 
-    const setterNames = referencedSetterNames(program);
+    const setterNames = findReferencedSetterNames(program);
     if (setterNames.length === 0) {
       return null;
     }
 
     const configDir = dirname(mainConfigPath);
     const source =
-      previewImportManifest(program, setterNames, dirname(previewConfigPath)) ??
-      (await packageJsonManifest(files, configDir)) ??
-      (await workspaceManifest());
+      findPreviewImportManifest(program, setterNames, dirname(previewConfigPath)) ??
+      (await findPackageJsonManifest(files, configDir)) ??
+      (await findWorkspaceManifest());
     if (!source) {
       return null;
     }
     const manifestPaths = source.from === 'file' ? [source.path] : source.paths;
-    const unreadableManifest = await unreadableManifestPath(files, manifestPaths);
+    const unreadableManifest = await findUnreadableManifestPath(files, manifestPaths);
     if (unreadableManifest) {
-      invalidManifestWarning(previewConfigPath, setterNames[0], unreadableManifest);
+      logInvalidManifestWarning(previewConfigPath, setterNames[0], unreadableManifest);
       return null;
     }
     const manifestPath = source.from === 'file' ? relative(configDir, source.path) : null;
@@ -84,9 +83,7 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
   },
 
   prompt: (): string =>
-    dedent`
-      @storybook/web-components runtime manifest API is deprecated. We'll remove the runtime calls and add the manifest path in your main.ts
-    `,
+    "The @storybook/web-components runtime manifest API is deprecated. We'll remove the runtime calls and add the manifest path to your main config.",
 
   transform: ({ result }): FixTransform[] => [
     {
@@ -122,10 +119,10 @@ const parsePreview = (source: string): t.Program | null => {
   }
 };
 
-const referencedSetterNames = (program: t.Program): SetterName[] =>
+const findReferencedSetterNames = (program: t.Program): SetterName[] =>
   SETTER_NAMES.filter((name) => countReferences(program, name) > 0);
 
-const previewImportManifest = (
+const findPreviewImportManifest = (
   program: t.Program,
   setterNames: SetterName[],
   previewDir: string
@@ -140,7 +137,7 @@ const previewImportManifest = (
       if (!t.isIdentifier(argument)) {
         continue;
       }
-      const specifier = defaultJsonImportSpecifier(program, argument.name);
+      const specifier = findDefaultJsonImportSpecifier(program, argument.name);
       if (specifier) {
         return { from: 'file', path: resolve(previewDir, specifier) };
       }
@@ -149,7 +146,7 @@ const previewImportManifest = (
   return null;
 };
 
-const packageJsonManifest = async (
+const findPackageJsonManifest = async (
   files: Pick<FixFiles, 'read'>,
   configDir: string
 ): Promise<ManifestSource | null> => {
@@ -159,11 +156,11 @@ const packageJsonManifest = async (
   }
 
   const packageJson = await readJsonFile(files, packageJsonPath);
-  const paths = packageCustomElementsPaths(packageJson?.customElements, packageJsonPath);
+  const paths = getPackageCustomElementsPaths(packageJson?.customElements, packageJsonPath);
   return paths.length > 0 ? { from: 'package-json', paths } : null;
 };
 
-const packageCustomElementsPaths = (value: unknown, packageJsonPath: string): string[] => {
+const getPackageCustomElementsPaths = (value: unknown, packageJsonPath: string): string[] => {
   const packageDir = dirname(packageJsonPath);
   if (typeof value === 'string') {
     return value.length > 0 ? [resolve(packageDir, value)] : [];
@@ -174,7 +171,7 @@ const packageCustomElementsPaths = (value: unknown, packageJsonPath: string): st
   return [];
 };
 
-const workspaceManifest = async (): Promise<ManifestSource | null> => {
+const findWorkspaceManifest = async (): Promise<ManifestSource | null> => {
   const paths = await findWorkspaceFiles('custom-elements.json');
   return paths.length === 1 ? { from: 'file', path: paths[0] } : null;
 };
@@ -184,7 +181,7 @@ const isCustomElementsManifest = (json: unknown): boolean =>
   json !== null &&
   Array.isArray((json as { modules?: unknown }).modules);
 
-const unreadableManifestPath = async (
+const findUnreadableManifestPath = async (
   files: Pick<FixFiles, 'read'>,
   paths: string[]
 ): Promise<string | null> => {
@@ -196,7 +193,7 @@ const unreadableManifestPath = async (
   return null;
 };
 
-const invalidManifestWarning = (
+const logInvalidManifestWarning = (
   previewConfigPath: string,
   setterName: SetterName,
   path: string
@@ -207,7 +204,7 @@ const invalidManifestWarning = (
       `"${AUTOMIGRATE_COMMAND}".`
   );
 
-const defaultJsonImportSpecifier = (program: t.Program, name: string): string | null => {
+const findDefaultJsonImportSpecifier = (program: t.Program, name: string): string | null => {
   for (const node of program.body) {
     if (!t.isImportDeclaration(node) || !isRelativeJsonSpecifier(node.source.value)) {
       continue;
@@ -226,7 +223,7 @@ const defaultJsonImportSpecifier = (program: t.Program, name: string): string | 
 const isRelativeJsonSpecifier = (specifier: string): boolean =>
   specifier.endsWith('.json') && (specifier.startsWith('./') || specifier.startsWith('../'));
 
-const manualRemovalHint = (
+const logManualRemovalHint = (
   previewConfigPath: string,
   setterName: SetterName,
   reason: string
@@ -247,7 +244,7 @@ const removePreviewWiring = (
       calleeSources: WEB_COMPONENTS_PACKAGES,
     });
     if (reason) {
-      manualRemovalHint(previewConfigPath, setterName, reason);
+      logManualRemovalHint(previewConfigPath, setterName, reason);
       continue;
     }
     logger.debug(`Removed the ${setterName} wiring from ${previewConfigPath}`);

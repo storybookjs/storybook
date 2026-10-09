@@ -24,7 +24,7 @@ import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
-import { lt, prerelease } from 'semver';
+import { lt, prerelease, rsort } from 'semver';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -482,8 +482,11 @@ export const generateUpgradeSpecs = async (
       try {
         const upgradePromises = satelliteDependencies.map(async (dependency) => {
           try {
-            const packageName = isCLIPrerelease ? `${dependency}@next` : dependency;
-            const mostRecentVersion = (await packageManager.latestVersion(packageName))!;
+            const tags = isCLIPrerelease ? [dependency, `${dependency}@next`] : [dependency];
+            const versions = await Promise.all(
+              tags.map((tag) => packageManager.latestVersion(tag))
+            );
+            const [mostRecentVersion] = rsort(versions.filter((version) => version !== null));
             if (!mostRecentVersion) {
               return null;
             }

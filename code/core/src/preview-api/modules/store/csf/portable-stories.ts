@@ -375,7 +375,9 @@ async function runStory<TRenderer extends Renderer>(
     await waitForAnimations(context.abortSignal);
   }
 
-  await story.applyAfterEach(hookContext);
-
-  await cleanUp?.();
+  try {
+    await story.applyAfterEach(hookContext);
+  } finally {
+    await cleanUp?.();
+  }
 }

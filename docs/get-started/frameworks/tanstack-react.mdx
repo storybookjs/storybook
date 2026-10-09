@@ -185,7 +185,17 @@ TanStack Query is not automatically set up. The recommended approach is to creat
 
 This setup keeps the router context and React provider pointed at the same `QueryClient` no matter how Storybook renders the story: in the sidebar, in the Docs page, through portable stories, or in a test run. Clearing the cache before each story gives every story fresh query state while preserving one predictable integration point for loaders, route context, decorators, and story-level setup.
 
-You can create a separate `QueryClient` for each story when you need stronger isolation, such as rendering several stories with the same query keys on one Docs page and keeping their cached responses independent. The tradeoff is that you must make the per-story client available to both the router context and the `QueryClientProvider` for that story. If those two places receive different clients, route loaders and components can read different caches, and story setup that calls `setQueryData` may not affect the component being rendered. Per-story clients also require explicit cleanup of timers, subscriptions, and cached data owned by each client.
+You can create a separate `QueryClient` for each story when you need stronger isolation, such as rendering several stories with the same query keys on one Docs page and keeping their cached responses independent. The tradeoff is that you must make the per-story client available to both the router context and the `QueryClientProvider` for that story. If those two places receive different clients, route loaders and components can read different caches, and story setup that calls `setQueryData` may not affect the component being rendered. Per-story clients must be scoped to the preview module lifetime, or explicitly cleaned up by a lifecycle you have verified for your application.
+
+#### Story isolation on Docs pages
+
+It breaks down when several stories render at the same time in one browser context, most often on a [Docs page](../../writing-docs/autodocs.mdx) that shows multiple stories. Simultaneously rendered stories share the single client, so two stories that seed the same query key overwrite each other, and a `beforeEach` cache clear for one story can remove data another story is still reading. A Docs page showing `LoggedInAsAlice` and `LoggedInAsBob` stories seeded through the same key renders the last-seeded user in both.
+
+For per-story isolation, create one client per story and pass the same instance to the router context, the `QueryClientProvider`, and story setup. The [`context`](#context) factory runs before the router's initial load, so route loaders see the story's own client:
+
+<CodeSnippets path="tanstack-react-query-per-story-client.md" />
+
+With the factory form, `parameters.tanstack.router.context` is a function, so story hooks can no longer read the client from parameters. Key the clients by story ID in a shared module and use that helper in story `beforeEach` hooks, as shown above. This example assumes at most one live render of each story ID and retains clients for the lifetime of the preview module. It does not clear a client when a story unmounts: a `beforeEach` cleanup may run before React unmounts, and a cleanup keyed only by story ID could clear a second live render of the same story. If your preview stays mounted for long periods or you render the same story ID twice, use a mount-aware ownership scheme with a verified teardown lifecycle instead.
 
 #### Seeding query data per story
 

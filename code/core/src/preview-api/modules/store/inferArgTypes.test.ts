@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
 
@@ -7,6 +7,10 @@ import { inferArgTypes } from './inferArgTypes.ts';
 vi.mock('storybook/internal/client-logger');
 
 describe('inferArgTypes', () => {
+  beforeEach(() => {
+    vi.mocked(logger.warn).mockClear();
+  });
+
   it('infers scalar types', () => {
     expect(
       inferArgTypes({
@@ -84,7 +88,6 @@ describe('inferArgTypes', () => {
     const cyclic: any = {};
     cyclic.foo = cyclic;
 
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         initialArgs: {
@@ -100,8 +103,94 @@ describe('inferArgTypes', () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 
+  it('does not warn on cyclic args that define toJSON', () => {
+    // Repro from issue #35239: a Backbone-style collection holds a cyclic
+    // back-reference but defines toJSON, so its serialized output is finite.
+    const cyclic: any = { id: 1, name: 'item' };
+    cyclic.self = cyclic;
+    const collection = {
+      models: [cyclic],
+      toJSON() {
+        return [{ id: 1, name: 'item' }];
+      },
+    };
+
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          collection,
+        },
+      } as any)
+    ).toEqual({
+      collection: {
+        name: 'collection',
+        type: {
+          name: 'array',
+          value: { name: 'object', value: { id: { name: 'number' }, name: { name: 'string' } } },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to normal inference when toJSON throws', () => {
+    const value = {
+      x: 1,
+      toJSON() {
+        throw new Error('serialization unavailable');
+      },
+    };
+
+    expect(
+      inferArgTypes({
+        initialArgs: { a: value },
+      } as any)
+    ).toEqual({
+      a: {
+        name: 'a',
+        type: {
+          name: 'object',
+          // The `toJSON` method itself is walked as a function field.
+          value: { x: { name: 'number' }, toJSON: { name: 'function' } },
+        },
+      },
+    });
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('memoizes the inferred type across repeated references to the same toJSON arg', () => {
+    // Verifies the toJSON branch writes to the shared cache so repeated
+    // references to the same value reuse the previous inference instead of
+    // re-running toJSON() and walking the serialized output again.
+    const toJSON = vi.fn(() => ({ id: 1 }));
+    const shared = { foo: 'bar', toJSON };
+
+    inferArgTypes({
+      initialArgs: {
+        a: shared,
+        b: shared,
+      },
+    } as any);
+    expect(toJSON).toHaveBeenCalledTimes(1);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to cycle detection when toJSON returns the value itself', () => {
+    // A toJSON that returns `this` must not cause infinite recursion; the
+    // existing cycle path should still fire.
+    const cyclic: any = {};
+    cyclic.foo = cyclic;
+    cyclic.toJSON = function () {
+      return this;
+    };
+
+    inferArgTypes({
+      initialArgs: { a: cyclic },
+    } as any);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
   it('ensures names', () => {
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         initialArgs: {
@@ -125,7 +214,6 @@ describe('inferArgTypes', () => {
   });
 
   it('ensures names even with no arg', () => {
-    vi.mocked(logger.warn).mockClear();
     expect(
       inferArgTypes({
         argTypes: {

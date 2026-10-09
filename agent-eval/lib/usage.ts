@@ -12,12 +12,24 @@ const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead?:
   'claude-opus-4-7': { input: 5, output: 25 },
   /** @see https://platform.claude.com/docs/en/about-claude/pricing */
   'claude-sonnet-5': { input: 3, output: 15 },
+  /** @see https://platform.claude.com/docs/en/pricing */
+  'claude-sonnet-5-5': { input: 2, output: 10, cacheRead: 0.1 },
+  /** Prompts up to 100,000 tokens. @see https://platform.claude.com/docs/en/pricing */
+  'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheRead: 0.01 },
   /** @see https://platform.claude.com/docs/en/about-claude/pricing */
   'claude-haiku-4-5': { input: 1, output: 5 },
   /**
    * @see https://developers.openai.com/api/docs/pricing
    */
+  'gpt-6.1-sol': { input: 2, output: 10, cacheRead: 0.1 },
+  /**
+   * @see https://developers.openai.com/api/docs/pricing
+   */
   'gpt-6-sol': { input: 2, output: 10 },
+  /**
+   * @see https://developers.openai.com/api/docs/pricing
+   */
+  'gpt-6-luna': { input: 0.1, output: 0.5, cacheRead: 0.01 },
   /**
    * @see https://developers.openai.com/api/docs/pricing
    */

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "csf-shapes.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Plain element for static CSF story-docs shapes.",
+          "name": "CsfShapes",
+          "cssProperties": [
+            {
+              "description": "Accent color.",
+              "name": "--csf-shapes-accent"
+            }
+          ],
+          "cssParts": [
+            {
+              "description": "Outer panel.",
+              "name": "panel"
+            }
+          ],
+          "cssStates": [
+            {
+              "description": "Active state.",
+              "name": "active"
+            }
+          ],
+          "slots": [
+            {
+              "description": "Default body.",
+              "name": ""
+            },
+            {
+              "description": "Action controls.",
+              "name": "actions"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Text label.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "description": "Item count.",
+              "attribute": "count"
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "Disabled state.",
+              "attribute": "disabled"
+            },
+            {
+              "kind": "field",
+              "name": "items",
+              "type": {
+                "text": "Array<{ name: string }>"
+              },
+              "description": "Property-only items."
+            },
+            {
+              "kind": "method",
+              "name": "refresh"
+            }
+          ],
+          "events": [
+            {
+              "name": "shape-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Fires when the shape changes."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Text label.",
+              "fieldName": "label"
+            },
+            {
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "description": "Item count.",
+              "fieldName": "count"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "Disabled state.",
+              "fieldName": "disabled"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "csf-shapes",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "CsfShapes",
+          "declaration": {
+            "name": "CsfShapes",
+            "module": "csf-shapes.js"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "csf-shapes",
+          "declaration": {
+            "name": "CsfShapes",
+            "module": "csf-shapes.js"
+          }
+        }
+      ]
+    }
+  ]
+}

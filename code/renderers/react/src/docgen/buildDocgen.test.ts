@@ -125,6 +125,77 @@ describe('buildDocgenPayload', () => {
     expect(payload!.argTypes?.size.table?.defaultValue).toEqual({ summary: '"small"' });
   });
 
+  it(
+    'shows a default the checker cannot resolve as written, not as a string',
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'imported.js': `export const imported = 'imported-value';`,
+        'Button.tsx': dedent`
+          import React from 'react';
+          // @ts-ignore a JS module the project does not type-check
+          import { imported } from './imported';
+          export const Button = ({ label = imported }: { label?: string }) => <button />;
+        `,
+        'Button.stories.tsx': dedent`
+          import { Button } from './Button';
+          export default { component: Button, title: 'Forms/Button' };
+          export const Primary = () => <Button />;
+        `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(ts);
+
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      expect(payload!.argTypes?.label.table?.defaultValue).toEqual({ summary: 'imported' });
+    }
+  );
+
+  it(
+    "leaves React's own ref and key out of argTypes, like builder docgen did",
+    { timeout: 30_000 },
+    async () => {
+      tempDir = createTempDir('docgen-build');
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Button.tsx': dedent`
+          import React from 'react';
+          export const Button = React.forwardRef<HTMLButtonElement, { label: string }>(
+            (props, ref) => <button ref={ref} />
+          );
+        `,
+        'Button.stories.tsx': dedent`
+          import { Button } from './Button';
+          export default { component: Button, title: 'Forms/Button' };
+          export const Primary = () => <Button label="hi" />;
+        `,
+      });
+
+      componentMetaManager = new ComponentMetaManager(ts);
+
+      const payload = await buildDocgenPayload(
+        { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+        {
+          componentMetaManager,
+          resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+        }
+      );
+
+      expect(Object.keys(payload!.argTypes ?? {})).toEqual(['label']);
+    }
+  );
+
   it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
     tempDir = createTempDir('docgen-build');
     componentMetaManager = new ComponentMetaManager(ts);

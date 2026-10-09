@@ -57,7 +57,7 @@ export type RuntimeInstanceRecord = {
   pid: number;
   cwd: string;
   /**
-   * Resolved config directory of the running Storybook. Lets `storybook ai` find this instance
+   * Resolved config directory of the running Storybook. Lets `storybook tools` find this instance
    * from a different cwd in a monorepo (storybookjs/storybook#35359). Optional because records
    * written by older Storybooks lack it.
    */

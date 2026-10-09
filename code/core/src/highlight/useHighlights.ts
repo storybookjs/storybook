@@ -11,7 +11,7 @@ import {
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
 } from './constants.ts';
-import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types.ts';
+import type { Box, Highlight, HighlightOptions } from './types.ts';
 import {
   createElement,
   createIcon,
@@ -532,7 +532,7 @@ export const useHighlights = (channel: Channel) => {
   // Channel event handlers
   //
 
-  const addHighlight = (highlight: RawHighlightOptions) => {
+  const addHighlight = (highlight: HighlightOptions) => {
     const info = normalizeOptions(highlight);
     highlights.set((value) => {
       const others = info.id ? value.filter((h) => h.id !== info.id) : value;

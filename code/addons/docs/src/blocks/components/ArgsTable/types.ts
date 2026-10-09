@@ -39,7 +39,6 @@ export interface TableAnnotation {
 export interface ArgType {
   name?: string;
   description?: string;
-  defaultValue?: any;
   if?: Conditional;
   table?: {
     category?: string;

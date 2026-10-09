@@ -35,16 +35,16 @@
   "author": "Shaun Evening",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
     "./preview": {
-      "types": "./dist/preview.d.ts",
       "code": "./src/preview.ts",
+      "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     }
   },

@@ -26,13 +26,13 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./browser": {
-      "types": "./dist/browser.d.ts",
       "code": "./src/browser.ts",
+      "types": "./dist/browser.d.ts",
       "default": "./dist/browser.js"
     },
     "./package.json": "./package.json"

@@ -26,22 +26,22 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./internal/docgen": {
-      "types": "./dist/docgen/index.d.ts",
       "code": "./src/docgen/index.ts",
+      "types": "./dist/docgen/index.d.ts",
       "default": "./dist/docgen/index.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": {
-      "types": "./dist/preset.d.ts",
       "code": "./src/preset.ts",
+      "types": "./dist/preset.d.ts",
       "default": "./dist/preset.js"
     }
   },

@@ -384,7 +384,7 @@ Accessibility: not checked.`);
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           componentTestCount: { success: 1, error: 0 },
-          a11yCount: { success: 0, warning: 1, error: 1 },
+          a11yCount: { success: 0, warning: 1, error: 0 },
           componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
           a11yReports: {
             'button--primary': [
@@ -427,8 +427,8 @@ Color contrast ratio is insufficient
 
 ## Result
 
-Failed: 1 accessibility check failed.
-Accessibility: 2 stories checked; 1 with violations reported as warnings, which do not fail the run; 1 failing the run.`);
+Passed: 1 component test passed.
+Accessibility: 1 story checked; 1 with violations reported as warnings, which do not fail the run.`);
     });
 
     it('omits accessibility violations when the run disabled a11y', async () => {
@@ -503,6 +503,19 @@ Accessibility: not checked.`);
             componentTest('button--primary', 'status-value:error', 'Expected 1 call, got 0'),
           ],
           a11yStatuses: [a11yCheck('button--primary', 'status-value:error')],
+          a11yReports: {
+            'button--primary': [
+              {
+                violations: [
+                  {
+                    id: 'button-name',
+                    description: 'Buttons must have discernible text',
+                    nodes: [{ html: '<button></button>', impact: 'critical' }],
+                  },
+                ],
+              },
+            ],
+          },
         })
       );
 
@@ -513,6 +526,16 @@ Accessibility: not checked.`);
 Expected 1 call, got 0
 
 The accessibility check failed; see Accessibility Violations below.
+
+## Accessibility Violations
+
+### button--primary - button-name
+
+Buttons must have discernible text
+
+#### Affected Elements
+- **Impact**: critical
+  **Element**: <button></button>
 
 ## Result
 

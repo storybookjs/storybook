@@ -254,7 +254,6 @@ function formatA11yResult(result: TestRunResult, a11y: boolean): string {
   return `Accessibility: ${pluralize(checked, 'story', 'stories')} checked; ${parts.join('; ')}.`;
 }
 
-// Last, because agents mostly read this report through `tail`.
 function formatResultSection(result: TestRunResult, a11y: boolean): string {
   const failures = countTestRunFailures(result, a11y);
   const failureParts = [
@@ -319,6 +318,7 @@ function formatCompletedRun(
     sections.push(formatUnhandledErrorsSection(result.unhandledErrors as UnhandledError[]));
   }
 
+  // Last, because agents mostly read this report through `tail`.
   sections.push(formatResultSection(result, a11y));
 
   return sections.join('\n\n');

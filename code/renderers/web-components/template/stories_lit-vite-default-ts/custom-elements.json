@@ -1,0 +1,303 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "demo-wc-counter/DemoWcCounter.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A counter that exposes every Custom Elements Manifest category the default render binds.",
+          "name": "DemoWcCounter",
+          "cssProperties": [
+            {
+              "type": {
+                "text": "<color>"
+              },
+              "description": "Background of the increment button",
+              "name": "--demo-wc-counter-accent",
+              "default": "rgb(0, 95, 204)"
+            },
+            {
+              "type": {
+                "text": "<number>"
+              },
+              "description": "Opacity of the badges",
+              "name": "--demo-wc-counter-badge-opacity",
+              "default": "1"
+            }
+          ],
+          "cssParts": [
+            {
+              "description": "A badge rendered next to the current count",
+              "name": "badge"
+            },
+            {
+              "description": "The increment button",
+              "name": "button"
+            },
+            {
+              "description": "The deadline, when set",
+              "name": "deadline"
+            },
+            {
+              "description": "The current count",
+              "name": "value"
+            }
+          ],
+          "slots": [
+            {
+              "description": "Label shown next to the value",
+              "name": ""
+            },
+            {
+              "description": "Content rendered before the label",
+              "name": "prefix"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "#internals",
+              "privacy": "private"
+            },
+            {
+              "kind": "field",
+              "name": "atMax",
+              "description": "Whether the count has reached `max`",
+              "readonly": true
+            },
+            {
+              "kind": "method",
+              "name": "increment",
+              "description": "Adds `step` to the count, up to `max`"
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "privacy": "public",
+              "type": {
+                "text": "number"
+              },
+              "description": "Current value",
+              "default": "0",
+              "attribute": "count",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "step",
+              "privacy": "public",
+              "type": {
+                "text": "number"
+              },
+              "description": "Amount added on every increment",
+              "default": "1",
+              "attribute": "step"
+            },
+            {
+              "kind": "field",
+              "name": "max",
+              "privacy": "public",
+              "type": {
+                "text": "number"
+              },
+              "description": "Highest value the counter can reach",
+              "default": "10",
+              "attribute": "max"
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "privacy": "public",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "Prevents incrementing",
+              "default": "false",
+              "attribute": "disabled",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "privacy": "public",
+              "type": {
+                "text": "'small' | 'medium' | 'large'"
+              },
+              "description": "Button size",
+              "default": "'medium'",
+              "attribute": "size",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "tone",
+              "privacy": "public",
+              "type": {
+                "text": "'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand'"
+              },
+              "description": "Color of the value",
+              "default": "'neutral'",
+              "attribute": "tone",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "privacy": "public",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name of the increment button",
+              "default": "'Increment'",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "badges",
+              "privacy": "public",
+              "type": {
+                "text": "Array<'new' | 'hot' | 'sale'>"
+              },
+              "description": "Badges shown after the value, only settable as a property",
+              "default": "[]"
+            },
+            {
+              "kind": "field",
+              "name": "unit",
+              "privacy": "public",
+              "type": {
+                "text": "{ singular: string, plural: string }"
+              },
+              "description": "Words used after the value, only settable as a property",
+              "default": "{ singular: 'click', plural: 'clicks' }"
+            },
+            {
+              "kind": "field",
+              "name": "deadline",
+              "privacy": "public",
+              "description": "Date shown after the value, only settable as a property",
+              "type": {
+                "text": "Date"
+              },
+              "default": "undefined"
+            }
+          ],
+          "events": [
+            {
+              "name": "count-changed",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Fires after the count changes, with the new count as `detail.count`"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "description": "Current value",
+              "default": "0",
+              "fieldName": "count"
+            },
+            {
+              "name": "step",
+              "type": {
+                "text": "number"
+              },
+              "description": "Amount added on every increment",
+              "default": "1",
+              "fieldName": "step"
+            },
+            {
+              "name": "max",
+              "type": {
+                "text": "number"
+              },
+              "description": "Highest value the counter can reach",
+              "default": "10",
+              "fieldName": "max"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "Prevents incrementing",
+              "default": "false",
+              "fieldName": "disabled"
+            },
+            {
+              "name": "size",
+              "type": {
+                "text": "'small' | 'medium' | 'large'"
+              },
+              "description": "Button size",
+              "default": "'medium'",
+              "fieldName": "size"
+            },
+            {
+              "name": "tone",
+              "type": {
+                "text": "'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand'"
+              },
+              "description": "Color of the value",
+              "default": "'neutral'",
+              "fieldName": "tone"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "description": "Accessible name of the increment button",
+              "default": "'Increment'",
+              "fieldName": "label"
+            }
+          ],
+          "cssStates": [
+            {
+              "description": "Set while the count has reached `max`",
+              "name": "at-max"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "demo-wc-counter",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "DemoWcCounter",
+          "declaration": {
+            "name": "DemoWcCounter",
+            "module": "demo-wc-counter/DemoWcCounter.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "demo-wc-counter/index.js",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "demo-wc-counter",
+          "declaration": {
+            "name": "DemoWcCounter",
+            "module": "/demo-wc-counter/DemoWcCounter.js"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -63,18 +63,34 @@ describe('readStaticDocgen', () => {
     );
   });
 
-  it('skips components referenced through a global, which have no import to resolve', () => {
-    vol.fromJSON({
-      [`${DOCGEN}/global.json`]: snapshot('global', {
-        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+  it.each([
+    {
+      inputName: 'named after the global',
+      input: { name: 'globalThis.__TEMPLATE_COMPONENTS__.Html', jsDocTags: {} },
+      expectedIds: ['real'],
+    },
+    {
+      inputName: 'quoting the global in its error',
+      input: {
+        name: 'args',
         jsDocTags: {},
-      }),
+        error: {
+          name: 'component-not-a-tag',
+          message:
+            "`meta.component` must be the element's tag name as a string, got `globalThis.__TEMPLATE_COMPONENTS__.Pre`",
+        },
+      },
+      expectedIds: ['real'],
+    },
+  ])('skips a globally referenced component $inputName', ({ input, expectedIds }) => {
+    vol.fromJSON({
+      [`${DOCGEN}/global.json`]: snapshot('global', input),
       [`${DOCGEN}/real.json`]: snapshot('real', { name: 'ButtonComponent', jsDocTags: {} }),
     });
 
-    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual([
-      'real',
-    ]);
+    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual(
+      expectedIds
+    );
   });
 
   it('refuses to record when every component is globally referenced', () => {

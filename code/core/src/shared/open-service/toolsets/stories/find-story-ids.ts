@@ -39,7 +39,7 @@ function normalizeImportPath(importPath: string): string {
 const MAX_SUGGESTIONS = 3;
 const MAX_FILE_STORIES = 5;
 
-function isStory(entry: IndexEntry): entry is StoryIndexEntry {
+function isNonTestStory(entry: IndexEntry): entry is StoryIndexEntry {
   return entry.type === 'story' && entry.subtype !== 'test';
 }
 
@@ -51,11 +51,13 @@ function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
   const [componentId, guessedSlug = ''] = storyId.split('--');
   const maxDistance = storyId.length / 3;
   return entries
-    .filter(isStory)
+    .filter(isNonTestStory)
     .flatMap((entry) => {
       const [entryComponentId, entrySlug = ''] = entry.id.split('--');
-      const sameComponent =
-        entryComponentId === componentId || entryComponentId.endsWith(`-${componentId}`);
+      // 2: the guessed component, 1: the guessed component under a title prefix, 0: another one.
+      const componentMatch =
+        entryComponentId === componentId ? 2 : entryComponentId.endsWith(`-${componentId}`) ? 1 : 0;
+      const sameComponent = componentMatch > 0;
       if (!sameComponent && Math.abs(entry.id.length - storyId.length) > maxDistance) {
         return [];
       }
@@ -68,11 +70,11 @@ function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
         guessedSlug !== '' &&
         entrySlug !== '' &&
         (entrySlug.includes(guessedSlug) || guessedSlug.includes(entrySlug));
-      return [{ id: entry.id, sameComponent, overlapsGuess, distance }];
+      return [{ id: entry.id, componentMatch, overlapsGuess, distance }];
     })
     .sort(
       (a, b) =>
-        Number(b.sameComponent) - Number(a.sameComponent) ||
+        b.componentMatch - a.componentMatch ||
         Number(b.overlapsGuess) - Number(a.overlapsGuess) ||
         a.distance - b.distance
     )
@@ -135,7 +137,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
       (entry): entry is StoryIndexEntry =>
         entry.type === 'story' && normalizeImportPath(entry.importPath) === relativePath
     );
-    const fileStories = fileEntries.filter(isStory);
+    const fileStories = fileEntries.filter(isNonTestStory);
     // A test entry carries its parent story's export name, so only stories match on it.
     const foundEntry =
       fileStories.find((entry) => entry.exportName === exportName) ??

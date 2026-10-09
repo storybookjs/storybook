@@ -123,6 +123,75 @@ describe('findStoryIds', () => {
     );
   });
 
+  it('ranks the guessed component before one that only ends in its name', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        ['button--error-state-with-retry', 'icon-button--error'].map((id) => [
+          id,
+          { ...primaryStory, id },
+        ])
+      ),
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--error' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--error". Did you mean "button--error-state-with-retry", "icon-button--error"?'
+    );
+  });
+
+  it('does not suggest docs or test entries for a story ID', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--docs': {
+          type: 'docs',
+          id: 'button--docs',
+          name: 'Docs',
+          title: 'Button',
+          importPath: primaryStory.importPath,
+          storiesImports: [],
+        },
+        'button--primary:renders': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--primary:renders',
+          name: 'renders',
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--doc' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--doc"'
+    );
+  });
+
+  it('matches an export name on the story, not on its tests', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--primary:renders': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--primary:renders',
+          name: 'renders',
+          exportName: 'Primary',
+        },
+        'button--primary': { ...primaryStory, name: 'Main button', exportName: 'Primary' },
+      },
+    };
+    const stories: StoryInput[] = [
+      { exportName: 'Primary', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ];
+
+    expect(findStoryIds(index, stories)).toEqual([
+      { entry: index.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
   it('suggests an ID of another component only when it is a few edits away', () => {
     const [nearMiss, farMiss] = findStoryIds(mockStoryIndex, [
       { storyId: 'inputs--default' },
@@ -214,7 +283,6 @@ describe('findStoryIds', () => {
   });
 
   it('lists only stories, the closest five, when the export name misses', () => {
-    const story = primaryStory;
     const index: StoryIndex = {
       v: 5,
       entries: {
@@ -223,11 +291,11 @@ describe('findStoryIds', () => {
           id: 'button--docs',
           name: 'Docs',
           title: 'Button',
-          importPath: story.importPath,
+          importPath: primaryStory.importPath,
           storiesImports: [],
         },
         'button--small:renders': {
-          ...story,
+          ...primaryStory,
           subtype: 'test',
           id: 'button--small:renders',
           name: 'Small',
@@ -235,7 +303,7 @@ describe('findStoryIds', () => {
         ...Object.fromEntries(
           ['Small', 'Medium', 'Large', 'Huge', 'Tiny', 'Disabled'].map((name) => [
             `button--${name.toLowerCase()}`,
-            { ...story, id: `button--${name.toLowerCase()}`, name },
+            { ...primaryStory, id: `button--${name.toLowerCase()}`, name },
           ])
         ),
       },

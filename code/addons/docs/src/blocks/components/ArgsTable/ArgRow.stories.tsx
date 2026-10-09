@@ -4,7 +4,7 @@ import { ResetWrapper } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, screen } from 'storybook/test';
+import { expect, screen, within } from 'storybook/test';
 
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
@@ -466,3 +466,129 @@ export const StringNoControlsCompact = {
     compact: true,
   },
 };
+
+export const JsDocMarkdown = {
+  name: 'JSDoc Markdown reproduction',
+  args: {
+    row: {
+      ...Func.args.row,
+      description: 'Regular description: **bold**, *italic* and `code`.',
+      table: {
+        ...Func.args.row.table,
+        jsDocTags: {
+          params: [
+            {
+              name: 'a',
+              description: 'Parameter description: **bold**, *italic* and `code`.',
+            },
+            {
+              name: 'b',
+              description: 'Another parameter with **important information**.',
+            },
+          ],
+          returns: {
+            description: 'Returns **combined text**.',
+          },
+        },
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    const description = within(canvas.getByText(/^Regular description:/));
+    await expect(description.getByText('bold', { selector: 'strong' })).toBeVisible();
+    await expect(description.getByText('italic', { selector: 'em' })).toBeVisible();
+    await expect(description.getByText('code', { selector: 'code' })).toBeVisible();
+
+    const parameter = within(canvas.getByRole('row', { name: /^a Parameter description:/ }));
+    await expect(parameter.getByText('bold', { selector: 'strong' })).toBeVisible();
+    await expect(parameter.getByText('italic', { selector: 'em' })).toBeVisible();
+    await expect(parameter.getByText('code', { selector: 'code' })).toBeVisible();
+
+    const secondParameter = within(canvas.getByRole('row', { name: /^b Another parameter/ }));
+    await expect(
+      secondParameter.getByText('important information', { selector: 'strong' })
+    ).toBeVisible();
+
+    const returns = within(canvas.getByRole('row', { name: /^Returns Returns/ }));
+    await expect(returns.getByText('combined text', { selector: 'strong' })).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const JsDocMarkdownParagraphs = {
+  args: {
+    row: {
+      ...Func.args.row,
+      table: {
+        ...Func.args.row.table,
+        jsDocTags: {
+          params: [
+            {
+              name: 'a',
+              description:
+                'First **paragraph**.\n\nSecond paragraph with a [link](https://storybook.js.org/).',
+            },
+          ],
+          returns: {
+            description: 'Returns *combined text* with `code`.',
+          },
+        },
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    const parameter = within(canvas.getByRole('row', { name: /^a First paragraph/ }));
+    await expect(parameter.getAllByRole('paragraph')).toHaveLength(2);
+    await expect(parameter.getByText('paragraph', { selector: 'strong' })).toBeVisible();
+    await expect(parameter.getByRole('link', { name: 'link' })).toHaveAttribute(
+      'href',
+      'https://storybook.js.org/'
+    );
+
+    const returns = within(canvas.getByRole('row', { name: /^Returns Returns/ }));
+    await expect(returns.getByText('combined text', { selector: 'em' })).toBeVisible();
+    await expect(returns.getByText('code', { selector: 'code' })).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const JsDocEmptyDescriptions = {
+  args: {
+    row: {
+      ...Func.args.row,
+      table: {
+        ...Func.args.row.table,
+        jsDocTags: {
+          params: [{ name: 'empty', description: '' }, { name: 'missing' }],
+          returns: { description: '' },
+        },
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByText('empty')).not.toBeInTheDocument();
+    await expect(canvas.queryByText('missing')).not.toBeInTheDocument();
+
+    const returns = within(canvas.getByRole('row', { name: 'Returns' }));
+    await expect(returns.getAllByRole('cell')[1]).toBeEmptyDOMElement();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const JsDocMissingReturnDescription = {
+  args: {
+    row: {
+      ...JsDocEmptyDescriptions.args.row,
+      table: {
+        ...JsDocEmptyDescriptions.args.row.table,
+        jsDocTags: {
+          ...JsDocEmptyDescriptions.args.row.table.jsDocTags,
+          returns: {},
+        },
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByText('empty')).not.toBeInTheDocument();
+    await expect(canvas.queryByText('missing')).not.toBeInTheDocument();
+    await expect(canvas.queryByText('Returns')).not.toBeInTheDocument();
+    await expect(canvas.getAllByRole('table')).toHaveLength(1);
+  },
+} satisfies StoryObj<typeof ArgRow>;

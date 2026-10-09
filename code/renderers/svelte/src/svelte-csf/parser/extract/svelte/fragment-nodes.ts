@@ -36,7 +36,7 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
   const { fragment, moduleNodes } = params;
-  const { storyIdentifier } = moduleNodes;
+  const { storyNames } = moduleNodes;
 
   let latestComment: SvelteAST.Comment | undefined;
 
@@ -52,7 +52,7 @@ export async function extractFragmentNodes(params: Params): Promise<Result> {
     },
 
     Component(node, { state }) {
-      if (node.name === storyIdentifier.name) {
+      if (storyNames.includes(node.name)) {
         state.storyComponents.push({
           comment: latestComment,
           component: node,

@@ -1,3 +1,11 @@
+## 11.0.0-alpha.6
+
+- Docgen: Avoid loading test libraries in the Vue and Angular presets - [#36474](https://github.com/storybookjs/storybook/pull/36474), thanks @Cherry!
+- TanStack: Type story query params from the route's search schema - [#36502](https://github.com/storybookjs/storybook/pull/36502), thanks @dasjideepak!
+- UI: Allow collapsing the testing widget after a crash - [#36575](https://github.com/storybookjs/storybook/pull/36575), thanks @eskres!
+- UI: Fix JSX runtime resolution in manager addons - [#36465](https://github.com/storybookjs/storybook/pull/36465), thanks @AkashNemade16!
+- WC: Automigration from runtime to docgen - [#36648](https://github.com/storybookjs/storybook/pull/36648), thanks @huang-julien!
+
 ## 11.0.0-alpha.5
 
 - Addon Vitest: Support Vitest 5 - [#36671](https://github.com/storybookjs/storybook/pull/36671), thanks @PaulMest!

@@ -14,6 +14,7 @@ import {
 } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
+  UpgradeStorybookConfigDirNotFoundError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -708,10 +709,7 @@ export const getProjects = async (
     if (detectedConfigDirs.length === 0) {
       task.stop('No .storybook directory found');
       if (options.yes) {
-        const message =
-          'No .storybook directory was found. Pass --config-dir <path> to upgrade a Storybook whose configuration lives elsewhere.';
-        logger.error(message);
-        throw new HandledError(message);
+        throw new UpgradeStorybookConfigDirNotFoundError();
       }
       const configDir = await prompt.text({
         message:
@@ -763,7 +761,9 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    if (!(error instanceof HandledError)) {
+    if (
+      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
+    ) {
       logger.error('Failed to get projects');
     }
 

@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { UpgradeStorybookConfigDirNotFoundError } from 'storybook/internal/server-errors';
 
 import type { UpgradeOptions } from './upgrade.ts';
 import { findStorybookProjects, getProjects } from './util.ts';
@@ -43,7 +43,8 @@ describe('getProjects', () => {
     createFixture({ 'storybook/main.ts': 'export default {};' });
     vi.spyOn(process, 'cwd').mockReturnValue(root);
 
-    await expect(getProjects({ yes: true } as UpgradeOptions)).rejects.toThrow('--config-dir');
-    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('--config-dir'));
+    await expect(getProjects({ yes: true } as UpgradeOptions)).rejects.toThrow(
+      UpgradeStorybookConfigDirNotFoundError
+    );
   });
 });

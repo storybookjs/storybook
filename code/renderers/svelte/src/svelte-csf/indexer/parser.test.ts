@@ -208,6 +208,13 @@ describe('parseForIndexer', () => {
         const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
         const { Story } = meta;`,
       ],
+      [
+        'preview.type<>().meta()',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview
+          .type<{ args: { theme: string } }>()
+          .meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
     ])('indexes %s', async ([, moduleScript], { expect }) => {
       const file = await writeFactoryStoriesFile(moduleScript);
 

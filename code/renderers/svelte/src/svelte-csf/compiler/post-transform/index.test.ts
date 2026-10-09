@@ -474,6 +474,25 @@ describe('CSF factories', () => {
     `);
   });
 
+  it('names the meta from preview.type<>().meta()', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module lang="ts">
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const { Story } = preview.type<{ args: { theme: string } }>().meta({ component: Button });
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary', theme: 'dark' }} />
+    `);
+
+    expect(output).toContain(dedent`
+      const $__meta = preview.type().meta({ component: Button });
+      const { Story } = $__meta;
+    `);
+    expect(output).toContain('const $__Primary = $__meta.story({');
+  });
+
   it('uses the meta variable of the file', async ({ expect }) => {
     const output = await transform(dedent`
       <script module>

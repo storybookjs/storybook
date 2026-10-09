@@ -135,20 +135,37 @@ function getMetaFunctionName(
   if (
     callee.type !== 'MemberExpression' ||
     callee.computed ||
-    callee.object.type !== 'Identifier' ||
     callee.property.type !== 'Identifier' ||
     callee.property.name !== 'meta'
   ) {
     return undefined;
   }
 
-  if (imports.previewNames.includes(callee.object.name)) {
-    return `${callee.object.name}.meta`;
+  let { object } = callee;
+
+  // `preview.type<…>()` returns the preview with more types, so its `.meta()` is a meta of `preview`
+  if (
+    object.type === 'CallExpression' &&
+    object.arguments.length === 0 &&
+    object.callee.type === 'MemberExpression' &&
+    !object.callee.computed &&
+    object.callee.property.type === 'Identifier' &&
+    object.callee.property.name === 'type'
+  ) {
+    object = object.callee.object;
+  }
+
+  if (object.type !== 'Identifier') {
+    return undefined;
+  }
+
+  if (imports.previewNames.includes(object.name)) {
+    return `${object.name}.meta`;
   }
 
   // Like `CsfFile`, only a variable named `preview` shows that the file tries to use CSF factories.
   // Other `.meta()` calls, such as Zod's, are not a meta.
-  if (callee.object.name === 'preview') {
+  if (object.name === 'preview') {
     throw new PreviewNotImportedError(filename);
   }
 

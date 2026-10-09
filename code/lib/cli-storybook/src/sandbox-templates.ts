@@ -760,7 +760,7 @@ export const baseTemplates = {
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
     script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+      'npx sv@0.17 create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
     expected: {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',

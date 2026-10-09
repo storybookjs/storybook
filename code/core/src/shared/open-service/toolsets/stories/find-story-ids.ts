@@ -4,6 +4,8 @@ import { normalizeStoryPath } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
+import leven from 'leven';
+
 import type { StoryInput } from './story-input.ts';
 
 export interface FoundStory {
@@ -34,6 +36,40 @@ function normalizeImportPath(importPath: string): string {
   return toPosixPath(normalizeStoryPath(normalized));
 }
 
+const MAX_SUGGESTIONS = 3;
+const MAX_FILE_STORIES = 5;
+
+// Agents guess IDs from story names (`--error` for an `ErrorState` story named "Error"), so the
+// same component's stories come first, those whose name overlaps the guess before the rest.
+function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
+  const [componentId, storyName = ''] = storyId.split('--');
+  return entries
+    .filter((entry) => entry.type === 'story')
+    .map((entry) => {
+      const [entryComponentId, entryStoryName = ''] = entry.id.split('--');
+      const sameComponent = entryComponentId === componentId;
+      return {
+        id: entry.id,
+        sameComponent,
+        overlapsGuess:
+          sameComponent &&
+          storyName !== '' &&
+          entryStoryName !== '' &&
+          (entryStoryName.includes(storyName) || storyName.includes(entryStoryName)),
+        distance: leven(storyId, entry.id),
+      };
+    })
+    .filter(({ sameComponent, distance }) => sameComponent || distance <= storyId.length / 3)
+    .sort(
+      (a, b) =>
+        Number(b.sameComponent) - Number(a.sameComponent) ||
+        Number(b.overlapsGuess) - Number(a.overlapsGuess) ||
+        a.distance - b.distance
+    )
+    .slice(0, MAX_SUGGESTIONS)
+    .map(({ id }) => `"${id}"`);
+}
+
 /**
  * Finds story IDs in the story index that match the given story inputs.
  *
@@ -53,9 +89,12 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
           input: storyInput,
         });
       } else {
+        const suggestions = suggestStoryIds(entriesList, storyInput.storyId);
         result.push({
           input: storyInput,
-          errorMessage: `No story found for story ID "${storyInput.storyId}"`,
+          errorMessage:
+            `No story found for story ID "${storyInput.storyId}"` +
+            (suggestions.length > 0 ? `. Did you mean ${suggestions.join(', ')}?` : ''),
         });
       }
 
@@ -69,10 +108,11 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
       path.posix.relative(normalizedCwd, normalizedAbsolutePath)
     );
 
-    const foundEntry = entriesList.find(
-      (entry) =>
-        normalizeImportPath(entry.importPath) === relativePath &&
-        [explicitStoryName, storyNameFromExport(exportName)].includes(entry.name)
+    const fileEntries = entriesList.filter(
+      (entry) => entry.type === 'story' && normalizeImportPath(entry.importPath) === relativePath
+    );
+    const foundEntry = fileEntries.find((entry) =>
+      [explicitStoryName, storyNameFromExport(exportName)].includes(entry.name)
     );
 
     if (foundEntry) {
@@ -82,7 +122,19 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
       });
     } else {
       let errorMessage = `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}"`;
-      if (!explicitStoryName) {
+      if (fileEntries.length > 0) {
+        const guessedName = explicitStoryName ?? storyNameFromExport(exportName);
+        const closest = fileEntries
+          .toSorted((a, b) => leven(guessedName, a.name) - leven(guessedName, b.name))
+          .slice(0, MAX_FILE_STORIES);
+        const more =
+          fileEntries.length > closest.length
+            ? ` (+${fileEntries.length - closest.length} more)`
+            : '';
+        errorMessage += `. Closest stories in that file: ${closest
+          .map((entry) => `"${entry.id}" (named "${entry.name}")`)
+          .join(', ')}${more}. Pass one of these IDs as { storyId } instead`;
+      } else if (!explicitStoryName) {
         errorMessage += ` (did you forget to pass the explicit story name?)`;
       }
       result.push({

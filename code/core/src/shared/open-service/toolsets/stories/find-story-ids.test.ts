@@ -39,6 +39,24 @@ describe('findStoryIds', () => {
     },
   };
 
+  const ordersIndex: StoryIndex = {
+    v: 5,
+    entries: Object.fromEntries(
+      ['loaded', 'empty', 'error-state'].map((name) => [
+        `orders--${name}`,
+        {
+          type: 'story',
+          subtype: 'story',
+          id: `orders--${name}`,
+          name,
+          title: 'Orders',
+          importPath: './src/Orders.stories.tsx',
+          tags: ['story'],
+        },
+      ])
+    ),
+  };
+
   it('finds a story by storyId', () => {
     const stories: StoryInput[] = [{ storyId: 'button--primary' }];
 
@@ -57,6 +75,44 @@ describe('findStoryIds', () => {
     expect(result).toHaveLength(1);
     expect((result[0] as { errorMessage: string }).errorMessage).toContain(
       'button--does-not-exist'
+    );
+  });
+
+  it('suggests the closest story IDs of the same component first', () => {
+    const result = findStoryIds(mockStoryIndex, [{ storyId: 'button--primry' }]);
+
+    expect((result[0] as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--primry". Did you mean "button--primary", "button--secondary"?'
+    );
+  });
+
+  it('ranks a story whose name extends the guess first', () => {
+    const [result] = findStoryIds(ordersIndex, [{ storyId: 'orders--error' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "orders--error". Did you mean "orders--error-state", "orders--empty", "orders--loaded"?'
+    );
+  });
+
+  it('ranks a story whose name the guess contains first', () => {
+    const [result] = findStoryIds(ordersIndex, [{ storyId: 'orders--empty-state' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toMatch(
+      /Did you mean "orders--empty", /
+    );
+  });
+
+  it('suggests an ID of another component only when it is a few edits away', () => {
+    const [nearMiss, farMiss] = findStoryIds(mockStoryIndex, [
+      { storyId: 'inputs--default' },
+      { storyId: 'checkbox--checked' },
+    ]);
+
+    expect((nearMiss as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "inputs--default". Did you mean "input--default"?'
+    );
+    expect((farMiss as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "checkbox--checked"'
     );
   });
 
@@ -103,6 +159,16 @@ describe('findStoryIds', () => {
 
     expect((result[0] as { errorMessage: string }).errorMessage).toContain(
       'did you forget to pass the explicit story name?'
+    );
+  });
+
+  it('lists the stories of a known file when the export name misses', () => {
+    const [result] = findStoryIds(mockStoryIndex, [
+      { exportName: 'ErrorState', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      `No story found for export name "ErrorState" with absolute file path "${process.cwd()}/src/Button.stories.tsx". Closest stories in that file: "button--primary" (named "Primary"), "button--secondary" (named "Secondary"). Pass one of these IDs as { storyId } instead`
     );
   });
 

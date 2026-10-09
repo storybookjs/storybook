@@ -55,7 +55,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
     options.presets.apply('docs', {}, options),
     options.presets.apply('features', {}, options),
   ]);
-  const docsEnabled = Object.keys(docsConfig).length > 0;
+  const docsEnabled = Object.keys(docsConfig ?? {}).length > 0;
   const experimentalRSC = features?.experimentalRSC;
   const result: string[] = [];
 

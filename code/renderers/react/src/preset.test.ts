@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { features, optimizeViteDeps } from './preset.ts';
+import { features, optimizeViteDeps, previewAnnotations } from './preset.ts';
 
 describe('optimizeViteDeps', () => {
   it('includes react-dom/client', () => {
@@ -28,5 +28,29 @@ describe('features', () => {
       controls: true,
       componentsManifest: true,
     });
+  });
+});
+
+describe('previewAnnotations', () => {
+  it('does not throw when the docs preset returns undefined', async () => {
+    if (typeof previewAnnotations !== 'function') {
+      throw new Error('expected previewAnnotations to be a function');
+    }
+
+    const options = {
+      presets: {
+        apply: async (key: string) => {
+          if (key === 'docs') {
+            return undefined;
+          }
+          if (key === 'features') {
+            return {};
+          }
+          return {};
+        },
+      },
+    };
+
+    await expect(previewAnnotations([], options as never)).resolves.toEqual(expect.any(Array));
   });
 });

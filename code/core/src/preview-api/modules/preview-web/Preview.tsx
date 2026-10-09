@@ -55,6 +55,15 @@ const { fetch } = global;
 
 const STORY_INDEX_PATH = './index.json';
 
+function resolveStoryIndexUrl() {
+  try {
+    return new URL(STORY_INDEX_PATH, globalThis.document.baseURI).href;
+  } catch {
+    // No document to resolve against, like in React Native
+    return STORY_INDEX_PATH;
+  }
+}
+
 export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
@@ -77,6 +86,9 @@ export class Preview<TRenderer extends Renderer> {
   protected resolveStoreInitializationPromise!: () => void;
 
   protected rejectStoreInitializationPromise!: (err: Error) => void;
+
+  // Not the URL of the moment, which a framework can change to the URL of a page of the app
+  private storyIndexUrl = resolveStoryIndexUrl();
 
   constructor(
     public importFn: ModuleImportFn,
@@ -201,7 +213,7 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   async getStoryIndexFromServer() {
-    const result = await fetch(STORY_INDEX_PATH);
+    const result = await fetch(this.storyIndexUrl);
     if (result.status === 200) {
       return result.json() as any as StoryIndex;
     }

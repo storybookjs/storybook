@@ -56,7 +56,10 @@ export function sourceDecorator(
   });
 
   if (!skipSourceRender(context)) {
-    source = renderStorySource(renderedForSource);
+    source =
+      typeof renderedForSource === 'string'
+        ? renderedForSource
+        : renderStorySource(renderedForSource);
   }
 
   return story;

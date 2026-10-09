@@ -98,18 +98,33 @@ export const enhanceContext: LoaderFunction = async (context) => {
     // which will throw an error in react native for example.
     const clipboard = globalThis.window?.navigator?.clipboard;
     if (clipboard) {
-      context.userEvent = instrument(
-        { userEvent: uninstrumentedUserEvent.setup() },
-        {
-          intercept: true,
-          getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
-        }
-      ).userEvent;
-
-      // Restore original clipboard, which was replaced with a stub by userEvent.setup()
-      Object.defineProperty(globalThis.window.navigator, 'clipboard', {
-        get: () => clipboard,
+      let userEvent: any;
+      Object.defineProperty(context, 'userEvent', {
         configurable: true,
+        enumerable: false,
+        get() {
+          if (!userEvent) {
+            const currentClipboard = globalThis.window?.navigator?.clipboard;
+            const userEventInstance = uninstrumentedUserEvent.setup();
+            userEvent = instrument(
+              { userEvent: userEventInstance },
+              {
+                intercept: true,
+                getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
+              }
+            ).userEvent;
+
+            // Restore original clipboard, which was replaced with a stub by userEvent.setup()
+            Object.defineProperty(globalThis.window.navigator, 'clipboard', {
+              get: () => currentClipboard,
+              configurable: true,
+            });
+          }
+          return userEvent;
+        },
+        set(value) {
+          userEvent = value;
+        },
       });
 
       if (!patchedFocus) {

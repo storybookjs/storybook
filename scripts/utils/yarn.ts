@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions.ts';
-import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { exec } from './exec.ts';
 import { preapproveLocallyPublishedPackages } from './preapprove-local-packages.ts';
 
@@ -46,7 +46,12 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 };
 
-export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
+export const installYarn2 = async ({
+  cwd,
+  dryRun,
+  debug,
+  key,
+}: YarnOptions & { key: AllTemplatesKey }) => {
   // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
@@ -59,7 +64,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // Our own Storybook packages are published to Verdaccio seconds before this install,
   // so they can never satisfy the gate. Name them instead of switching it off, exactly
   // as sandbox generation does for the `after-storybook` install.
-  await preapproveLocallyPublishedPackages(cwd);
+  await preapproveLocallyPublishedPackages(cwd, allTemplates[key].minAgeGateExemptions);
 
   const command = [
     // No `yarn set version` here: the sandbox pins Yarn through the `packageManager`

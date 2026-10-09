@@ -777,7 +777,17 @@ export class CsfFile {
                   }
                 } else {
                   const annotations = {} as Record<string, t.Node>;
-                  const storyNode = decl;
+                  let storyNode: t.Node | undefined = decl;
+                  let storyIsFactory = false;
+                  const unwrappedDecl = decl && unwrapExpression(decl);
+                  if (unwrappedDecl && isCsfFactoryCall(unwrappedDecl)) {
+                    storyIsFactory = true;
+                    storyNode = unwrappedDecl.arguments[0];
+                  }
+                  // A story imported from another file has no initializer here
+                  if (self._metaIsFactory && decl && !storyIsFactory) {
+                    return;
+                  }
                   if (t.isObjectExpression(storyNode)) {
                     (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
                       if (t.isIdentifier(p.key)) {
@@ -793,7 +803,7 @@ export class CsfFile {
                     name: exportName,
                     localName,
                     parameters: {},
-                    __stats: {},
+                    __stats: storyIsFactory ? { factory: true } : {},
                   };
                 }
               }

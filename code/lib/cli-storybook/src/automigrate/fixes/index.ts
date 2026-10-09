@@ -2,6 +2,7 @@ import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
+import { webComponentsRuntimeManifest } from './web-components-runtime-manifest.ts';
 import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
@@ -35,6 +36,7 @@ export const allFixes: Fix[] = [
   nextjsToNextjsVite,
   angularToAngularVite,
   angularViteRemoveCompodoc,
+  webComponentsRuntimeManifest,
   reactViteToTanstackReact,
   addonSvelteCsfToCore,
   wrapGetAbsolutePath,

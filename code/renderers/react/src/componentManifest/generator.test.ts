@@ -288,10 +288,13 @@ test('manifests generates correct id, name, description and examples ', async ()
   );
 });
 
-async function getManifestForStory(code: string) {
+async function getManifestForStory(
+  code: string,
+  packageJson: Record<string, unknown> = { name: 'some-package' }
+) {
   vol.fromJSON(
     {
-      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./package.json']: JSON.stringify(packageJson),
       ['./src/stories/Button.stories.ts']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
@@ -407,6 +410,38 @@ test('fall back to index title when no component name', async () => {
       "summary": undefined,
     }
   `);
+});
+
+test('keeps the story import for a component in a private app package', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, { name: 'my-app', private: true });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
+test('imports a component in a private workspace package by its package name', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    main: './src/index.ts',
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
+test('keeps the story import for a private package that exports only subpaths', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { './components/*': './src/components/*.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
 });
 
 test('component exported from other file', async () => {

@@ -300,34 +300,30 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "# Button
+      {
+        "content": [
+          {
+            "text": "# Button
 
-			ID: button
+      ID: button
 
-			A button component
+      A button component
 
-			## Props
+      ## Props
 
-			\`\`\`
-			export type Props = {
-			  /**
-			    Button style variant
-			  */
-			  variant?: "primary" | "secondary" = "primary";
-			  /**
-			    Disable the button
-			  */
-			  disabled?: boolean;
-			}
-			\`\`\`",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+      \`\`\`
+      export type Props = {
+        /** Button style variant */
+        variant?: "primary" | "secondary" = "primary";
+        /** Disable the button */
+        disabled?: boolean;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
   });
 
   it('should include props section when reactComponentMeta is present', async () => {
@@ -391,34 +387,30 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "# Button
+      {
+        "content": [
+          {
+            "text": "# Button
 
-			ID: button
+      ID: button
 
-			A button component
+      A button component
 
-			## Props
+      ## Props
 
-			\`\`\`
-			export type Props = {
-			  /**
-			    Button style variant
-			  */
-			  variant?: "primary" | "secondary" = "primary";
-			  /**
-			    Disable the button
-			  */
-			  disabled?: boolean;
-			}
-			\`\`\`",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+      \`\`\`
+      export type Props = {
+        /** Button style variant */
+        variant?: "primary" | "secondary" = "primary";
+        /** Disable the button */
+        disabled?: boolean;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
   });
 
   it('should render apiDescription ahead of the stories it is applied by', async () => {
@@ -579,40 +571,38 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "# ComboBox
+      {
+        "content": [
+          {
+            "text": "# ComboBox
 
-			ID: combo-box
+      ID: combo-box
 
-			A combo box component
+      A combo box component
 
-			## Subcomponents
+      ## Subcomponents
 
-			### ComboBoxItem
+      ### ComboBoxItem
 
-			Use for individual options.
+      Use for individual options.
 
-			\`\`\`
-			import { ComboBoxItem } from "@/components";
-			\`\`\`
+      \`\`\`
+      import { ComboBoxItem } from "@/components";
+      \`\`\`
 
-			#### Props
+      #### Props
 
-			\`\`\`
-			export type ComboBoxItemProps = {
-			  /**
-			    Required when children are not plain text.
-			  */
-			  textValue?: string;
-			}
-			\`\`\`",
-			      "type": "text",
-			    },
-			  ],
-			}
-		`);
+      \`\`\`
+      export type ComboBoxItemProps = {
+        /** Required when children are not plain text. */
+        textValue?: string;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
   });
 
   describe('multi-source mode', () => {
@@ -1102,14 +1092,14 @@ http://remote.example.com/mcp`);
       expect((response.result as any).content[0].text).toContain('# Welcome');
     });
 
-    it('returns not-found when resolveEntry yields nothing', async () => {
+    it('returns not-found when resolveEntry yields nothing, with close ids from the listing', async () => {
       const resolveEntry = vi.fn().mockResolvedValue(undefined);
 
       const request = {
         jsonrpc: '2.0' as const,
         id: 1,
         method: 'tools/call',
-        params: { name: GET_TOOL_NAME, arguments: { id: 'nope' } },
+        params: { name: GET_TOOL_NAME, arguments: { id: 'primary-button' } },
       };
 
       const mockHttpRequest = new Request('https://example.com/mcp');
@@ -1117,9 +1107,11 @@ http://remote.example.com/mcp`);
         custom: { request: mockHttpRequest, manifestProvider, resolveEntry },
       });
 
-      expect(manifestProvider).not.toHaveBeenCalled();
       expect((response.result as any).isError).toBe(true);
       expect((response.result as any).content[0].text).toContain('not found');
+      expect((response.result as any).content[0].text).toContain(
+        '- Button: docs-show {"id":"button"}'
+      );
     });
   });
 });

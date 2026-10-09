@@ -6,7 +6,8 @@
  * from the story index, so the listing matches what core's manifest generator would emit — same
  * `manifest` tag filter, same component selection, same order — instead of whatever happens to have
  * been extracted so far. And single-entry lookups use the per-id queries, so resolving one
- * component never triggers docgen extraction for every component.
+ * component never triggers docgen extraction for every component. A `docs show` miss still lists the
+ * source, to suggest close ids.
  */
 
 import type { StoryIndex } from 'storybook/internal/types';

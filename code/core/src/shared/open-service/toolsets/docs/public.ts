@@ -22,6 +22,7 @@ export type {
   DocsShowStoryOutput,
   DocsToolset,
 } from './definition.ts';
+export type { DocsListedEntry } from './suggest.ts';
 export {
   COMPONENT_MANIFEST_PATH,
   createProviderDocsAccess,

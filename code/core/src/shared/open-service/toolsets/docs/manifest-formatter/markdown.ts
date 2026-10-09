@@ -211,6 +211,28 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
   return parts;
 }
 
+const MAX_LITERAL_UNION_LENGTH = 300;
+const ABBREVIATED_UNION_LENGTH = 150;
+const UNION_MEMBER = `(?:"[^"]*"|'[^']*'|undefined|null)`;
+const STRING_LITERAL_UNION = new RegExp(`^${UNION_MEMBER}(?: \\| ${UNION_MEMBER})+$`);
+
+// A long union of string literals, such as every intrinsic element name, is cut to its first
+// members and a count: the rest is more of the same. Any other type is printed whole.
+function abbreviateUnion(type: string): string {
+  if (type.length <= MAX_LITERAL_UNION_LENGTH || !STRING_LITERAL_UNION.test(type)) {
+    return type;
+  }
+  const members = type.match(new RegExp(UNION_MEMBER, 'g'))!;
+  const kept = [members[0]];
+  for (const member of members.slice(1)) {
+    if (`${kept.join(' | ')} | ${member}`.length > ABBREVIATED_UNION_LENGTH) {
+      break;
+    }
+    kept.push(member);
+  }
+  return `${kept.join(' | ')} | ... (${members.length - kept.length} more)`;
+}
+
 function formatPropsSection(
   parsedDocgen: ParsedDocgen | undefined,
   options: { title?: string; typeName?: string } = {}
@@ -230,14 +252,16 @@ function formatPropsSection(
   parts.push(`export type ${typeName} = {`);
 
   for (const [propName, propInfo] of propEntries) {
-    const type = propInfo.type ?? 'any';
+    const type = abbreviateUnion(propInfo.type ?? 'any');
     const isRequired = propInfo.required ?? true;
     const hasDefault = propInfo.defaultValue !== undefined;
-    const hasDescription = propInfo.description !== undefined;
+    const { description } = propInfo;
 
-    if (hasDescription) {
+    if (description !== undefined && !description.includes('\n')) {
+      parts.push(`  /** ${description} */`);
+    } else if (description !== undefined) {
       parts.push('  /**');
-      parts.push(`    ${propInfo.description}`);
+      parts.push(`    ${description}`);
       parts.push('  */');
     }
 
@@ -367,15 +391,17 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
   parts.push(...formatJsDocTags(jsDocTags, isGenericJsDocTag));
   parts.push(...formatExampleJsDocTags(jsDocTags));
 
-  parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
-
-  // A framework's own API markdown leads, because it is the component's contract and the stories
-  // below are examples of applying it. The `react*` props section keeps its historical position.
+  // The component's contract leads and the stories below are examples of applying it, so an agent
+  // reading only the head of the output still gets the props.
   const { apiDescription } = componentManifest;
   if (apiDescription) {
     parts.push(apiDescription);
     parts.push('');
+  } else {
+    parts.push(...formatPropsSection(parsedDocgen));
   }
+
+  parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
   // Stories section
   const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
@@ -426,10 +452,6 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     }
   }
 
-  if (!apiDescription) {
-    parts.push(...formatPropsSection(parsedDocgen));
-  }
-
   // Attached docs section
   if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {
     const docsWithContent = Object.values(componentManifest.docs).filter(
@@ -462,6 +484,9 @@ export function formatDocsManifest(doc: Doc): string {
 			${doc.content ?? ''}`;
 }
 
+const NO_ENTRIES =
+  'No components or docs entries found. A component is listed here once it has a story.';
+
 /**
  * Format a component manifest map into a markdown list.
  * @param manifest - The component manifest map to format
@@ -471,11 +496,16 @@ export function formatManifestsToLists(
   manifests: AllManifests,
   options: ListFormattingOptions = {}
 ): string {
+  const components = Object.values(manifests.componentManifest.components);
+  if (components.length === 0 && Object.keys(manifests.docsManifest?.docs ?? {}).length === 0) {
+    return NO_ENTRIES;
+  }
+
   const parts: string[] = [];
 
   parts.push('# Components');
   parts.push('');
-  for (const component of Object.values(manifests.componentManifest.components)) {
+  for (const component of components) {
     parts.push(formatComponentLine(component));
     if (options.withStoryIds && Array.isArray(component.stories)) {
       for (const story of component.stories) {
@@ -529,6 +559,13 @@ export function formatMultiSourceManifestsToLists(
     }
 
     const components = Object.values(manifests?.componentManifest.components ?? {});
+    const docs = Object.values(manifests?.docsManifest?.docs ?? {});
+    if (components.length === 0 && docs.length === 0) {
+      parts.push(NO_ENTRIES);
+      parts.push('');
+      continue;
+    }
+
     if (components.length > 0) {
       parts.push('## Components');
       parts.push('');
@@ -543,7 +580,6 @@ export function formatMultiSourceManifestsToLists(
       parts.push('');
     }
 
-    const docs = Object.values(manifests?.docsManifest?.docs ?? {});
     if (docs.length > 0) {
       parts.push('## Docs');
       parts.push('');

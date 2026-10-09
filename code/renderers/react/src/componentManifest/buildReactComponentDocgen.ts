@@ -52,7 +52,30 @@ export interface ReactComponentManifest extends ComponentManifest {
   [key: string]: unknown;
 }
 
-function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
+const MAIN_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
+
+// Whether the bare package name resolves: `exports` decides when present, the main fields otherwise.
+function hasRootEntry(pkg: Record<string, unknown>) {
+  const { exports } = pkg;
+  if (exports === undefined) {
+    return MAIN_FIELDS.some((field) => field in pkg);
+  }
+  // A string, or an array of fallbacks, is the root entry itself.
+  if (typeof exports !== 'object' || Array.isArray(exports)) {
+    return true;
+  }
+  if (exports === null) {
+    return false;
+  }
+  // An object lists either subpaths (`"."`, `"./button"`) or conditions (`"import"`, `"default"`).
+  // Conditions describe the root.
+  const subpaths = Object.keys(exports).filter((key) => key.startsWith('.'));
+  return subpaths.length === 0 || subpaths.includes('.');
+}
+
+// An app's own package (private, with no root entry) cannot be imported by name, so its
+// components keep the import the story wrote.
+function getImportablePackageName(componentPath: string | undefined, fallbackPath: string) {
   const nearestPkg = cachedFindUp('package.json', {
     cwd: path.dirname(componentPath ?? fallbackPath),
   });
@@ -63,12 +86,11 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
     }
 
     const parsed = JSON.parse(cachedReadTextFileSync(nearestPkg));
-    return typeof parsed === 'object' &&
-      parsed &&
-      'name' in parsed &&
-      typeof parsed.name === 'string'
-      ? parsed.name
-      : undefined;
+    if (typeof parsed !== 'object' || !parsed || typeof parsed.name !== 'string') {
+      return undefined;
+    }
+    const importable = parsed.private !== true || hasRootEntry(parsed);
+    return importable ? parsed.name : undefined;
   } catch {
     return undefined;
   }
@@ -224,7 +246,7 @@ export function buildStoryDocsFromResolved({
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-  const packageName = getPackageInfo(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path, storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds, {
     filePath: storyPath,
@@ -293,7 +315,7 @@ export function buildComponentDocgenFromResolved({
 }): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const packageName = getPackageInfo(component?.path, storyPath);
+  const packageName = getImportablePackageName(component?.path, storyPath);
 
   const base = {
     id,

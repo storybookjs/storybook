@@ -1,6 +1,9 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { checkRef } from './get-storybook-refs.ts';
+import { checkRef, getRefs } from './get-storybook-refs.ts';
 
 describe('checkRef', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -38,5 +41,29 @@ describe('checkRef', () => {
       .mockResolvedValueOnce({ ok: true, status: 200 } as Response)
       .mockRejectedValueOnce(new TypeError('fetch failed'));
     expect(await checkRef('https://chromatic.com')).toBe(false);
+  });
+});
+
+describe('getRefs', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('normalizes camelCase ref keys to lowercase and drops the original entry', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 401 } as Response);
+
+    const refs = await getRefs({
+      configDir: join(tmpdir(), 'storybook-get-refs-test'),
+      presets: {
+        apply: async () => ({
+          qaWorking: { title: 'QA', url: 'http://localhost:6007' },
+        }),
+      },
+    } as unknown as Parameters<typeof getRefs>[0]);
+
+    expect(Object.keys(refs)).toEqual(['qaworking']);
+    expect(refs.qaworking).toMatchObject({
+      id: 'qaworking',
+      title: 'QA',
+      url: 'http://localhost:6007',
+    });
   });
 });

@@ -99,6 +99,11 @@ export async function getRefs(options: Options) {
       title: value.title || toTitle(value.id || key),
       url: stripTrailingSlash(value.url),
     };
+
+    // Also delete the original key, so a camelCase ref doesn't end up in REFS twice
+    if (key !== key.toLowerCase()) {
+      delete refs[key];
+    }
   });
 
   // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work

@@ -119,6 +119,59 @@ export function defineMcpTestStorybook() {
   );
 }
 
+// A Next.js App Router app with `@storybook/nextjs-vite-rsc`, on Chromatic as the sandboxes are
+export function defineNextjsViteRscNotesTestStorybook() {
+  const working_directory = 'test-storybooks/nextjs-vite-rsc-notes';
+
+  return defineJob(
+    'test-storybooks-nextjs-vite-rsc-notes',
+    () => ({
+      executor: {
+        name: 'sb_node_22_classic',
+        class: 'medium+',
+      },
+      steps: [
+        // Chromatic needs the git history for its baselines
+        ...workflow.restoreLinux({ shallow: false }),
+        {
+          // Yarn's file: protocol checksums the whole package directory (including
+          // nested node_modules/.cache). A bloated jiti cache under code/core OOMs
+          // libzip with "Malloc failure" during resolution.
+          run: {
+            name: 'Clear nested package caches before file: install',
+            command: 'find code -type d -path "*/node_modules/.cache" -prune -exec rm -rf {} +',
+          },
+        },
+        {
+          run: {
+            name: 'Install dependencies',
+            working_directory,
+            command: 'yarn install --no-immutable',
+            environment: {
+              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+            },
+          },
+        },
+        {
+          run: {
+            name: 'Build Storybook',
+            working_directory,
+            command: 'yarn build-storybook',
+          },
+        },
+        {
+          run: {
+            name: 'Run Chromatic',
+            working_directory,
+            command: 'yarn chromatic --project-token="${CHROMATIC_TOKEN_NEXTJS_VITE_RSC_NOTES}"',
+          },
+        },
+      ],
+    }),
+    [testStorybooksNoOpJob]
+  );
+}
+
 export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
 export function getTestStorybooks() {
@@ -127,6 +180,7 @@ export function getTestStorybooks() {
   );
 
   testStorybooks.push(defineMcpTestStorybook());
+  testStorybooks.push(defineNextjsViteRscNotesTestStorybook());
 
   return testStorybooks;
 }

@@ -30,7 +30,7 @@ describe('checkInstallation', () => {
         { storybookPath: '/project/node_modules/storybook' },
         '/project/node_modules/storybook'
       )
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, callerPath: '/project/node_modules/storybook' });
   });
 
   it('refuses two different installations, reporting both realpathed roots', () => {
@@ -58,7 +58,7 @@ describe('checkInstallation', () => {
 
     expect(
       checkInstallation({ storybookPath: '/project/node_modules/storybook' }, '/store/storybook')
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, callerPath: '/store/storybook' });
   });
 
   it('attaches Windows paths that differ only by letter case', () => {
@@ -70,7 +70,7 @@ describe('checkInstallation', () => {
         { storybookPath: '/project/node_modules/storybook' },
         '/PROJECT/NODE_MODULES/STORYBOOK'
       )
-    ).toEqual({ ok: true });
+    ).toEqual({ ok: true, callerPath: '/PROJECT/NODE_MODULES/STORYBOOK' });
   });
 
   it('refuses a record that does not name its installation', () => {

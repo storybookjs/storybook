@@ -3,6 +3,7 @@ export enum ProjectType {
   EMBER = 'ember',
   HTML = 'html',
   NEXTJS = 'nextjs',
+  NEXTJS_VITE_RSC = 'nextjs_vite_rsc',
   NUXT = 'nuxt',
   NX = 'nx',
   PREACT = 'preact',

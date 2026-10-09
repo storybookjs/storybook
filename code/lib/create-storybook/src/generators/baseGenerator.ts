@@ -113,6 +113,7 @@ const hasFrameworkTemplates = (framework?: string) => {
     SupportedFramework.HTML_VITE,
     SupportedFramework.NEXTJS,
     SupportedFramework.NEXTJS_VITE,
+    SupportedFramework.NEXTJS_VITE_RSC,
     SupportedFramework.PREACT_VITE,
     SupportedFramework.REACT_NATIVE_WEB_VITE,
     SupportedFramework.REACT_VITE,

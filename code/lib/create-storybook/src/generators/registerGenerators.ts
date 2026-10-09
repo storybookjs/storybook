@@ -3,6 +3,7 @@ import emberGenerator from './EMBER/index.ts';
 import { generatorRegistry } from './GeneratorRegistry.ts';
 import htmlGenerator from './HTML/index.ts';
 import nextjsGenerator from './NEXTJS/index.ts';
+import nextjsViteRscGenerator from './NEXTJS_VITE_RSC/index.ts';
 import nuxtGenerator from './NUXT/index.ts';
 import preactGenerator from './PREACT/index.ts';
 import qwikGenerator from './QWIK/index.ts';
@@ -28,6 +29,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   nuxtGenerator,
   angularGenerator,
   nextjsGenerator,
+  nextjsViteRscGenerator,
   svelteGenerator,
   svelteKitGenerator,
   emberGenerator,

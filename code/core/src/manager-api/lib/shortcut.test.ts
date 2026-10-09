@@ -210,7 +210,7 @@ describe('shortcut', () => {
       expect(keyToSymbol('Enter')).toBe('');
       expect(keyToSymbol('Backspace')).toBe('');
       expect(keyToSymbol('Esc')).toBe('');
-      // 'escape' falls through to the uppercase default; nothing binds it as a shortcut anymore.
+      // Escape renders as text for the fullscreen tool's shortcut hint.
       expect(keyToSymbol('escape')).toBe('ESCAPE');
       expect(keyToSymbol(' ')).toBe('SPACE');
       expect(keyToSymbol('ArrowUp')).toBe('↑');

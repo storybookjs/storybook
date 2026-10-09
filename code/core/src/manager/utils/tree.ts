@@ -3,19 +3,18 @@ import type { SyntheticEvent } from 'react';
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
-import type { HashEntry, IndexHash } from 'storybook/manager-api';
+import type {
+  ComponentEntry,
+  GroupEntry,
+  HashEntry,
+  IndexHash,
+  StoryEntry,
+} from 'storybook/manager-api';
 
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
 import type { Dataset, Item, RefType } from '../components/sidebar/types.ts';
 
 const { document, window: globalWindow } = global;
-
-export const createId = (itemId: string, refId?: string) =>
-  !refId || refId === DEFAULT_REF_ID ? itemId : `${refId}_${itemId}`;
-
-export const getLink = (item: HashEntry, refId?: string) => {
-  return `${document.location.pathname}?path=/${item.type}/${createId(item.id, refId)}`;
-};
 
 export const prevent = (e: SyntheticEvent) => {
   e.preventDefault();
@@ -34,26 +33,6 @@ export const getParents = memoize(1000)((id: string, dataset: Dataset): Item[] =
 export const getAncestorIds = memoize(1000)((data: IndexHash, id: string): string[] =>
   getParents(id, data).map((item) => item.id)
 );
-export const getDescendantIds = memoize(1000)((
-  data: IndexHash,
-  id: string,
-  skipLeafs: boolean
-): string[] => {
-  const entry = data[id];
-  if (!entry || !('children' in entry) || !entry.children) {
-    return [];
-  }
-  return entry.children.reduce((acc, childId) => {
-    const child = data[childId];
-
-    if (!child || (skipLeafs && (child.type === 'story' || child.type === 'docs'))) {
-      return acc;
-    }
-    acc.push(childId, ...getDescendantIds(data, childId, skipLeafs));
-    return acc;
-  }, [] as string[]);
-});
-
 export function getPath(item: Item, ref: Pick<RefType, 'id' | 'title' | 'index'>): string[] {
   // @ts-expect-error (non strict)
   const parent = item.type !== 'root' && item.parent ? ref.index[item.parent] : null;
@@ -70,19 +49,6 @@ export const searchItem = <T extends Item>(
 ): T & { refId: string; path: string[] } => {
   return { ...item, refId: ref.id, path: getPath(item, ref) };
 };
-
-export function cycle<T>(array: T[], index: number, delta: number): number {
-  let next = index + (delta % array.length);
-
-  if (next < 0) {
-    next = array.length + next;
-  }
-
-  if (next >= array.length) {
-    next -= array.length;
-  }
-  return next;
-}
 
 export const scrollIntoView = (element: Element, center = false) => {
   if (!element) {
@@ -121,18 +87,119 @@ export const getStateType = (
   }
 };
 
-export const isAncestor = (element?: Element, maybeAncestor?: Element): boolean => {
-  if (!element || !maybeAncestor) {
-    return false;
-  }
-
-  if (element === maybeAncestor) {
-    return true;
-  }
-  return isAncestor(element.parentElement || undefined, maybeAncestor);
-};
-
 export const removeNoiseFromName = (storyName: string) => storyName.replaceAll(/(\s|-|_)/gi, '');
 
 export const isStoryHoistable = (storyName: string, componentName: string) =>
   removeNoiseFromName(storyName) === removeNoiseFromName(componentName);
+
+export const hoistSingleStoryComponents = (data: IndexHash): IndexHash => {
+  // Collect the components that must collapse into their only child.
+  const singleStoryComponents: ComponentEntry[] = Object.values(data).filter(
+    (entry): entry is ComponentEntry => {
+      if (entry.type !== 'component') {
+        return false;
+      }
+
+      const { children = [], name } = entry;
+
+      if (children.length !== 1) {
+        return false;
+      }
+
+      const onlyChild = data[children[0]];
+
+      if (onlyChild.type === 'docs') {
+        return true;
+      }
+
+      if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
+        return isStoryHoistable(onlyChild.name, name);
+      }
+      return false;
+    }
+  );
+
+  return singleStoryComponents.reduce(
+    (acc, entry) => {
+      const { children, parent, name } = entry;
+      const [childId] = children;
+      if (parent) {
+        // Read from the accumulator, not from the source data. An earlier collapse can
+        // already have rewritten the children of this parent, and the source copy is stale.
+        const parentEntry = acc[parent] as GroupEntry;
+        const siblings = [...parentEntry.children];
+        siblings[siblings.indexOf(entry.id)] = childId;
+        acc[parent] = { ...parentEntry, children: siblings };
+      }
+      acc[childId] = {
+        ...(data[childId] as StoryEntry),
+        name,
+        // A hoisted story that replaces a top-level component has no parent. The API type
+        // declares `parent` as required for a story, so this cast is necessary.
+        parent: parent as StoryEntry['parent'],
+        depth: data[childId].depth - 1,
+      };
+      // Move the subtree of the hoisted story, for example its test entries, up as well.
+      // Without this, its rows indent one level too deep and report the wrong aria level.
+      const hoistDescendants = (ids?: string[]) => {
+        for (const id of ids ?? []) {
+          const descendant = acc[id];
+          if (!descendant) {
+            continue;
+          }
+          acc[id] = { ...descendant, depth: descendant.depth - 1 };
+          hoistDescendants((descendant as { children?: string[] }).children);
+        }
+      };
+      hoistDescendants((data[childId] as { children?: string[] }).children);
+      // Remove the replaced component. indexToTree resolves rows from the parent pointers, so
+      // an entry that remains renders an extra row next to the hoisted story.
+      delete acc[entry.id];
+      return acc;
+    },
+    { ...data }
+  );
+};
+
+/** Whether an entry is a branch: it has at least one child row. */
+export function isBranch<T extends HashEntry>(entry: T): entry is T & { children: string[] } {
+  return 'children' in entry && Array.isArray(entry.children) && entry.children.length > 0;
+}
+
+export type TreeEntry = HashEntry & { resolvedChildren?: TreeEntry[] };
+
+/**
+ * A hierarchical representation of the `IndexHash`. Navigation goes from the roots to the leaves.
+ * Use it to render a tree from the index, for example the sidebar Tree.
+ */
+export type IndexTree = TreeEntry[];
+
+export const indexToTree = (index: IndexHash): IndexTree => {
+  const tree: IndexTree = [];
+  const children: Record<string, TreeEntry[]> = {};
+  const processingQueue: IndexTree = [];
+
+  // Collect the children of every node and add the root nodes to the tree.
+  // Copy every node. The entries are shared with the manager-api state hash, so a change in
+  // place would leak the resolvedChildren subtrees into every other consumer.
+  for (const item of Object.values(index)) {
+    const entry: TreeEntry = { ...item, resolvedChildren: [] };
+    if (item.type === 'root' || !item.parent) {
+      tree.push(entry);
+    } else {
+      children[item.parent] = children[item.parent] || [];
+      children[item.parent].push(entry);
+    }
+  }
+
+  // Walk the tree and attach the children of every node.
+  processingQueue.push(...tree);
+  while (processingQueue.length > 0) {
+    const current = processingQueue.shift()!;
+    const currentChildren = children[current.id] || [];
+    current.resolvedChildren = currentChildren;
+    processingQueue.push(...currentChildren);
+  }
+
+  return tree;
+};

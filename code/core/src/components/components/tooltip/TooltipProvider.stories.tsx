@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Popover, TooltipNote } from 'storybook/internal/components';
 
-import { expect, fn, screen } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers.tsx';
@@ -199,6 +199,69 @@ export const NeverOpen = meta.story({
   },
   play: async () => {
     await expect(await screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
+  },
+});
+
+/**
+ * A trigger can lose its box while its tooltip is open, such as a row-action button that hides
+ * when its row is no longer hovered. The tooltip must close with it: an open tooltip positioned
+ * against a collapsed rect lands at the viewport origin.
+ */
+export const HiddenTriggerCloses = meta.story({
+  args: {
+    delayShow: 0,
+    delayHide: 5000,
+    tooltip: <SampleTooltip />,
+    children: <Trigger tabIndex={0}>Hover me!</Trigger>,
+  },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByText('Hover me!');
+    await userEvent.hover(trigger);
+    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+    trigger.style.display = 'none';
+    await waitFor(() =>
+      expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument()
+    );
+  },
+});
+
+/**
+ * `disabled` closes an open tooltip and blocks new opens, while react-aria keeps reporting state
+ * changes. The toggle is activated with the keyboard, so the close can only come from the
+ * `disabled` prop and not from the document-level pointerdown fallback.
+ */
+export const DisabledClosesOpenTooltip = meta.story({
+  args: {
+    delayShow: 0,
+    tooltip: <SampleTooltip />,
+    children: <Trigger>Hover me!</Trigger>,
+  },
+  render: function Render(args) {
+    const [disabled, setDisabled] = React.useState(false);
+    return (
+      <>
+        <TooltipProvider {...args} disabled={disabled} />
+        <button onClick={() => setDisabled(true)}>disable tooltips</button>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByText('Hover me!');
+    await userEvent.hover(trigger);
+    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+
+    const toggle = canvas.getByText('disable tooltips');
+    toggle.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument()
+    );
+
+    await userEvent.unhover(trigger);
+    await userEvent.hover(trigger);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
   },
 });
 

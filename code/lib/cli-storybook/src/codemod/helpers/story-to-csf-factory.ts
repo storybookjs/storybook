@@ -2,10 +2,12 @@ import { types as t, traverse } from 'storybook/internal/babel';
 import { isValidPreviewPath, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import path from 'path';
-
 import type { FileInfo } from '../../automigrate/codemod.ts';
-import { addImportToTop } from './csf-factories-utils.ts';
+import {
+  type PreviewImportOptions,
+  addImportToTop,
+  getPreviewImportPath,
+} from './csf-factories-utils.ts';
 import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
 import { wrapArgsMocks } from './wrap-args-mocks.ts';
@@ -13,14 +15,7 @@ import { wrapArgsMocks } from './wrap-args-mocks.ts';
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
-type Options =
-  | { useSubPathImports: true; previewConfigPath?: string }
-  | { useSubPathImports: false; previewConfigPath: string };
-
-export async function storyToCsfFactory(
-  info: FileInfo,
-  { previewConfigPath, useSubPathImports }: Options
-) {
+export async function storyToCsfFactory(info: FileInfo, options: PreviewImportOptions) {
   let csf;
   try {
     csf = loadCsf(info.source, { makeTitle: () => 'FIXME' });
@@ -57,23 +52,7 @@ export async function storyToCsfFactory(
       n.declarations.some((declaration) => t.isIdentifier(declaration.id, { name: 'preview' }))
   );
 
-  let previewPath = '#.storybook/preview';
-  if (!useSubPathImports) {
-    // calculate relative path from story file to preview file
-    const relativePath = path.relative(path.dirname(info.path), previewConfigPath);
-    const { dir, name } = path.parse(relativePath);
-
-    // Construct the path manually and replace Windows backslashes
-    previewPath = `${dir ? `${dir}/` : ''}${name}`;
-
-    // account for stories in the same path as preview file
-    if (!previewPath.startsWith('.')) {
-      previewPath = `./${previewPath}`;
-    }
-
-    // Convert Windows backslashes to forward slashes
-    previewPath = previewPath.replace(/\\/g, '/');
-  }
+  const previewPath = getPreviewImportPath(info.path, options);
 
   let sbConfigImportName = hasRootLevelConfig ? 'storybookPreview' : 'preview';
 

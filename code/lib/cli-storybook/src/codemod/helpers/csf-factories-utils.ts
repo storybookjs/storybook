@@ -1,5 +1,7 @@
 import { types as t, traverse } from 'storybook/internal/babel';
 
+import path from 'path';
+
 const projectAnnotationNames = [
   'decorators',
   'parameters',
@@ -144,4 +146,24 @@ export function addImportToTop(programNode: t.Program, importDecl: t.ImportDecla
   }
 
   programNode.body.unshift(importDecl);
+}
+
+export type PreviewImportOptions =
+  | { useSubPathImports: true; previewConfigPath?: string }
+  | { useSubPathImports: false; previewConfigPath: string };
+
+export function getPreviewImportPath(
+  storiesFilePath: string,
+  { useSubPathImports, previewConfigPath }: PreviewImportOptions
+) {
+  if (useSubPathImports) {
+    return '#.storybook/preview';
+  }
+
+  const relativePath = path.relative(path.dirname(storiesFilePath), previewConfigPath);
+  const { dir, name } = path.parse(relativePath);
+  const previewPath = (dir ? `${dir}/${name}` : name).replace(/\\/g, '/');
+
+  // account for stories in the same path as preview file
+  return previewPath.startsWith('.') ? previewPath : `./${previewPath}`;
 }

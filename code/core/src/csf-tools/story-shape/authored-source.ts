@@ -1,20 +1,18 @@
 import { types as t } from 'storybook/internal/babel';
-import type { ReferenceContext, ResolvedMembers } from 'storybook/internal/csf-tools';
-import {
-  resolveArgValue,
-  resolveObjectMembers,
-  sourceOf,
-  unwrapExpression,
-} from 'storybook/internal/csf-tools';
 
-import type { StoryShape } from './story-docs-markup.ts';
-import { templateParts } from './story-docs-markup.ts';
+import type { ReferenceContext, ResolvedMembers } from './resolve-members.ts';
+import { resolveObjectMembers, sourceOf } from './resolve-members.ts';
+import { resolveArgValue } from './resolve-arg-value.ts';
+import type { ResolvedStoryArgs } from './resolve-story-args.ts';
+import { templateParts, unwrapExpression } from './utils.ts';
 
 export type AuthoredSource =
   | { kind: 'missing' }
   | { kind: 'disabled' }
   | { kind: 'code'; code: string }
   | { kind: 'unresolvable'; source: string };
+
+type AuthoredSourceShape = Pick<ResolvedStoryArgs, 'storyMembers' | 'metaMembers'>;
 
 type MemberPathResolution =
   | { kind: 'value'; node: t.Node }
@@ -23,10 +21,10 @@ type MemberPathResolution =
   | { kind: 'unresolvable'; source: string };
 
 export const authoredSource = (
-  shape: Pick<StoryShape, 'members' | 'metaMembers'>,
+  shape: AuthoredSourceShape,
   ctx: ReferenceContext
 ): AuthoredSource => {
-  for (const members of [shape.members, shape.metaMembers]) {
+  for (const members of [shape.storyMembers, shape.metaMembers]) {
     const code = memberAt(members, ['parameters', 'docs', 'source', 'code'], ctx);
     if (code.kind === 'missing') {
       continue;

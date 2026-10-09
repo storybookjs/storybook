@@ -1034,6 +1034,19 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   }
 }
 
+export class UpgradeStorybookConfigDirNotFoundError extends StorybookError {
+  constructor() {
+    super({
+      name: 'UpgradeStorybookConfigDirNotFoundError',
+      category: Category.CLI_UPGRADE,
+      isHandledError: true,
+      code: 6,
+      message:
+        'No .storybook directory was found. Pass --config-dir <path> to upgrade a Storybook whose configuration lives elsewhere.',
+    });
+  }
+}
+
 export class NoStatsForViteDevError extends StorybookError {
   constructor() {
     super({

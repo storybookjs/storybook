@@ -1,13 +1,8 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import type { StoryContext } from 'storybook/internal/types';
 
-import { addons, useParameter } from 'storybook/preview-api';
-import { dedent } from 'ts-dedent';
+import { addons } from 'storybook/preview-api';
 
-import { DEFAULT_THEME_PARAMETERS, GLOBAL_KEY, PARAM_KEY, THEMING_EVENTS } from '../constants.ts';
-import type { ThemesParameters as Parameters } from '../types.ts';
-
-type ThemesParameters = Parameters['themes'];
+import { GLOBAL_KEY, THEMING_EVENTS } from '../constants.ts';
 
 /**
  * @param StoryContext
@@ -15,20 +10,6 @@ type ThemesParameters = Parameters['themes'];
  */
 export function pluckThemeFromContext({ globals }: StoryContext): string {
   return globals[GLOBAL_KEY] || '';
-}
-
-export function useThemeParameters(context?: StoryContext): ThemesParameters {
-  deprecate(
-    dedent`The useThemeParameters function is deprecated. Please access parameters via the context directly instead e.g.
-    - const { themeOverride } = context.parameters.themes ?? {};
-    `
-  );
-
-  if (!context) {
-    return useParameter<ThemesParameters>(PARAM_KEY, DEFAULT_THEME_PARAMETERS) as ThemesParameters;
-  }
-
-  return context.parameters[PARAM_KEY] ?? DEFAULT_THEME_PARAMETERS;
 }
 
 export function initializeThemeState(themeNames: string[], defaultTheme: string) {

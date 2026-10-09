@@ -8,12 +8,16 @@ import {
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
 describe('creating a ProfileCard component', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['profilecard'],
+    });
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {

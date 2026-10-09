@@ -1,0 +1,330 @@
+{
+  "argTypes": {
+    "--demo-wc-counter-accent": {
+      "control": {
+        "type": "color"
+      },
+      "description": "Background of the increment button",
+      "name": "--demo-wc-counter-accent",
+      "table": {
+        "category": "css custom properties",
+        "defaultValue": {
+          "summary": "rgb(0, 95, 204)"
+        },
+        "type": {
+          "summary": "<color>"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "--demo-wc-counter-badge-opacity": {
+      "description": "Opacity of the badges",
+      "name": "--demo-wc-counter-badge-opacity",
+      "table": {
+        "category": "css custom properties",
+        "defaultValue": {
+          "summary": "1"
+        },
+        "type": {
+          "summary": "<number>"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "at-max-state": {
+      "description": "Set while the count has reached `max`",
+      "name": "at-max",
+      "table": {
+        "category": "css states"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "atMax": {
+      "control": false,
+      "description": "Whether the count has reached `max`",
+      "name": "atMax",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {}
+      },
+      "type": {
+        "name": "other",
+        "value": ""
+      }
+    },
+    "badge-part": {
+      "description": "A badge rendered next to the current count",
+      "name": "badge",
+      "table": {
+        "category": "css shadow parts"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "badges": {
+      "control": {
+        "type": "multi-select"
+      },
+      "description": "Badges shown after the value, only settable as a property",
+      "name": "badges",
+      "options": ["new", "hot", "sale"],
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "[]"
+        },
+        "type": {
+          "summary": "Array<'new' | 'hot' | 'sale'>"
+        }
+      },
+      "type": {
+        "name": "array",
+        "value": {
+          "name": "enum",
+          "value": ["new", "hot", "sale"]
+        }
+      }
+    },
+    "button-part": {
+      "description": "The increment button",
+      "name": "button",
+      "table": {
+        "category": "css shadow parts"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "count": {
+      "description": "Current value",
+      "name": "count",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "0"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "count-changed-event": {
+      "control": false,
+      "description": "Fires after the count changes, with the new count as `detail.count`",
+      "name": "count-changed",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "CustomEvent"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "CustomEvent"
+      }
+    },
+    "deadline": {
+      "control": {
+        "type": "date"
+      },
+      "description": "Date shown after the value, only settable as a property",
+      "name": "deadline",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "undefined"
+        },
+        "type": {
+          "summary": "Date"
+        }
+      },
+      "type": {
+        "name": "date"
+      }
+    },
+    "deadline-part": {
+      "description": "The deadline, when set",
+      "name": "deadline",
+      "table": {
+        "category": "css shadow parts"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "default-slot": {
+      "description": "Label shown next to the value",
+      "name": "default",
+      "table": {
+        "category": "slots"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "disabled": {
+      "description": "Prevents incrementing",
+      "name": "disabled",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "increment-method": {
+      "description": "Adds `step` to the count, up to `max`",
+      "name": "increment",
+      "table": {
+        "category": "methods",
+        "type": {
+          "summary": "()"
+        }
+      },
+      "type": {
+        "name": "function"
+      }
+    },
+    "label": {
+      "description": "Accessible name of the increment button",
+      "name": "label",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "'Increment'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "max": {
+      "description": "Highest value the counter can reach",
+      "name": "max",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "10"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "prefix-slot": {
+      "description": "Content rendered before the label",
+      "name": "prefix",
+      "table": {
+        "category": "slots"
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "size": {
+      "description": "Button size",
+      "name": "size",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "'medium'"
+        },
+        "type": {
+          "summary": "'small' | 'medium' | 'large'"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["small", "medium", "large"]
+      }
+    },
+    "step": {
+      "description": "Amount added on every increment",
+      "name": "step",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "1"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "tone": {
+      "description": "Color of the value",
+      "name": "tone",
+      "table": {
+        "category": "attributes",
+        "defaultValue": {
+          "summary": "'neutral'"
+        },
+        "type": {
+          "summary": "'neutral' | 'info' | 'success' | 'warning' | 'danger' | 'brand'"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["neutral", "info", "success", "warning", "danger", "brand"]
+      }
+    },
+    "unit": {
+      "description": "Words used after the value, only settable as a property",
+      "name": "unit",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "{ singular: 'click', plural: 'clicks' }"
+        },
+        "type": {
+          "summary": "{ singular: string, plural: string }"
+        }
+      },
+      "type": {
+        "name": "object",
+        "value": {}
+      }
+    },
+    "value-part": {
+      "description": "The current count",
+      "name": "value",
+      "table": {
+        "category": "css shadow parts"
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "description": "Every story uses the default render, which binds each arg by the category its key encodes in the\nCustom Elements Manifest: attributes and properties, `-event`, `-slot`, `-part`, `-state`, and\n`--` CSS custom properties.",
+  "id": "stories-renderers-web-components-lit-vite-default-ts-demo-wc-counter",
+  "jsDocTags": {},
+  "name": "demo-wc-counter",
+  "path": "./src/stories/renderers/web-components_lit-vite-default-ts/demo-wc-counter.stories.js"
+}

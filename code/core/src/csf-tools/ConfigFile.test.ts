@@ -1466,6 +1466,29 @@ describe('ConfigFile', () => {
       `);
     });
 
+    it('keeps a directive on its statement when moving the license header', () => {
+      const source = dedent`
+        // Copyright Example
+
+        // @ts-expect-error not a number
+        const config: number = {};
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        // Copyright Example
+
+        import { dirname } from "node:path";
+
+        // @ts-expect-error not a number
+        const config: number = {};
+        export default config;
+      `);
+    });
+
     it('keeps a license header above a require it adds to a file without imports', () => {
       const source = dedent`
         // Copyright Example

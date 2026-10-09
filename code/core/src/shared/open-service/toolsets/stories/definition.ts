@@ -15,6 +15,7 @@ import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../tools
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
+import { detectChangedFilesOutsideStories } from './changed-files-outside-stories.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
@@ -26,7 +27,6 @@ import {
 } from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
-import { detectUnreachableFiles } from './unreachable-files.ts';
 
 const previewSuccessSchema = v.object({
   title: v.string(),
@@ -73,6 +73,8 @@ const changedOutputSchema = v.object({
     affected: v.number(),
   }),
   unreachableFiles: v.array(v.string()),
+  unreachableFilesTruncated: v.boolean(),
+  changedConfigFiles: v.array(v.string()),
 });
 
 export type ChangedStoriesOutput = v.InferOutput<typeof changedOutputSchema>;
@@ -134,6 +136,13 @@ export type StoriesGitAccess = {
   }>;
 };
 
+export type StorybookDirsAccess = {
+  /** Absolute path of the Storybook config directory. */
+  configDir: string;
+  /** Absolute paths of the configured static directories. */
+  getStaticDirs: () => Promise<string[]>;
+};
+
 export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
@@ -143,6 +152,7 @@ export type CreateStoriesToolsetOptions = {
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
+  storybookDirs: StorybookDirsAccess;
 };
 
 const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
@@ -152,6 +162,8 @@ function emptyChangedStories(): ChangedStoriesOutput {
     stories: [],
     counts: { new: 0, modified: 0, affected: 0 },
     unreachableFiles: [],
+    unreachableFilesTruncated: false,
+    changedConfigFiles: [],
   };
 }
 
@@ -186,7 +198,7 @@ Do not end visual work or browse requests with these links — publish a curated
 function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
-The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
+The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response names the changed source files that no story reaches through its imports.`;
 }
 
 function describeFindByComponent(ctx: ToolsetCtx): string {
@@ -230,6 +242,7 @@ export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
+  storybookDirs,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
@@ -333,7 +346,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             ...getChangedStories({ statuses, index }),
             // Files outside the story graph are why an empty or partial result can still be wrong,
             // so they are part of the answer rather than a separate lookup.
-            unreachableFiles: await detectUnreachableFiles({ git, moduleGraph }),
+            ...(await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs })),
           };
 
           return {

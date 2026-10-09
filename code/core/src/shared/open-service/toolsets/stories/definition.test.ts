@@ -48,6 +48,7 @@ const themePath = resolve(storybookWorkingDir, 'src/theme.ts');
 // Git reports paths relative to the repository root, and the response echoes them in that form.
 const changedComponentFile = 'packages/ui/src/Button.tsx';
 const changedThemeFile = 'packages/ui/src/theme.ts';
+const changedPreviewFile = 'packages/ui/.storybook/preview.tsx';
 
 const buttonStoryHit = { storyFile: './src/Button.stories.tsx', depth: 1 };
 const previewUrl = 'http://localhost:6006/?path=/story/button--primary';
@@ -71,6 +72,10 @@ const moduleGraph = {
 const storyIndex = { getIndex };
 const git = { getChangedFiles, getRepoRoot };
 const changeStatuses = { getAll: getStatuses };
+const storybookDirs = {
+  configDir: resolve(storybookWorkingDir, '.storybook'),
+  getStaticDirs: async () => [resolve(storybookWorkingDir, 'public')],
+};
 
 let statusesFixture: Record<string, Record<string, unknown>>;
 let graphMatchesByFile: Map<string, Array<{ storyFile: string; depth: number }>>;
@@ -79,7 +84,7 @@ let mcpCtx: ToolsetCtx;
 let toolset: StoriesToolset;
 
 function createToolset(): StoriesToolset {
-  return createStoriesToolset({ storyIndex, git, changeStatuses });
+  return createStoriesToolset({ storyIndex, git, changeStatuses, storybookDirs });
 }
 
 function runPreview(
@@ -267,6 +272,8 @@ describe('stories.changed', () => {
       ],
       counts: { new: 0, modified: 1, affected: 0 },
       unreachableFiles: [changedThemeFile],
+      unreachableFilesTruncated: false,
+      changedConfigFiles: [],
     });
     expect(getStatuses).toHaveBeenCalledOnce();
     expect(cliCtx.getService).toHaveBeenCalledTimes(2);
@@ -328,11 +335,124 @@ describe('stories.changed', () => {
         stories: [],
         counts: { new: 0, modified: 0, affected: 0 },
         unreachableFiles: [],
+        unreachableFilesTruncated: false,
+        changedConfigFiles: [],
       });
       expect(outcome.markdown).toBe('No new, modified, or related stories detected.');
       expect(getStatuses).not.toHaveBeenCalled();
     }
   );
+
+  it('lists only changed files that could render in a story as unreachable', async () => {
+    getChangedFiles.mockResolvedValue({
+      changed: new Set([
+        changedThemeFile,
+        'packages/ui/vite.config.ts',
+        'packages/ui/eslint.config.js',
+        'vitest.config.ts',
+        'apps/web/next.config.ts',
+        'packages/ui/src/Button.test.tsx',
+        'packages/ui/src/env.d.ts',
+        'packages/ui/public/mockServiceWorker.js',
+        'packages/ui/scripts/start.mjs',
+        'packages/ui/src/tokens.css',
+        'packages/ui/src/__tests__/fixture.tsx',
+        'packages/ui/scripts/build.ts',
+        'scripts/release.ts',
+        '.github/scripts/release.ts',
+      ]),
+      new: new Set([
+        '.agent-eval/mcp/browser-mock.mjs',
+        'packages/ui/src/Orphan.tsx',
+        'packages/ui/src/theme.config.ts',
+        'packages/ui/src/Card.vue',
+      ]),
+    });
+
+    const outcome = await runChanged();
+
+    expect(outcome.data.unreachableFiles).toEqual([
+      changedThemeFile,
+      'packages/ui/src/Orphan.tsx',
+      'packages/ui/src/theme.config.ts',
+      'packages/ui/src/Card.vue',
+    ]);
+  });
+
+  it('treats every changed source file as part of the project when Storybook sits at the git root', async () => {
+    getRepoRoot.mockResolvedValue(storybookWorkingDir);
+    getChangedFiles.mockResolvedValue({
+      changed: new Set(['.storybook/preview.tsx', 'vite.config.ts', 'src/theme.ts']),
+      new: new Set(['src/theme.config.ts']),
+    });
+
+    const outcome = await runChanged();
+
+    expect(outcome.data).toMatchObject({
+      changedConfigFiles: ['.storybook/preview.tsx'],
+      unreachableFiles: ['src/theme.ts', 'src/theme.config.ts'],
+    });
+  });
+
+  it('caps the unreachable files and says the list is cut', async () => {
+    const orphans = Array.from({ length: 11 }, (_, i) => `packages/ui/src/Orphan${i}.tsx`);
+    getChangedFiles.mockResolvedValue({ changed: new Set(orphans), new: new Set() });
+
+    const outcome = await runChanged(mcpCtx);
+
+    expect(outcome.data.unreachableFiles).toEqual(orphans.slice(0, 10));
+    expect(outcome.data.unreachableFilesTruncated).toBe(true);
+    expect(outcome.markdown).toContain(
+      'Changed files that no story imports, directly or indirectly (first 10):'
+    );
+  });
+
+  it('does not call a list of exactly the cap cut', async () => {
+    const orphans = Array.from({ length: 10 }, (_, i) => `packages/ui/src/Orphan${i}.tsx`);
+    getChangedFiles.mockResolvedValue({ changed: new Set(orphans), new: new Set() });
+
+    const outcome = await runChanged();
+
+    expect(outcome.data.unreachableFilesTruncated).toBe(false);
+    expect(outcome.markdown).not.toContain('(first');
+  });
+
+  it("lists this Storybook project's unreachable files before other packages'", async () => {
+    getChangedFiles.mockResolvedValue({
+      changed: new Set(['apps/api/src/server.ts']),
+      new: new Set([changedThemeFile]),
+    });
+
+    const outcome = await runChanged();
+
+    expect(outcome.data.unreachableFiles).toEqual([changedThemeFile, 'apps/api/src/server.ts']);
+  });
+
+  it('reports changed config files that apply to every story, not as unreachable', async () => {
+    getChangedFiles.mockResolvedValue({
+      changed: new Set([
+        changedPreviewFile,
+        'packages/ui/.storybook/main.ts',
+        'packages/ui/.storybook/manager.ts',
+        'packages/ui/.storybook/tsconfig.json',
+      ]),
+      new: new Set([
+        'packages/ui/.storybook/decorators.tsx',
+        'packages/ui/.storybook/preview-head.html',
+        'packages/ui/.storybook/preview.css',
+      ]),
+    });
+
+    const outcome = await runChanged();
+
+    expect(outcome.data.changedConfigFiles).toEqual([
+      changedPreviewFile,
+      'packages/ui/.storybook/decorators.tsx',
+      'packages/ui/.storybook/preview-head.html',
+      'packages/ui/.storybook/preview.css',
+    ]);
+    expect(outcome.data.unreachableFiles).toEqual([]);
+  });
 
   it('anchors Git-relative paths at the repository root, not the Storybook working directory', async () => {
     await runChanged();
@@ -383,37 +503,36 @@ New stories:
       );
     });
 
-    it('brackets a non-empty MCP result with a coverage banner and a sanity-check note', async () => {
+    it('names unreachable files in one line between the summary and the story list', async () => {
       markChanged('button--primary', 'status-value:new');
       const outcome = await runChanged(mcpCtx);
 
       expect(outcome.markdown).toBe(
-        `⚠ Coverage gap: 1 modified file unreachable from any story (${changedThemeFile}) — full sanity-check note at end of this response.
-
-Detected 1 changed story (1 new, 0 modified, 0 related).
+        `Detected 1 changed story (1 new, 0 modified, 0 related).
 
 Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.
 
+Changed files that no story imports, directly or indirectly: \`${changedThemeFile}\`. If they affect rendering, find the components that use them and pass those paths to \`stories-find-by-component\`; a component in this list has no stories yet.
+
 New stories:
-- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
-
-Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story above (no static import path connects them — typically theme tokens, decorators, or other preview-runtime files):
-- ${changedThemeFile}
-
-The list above is real but may be stale w.r.t. these files — they're often left over from an earlier sub-change in the same diff. Before composing a review, grep the codebase for their exports and call \`stories-find-by-component\` with the runtime consumers' file paths. Do not assume the list above already covers them, and never invent story IDs to fill the gap.`
+- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
       );
     });
 
-    it('tells MCP how to recover when nothing changed but files are unreachable', async () => {
+    it('tells MCP which changed files no story covers when nothing changed', async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedPreviewFile]),
+        new: new Set([changedThemeFile]),
+      });
+
       const outcome = await runChanged(mcpCtx);
 
       expect(outcome.markdown).toBe(
         `No new, modified, or related stories detected.
 
-The following working-tree file(s) are modified but unreachable from any story (no static import path connects them — they are likely theme tokens, decorators, or other Storybook-preview-runtime files):
-- ${changedThemeFile}
+Changed files in the Storybook config directory, which can affect every story: \`${changedPreviewFile}\`.
 
-For these, grep the codebase for their exports (e.g. specific tokens or symbols) to find runtime consumers, then call \`stories-find-by-component\` with those consumer file paths.`
+Changed files that no story imports, directly or indirectly: \`${changedThemeFile}\`. If they affect rendering, find the components that use them and pass those paths to \`stories-find-by-component\`; a component in this list has no stories yet.`
       );
     });
   });

@@ -72,7 +72,7 @@ import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
 import { initializeSaveStory } from '../utils/save-story/save-story.ts';
-import { parseStaticDir } from '../utils/server-statics.ts';
+import { mapStaticDir, parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
 
@@ -406,6 +406,18 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getChangedFiles: () => gitDiffProvider.getChangedFiles(),
       },
       changeStatuses: { getAll: getSyncedStatuses },
+      storybookDirs: {
+        configDir: pathe.resolve(options.configDir),
+        getStaticDirs: async () =>
+          ((await options.presets.apply('staticDirs')) ?? []).flatMap((staticDir) => {
+            try {
+              return [mapStaticDir(staticDir, options.configDir).staticPath];
+            } catch {
+              // A missing directory throws here, and holds no changed files anyway.
+              return [];
+            }
+          }),
+      },
     })
   );
 

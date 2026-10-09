@@ -1,0 +1,56 @@
+{
+  "id": "webcomponentsfixtures-lit-toolkit-shapes",
+  "name": "lit-toolkit-shapes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-toolkit-shapes--args-default-render": {
+      "id": "webcomponentsfixtures-lit-toolkit-shapes--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-toolkit-shapes
+  size="small"
+  level="3"
+  tags="[&quot;b&quot;]"
+  label="Default render"
+></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+    },
+    "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
+      "id": "webcomponentsfixtures-lit-toolkit-shapes--dom-node",
+      "name": "Dom Node",
+      "snippet": "<lit-toolkit-shapes
+  size="large"
+  level="2"
+  tags="[&quot;b&quot;]"
+  label="Shaped"
+></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-toolkit-shapes'); el.setAttribute('size', String(args.size)); el.setAttribute('level', String(args.level)); el.setAttribute('label', String(args.label)); (el as HTMLElement & { tags: string[]; }).tags = args.tags as string[]; el.addEventListener('toolkit-resize', args.onToolkitResize as EventListener); return el; }` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-lit-toolkit-shapes--lit-template": {
+      "id": "webcomponentsfixtures-lit-toolkit-shapes--lit-template",
+      "name": "Lit Template",
+      "snippet": "<lit-toolkit-shapes
+  size="large"
+  level="2"
+  tags="[&quot;b&quot;]"
+  label="Shaped"
+></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+    },
+  },
+}

@@ -1,6 +1,6 @@
 ---
 name: stories
-description: Invoke FIRST, before creating, editing, or deleting components, stories, styles, CSS, themes, colors, or design tokens — anything that changes how the UI looks, no exceptions. Also for starting or previewing Storybook to verify UI, requests to show, browse, or list components, stories, or UI states, and docs, props, or usage lookups.
+description: Invoke FIRST, before creating, editing, or deleting components, stories, styles, CSS, themes, colors, or design tokens — anything that changes how the UI looks, no exceptions. Also before running story tests, answering a question about a component's props, API, or usage, starting Storybook, or showing or listing components, stories, or UI states.
 ---
 
 Prerequisites:

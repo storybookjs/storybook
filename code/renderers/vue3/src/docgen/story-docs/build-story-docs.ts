@@ -8,7 +8,7 @@ import {
   getStoryImportPathFromEntry,
 } from 'storybook/internal/common';
 import { getService } from 'storybook/internal/core-server';
-import { storyNameFromExport } from 'storybook/internal/csf';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
   buildImportStatements,
   collectImportBindings,
@@ -23,16 +23,13 @@ import {
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
-  resolveRenderFunction,
   resolveReturnedObjectExpression,
   returnedExpression,
   returnedExpressionPath,
   unresolvedWarning,
   unwrapExpression,
   type ImportBinding,
-  type ReferenceContext,
   type RenderFunctionPath,
-  type RenderResolution,
   type StoryArgsResolver,
   type StoryReferenceResolver,
 } from 'storybook/internal/csf-tools';
@@ -52,6 +49,7 @@ import {
   transformTemplate,
   type TemplateRenderConfig,
 } from './transform-template/transform-template.ts';
+import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
@@ -323,13 +321,7 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const storyConfigPath = normalized.type === 'config' ? normalized.path : undefined;
-  const effectiveRender = resolveEffectiveRender(
-    storyConfigPath,
-    options.metaPath,
-    csf._storyDeclarationPath[storyExport],
-    options.resolver.ctx
-  );
+  const effectiveRender = resolveEffectiveRender(csf, storyExport, options.resolver.ctx);
   const renderer =
     effectiveRender.kind === 'resolved'
       ? staticRendererForRenderFunction(effectiveRender.path, options)
@@ -534,28 +526,4 @@ function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expr
 function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {
   const [parameter] = renderFunction.params;
   return t.isIdentifier(parameter) ? parameter.name : undefined;
-}
-
-function resolveEffectiveRender(
-  storyConfigPath: NodePath<t.ObjectExpression> | undefined,
-  metaPath: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>,
-  references: ReferenceContext
-): RenderResolution {
-  const storyRender = resolveRenderFromObjectPath(storyConfigPath, storyDeclaration, references);
-  return storyRender.kind !== 'missing'
-    ? storyRender
-    : resolveRenderFromObjectPath(metaPath, storyDeclaration, references);
-}
-
-function resolveRenderFromObjectPath(
-  path: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>,
-  references: ReferenceContext
-): RenderResolution {
-  try {
-    return resolveRenderFunction(path, storyDeclaration, references);
-  } catch {
-    return { kind: 'unresolved' };
-  }
 }

@@ -1,10 +1,12 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [Icons component removed](#icons-component-removed)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
@@ -20,6 +22,7 @@
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
@@ -594,6 +597,24 @@
 
 ## From version 10.x to 11.0.0
 
+### Legacy highlight object format removed
+
+The legacy highlight payload `{ elements, color, style }` is no longer accepted by the `HIGHLIGHT` event. Senders must use the current format, which targets elements with `selectors` and controls their appearance with `styles`:
+
+| Removed | Replacement |
+| --- | --- |
+| `elements` | `selectors` |
+| `color` and `style` | `styles` (CSS properties, e.g. `{ outline: '2px dashed red' }`) |
+
+```diff
+import { HIGHLIGHT } from 'storybook/highlight';
+
+- emit(HIGHLIGHT, { elements: ['#button'], color: 'red', style: 'dashed' });
++ emit(HIGHLIGHT, { selectors: ['#button'], styles: { outline: '2px dashed red' } });
+```
+
+The full payload contract is `{ selectors, styles, hoverStyles, focusStyles, menu, priority, id }`. See the [highlight documentation](./docs/essentials/highlight.mdx) for the complete reference.
+
 ### Tag filtering API
 
 Storybook 11 removes the experimental and undocumented tag filtering names. They no longer work at runtime.
@@ -685,6 +706,28 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+### `viewport.defaultViewport` parameter and `responsiveViewport` removed
+
+Storybook 11 removes the deprecated `parameters.viewport.defaultViewport` parameter and the `responsiveViewport` export from `storybook/viewport`. Set the viewport with the `globals` API instead:
+
+```diff
+// .storybook/preview.ts
+export default {
+-  viewport: {
+-    defaultViewport: 'mobile1',
+-  },
++  initialGlobals: {
++    viewport: {
++      value: 'mobile1',
++    },
++  },
+};
+```
+
+`parameters.viewport.viewports` and `parameters.viewport.options`, which define the available viewports, remain unchanged.
+
+If you imported `responsiveViewport` from `storybook/viewport`, remove the import. Selecting the responsive, full-size view still works through the viewport addon UI.
 
 ### `parameters.componentSubtitle` removed
 
@@ -957,6 +1000,10 @@ option exists in both places, keep the nested value because it was authoritative
 `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working - the parameter is optional.
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
+
+### Escape is no longer a configurable shortcut
+
+The `escape` entry was removed from the manager's configurable shortcuts: `api.getShortcutKeys()` no longer includes it, and the types no longer accept `api.setShortcut('escape', ...)`. Escape still exits fullscreen, but as fixed behavior layered under overlay dismissal (a popover, menu, or modal that consumes Escape closes without also exiting fullscreen), so it cannot be rebound or shadowed from the shortcuts settings page.
 
 ### 'Create new story' UI feature removed
 

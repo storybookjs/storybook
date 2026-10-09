@@ -1,0 +1,28 @@
+{
+  "id": "webcomponentsfixtures-stencil-props",
+  "name": "stencil-props",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-stencil-props--args-default-render": {
+      "id": "webcomponentsfixtures-stencil-props--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<stencil-props
+  value="1"
+  max="5"
+  variant="full"
+  aria-label-text="Default rating"
+></stencil-props>",
+    },
+    "webcomponentsfixtures-stencil-props--dom-node": {
+      "id": "webcomponentsfixtures-stencil-props--dom-node",
+      "name": "Dom Node",
+      "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('stencil-props'); el.setAttribute('value', String(args.value)); el.setAttribute('max', String(args.max)); el.setAttribute('variant', String(args.variant)); el.setAttribute('aria-label-text', String(args.labelText)); return el; }` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-stencil-props--lit-template": {
+      "id": "webcomponentsfixtures-stencil-props--lit-template",
+      "name": "Lit Template",
+      "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+    },
+  },
+}

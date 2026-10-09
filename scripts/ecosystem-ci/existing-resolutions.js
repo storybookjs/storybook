@@ -12,6 +12,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@babel/traverse',
   '@babel/types',
   '@playwright/test',
+  '@storybook/nextjs-vite-rsc/@types/react',
   '@testing-library/jest-dom',
   '@testing-library/user-event@npm:^14.4.0',
   '@testing-library/user-event@npm:^14.6.3',

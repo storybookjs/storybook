@@ -10616,6 +10616,29 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/nextjs-vite-rsc@workspace:code/frameworks/nextjs-vite-rsc":
+  version: 0.0.0-use.local
+  resolution: "@storybook/nextjs-vite-rsc@workspace:code/frameworks/nextjs-vite-rsc"
+  dependencies:
+    "@storybook/builder-vite": "workspace:*"
+    "@types/node": "npm:^22.19.1"
+    "@types/react": "npm:^19.2.18"
+    typescript: "npm:^6.0.3"
+    vitest-plugin-rsc: "https://pkg.pr.new/vitest-plugin-rsc@98467dd"
+  peerDependencies:
+    "@next/routing": ^16.4.0
+    "@storybook/addon-docs": "workspace:^"
+    next: ^16.4.0
+    react: ^19.0.0
+    react-dom: ^19.0.0
+    storybook: "workspace:^"
+    vite: ^8.0.0
+  peerDependenciesMeta:
+    "@storybook/addon-docs":
+      optional: true
+  languageName: unknown
+  linkType: soft
+
 "@storybook/nextjs-vite@workspace:code/frameworks/nextjs-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/nextjs-vite@workspace:code/frameworks/nextjs-vite"
@@ -12913,6 +12936,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react@npm:^19.2.18":
+  version: 19.3.0
+  resolution: "@types/react@npm:19.3.0"
+  dependencies:
+    csstype: "npm:^3.2.2"
+  checksum: 10c0/fbcabf303f935ca9f36ed2dcf81751cf84744098c5a683c8a62a0fa7edd31714b48d5c46b12fd0014f7f2dfe4d9ec6de428a850748eec719a70294e51029551b
+  languageName: node
+  linkType: hard
+
 "@types/resolve@npm:^1.20.2":
   version: 1.20.6
   resolution: "@types/resolve@npm:1.20.6"
@@ -14281,6 +14313,31 @@ __metadata:
   peerDependencies:
     vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   checksum: 10c0/bac0a409e71eee954a05bc41580411c369bd5f9ef0586a1f9743fba76ad6603c437d93d407d230780015361f93d1592c55e53314813cded6369c36d3c1e8edbf
+  languageName: node
+  linkType: hard
+
+"@vitejs/plugin-rsc@npm:0.5.36":
+  version: 0.5.36
+  resolution: "@vitejs/plugin-rsc@npm:0.5.36"
+  dependencies:
+    "@rolldown/pluginutils": "npm:^1.0.1"
+    es-module-lexer: "npm:^3.0.3"
+    estree-walker: "npm:^3.0.3"
+    magic-string: "npm:^1.4.3"
+    obug: "npm:^3.0.0"
+    srvx: "npm:^1.0.5"
+    strip-literal: "npm:^4.0.0"
+    turbo-stream: "npm:^3.2.1"
+    vitefu: "npm:^1.1.3"
+  peerDependencies:
+    react: "*"
+    react-dom: "*"
+    react-server-dom-webpack: "*"
+    vite: "*"
+  peerDependenciesMeta:
+    react-server-dom-webpack:
+      optional: true
+  checksum: 10c0/df3372ae1bca7a4c199970a58937fa1feeaa79e7bda05288962dad5b7768dffa27ea28b7eb77c757d53bed8375a13979ae3294281ce0a222824c68ccc0cc64d4
   languageName: node
   linkType: hard
 
@@ -17372,6 +17429,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cjs-module-lexer@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "cjs-module-lexer@npm:2.3.0"
+  checksum: 10c0/9a6b9ca6f3c4734e108afa7a9cdf9ebf180329e1f94729a8a054102b2d66f5bbd62beb6a7b25ed8b0feca561c96542f34583fe5f0a72691751ff3ab718f5690f
+  languageName: node
+  linkType: hard
+
 "class-variance-authority@npm:^0.7.1":
   version: 0.7.1
   resolution: "class-variance-authority@npm:0.7.1"
@@ -19856,6 +19920,13 @@ __metadata:
   version: 2.3.2
   resolution: "es-module-lexer@npm:2.3.2"
   checksum: 10c0/5e7389424c43478439f12f9a6aca1750f6f99afa384fc3de329f4a45f152ab156671055008adaafc74960877abf8cc338aeebf6bed8c21297b146fd6eb7a22f8
+  languageName: node
+  linkType: hard
+
+"es-module-lexer@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "es-module-lexer@npm:3.0.3"
+  checksum: 10c0/9c040aca427aa06683b5746d3156f512b5f7ee7cfd18eccb31756bac74605e6432ae04e77b4bc153b7295b0feb907343b127dce1e7723941db27890838c8b5a4
   languageName: node
   linkType: hard
 
@@ -25831,6 +25902,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"magic-string@npm:^1.4.3":
+  version: 1.4.3
+  resolution: "magic-string@npm:1.4.3"
+  dependencies:
+    "@jridgewell/sourcemap-codec": "npm:^1.6.0"
+  checksum: 10c0/857743a1e7039d2e867505bb272a57cc605f610b90f6bf9ef6cbf9654e9cd64330ec35e564a58ca455350529872c3ecc01f37da934da130391237f9f593cc565
+  languageName: node
+  linkType: hard
+
 "magicast@npm:^0.3.5":
   version: 0.3.5
   resolution: "magicast@npm:0.3.5"
@@ -27985,6 +28065,13 @@ __metadata:
   version: 2.2.1
   resolution: "obug@npm:2.2.1"
   checksum: 10c0/8a7c001847d880fa6ba83c7bbee6a80fd271ee628439cd508c8647d53b217abb1759e2d5e4aaeb09a35d0a274bdb225a0a5a78eded3213d63e656153cf411b63
+  languageName: node
+  linkType: hard
+
+"obug@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "obug@npm:3.0.0"
+  checksum: 10c0/985625b70ea05a39956da94f406040a0c7d27b1699a14af87b1ea75cba915b5957b75c4acdaccaefa2a86eaf40fc968bc00f6c28755a91496fc91a92b1513b38
   languageName: node
   linkType: hard
 
@@ -33460,6 +33547,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"srvx@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "srvx@npm:1.0.5"
+  bin:
+    srvx: ./bin/srvx.mjs
+  checksum: 10c0/7ff87707840af95b399a11ab0b2fba6ded66a1d4658324913a1c95c916304056e5e618a9fc93803c1351aaf6acf4f7f3c5f55f18e82110a2ce876246d770c881
+  languageName: node
+  linkType: hard
+
 "ssh2@npm:^1.15.0":
   version: 1.17.0
   resolution: "ssh2@npm:1.17.0"
@@ -34145,6 +34241,15 @@ __metadata:
   version: 3.1.1
   resolution: "strip-json-comments@npm:3.1.1"
   checksum: 10c0/9681a6257b925a7fa0f285851c0e613cc934a50661fa7bb41ca9cbbff89686bb4a0ee366e6ecedc4daafd01e83eee0720111ab294366fe7c185e935475ebcecd
+  languageName: node
+  linkType: hard
+
+"strip-literal@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "strip-literal@npm:4.0.0"
+  dependencies:
+    js-tokens: "npm:^10.0.0"
+  checksum: 10c0/166dcaf997c185d6d6a19ed9877d182bc6bf8286e71113e1c03e6d9c916b28f11380c202bb6f6e08f9e3b48d3aa05c5e333eb733d7bbb54ea857bca39f05d6df
   languageName: node
   linkType: hard
 
@@ -35212,6 +35317,13 @@ __metadata:
   version: 0.0.6
   resolution: "tunnel@npm:0.0.6"
   checksum: 10c0/e27e7e896f2426c1c747325b5f54efebc1a004647d853fad892b46d64e37591ccd0b97439470795e5262b5c0748d22beb4489a04a0a448029636670bfd801b75
+  languageName: node
+  linkType: hard
+
+"turbo-stream@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "turbo-stream@npm:3.2.1"
+  checksum: 10c0/0bcc9a3f1ef99a54a922c45b3bc0eb47438565e40c094e160233f997088e9d901df3c7b4455479b468f11f73a6fa8bf692447c3206afdace2d06862b8a2f6f37
   languageName: node
   linkType: hard
 
@@ -36578,6 +36690,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"vitefu@npm:^1.1.3":
+  version: 1.1.3
+  resolution: "vitefu@npm:1.1.3"
+  peerDependencies:
+    vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    vite:
+      optional: true
+  checksum: 10c0/6cfcd52a17339f63f71ef08787a68850a17a9d9dd7a688e29e41067f963eb2cd5192bb65d38df87fa3a733a21e0229aaa6382201655c1599699e5d6669e3e094
+  languageName: node
+  linkType: hard
+
 "vitest-axe@npm:^0.1.0":
   version: 0.1.0
   resolution: "vitest-axe@npm:0.1.0"
@@ -36591,6 +36715,30 @@ __metadata:
   peerDependencies:
     vitest: ">=0.16.0"
   checksum: 10c0/ad523ad3115f66b1605c3c0ea6a9932867c4273f8ad73b717afc5fe496159b5e11d50a8babf05ce4990c612558ee24579cf14258304ce6b32a77d15be9e98aa6
+  languageName: node
+  linkType: hard
+
+"vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@98467dd":
+  version: 0.3.0
+  resolution: "vitest-plugin-rsc@https://pkg.pr.new/vitest-plugin-rsc@98467dd"
+  dependencies:
+    "@jridgewell/gen-mapping": "npm:^0.3.13"
+    "@vitejs/plugin-rsc": "npm:0.5.36"
+    cjs-module-lexer: "npm:^2.3.0"
+    convert-source-map: "npm:^2.0.0"
+  peerDependencies:
+    "@next/routing": ">=16.4.0-0"
+    next: ">=16.4.0-0"
+    react: "*"
+    react-dom: "*"
+    vite: ">=8.0.0"
+    vitest: ">=5.0.3"
+  peerDependenciesMeta:
+    "@next/routing":
+      optional: true
+    next:
+      optional: true
+  checksum: 10c0/9694fdd121ce43574c112cfbca66c1f83273b453972f2d60026d3fa4118ddc0bfe1b9060cc00e00c7eabd3aa79c43db34eba7dd8eb8f4cc002603fa0bbe0faaa
   languageName: node
   linkType: hard
 

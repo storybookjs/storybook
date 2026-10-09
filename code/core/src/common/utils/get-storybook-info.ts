@@ -36,6 +36,8 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
   '@storybook/preact': SupportedRenderer.PREACT,
   '@storybook/server': SupportedRenderer.SERVER,
   '@storybook/react-native': SupportedRenderer.REACT_NATIVE,
+  // A framework that is its own renderer, like Angular and Ember
+  '@storybook/nextjs-vite-rsc': SupportedRenderer.NEXTJS_VITE_RSC,
 
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedRenderer.QWIK,
@@ -56,6 +58,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   '@storybook/sveltekit': SupportedFramework.SVELTEKIT,
   '@storybook/vue3-vite': SupportedFramework.VUE3_VITE,
   '@storybook/nextjs-vite': SupportedFramework.NEXTJS_VITE,
+  '@storybook/nextjs-vite-rsc': SupportedFramework.NEXTJS_VITE_RSC,
   '@storybook/react-native-web-vite': SupportedFramework.REACT_NATIVE_WEB_VITE,
   '@storybook/web-components-vite': SupportedFramework.WEB_COMPONENTS_VITE,
   '@storybook/tanstack-react': SupportedFramework.TANSTACK_REACT,

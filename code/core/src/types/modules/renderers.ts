@@ -12,4 +12,5 @@ export enum SupportedRenderer {
   SERVER = 'server',
   SOLID = 'solid',
   NUXT = 'nuxt',
+  NEXTJS_VITE_RSC = 'nextjs-vite-rsc',
 }

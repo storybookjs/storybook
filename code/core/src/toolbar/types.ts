@@ -1,3 +1,5 @@
+import type { ComponentType, SVGAttributes } from 'react';
+
 import type { InputType } from 'storybook/internal/types';
 
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
@@ -12,21 +14,27 @@ export interface ToolbarShortcutConfig {
 export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig>;
 
 /**
- * Legacy string icon name from the removed `Icons` component.
+ * The props accepted by the icon components exported from `@storybook/icons`.
  *
- * String icon names no longer render: icons must be provided as a React node. Toolbar menus
- * relying on `icon` should set a `title` so they remain usable.
- * @deprecated Remove in a future major; see https://github.com/storybookjs/storybook/issues/29159
+ * The package exports only the individual icon components, not their props type, so the shape is
+ * mirrored here.
  */
-export type ToolbarIconName = string;
+type ToolbarIconProps = SVGAttributes<SVGElement> & {
+  children?: never;
+  color?: string;
+  size?: number;
+};
+
+/**
+ * An icon component individually imported from `@storybook/icons`, e.g. `CircleHollowIcon`.
+ * Legacy string icon names are no longer supported.
+ */
+export type ToolbarIconType = ComponentType<ToolbarIconProps>;
 
 export interface ToolbarItem {
   value?: string;
-  /**
-   * No longer renders; string icon names were removed with the `Icons` component.
-   * @deprecated
-   */
-  icon?: ToolbarIconName;
+  /** Icon component from `@storybook/icons`, e.g. `import { CircleHollowIcon } from '@storybook/icons'` */
+  icon?: ToolbarIconType;
   right?: string;
   title?: string;
   hideIcon?: boolean;
@@ -36,8 +44,8 @@ export interface ToolbarItem {
 export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
-  /** No longer renders; the `Icons`/`Symbols` components were removed in Storybook 11. */
-  icon?: ToolbarIconName;
+  /** Icon component from `@storybook/icons` shown next to the toolbar title */
+  icon?: ToolbarIconType;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;
   items: ToolbarItem[];

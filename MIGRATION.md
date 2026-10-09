@@ -627,13 +627,16 @@ The deprecated `Icons` and `Symbols` components are removed from `@storybook/com
 +<HeartIcon />
 ```
 
-String icon names in `globalTypes` toolbar menus no longer render. Toolbar menu items still fall back to their `value` when they have no `title`, but the toolbar itself does not: a toolbar configured without a `title` (previously covered by the string `icon`) renders without a visible label and logs a `console.warn`. Give every toolbar menu a `title`:
+Toolbar menus in `globalTypes` accept an icon component from `@storybook/icons` instead of a string name. Import the icon individually and pass the component as the `icon`; legacy string names from the removed map are no longer supported. Passing an `icon` on individual items works the same way. A toolbar menu item still falls back to its `value` when it has no `title`, but the toolbar itself does not: a toolbar configured without both a `title` and an `icon` renders without a visible label and logs a `console.warn`. Give every toolbar menu a `title`:
 
 ```diff
-myAddon: {
-  toolbar: {
++import { CircleHollowIcon } from '@storybook/icons';
++
+ myAddon: {
+   toolbar: {
 -   icon: 'circle',
-+   title: 'Background',
++   icon: CircleHollowIcon,
+    title: 'Background',
     items: [{ value: 'light', title: 'Light' }],
   },
 }

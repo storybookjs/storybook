@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getService } from '../../shared/open-service/server.ts';
-import { importModule } from '../../shared/utils/module.ts';
 import type { Options } from '../../types/index.ts';
 
 import { isAddonA11yEnabled } from './addon-a11y.ts';
@@ -10,7 +9,6 @@ import {
   getEffectiveToolAvailability,
   getToolAvailability,
   isModuleGraphSupported,
-  isModuleGraphSupportedByBuilder,
   type ToolAvailability,
 } from './availability.ts';
 import { getManifestStatus } from './manifest-status.ts';
@@ -19,17 +17,11 @@ vi.mock('./manifest-status.ts', () => ({ getManifestStatus: vi.fn() }));
 vi.mock('./addon-vitest.ts', () => ({ isAddonVitestEnabled: vi.fn() }));
 vi.mock('./addon-a11y.ts', () => ({ isAddonA11yEnabled: vi.fn() }));
 vi.mock('../../shared/open-service/server.ts', () => ({ getService: vi.fn() }));
-vi.mock('../../shared/utils/module.ts', () => ({ importModule: vi.fn() }));
 
-function createOptions({ features }: { features?: Record<string, unknown> } = {}): Options {
+function createOptions(): Options {
   return {
     presets: {
-      apply: vi.fn(async (key: string, defaultValue?: unknown) => {
-        if (key === 'features') {
-          return features ?? {};
-        }
-        return defaultValue;
-      }),
+      apply: vi.fn(async (_key: string, defaultValue?: unknown) => defaultValue),
     },
   } as unknown as Options;
 }
@@ -58,16 +50,12 @@ describe('getToolAvailability', () => {
     });
     vi.mocked(isAddonVitestEnabled).mockResolvedValue(true);
     vi.mocked(isAddonA11yEnabled).mockResolvedValue(true);
+    vi.mocked(getService).mockReturnValue({} as any);
 
-    const result = await getToolAvailability(
-      createOptions({ features: { changeDetection: true } }),
-      { moduleGraphSupported: true }
-    );
+    const result = await getToolAvailability(createOptions());
 
     expect(result).toEqual({
       moduleGraphSupported: true,
-      changeDetectionEnabled: true,
-      reviewEnabled: true,
       docsEnabled: true,
       docsEnabledForCli: true,
       docsHasManifests: true,
@@ -105,7 +93,7 @@ describe('getToolAvailability', () => {
     expect(result.docsEnabledForCli).toBe(false);
   });
 
-  it('probes the module-graph service directly when no override is given', async () => {
+  it('probes the module-graph service', async () => {
     vi.mocked(getService).mockReturnValue({} as any);
 
     const result = await getToolAvailability(createOptions());
@@ -113,30 +101,11 @@ describe('getToolAvailability', () => {
     expect(result.moduleGraphSupported).toBe(true);
     expect(getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
   });
-
-  it('turns review off together with change detection', async () => {
-    const result = await getToolAvailability(
-      createOptions({ features: { changeDetection: false } })
-    );
-
-    expect(result.changeDetectionEnabled).toBe(false);
-    expect(result.reviewEnabled).toBe(false);
-  });
-
-  it('reads pre-resolved features instead of the features preset', async () => {
-    const options = createOptions({ features: { changeDetection: false } });
-
-    const result = await getToolAvailability(options, { features: { changeDetection: true } });
-
-    expect(result.reviewEnabled).toBe(true);
-  });
 });
 
 describe('getEffectiveToolAvailability', () => {
   const base: ToolAvailability = {
     moduleGraphSupported: false,
-    changeDetectionEnabled: false,
-    reviewEnabled: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,
@@ -171,38 +140,5 @@ describe('isModuleGraphSupported', () => {
       throw new Error('missing');
     });
     expect(await isModuleGraphSupported()).toBe(false);
-  });
-});
-
-describe('isModuleGraphSupportedByBuilder', () => {
-  it('returns false when no builder is configured', async () => {
-    const options = { presets: { apply: vi.fn().mockResolvedValue(undefined) } };
-    expect(await isModuleGraphSupportedByBuilder(options as any)).toBe(false);
-  });
-
-  it('returns true when the builder exports a changeDetectionAdapter', async () => {
-    vi.mocked(importModule).mockResolvedValue({ changeDetectionAdapter: () => {} });
-    const options = {
-      presets: { apply: vi.fn().mockResolvedValue({ builder: '@storybook/builder-vite' }) },
-    };
-    expect(await isModuleGraphSupportedByBuilder(options as any)).toBe(true);
-  });
-
-  it('returns false when the builder cannot be imported', async () => {
-    vi.mocked(importModule).mockRejectedValue(new Error('cannot resolve'));
-    const options = {
-      presets: { apply: vi.fn().mockResolvedValue({ builder: '@storybook/builder-webpack5' }) },
-    };
-    expect(await isModuleGraphSupportedByBuilder(options as any)).toBe(false);
-  });
-
-  it('resolves a builder configured as an object with a name property', async () => {
-    vi.mocked(importModule).mockResolvedValue({ changeDetectionAdapter: () => {} });
-    const options = {
-      presets: {
-        apply: vi.fn().mockResolvedValue({ builder: { name: '@storybook/builder-vite' } }),
-      },
-    };
-    expect(await isModuleGraphSupportedByBuilder(options as any)).toBe(true);
   });
 });

@@ -46,9 +46,14 @@ type TypescriptOptions = TypescriptOptionsBase & {
    * Sets the type of Docgen when working with React and TypeScript
    *
    * @default `'react-docgen'`
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
   reactDocgen: 'react-docgen-typescript' | 'react-docgen' | false;
-  /** Configures `@joshwooding/vite-plugin-react-docgen-typescript` */
+  /**
+   * Configures `@joshwooding/vite-plugin-react-docgen-typescript`
+   *
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
+   */
   reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
 };
 

@@ -1,0 +1,3 @@
+<meta-render label="dom"></meta-render>
+
+warning: Incomplete snippet: `() => document.createElement('meta-render')` could not be resolved statically.

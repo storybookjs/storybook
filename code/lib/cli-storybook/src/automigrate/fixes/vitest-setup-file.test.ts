@@ -1012,6 +1012,61 @@ describe('transformSetupFile', () => {
     a11yRegistered: true,
   };
 
+  it('keeps the license header of a statement it removes', () => {
+    const result = transformSetupFile(
+      dedent`
+        //
+        // Copyright 2024 DXOS.org
+        //
+
+        import { setProjectAnnotations } from '@storybook/react-vite';
+        import { beforeAll } from 'vitest';
+        import * as projectAnnotations from './preview';
+        import { setupTests } from './setup';
+
+        const annotations = setProjectAnnotations([projectAnnotations]);
+        beforeAll(annotations.beforeAll);
+        setupTests();
+      `,
+      options
+    );
+
+    expect(result.kind === 'rewritten' && result.code).toMatchInlineSnapshot(`
+      "//
+      // Copyright 2024 DXOS.org
+      //
+
+      import { setupTests } from './setup';
+
+      setupTests();"
+    `);
+  });
+
+  it('drops a directive with the statement it removes', () => {
+    const result = transformSetupFile(
+      dedent`
+        // Copyright Example
+
+        // eslint-disable-next-line import/no-unresolved
+        import { setProjectAnnotations } from '@storybook/react-vite';
+        import * as projectAnnotations from './preview';
+        import { setupTests } from './setup';
+
+        setProjectAnnotations([projectAnnotations]);
+        setupTests();
+      `,
+      options
+    );
+
+    expect(result.kind === 'rewritten' && result.code).toMatchInlineSnapshot(`
+      "// Copyright Example
+
+      import { setupTests } from './setup';
+
+      setupTests();"
+    `);
+  });
+
   it('empties the pre-10.3 boilerplate', () => {
     expect(transformSetupFile(PREVIEW_ONLY_SETUP_FILE, options)).toEqual({ kind: 'empty' });
     expect(transformSetupFile(A11Y_SETUP_FILE, options)).toEqual({ kind: 'empty' });

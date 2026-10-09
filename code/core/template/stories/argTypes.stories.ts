@@ -1,8 +1,4 @@
-import type {
-  PartialStoryFn,
-  PlayFunctionContext,
-  StoryContextForRender,
-} from 'storybook/internal/types';
+import type { PartialStoryFn, StoryContext, StoryContextForRender } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -27,7 +23,7 @@ export const Inheritance = {
     storyArg: { type: 'number' },
     composedArg: { options: ['a', 'b'] },
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     // NOTE: these stories don't test project-level argTypes inheritance as it is too problematic
     // to have an argType floating around that will apply too *all* other stories in our sandboxes.
     await expect(JSON.parse(within(canvasElement).getByTestId('pre').innerText)).toMatchObject({
@@ -47,7 +43,7 @@ export const ArgTypeInference = {
     d: { a: 'b' },
     e: ['a', 'b'],
   },
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     const argTypes = JSON.parse(within(canvasElement).getByTestId('pre').innerText);
     // `prepareStory` skips `inferArgTypes` when `docgenServer` is on; the manager
     // runs that second pass in `mergeServiceArgTypes`, so the preview canvas never sees types
@@ -72,7 +68,7 @@ export const ArgTypeInference = {
 };
 
 export const HiddenFromPlay = {
-  play: async (context: PlayFunctionContext<any>) => {
+  play: async (context: StoryContext<any>) => {
     expect('argTypes' in context).toBe(false);
     expect(() => context.argTypes).toThrow(/no longer part of the story context/);
   },

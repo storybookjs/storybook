@@ -41,7 +41,7 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
 };
 
 export function renderToCanvas(
-  { storyFn, kind, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
+  { storyFn, title, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
   canvasElement: WebComponentsRenderer['canvasElement']
 ): void {
   const element = storyFn();
@@ -72,7 +72,7 @@ export function renderToCanvas(
     simulateDOMContentLoaded();
   } else {
     showError({
-      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${kind}".`,
+      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${title}".`,
       description: dedent`
         Did you forget to return the HTML snippet from the story?
         Use "() => <your snippet or node>" or when defining the story.

@@ -1,6 +1,6 @@
 import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
 import { toId } from 'storybook/internal/csf';
-import type { ComponentTitle, StoryId, StoryKind, StoryName } from 'storybook/internal/types';
+import type { ComponentTitle, StoryId, StoryName } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -14,7 +14,7 @@ interface ParamsId {
   storyId: StoryId;
 }
 interface ParamsCombo {
-  kind?: StoryKind;
+  kind?: ComponentTitle;
   title?: ComponentTitle;
   story?: StoryName;
   name?: StoryName;

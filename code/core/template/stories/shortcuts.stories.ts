@@ -1,5 +1,5 @@
 import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
-import type { PlayFunctionContext } from 'storybook/internal/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -15,7 +15,7 @@ export default {
 };
 
 export const KeydownDuringPlay = {
-  play: async ({ canvasElement }: PlayFunctionContext<any>) => {
+  play: async ({ canvasElement }: StoryContext<any>) => {
     const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
 
     const previewKeydown = fn();

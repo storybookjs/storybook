@@ -332,7 +332,6 @@ describe.skip('decorateStory', () => {
 function makeContext(input: Record<string, unknown>): StoryContextForRender<AngularRenderer> {
   return {
     id: 'id',
-    kind: 'kind',
     name: 'name',
     viewMode: 'story',
     parameters: {},

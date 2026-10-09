@@ -6,6 +6,7 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SELECT_STORY,
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
@@ -1428,7 +1429,10 @@ describe('stories API', () => {
         {
           id: 'ref',
           setStoriesData: {
-            'a--1': { kind: 'a', parameters: { global: 'global', kind: 'kind', story: 'story' } },
+            'a--1': {
+              kind: 'a',
+              parameters: { global: 'global', story: 'story' },
+            },
           },
         },
         true
@@ -1466,6 +1470,73 @@ describe('stories API', () => {
       );
     });
   });
+  describe('SELECT_STORY event', () => {
+    it('resolves the story from title and name', () => {
+      const fullAPI = {
+        findRef: vi.fn(),
+        setRef: vi.fn(),
+        selectStory: vi.fn(),
+      };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        title: 'a',
+        name: '1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', {
+        viewMode: 'story',
+      });
+    });
+
+    it('resolves the story from storyId when provided', () => {
+      const fullAPI = {
+        findRef: vi.fn(),
+        setRef: vi.fn(),
+        selectStory: vi.fn(),
+      };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        storyId: 'a--1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, {
+        viewMode: 'story',
+      });
+    });
+
+    it('does not fall back to the legacy kind/story payload fields', () => {
+      const fullAPI = {
+        findRef: vi.fn(),
+        setRef: vi.fn(),
+        selectStory: vi.fn(),
+      };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        kind: 'a',
+        story: '1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith(undefined, undefined, {
+        viewMode: 'story',
+      });
+    });
+  });
+
   describe('SET_CONFIG', () => {
     it('ignores sidebar.filters when config arrives after the index', async () => {
       const moduleArgs = createMockModuleArgs({

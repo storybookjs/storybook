@@ -6,7 +6,7 @@ import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from 'storybook/internal/cor
 import { global } from '@storybook/global';
 
 import { throttle } from 'es-toolkit/function';
-import type { StoriesHash } from 'storybook/manager-api';
+import type { IndexHash } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
@@ -26,7 +26,7 @@ export interface ExpandedProps {
   containerRef: MutableRefObject<HTMLElement>;
   isBrowsing: boolean;
   refId: string;
-  data: StoriesHash;
+  data: IndexHash;
   initialExpanded?: ExpandedState;
   rootIds: string[];
   highlightedRef: MutableRefObject<Highlight>;
@@ -44,7 +44,7 @@ const initializeExpanded = ({
   selectedStoryId,
 }: {
   refId: string;
-  data: StoriesHash;
+  data: IndexHash;
   initialExpanded?: ExpandedState;
   highlightedRef: MutableRefObject<Highlight>;
   rootIds: string[];
@@ -87,7 +87,7 @@ export const useExpanded = ({
     Reducer<ExpandedState, ExpandAction>,
     {
       refId: string;
-      data: StoriesHash;
+      data: IndexHash;
       highlightedRef: MutableRefObject<Highlight>;
       rootIds: string[];
       initialExpanded: ExpandedState;

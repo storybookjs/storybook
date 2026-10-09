@@ -19,13 +19,7 @@ import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken } from 'polished';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import type {
-  API,
-  ComponentEntry,
-  GroupEntry,
-  StoriesHash,
-  StoryEntry,
-} from 'storybook/manager-api';
+import type { API, ComponentEntry, GroupEntry, IndexHash, StoryEntry } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
@@ -607,7 +601,7 @@ export const Tree = React.memo<{
   isMain: boolean;
   allStatuses?: StatusesByStoryIdAndTypeId;
   refId: string;
-  data: StoriesHash;
+  data: IndexHash;
   docsMode: boolean;
   highlightedRef: MutableRefObject<Highlight>;
   setHighlightedItemId: (itemId: string) => void;

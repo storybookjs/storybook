@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   type API_PreparedStoryIndex,
   type StatusesByStoryIdAndTypeId,
-  type StoryIndexV2,
   type StoryIndexV3,
 } from 'storybook/internal/types';
 
@@ -11,17 +10,9 @@ import type { State } from '../root.tsx';
 import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
   transformStoryIndexToStoriesHash,
-  transformStoryIndexV2toV3,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
 } from './stories.ts';
-
-const baseV2: StoryIndexV2['stories'][0] = {
-  id: '1',
-  story: '',
-  kind: '',
-  parameters: {},
-};
 
 const baseV3: StoryIndexV3['stories'][0] = {
   id: '1',
@@ -32,54 +23,6 @@ const baseV3: StoryIndexV3['stories'][0] = {
   parameters: {},
   importPath: '',
 };
-
-describe('transformStoryIndexV2toV3', () => {
-  it('transforms a StoryIndexV2 to a StoryIndexV3 correctly', () => {
-    const indexV2: StoryIndexV2 = {
-      v: 2,
-      stories: {
-        '1': {
-          ...baseV2,
-          id: '1',
-          kind: 'story',
-          story: 'Story 1',
-        },
-        '2': {
-          ...baseV2,
-          id: '2',
-          kind: 'blog',
-          story: 'Blog 1',
-        },
-      },
-    };
-
-    expect(transformStoryIndexV2toV3(indexV2)).toMatchInlineSnapshot(`
-      {
-        "stories": {
-          "1": {
-            "id": "1",
-            "importPath": "",
-            "kind": "story",
-            "name": "Story 1",
-            "parameters": {},
-            "story": "Story 1",
-            "title": "story",
-          },
-          "2": {
-            "id": "2",
-            "importPath": "",
-            "kind": "blog",
-            "name": "Blog 1",
-            "parameters": {},
-            "story": "Blog 1",
-            "title": "blog",
-          },
-        },
-        "v": 3,
-      }
-    `);
-  });
-});
 
 describe('transformStoryIndexV3toV4', () => {
   it('transforms a StoryIndexV3 to an API_PreparedStoryIndex correctly', () => {

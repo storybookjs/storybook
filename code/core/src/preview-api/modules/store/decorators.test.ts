@@ -7,7 +7,6 @@ import { defaultDecorateStory } from './decorators.ts';
 function makeContext(input: Record<string, any> = {}): StoryContextForRender<Renderer> {
   return {
     id: 'id',
-    kind: 'kind',
     name: 'name',
     viewMode: 'story',
     parameters: {},
@@ -122,17 +121,23 @@ describe('client-api.decorators', () => {
     const contexts: StoryContextForRender[] = [];
     const decorators = [
       // @ts-expect-error (not defined)
-      (s, c) =>
-        contexts.push(c) &&
-        s({ parameters: { c: 'd' }, id: 'notId', kind: 'notKind', name: 'notName' }),
+      (s, c) => contexts.push(c) && s({ parameters: { c: 'd' }, id: 'notId', name: 'notName' }),
     ];
     const decorated = defaultDecorateStory((c) => contexts.push(c), decorators);
 
     expect(contexts).toEqual([]);
     decorated(makeContext({ parameters: { a: 'b' } }));
     expect(contexts).toEqual([
-      expect.objectContaining({ parameters: { a: 'b' }, id: 'id', kind: 'kind', name: 'name' }),
-      expect.objectContaining({ parameters: { a: 'b' }, id: 'id', kind: 'kind', name: 'name' }),
+      expect.objectContaining({
+        parameters: { a: 'b' },
+        id: 'id',
+        name: 'name',
+      }),
+      expect.objectContaining({
+        parameters: { a: 'b' },
+        id: 'id',
+        name: 'name',
+      }),
     ]);
   });
 });

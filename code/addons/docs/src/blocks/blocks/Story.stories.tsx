@@ -6,7 +6,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { DocsContextProps } from 'storybook/internal/types';
+import type { DocsContextProps, StoryContext } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -133,8 +133,16 @@ export const IFrameProps: Story = {
 
 const channel = requireChannel();
 
+const primaryStoryId = (loaded: StoryContext['loaded']) =>
+  (loaded.docsContext as DocsContextProps).resolveOf(ButtonStories.Primary, ['story']).story.id;
+
 const iframeButton = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('iframe')!.contentDocument!.querySelector('#storybook-root button');
+
+const waitForIframeText = (canvasElement: HTMLElement, text: string) =>
+  waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent(text), { timeout: 10000 });
+
+const argsUpdated = () => new Promise<void>((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
 
 export const IFrameFollowsArgs: Story = {
   ...Inline,
@@ -146,22 +154,25 @@ export const IFrameFollowsArgs: Story = {
   parameters: {
     chromatic: { disableSnapshot: true },
   },
+  // The IFrame stories change the shared args of `ButtonStories.Primary`; put them back even when
+  // a `play` function fails part-way.
+  beforeEach: ({ loaded }) => {
+    const storyId = primaryStoryId(loaded);
+    return async () => {
+      const updated = argsUpdated();
+      channel.emit(RESET_STORY_ARGS, { storyId });
+      await updated;
+    };
+  },
   play: async ({ canvasElement, loaded }) => {
-    const docsContext = loaded.docsContext as DocsContextProps;
-    const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
-      timeout: 10000,
-    });
+    const storyId = primaryStoryId(loaded);
+    await waitForIframeText(canvasElement, 'Button');
 
-    await channel.emit(UPDATE_STORY_ARGS, { storyId: story.id, updatedArgs: { label: 'Updated' } });
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Updated'), {
-      timeout: 10000,
-    });
+    channel.emit(UPDATE_STORY_ARGS, { storyId, updatedArgs: { label: 'Updated' } });
+    await waitForIframeText(canvasElement, 'Updated');
 
-    await channel.emit(RESET_STORY_ARGS, { storyId: story.id });
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
-      timeout: 10000,
-    });
+    channel.emit(RESET_STORY_ARGS, { storyId });
+    await waitForIframeText(canvasElement, 'Button');
   },
 };
 
@@ -169,23 +180,20 @@ export const IFrameUnsetsDroppedArgs: Story = {
   ...IFrameFollowsArgs,
   name: 'IFrame Unsets Dropped Args',
   play: async ({ canvasElement, loaded }) => {
-    const docsContext = loaded.docsContext as DocsContextProps;
-    const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
+    const storyId = primaryStoryId(loaded);
     const backgroundColor = () => {
       const button = iframeButton(canvasElement)!;
       return button.ownerDocument.defaultView!.getComputedStyle(button).backgroundColor;
     };
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
-      timeout: 10000,
-    });
+    await waitForIframeText(canvasElement, 'Button');
 
-    await channel.emit(UPDATE_STORY_ARGS, {
-      storyId: story.id,
+    channel.emit(UPDATE_STORY_ARGS, {
+      storyId,
       updatedArgs: { backgroundColor: 'rgb(255, 0, 0)' },
     });
     await waitFor(() => expect(backgroundColor()).toBe('rgb(255, 0, 0)'), { timeout: 10000 });
 
-    await channel.emit(RESET_STORY_ARGS, { storyId: story.id });
+    channel.emit(RESET_STORY_ARGS, { storyId });
     await waitFor(() => expect(backgroundColor()).not.toBe('rgb(255, 0, 0)'), { timeout: 10000 });
   },
 };
@@ -194,16 +202,11 @@ export const IFrameKeepsArgsAcrossReload: Story = {
   ...IFrameFollowsArgs,
   name: 'IFrame Keeps Args Across Reload',
   play: async ({ canvasElement, loaded }) => {
-    const docsContext = loaded.docsContext as DocsContextProps;
-    const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
-      timeout: 10000,
-    });
+    const storyId = primaryStoryId(loaded);
+    await waitForIframeText(canvasElement, 'Button');
 
-    await channel.emit(UPDATE_STORY_ARGS, { storyId: story.id, updatedArgs: { label: 'Updated' } });
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Updated'), {
-      timeout: 10000,
-    });
+    channel.emit(UPDATE_STORY_ARGS, { storyId, updatedArgs: { label: 'Updated' } });
+    await waitForIframeText(canvasElement, 'Updated');
 
     const iframe = canvasElement.querySelector('iframe')!;
     const documentBeforeReload = iframe.contentDocument;
@@ -211,12 +214,7 @@ export const IFrameKeepsArgsAcrossReload: Story = {
     await waitFor(() => expect(iframe.contentDocument).not.toBe(documentBeforeReload), {
       timeout: 10000,
     });
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Updated'), {
-      timeout: 10000,
-    });
-
-    await channel.emit(RESET_STORY_ARGS, { storyId: story.id });
-    await new Promise<void>((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
+    await waitForIframeText(canvasElement, 'Updated');
   },
 };
 
@@ -229,21 +227,15 @@ export const IFrameForceInitialArgs: Story = {
     __forceInitialArgs: true,
   },
   play: async ({ canvasElement, loaded }) => {
-    const docsContext = loaded.docsContext as DocsContextProps;
-    const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
-    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
-      timeout: 10000,
-    });
+    const storyId = primaryStoryId(loaded);
+    await waitForIframeText(canvasElement, 'Button');
 
-    const updated = new Promise<void>((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
-    await channel.emit(UPDATE_STORY_ARGS, { storyId: story.id, updatedArgs: { label: 'Updated' } });
+    const updated = argsUpdated();
+    channel.emit(UPDATE_STORY_ARGS, { storyId, updatedArgs: { label: 'Updated' } });
     await updated;
     // A wrongly relayed update would have re-rendered the iframe by now.
     await new Promise((resolve) => setTimeout(resolve, 300));
     await expect(iframeButton(canvasElement)).toHaveTextContent('Button');
-
-    await channel.emit(RESET_STORY_ARGS, { storyId: story.id });
-    await new Promise<void>((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
   },
 };
 

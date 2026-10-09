@@ -1,18 +1,16 @@
 /* oxlint-disable react-classic/destructuring-assignment */
 import type { FunctionComponent } from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
-import { STORY_PREPARED, UPDATE_STORY_ARGS } from 'storybook/internal/core-events';
-import type { Channel } from 'storybook/internal/channels';
 import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit/predicate';
 import { styled } from 'storybook/theming';
 
 import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
+import { useIframeArgsSync } from './useIframeArgsSync';
 
 interface CommonProps {
   story: PreparedStory;
@@ -96,88 +94,18 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const iframeChannel = (iframe: HTMLIFrameElement | null | undefined) =>
-  (iframe?.contentWindow as IFrameWindow | null | undefined)?.__STORYBOOK_ADDONS_CHANNEL__;
-
 const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px', args }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const argsRef = useRef(args);
-  // Set once the iframe's preview has prepared the story; args sent before that are rejected.
-  const prepared = useRef(false);
-  const iframeArgs = useRef<Args | undefined>(undefined);
-
-  const sendArgs = useCallback(() => {
-    const current = argsRef.current;
-    const channel = iframeChannel(containerRef.current?.querySelector('iframe'));
-    if (!current || !channel || !prepared.current) {
-      return;
-    }
-    const known = iframeArgs.current ?? story.initialArgs;
-    if (isEqual(current, known)) {
-      return;
-    }
-    // A key the docs page dropped has to be unset in the iframe, so it is sent as `undefined`.
-    const unsetKnown = Object.fromEntries(Object.keys(known).map((key) => [key, undefined]));
-    channel.emit(UPDATE_STORY_ARGS, {
-      storyId: story.id,
-      updatedArgs: { ...unsetKnown, ...current },
-    });
-    iframeArgs.current = current;
-  }, [story]);
-
-  useEffect(() => {
-    const iframe = containerRef.current?.querySelector('iframe');
-    if (!iframe) {
-      return () => {};
-    }
-    let unsubscribe = () => {};
-    const markPrepared = () => {
-      prepared.current = true;
-      sendArgs();
-    };
-    const onLoad = () => {
-      prepared.current = false;
-      iframeArgs.current = undefined;
-      unsubscribe();
-      const channel = iframeChannel(iframe);
-      if (!channel) {
-        return;
-      }
-      if (channel.last(STORY_PREPARED)?.[0]?.id === story.id) {
-        markPrepared();
-        return;
-      }
-      const onPrepared = ({ id }: { id: string }) => {
-        if (id === story.id) {
-          unsubscribe();
-          markPrepared();
-        }
-      };
-      channel.on(STORY_PREPARED, onPrepared);
-      unsubscribe = () => {
-        channel.off(STORY_PREPARED, onPrepared);
-        unsubscribe = () => {};
-      };
-    };
-    iframe.addEventListener('load', onLoad);
-    return () => {
-      unsubscribe();
-      iframe.removeEventListener('load', onLoad);
-    };
-  }, [story, sendArgs]);
-
-  useEffect(() => {
-    argsRef.current = args;
-    sendArgs();
-  }, [args, sendArgs]);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  useIframeArgsSync(iframeRef, story, args);
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height }}>
+    <div style={{ width: '100%', height }}>
       <ZoomContext.Consumer>
         {({ scale }) => {
           return (
             <IFrame
               key="iframe"
+              iframeRef={iframeRef}
               id={`iframe--${story.id}`}
               title={story.name}
               src={getStoryHref(story.id, { viewMode: 'story' })}
@@ -195,10 +123,6 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
     </div>
   );
 };
-
-interface IFrameWindow extends Window {
-  __STORYBOOK_ADDONS_CHANNEL__?: Pick<Channel, 'emit' | 'on' | 'off' | 'last'>;
-}
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 
@@ -226,7 +150,7 @@ const Story: FunctionComponent<StoryProps> = (props) => {
       {inline ? (
         <InlineStory {...(props as InlineStoryProps)} />
       ) : (
-        <IFrameStory {...(props as IFrameStoryProps)} />
+        <IFrameStory key={story.id} {...(props as IFrameStoryProps)} />
       )}
     </div>
   );

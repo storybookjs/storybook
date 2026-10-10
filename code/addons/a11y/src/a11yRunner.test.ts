@@ -6,7 +6,7 @@ import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants.ts';
 
-const { axeMock, documentMock } = vi.hoisted(() => {
+const { axeMock, documentMock, getIsVitestStandaloneRunMock } = vi.hoisted(() => {
   const documentMock = {
     body: {},
     getElementById: vi.fn(),
@@ -20,6 +20,7 @@ const { axeMock, documentMock } = vi.hoisted(() => {
       configure: vi.fn(),
       run: vi.fn(),
     },
+    getIsVitestStandaloneRunMock: vi.fn(),
   };
 });
 
@@ -31,6 +32,10 @@ vi.mock('@storybook/global', () => ({
 
 vi.mock('axe-core', () => ({
   default: axeMock,
+}));
+
+vi.mock('./utils.ts', () => ({
+  getIsVitestStandaloneRun: getIsVitestStandaloneRunMock,
 }));
 
 vi.mock('storybook/preview-api');
@@ -52,6 +57,7 @@ describe('a11yRunner', () => {
 
     documentMock.getElementById.mockReturnValue(null);
     axeMock.run.mockResolvedValue(axeResults);
+    getIsVitestStandaloneRunMock.mockReturnValue(false);
 
     mockChannel = { on: vi.fn(), emit: vi.fn() };
     mockedAddons.getChannel.mockReturnValue(
@@ -126,6 +132,28 @@ describe('a11yRunner', () => {
 
     expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
       runOnly: ['wcag2a'],
+    });
+  });
+
+  it('defaults resultTypes to violations and incomplete in a standalone Vitest run', async () => {
+    getIsVitestStandaloneRunMock.mockReturnValue(true);
+    const { run } = await import('./a11yRunner.ts');
+
+    await run({ config: {}, options: {} }, 'example-story');
+
+    expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
+      resultTypes: ['violations', 'incomplete'],
+    });
+  });
+
+  it('keeps a user-provided resultTypes in a standalone Vitest run', async () => {
+    getIsVitestStandaloneRunMock.mockReturnValue(true);
+    const { run } = await import('./a11yRunner.ts');
+
+    await run({ config: {}, options: { resultTypes: ['passes'] } }, 'example-story');
+
+    expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
+      resultTypes: ['passes'],
     });
   });
 });

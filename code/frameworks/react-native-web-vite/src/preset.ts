@@ -26,7 +26,23 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const { pluginReactOptions = {}, modulesToTranspile = [] } =
     await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
-  const { plugins = [], ...reactConfigWithoutPlugins } = await reactViteFinal(config, options);
+  const filteredConfig = {
+    ...config,
+    // vite-plugin-rnw bundles its own React plugin
+    // an app-level one would double-apply FastRefresh on every module.
+    // Keep RNW's own 'vite:react-native-web-babel'.
+    plugins: (config.plugins ?? [])
+      .flat()
+      .filter(
+        (plugin: any) =>
+          plugin?.name === 'vite:react-native-web-babel' || !plugin?.name?.startsWith('vite:react-')
+      ),
+  };
+
+  const { plugins = [], ...reactConfigWithoutPlugins } = await reactViteFinal(
+    filteredConfig,
+    options
+  );
 
   return mergeConfig(reactConfigWithoutPlugins, {
     plugins: [

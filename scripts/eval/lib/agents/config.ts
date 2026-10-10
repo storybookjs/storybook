@@ -5,7 +5,7 @@
 import type { Logger } from '../utils.ts';
 
 export const CLAUDE_MODELS = ['sonnet-4.6', 'opus-4.6', 'haiku-4.5'] as const;
-export const CODEX_MODELS = ['gpt-5.4'] as const;
+export const CODEX_MODELS = ['gpt-5.4', 'gpt-5.5'] as const;
 export const ALL_MODELS = [...CLAUDE_MODELS, ...CODEX_MODELS] as const;
 
 export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'max'] as const;
@@ -91,6 +91,9 @@ export interface CodexExecutionConfig {
   /** Codex runs non-interactively so benchmark runs never block on approval prompts. */
   approvalPolicy: 'never';
   permissionModel: 'approval-policy-never';
+  /** Eval worktrees are disposable and must be writable for story setup. */
+  sandboxMode: 'danger-full-access';
+  serviceTier: 'fast';
 }
 
 export interface AgentDefinition<TModel extends string, TEffort extends string, TExecution> {
@@ -138,12 +141,15 @@ export const AGENTS: AgentDefinitions = {
     sdkModelIds: {},
     pricing: {
       'gpt-5.4': { input: 2.5, cachedInput: 0.25, output: 15.0 },
+      'gpt-5.5': { input: 5.0, cachedInput: 0.5, output: 30.0 },
     },
     efforts: CODEX_EFFORTS,
     defaultEffort: 'medium',
     execution: {
       approvalPolicy: 'never',
       permissionModel: 'approval-policy-never',
+      sandboxMode: 'danger-full-access',
+      serviceTier: 'fast',
     },
   },
 };

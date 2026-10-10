@@ -30,6 +30,12 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 `Meta` is configured with the following props:
 
+### `id`
+
+Type: `string`
+
+Sets the id of an [unattached](#attached-vs-unattached) MDX file, which is used in its URL instead of one derived from the `title`. Useful when you want [permalinks](../../configure/user-interface/sidebar-and-urls.mdx#permalink-to-stories) to survive a sidebar reorganization. For an attached file, the id comes from the CSF file's `meta` instead.
+
 ### `isTemplate`
 
 Type: `boolean`

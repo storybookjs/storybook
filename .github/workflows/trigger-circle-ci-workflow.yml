@@ -84,6 +84,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions: {}
     steps:
+      - id: focus
+        if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:focus'))
+        run: echo "workflow=focus" >> "$GITHUB_OUTPUT"
       - id: normal
         if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
         run: echo "workflow=normal" >> "$GITHUB_OUTPUT"
@@ -132,7 +135,7 @@ jobs:
             echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
           fi
     outputs:
-      workflow: ${{ steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow }}
+      workflow: ${{ steps.focus.outputs.workflow || steps.normal.outputs.workflow || steps.docs.outputs.workflow || steps.merged.outputs.workflow || steps.daily.outputs.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
       ghTrustedAuthor: ${{ steps.trusted-author.outputs.result }}

@@ -24,6 +24,12 @@ import {
   testsUnit_linux,
 } from './common-jobs.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
+import {
+  defineFocusJob,
+  getChangedFiles,
+  selectChromaticSiblings,
+  selectFocusSandbox,
+} from './focus.ts';
 import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
 import { executors } from './utils/executors.ts';
@@ -46,9 +52,13 @@ const dirname = import.meta.dirname;
  * @param workflow - The workflow to generate the config for.
  * @returns The generated config for CircleCI in JS format.
  */
-function generateConfig(workflow: Workflow) {
+function generateConfig(workflow: Workflow, baseRef: string) {
   const jobs: JobOrNoOpJob[] = [];
-  if (isWorkflowOrAbove(workflow, 'docs')) {
+  if (workflow === 'focus') {
+    const changedFiles = getChangedFiles(baseRef);
+    const template = selectFocusSandbox(changedFiles);
+    jobs.push(defineFocusJob(template, selectChromaticSiblings(template, changedFiles)));
+  } else if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
@@ -162,6 +172,7 @@ console.log('--------------------------------');
 program
   .description('Generate CircleCI config')
   .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
+  .option('--base-ref <string>', 'Git ref to compare against for focused CI', 'origin/next')
   .option(
     '--gh-trusted-author <string>',
     'Whether the pipeline can persist to shared caches',
@@ -174,7 +185,7 @@ setTrustedAuthor(opts.ghTrustedAuthor === 'true');
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(opts.workflow), null, {
+  yml.stringify(generateConfig(opts.workflow, opts.baseRef), null, {
     lineWidth: 1200,
     indent: 4,
   })

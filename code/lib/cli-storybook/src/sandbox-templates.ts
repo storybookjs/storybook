@@ -16,6 +16,8 @@ export type SkippableTask =
   | 'e2e-tests-dev'
   | 'bench';
 
+export type FocusPathKind = 'framework' | 'renderer' | 'builder';
+
 export type TemplateKey =
   | keyof typeof baseTemplates
   | keyof typeof internalTemplates
@@ -55,6 +57,8 @@ export type Template = {
     renderer: string;
     builder: string;
   };
+
+  focusPathPrefixes?: Partial<Record<FocusPathKind, string>>;
 
   expectedFailures?: Array<{
     feature: string;
@@ -181,6 +185,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
     },
+    focusPathPrefixes: { framework: 'code/frameworks/nextjs/' },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
@@ -263,6 +268,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    focusPathPrefixes: { framework: 'code/frameworks/nextjs-vite/' },
     modifications: {
       useCsfFactory: true,
       mainConfig: {
@@ -304,6 +310,11 @@ export const baseTemplates = {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
+    },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/react-vite/',
+      renderer: 'code/renderers/react/',
+      builder: 'code/builders/builder-vite/',
     },
     modifications: {
       useCsfFactory: true,
@@ -365,6 +376,10 @@ export const baseTemplates = {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
       builder: '@storybook/builder-webpack5',
+    },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/react-webpack5/',
+      builder: 'code/builders/builder-webpack5/',
     },
     modifications: {
       useCsfFactory: true,
@@ -510,6 +525,10 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/vue3-vite/',
+      renderer: 'code/renderers/vue3/',
+    },
     modifications: {
       extraDevDependencies: ['@storybook/addon-mcp'],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
@@ -574,6 +593,10 @@ export const baseTemplates = {
       renderer: '@storybook/html',
       builder: '@storybook/builder-vite',
     },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/html-vite/',
+      renderer: 'code/renderers/html/',
+    },
     skipTasks: ['e2e-tests', 'bench'],
     initOptions: {
       type: ProjectType.HTML,
@@ -612,6 +635,10 @@ export const baseTemplates = {
       framework: '@storybook/svelte-vite',
       renderer: '@storybook/svelte',
       builder: '@storybook/builder-vite',
+    },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/svelte-vite/',
+      renderer: 'code/renderers/svelte/',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],
@@ -655,6 +682,7 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
+    focusPathPrefixes: { framework: 'code/frameworks/angular/' },
     skipTasks: ['bench', 'vitest-integration'],
     initOptions: { builder: SupportedBuilder.WEBPACK5 },
   },
@@ -716,6 +744,7 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
+    focusPathPrefixes: { framework: 'code/frameworks/angular-vite/' },
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
@@ -742,6 +771,10 @@ export const baseTemplates = {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
       builder: '@storybook/builder-vite',
+    },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/web-components-vite/',
+      renderer: 'code/renderers/web-components/',
     },
     modifications: {
       useCsfFactory: true,
@@ -788,6 +821,10 @@ export const baseTemplates = {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
       builder: '@storybook/builder-vite',
+    },
+    focusPathPrefixes: {
+      framework: 'code/frameworks/preact-vite/',
+      renderer: 'code/renderers/preact/',
     },
     modifications: {
       // create-vite still scaffolds Preact 10.
@@ -862,6 +899,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    focusPathPrefixes: { framework: 'code/frameworks/react-native-web-vite/' },
     modifications: {
       useCsfFactory: true,
       // The React renderer's template-stories (e.g. js-argtypes.stories.jsx) import

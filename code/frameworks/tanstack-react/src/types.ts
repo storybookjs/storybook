@@ -12,6 +12,8 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 export type FrameworkOptions = {
   /** Builder options passed through to @storybook/builder-vite. */
   builder?: BuilderOptions;
+  /** Render stories inside `React.StrictMode`. */
+  strictMode?: boolean;
 };
 
 type StorybookConfigFramework = {

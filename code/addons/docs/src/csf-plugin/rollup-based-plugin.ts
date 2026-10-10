@@ -26,7 +26,9 @@ export async function transformCsf(
   try {
     const makeTitle = (userTitle: string) => userTitle || 'default';
     const csf = loadCsf(code, { makeTitle }).parse();
-    const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
+    // Built-in enrichment only appends to `csf`, but an `enrichCsf` hook may read the pristine source.
+    const csfSource =
+      code === sourceCode && !options.enrichCsf ? csf : loadCsf(sourceCode, { makeTitle }).parse();
     await enrichCsf(csf, csfSource, options);
     const inputSourceMap = this.getCombinedSourcemap();
     return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);

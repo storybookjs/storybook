@@ -41,6 +41,7 @@
   - [Internal toolset inputs must be strict objects](#internal-toolset-inputs-must-be-strict-objects)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
+  - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
@@ -1226,6 +1227,21 @@ Replace calls with the native operator:
 ### Experimental `UniversalStore` API is now internal
 
 `experimental_UniversalStore` and `experimental_useUniversalStore` are no longer exported from `storybook/manager-api` and `storybook/internal/core-server`. The store is internal to Storybook, and `UniversalStore.create()` now throws for store ids that Storybook does not own. We are working on a replacement called Open Services, but it is not ready for third-party addons yet.
+
+### `mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`
+
+The deprecated `mockChannel` helper is no longer exported from `storybook/preview-api` (also available under `storybook/internal/preview-api`) or `storybook/manager-api`. It built a `Channel` with a no-op transport, which spans no runtime boundary — events sent through it never leave the current process.
+
+If you used it to mock the addon channel in tests or in non-browser environments like Jest, construct a transport-less `Channel` directly instead:
+
+```diff
+-import { addons, mockChannel } from 'storybook/preview-api';
++import { addons } from 'storybook/preview-api';
++import { Channel } from 'storybook/internal/channels';
+
+-addons.setChannel(mockChannel());
++addons.setChannel(new Channel({}));
+```
 
 ### React: Require v18 and up
 

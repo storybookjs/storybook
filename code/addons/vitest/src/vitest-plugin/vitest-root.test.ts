@@ -16,16 +16,18 @@ vi.mock('storybook/internal/core-server', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 
 const presetApply = vi.fn();
+let frameworkName = '@storybook/react-vite';
 
 beforeEach(() => {
   vi.stubEnv('VITEST', 'true');
+  frameworkName = '@storybook/react-vite';
 
   presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
     switch (key) {
       case 'stories':
         return ['../stories/**/*.stories.tsx'];
       case 'framework':
-        return { name: '@storybook/react-vite' };
+        return { name: frameworkName };
       // Mirrors a project without its own `viteFinal`: the common config is returned untouched,
       // so the root the plugin proposes is the root it ends up returning.
       case 'viteFinal':
@@ -75,7 +77,13 @@ async function getPluginConfig(invokingRoot: string) {
     throw new Error('The plugin config hook returned no test config');
   }
 
-  return { root: config.root, test: config.test, plugin };
+  return {
+    root: config.root,
+    test: config.test,
+    optimizeDeps: config.optimizeDeps,
+    define: config.define,
+    plugin,
+  };
 }
 
 describe('story test patterns', () => {
@@ -117,5 +125,34 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
+  });
+});
+
+describe('framework-specific configuration', () => {
+  it.each([
+    '\\repo\\node_modules\\@storybook\\react-vite',
+    '/repo/node_modules/.pnpm/@storybook+react-vite@11.0.0',
+  ])('includes React test utilities for %s', async (name) => {
+    frameworkName = name;
+
+    const { optimizeDeps } = await getPluginConfig(REPO_ROOT);
+
+    expect(optimizeDeps?.include).toContain('react-dom/test-utils');
+  });
+
+  it('does not include React test utilities for Preact', async () => {
+    frameworkName = '@storybook/preact-vite';
+
+    const { optimizeDeps } = await getPluginConfig(REPO_ROOT);
+
+    expect(optimizeDeps?.include).not.toContain('react-dom/test-utils');
+  });
+
+  it('sets Vue configuration from a Windows framework path', async () => {
+    frameworkName = '\\repo\\node_modules\\@storybook\\vue3-vite';
+
+    const { define } = await getPluginConfig(REPO_ROOT);
+
+    expect(define).toMatchObject({ __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' });
   });
 });

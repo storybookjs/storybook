@@ -8,6 +8,7 @@ import type {} from '@vitest/browser-playwright';
 import {
   DEFAULT_FILES_PATTERN,
   HandledError,
+  extractRenderer,
   getInterpretedFile,
   normalizeStories,
   optionalEnvToBoolean,
@@ -30,7 +31,7 @@ import {
   telemetry,
   setTelemetryEnabled,
 } from 'storybook/internal/telemetry';
-import type { Presets } from 'storybook/internal/types';
+import { type Presets, SupportedRenderer } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
@@ -50,7 +51,6 @@ import {
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
-import { isReactFramework } from './framework-name.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
 const WORKING_DIR = process.cwd();
@@ -303,6 +303,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
 
       const frameworkName = typeof framework === 'string' ? framework : framework.name;
+      const renderer = frameworkName ? await extractRenderer(frameworkName) : null;
 
       // If we end up needing to know if we are running in browser mode later
       // const isRunningInBrowserMode = config.plugins.find((plugin: Plugin) =>
@@ -439,12 +440,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             // imported by the setup files; without pinning, its CJS-only deps (via
             // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
             'storybook/test',
-            ...(isReactFramework(frameworkName) ? ['react-dom/test-utils'] : []),
+            ...(renderer === SupportedRenderer.REACT ? ['react-dom/test-utils'] : []),
           ],
         },
 
         define: {
-          ...(frameworkName?.includes('vue3')
+          ...(renderer === SupportedRenderer.VUE3
             ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
             : {}),
           FEATURES: JSON.stringify(features),

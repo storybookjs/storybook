@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { matchPath, parseWithReactDocgen } from './reactDocgen.ts';
+import { getMatchingDocgen, matchPath, parseWithReactDocgen } from './reactDocgen.ts';
 import { invalidateCache } from './utils.ts';
 
 const tempDirs: string[] = [];
@@ -27,6 +27,77 @@ async function parse(code: string, name = 'Component.tsx') {
   const filename = `/virtual/${name}`;
   return parseWithReactDocgen(code, filename);
 }
+
+test('matches a default import by component name when reexports contain multiple defaults', async () => {
+  const skeleton = await parse(
+    'export default function ButtonSkeleton() { return <span /> }',
+    'Button.Skeleton.tsx'
+  );
+  const button = await parse(
+    'export default function Button() { return <button /> }',
+    'Button.tsx'
+  );
+
+  const match = getMatchingDocgen([...skeleton, ...button], {
+    componentName: 'Button',
+    importName: 'default',
+    localImportName: 'Button',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('Button');
+});
+
+test('matches a unique default export when its local name matches another component', async () => {
+  const docgens = await parse(
+    'export function Alias() { return <span /> } export default function Button() { return <button /> }'
+  );
+  const match = getMatchingDocgen(docgens, {
+    componentName: 'Alias',
+    importName: 'default',
+    localImportName: 'Alias',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('Button');
+});
+
+test('matches a unique default export ahead of a named reexport from another file', async () => {
+  const defaultButton = await parse(
+    'export default function MainButton() { return <button /> }',
+    'MainButton.tsx'
+  );
+  const namedButton = await parse('export function Button() { return <span /> }', 'Button.tsx');
+
+  const match = getMatchingDocgen([...namedButton, ...defaultButton], {
+    componentName: 'Button',
+    importName: 'default',
+    localImportName: 'Button',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('MainButton');
+});
+
+test('matches an asserted default component ahead of a different file default export', async () => {
+  const skeleton = await parse(
+    'export default function ButtonSkeleton() { return <span /> }',
+    'Button.Skeleton.tsx'
+  );
+  const button = await parse(
+    'type ButtonComponent = typeof Button; const Button = () => <button />; export default Button as ButtonComponent;',
+    'Button.tsx'
+  );
+
+  const match = getMatchingDocgen([...skeleton, ...button], {
+    componentName: 'Button',
+    importName: 'default',
+    localImportName: 'Button',
+    isPackage: false,
+  });
+
+  expect(match?.actualName).toBe('Button');
+});
 
 describe('parseWithReactDocgen exportName coverage', () => {
   test('inline default export function declaration', async () => {
@@ -102,6 +173,19 @@ describe('parseWithReactDocgen exportName coverage', () => {
       ]
     `);
   });
+
+  test.each(['export default Foo as FooType;', 'export default (Foo as FooType);'])(
+    'type-wrapped default export identifier: %s',
+    async (exportStatement) => {
+      const code = dedent /* tsx */ `
+      const Foo = () => <div/>;
+      type FooType = typeof Foo;
+      ${exportStatement}
+    `;
+      const [docgen] = await parse(code);
+      expect(docgen.exportName).toBe('default');
+    }
+  );
 
   test('named export: export const Foo = ...', async () => {
     const code = dedent /* tsx */ `

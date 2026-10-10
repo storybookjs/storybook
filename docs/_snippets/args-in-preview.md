@@ -87,3 +87,25 @@ export default definePreview({
   args: { theme: 'light' },
 });
 ```
+
+```ts filename=".storybook/preview.ts" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+// Replace svelte-vite with sveltekit if you are using SvelteKit
+import { definePreview } from '@storybook/svelte-vite';
+
+export default definePreview({
+  // The default value of the theme arg for all stories
+  args: { theme: 'light' },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+// Replace svelte-vite with sveltekit if you are using SvelteKit
+import { definePreview } from '@storybook/svelte-vite';
+
+export default definePreview({
+  // The default value of the theme arg for all stories
+  args: { theme: 'light' },
+});
+```

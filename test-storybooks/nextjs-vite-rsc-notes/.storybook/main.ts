@@ -38,7 +38,8 @@ export default defineMain({
   framework: {
     name: "@storybook/nextjs-vite-rsc",
     options: {
-      // MSW, which preview.ts starts, reads the storage of the page: it is not server code.
+      // MSW, which the stories of the cache probe start, reads the storage of the page: it is
+      // not server code.
       browserModules: ["**/node_modules/msw/**", "**/node_modules/@mswjs/**"],
     },
   },

@@ -1,16 +1,34 @@
+import { setupWorker } from "msw/browser";
 import { expect, userEvent } from "storybook/test";
 import preview from "#.storybook/preview.ts";
+import { nextCacheProbeFetchHandler } from "./next-cache-msw.ts";
 import { NextCacheProbe, resetNextCacheProbe } from "./next-cache-probe.tsx";
 
 // Next's Data Cache, seen through a probe: `unstable_cache`, cached and
 // uncached `fetch`, and the Server Actions that refresh and revalidate. The
-// service it fetches from is MSW, which .storybook/preview.ts starts. See
+// service it fetches from is MSW, which these stories start. See
 // next-cache.test.tsx.
+const worker = setupWorker(...nextCacheProbeFetchHandler);
+
 const meta = preview.meta({
   title: "Probes/NextCacheProbe",
   component: NextCacheProbe,
-  beforeEach() {
+  async beforeEach() {
     resetNextCacheProbe();
+    // Its worker handles the requests of the preview, iframe.html, while a
+    // story of the probe is open. Not those of Storybook's manager, or of
+    // the other stories.
+    const registration = await worker.start({
+      onUnhandledRequest: "bypass",
+      quiet: true,
+      serviceWorker: { url: "/mockServiceWorker.js", options: { scope: "/iframe.html" } },
+    });
+    return async () => {
+      worker.stop();
+      // The worker unregisters itself once no page uses it. Done here, the
+      // next story does not find it on its way out.
+      await registration?.unregister();
+    };
   },
 });
 

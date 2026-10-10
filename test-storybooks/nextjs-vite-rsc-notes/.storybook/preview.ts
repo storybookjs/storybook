@@ -2,12 +2,10 @@ import addonDocs from "@storybook/addon-docs";
 import { createElement } from "react";
 import { definePreview } from "@storybook/nextjs-vite-rsc";
 import { drizzle } from "drizzle-orm/pglite";
-import { setupWorker } from "msw/browser";
 import { mocked, sb } from "storybook/test";
 import { resetDatabase } from "#.storybook/database.ts";
 import { fontVariables } from "#app/fonts.ts";
 import * as schema from "#db/schema.ts";
-import { nextCacheProbeFetchHandler } from "#components/next-cache-msw.ts";
 import { auth } from "#lib/auth.ts";
 import * as authSessionModule from "#lib/auth-session.ts";
 import * as dbModule from "#lib/db.ts";
@@ -32,10 +30,6 @@ const { resetDb } = dbModule as typeof import("#lib/__mocks__/db.ts");
 const { setCurrentUser } = authSessionModule as typeof import("#lib/__mocks__/auth-session.ts");
 const { deleteFlashCookies } = flashCookieModule as typeof import("#lib/__mocks__/flash-cookie.ts");
 
-// The service that the cache probe fetches from: started once a story needs it.
-const worker = setupWorker(...nextCacheProbeFetchHandler);
-let started: Promise<unknown> | undefined;
-
 export default definePreview({
   addons: [addonDocs()],
   // A story of a component renders with some room around it. A page story,
@@ -54,13 +48,6 @@ export default definePreview({
   // Before every story: nobody signed in, no flash cookies, and an empty
   // database. A story seeds it in its own `beforeEach`.
   async beforeEach() {
-    started ??= worker.start({
-      onUnhandledRequest: "bypass",
-      quiet: true,
-      serviceWorker: { url: "/mockServiceWorker.js" },
-    });
-    await started;
-    worker.resetHandlers();
     // A mock of `#lib/auth.ts` that a story changed answers as it did.
     for (const spy of Object.values(auth.api)) mocked(spy).mockReset();
     setCurrentUser(null);

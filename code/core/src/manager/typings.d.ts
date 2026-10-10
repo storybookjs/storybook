@@ -31,7 +31,6 @@ declare var __STORYBOOK_THEMING_CREATE__: any;
 declare var __STORYBOOK_TEST__: any;
 declare var __STORYBOOK_ACTIONS__: any;
 declare var __STORYBOOK_API__: any;
-declare var __STORYBOOK_ICONS__: any;
 declare var __STORYBOOK_CLIENT_LOGGER__: any;
 declare var __STORYBOOK_ADDONS_CHANNEL__: any;
 declare var __STORYBOOK_TYPES__: any;

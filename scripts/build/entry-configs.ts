@@ -14,6 +14,7 @@ import angularFrameworkConfig from '../../code/frameworks/angular/build-config.t
 import emberFrameworkConfig from '../../code/frameworks/ember/build-config.ts';
 import htmlViteFrameworkConfig from '../../code/frameworks/html-vite/build-config.ts';
 import nextjsViteFrameworkConfig from '../../code/frameworks/nextjs-vite/build-config.ts';
+import nextjsViteRscFrameworkConfig from '../../code/frameworks/nextjs-vite-rsc/build-config.ts';
 import nextjsFrameworkConfig from '../../code/frameworks/nextjs/build-config.ts';
 import preactViteFrameworkConfig from '../../code/frameworks/preact-vite/build-config.ts';
 import reactNativeWebViteFrameworkConfig from '../../code/frameworks/react-native-web-vite/build-config.ts';
@@ -70,6 +71,7 @@ export const buildEntries = {
   '@storybook/html-vite': htmlViteFrameworkConfig,
   '@storybook/nextjs': nextjsFrameworkConfig,
   '@storybook/nextjs-vite': nextjsViteFrameworkConfig,
+  '@storybook/nextjs-vite-rsc': nextjsViteRscFrameworkConfig,
   '@storybook/preact-vite': preactViteFrameworkConfig,
   '@storybook/react-native-web-vite': reactNativeWebViteFrameworkConfig,
   '@storybook/react-vite': reactViteFrameworkConfig,

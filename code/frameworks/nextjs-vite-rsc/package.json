@@ -1,0 +1,104 @@
+{
+  "name": "@storybook/nextjs-vite-rsc",
+  "version": "11.0.0-alpha.4",
+  "description": "Storybook for Next.js with React Server Components and Vite: Develop, document, and test the components and pages of your app in isolation",
+  "keywords": [
+    "storybook",
+    "storybook-framework",
+    "next",
+    "next.js",
+    "react-server-components",
+    "rsc",
+    "vite",
+    "component",
+    "components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/nextjs-vite-rsc",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/frameworks/nextjs-vite-rsc"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./internal/addon-docs": {
+      "types": "./dist/docs/addon-docs.d.ts",
+      "code": "./src/docs/addon-docs.ts",
+      "default": "./dist/docs/addon-docs.js"
+    },
+    "./internal/client-story": {
+      "types": "./dist/client-story.d.ts",
+      "code": "./src/client-story.tsx",
+      "default": "./dist/client-story.js"
+    },
+    "./internal/docs-renderer": {
+      "types": "./dist/docs/docs-renderer.d.ts",
+      "code": "./src/docs/docs-renderer.tsx",
+      "default": "./dist/docs/docs-renderer.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
+      "default": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json",
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "code": "./src/preset.ts",
+      "default": "./dist/preset.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "template/cli/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@storybook/builder-vite": "workspace:*",
+    "vitest-plugin-rsc": "https://pkg.pr.new/vitest-plugin-rsc@d3b873d"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.2.18",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "@next/routing": "^16.4.0",
+    "@storybook/addon-docs": "workspace:^",
+    "next": "^16.4.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "storybook": "workspace:^",
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@storybook/addon-docs": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

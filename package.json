@@ -48,6 +48,7 @@
     "@babel/traverse": "latest",
     "@babel/types": "^7.28.4",
     "@playwright/test": "1.58.2",
+    "@storybook/nextjs-vite-rsc/@types/react": "^19.2.18",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch",
     "@testing-library/user-event@npm:^14.6.3": "patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch",

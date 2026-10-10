@@ -91,6 +91,12 @@ export type Template = {
    */
   modifications?: {
     skipTemplateStories?: boolean;
+    /**
+     * Link only the framework's own template stories, and not the ones of core, the renderer and
+     * the addons, which are written for stories that render in the browser. For a framework whose
+     * story files are server code, like `@storybook/nextjs-vite-rsc`.
+     */
+    frameworkStoriesOnly?: boolean;
     skipMocking?: boolean;
     mainConfig?: LoosenedStorybookConfig | ((config: ConfigFile) => LoosenedStorybookConfig);
     testBuild?: boolean;
@@ -276,6 +282,41 @@ export const baseTemplates = {
       extraDevDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['bench'],
+  },
+  'nextjs-vite-rsc/default-ts': {
+    name: 'Next.js RSC Latest (Vite | TypeScript)',
+    // TODO: Remove `inDevelopment`, `--min-release-age=0` and `minAgeGateExemptions` once the
+    // published sandbox has this template. Next.js 16.4, which the framework needs, and the releases
+    // that vitest-plugin-rsc needs are younger than the sandbox age gate, and npx ignores
+    // `minAgeGateExemptions`.
+    script:
+      'npx --min-release-age=0 create-next-app@latest {{beforeDir}} --skip-install --eslint --no-tailwind --app --import-alias="@/*" --src-dir --no-cache-components',
+    minAgeGateExemptions: [
+      'next',
+      '@next/*',
+      'eslint-config-next',
+      '@vitejs/plugin-rsc',
+      'cjs-module-lexer',
+      'es-module-lexer',
+      'magic-string',
+    ],
+    inDevelopment: true,
+    expected: {
+      framework: '@storybook/nextjs-vite-rsc',
+      renderer: '@storybook/nextjs-vite-rsc',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      frameworkStoriesOnly: true,
+      skipMocking: true,
+    },
+    initOptions: {
+      type: ProjectType.NEXTJS_VITE_RSC,
+    },
+    // The e2e tests and the Vitest integration are for the template stories of core, and
+    // `@storybook/addon-vitest` does not support the framework yet.
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration', 'bench'],
   },
   'react-vite/default-js': {
     name: 'React Latest (Vite | JavaScript)',
@@ -1034,6 +1075,7 @@ export const normal: TemplateKey[] = [
   'svelte-kit/skeleton-ts',
   'nextjs/default-ts',
   'nextjs-vite/default-ts',
+  'nextjs-vite-rsc/default-ts',
   'bench/react-vite-default-ts',
   'bench/react-webpack-18-ts',
   'bench/react-vite-default-ts-nodocs',

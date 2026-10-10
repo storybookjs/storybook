@@ -7,6 +7,7 @@ export enum SupportedFramework {
   HTML_VITE = 'html-vite',
   NEXTJS = 'nextjs',
   NEXTJS_VITE = 'nextjs-vite',
+  NEXTJS_VITE_RSC = 'nextjs-vite-rsc',
   PREACT_VITE = 'preact-vite',
   REACT_NATIVE_WEB_VITE = 'react-native-web-vite',
   REACT_VITE = 'react-vite',

@@ -38,8 +38,17 @@ describe('generateImportFnScriptCode', () => {
         "virtual:story.js": () => import("virtual:story.js")
       };
 
+      const loading = new Map();
+
       export async function importFn(path) {
-        return await importers[path]();
+        let loaded = loading.get(path);
+        if (!loaded) {
+          loaded = importers[path]();
+          loading.set(path, loaded);
+          const done = () => loading.delete(path);
+          loaded.then(done, done);
+        }
+        return await loaded;
       }"
     `);
   });
@@ -77,8 +86,17 @@ describe('generateImportFnScriptCode', () => {
         "virtual:story.js": () => import("virtual:story.js")
       };
 
+      const loading = new Map();
+
       export async function importFn(path) {
-        return await importers[path]();
+        let loaded = loading.get(path);
+        if (!loaded) {
+          loaded = importers[path]();
+          loading.set(path, loaded);
+          const done = () => loading.delete(path);
+          loaded.then(done, done);
+        }
+        return await loaded;
       }"
     `);
   });
@@ -89,8 +107,17 @@ describe('generateImportFnScriptCode', () => {
     expect(result).toMatchInlineSnapshot(`
       "const importers = {};
 
+      const loading = new Map();
+
       export async function importFn(path) {
-        return await importers[path]();
+        let loaded = loading.get(path);
+        if (!loaded) {
+          loaded = importers[path]();
+          loading.set(path, loaded);
+          const done = () => loading.delete(path);
+          loaded.then(done, done);
+        }
+        return await loaded;
       }"
     `);
   });

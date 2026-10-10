@@ -17,6 +17,7 @@ export default {
   '@storybook/html-vite': '11.0.0-alpha.4',
   '@storybook/nextjs': '11.0.0-alpha.4',
   '@storybook/nextjs-vite': '11.0.0-alpha.4',
+  '@storybook/nextjs-vite-rsc': '11.0.0-alpha.4',
   '@storybook/preact-vite': '11.0.0-alpha.4',
   '@storybook/react-native-web-vite': '11.0.0-alpha.4',
   '@storybook/react-vite': '11.0.0-alpha.4',

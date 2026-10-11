@@ -36,6 +36,7 @@ export default definePreview({
       sortProps: false,
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -50,5 +51,6 @@ export default definePreview({
       sortProps: false,
     },
   },
+  addons: [/* ... */],
 });
 ```

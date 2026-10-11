@@ -52,6 +52,7 @@ export default definePreview({
   beforeEach({ canvasElement, canvas }) {
     Object.assign(canvas, { ...withinShadow(canvasElement) });
   },
+  addons: [/* ... */],
   // ...
 });
 ```
@@ -68,6 +69,7 @@ export default definePreview({
   beforeEach({ canvasElement, canvas }) {
     Object.assign(canvas, { ...withinShadow(canvasElement) });
   },
+  addons: [/* ... */],
   // ...
 });
 ```

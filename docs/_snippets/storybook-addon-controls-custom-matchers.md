@@ -42,6 +42,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -60,6 +61,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -75,6 +77,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -92,6 +95,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -107,6 +111,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -122,6 +127,7 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -139,5 +145,6 @@ export default definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 ```

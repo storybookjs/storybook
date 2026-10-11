@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { useStore } from './utils.ts';
+import type { HighlightOptions } from './types.ts';
+import { useStore, normalizeOptions } from './utils.ts';
 
 describe('useStore', () => {
   it('should return the initial value', () => {
@@ -47,5 +48,50 @@ describe('useStore', () => {
     const { get, teardown } = useStore(1);
     teardown();
     expect(get()).toBeUndefined();
+  });
+});
+
+describe('normalizeOptions', () => {
+  it('should apply the default outline style for a selector-only payload', () => {
+    expect(normalizeOptions({ selectors: ['#button'] })).toEqual({
+      id: undefined,
+      priority: 0,
+      selectors: ['#button'],
+      styles: {
+        outline: '2px dashed #029cfd',
+      },
+      menu: undefined,
+    });
+  });
+
+  it('should pass through a full HighlightOptions payload', () => {
+    const options = {
+      id: 'my-highlight',
+      priority: 5,
+      selectors: ['#button', '.box'],
+      styles: { outline: '3px solid red' },
+      hoverStyles: { background: 'yellow' },
+      focusStyles: { background: 'green' },
+    };
+    expect(normalizeOptions(options)).toEqual(options);
+  });
+
+  it('should flatten a one-dimensional menu into groups', () => {
+    const menuItem = { id: 'action', title: 'Action' };
+    // The channel payload is untyped at runtime, so a sender can send a flat menu.
+    const options = { selectors: ['#button'], menu: [menuItem] } as unknown as HighlightOptions;
+    expect(normalizeOptions(options)).toEqual(expect.objectContaining({ menu: [[menuItem]] }));
+  });
+
+  it('should keep an already two-dimensional menu unchanged', () => {
+    const menuItem = { id: 'action', title: 'Action' };
+    expect(normalizeOptions({ selectors: ['#button'], menu: [[menuItem]] })).toEqual(
+      expect.objectContaining({ menu: [[menuItem]] })
+    );
+  });
+
+  it('should set menu to undefined when it is not an array', () => {
+    const options = { selectors: ['#button'], menu: 'not-a-menu' } as unknown as HighlightOptions;
+    expect(normalizeOptions(options)).toEqual(expect.objectContaining({ menu: undefined }));
   });
 });

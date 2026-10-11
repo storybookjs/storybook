@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { stat, writeFile } from 'node:fs/promises';
 
 import { join, normalize } from 'pathe';
 
@@ -30,13 +30,17 @@ export interface ModuleGraphEngineOptions {
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
-  /** Mirrors the built reverse index into the `core/module-graph` open service. */
+  /** Mirrors the built reverse index into the open services after the initial build. */
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
-  /** Mirrors state after each settled patch; includes story files whose graph may have changed. */
-  onUpdate?: (payload: {
-    storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>;
-    bumpedStoryFiles: string[];
-  }) => void;
+  /** Replaces `core/module-graph-index` when a patch moved the reverse index. */
+  onIndex?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void | Promise<void>;
+  /**
+   * Fired after every settled file-change patch. Empty `bumpedStoryFiles` means the path was
+   * out of graph: `fileActivityRevision` still advances so change detection can rescan git.
+   * `changedAt` is the changed file's modification time, capped at when the event arrived, or the
+   * arrival time for a deleted file.
+   */
+  onBump?: (bumpedStoryFiles: string[], changedAt: number) => void | Promise<void>;
 }
 
 /**
@@ -58,6 +62,11 @@ export class ModuleGraphEngine {
   private storyFiles: Set<string> = new Set();
   private refreshInFlight = false;
   /**
+   * Resolves once {@link startInternal} finishes (success or handled failure). The initial build
+   * does not go through {@link patchQueue}, so {@link whenSettled} awaits this first.
+   */
+  private startSettled: Promise<void> = Promise.resolve();
+  /**
    * Resolves once the in-flight story-index reconciliation has enqueued its add/unlink patches.
    * {@link whenSettled} awaits this before snapshotting {@link patchQueue}, so a barrier taken
    * while a reconciliation is still in `getIndex()` does not miss its patches (which would let a
@@ -78,7 +87,7 @@ export class ModuleGraphEngine {
   start(adapter: ChangeDetectionAdapter): void {
     this.adapter = adapter;
 
-    void this.startInternal().catch((error) => {
+    this.startSettled = this.startInternal().catch((error) => {
       const failure = error instanceof Error ? error : new ModuleGraphFailureError(String(error));
       logger.error(`Module graph failed to start: ${failure.message}`);
       this.options.onError?.(failure);
@@ -109,24 +118,31 @@ export class ModuleGraphEngine {
     return bumpedStoryFiles;
   }
 
-  private mirrorUpdate(changedFile: string, prePatchBumped: Set<string> = new Set()): void {
+  private async mirrorUpdate(
+    changedFile: string,
+    prePatchBumped: Set<string>,
+    indexChanged: boolean,
+    changedAt: number
+  ): Promise<void> {
     if (!this.reverseIndex) {
       return;
     }
-    const normalized = normalize(changedFile);
-    const bumpedStoryFiles = new Set(prePatchBumped);
-    for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
-      bumpedStoryFiles.add(storyFile);
+    const bumpedStoryFiles = new Set([
+      ...prePatchBumped,
+      ...this.collectBumpedStoryFiles(changedFile),
+    ]);
+
+    // Index before bump: subscribers must not observe a new revision against a stale reverse index.
+    // Serializing the index is O(files × stories); only pay it when the reverse index moved.
+    if (indexChanged) {
+      await this.options.onIndex?.(
+        reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+      );
     }
-    if (this.storyFiles.has(normalized)) {
-      bumpedStoryFiles.add(normalized);
-    }
-    this.options.onUpdate?.({
-      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir),
-      bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
-        toStoryIndexPath(storyFile, this.workingDir)
-      ),
-    });
+    await this.options.onBump?.(
+      Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir)),
+      changedAt
+    );
   }
 
   /**
@@ -156,6 +172,7 @@ export class ModuleGraphEngine {
    * {@link lookup} immediately after this resolves with no intervening `await`.
    */
   async whenSettled(): Promise<void> {
+    await this.startSettled;
     // Phase 1: let any in-flight story-index reconciliation enqueue its add/unlink patches, so the
     // tail snapshot below includes them.
     await this.refreshSettled.catch(() => undefined);
@@ -217,9 +234,9 @@ export class ModuleGraphEngine {
     });
 
     // Subscribe BEFORE build — buffer events until patcher is ready
-    const eventBuffer: FileChangeEvent[] = [];
+    const eventBuffer: Array<{ event: FileChangeEvent; receivedAt: number }> = [];
     const unsubscribeBuffer = adapter.onFileChange((event) => {
-      eventBuffer.push(event);
+      eventBuffer.push({ event, receivedAt: Date.now() });
     });
 
     const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
@@ -239,15 +256,16 @@ export class ModuleGraphEngine {
 
     // Drain buffered events into patchQueue, then switch to live handler
     unsubscribeBuffer();
-    for (const event of eventBuffer) {
+    for (const { event, receivedAt } of eventBuffer) {
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange(event))
+        .then(() => this.handleFileChange(event, receivedAt))
         .catch(() => undefined);
     }
 
     adapter.onFileChange((event) => {
+      const receivedAt = Date.now();
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange(event))
+        .then(() => this.handleFileChange(event, receivedAt))
         .catch(() => undefined);
     });
 
@@ -283,6 +301,7 @@ export class ModuleGraphEngine {
    * patches to be enqueued.
    */
   private async refreshStoryFiles(): Promise<void> {
+    const receivedAt = Date.now();
     const storyIndex = await this.options.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const next = new Set(storyIdsByFile.keys());
@@ -309,12 +328,12 @@ export class ModuleGraphEngine {
 
     for (const path of added) {
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange({ kind: 'add', path }))
+        .then(() => this.handleFileChange({ kind: 'add', path }, receivedAt))
         .catch(() => undefined);
     }
     for (const path of removed) {
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange({ kind: 'unlink', path }))
+        .then(() => this.handleFileChange({ kind: 'unlink', path }, receivedAt))
         .catch(() => undefined);
     }
   }
@@ -377,11 +396,20 @@ export class ModuleGraphEngine {
     }
   }
 
-  private async handleFileChange(event: FileChangeEvent): Promise<void> {
-    if (!this.incrementalPatcher) {
+  private async handleFileChange(event: FileChangeEvent, receivedAt: number): Promise<void> {
+    if (!this.incrementalPatcher || !this.reverseIndex) {
       return;
     }
+    // Builders can report an edit long after it happened (webpack holds edits made during a
+    // compile until it finishes), so the file's own mtime dates the change. A future mtime (clock
+    // skew, `touch -d`) is capped at arrival so it cannot date every later change after a review.
+    // A deleted file has no mtime, so its arrival dates it.
+    const changedAt = await stat(event.path).then(
+      (stats) => Math.min(stats.mtimeMs, receivedAt),
+      () => receivedAt
+    );
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
+    const revisionBefore = this.reverseIndex.revision;
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {
@@ -389,6 +417,13 @@ export class ModuleGraphEngine {
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    this.mirrorUpdate(event.path, prePatchBumped);
+    // Partial mutations still bump the reverse-index revision, so a thrown patch is mirrored when
+    // anything actually moved — without guessing from control flow.
+    await this.mirrorUpdate(
+      event.path,
+      prePatchBumped,
+      this.reverseIndex.revision !== revisionBefore,
+      changedAt
+    );
   }
 }

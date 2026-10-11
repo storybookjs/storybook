@@ -86,14 +86,14 @@ const meta = {
       </ManagerContext.Provider>
     ),
   ],
-} as Meta<typeof Tree>;
+} satisfies Meta<typeof Tree>;
 
 export default meta;
 
 // @ts-expect-error (non strict)
 const storyId = Object.values(index).find((story) => story.type === 'story').id;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<typeof Tree>>;
 
 export const Full: Story = {
   args: {

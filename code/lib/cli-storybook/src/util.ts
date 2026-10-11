@@ -1,12 +1,20 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
+import {
+  HandledError,
+  JsPackageManager,
+  getPkgPrNewPackageSpecifier,
+  getProjectRoot,
+  isPkgPrNewVersionSpecifier,
+  isSatelliteAddon,
+  versions,
+} from 'storybook/internal/common';
 import {
   experimental_loadStorybook,
   getStoriesPathsFromConfig,
 } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
+  UpgradeStorybookConfigDirNotFoundError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -16,7 +24,7 @@ import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
-import { lt, prerelease } from 'semver';
+import { lt, prerelease, rsort } from 'semver';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -37,6 +45,7 @@ interface UpgradeConfig {
   readonly isCLIPrerelease: boolean;
   readonly isCLIExactPrerelease: boolean;
   readonly isCLIExactLatest: boolean;
+  readonly storybookVersionSpecifier?: string;
 }
 
 /** Result of successfully collecting project data */
@@ -51,7 +60,6 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string | null;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
-  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -145,7 +153,10 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @returns True if the version is a canary release
  */
 const isCanaryVersion = (version: string): boolean =>
-  version.startsWith('0.0.0') || version.startsWith('portal:') || version.startsWith('workspace:');
+  version.startsWith('0.0.0') ||
+  version.startsWith('portal:') ||
+  version.startsWith('workspace:') ||
+  isPkgPrNewVersionSpecifier(version);
 
 /**
  * Validates that a version string is not empty or undefined
@@ -205,20 +216,15 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       cwd,
       dot: true,
       gitignore: true,
+      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
+      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      ignore: ['**/node_modules/**'],
       absolute: true,
       onlyDirectories: true,
       followSymbolicLinks: false,
     });
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
-
-    if (storybookDirs.length === 0) {
-      const answer = await prompt.text({
-        message:
-          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
-      });
-      return [answer];
-    }
 
     return storybookDirs;
   } catch (error) {
@@ -296,14 +302,17 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
+      versionSpecifier,
       versionInstalled,
-      hasCsfFactoryPreview,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
     validateVersion(versionInstalled);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
+    const isCanary =
+      isCanaryVersion(currentCLIVersion) ||
+      isCanaryVersion(versionInstalled) ||
+      isPkgPrNewVersionSpecifier(versionSpecifier);
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
@@ -359,10 +368,10 @@ const processProject = async ({
       currentCLIVersion,
       latestCLIVersionOnNPM,
       isCLIExactPrerelease,
+      storybookVersionSpecifier: versionSpecifier,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
-      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));
@@ -442,6 +451,15 @@ export const generateUpgradeSpecs = async (
   const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
     const versionSpec = dependencies[dependency];
 
+    const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+      dependency,
+      config.storybookVersionSpecifier
+    );
+
+    if (pkgPrNewSpecifier) {
+      return `${dependency}@${pkgPrNewSpecifier}`;
+    }
+
     if (!versionSpec) {
       return `${dependency}@${versions[dependency]}`;
     }
@@ -464,8 +482,11 @@ export const generateUpgradeSpecs = async (
       try {
         const upgradePromises = satelliteDependencies.map(async (dependency) => {
           try {
-            const packageName = isCLIPrerelease ? `${dependency}@next` : dependency;
-            const mostRecentVersion = (await packageManager.latestVersion(packageName))!;
+            const tags = isCLIPrerelease ? [dependency, `${dependency}@next`] : [dependency];
+            const versions = await Promise.all(
+              tags.map((tag) => packageManager.latestVersion(tag))
+            );
+            const [mostRecentVersion] = rsort(versions.filter((version) => version !== null));
             if (!mostRecentVersion) {
               return null;
             }
@@ -688,6 +709,18 @@ export const getProjects = async (
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
     }
+    if (detectedConfigDirs.length === 0) {
+      task.stop('No .storybook directory found');
+      if (options.yes) {
+        throw new UpgradeStorybookConfigDirNotFoundError();
+      }
+      const configDir = await prompt.text({
+        message:
+          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
+      });
+      detectedConfigDirs = [configDir];
+      task.start('Detecting projects...');
+    }
 
     let count = 0;
     const projects = await collectProjects(options, detectedConfigDirs, () =>
@@ -731,7 +764,9 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    if (!(error instanceof HandledError)) {
+    if (
+      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
+    ) {
       logger.error('Failed to get projects');
     }
 
@@ -743,13 +778,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(
-      ...globbySync(matchers, {
-        gitignore: true,
-        absolute: true,
-        cwd: directory,
-      })
-    );
+    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
+    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
+    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;

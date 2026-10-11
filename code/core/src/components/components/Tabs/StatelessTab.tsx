@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Tab } from 'react-aria-components/patched-dist/Tabs';
+import { Tab } from 'react-aria-components/Tabs';
 import { styled } from 'storybook/theming';
 
 export interface StatelessTabProps {

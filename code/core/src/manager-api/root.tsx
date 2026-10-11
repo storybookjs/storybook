@@ -158,7 +158,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
         if (!this.mounted) {
           // Before mount (e.g. during addon registration in the constructor) React's setState is a
           // no-op, so apply the patch directly to this.state and resolve synchronously. This ensures
-          // register-time writes (like experimental_setFilters) land in the first render.
+          // register-time writes (like setFilters) land in the first render.
           const patch =
             typeof stateChange === 'function'
               ? (stateChange as (s: State) => Partial<State>)(this.state)
@@ -215,7 +215,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
     this.api = api;
 
     // Run addon register callbacks before the first render mounts the preview iframe, so manager-side
-    // listeners (e.g. open-service) exist before preview JS can emit sync-start.
+    // listeners (e.g. open-service) exist before preview JS can emit sync-request.
     props.provider.handleAPI(this.api);
   }
 
@@ -225,9 +225,12 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {
     const locationSearchChanged = state.location?.search !== props.location?.search;
+    // In-page navigation (e.g. to a docs heading) only changes the hash, and consumers like
+    // getUrlState() and the sidebar's "last viewed" tracking need to observe it.
+    const locationHashChanged = state.location?.hash !== props.location?.hash;
     const pathChanged = state.path !== props.path;
 
-    if (pathChanged || locationSearchChanged) {
+    if (pathChanged || locationSearchChanged || locationHashChanged) {
       return {
         ...state,
         location: props.location,

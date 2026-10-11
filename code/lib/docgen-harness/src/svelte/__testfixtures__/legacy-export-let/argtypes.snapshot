@@ -1,0 +1,42 @@
+{
+  "count": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Legacy count.",
+    "name": "count",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": true,
+    },
+  },
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Legacy label text.",
+    "name": "label",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""Legacy"",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

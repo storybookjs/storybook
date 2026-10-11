@@ -1,0 +1,1 @@
+We've had complaints from customers with disabilities that checkout is confusing to get through: after finishing the first set of fields, they can't tell that the page has moved on to delivery details, and the browser never offers to fill in their saved email or address. Go through the checkout flow the way they would and fix what's getting in their way.

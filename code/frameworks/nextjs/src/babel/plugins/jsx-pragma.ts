@@ -5,7 +5,11 @@
 import type { types as BabelTypes, NodePath, PluginObj } from '@babel/core';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-import jsx from 'next/dist/compiled/babel/plugin-syntax-jsx.js';
+import jsxModule from 'next/dist/compiled/babel/plugin-syntax-jsx.js';
+
+// Next.js 16.3 compiles this module without `__esModule`, so the default import is
+// `{ default: plugin }` instead of the plugin.
+const jsx = jsxModule.default ?? jsxModule;
 
 export default function jsxPragma({ types: t }: { types: typeof BabelTypes }): PluginObj<any> {
   return {

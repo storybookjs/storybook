@@ -18,6 +18,7 @@ const storyDocSchema = v.object({
   snippet: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
+  warning: v.optional(v.string()),
   error: v.optional(storyDocsErrorSchema),
 });
 
@@ -45,6 +46,7 @@ export type StoryDocsServiceState = {
  */
 export const storyDocsServiceDef = defineService({
   id: 'core/story-docs',
+  internal: true,
   description: 'Story documentation (snippets, descriptions, imports) keyed by component id.',
   initialState: { components: {} } as StoryDocsServiceState,
   queries: {

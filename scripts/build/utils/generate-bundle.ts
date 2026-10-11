@@ -1,4 +1,3 @@
-/* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 
@@ -90,6 +89,11 @@ export async function generateBundle({
     treeShaking: true,
     color: true,
     external,
+    loader: {
+      // The MCP packages import markdown/html instruction and template files as text
+      '.md': 'text',
+      '.html': 'text',
+    },
     minifySyntax: true,
     define: {
       /*
@@ -174,6 +178,8 @@ export async function generateBundle({
           // Keep a single bundled acorn copy when CommonJS dependencies such as
           // acorn-jsx require('acorn') alongside ESM imports.
           acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
+          // Avoid a nested @polka/url@0.5.0 CJS copy that drops polka's named `parse` export.
+          '@polka/url': join(resolvePackageDir('@polka/url'), 'build.mjs'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
@@ -215,7 +221,7 @@ export async function generateBundle({
         ...sharedOptions,
         external: [
           ...(sharedOptions.external as string[]),
-          ...(entries.browser.flatMap((entry) => entry.external) ?? []),
+          ...entries.browser.flatMap((entry) => entry.external ?? []),
         ].filter(Boolean),
         entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
@@ -265,7 +271,9 @@ export async function generateBundle({
         await context.watch();
         // show a log message when a file is compiled
         watch(join(DIR_CWD, 'dist'), { recursive: true }, (_event, filename) => {
-          console.log(`compiled ${picocolors.cyan(join(DIR_REL, 'dist', filename))}`);
+          if (filename) {
+            console.log(`compiled ${picocolors.cyan(join(DIR_REL, 'dist', filename))}`);
+          }
         });
       } else {
         await context.rebuild();

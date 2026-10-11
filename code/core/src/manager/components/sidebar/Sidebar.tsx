@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef } from 'react';
 
-import { Button, ScrollArea } from 'storybook/internal/components';
+import { ScrollArea } from 'storybook/internal/components';
 import type {
   API_LoadedRefData,
   StatusesByStoryIdAndTypeId,
@@ -8,7 +8,6 @@ import type {
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { PlusIcon } from '@storybook/icons';
 
 import { useStorybookApi, type State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -18,7 +17,6 @@ import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { ChecklistWidget } from './ChecklistWidget.tsx';
-import { CreateNewStoryFileModal } from './CreateNewStoryFileModal.tsx';
 import { Explorer } from './Explorer.tsx';
 import { Filter } from './Filter.tsx';
 import type { HeadingProps } from './Heading.tsx';
@@ -27,6 +25,7 @@ import { IconSymbols } from './IconSymbols.tsx';
 import ReviewWidget, { useActiveReviewStoryCount } from './ReviewWidget.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
+import { ShowChangesButton } from './ShowChangesButton.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
@@ -58,13 +57,6 @@ const Stack = styled.div({
   padding: '16px 12px 20px 12px',
 });
 
-const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
-  color: theme.textMutedColor,
-  width: isMobile ? 36 : 32,
-  height: isMobile ? 36 : 32,
-  borderRadius: theme.appBorderRadius + 2,
-}));
-
 const useCombination = (
   index: SidebarProps['index'],
   indexError: SidebarProps['indexError'],
@@ -92,18 +84,16 @@ const useCombination = (
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
 };
 
-const isRendererReact = global.STORYBOOK_RENDERER === 'react';
-
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
   allStatuses: StatusesByStoryIdAndTypeId;
   menu: any[];
   storyId?: string;
   refId?: string;
+  anchor?: string;
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
-  showCreateStoryButton?: boolean;
   indexJson?: StoryIndex;
   isDevelopment?: boolean;
 }
@@ -111,6 +101,7 @@ export const Sidebar = React.memo(function Sidebar({
   // @ts-expect-error (non strict)
   storyId = null,
   refId = DEFAULT_REF_ID,
+  anchor,
   index,
   indexJson,
   indexError,
@@ -122,11 +113,11 @@ export const Sidebar = React.memo(function Sidebar({
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
   refs = {},
   onMenuClick,
-  showCreateStoryButton = isDevelopment && isRendererReact,
 }: SidebarProps) {
-  const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
-  // @ts-expect-error (non strict)
-  const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
+  const selected: Selection = useMemo(
+    () => (storyId ? { storyId, refId, anchor } : null),
+    [storyId, refId, anchor]
+  );
   const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
   const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
@@ -179,28 +170,8 @@ export const Sidebar = React.memo(function Sidebar({
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}
-            searchBarContent={
-              showCreateStoryButton && (
-                <>
-                  <CreateNewStoryButton
-                    isMobile={isMobile}
-                    onClick={() => {
-                      setIsFileSearchModalOpen(true);
-                    }}
-                    ariaLabel="Create a new story"
-                    variant="outline"
-                    padding="small"
-                  >
-                    <PlusIcon />
-                  </CreateNewStoryButton>
-                  <CreateNewStoryFileModal
-                    open={isFileSearchModalOpen}
-                    onOpenChange={setIsFileSearchModalOpen}
-                  />
-                </>
-              )
-            }
             searchFieldContent={<Filter />}
+            belowSearchContent={<ShowChangesButton />}
             {...lastViewedProps}
           >
             {({

@@ -1,10 +1,12 @@
-import React, { useCallback } from 'react';
 import type { ComponentProps, ReactElement, ReactNode } from 'react';
+import React, { useCallback } from 'react';
 
 import { global } from '@storybook/global';
 
 import * as R from 'react-router-dom';
 
+import { NAVIGATE_URL } from 'storybook/internal/core-events';
+import { addons } from 'storybook/manager-api';
 import type { LinkProps, NavigateOptions, RenderData } from './types.ts';
 import { getMatch, parsePath, queryFromLocation } from './utils.ts';
 
@@ -47,15 +49,25 @@ export const useNavigate = () => {
 
   return useCallback((to: R.To | number, { plain, ...options } = {} as NavigateOptions) => {
     if (typeof to === 'string' && to.startsWith('#')) {
-      if (to === '#') {
-        navigate(document.location.search);
-      } else {
-        document.location.hash = to;
-      }
-      return undefined;
+      // In-page navigation. Go through the router (instead of mutating document.location.hash)
+      // so the location change is observable by the manager state, e.g. for "last viewed"
+      // tracking in the sidebar.
+      return navigate(`${document.location.search}${to === '#' ? '' : to}`, options);
     }
     if (typeof to === 'string') {
       const target = plain ? to : `?path=${to}`;
+      const [search, hash] = target.split('#');
+
+      // When navigating to an anchor on the same page, e.g. via searching a sub-headline, the
+      // preview does not re-render, so nothing scrolls to the anchor. Emitting NAVIGATE_URL makes
+      // the preview scroll, and the manager's NAVIGATE_URL handler performs the actual `#hash`
+      // navigation through the in-page branch above.
+      if (search === document.location.search && hash) {
+        addons.getChannel().emit(NAVIGATE_URL, `#${hash}`);
+
+        return undefined;
+      }
+
       return navigate(target, options);
     }
     if (typeof to === 'number') {
@@ -138,7 +150,7 @@ function Route(input: RoutePropsDefault | RoutePropsStartsWith) {
 }
 Route.displayName = 'Route';
 
-export { Route, Match };
+export { Match, Route };
 
 export const LocationProvider: typeof R.BrowserRouter = (...args) => R.BrowserRouter(...args);
 export const BaseLocationProvider: typeof R.Router = (...args) => R.Router(...args);

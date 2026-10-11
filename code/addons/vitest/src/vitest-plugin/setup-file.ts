@@ -1,10 +1,17 @@
-import { afterEach, beforeAll, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, inject, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 import { getChannel, setChannel } from 'storybook/internal/channels';
 
-import { COMPONENT_TESTING_PANEL_ID } from '../constants.ts';
+import { COMPONENT_TESTING_PANEL_ID, STORYBOOK_TEST_FEATURES_PROVIDE_KEY } from '../constants.ts';
+
+// Vitest 5 replaces the Vite define without exposing it on the runtime global.
+const features = inject(STORYBOOK_TEST_FEATURES_PROVIDE_KEY);
+if (features) {
+  vi.stubGlobal('FEATURES', features);
+  beforeEach(() => vi.stubGlobal('FEATURES', features));
+}
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment

@@ -1,0 +1,23 @@
+{
+  "id": "no-selector",
+  "name": "NoSelectorComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-no-selector--primary": {
+      "id": "storydocs-no-selector--primary",
+      "name": "Primary",
+      "snippet": "import { NgComponentOutlet } from '@angular/common';
+import { Component } from '@angular/core';
+import { NoSelectorComponent } from './no-selector.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [NgComponentOutlet],
+  template: `<ng-container *ngComponentOutlet="NoSelectorComponent" />`,
+})
+export class DemoComponent {
+  protected readonly NoSelectorComponent = NoSelectorComponent;
+}",
+    },
+  },
+}

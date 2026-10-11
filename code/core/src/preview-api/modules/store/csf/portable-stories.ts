@@ -1,5 +1,8 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
+import {
+  MountMustBeDestructuredError,
+  ProjectAnnotationsAlreadyAppliedError,
+} from 'storybook/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -16,11 +19,11 @@ import type {
   Renderer,
   Store_CSFExports,
   StoryContext,
+  StoryContextForRender,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
 import type { UserEventObject } from 'storybook/test';
-import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons.ts';
 import {
@@ -36,12 +39,16 @@ import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { normalizeStory } from './normalizeStory.ts';
+import { hideArgTypes } from './hideArgTypes.ts';
 import { prepareContext, prepareStory } from './prepareStory.ts';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {
   var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
   var defaultProjectAnnotations: ProjectAnnotations<any>;
+  // Set by @storybook/addon-vitest once its setup file has applied the project annotations.
+  var __STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__: boolean | undefined;
+  var __STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__: boolean | undefined;
 }
 
 export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
@@ -59,6 +66,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
+  if (globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__) {
+    throw new ProjectAnnotationsAlreadyAppliedError();
+  }
+  globalThis.__STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__ = true;
+
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
   // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps
@@ -129,7 +141,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   const reporting = new ReporterAPI();
 
   const initializeContext = () => {
-    const context: StoryContext<TRenderer> = prepareContext({
+    const context: StoryContextForRender<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals,
       args: { ...story.initialArgs },
@@ -137,7 +149,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       reporting,
       loaded: {},
       abortSignal: new AbortController().signal,
-      step: (label, play) => story.runStep(label, play, context),
+      step: (label, play) => story.runStep(label, play, hideArgTypes(context)),
       canvasElement: null!,
       canvas: {} as Canvas,
       userEvent: {} as UserEventObject,
@@ -204,7 +216,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     return context;
   };
 
-  let loadedContext: StoryContext<TRenderer> | undefined;
+  let loadedContext: StoryContextForRender<TRenderer> | undefined;
 
   const play = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
@@ -213,7 +225,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       context.loaded = loadedContext.loaded;
     }
     Object.assign(context, extraContext);
-    return story.playFunction!(context);
+    return story.playFunction!(hideArgTypes(context));
   };
 
   const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
@@ -249,10 +261,11 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         cleanups.length = 0;
 
         const context = initializeContext();
+        const hookContext = hideArgTypes(context);
 
-        context.loaded = await story.applyLoaders(context);
+        context.loaded = await story.applyLoaders(hookContext);
 
-        cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+        cleanups.push(...(await story.applyBeforeEach(hookContext)).filter(Boolean));
 
         loadedContext = context;
       },
@@ -303,87 +316,17 @@ export function composeStories<TModule extends Store_CSFExports>(
   return composedStories;
 }
 
-type WrappedStoryRef =
-  | { __pw_type: 'jsx'; props: Record<string, any> }
-  | { __pw_type: 'importRef' };
-type UnwrappedJSXStoryRef = {
-  __pw_type: 'jsx';
-  type: UnwrappedImportStoryRef;
-};
-type UnwrappedImportStoryRef = ComposedStoryFn;
-
-declare global {
-  function __pwUnwrapObject(
-    storyRef: WrappedStoryRef
-  ): Promise<UnwrappedJSXStoryRef | UnwrappedImportStoryRef>;
-}
-
-export function createPlaywrightTest<TFixture extends { extend: any }>(
-  baseTest: TFixture
-): TFixture {
-  return baseTest.extend({
-    mount: async ({ mount, page }: any, use: any) => {
-      await use(async (storyRef: WrappedStoryRef, ...restArgs: any) => {
-        // Playwright CT deals with JSX import references differently than normal imports
-        // and we can currently only handle JSX import references
-        if (
-          !('__pw_type' in storyRef) ||
-          ('__pw_type' in storyRef && storyRef.__pw_type !== 'jsx')
-        ) {
-          // eslint-disable-next-line local-rules/no-uncategorized-errors
-          throw new Error(dedent`
-              Portable stories in Playwright CT only work when referencing JSX elements.
-              Please use JSX format for your components such as:
-
-              instead of:
-              await mount(MyComponent, { props: { foo: 'bar' } })
-
-              do:
-              await mount(<MyComponent foo="bar"/>)
-
-              More info: https://storybook.js.org/docs/api/portable-stories/portable-stories-playwright?ref=error
-            `);
-        }
-
-        // Props are not necessarily serialisable and so can't be passed to browser via
-        // `page.evaluate`. Regardless they are not needed for storybook load/play steps.
-        const { props, ...storyRefWithoutProps } = storyRef;
-
-        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
-          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
-          const story =
-            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
-          return story?.load?.();
-        }, storyRefWithoutProps);
-
-        // mount the story
-        const mountResult = await mount(storyRef, ...restArgs);
-
-        // play the story in the browser
-        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
-          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
-          const story =
-            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
-          const canvasElement = document.querySelector('#root');
-          return story?.play?.({ canvasElement });
-        }, storyRefWithoutProps);
-
-        return mountResult;
-      });
-    },
-  });
-}
-
 // TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.
 // Will make a follow up PR for that
 async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
-  context: StoryContext<TRenderer>
+  context: StoryContextForRender<TRenderer>
 ) {
   for (const callback of [...cleanups].reverse()) {
     await callback();
   }
   cleanups.length = 0;
+  const hookContext = hideArgTypes(context);
 
   if (!context.canvasElement) {
     const container = document.createElement('div');
@@ -396,13 +339,13 @@ async function runStory<TRenderer extends Renderer>(
     });
   }
 
-  context.loaded = await story.applyLoaders(context);
+  context.loaded = await story.applyLoaders(hookContext);
 
   if (context.abortSignal.aborted) {
     return;
   }
 
-  cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+  cleanups.push(...(await story.applyBeforeEach(hookContext)).filter(Boolean));
 
   const playFunction = story.playFunction;
 
@@ -422,7 +365,7 @@ async function runStory<TRenderer extends Renderer>(
         throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
       };
     }
-    await playFunction(context);
+    await playFunction(hookContext);
   }
 
   let cleanUp: CleanupCallback | undefined;
@@ -432,7 +375,7 @@ async function runStory<TRenderer extends Renderer>(
     await waitForAnimations(context.abortSignal);
   }
 
-  await story.applyAfterEach(context);
+  await story.applyAfterEach(hookContext);
 
   await cleanUp?.();
 }

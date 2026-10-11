@@ -2,9 +2,14 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
-import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
-import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import {
+  commonGlobOptions,
+  getProjectRoot,
+  getTsconfigPathsBaseDir,
+  normalizeStoryPath,
+} from 'storybook/internal/common';
+import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
+import { loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
@@ -30,8 +35,9 @@ import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
-import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
+import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
+import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
+import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -64,6 +70,8 @@ export type StoryIndexGeneratorOptions = {
   indexers: Indexer[];
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
+  features?: StorybookConfigRaw['features'];
+  storySorts?: StorybookConfigRaw['storySorts'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -224,8 +232,8 @@ export class StoryIndexGenerator {
       this.specifierToCache.set(specifier, cache)
     );
 
-    const preview = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(preview);
+    const preview = await this.getPreviewConfig();
+    const projectTags = this.getProjectTags(preview?.code, preview?.fileName);
 
     // Extract stories for each file
     await this.ensureExtracted({ projectTags });
@@ -419,11 +427,11 @@ export class StoryIndexGenerator {
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {
-      matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-        'browser',
-        'module',
-        'main',
-      ]);
+      matchPath = TsconfigPaths.createMatchPath(
+        getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+        tsconfig.paths,
+        ['browser', 'module', 'main']
+      );
     }
 
     const toImportPath = (path: string | undefined) => {
@@ -496,6 +504,11 @@ export class StoryIndexGenerator {
         type: 'docs',
         tags,
         storiesImports: [],
+        ...(this.options.features?.experimentalSearchDocsHeadings && {
+          // Each story in an autodocs page is wrapped in an `Anchor` block whose DOM id is
+          // derived from the story id, so those are the reliable in-page navigation targets.
+          anchors: storyEntries.map((e) => ({ id: anchorBlockIdFromId(e.id), title: e.name })),
+        }),
       };
 
       return {
@@ -619,6 +632,7 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         tags,
+        ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: result.anchors }),
       };
       return docsEntry;
     } catch (err) {
@@ -737,8 +751,8 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
-    const preview = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(preview);
+    const preview = await this.getPreviewConfig();
+    const projectTags = this.getProjectTags(preview?.code, preview?.fileName);
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
@@ -774,7 +788,7 @@ export class StoryIndexGenerator {
 
       const sorted = await this.sortStories(
         indexEntries,
-        preview && getStorySortParameter(preview.code)
+        combineStorySorts(this.options.storySorts ?? [])
       );
 
       this.lastStats = stats;
@@ -862,26 +876,32 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewConfig() {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
     return previewFile
-      ? {
-          code: (await readFile(previewFile, { encoding: 'utf8' })).toString(),
-          fileName: previewFile,
-        }
+      ? { code: await readFile(previewFile, { encoding: 'utf8' }), fileName: previewFile }
       : undefined;
   }
 
-  getProjectTags(preview?: { code: string; fileName: string }) {
+  getProjectTags(previewCode?: string, fileName?: string) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
-    if (preview) {
+    if (previewCode) {
       try {
-        const projectAnnotations = loadConfig(preview.code, preview.fileName).parse();
-        projectTags = projectAnnotations.getFieldValue(['tags']) ?? [];
+        const projectAnnotations = loadConfig(previewCode, fileName).parse();
+        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        invariant(
+          !projectAnnotations.mutationDiagnostics.some(
+            ({ code }) => code === 'unsupported-value'
+          ) &&
+            Array.isArray(tags) &&
+            tags.every((tag) => typeof tag === 'string'),
+          'Preview tags must be a static array of strings'
+        );
+        projectTags = tags;
       } catch (err) {
         once.warn(dedent`
           Unable to parse tags from project configuration. If defined, tags should be specified inline, e.g.
@@ -894,7 +914,7 @@ export class StoryIndexGenerator {
 
           Received:
 
-          ${preview.code}
+          ${previewCode}
         `);
       }
     }

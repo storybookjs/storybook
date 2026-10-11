@@ -10,11 +10,25 @@ import { getCodeSnippet } from './generateCodeSnippet.ts';
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
 
-  const snippets = Object.keys(csf._storyExports)
-    .map((name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle'))
-    .filter(Boolean);
+  const snippets = Object.keys(csf._storyExports).map(
+    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').node
+  );
 
   return recast.print(t.program(snippets)).code;
+}
+
+/** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
+function generateResolved(code: string) {
+  const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
+
+  return Object.keys(csf._storyExports).map((name) => {
+    const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
+    return {
+      snippet: recast.print(snippet.node).code,
+      imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
+      unresolved: snippet.unresolved,
+    };
+  });
 }
 
 function withCSF3(body: string) {
@@ -699,5 +713,193 @@ test('allow top level export functions', async () => {
             </div>
         );
     }"
+  `);
+});
+
+test('render method shorthand resolves like a render function', () => {
+  const input = withCSF3(dedent`
+    export const Default: Story = {
+      render(args) {
+        return <Button {...args}>method body</Button>;
+      }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Default = () => {
+        return <Button>method body</Button>;
+    };"
+  `);
+});
+
+test('a render shadowed by a later spread stays the snippet, not the synthesized fallback', () => {
+  const input = withCSF3(dedent`
+    const base = {};
+    export const Default: Story = {
+      render: (args) => <Button {...args}>custom body</Button>,
+      ...base,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button>custom body</Button>;"`
+  );
+});
+
+test('a spread of a local const object contributes its args', () => {
+  const input = withCSF3(dedent`
+    const shared = { primary: true, size: 'large' };
+    export const Default: Story = { args: { ...shared, label: 'local' } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button primary size="large" label="local">Click me</Button>;"`
+  );
+});
+
+test("a spread of a sibling story's args contributes the args it does not override", () => {
+  const input = withCSF3(dedent`
+    export const Base: Story = { args: { label: 'base', primary: true } };
+    export const Sibling: Story = { args: { ...Base.args, label: 'sibling' } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Base = () => <Button label="base" primary>Click me</Button>;
+    const Sibling = () => <Button label="sibling" primary>Click me</Button>;"
+  `);
+});
+
+test('a config-level spread inherits the args the story it extends declares', () => {
+  const input = withCSF3(dedent`
+    export const Base: Story = { args: { label: 'base', primary: true } };
+    export const Inherits: Story = { ...Base };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Base = () => <Button label="base" primary>Click me</Button>;
+    const Inherits = () => <Button label="base" primary>Click me</Button>;"
+  `);
+});
+
+test("a spread of a CSF4 story's args contributes the args it does not override", () => {
+  const input = withCSF4(dedent`
+    export const Base = meta.story({ args: { label: 'base', primary: true } });
+    export const Sibling = meta.story({ args: { ...Base.input.args, label: 'sibling' } });
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Base = () => <Button label="base" primary>Click me</Button>;
+    const Sibling = () => <Button label="sibling" primary>Click me</Button>;"
+  `);
+});
+
+test('an arg naming a local const carries the value, not the name', () => {
+  const input = withCSF3(dedent`
+    const LOCAL_LABEL = 'local';
+    export const Default: Story = { args: { label: LOCAL_LABEL } };
+  `);
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [],
+        "snippet": "const Default = () => <Button label="local">Click me</Button>;",
+        "unresolved": [],
+      },
+    ]
+  `);
+});
+
+test('an arg naming an imported value keeps the name and reports the import it needs', () => {
+  const input = withCSF3(dedent`
+    import { IMPORTED_LABEL } from './constants';
+    export const Default: Story = { args: { label: IMPORTED_LABEL } };
+  `);
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [
+          "IMPORTED_LABEL from ./constants",
+        ],
+        "snippet": "const Default = () => <Button label={IMPORTED_LABEL}>Click me</Button>;",
+        "unresolved": [],
+      },
+    ]
+  `);
+});
+
+test('args assembled at runtime are reported rather than dropped', () => {
+  const input = withCSF3(dedent`
+    export const Default: Story = { args: { ...buildArgs(), label: 'runtime' } };
+  `);
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [],
+        "snippet": "const Default = () => <Button label="runtime">Click me</Button>;",
+        "unresolved": [
+          "...buildArgs()",
+        ],
+      },
+    ]
+  `);
+});
+
+test('args assigned to a function-declaration story are inlined', () => {
+  const input = withCSF3(dedent`
+    export function Usage(args) {
+      return <Button {...args}></Button>;
+    }
+    Usage.args = { label: 'assigned' };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Usage() {
+        return <Button label="assigned">Click me</Button>;
+    }"
+  `);
+});
+
+test('a meta-level spread that may carry args is reported', () => {
+  const input = dedent`
+    import { Button } from '@design-system/button';
+    declare function sharedMeta(): object;
+    export default { component: Button, ...sharedMeta() };
+    export const Default = { args: { label: 'x' } };
+  `;
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [],
+        "snippet": "const Default = () => <Button label="x" />;",
+        "unresolved": [
+          "...sharedMeta()",
+        ],
+      },
+    ]
+  `);
+});
+
+test('a body still reading args after a partial inline keeps the parameter', () => {
+  const input = withCSF3(dedent`
+    export function Usage(args) {
+      return <Button {...args} title={args.notAnArg} />;
+    }
+    Usage.args = { label: 'assigned' };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Usage(args) {
+        return <Button label="assigned" title={args.notAnArg}>Click me</Button>;
+    }"
+  `);
+});
+
+test('an arg value keeps a shorthand property shorthand', () => {
+  const input = withCSF3(dedent`
+    import { dep } from './dep';
+    const base = { size: 'md' };
+    export const Shorthand: Story = { args: { cfg: { dep, nested: { ...base } } } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Shorthand = () => <Button
+        cfg={{
+            dep,
+
+            nested: {
+                size: 'md'
+            }
+        }}>Click me</Button>;"
   `);
 });

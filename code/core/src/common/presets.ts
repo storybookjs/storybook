@@ -12,7 +12,9 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { join, parse, resolve } from 'pathe';
+import { readFileSync } from 'node:fs';
+
+import { isAbsolute, join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import type { ChannelLike } from '../channels/index.ts';
@@ -54,6 +56,15 @@ function resolvePresetFunction<T = any>(
   return [];
 }
 
+function readAddonManifest(dir: string): { name?: string; exports?: unknown } | undefined {
+  try {
+    const { name, exports } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    return { name: typeof name === 'string' && name !== '' ? name : undefined, exports };
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Parse an addon into either a managerEntries or a preset. Throw on invalid input.
  *
@@ -64,7 +75,6 @@ function resolvePresetFunction<T = any>(
  * - `{ name: '@storybook/addon-docs(/preset)?', options: { } } => { type: 'presets', item: { name:
  *   '@storybook/addon-docs/preset', options } }`
  */
-
 export const resolveAddonName = (
   configDir: string,
   name: string,
@@ -79,9 +89,21 @@ export const resolveAddonName = (
     };
   }
 
-  const presetFile = safeResolveModule({ specifier: join(name, 'preset'), parent: configDir });
-  const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
-  const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
+  // An absolute `name` is a directory, so joining entry subpaths onto it bypasses the
+  // package's `exports` map. Resolving the bare specifier from the package's own directory
+  // consults `exports` instead, and restricting that to packages which declare `exports`
+  // keeps the lookup from walking node_modules into a different copy of the addon.
+  const manifest = isAbsolute(name) ? readAddonManifest(name) : undefined;
+  const exportsSpecifier = manifest?.exports ? manifest.name : undefined;
+
+  const resolveEntryFile = (entry: string) =>
+    (exportsSpecifier
+      ? safeResolveModule({ specifier: `${exportsSpecifier}/${entry}`, parent: name })
+      : undefined) ?? safeResolveModule({ specifier: join(name, entry), parent: configDir });
+
+  const presetFile = resolveEntryFile('preset');
+  const managerFile = resolveEntryFile('manager');
+  const previewFile = resolveEntryFile('preview');
 
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];
@@ -133,7 +155,16 @@ const map =
     }
 
     if (!resolved) {
-      logger.warn(`Could not resolve addon "${name}", skipping. Is it installed?`);
+      const packageName = isAbsolute(name) ? readAddonManifest(name)?.name : undefined;
+      logger.warn(
+        packageName
+          ? dedent`
+              Could not resolve addon "${packageName}", skipping.
+              It is installed at ${name}, but none of its preset, manager or preview entry points could be resolved.
+              If your main config wraps it in getAbsolutePath(), try referencing "${packageName}" directly instead.
+            `
+          : `Could not resolve addon "${name}", skipping. Is it installed?`
+      );
       return undefined;
     }
 

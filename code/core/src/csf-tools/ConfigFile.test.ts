@@ -1,15 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { babelPrint } from 'storybook/internal/babel';
-import { logger, once } from 'storybook/internal/node-logger';
+import * as babelParser from '@babel/parser';
+import { babelPrint, parserOptions } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import { loadConfig, printConfig } from './ConfigFile.ts';
+import { ConfigFile, formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 
-vi.mock('storybook/internal/node-logger', { spy: true });
-
-const mockedLogger = vi.mocked(logger);
+vi.mock('storybook/internal/node-logger');
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -18,12 +17,12 @@ expect.addSnapshotSerializer({
 
 const getField = (path: string[], source: string) => {
   const config = loadConfig(source).parse();
-  return config.getFieldValue(path);
+  return config.getValue(path);
 };
 
 const setField = (path: string[], value: any, source: string) => {
   const config = loadConfig(source).parse();
-  config.setFieldValue(path, value);
+  expect(config.set(path, value)).toMatchObject({ ok: true });
   return printConfig(config).code;
 };
 
@@ -40,6 +39,225 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  describe('imported default export diagnostics', () => {
+    beforeEach(() => {
+      vi.mocked(logger.debug).mockClear();
+      vi.mocked(logger.warn).mockClear();
+    });
+
+    it.each([
+      "import { config } from './shared'; export default config;",
+      "import { config as preview } from './shared'; export default preview;",
+      "import config from './shared'; export default config;",
+      "import * as config from './shared'; export default config;",
+      "import config from './shared'; export default config as object;",
+      "import config from './shared'; export default config satisfies object;",
+      "import config from './shared'; export default config!;",
+      "import config from './shared'; export { config as default };",
+      "import config from './shared'; export { config as 'default' };",
+      "export { config as default } from './shared';",
+      "export { default } from './shared';",
+    ])('explains the source without resolving or mutating %s', (source) => {
+      const config = loadConfig(source, 'preview.ts');
+      const before = printConfig(config).code;
+      config.parse();
+
+      expect(logger.debug).toHaveBeenCalledExactlyOnceWith(dedent`
+        Cannot statically read the default export in 'preview.ts': its value comes from './shared'.
+        Define the configuration object in this file so Storybook can read it statically.
+      `);
+      expect(logger.warn).not.toHaveBeenCalled();
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(config.changed).toBe(false);
+      expect(printConfig(config).code).toBe(before);
+    });
+
+    it('uses a generic file description when no file name is available', () => {
+      loadConfig("import config from './shared'; export default config;").parse();
+      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('in a config file:'));
+    });
+
+    it.each([
+      "import type { config } from './shared'; export default config;",
+      "import { type config } from './shared'; export default config;",
+      "import type { config } from './shared'; export { config as default };",
+      "export type { config as default } from './shared';",
+      "export { type config as default } from './shared';",
+      "const config = {}; export type { config as default } from './shared';",
+      'export default unknownConfig;',
+      "import * as config from './shared'; export default config.preview;",
+      "import config from './shared'; export default definePreview(config);",
+      "import config from './shared'; const local = config; export { local as default };",
+    ])('does not classify unsupported or type-only expressions as direct imports: %s', (source) => {
+      loadConfig(source).parse();
+      expect(logger.debug).not.toHaveBeenCalledWith(
+        expect.stringContaining('its value comes from')
+      );
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('identifies a re-export even when a local object has the same name', () => {
+      const source =
+        "const config = { tags: ['local'] }; export { config as default } from './shared';";
+      const config = loadConfig(source).parse();
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining("its value comes from './shared'")
+      );
+      expect(config.hasDefaultExport).toBe(true);
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(config.mutationDiagnostics).toEqual(
+        expect.arrayContaining([expect.objectContaining({ code: 'ambiguous-binding' })])
+      );
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it('does not interpret an arbitrary function argument as its return value', () => {
+      const source =
+        "const config = { tags: ['autodocs'] }; function erase(value) { return {}; } export default erase(config);";
+      const config = loadConfig(source).parse();
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(printConfig(config).code).toBe(source);
+    });
+  });
+
+  it.each([
+    `export default { parameters: { viewport: { disable: true } } };`,
+    `export default definePreview({ parameters: { viewport: { disable: true } } });`,
+    `export const parameters = { viewport: { disable: true } };`,
+    `export default {};`,
+  ])('keeps nested fields readable and removable after setting them in %s', (source) => {
+    const config = loadConfig(source).parse();
+
+    config.set(['parameters', 'viewport', 'options'], {});
+    expect(config.getValue(['parameters', 'viewport', 'options'])).toEqual({});
+    if (source.includes('disable: true')) {
+      expect(config.getValue(['parameters', 'viewport', 'disable'])).toBe(true);
+    }
+    config.removeField(['parameters', 'viewport', 'disable']);
+    config.set(['parameters', 'viewport', 'disabled'], true);
+
+    const reparsed = loadConfig(printConfig(config).code).parse();
+    expect(config.getValue(['parameters'])).toEqual({
+      viewport: { options: {}, disabled: true },
+    });
+    expect(reparsed.getValue(['parameters'])).toEqual(config.getValue(['parameters']));
+  });
+
+  describe('callArguments', () => {
+    it('finds binding-safe method calls on aliased named imports', () => {
+      const config = loadConfig(dedent`
+        import { addons as managerAddons } from 'storybook/manager-api';
+
+        managerAddons.setConfig({ showNav: false });
+        managerAddons['setConfig']({ showPanel: false });
+
+        function configure(managerAddons: { setConfig: (value: unknown) => void }) {
+          managerAddons.setConfig({ showToolbar: false });
+        }
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api', '@storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
+
+      calls[0].group(['layout'], ['showNav']);
+      expect(config.changed).toBe(true);
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(printConfig(config).code).toContain('layout: {');
+      expect(calls[0].getValue(['layout', 'showNav'])).toBe(false);
+    });
+
+    it('ignores other modules and type-only imports', () => {
+      const config = loadConfig(dedent`
+        import { addons } from 'other-package';
+        import type { addons as typeAddons } from 'storybook/manager-api';
+        addons.setConfig({ showNav: false });
+        typeAddons.setConfig({ showPanel: false });
+      `).parse();
+
+      expect(
+        config.callArguments({
+          importedName: 'addons',
+          methodName: 'setConfig',
+          moduleNames: ['storybook/manager-api'],
+        })
+      ).toHaveLength(0);
+    });
+
+    it('finds binding-safe method calls on destructured CommonJS imports', () => {
+      const config = loadConfig(dedent`
+        const { addons: managerAddons } = require('storybook/manager-api');
+
+        managerAddons.setConfig({ showNav: false });
+
+        function configure(managerAddons) {
+          managerAddons.setConfig({ showPanel: false });
+        }
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+    });
+
+    it('finds same-named imported bindings in different scopes', () => {
+      const config = loadConfig(dedent`
+        import { addons } from 'storybook/manager-api';
+
+        addons.setConfig({ showNav: false });
+
+        function configure() {
+          const { addons } = require('storybook/manager-api');
+          addons.setConfig({ showPanel: false });
+        }
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
+    });
+
+    it('ignores other bindings from the same CommonJS destructuring', () => {
+      const config = loadConfig(dedent`
+        const { addons, unrelated } = require('storybook/manager-api');
+
+        addons.setConfig({ showNav: false });
+        unrelated.setConfig({ showPanel: false });
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+    });
+  });
+
   describe('getField', () => {
     describe('named exports', () => {
       it('missing export', () => {
@@ -313,12 +531,12 @@ describe('ConfigFile', () => {
           }>();
         `;
         const config = loadConfig(source).parse();
-        expect(config.getFieldValue(['parameters', 'foo'])).toEqual('bar');
+        expect(config.getValue(['parameters', 'foo'])).toEqual('bar');
       });
     });
   });
 
-  describe('setField', () => {
+  describe('set', () => {
     describe('named exports', () => {
       it('missing export', () => {
         expect(
@@ -516,12 +734,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: 'baz'
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -1018,12 +1236,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: 'baz'
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -1035,6 +1253,38 @@ describe('ConfigFile', () => {
           };
         `);
       });
+    });
+  });
+
+  describe('quote inference under EOL reconstruction', () => {
+    it('keeps single quotes when token offsets index a CRLF reconstruction (Windows)', () => {
+      const source = `export default {\n  framework: '@storybook/react-vite',\n};\n`;
+      // On Windows, recast rebuilds the parser input with `os.EOL` before babel sees it, so
+      // babel's token offsets index a CRLF string while `_code` is the original LF source.
+      // Parsing the CRLF variant directly with @babel/parser recreates exactly that
+      // misalignment; quote inference must not depend on token offsets to survive it.
+      const ast = babelParser.parse(source.replaceAll('\n', '\r\n'), { ...parserOptions });
+      const config = new ConfigFile(ast, source);
+      config.parse();
+      config.setImport(['fileURLToPath'], 'node:url');
+      const printed = printConfig(config).code;
+      expect(printed).toContain("from 'node:url'");
+      expect(printed).not.toContain('from "node:url"');
+    });
+
+    it('infers quotes and prints LF output for CRLF sources', () => {
+      const source = [
+        "import { addons } from 'storybook/manager-api';",
+        '',
+        'export const tags = [];',
+      ].join('\r\n');
+      const config = loadConfig(source).parse();
+      config.set(['tags'], ['autodocs']);
+
+      const printed = printConfig(config).code;
+      expect(printed).not.toContain('\r');
+      expect(printed).toContain("'autodocs'");
+      expect(printed).not.toContain('"autodocs"');
     });
   });
 
@@ -1110,7 +1360,7 @@ describe('ConfigFile', () => {
         expect(config.getNameFromPath(['otherField'])).toEqual('foo');
       });
 
-      it(`supports pnp wrapped names`, () => {
+      it(`supports wrapped names`, () => {
         const source = dedent`
           import type { StorybookConfig } from '@storybook/react-webpack5';
 
@@ -1274,6 +1524,81 @@ describe('ConfigFile', () => {
   });
 
   describe('setImport', () => {
+    it('keeps a license header above the imports it adds', () => {
+      const source = dedent`
+        /*
+         * Copyright Example
+         */
+
+        import type { StorybookConfig } from '@storybook/react-vite';
+
+        const config: StorybookConfig = { stories: [] };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+      config.setImport(['fileURLToPath'], 'node:url');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        /*
+         * Copyright Example
+         */
+
+        import type { StorybookConfig } from '@storybook/react-vite';
+
+        import { dirname } from 'node:path';
+        import { fileURLToPath } from 'node:url';
+
+        const config: StorybookConfig = { stories: [] };
+        export default config;
+      `);
+    });
+
+    it('keeps a directive on its statement when moving the license header', () => {
+      const source = dedent`
+        // Copyright Example
+
+        // @ts-expect-error not a number
+        const config: number = {};
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        // Copyright Example
+
+        import { dirname } from "node:path";
+
+        // @ts-expect-error not a number
+        const config: number = {};
+        export default config;
+      `);
+    });
+
+    it('keeps a license header above a require it adds to a file without imports', () => {
+      const source = dedent`
+        // Copyright Example
+
+        module.exports = { stories: [] };
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['dirname'], 'node:path');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        // Copyright Example
+
+        const {
+          dirname
+        } = require("node:path");
+
+        module.exports = { stories: [] };
+      `);
+    });
+
     it(`supports setting a default import for a field that does not exist`, () => {
       const source = dedent`
         const config: StorybookConfig = { };
@@ -1813,7 +2138,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a preset-style object entry', () => {
@@ -1824,10 +2149,10 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
-    it('removes a pnp-wrapped string entry', () => {
+    it('removes a wrapped string entry', () => {
       const source = dedent`
         export default {
           addons: ['a', getAbsolutePath('b'), 'c'],
@@ -1835,10 +2160,10 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
-    it('removes a pnp-wrapped object entry', () => {
+    it('removes a wrapped object entry', () => {
       const source = dedent`
         export default {
           addons: ['a',  { name: getAbsolutePath('b'), options: {} }, 'c'],
@@ -1846,7 +2171,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('throws when entry is missing', () => {
@@ -1927,124 +2252,6 @@ describe('ConfigFile', () => {
         expect(config._exportsObject?.type).toBe('ObjectExpression');
         expect(config._exportsObject?.properties).toHaveLength(1);
       }
-    });
-  });
-
-  describe('default export analysis warnings', () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-      // several tests emit an identical message, which `once` would otherwise dedupe across tests
-      once.clear();
-    });
-
-    it('warns with an actionable message when the default export is a named import', () => {
-      const config = loadConfig(
-        dedent`
-          import { previewConfig } from './pre';
-          export default previewConfig;
-        `,
-        'preview.ts'
-      ).parse();
-      expect(config.hasDefaultExport).toBe(true);
-      expect(config.getFieldValue(['tags'])).toBeUndefined();
-      expect(mockedLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("it is imported from './pre'")
-      );
-      expect(mockedLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("default export of 'preview.ts'")
-      );
-    });
-
-    it('warns with an actionable message when the default export is a default import', () => {
-      loadConfig(
-        dedent`
-          import previewConfig from './pre';
-          export default previewConfig;
-        `
-      ).parse();
-      expect(mockedLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("default export of this config file: it is imported from './pre'")
-      );
-    });
-
-    it('warns with an actionable message when an imported config is passed to a csf factory', () => {
-      loadConfig(
-        dedent`
-          import { definePreview } from '@storybook/react-vite';
-          import { previewConfig } from './pre';
-          export default definePreview(previewConfig);
-        `
-      ).parse();
-      expect(mockedLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("it is imported from './pre'")
-      );
-    });
-
-    it('resolves a local variable passed to a csf factory', () => {
-      const config = loadConfig(
-        dedent`
-          import { definePreview } from '@storybook/react-vite';
-          const previewConfig = { tags: ['autodocs'] };
-          export default definePreview(previewConfig);
-        `
-      ).parse();
-      expect(config.getFieldValue(['tags'])).toEqual(['autodocs']);
-      expect(mockedLogger.warn).not.toHaveBeenCalled();
-    });
-
-    it('warns with an actionable message for a re-exported default', () => {
-      const config = loadConfig(
-        dedent`
-          export { previewConfig as default } from './pre';
-        `
-      ).parse();
-      expect(config.hasDefaultExport).toBe(true);
-      expect(mockedLogger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("it is imported from './pre'")
-      );
-    });
-
-    it('resolves a local variable exported as default via an export specifier', () => {
-      const config = loadConfig(
-        dedent`
-          const previewConfig = { tags: ['autodocs'] };
-          export { previewConfig as default };
-        `
-      ).parse();
-      expect(config.hasDefaultExport).toBe(true);
-      expect(config.getFieldValue(['tags'])).toEqual(['autodocs']);
-      expect(mockedLogger.warn).not.toHaveBeenCalled();
-    });
-
-    it('warns only once when the same config is parsed repeatedly', () => {
-      const source = dedent`
-        import { previewConfig } from './pre';
-        export default previewConfig;
-      `;
-      loadConfig(source, 'preview.ts').parse();
-      loadConfig(source, 'preview.ts').parse();
-      expect(mockedLogger.warn).toHaveBeenCalledTimes(1);
-    });
-
-    it('throws when setting a field on a re-exported default', () => {
-      const config = loadConfig(
-        dedent`
-          export { previewConfig as default } from './pre';
-        `
-      ).parse();
-      expect(() => config.setFieldValue(['tags'], ['test'])).toThrow(/default export/);
-    });
-
-    it('falls back to the generic parsing warning for other unresolvable default exports', () => {
-      loadConfig(
-        dedent`
-          export default foo;
-        `
-      ).parse();
-      expect(mockedLogger.warn).toHaveBeenCalledWith(expect.stringContaining('CSF Parsing error'));
-      expect(mockedLogger.warn).not.toHaveBeenCalledWith(
-        expect.stringContaining('it is imported from')
-      );
     });
   });
 });

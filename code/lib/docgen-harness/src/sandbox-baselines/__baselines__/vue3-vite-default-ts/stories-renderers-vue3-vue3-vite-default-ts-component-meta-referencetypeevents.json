@@ -1,0 +1,59 @@
+{
+  "argTypes": {
+    "bar": {
+      "control": {
+        "disable": true
+      },
+      "description": "Test description bar",
+      "name": "bar",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[value: { year: number; title?: any; }]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[value: { year: number; title?: any; }]"
+      }
+    },
+    "baz": {
+      "control": {
+        "disable": true
+      },
+      "description": "Test description baz",
+      "name": "baz",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[]"
+      }
+    },
+    "foo": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "foo",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[data?: { foo: string; }]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[data?: { foo: string; } | undefined]"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-referencetypeevents",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/ReferenceTypeEvents.stories.ts"
+}

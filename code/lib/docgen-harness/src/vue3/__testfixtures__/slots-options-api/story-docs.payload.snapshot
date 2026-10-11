@@ -1,0 +1,32 @@
+{
+  "id": "slots-options-api",
+  "name": "OptionsApiSlots",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots-options-api--scoped-bindings": {
+      "description": undefined,
+      "id": "forms-slots-options-api--scoped-bindings",
+      "name": "Scoped Bindings",
+      "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
+    },
+    "forms-slots-options-api--string-child": {
+      "description": undefined,
+      "id": "forms-slots-options-api--string-child",
+      "name": "String Child",
+      "snippet": "<script lang="ts" setup>
+import OptionsApiSlots from './OptionsApiSlots.vue';
+</script>
+
+<template>
+  <OptionsApiSlots heading="Entries">
+    Plain text content
+    <template #header>
+      Header text
+    </template>
+  </OptionsApiSlots>
+</template>",
+      "summary": undefined,
+    },
+  },
+}

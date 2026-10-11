@@ -14,11 +14,11 @@ import { useQuerySubscription } from './use-query-subscription.ts';
  * `undefined` when nothing has been extracted for the id yet).
  *
  * Requires a concrete component id and a registered `core/docgen` service. Callers whose service may
- * be absent (e.g. behind `experimentalDocgenServer`) must guard at a parent and conditionally render
+ * be absent (e.g. behind `docgenServer`) must guard at a parent and conditionally render
  * a child that calls this hook. The React 16/17-safe subscription mechanics live in
  * {@link useQuerySubscription}.
  */
 export function useServiceDocgen(id: string): QueryState<DocgenPayload | undefined> {
-  const service = getService('core/docgen');
+  const service = getService('core/docgen', { internal: true });
   return useQuerySubscription(id, service.queries.docgen, { id });
 }

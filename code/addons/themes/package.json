@@ -33,6 +33,7 @@
   },
   "license": "MIT",
   "author": "Shaun Evening",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

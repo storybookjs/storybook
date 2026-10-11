@@ -25,6 +25,12 @@ beforeAll(async () => {
         name: 'unrelated-manager-globals',
         setup(builder) {
           builder.onResolve({ filter: /^[^./]/ }, ({ path }) => {
+            // On Windows, esbuild resolves entry points through this callback too, and an absolute
+            // path like `C:\...\runtime.ts` matches this filter (a drive letter is neither `.` nor
+            // `/`). Path-like specifiers must resolve normally; only bare specifiers get stubbed.
+            if (/^([A-Za-z]:|\\\\)/.test(path)) {
+              return;
+            }
             if (path === 'react' || path.startsWith('react/')) {
               return;
             }

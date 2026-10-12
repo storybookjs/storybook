@@ -52,6 +52,7 @@ export type { DocgenPayload } from './services/docgen/types.ts';
 export type { StoryDocsService } from './services/story-docs/definition.ts';
 export {
   prependImportToSnippet,
+  selectLiveSnippetForStory,
   selectSnippetForStory,
   selectStoryDoc,
   selectWarningForStory,

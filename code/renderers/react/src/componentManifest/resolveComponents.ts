@@ -139,6 +139,8 @@ export interface ResolvedStory {
   id: string;
   name: string;
   snippet?: string;
+  /** The snippet before args are filled in; see `StoryDoc.template`. */
+  template?: string;
   description?: string;
   summary?: string;
   /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
@@ -182,6 +184,7 @@ export function extractStorySnippets(
           id: story.id,
           name,
           snippet: recast.print(snippet.node).code,
+          template: recast.print(snippet.template).code,
           description,
           summary,
           ...(warning ? { warning } : {}),

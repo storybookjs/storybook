@@ -406,7 +406,7 @@ describe('stories.changed', () => {
     expect(outcome.data.unreachableFiles).toEqual(orphans.slice(0, 10));
     expect(outcome.data.unreachableFilesTruncated).toBe(true);
     expect(outcome.markdown).toContain(
-      'Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect (first 10):'
+      'Coverage gap (first 10 files): no story imports these changed files, directly or indirectly, so this result can miss stories they affect:'
     );
   });
 
@@ -482,7 +482,6 @@ describe('stories.changed', () => {
   describe('rendering', () => {
     it('renders the same bucketed report for the CLI as for MCP, apart from tool names', async () => {
       markChanged('button--primary', 'status-value:new');
-      markReachable(themePath);
       const outcome = await runChanged();
       const mcpOutcome = await runChanged(mcpCtx);
 
@@ -490,7 +489,9 @@ describe('stories.changed', () => {
         'Detected 1 changed story (1 new, 0 modified, 0 related).'
       );
       expect(outcome.markdown).toBe(
-        String(mcpOutcome.markdown).replaceAll('review-create', 'npx storybook tools review create')
+        String(mcpOutcome.markdown)
+          .replaceAll('review-create', 'npx storybook tools review create')
+          .replaceAll('stories-find-by-component', 'npx storybook tools stories find-by-component')
       );
     });
 
@@ -509,8 +510,12 @@ Next: if the change is visually observable, publish the review now — call **re
       );
     });
 
-    it('lists the coverage gap after the stories and ends on the next step', async () => {
+    it('lists the config line and the coverage gap after the stories and ends on the next step', async () => {
       markChanged('button--primary', 'status-value:new');
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([changedComponentFile, changedPreviewFile]),
+        new: new Set([changedThemeFile]),
+      });
       const outcome = await runChanged(mcpCtx);
 
       expect(outcome.markdown).toBe(
@@ -519,16 +524,19 @@ Next: if the change is visually observable, publish the review now — call **re
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
 
+Changed files in the Storybook config directory, which can affect every story: \`${changedPreviewFile}\`.
+
 Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
-- ${changedThemeFile}
+- \`${changedThemeFile}\`
 
 For each file:
 - A component: it has no stories yet. Write them, or tell the user.
-- Used by components (token, style, hook): find those components and pass their paths to \`stories-find-by-component\`.
+- Used by components without an import, such as a token turned into CSS variables: find those components and pass their paths to \`stories-find-by-component\`.
+- Neither, such as an app entry file: leave it out of the review.
 
 Never invent story IDs to fill the gap.
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`
+Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs and any you found for the coverage gap. That review link is how you finish; do not substitute individual preview URLs for it.`
       );
     });
 
@@ -546,11 +554,12 @@ Next: if the change is visually observable, publish the review now — call **re
 Changed files in the Storybook config directory, which can affect every story: \`${changedPreviewFile}\`.
 
 Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
-- ${changedThemeFile}
+- \`${changedThemeFile}\`
 
 For each file:
 - A component: it has no stories yet. Write them, or tell the user.
-- Used by components (token, style, hook): find those components and pass their paths to \`stories-find-by-component\`.
+- Used by components without an import, such as a token turned into CSS variables: find those components and pass their paths to \`stories-find-by-component\`.
+- Neither, such as an app entry file: leave it out of the review.
 
 Never invent story IDs to fill the gap.`
       );

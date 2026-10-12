@@ -55,14 +55,15 @@ function formatChangedFilesOutsideStories(
     );
   }
   if (unreachableFiles.length > 0) {
-    const capped = unreachableFilesTruncated ? ` (first ${unreachableFiles.length})` : '';
+    const capped = unreachableFilesTruncated ? ` (first ${unreachableFiles.length} files)` : '';
     notes.push(
-      `Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect${capped}:
-${unreachableFiles.map((file) => `- ${file}`).join('\n')}
+      `Coverage gap${capped}: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
+${unreachableFiles.map((file) => `- \`${file}\``).join('\n')}
 
 For each file:
 - A component: it has no stories yet. Write them, or tell the user.
-- Used by components (token, style, hook): find those components and pass their paths to \`${getToolName(ctx)('stories.findByComponent')}\`.
+- Used by components without an import, such as a token turned into CSS variables: find those components and pass their paths to \`${getToolName(ctx)('stories.findByComponent')}\`.
+- Neither, such as an app entry file: leave it out of the review.
 
 Never invent story IDs to fill the gap.`
     );
@@ -104,9 +105,10 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
 
   text += formatChangedFilesOutsideStories(data, ctx);
 
-  // Last, so output read through `tail` ends on the step that keeps agents from ending visual work
-  // at preview URLs.
-  text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
+  const gapStories =
+    data.unreachableFiles.length > 0 ? ' and any you found for the coverage gap' : '';
+  // Last, so output read through `tail` still ends on this step.
+  text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it.`;
 
   return text;
 }

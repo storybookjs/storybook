@@ -2,10 +2,12 @@
 
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/client-logger';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import {
   HIGHLIGHT,
+  HIGHLIGHT_MENU_CLICK,
   MAX_Z_INDEX,
   MIN_TOUCH_AREA_SIZE,
   REMOVE_HIGHLIGHT,
@@ -64,14 +66,15 @@ export const useHighlights = (channel: Channel) => {
 
   // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
-    const storybookRoot = document.getElementById(storybookRootId)!;
-    if (!storybookRoot) {
-      return;
-    }
+    const storybookRoot = document.getElementById(storybookRootId) ?? document.body;
 
     elements.set(mapElements(value));
 
-    const observer = new MutationObserver(() => elements.set(mapElements(value)));
+    const observer = new MutationObserver((records) => {
+      if (records.some((record) => !root?.contains(record.target))) {
+        elements.set(mapElements(value));
+      }
+    });
     observer.observe(storybookRoot, { subtree: true, childList: true });
 
     return () => {
@@ -478,28 +481,28 @@ export const useHighlights = (channel: Channel) => {
                 createElement(
                   'ul',
                   { class: 'menu-items' },
-                  menuItems.map(
-                    ({ id, title, description, iconLeft, iconRight, clickEvent: event }) => {
-                      const onClick =
-                        event && (() => channel.emit(event, id, getEventDetails(target)));
-                      return createElement('li', {}, [
-                        createElement(
-                          onClick ? 'button' : 'div',
-                          onClick
-                            ? { class: 'menu-item', type: 'button', onClick }
-                            : { class: 'menu-item' },
-                          [
-                            iconLeft ? createIcon(iconLeft) : null,
-                            createElement('div', { class: 'menu-item-content' }, [
-                              createElement(description ? 'strong' : 'span', {}, [title]),
-                              description && createElement('span', {}, [description]),
-                            ]),
-                            iconRight ? createIcon(iconRight) : null,
-                          ]
-                        ),
-                      ]);
-                    }
-                  )
+                  menuItems.map(({ id, title, description, iconLeft, iconRight, clickable }) => {
+                    const onClick =
+                      clickable &&
+                      (() =>
+                        channel.emit(HIGHLIGHT_MENU_CLICK, target.id, id, getEventDetails(target)));
+                    return createElement('li', {}, [
+                      createElement(
+                        onClick ? 'button' : 'div',
+                        onClick
+                          ? { class: 'menu-item', type: 'button', onClick }
+                          : { class: 'menu-item' },
+                        [
+                          iconLeft ? createIcon(iconLeft) : null,
+                          createElement('div', { class: 'menu-item-content' }, [
+                            createElement(description ? 'strong' : 'span', {}, [title]),
+                            description && createElement('span', {}, [description]),
+                          ]),
+                          iconRight ? createIcon(iconRight) : null,
+                        ]
+                      ),
+                    ]);
+                  })
                 ),
               ])
             )
@@ -534,9 +537,13 @@ export const useHighlights = (channel: Channel) => {
   //
 
   const addHighlight = (highlight: RawHighlightOptions) => {
-    const info = normalizeOptions(highlight);
+    const info = highlight && normalizeOptions(highlight);
+    if (typeof info?.id !== 'string' || !info.id) {
+      logger.warn('Ignoring highlight without an id', highlight);
+      return;
+    }
     highlights.set((value) => {
-      const others = info.id ? value.filter((h) => h.id !== info.id) : value;
+      const others = value.filter((h) => h.id !== info.id);
       return info.selectors?.length ? [...others, info] : others;
     });
   };
@@ -567,7 +574,7 @@ export const useHighlights = (channel: Channel) => {
 
     const element = document.querySelector(target);
     if (!element) {
-      console.warn(`Cannot scroll into view: ${target} not found`);
+      logger.warn(`Cannot scroll into view: ${target} not found`);
       return;
     }
 

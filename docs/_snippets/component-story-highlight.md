@@ -19,6 +19,7 @@ export const Highlighted: Story = {
     componentWrapperDecorator((story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return story;
@@ -42,6 +43,7 @@ export const Highlighted = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -71,6 +73,7 @@ export const Highlighted: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -99,6 +102,7 @@ export const Highlighted: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -122,6 +126,7 @@ export const Highlighted = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -150,6 +155,7 @@ export const Highlighted = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -179,6 +185,7 @@ export const Highlighted: Story = {
     (storyFn) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return storyFn();
@@ -202,6 +209,7 @@ export const Highlighted = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return {
@@ -232,6 +240,7 @@ export const Highlighted: Story = {
     () => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return {
@@ -255,6 +264,7 @@ export const Highlighted = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return story();
@@ -281,6 +291,7 @@ export const Highlighted: Story = {
     (story) => {
       const emit = useChannel({});
       emit(HIGHLIGHT, {
+        id: 'my-highlight',
         selectors: ['h2', 'a', '.storybook-button'],
       });
       return story();

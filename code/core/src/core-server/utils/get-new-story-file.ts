@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 
+import { types as t } from 'storybook/internal/babel';
 import {
   extractProperFrameworkName,
   findConfigFile,
@@ -13,9 +14,15 @@ import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
 import type { Options } from 'storybook/internal/types';
 
 import { loadConfig } from '../../csf-tools';
+import { getComponentVariableName } from './get-component-variable-name';
 import { getCsfFactoryTemplateForNewStoryFile } from './new-story-templates/csf-factory-template';
 import { getJavaScriptTemplateForNewStoryFile } from './new-story-templates/javascript';
 import { getTypeScriptTemplateForNewStoryFile } from './new-story-templates/typescript';
+
+// Babel's isValidIdentifier still accepts `eval` and `arguments`, which cannot be module bindings.
+function isModuleBindingIdentifier(name: string) {
+  return t.isValidIdentifier(name) && name !== 'eval' && name !== 'arguments';
+}
 
 export async function getNewStoryFile(
   {
@@ -26,6 +33,13 @@ export async function getNewStoryFile(
   }: CreateNewStoryRequestPayload,
   options: Options
 ) {
+  // The export name is interpolated verbatim into the generated story source.
+  // `default` is the channel sentinel for a default export and is not inserted as a binding.
+  const exportNameIsDefaultSentinel = componentIsDefaultExport && componentExportName === 'default';
+  if (!exportNameIsDefaultSentinel && !isModuleBindingIdentifier(componentExportName)) {
+    throw new Error(`Invalid componentExportName: ${JSON.stringify(componentExportName)}`);
+  }
+
   const frameworkPackageName = await getFrameworkName(options);
   const sanitizedFrameworkPackageName = extractProperFrameworkName(frameworkPackageName);
 
@@ -33,6 +47,15 @@ export async function getNewStoryFile(
   const extension = extname(componentFilePath);
   const basenameWithoutExtension = base.replace(extension, '');
   const dir = dirname(componentFilePath);
+
+  // In the default-export branch the templates interpolate a variable name derived from the
+  // client-supplied file basename instead of the export name, so validate what is inserted.
+  if (componentIsDefaultExport) {
+    const importName = await getComponentVariableName(basenameWithoutExtension);
+    if (!isModuleBindingIdentifier(importName)) {
+      throw new Error(`Invalid component import name: ${JSON.stringify(importName)}`);
+    }
+  }
 
   const { storyFileName, isTypescript, storyFileExtension } = getStoryMetadata(componentFilePath);
   const storyFileNameWithExtension = `${storyFileName}.${storyFileExtension}`;

@@ -1,4 +1,6 @@
 // @vitest-environment happy-dom
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
@@ -12,13 +14,15 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
+import { logger } from 'storybook/internal/node-logger';
 
 import { searchFiles } from '../utils/search-files';
 import { initFileSearchChannel } from './file-search-channel';
 
-vi.mock(import('../utils/search-files'), async (importOriginal) => ({
-  searchFiles: vi.fn((await importOriginal()).searchFiles),
-}));
+vi.mock(import('../utils/search-files'), async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, searchFiles: vi.fn(original.searchFiles) };
+});
 
 vi.mock('storybook/internal/common');
 
@@ -129,28 +133,82 @@ describe('file-search-channel', () => {
       }
     );
 
-    it('should emit an error message if an error occurs while searching for components in the project', async () => {
-      const mockOptions = {} as any;
-      const data = { searchQuery: 'commonjs' };
-      await initFileSearchChannel(mockChannel, mockOptions, { disableTelemetry: true });
+    it('should emit a generic error message and log the original error if searching fails', async () => {
+      const channel = new Channel({ transport });
+      const listener = vi.fn();
+      const searchError = new Error('Path /etc/passwd is not in cwd /path/to/project');
+      vi.mocked(searchFiles).mockRejectedValueOnce(searchError);
+      await initFileSearchChannel(channel, {} as any, { disableTelemetry: true });
 
-      mockChannel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, searchResultChannelListener);
-
-      mockChannel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
-        id: data.searchQuery,
+      channel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, listener);
+      channel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+        id: 'commonjs',
         payload: {},
+      } satisfies RequestData<FileComponentSearchRequestPayload>);
+
+      await vi.waitFor(() => expect(listener).toHaveBeenCalled());
+
+      expect(listener).toHaveBeenCalledWith({
+        id: 'commonjs',
+        error: 'An error occurred while searching for components in the project.',
+        success: false,
       });
+      expect(logger.error).toHaveBeenCalledWith(expect.stringContaining(searchError.message));
+    });
 
-      vi.mocked(searchFiles).mockRejectedValue(new Error('ENOENT: no such file or directory'));
+    it('should emit an invalid search query error for a query outside of the project root', async () => {
+      const channel = new Channel({ transport });
+      const listener = vi.fn();
+      await initFileSearchChannel(channel, {} as any, { disableTelemetry: true });
 
-      await vi.waitFor(() => expect(searchResultChannelListener).toHaveBeenCalled());
+      channel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, listener);
+      channel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+        id: '/etc/*',
+        payload: {},
+      } satisfies RequestData<FileComponentSearchRequestPayload>);
 
-      expect(searchResultChannelListener).toHaveBeenCalledWith({
-        id: data.searchQuery,
-        error:
-          'An error occurred while searching for components in the project.\nENOENT: no such file or directory',
+      await vi.waitFor(() => expect(listener).toHaveBeenCalled());
+
+      expect(listener).toHaveBeenCalledWith({
+        id: '/etc/*',
+        error: 'Invalid search query.',
         success: false,
       });
     });
+
+    it.each(['Button', 'packages/ui/src/*'])(
+      'should find %s in another workspace when Storybook runs from a monorepo package',
+      async (searchQuery) => {
+        const monorepoRoot = join(__dirname, '..', 'utils', '__search-files-monorepo__');
+        vi.spyOn(common, 'getProjectRoot').mockReturnValue(monorepoRoot);
+        vi.spyOn(process, 'cwd').mockReturnValue(join(monorepoRoot, 'apps', 'storybook'));
+        const channel = new Channel({ transport });
+        const listener = vi.fn();
+        await initFileSearchChannel(channel, {} as any, { disableTelemetry: true });
+
+        channel.addListener(FILE_COMPONENT_SEARCH_RESPONSE, listener);
+        channel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+          id: searchQuery,
+          payload: {},
+        } satisfies RequestData<FileComponentSearchRequestPayload>);
+
+        await vi.waitFor(() => expect(listener).toHaveBeenCalled());
+
+        expect(listener).toHaveBeenCalledWith({
+          id: searchQuery,
+          error: null,
+          payload: {
+            files: [
+              {
+                filepath: 'packages/ui/src/Button.tsx',
+                exportedComponents: [{ default: false, name: 'Button' }],
+                storyFileExists: false,
+              },
+            ],
+          },
+          success: true,
+        });
+      }
+    );
   });
 });

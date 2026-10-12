@@ -6,11 +6,12 @@ import { fn, userEvent, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview';
 import { StoryContent } from './StoryContent';
-import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
+import { HIGHLIGHT, HIGHLIGHT_MENU_CLICK, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
 
 const highlight = (
   selectors: string[],
   options?: {
+    id?: string;
     styles?: Record<string, string>;
     hoverStyles?: Record<string, string>;
     focusStyles?: Record<string, string>;
@@ -21,11 +22,13 @@ const highlight = (
       description?: string;
       right?: string;
       href?: string;
-      clickEvent?: string;
+      clickable?: boolean;
     }[];
   }
 ) => {
-  const emit = useChannel({ 'my-click-event': fn().mockName('my-click-event') });
+  const emit = useChannel({
+    [HIGHLIGHT_MENU_CLICK]: fn().mockName('highlight-menu-click'),
+  });
   const id = Math.random().toString(36).substring(2, 15);
   React.useEffect(() => {
     emit(HIGHLIGHT, {
@@ -154,13 +157,14 @@ export const Menu = meta.story({
       {
         selectors: ['div', 'input'],
         options: {
+          id: 'menu-highlight',
           menu: [
             [
               {
                 id: 'color-contrast',
                 title: 'Insufficient color contrast',
                 description: 'Elements must meet minimum color contrast ratio thresholds.',
-                clickEvent: 'my-click-event',
+                clickable: true,
               },
             ],
             [
@@ -175,7 +179,7 @@ export const Menu = meta.story({
                 description: 'Click here to view more details.',
                 iconLeft: 'info',
                 iconRight: 'shareAlt',
-                clickEvent: 'my-click-event',
+                clickable: true,
               },
             ],
           ],

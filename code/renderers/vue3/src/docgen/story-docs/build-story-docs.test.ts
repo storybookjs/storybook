@@ -236,3 +236,27 @@ export const Primary = {
     );
   });
 });
+
+describe('live template', () => {
+  it('emits the component with v-bind="args" when the story has no render', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
+    expect(story?.templateSyntax).toBe('vue');
+    expect(story?.template).toBe('<template>\n  <MyButton v-bind="args" />\n</template>');
+  });
+
+  it('emits the authored template with its args references', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label">{{ args.label }}</MyButton>',
+  }),
+};
+`);
+    expect(story?.template).toBe(
+      '<template>\n  <MyButton :label="args.label">{{ args.label }}</MyButton>\n</template>'
+    );
+  });
+});

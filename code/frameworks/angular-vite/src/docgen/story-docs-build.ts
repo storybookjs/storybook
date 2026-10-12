@@ -173,6 +173,9 @@ const buildStoryDoc = async (
       id: story.id,
       name,
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
+      ...(rendered?.template === undefined
+        ? {}
+        : { template: rendered.template, templateSyntax: 'angular' as const }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
@@ -192,7 +195,7 @@ const buildStoryDoc = async (
 const renderedSnippet = async (
   shape: StoryShape,
   deps: StoryDocDeps
-): Promise<HostComponentSnippet | undefined> => {
+): Promise<(HostComponentSnippet & { template?: string }) | undefined> => {
   const authoredShape = {
     storyMembers: shape.members,
     members: shape.members,
@@ -208,10 +211,37 @@ const renderedSnippet = async (
   const derived = deps.snippetMeta
     ? await renderStorySnippet(deps.snippetMeta, shape, shape.members.properties.decorators, deps)
     : undefined;
-  return derived && authored.kind === 'unresolvable'
-    ? withWarnings(derived, unresolvedWarning([authored.source]))
-    : derived;
+  const result =
+    derived && authored.kind === 'unresolvable'
+      ? withWarnings(derived, unresolvedWarning([authored.source]))
+      : derived;
+  // POC live snippets: the same snippet rendered again with arg markers in place of the inlined
+  // values, which the preview fills with the current args (`fillAngularTemplate`).
+  const marked = deps.snippetMeta
+    ? await renderStorySnippet(
+        deps.snippetMeta,
+        shape,
+        shape.members.properties.decorators,
+        deps,
+        true
+      )
+    : undefined;
+  const template = marked && toArgsTemplate(marked.snippet);
+  return result && template !== undefined && template !== result.snippet
+    ? { ...result, template }
+    : result;
 };
+
+// Sentinels are valid Angular identifiers, so the marked render goes through the same template
+// analysis as the static one; they become `{{args}}` / `{{args.name}}` markers afterwards.
+const ARGS_SENTINEL = '__sbArgs__';
+const argSentinel = (name: string) => `__sbArg_${name}__`;
+const canMark = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
+
+const toArgsTemplate = (snippet: string): string =>
+  snippet
+    .replace(`[${ARGS_SENTINEL}]="${ARGS_SENTINEL}"`, '{{args}}')
+    .replace(/__sbArg_([\w$]+?)__/g, '{{args.$1}}');
 
 const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
   const resolved = deps.resolveStoryArgs.resolve(exportName);
@@ -249,14 +279,15 @@ const renderStorySnippet = async (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
   storyDecorators: t.Node | undefined,
-  deps: StoryDocDeps
+  deps: StoryDocDeps,
+  markers = false
 ): Promise<HostComponentSnippet> => {
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
   const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
   const ngModules = storyNgModules(storyDecorators, deps);
-  const expansion = argsExpansion(snippetMeta, shape);
+  const expansion = argsExpansion(snippetMeta, shape, markers);
   // Hidden args would expand `argsToTemplate` into markup that looks complete, so the markup is
   // read without bindings then and falls back with a warning instead.
   const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? expansion : undefined);
@@ -291,7 +322,8 @@ const renderStorySnippet = async (
       userMarkup.representedArgs,
       shape,
       boundOutputs,
-      snippetMeta.enums
+      snippetMeta.enums,
+      markers
     );
     return withWarnings(
       host(formatTemplateMarkup(analysis.markup), false, boundOutputs, hostArgs.fields),
@@ -319,6 +351,18 @@ const renderStorySnippet = async (
     );
   }
 
+  if (markers) {
+    // Every arg the controls set binds through `{{args}}`; outputs stay bound by name.
+    return host(
+      buildTemplate(snippetMeta.selector, {
+        inputs: [{ name: ARGS_SENTINEL, expression: ARGS_SENTINEL }],
+        outputs: snippetMeta.outputs,
+        selfClosing: true,
+      }),
+      false,
+      snippetMeta.outputs
+    );
+  }
   const { bindings, fields } = componentBindings(snippetMeta, shape);
   return withWarnings(
     host(
@@ -337,7 +381,8 @@ const referencedArgFields = (
   representedArgs: readonly string[],
   shape: StoryShape,
   boundOutputs: readonly string[],
-  enums: AngularComponentSnippetMeta['enums']
+  enums: AngularComponentSnippetMeta['enums'],
+  markers = false
 ): { fields: { name: string; value: string }[]; unresolved: string[] } => {
   const taken = new Set([...representedArgs, ...boundOutputs]);
   const fields: { name: string; value: string }[] = [];
@@ -348,6 +393,10 @@ const referencedArgFields = (
       continue;
     }
     if (!referencedNames.has(name)) {
+      continue;
+    }
+    if (markers && canMark(name)) {
+      fields.push({ name, value: argSentinel(name) });
       continue;
     }
     const value = evaluateArgLiteral(node, enums);
@@ -444,7 +493,11 @@ const componentBindings = (
   return { bindings: { inputs, outputs: snippetMeta.outputs }, fields };
 };
 
-const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
+const argsExpansion = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape,
+  markers = false
+): Bindings => {
   const inputNames = new Set(snippetMeta.inputs);
   const outputNames = new Set(snippetMeta.outputs);
   const inputs: Bindings['inputs'] = [];
@@ -458,7 +511,13 @@ const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StorySha
         outputs.push(name);
       }
     } else if (inputNames.has(name)) {
-      inputs.push({ name, expression: evaluateArgExpression(node, snippetMeta.enums) });
+      inputs.push({
+        name,
+        expression:
+          markers && canMark(name)
+            ? argSentinel(name)
+            : evaluateArgExpression(node, snippetMeta.enums),
+      });
     }
   }
   return { inputs, outputs };

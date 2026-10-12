@@ -52,14 +52,14 @@ export function fillSnippetTemplate(code: string, args: Record<string, unknown> 
 }
 
 /** `args.a`, `args?.a.b`, `args['a'][0]`: a path into the args. */
-const ARG_PATH = /\bargs(?:\??\.[\w$]+|\[\d+\]|\[(?:"[^"]*"|'[^']*')\])+/;
+export const ARG_PATH = /\bargs(?:\??\.[\w$]+|\[\d+\]|\[(?:"[^"]*"|'[^']*')\])+/;
 const SEGMENT = /\??\.([\w$]+)|\[(\d+)\]|\[(?:"([^"]*)"|'([^']*)')\]/g;
 
 /**
  * Follows an arg path as far as the args have own data, so `args.items.map` resolves `args.items`
  * and leaves `.map` as written.
  */
-function resolveArgPath(path: string, args: Record<string, unknown>) {
+export function resolveArgPath(path: string, args: Record<string, unknown>) {
   let value: unknown = args;
   let consumed = 'args'.length;
   for (const segment of path.slice(consumed).matchAll(SEGMENT)) {
@@ -74,7 +74,7 @@ function resolveArgPath(path: string, args: Record<string, unknown>) {
   return { value, rest: path.slice(consumed) };
 }
 
-function lineIndent(code: string, offset: number) {
+export function lineIndent(code: string, offset: number) {
   const lineStart = code.lastIndexOf('\n', offset) + 1;
   return /^[ \t]*/.exec(code.slice(lineStart))![0];
 }
@@ -93,9 +93,9 @@ function spreadProps(props: string[], indent: string, closer = '') {
 const isPlainText = (value: unknown): value is string =>
   typeof value === 'string' && value.trim() !== '' && !/[{}<>"\\&]/.test(value);
 
-type MockableFunction = ((...args: any[]) => any) & { getMockName?: () => string };
+export type MockableFunction = ((...args: any[]) => any) & { getMockName?: () => string };
 
-const getFunctionName = (fn: MockableFunction) => {
+export const getFunctionName = (fn: MockableFunction) => {
   const name = fn.getMockName?.() ?? fn.name;
   return name && name !== 'spy' ? name : '() => {}';
 };
@@ -114,7 +114,7 @@ const elementName = (type: unknown): string => {
 const isIdentifier = (key: string) => /^[A-Za-z_$][\w$]*$/.test(key);
 
 /** Prints an arg value as the JS expression it would be written as. */
-const valueToString = (value: unknown, depth = 0): string => {
+export const valueToString = (value: unknown, depth = 0): string => {
   if (typeof value === 'function') {
     return getFunctionName(value as MockableFunction);
   }

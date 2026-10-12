@@ -34,6 +34,10 @@ export function editOverWriteRule({ configDir, tsx }: SetupInstructionsContext):
   return dedent`**Edit > Write.** For any file you've Read, use \`Edit\`. Use \`Write\` only for new files. The project already has a \`${configDir}/preview.${tsx}\` from \`storybook init\` — **Edit** it, do not overwrite.`;
 }
 
+export function keepUserWorkRule(ctx: SetupInstructionsContext): string {
+  return dedent`**Keep the user's work.** Never delete, move, or rewrite the stories, components, or config that existed before you started; add to them instead. The only exception is the \`storybook init\` examples described in the clean-up step.`;
+}
+
 export function batchTestsRule(ctx: SetupInstructionsContext): string {
   return dedent`**Batch the test loop.** Write **all** stories first, then run vitest **once** across everything. No per-file vitest runs until after that first batch run reveals failures.`;
 }

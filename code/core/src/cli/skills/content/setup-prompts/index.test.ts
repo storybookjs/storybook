@@ -190,4 +190,5 @@ it('only lets the agent delete the examples that storybook init generated', asyn
 
   expect(markdown).toContain('`Configure.mdx` next to `Button`, `Header`, and `Page`');
   expect(markdown).toContain("Don't delete any other stories.");
+  expect(markdown).toContain('Never delete, move, or rewrite the stories');
 });

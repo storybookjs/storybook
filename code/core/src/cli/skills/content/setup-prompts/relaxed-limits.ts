@@ -16,6 +16,7 @@ import {
 import {
   batchTestsRule,
   editOverWriteRule,
+  keepUserWorkRule,
   nodeModuleReadsRule,
   noPolishRule,
   packageManagerRule,
@@ -64,6 +65,7 @@ export function instructions(projectInfo: ProjectInfo): string {
       nodeModuleReadsRule(ctx),
       readBudgetRuleRelaxed(ctx),
       editOverWriteRule(ctx),
+      keepUserWorkRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),

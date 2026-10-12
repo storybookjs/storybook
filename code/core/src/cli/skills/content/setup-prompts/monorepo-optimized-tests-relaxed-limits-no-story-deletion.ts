@@ -16,6 +16,7 @@ import {
 import {
   batchTestsRule,
   editOverWriteRule,
+  keepUserWorkRule,
   monorepoRule,
   nodeModuleReadsRule,
   noPolishRule,
@@ -67,6 +68,7 @@ export function instructions(projectInfo: ProjectInfo): string {
       monorepoRule(projectInfo),
       readBudgetRuleRelaxed(ctx),
       editOverWriteRule(ctx),
+      keepUserWorkRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),

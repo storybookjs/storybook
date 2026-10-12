@@ -7,7 +7,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the webpack-based framework you are using (e.g., react-webpack5)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {

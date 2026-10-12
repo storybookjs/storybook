@@ -80,6 +80,39 @@ test.describe('iframe messaging', () => {
     await expect.poll(() => page.evaluate(() => window.received)).toStrictEqual(['preview']);
   });
 
+  test('the manager ignores channel messages from a preview iframe that navigated to another origin', async ({
+    page,
+  }) => {
+    test.skip(!runsAgainstDevServer, 'A built manager accepts messages from any origin');
+
+    await page.evaluate(() => {
+      window.received = [];
+      window.__STORYBOOK_ADDONS_CHANNEL__.on('e2e-probe', (from: unknown) =>
+        window.received.push(String(from))
+      );
+    });
+    const previewFrame = await getIframeContent(page, '#storybook-preview-iframe');
+    await previewFrame.goto(FOREIGN_URL);
+
+    const rejection = page.waitForEvent('console', {
+      predicate: (message) =>
+        message.text().includes('registered preview iframe that is on origin'),
+      timeout: 5000,
+    });
+    await previewFrame.evaluate(() =>
+      window.parent.postMessage(
+        JSON.stringify({
+          key: 'storybook-channel',
+          event: { type: 'e2e-probe', args: ['foreign'] },
+        }),
+        '*'
+      )
+    );
+    await rejection;
+
+    expect(await page.evaluate(() => window.received)).toStrictEqual([]);
+  });
+
   test('a preview iframe that navigated to another origin stops receiving manager events', async ({
     page,
   }) => {

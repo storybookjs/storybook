@@ -245,6 +245,41 @@ describe('PostMessageTransport origin validation', () => {
       expect(logger.warn).not.toHaveBeenCalled();
     });
 
+    it('drops and warns on a channel message from a registered iframe on an unexpected origin', () => {
+      const contentWindow = registerStorybookIframe();
+      createTransport('manager');
+
+      receiveFrom(contentWindow, EVIL_ORIGIN, { key: KEY, event: { type: 'someEvent', args: [] } });
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(EVIL_ORIGIN));
+    });
+
+    it('accepts a channel message from a registered ref iframe on the origin of its src', () => {
+      const contentWindow = registerStorybookIframe(
+        'data-is-storybook',
+        'https://ref.example.com/iframe.html'
+      );
+      createTransport('manager');
+
+      receiveFrom(contentWindow, 'https://ref.example.com', {
+        key: KEY,
+        event: { type: 'someEvent', args: [] },
+      });
+
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ type: 'someEvent' }));
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('accepts a channel message from a registered iframe on another origin in a built Storybook', () => {
+      const contentWindow = registerStorybookIframe();
+      createTransport('manager', { configType: 'PRODUCTION' });
+
+      receiveFrom(contentWindow, EVIL_ORIGIN, { key: KEY, event: { type: 'someEvent', args: [] } });
+
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ type: 'someEvent' }));
+    });
+
     it('drops and warns once on a channel message whose source is not a registered iframe', () => {
       registerStorybookIframe();
       createTransport('manager');

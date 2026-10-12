@@ -157,9 +157,14 @@ export const Primary = { args: { label: 'Primary' } };
   });
 
   it('leaves the source passed to enrichCsf hooks unenriched', async () => {
-    await transform(source, { enrichCsf });
+    expect.assertions(3);
+    enrichCsf.mockImplementation(async (csf, csfSource) => {
+      const sourceCode = formatCsf(csfSource) as string;
+      expect(sourceCode).toContain('/** Button component */');
+      expect(sourceCode).not.toContain('component: "Button component"');
+      expect(formatCsf(csf)).toContain('component: "Button component"');
+    });
 
-    const [, csfSource] = vi.mocked(enrichCsf).mock.calls[0];
-    expect(csfSource._ast.program.body).toHaveLength(2);
+    await transform(source, { enrichCsf });
   });
 });

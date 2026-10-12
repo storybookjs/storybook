@@ -17,7 +17,9 @@ export async function transformCsf(code: string, id: string, options: EnrichCsfO
   try {
     const makeTitle = (userTitle: string) => userTitle || 'default';
     const csf = loadCsf(code, { makeTitle }).parse();
-    // Built-in enrichment only appends to `csf`, but an `enrichCsf` hook may read the pristine source.
+    // Built-in enrichment reads each comment before it changes the meta node and only appends story
+    // statements, so it can share `csf`. An `enrichCsf` hook runs after the meta is changed, so it
+    // gets a separate parse.
     const csfSource =
       code === sourceCode && !options.enrichCsf ? csf : loadCsf(sourceCode, { makeTitle }).parse();
     await enrichCsf(csf, csfSource, options);

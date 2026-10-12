@@ -486,6 +486,35 @@ describe('SourceManager', () => {
     expect(generationsFromMention()).toBe(1);
   });
 
+  it('finds a tag for a story that missed once another story without a tsconfig resolves it', async () => {
+    file(
+      'shared-tag.js',
+      `
+        export class SharedTag extends HTMLElement {}
+        customElements.define('shared-tag', SharedTag);
+      `
+    );
+    const missingImportPath = file(
+      'missing-import.stories.js',
+      "export default { component: 'shared-tag' };"
+    );
+    const importingPath = file(
+      'importing.stories.js',
+      `import './shared-tag.js';
+       export default { component: 'shared-tag' };`
+    );
+    const manager = createManager();
+
+    await expect(
+      manager.find('shared-tag', { storyFilePath: missingImportPath })
+    ).resolves.toMatchObject({ name: 'tag-not-found' });
+    await manager.find('shared-tag', { storyFilePath: importingPath });
+
+    await expect(
+      manager.find('shared-tag', { storyFilePath: missingImportPath })
+    ).resolves.toMatchObject({ manifestPath: 'shared-tag.js' });
+  });
+
   it('finds a tag defined after an earlier miss once the watcher reports the new file', async () => {
     tsconfig();
     const storyPath = story('late-card');

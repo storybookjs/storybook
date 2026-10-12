@@ -30,7 +30,7 @@ export class GeneratorProject implements ComponentMetaProjectBase {
     private readonly getCommandLineFn?: () => ts.ParsedCommandLine
   ) {}
 
-  /** Moves on every file event, so callers can tell whether a cached miss is still valid. */
+  /** Moves on every file event or new root, so callers can tell whether a cached miss is still valid. */
   get revision(): number {
     return this.revisionCount;
   }
@@ -56,6 +56,7 @@ export class GeneratorProject implements ComponentMetaProjectBase {
     for (const fileName of fileNames.map(normalize)) {
       if (!this.commandLine.fileNames.includes(fileName)) {
         this.commandLine.fileNames.push(fileName);
+        this.revisionCount++;
       }
     }
   }

@@ -51,6 +51,8 @@ jobs:
       workflow: ${{ env.workflow }}
       ghBaseBranch: ${{ github.event.pull_request.base.ref }}
       ghPrNumber: ${{ github.event.pull_request.number }}
+      # Author trust is not evaluated on this branch, so trusted-author privileges are never granted.
+      ghTrustedAuthor: 'false'
 
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -406,12 +406,13 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getChangedFiles: () => gitDiffProvider.getChangedFiles(),
       },
       changeStatuses: { getAll: getSyncedStatuses },
+      // Real paths, because git reports the repo root as one; on Windows the cwd can differ in case.
       storybookDirs: {
-        configDir: pathe.resolve(options.configDir),
+        configDir: realpathSync.native(pathe.resolve(options.configDir)),
         getStaticDirs: async () =>
           ((await options.presets.apply('staticDirs')) ?? []).flatMap((staticDir) => {
             try {
-              return [mapStaticDir(staticDir, options.configDir).staticPath];
+              return [realpathSync.native(mapStaticDir(staticDir, options.configDir).staticPath)];
             } catch {
               // A missing directory throws here, and holds no changed files anyway.
               return [];

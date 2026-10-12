@@ -98,7 +98,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   text += formatChangedFilesOutsideStories(data, ctx);
 
   const gapStories =
-    data.unreachableFiles.length > 0 ? ' and any you found for the coverage gap' : '';
+    data.unreachableFiles.length > 0 ? ' and any you found for the sanity check' : '';
   // Last, so output read through `tail` still ends on this step.
   text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it.`;
 

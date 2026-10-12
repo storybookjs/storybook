@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { basename, dirname, relative, resolve as resolvePath } from 'pathe';
 
-import type { StoriesGitAccess, StorybookDirsAccess } from './definition.ts';
+import type { ChangedStoriesOutput, StoriesGitAccess, StorybookDirsAccess } from './definition.ts';
 import type { ModuleGraphAccess } from './resolve-component-stories.ts';
 
 const SOURCE_EXT_RE = /\.(?:[cm]?[jt]sx?|vue|svelte)$/i;
@@ -10,25 +10,21 @@ const RENDERING_SOURCE_EXT_RE = /\.(?:tsx?|jsx?|vue|svelte)$/i;
 const NON_RENDERING_CONFIG_FILE_RE = /^(?:main|manager)\./i;
 const PREVIEW_ASSET_RE = /^preview-(?:head|body)\.html$|\.(?:css|scss|sass|less)$/i;
 const TEST_OR_TYPES_FILE_RE = /\.(?:test|spec)\.[^/]+$|\.d\.[cm]?ts$/i;
-// Tooling configs sit at a package root; a deeper `*.config.*` file in this project can be a runtime
-// module, such as a theme config.
 const TOOL_CONFIG_FILE_RE = /\.config\.[^/]+$/i;
 
 // Bounds each reverse-index query on a large working tree.
 const CHUNK_SIZE = 50;
 const MAX_UNREACHABLE_FILES = 10;
 
-export type ChangedFilesOutsideStories = {
-  unreachableFiles: string[];
-  unreachableFilesTruncated: boolean;
-  changedConfigFiles: string[];
-};
+export type ChangedFilesOutsideStories = Pick<
+  ChangedStoriesOutput,
+  'unreachableFiles' | 'unreachableFilesTruncated' | 'changedConfigFiles'
+>;
 
 function isWithin(file: string, dir: string): boolean {
   return dir === '' || file === dir || file.startsWith(`${dir}/`);
 }
 
-// Test fixtures and a package's scripts never render in a story.
 function isTestOrScriptPath(file: string, projectDir: string): boolean {
   const segments = file.split('/');
   const projectDepth = projectDir === '' ? 0 : projectDir.split('/').length;
@@ -99,6 +95,7 @@ export async function detectChangedFilesOutsideStories({
     const couldRender =
       RENDERING_SOURCE_EXT_RE.test(name) &&
       !TEST_OR_TYPES_FILE_RE.test(name) &&
+      // Tooling configs sit at a package root; a deeper one can be runtime code, such as a theme.
       !(
         TOOL_CONFIG_FILE_RE.test(name) &&
         (isRootLevel(file, projectDir) || !isWithin(file, projectDir))
@@ -110,8 +107,7 @@ export async function detectChangedFilesOutsideStories({
     }
   }
 
-  // In a monorepo the diff spans every package; files of this Storybook's project come first so
-  // the cap cannot crowd them out.
+  // Project files first, so other packages cannot crowd them out of the cap.
   candidates.sort((a, b) => Number(isWithin(b, projectDir)) - Number(isWithin(a, projectDir)));
 
   const unreachableFiles: string[] = [];

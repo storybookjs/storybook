@@ -198,7 +198,7 @@ Do not end visual work or browse requests with these links — publish a curated
 function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
-The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response names the changed source files that no story reaches through its imports.`;
+The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 }
 
 function describeFindByComponent(ctx: ToolsetCtx): string {

@@ -369,6 +369,7 @@ describe('stories.changed', () => {
         'packages/ui/src/Orphan.tsx',
         'packages/ui/src/theme.config.ts',
         'packages/ui/src/Card.vue',
+        'packages/ui/src/legacy.mjs',
       ]),
     });
 
@@ -410,7 +411,7 @@ describe('stories.changed', () => {
     );
   });
 
-  it('does not call a list of exactly the cap cut', async () => {
+  it('does not mark exactly 10 files as truncated', async () => {
     const orphans = Array.from({ length: 10 }, (_, i) => `packages/ui/src/Orphan${i}.tsx`);
     getChangedFiles.mockResolvedValue({ changed: new Set(orphans), new: new Set() });
 
@@ -528,7 +529,7 @@ Changed files in the Storybook config directory, which can affect every story: \
 
 Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story (no static import path connects them), so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs to fill the gap.
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs and any you found for the coverage gap. That review link is how you finish; do not substitute individual preview URLs for it.`
+Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs and any you found for the sanity check. That review link is how you finish; do not substitute individual preview URLs for it.`
       );
     });
 

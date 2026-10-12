@@ -6,6 +6,7 @@ import type {
   StatusValue,
 } from '../../../status-store/index.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
+import type { ChangedFilesOutsideStories } from './changed-files-outside-stories.ts';
 import type { ChangedStoriesOutput, ChangeStatusValue } from './definition.ts';
 
 const INCLUDED_STATUS_VALUES = new Set<ChangeStatusValue>([
@@ -30,10 +31,7 @@ export type ChangedStoriesParams = {
   index: StoryIndex;
 };
 
-export type ChangedStoriesResult = Omit<
-  ChangedStoriesOutput,
-  'unreachableFiles' | 'unreachableFilesTruncated' | 'changedConfigFiles'
->;
+export type ChangedStoriesResult = Omit<ChangedStoriesOutput, keyof ChangedFilesOutsideStories>;
 
 /**
  * Filters change-detection statuses to new/modified/affected, enriches from the story index,

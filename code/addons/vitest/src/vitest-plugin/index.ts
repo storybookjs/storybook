@@ -271,17 +271,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
-      const [frameworkOptions, headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
-        presets.apply('frameworkOptions'),
+      const [headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
         presets.apply('previewHead'),
         presets.apply('previewBody'),
       ]);
 
       return html
-        .replace(
-          '</head>',
-          `<script>window.FRAMEWORK_OPTIONS = ${JSON.stringify(frameworkOptions)};</script>${headHtmlSnippet ?? ''}</head>`
-        )
+        .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
     async config(nonMutableInputConfig, { mode }) {

@@ -136,8 +136,8 @@ the template and setup files no longer look like the agent's changes:
 `storybook tools stories changed` reports only what the agent changed, and
 `git status` shows that plus the `package-lock.json` the harness's
 `npm install` creates afterwards. The saved result projects therefore no longer
-contain the template either. The agentic-reference experiments skip the
-commit, because their post-analysis reads the whole application from the saved
+contain the template either. The agentic-reference experiments, which are
+generated into `.agentic-ref/experiments/`, skip the commit, because their post-analysis reads the whole application from the saved
 project.
 
 Saved result projects never include the `local-packages/` tarballs, so a saved

@@ -32,7 +32,15 @@ import OptionsApiSlots from './OptionsApiSlots.vue';
 </script>
 
 <template>
-  <OptionsApiSlots v-bind="args /* slots: default, header, item */" />
+  <OptionsApiSlots v-bind="args /* slots: default, header, item */">
+    {{ args.default }}
+    <template #header>
+      {{ args.header }}
+    </template>
+    <template #item>
+      {{ args.item }}
+    </template>
+  </OptionsApiSlots>
 </template>",
     },
   },

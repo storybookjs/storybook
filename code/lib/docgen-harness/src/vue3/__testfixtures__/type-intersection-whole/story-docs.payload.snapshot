@@ -20,7 +20,9 @@ import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
 </script>
 
 <template>
-  <TypeIntersectionWhole v-bind="args /* slots: default */" />
+  <TypeIntersectionWhole v-bind="args /* slots: default */">
+    {{ args.default }}
+  </TypeIntersectionWhole>
 </template>",
     },
   },

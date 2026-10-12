@@ -32,7 +32,15 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 
 <template>
-  <TemplateOnlySlots v-bind="args /* slots: default, header, item */" />
+  <TemplateOnlySlots v-bind="args /* slots: default, header, item */">
+    {{ args.default }}
+    <template #header>
+      {{ args.header }}
+    </template>
+    <template #item>
+      {{ args.item }}
+    </template>
+  </TemplateOnlySlots>
 </template>",
     },
   },

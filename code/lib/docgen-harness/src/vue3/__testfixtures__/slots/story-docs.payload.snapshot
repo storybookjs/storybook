@@ -29,7 +29,15 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  <SlotsShowcase v-bind="args /* slots: default, header, item */" />
+  <SlotsShowcase v-bind="args /* slots: default, header, item */">
+    {{ args.default }}
+    <template #header>
+      {{ args.header }}
+    </template>
+    <template #item>
+      {{ args.item }}
+    </template>
+  </SlotsShowcase>
 </template>",
     },
     "forms-slots--v-node-child": {
@@ -58,6 +66,9 @@ import SlotsShowcase from './SlotsShowcase.vue';
     <p class="body">Body content</p>
     <template #header>
       <strong>Header content</strong>
+    </template>
+    <template #item>
+      {{ args.item }}
     </template>
   </SlotsShowcase>
 </template>",

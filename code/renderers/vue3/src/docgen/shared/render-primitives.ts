@@ -47,7 +47,7 @@ export interface RenderContext {
 
 export interface LiveTemplate {
   keepsReference: (name: string) => boolean;
-  // The story component's slots, which its `v-bind="args"` names for the filler.
+  // The story component's slots: its `v-bind="args"` names them, and shows each as content.
   slots: ReadonlySet<string>;
 }
 
@@ -498,7 +498,7 @@ function normalizeTemplateBlock(source: string): string {
   return lines.slice(start, end).join('\n');
 }
 
-function slotSortKey(name: string): string {
+export function slotSortKey(name: string): string {
   return name === 'default' ? '' : name;
 }
 

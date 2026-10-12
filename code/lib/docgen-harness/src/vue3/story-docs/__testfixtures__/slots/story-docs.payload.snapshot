@@ -25,7 +25,12 @@ import SlotsPanel from './SlotsPanel.vue';
 </script>
 
 <template>
-  <SlotsPanel v-bind="args /* slots: default, header */" />
+  <SlotsPanel v-bind="args /* slots: default, header */">
+    {{ args.default }}
+    <template #header>
+      {{ args.header }}
+    </template>
+  </SlotsPanel>
 </template>",
     },
   },

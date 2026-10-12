@@ -244,7 +244,7 @@ export const Primary = {
 });
 
 describe('live template', () => {
-  it('keeps the args spread, naming the slots and writing out v-models and function args', async () => {
+  it('keeps the args spread, naming the slots it shows as content and writing out v-models and function args', async () => {
     const story = await primaryStory(`
 export const Primary = {
   args: { label: 'Hi', modelValue: 'Draft', default: 'Body', header: 'Title', onClick: () => {} },
@@ -261,7 +261,12 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton v-bind="args /* slots: default, header */" v-model="modelValue" @click="onClick" />
+        <MyButton v-bind="args /* slots: default, header */" v-model="modelValue" @click="onClick">
+          {{ args.default }}
+          <template #header>
+            {{ args.header }}
+          </template>
+        </MyButton>
       </template>"
     `);
     expect(
@@ -283,12 +288,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton
-          label="Save"
-          size="large"
-          v-model="modelValue"
-          @click="onClick"
-        >
+        <MyButton label="Save" size="large" v-model="modelValue" @click="onClick">
           <template #header>
             New title
           </template>
@@ -369,7 +369,12 @@ export const Primary = {
 
       <template>
         <section class="toolbar">
-          <MyButton v-bind="args /* slots: default, header */" />
+          <MyButton v-bind="args /* slots: default, header */">
+            {{ args.default }}
+            <template #header>
+              {{ args.header }}
+            </template>
+          </MyButton>
           <p>{{ args.label }}</p>
         </section>
       </template>"
@@ -388,7 +393,7 @@ export const Primary = {
     `);
   });
 
-  it('keeps a slot function as the snippet prints it, filling the other slots after it', async () => {
+  it('keeps a slot function as the snippet prints it, showing the other slots after it', async () => {
     const story = await primaryStory(`
 export const Primary = { args: { label: 'Hi', default: () => 'Body' } };
 `);
@@ -400,6 +405,9 @@ export const Primary = { args: { label: 'Hi', default: () => 'Body' } };
       <template>
         <MyButton v-bind="args /* slots: default, header */">
           Body
+          <template #header>
+            {{ args.header }}
+          </template>
         </MyButton>
       </template>"
     `);

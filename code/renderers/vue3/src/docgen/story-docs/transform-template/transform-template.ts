@@ -30,6 +30,7 @@ import {
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
+  slotSortKey,
   wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
@@ -422,13 +423,17 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     }
   }
 
-  if (element.slotChildren.length > 0) {
-    // Slot children joining an element that already renders its own content would reorder or
-    // duplicate what the story shows, so only an empty element takes them.
-    if (hasNonWhitespaceChildren(node)) {
-      return false;
-    }
-    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
+  // Slot children joining an element that already renders its own content would reorder or
+  // duplicate what the story shows, so only an empty element takes them.
+  if (element.slotChildren.length > 0 && hasNonWhitespaceChildren(node)) {
+    return false;
+  }
+  const children = [
+    ...element.slotChildren,
+    ...(plan.directive && element.storyTag ? slotArgPlaceholders(node, state.ctx) : []),
+  ];
+  if (children.length > 0) {
+    const edit = slotChildrenEdit(node, children, state.template);
     if (!edit) {
       return false;
     }
@@ -436,6 +441,30 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
   }
 
   return node.children.every((child) => transformNode(child, state));
+}
+
+// In a live template, `{{ args.header }}` shows each slot arg its `v-bind="args"` passes, where
+// the element's own content does not already fill that slot.
+function slotArgPlaceholders(node: ElementNode, ctx: RenderContext): string[] {
+  const written = new Set(
+    node.children.flatMap((child) => {
+      const slot =
+        child.type === NodeTypes.ELEMENT && child.tag === 'template'
+          ? child.props.find((prop) => prop.type === NodeTypes.DIRECTIVE && prop.name === 'slot')
+          : undefined;
+      if (slot?.type === NodeTypes.DIRECTIVE) {
+        return [slot.arg?.type === NodeTypes.SIMPLE_EXPRESSION ? slot.arg.content : 'default'];
+      }
+      const blank =
+        child.type === NodeTypes.COMMENT ||
+        (child.type === NodeTypes.TEXT && child.content.trim() === '');
+      return blank ? [] : ['default'];
+    })
+  );
+  return [...(ctx.liveTemplate?.slots ?? [])]
+    .filter((slot) => keepsArgReference(ctx, slot) && !written.has(slot))
+    .sort((a, b) => slotSortKey(a).localeCompare(slotSortKey(b)))
+    .map((slot) => wrapSlotContent(slot, `{{ ${printValue(argReference(slot))} }}`));
 }
 
 /**
@@ -935,6 +964,14 @@ function slotChildrenEdit(
       start -= 1;
     }
     return { start, end: node.loc.end.offset, text: `>${joined}</${node.tag}>` };
+  }
+
+  // Only slot arg placeholders join an element's own content, after it.
+  if (hasNonWhitespaceChildren(node)) {
+    const closeTag = template.lastIndexOf('</', node.loc.end.offset);
+    const end = template.slice(0, closeTag).trimEnd().length;
+    const text = children.map((child) => `\n${indentBy(child, `${baseIndent}  `)}`).join('');
+    return { start: end, end, text };
   }
 
   if (node.children.length > 0) {

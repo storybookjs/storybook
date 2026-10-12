@@ -23,6 +23,7 @@ const { getStorybookDataMock } = vi.hoisted(() => ({
 const spawnSyncMock = vi.hoisted(() => vi.fn());
 // Mutable holder so tests can control the mocked manager's detected type (defaults to undefined).
 const managerTypeHolder = vi.hoisted(() => ({ type: undefined as string | undefined }));
+const getPackageManagerMock = vi.hoisted(() => vi.fn());
 vi.mock('cross-spawn', () => ({ sync: spawnSyncMock }));
 
 // Mirrors every logger.warn call (deduped emissions included) so tests can assert on emissions
@@ -51,14 +52,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...originalModule,
     JsPackageManagerFactory: Object.assign(originalModule.JsPackageManagerFactory, {
-      getPackageManager: ({ force }: { force?: PackageManagerName } = {}) => ({
-        type: force ?? managerTypeHolder.type,
-        findInstallations: findInstallationsMock,
-        getInstalledVersion: getInstalledVersionMock,
-        latestVersion: async () => '8.0.0',
-        getAllDependencies: () => ({ storybook: '8.0.0' }),
-        getModulePackageJSON: async () => ({ version: '9.0.0' }),
-      }),
+      getPackageManager: getPackageManagerMock,
     }),
     versions: Object.keys(originalModule.versions).reduce(
       (acc, key) => {
@@ -68,6 +62,17 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
       {} as Record<string, string>
     ) as typeof originalModule.versions,
   };
+});
+
+beforeEach(() => {
+  getPackageManagerMock.mockImplementation(({ force }: { force?: PackageManagerName } = {}) => ({
+    type: force ?? managerTypeHolder.type,
+    findInstallations: findInstallationsMock,
+    getInstalledVersion: getInstalledVersionMock,
+    latestVersion: async () => '8.0.0',
+    getAllDependencies: () => ({ storybook: '8.0.0' }),
+    getModulePackageJSON: async () => ({ version: '9.0.0' }),
+  }));
 });
 
 describe.each([

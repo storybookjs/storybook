@@ -44,8 +44,6 @@ function formatQuotedList(files: string[]): string {
   return files.map((file) => `\`${file}\``).join(', ');
 }
 
-// Between the summary and the story list: output read through `head` keeps the summary with these
-// notes, and output read through `tail` ends on the stories.
 function formatChangedFilesOutsideStories(
   { unreachableFiles, unreachableFilesTruncated, changedConfigFiles }: ChangedStoriesOutput,
   ctx: ToolsetCtx
@@ -59,7 +57,14 @@ function formatChangedFilesOutsideStories(
   if (unreachableFiles.length > 0) {
     const capped = unreachableFilesTruncated ? ` (first ${unreachableFiles.length})` : '';
     notes.push(
-      `Changed files that no story imports, directly or indirectly${capped}: ${formatQuotedList(unreachableFiles)}. If they affect rendering, find the components that use them and pass those paths to \`${getToolName(ctx)('stories.findByComponent')}\`; a component in this list has no stories yet.`
+      `Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect${capped}:
+${unreachableFiles.map((file) => `- ${file}`).join('\n')}
+
+For each file:
+- A component: it has no stories yet. Write them, or tell the user.
+- Used by components (token, style, hook): find those components and pass their paths to \`${getToolName(ctx)('stories.findByComponent')}\`.
+
+Never invent story IDs to fill the gap.`
     );
   }
   return notes.map((note) => `\n\n${note}`).join('');
@@ -79,12 +84,6 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
 
   let text = `Detected ${stories.length} changed stor${pluralize(stories.length, 'y', 'ies')} (${counts.new} new, ${counts.modified} modified, ${counts.affected} related).`;
 
-  // Front-loaded: host-side output caps can cut the tail of a long story list, and this next step
-  // is what keeps agents from ending visual work at preview URLs.
-  text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
-
-  text += formatChangedFilesOutsideStories(data, ctx);
-
   const serializeStory = ({
     storyId,
     title,
@@ -102,6 +101,12 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   if (buckets.affected.length > 0) {
     text += `\n\nRelated stories:\n${buckets.affected.map(serializeStory).join('\n')}`;
   }
+
+  text += formatChangedFilesOutsideStories(data, ctx);
+
+  // Last, so output read through `tail` ends on the step that keeps agents from ending visual work
+  // at preview URLs.
+  text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
 
   return text;
 }

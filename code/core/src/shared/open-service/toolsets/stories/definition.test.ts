@@ -406,7 +406,7 @@ describe('stories.changed', () => {
     expect(outcome.data.unreachableFiles).toEqual(orphans.slice(0, 10));
     expect(outcome.data.unreachableFilesTruncated).toBe(true);
     expect(outcome.markdown).toContain(
-      'Changed files that no story imports, directly or indirectly (first 10):'
+      'Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect (first 10):'
     );
   });
 
@@ -502,26 +502,33 @@ describe('stories.changed', () => {
       expect(outcome.markdown).toBe(
         `Detected 1 changed story (1 new, 0 modified, 0 related).
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.
-
 New stories:
-- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
+- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
+
+Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`
       );
     });
 
-    it('names unreachable files in one line between the summary and the story list', async () => {
+    it('lists the coverage gap after the stories and ends on the next step', async () => {
       markChanged('button--primary', 'status-value:new');
       const outcome = await runChanged(mcpCtx);
 
       expect(outcome.markdown).toBe(
         `Detected 1 changed story (1 new, 0 modified, 0 related).
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.
-
-Changed files that no story imports, directly or indirectly: \`${changedThemeFile}\`. If they affect rendering, find the components that use them and pass those paths to \`stories-find-by-component\`; a component in this list has no stories yet.
-
 New stories:
-- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
+- \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
+
+Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
+- ${changedThemeFile}
+
+For each file:
+- A component: it has no stories yet. Write them, or tell the user.
+- Used by components (token, style, hook): find those components and pass their paths to \`stories-find-by-component\`.
+
+Never invent story IDs to fill the gap.
+
+Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`
       );
     });
 
@@ -538,7 +545,14 @@ New stories:
 
 Changed files in the Storybook config directory, which can affect every story: \`${changedPreviewFile}\`.
 
-Changed files that no story imports, directly or indirectly: \`${changedThemeFile}\`. If they affect rendering, find the components that use them and pass those paths to \`stories-find-by-component\`; a component in this list has no stories yet.`
+Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
+- ${changedThemeFile}
+
+For each file:
+- A component: it has no stories yet. Write them, or tell the user.
+- Used by components (token, style, hook): find those components and pass their paths to \`stories-find-by-component\`.
+
+Never invent story IDs to fill the gap.`
       );
     });
   });

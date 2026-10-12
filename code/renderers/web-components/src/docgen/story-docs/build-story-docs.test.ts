@@ -147,7 +147,7 @@ describe('buildStoryDocsPayload template', () => {
       story(`{ args: { label: 'Hi', isOpen: true, items: [1], '--accent': 'red' } }`)
     );
     expect(doc.template).toMatchInlineSnapshot(
-      `"<test-element \${...args/* {"label":"label","isOpen":"is-open","items":".items","--accent":"--accent","default-slot":null,"actions-slot":null,"panel-part":null,"active-state":null,"count":"count","disabled":"disabled","active":"active","is-open":"is-open","variant":"variant","heading":"heading"} */}></test-element>"`
+      `"<test-element \${...args/* {"label":".label=label","isOpen":".isOpen=is-open","items":".items","--accent":"--accent","default-slot":null,"actions-slot":null,"panel-part":null,"active-state":null,"count":".count=count","disabled":".disabled=disabled","active":".active=active","is-open":"is-open","variant":"variant","heading":".heading=heading"} */}></test-element>"`
     );
     expect(
       fillTemplate(doc.template!, {
@@ -157,8 +157,8 @@ describe('buildStoryDocsPayload template', () => {
         variant: 'outline',
         '--accent': 'red',
       })
-    ).toBe(
-      '<test-element label="Bye" .items=${[1]} variant="outline" style="--accent: red;"></test-element>'
+    ).toMatchInlineSnapshot(
+      `"<test-element label="Bye" .isOpen=\${false} .items=\${[1]} variant="outline" style="--accent: red;"></test-element>"`
     );
   });
 

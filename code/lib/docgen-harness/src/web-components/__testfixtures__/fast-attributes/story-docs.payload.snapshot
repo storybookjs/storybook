@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-fast-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
-      "template": "<fast-attributes ${...args/* {"label":"label","size":"size","disabled":"disabled","maxCount":"max-count","items":".items","count":".count","max-count":"max-count"} */}></fast-attributes>",
+      "template": "<fast-attributes ${...args/* {"label":".label=label","size":".size=size","disabled":".disabled=disabled","maxCount":".maxCount=max-count","items":".items","count":".count","max-count":"max-count"} */}></fast-attributes>",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {

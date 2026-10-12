@@ -11,15 +11,16 @@ import type { Args } from 'storybook/internal/types';
 
 import { parseSpread } from './template-format.ts';
 
-// Fills a template in the format `./template-format.ts` describes. A hole that is one arg path
-// prints the html lit renders for a primitive value; any other hole keeps its code, with the args
-// it reads printed in place.
 const ARG_PATHS = new RegExp(ARG_PATH_PATTERN, 'g');
 const ARG_HOLE = new RegExp(
   `^(?:(ifDefined)\\(\\s*(${ARG_PATH_PATTERN})\\s*\\)|(${ARG_PATH_PATTERN}))$`
 );
 const BINDING = /\s([?.@]?)([^\s"'<>=/]+)=$/;
+const QUOTED_LIT_BINDING = /\s[?.@][^\s"'<>=/]+=["'][^"']*$/;
 
+// Fills a template in the format `./template-format.ts` describes. A hole that is one arg path
+// prints the html lit renders for a primitive value; any other hole keeps its code, with the args
+// it reads printed in place.
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   let out = '';
   let inTag = false;
@@ -69,6 +70,9 @@ function fillHole(
   if (rest !== '') {
     return asCode();
   }
+  if (quote && QUOTED_LIT_BINDING.test(out)) {
+    return asCode();
+  }
   const binding = inTag && !quote ? BINDING.exec(out) : null;
   if (!binding) {
     if (isUnset(value)) {
@@ -77,22 +81,21 @@ function fillHole(
     if (!isPrimitive(value)) {
       return asCode();
     }
-    return out + (quote ? escapeAttribute(String(value)) : escapeText(String(value)));
+    return out + (quote ? escapeAttribute(String(value), quote) : escapeText(String(value)));
   }
   // `name=${…}`, `?name=${…}`, `.name=${…}` or `@name=${…}`, as lit binds it.
-  const [written, prefix, name] = binding as unknown as [string, string, string];
+  const [written, prefix = '', name = ''] = binding;
   const before = out.slice(0, -written.length);
   switch (prefix) {
     case '?':
-      return value ? `${before} ${name}` : before;
+      return value ? `${before} ${name}` : before.trimEnd();
     case '.':
+      return `${before} .${name}=\${${printCode(value, key)}}`;
     case '@':
-      return value === undefined
-        ? before
-        : `${before} ${prefix}${name}=\${${printCode(value, key)}}`;
+      return `${before} @${name}=\${${printHandler(value, key)}}`;
     default:
       if (isUnset(value)) {
-        return hole[1] ? before : `${before} ${name}=""`;
+        return hole[1] ? before.trimEnd() : `${before} ${name}=""`;
       }
       return isPrimitive(value)
         ? `${before} ${name}="${escapeAttribute(String(value))}"`
@@ -100,25 +103,32 @@ function fillHole(
   }
 }
 
-// The args a spread sets, as the attribute, property or custom property it maps each to.
+// The args a spread sets, as the attribute, property or custom property it maps each to. An
+// attribute backed by a field, `.field=attribute`, is set through the field for a value its
+// attribute cannot show, as `bindArgs` does.
 function spreadAttributes(spread: Record<string, string | null>, args: Args): string[] {
   const attributes: string[] = [];
   const style: string[] = [];
-  for (const [arg, name] of Object.entries(spread)) {
+  for (const [arg, binding] of Object.entries(spread)) {
     const value = args[arg];
-    if (isUnset(value) || value === '' || typeof value === 'function') {
+    if (isUnset(value) || typeof value === 'function') {
       continue;
     }
-    if (name === null) {
+    if (binding === null) {
       throw new UnprintableArgError(arg);
     }
-    if (name.startsWith('.')) {
-      attributes.push(`${name}=\${${printCode(value, arg)}}`);
-    } else if (name.startsWith('--')) {
-      style.push(`${name}: ${String(value)};`);
-    } else if (value !== false) {
+    const [, field, attribute] = /^(?:\.([^=]+)=)?(.*)$/.exec(binding)!;
+    if (binding.startsWith('--')) {
+      style.push(`${binding}: ${String(value)};`);
+    } else if (binding.startsWith('.') && field === undefined) {
+      attributes.push(`${binding}=\${${printCode(value, arg)}}`);
+    } else if (value === '' || value === false) {
+      if (field !== undefined) {
+        attributes.push(`.${field}=\${${printCode(value, arg)}}`);
+      }
+    } else {
       const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
-      attributes.push(value === true ? name : `${name}="${escapeAttribute(text)}"`);
+      attributes.push(value === true ? attribute! : `${attribute}="${escapeAttribute(text)}"`);
     }
   }
   return style.length === 0
@@ -131,8 +141,11 @@ const isUnset = (value: unknown) => value === undefined || value === null;
 const isPrimitive = (value: unknown) =>
   ['string', 'number', 'boolean', 'bigint'].includes(typeof value);
 
-const escapeAttribute = (text: string) =>
-  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const escapeAttribute = (text: string, quote = '"') =>
+  text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replaceAll(quote, quote === '"' ? '&quot;' : '&#39;');
 
 const escapeText = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -170,6 +183,13 @@ const PRINT_OPTIONS: PrintValueOptions = {
 const isLitKey = (key: string) => key.startsWith('_$lit');
 
 const printCode = (value: unknown, name: string) => printValue(value, { ...PRINT_OPTIONS, name });
+
+// A listener named after its arg, or an empty handler when the arg's name is not a variable, such
+// as a manifest event's `my-change-event`.
+const printHandler = (value: unknown, name: string) =>
+  typeof value === 'function' && !/^[A-Za-z_$][\w$]*$/.test(name)
+    ? '() => {}'
+    : printCode(value, name);
 
 // The index of the `}` that closes a hole whose code starts at `start`, past nested brackets,
 // strings, template literals and comments.

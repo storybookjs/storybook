@@ -11,6 +11,7 @@ describe('fillTemplate', () => {
     const template = `<x-el ${spreadHole({
       label: 'label',
       open: 'open',
+      heading: '.heading=heading',
       items: '.items',
       accent: '--accent',
       slot: null,
@@ -26,6 +27,12 @@ describe('fillTemplate', () => {
       expect(
         fillTemplate(template, { label: '', open: false, items: undefined, onClick: () => {} })
       ).toBe('<x-el></x-el>');
+    });
+
+    it('sets an attribute backed by a field through the field for a value it cannot show', () => {
+      expect(fillTemplate(template, { heading: 'Hi' })).toBe('<x-el heading="Hi"></x-el>');
+      expect(fillTemplate(template, { heading: '' })).toBe('<x-el .heading=${""}></x-el>');
+      expect(fillTemplate(template, { heading: false })).toBe('<x-el .heading=${false}></x-el>');
     });
 
     it('throws for a set arg that only the static snippet can show', () => {
@@ -68,6 +75,27 @@ describe('fillTemplate', () => {
       expect(fillTemplate('<x-el class="btn btn-${args.size}"></x-el>', { size: 'a"b' })).toBe(
         '<x-el class="btn btn-a&quot;b"></x-el>'
       );
+      expect(fillTemplate("<x-el label='${args.label}'></x-el>", { label: "Don't" })).toBe(
+        "<x-el label='Don&#39;t'></x-el>"
+      );
+    });
+
+    it('keeps a quoted lit binding as code', () => {
+      expect(fillTemplate('<x-el ?open="${args.open}"></x-el>', { open: false })).toBe(
+        '<x-el ?open="${false}"></x-el>'
+      );
+    });
+
+    it('drops the line of a binding it leaves out', () => {
+      expect(fillTemplate('<x-el\n  label="a"\n  ?open=${args.open}\n></x-el>', {})).toBe(
+        '<x-el\n  label="a"\n></x-el>'
+      );
+    });
+
+    it('writes an empty handler for a listener arg whose name is not a variable', () => {
+      expect(
+        fillTemplate('<x-el @change=${args["change-event"]}></x-el>', { 'change-event': () => {} })
+      ).toBe('<x-el @change=${() => {}}></x-el>');
     });
 
     it('keeps a value without a literal as code', () => {

@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-inheritance-mixin--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
-      "template": "<lit-inheritance-mixin ${...args/* {"baseLabel":"base-label","mixedActive":"mixed-active","count":"count","base-label":"base-label","mixed-active":"mixed-active"} */}></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin ${...args/* {"baseLabel":".baseLabel=base-label","mixedActive":".mixedActive=mixed-active","count":".count=count","base-label":"base-label","mixed-active":"mixed-active"} */}></lit-inheritance-mixin>",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--dom-node": {
       "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",

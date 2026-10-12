@@ -379,7 +379,7 @@ const argsTemplate = (
 ): string => {
   const bindings: Record<string, string | null> = {};
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
-    const name = spreadName(classifyArg(key, false, argTypes, declaration));
+    const name = spreadName(key, classifyArg(key, false, argTypes, declaration));
     if (name !== undefined) {
       bindings[key] = name;
     }
@@ -391,10 +391,10 @@ const argsTemplate = (
 
 // What the spread sets an arg as, `null` for what only the static snippet shows (a slot, part or
 // state), or `undefined` for a listener or method, which it leaves out.
-const spreadName = (binding: ArgBinding): string | null | undefined => {
+const spreadName = (key: string, binding: ArgBinding): string | null | undefined => {
   switch (binding.kind) {
     case 'attribute':
-      return binding.name;
+      return binding.viaField ? `.${key}=${binding.name}` : binding.name;
     case 'property':
       return `.${binding.name}`;
     case 'cssProperty':

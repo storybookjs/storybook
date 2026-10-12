@@ -1,7 +1,8 @@
 // A live snippet `template` is the story's lit html as written, with every arg it reads written as
 // `args.name`; `\` escapes the next character. A story without a render function gets
-// `<tag ${...args/* {…} */}>`, which spreads the args as the attribute, `.property` or
-// `--custom-property` the manifest maps each to, or `null` for one only the static snippet shows.
+// `<tag ${...args/* {…} */}>`, which spreads each arg as what the manifest maps it to: an
+// `attribute`, a `.property`, an attribute backed by a field as `.field=attribute`, a
+// `--custom-property`, or `null` for one only the static snippet shows.
 
 export const escapeTemplateText = (text: string) =>
   text.replace(/\\/g, '\\\\').replace(/\$\{/g, '\\${');

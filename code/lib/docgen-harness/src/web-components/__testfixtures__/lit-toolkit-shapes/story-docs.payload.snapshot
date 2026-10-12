@@ -18,7 +18,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes ${...args/* {"size":"size","level":"level","tags":"tags","label":"label","default-slot":null,"label-slot":null,"base-part":null,"active-state":null,"--toolkit-color":"--toolkit-color","--toolkit-scale":"--toolkit-scale","--toolkit-font":"--toolkit-font","--toolkit-gap":"--toolkit-gap","computed":".computed","version":".version","pressed":".pressed","oldSize":"old-size","onSelect":".onSelect","target":"target","when":"when","old-size":"old-size"} */}></lit-toolkit-shapes>
+      "template": "<lit-toolkit-shapes ${...args/* {"size":".size=size","level":".level=level","tags":".tags=tags","label":".label=label","default-slot":null,"label-slot":null,"base-part":null,"active-state":null,"--toolkit-color":"--toolkit-color","--toolkit-scale":"--toolkit-scale","--toolkit-font":"--toolkit-font","--toolkit-gap":"--toolkit-gap","computed":".computed","version":".version","pressed":".pressed","oldSize":".oldSize=old-size","onSelect":".onSelect","target":".target=target","when":".when=when","old-size":"old-size"} */}></lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

@@ -14,7 +14,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events ${...args/* {"value":"value"} */}></lit-events>
+      "template": "<lit-events ${...args/* {"value":".value=value"} */}></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

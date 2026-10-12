@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-property-only--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-property-only label="Default render"></lit-property-only>",
-      "template": "<lit-property-only ${...args/* {"label":"label","items":".items","config":".config"} */}></lit-property-only>",
+      "template": "<lit-property-only ${...args/* {"label":".label=label","items":".items","config":".config"} */}></lit-property-only>",
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
     "webcomponentsfixtures-lit-property-only--dom-node": {

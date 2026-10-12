@@ -4,10 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
+import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
+import { fillTemplate } from '../../../../renderers/web-components/src/docs/fill-template.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
@@ -50,6 +52,21 @@ const cases = [
   })),
 ];
 
+// The story's args as the preview has them, when the static pass can read them all.
+const staticArgs = (nodes: Record<string, Parameters<typeof evaluateArgValue>[0]>) => {
+  const args: Record<string, unknown> = {};
+  for (const [name, node] of Object.entries(nodes)) {
+    const value = evaluateArgValue(node);
+    if (value.kind === 'unresolved') {
+      return undefined;
+    }
+    args[name] = value.kind === 'value' ? value.value : () => {};
+  }
+  return args;
+};
+
+let filled = 0;
+
 describe('web-components story-docs server snippets', () => {
   it.each(cases)('$fixtureCase', async ({ fixtureCase, testDir, title, legacyParity }) => {
     const storyPath = join(testDir, 'input.stories.ts');
@@ -72,8 +89,14 @@ describe('web-components story-docs server snippets', () => {
     );
     expect(payload).toBeDefined();
 
+    const resolver = createStoryArgsResolver(csf);
     for (const [exportName, story] of storyExports) {
       const storyDoc = payload!.stories[story.id];
+      const args = staticArgs(resolver.resolve(exportName).args);
+      if (storyDoc?.template !== undefined && args !== undefined) {
+        expect(() => fillTemplate(storyDoc.template!, args), `${exportName} fills`).not.toThrow();
+        filled += 1;
+      }
       expect(storyDoc, `${exportName} missing from payload`).toBeDefined();
       expect(storyDoc?.error, `${exportName} produced an error`).toBeUndefined();
       const recorded = [
@@ -99,5 +122,9 @@ describe('web-components story-docs server snippets', () => {
     await expect({ ...payload, path: '__PATH__' }).toMatchFileSnapshot(
       join(testDir, 'story-docs.payload.snapshot')
     );
+  });
+
+  it('fills a meaningful number of templates with their story args', () => {
+    expect(filled).toBeGreaterThan(20);
   });
 });

@@ -9,7 +9,16 @@ const ARG_PATH = new RegExp(ARG_PATH_PATTERN);
 
 // The live `template` that `../../docs/template-format.ts` describes, or `undefined` when a hole
 // reads the args in a way the filler cannot follow or no hole reads them at all.
-export function templateSource({ quasis, expressions, scope }: HtmlTemplate): string | undefined {
+export function templateSource({
+  expressions,
+  lit,
+  quasis,
+  scope,
+}: HtmlTemplate): string | undefined {
+  // A string template renders as `innerHTML`, which lit's bindings do not describe.
+  if (!lit) {
+    return undefined;
+  }
   const holes = expressions.map((expression) => normalizeExpression(expression, scope));
   if (holes.some((hole) => hole === undefined) || !holes.some((hole) => ARG_PATH.test(hole!))) {
     return undefined;

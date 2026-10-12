@@ -2,7 +2,6 @@ import {
   ARG_PATH_PATTERN,
   type FillSnippetTemplate,
   type PrintValueOptions,
-  layoutAttributes,
   printArgPath,
   printValue,
   resolveArgPath,
@@ -204,4 +203,29 @@ function elementName(type: unknown): string {
   // `memo` and `forwardRef` wrap the component they name in `type` and `render`.
   const wrapper = (type ?? {}) as { type?: unknown; render?: unknown };
   return named(type) ?? named(wrapper.type) ?? named(wrapper.render) ?? 'Component';
+}
+
+// The indentation of the line `offset` is on.
+function lineIndent(code: string, offset: number): string {
+  const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
+  return /^[ \t]*/.exec(code.slice(lineStart))![0];
+}
+
+const MAX_INLINE_ATTRIBUTES_LENGTH = 50;
+
+// Lays out attributes written in place of an args spread: on the same line when short, otherwise
+// one per line, indented one level deeper than the element on the line at `offset`. `closer` is
+// the tag's `>` or `/>` when it directly follows the spread, and then goes on its own line.
+function layoutAttributes(
+  attributes: readonly string[],
+  code: string,
+  offset: number,
+  closer = ''
+): string {
+  if (attributes.join(' ').length <= MAX_INLINE_ATTRIBUTES_LENGTH) {
+    return attributes.map((attribute) => ` ${attribute}`).join('') + closer;
+  }
+  const indent = lineIndent(code, offset);
+  const lines = attributes.map((attribute) => `\n${indent}  ${attribute}`).join('');
+  return closer ? `${lines}\n${indent}${closer.trim()}` : `${lines}\n${indent} `;
 }

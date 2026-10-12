@@ -215,33 +215,3 @@ function quoteString(text: string, quote: '"' | "'") {
     .replaceAll(quote, `\\${quote}`);
   return `${quote}${escaped}${quote}`;
 }
-
-/** The indentation of the line `offset` is on in `code`. */
-export function lineIndent(code: string, offset: number): string {
-  const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
-  return /^[ \t]*/.exec(code.slice(lineStart))![0];
-}
-
-const MAX_INLINE_ATTRIBUTES_LENGTH = 50;
-
-/**
- * Lays out attributes written in place of an args spread: on the same line when short, otherwise
- * one per line, indented one level deeper than the element on the line at `offset`.
- *
- * `closer` is the tag's `>` or `/>` when it directly follows the spread, and then goes on its own
- * line. Without one, the result ends indented so the attribute written after the spread, with the
- * space before it, continues the list.
- */
-export function layoutAttributes(
-  attributes: readonly string[],
-  code: string,
-  offset: number,
-  closer = ''
-): string {
-  if (attributes.join(' ').length <= MAX_INLINE_ATTRIBUTES_LENGTH) {
-    return attributes.map((attribute) => ` ${attribute}`).join('') + closer;
-  }
-  const indent = lineIndent(code, offset);
-  const lines = attributes.map((attribute) => `\n${indent}  ${attribute}`).join('');
-  return closer ? `${lines}\n${indent}${closer.trim()}` : `${lines}\n${indent} `;
-}

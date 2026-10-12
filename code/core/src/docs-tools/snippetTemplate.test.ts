@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ARG_PATH_PATTERN,
-  layoutAttributes,
   printArgPath,
   printValue,
   UnprintableArgError,
@@ -160,25 +159,5 @@ describe('printValue', () => {
     const element = { $$typeof: Symbol.for('react.element') };
     const printCustom = (value: unknown) => (value === element ? '<Icon />' : undefined);
     expect(printValue({ icon: element }, { printCustom })).toBe('{ icon: <Icon /> }');
-  });
-});
-
-describe('layoutAttributes', () => {
-  it('keeps short attribute lists on the line', () => {
-    expect(layoutAttributes(['primary', 'label="Hi"'], '<Button {...args} />', 8, ' />')).toBe(
-      ' primary label="Hi" />'
-    );
-    expect(layoutAttributes([], '<Button {...args} />', 8, ' />')).toBe(' />');
-  });
-
-  it('puts long attribute lists one per line, indented under the element', () => {
-    const code = '  <Button {...args} />';
-    const attributes = ['primary', 'label="A long label value"', 'size="large"', 'disabled'];
-    expect(layoutAttributes(attributes, code, 10, ' />')).toBe(
-      '\n    primary\n    label="A long label value"\n    size="large"\n    disabled\n  />'
-    );
-    expect(layoutAttributes(attributes, code, 10)).toBe(
-      '\n    primary\n    label="A long label value"\n    size="large"\n    disabled\n   '
-    );
   });
 });

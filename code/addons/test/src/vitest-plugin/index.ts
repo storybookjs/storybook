@@ -32,6 +32,16 @@ import type { InternalOptions, UserOptions } from './types';
 
 const WORKING_DIR = process.cwd();
 
+// Vitest 3.2.5 and later gate browser file writes and command execution with these; the installed
+// Vitest types predate them.
+type BrowserApiConfig = Exclude<
+  NonNullable<NonNullable<ViteUserConfig['test']>['browser']>['api'],
+  number
+> & {
+  allowWrite?: boolean;
+  allowExec?: boolean;
+};
+
 const defaultOptions: UserOptions = {
   storybookScript: undefined,
   configDir: resolve(join(WORKING_DIR, '.storybook')),
@@ -166,6 +176,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-test's backend
       const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
 
+      const userBrowserApi =
+        inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser?.api;
+      const browserApi: BrowserApiConfig | undefined =
+        typeof userBrowserApi === 'number' ? { port: userBrowserApi } : userBrowserApi;
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         test: {
           setupFiles: [
@@ -225,6 +240,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                 };
               },
             },
+            // Story code runs in the browser, and Vitest otherwise lets it write files and run
+            // commands in Node through the browser API whenever the server is bound to loopback.
+            api: {
+              ...browserApi,
+              allowWrite: browserApi?.allowWrite ?? false,
+              allowExec: browserApi?.allowExec ?? false,
+            } as BrowserApiConfig,
+
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser &&
             inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test.browser

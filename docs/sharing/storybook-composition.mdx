@@ -73,3 +73,9 @@ If you're working with an outdated Storybook version or have a project-specific 
 <Callout variant="info">
   The usage of a specific version of the CLI is intended as the `extract` command is not available in Storybook 8.0 or higher. It also requires you to provide additional configuration to generate the `index.json` file accurately. See the [previous documentation](../../../release-7-6/docs/sharing/storybook-composition.mdx) for more information.
 </Callout>
+
+### A development Storybook composed from a remote IP address fails
+
+When in development mode, for security reasons, Storybook blocks iframe embedding from non-localhost origins, and only exchanges messages with a composing Storybook opened on a local host, such as `localhost` or `127.0.0.1`. If you need to open the composing Storybook through a LAN IP address, build the composed Storybook first, and compose its build output instead.
+
+You can also enable the [`security.insecureRemoteIframeEmbed`](../api/main-config/main-config-security.mdx#insecureremoteiframeembed) and [`security.insecureIframeMessaging`](../api/main-config/main-config-security.mdx#insecureiframemessaging) flags in the composed Storybook's configuration. Be cautious when using these flags, as they allow any website you visit to embed your local Storybook and exchange messages with it.

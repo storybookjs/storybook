@@ -1,0 +1,43 @@
+---
+title: 'security'
+sidebar:
+  order: 19
+  title: security
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type:
+
+```ts
+{
+  insecureIframeMessaging?: boolean;
+  insecureRemoteIframeEmbed?: boolean;
+}
+```
+
+Configures security behavior of Storybook.
+
+## `insecureIframeMessaging`
+
+Type: `boolean`
+
+Default: `false`
+
+The manager and its preview iframes exchange messages with `postMessage`. By default, the manager only accepts messages from its own preview iframes, and a preview running in dev mode only accepts messages from a manager on a local host such as `localhost` or `127.0.0.1`. In dev mode, both also address their messages to the expected origin. This prevents other websites from sending messages to your Storybook or reading the ones it sends.
+
+The `insecureIframeMessaging` flag turns these checks off and restores the behavior of earlier Storybook versions. It should be used with caution, as any website that embeds your Storybook can then exchange messages with it. If you need to compose a Storybook running in dev mode from a Storybook opened on another host, the safe alternative is to build the composed Storybook and compose the build output instead.
+
+<CodeSnippets path="main-config-security-insecure-iframe-messaging.md" />
+
+## `insecureRemoteIframeEmbed`
+
+Type: `boolean`
+
+Default: `false`
+
+By default, the dev server's manager and preview can only be embedded in iframes by pages served on `localhost` or `127.0.0.1`. This prevents malicious websites from embedding your local Storybook and attempting to interact with your dev server.
+
+The `insecureRemoteIframeEmbed` flag lets you embed your Storybook dev server in an `<iframe>` hosted on any origin. It should be used with caution, as any website you visit will be able to embed your local Storybook. The safe alternative is to build your composed Storybook and compose the build output instead.
+
+<CodeSnippets path="main-config-security-insecure-remote-iframe-embed.md" />

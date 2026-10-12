@@ -33,6 +33,16 @@ export enum Category {
   ADDON_VITEST = 'ADDON_VITEST',
 }
 
+export class InvalidChannelPageError extends StorybookError {
+  constructor(public data: { page: string }) {
+    super({
+      category: Category.PREVIEW_CHANNELS,
+      code: 1,
+      message: `The postMessage channel transport needs "config.page" to be "manager" or "preview", but received "${data.page}".`,
+    });
+  }
+}
+
 export class MissingStoryAfterHmrError extends StorybookError {
   constructor(public data: { storyId: string }) {
     super({

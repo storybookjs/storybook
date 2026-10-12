@@ -20,10 +20,11 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from '@storybook/core/core-events';
+import { logger } from '@storybook/core/node-logger';
 
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
 import { getParser } from '../utils/parser';
-import { searchFiles } from '../utils/search-files';
+import { InvalidSearchQueryError, searchFiles } from '../utils/search-files';
 
 export async function initFileSearchChannel(
   channel: Channel,
@@ -104,12 +105,19 @@ export async function initFileSearchChannel(
           error: null,
         } satisfies ResponseData<FileComponentSearchResponsePayload>);
       } catch (e: any) {
-        /** Emits the search result event with an error message */
+        const isInvalidQuery = e instanceof InvalidSearchQueryError;
+
         channel.emit(FILE_COMPONENT_SEARCH_RESPONSE, {
           success: false,
           id: searchQuery ?? '',
-          error: `An error occurred while searching for components in the project.\n${e?.message}`,
+          error: isInvalidQuery
+            ? e.message
+            : 'An error occurred while searching for components in the project.',
         } satisfies ResponseData<FileComponentSearchResponsePayload>);
+
+        if (!isInvalidQuery) {
+          logger.error(`An error occurred while searching for components:\n${e?.stack ?? e}`);
+        }
 
         if (!coreOptions.disableTelemetry) {
           telemetry('create-new-story-file-search', {

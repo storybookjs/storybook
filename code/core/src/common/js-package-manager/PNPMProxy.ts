@@ -253,6 +253,35 @@ export class PNPMProxy extends JsPackageManager {
     return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
   }
 
+  override writeCatalogUpgrades(
+    specifiers: string[],
+    declared: Partial<Record<string, string>>
+  ): string[] {
+    const upgrades = specifiers.map((specifier) => {
+      const at = specifier.indexOf('@', 1);
+      const name = specifier.slice(0, at);
+      return {
+        specifier,
+        name,
+        version: specifier.slice(at + 1),
+        catalog: this.#getCatalogName(declared[name]),
+      };
+    });
+    const catalogued = upgrades.filter(({ catalog }) => catalog !== null);
+    const workspace = catalogued.length > 0 ? this.#readWorkspaceYaml() : undefined;
+    if (!workspace) {
+      return specifiers;
+    }
+    for (const { name, version, catalog } of catalogued) {
+      const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
+      const current = String(workspace.doc.getIn(keyPath) ?? '');
+      const modifier = /^[~^]/.test(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
+      workspace.doc.setIn(keyPath, `${modifier}${version}`);
+    }
+    writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+    return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
+  }
+
   override applyVersionToRelatedPackages(
     packages: string[],
     version: string,
@@ -624,7 +653,7 @@ export class PNPMProxy extends JsPackageManager {
   private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {
     const result = await this.runInternalCommand(
       'view',
-      ['--json', packageName, `time[${version}]`],
+      ['--json', packageName, 'time'],
       undefined,
       'pipe'
     );
@@ -634,7 +663,8 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
 
-    return parseReleaseTime(JSON.parse(normalizedValue));
+    const timeMap = parsePackageTimeMap(JSON.parse(normalizedValue));
+    return parseReleaseTime(timeMap?.[version]);
   }
 
   private async getLatestStableVersionAdheringToMinimumReleaseAge(

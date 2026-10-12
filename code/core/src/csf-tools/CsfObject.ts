@@ -11,7 +11,7 @@ export type CsfObjectTarget =
       kind: 'story-annotation';
       exportName: string;
       localName: string;
-      annotation: 'parameters';
+      annotation: 'parameters' | 'argTypes';
     };
 
 export type CsfMutationDiagnosticCode =
@@ -71,7 +71,8 @@ export interface CsfObject {
    */
   readonly changed: boolean;
   /**
-   * Read a copy of the Babel expression at a property path. Missing fields return `undefined`.
+   * Read a copy of the Babel expression at a property path. For a CSF2 annotation, its annotation
+   * path returns the whole object. Missing fields return `undefined`.
    *
    * @example
    * ```ts
@@ -342,6 +343,9 @@ class CsfObjectEditor implements CsfObject {
     const logicalPath = this.normalizePath(path);
     if (!logicalPath) {
       return undefined;
+    }
+    if (logicalPath.length === 0) {
+      return this.prefix.length > 0 ? t.cloneNode(this.root.node, true) : undefined;
     }
     const found = this.inspect(logicalPath);
     if (found.ok === false) {

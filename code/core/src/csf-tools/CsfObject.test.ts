@@ -370,6 +370,23 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toContain(`Basic.parameters = { a11y: { context: '#root' } };`);
   });
 
+  it('uses logical paths for CSF2 argTypes assignments', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Playground = () => null;
+      Playground.argTypes = { autoTruncateTokens: { defaultValue: false, control: 'boolean' } };
+    `);
+    const [argTypes] = csf.objects({ meta: false });
+
+    expect(argTypes.get(['argTypes'])).toMatchObject({ type: 'ObjectExpression' });
+    expect(argTypes.remove(['argTypes', 'autoTruncateTokens', 'defaultValue'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain("control: 'boolean'");
+    expect(printCsf(csf).code).not.toContain('defaultValue');
+  });
+
   it('rejects repeated CSF2 annotations instead of exposing either object', () => {
     const csf = parse(`
       export default { title: 'Example' };

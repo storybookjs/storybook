@@ -380,7 +380,7 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories, including CSF2 parameter assignments. Unsupported
+   * Discover editors for the meta and stories, including CSF2 parameter and argTypes assignments. Unsupported
    * targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example

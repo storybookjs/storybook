@@ -5,8 +5,6 @@
 export type DocsListedEntry = { id: string; name: string; storybookId?: string };
 
 const MAX_SUGGESTIONS = 5;
-const SAME_ID_SCORE = Number.MAX_SAFE_INTEGER;
-const SAME_COMPONENT_SCORE = SAME_ID_SCORE - 1;
 // A whole name spelled out by the id outweighs any single shared word.
 const NAME_SCORE = 2;
 
@@ -42,22 +40,23 @@ export function suggestEntries(id: string, candidates: DocsListedEntry[]): DocsL
   const distinctive = [...wanted].filter((token) => (idCountByToken.get(token) ?? 0) <= maxIdCount);
 
   const scoreOf = (candidate: DocsListedEntry) => {
-    if (candidate.id === id) {
-      return SAME_ID_SCORE;
-    }
-    if (candidate.id === componentId) {
-      return SAME_COMPONENT_SCORE;
-    }
     const candidateTokens = new Set([...tokenize(candidate.id), ...tokenize(candidate.name)]);
     const sharedWords = distinctive.filter((token) => candidateTokens.has(token)).length;
     const joinedName = candidate.name.toLowerCase().replace(/[^a-z0-9]/g, '');
     return sharedWords + (wanted.has(joinedName) ? NAME_SCORE : 0);
   };
 
+  // The id itself comes first, then the component a story or docs id belongs to, then the entries
+  // that share words with it.
+  const tierOf = (candidate: DocsListedEntry) =>
+    candidate.id === id ? 0 : candidate.id === componentId ? 1 : 2;
+
   return candidates
-    .map((candidate) => ({ candidate, score: scoreOf(candidate) }))
-    .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score || a.candidate.id.localeCompare(b.candidate.id))
+    .map((candidate) => ({ candidate, tier: tierOf(candidate), score: scoreOf(candidate) }))
+    .filter(({ tier, score }) => tier < 2 || score > 0)
+    .sort(
+      (a, b) => a.tier - b.tier || b.score - a.score || a.candidate.id.localeCompare(b.candidate.id)
+    )
     .slice(0, MAX_SUGGESTIONS)
     .map(({ candidate }) => candidate);
 }

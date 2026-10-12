@@ -211,28 +211,6 @@ function formatStoryContent(story: Story, importStatement: string | undefined): 
   return parts;
 }
 
-const MAX_LITERAL_UNION_LENGTH = 300;
-const ABBREVIATED_UNION_LENGTH = 150;
-const UNION_MEMBER = `(?:"[^"]*"|'[^']*'|undefined|null)`;
-const STRING_LITERAL_UNION = new RegExp(`^${UNION_MEMBER}(?: \\| ${UNION_MEMBER})+$`);
-
-// A long union of string literals, such as every intrinsic element name, is cut to its first
-// members and a count: the rest is more of the same. Any other type is printed whole.
-function abbreviateUnion(type: string): string {
-  if (type.length <= MAX_LITERAL_UNION_LENGTH || !STRING_LITERAL_UNION.test(type)) {
-    return type;
-  }
-  const members = type.match(new RegExp(UNION_MEMBER, 'g'))!;
-  const kept = [members[0]];
-  for (const member of members.slice(1)) {
-    if (`${kept.join(' | ')} | ${member}`.length > ABBREVIATED_UNION_LENGTH) {
-      break;
-    }
-    kept.push(member);
-  }
-  return `${kept.join(' | ')} | ... (${members.length - kept.length} more)`;
-}
-
 function formatPropsSection(
   parsedDocgen: ParsedDocgen | undefined,
   options: { title?: string; typeName?: string } = {}
@@ -252,7 +230,7 @@ function formatPropsSection(
   parts.push(`export type ${typeName} = {`);
 
   for (const [propName, propInfo] of propEntries) {
-    const type = abbreviateUnion(propInfo.type ?? 'any');
+    const type = propInfo.type ?? 'any';
     const isRequired = propInfo.required ?? true;
     const hasDefault = propInfo.defaultValue !== undefined;
     const { description } = propInfo;

@@ -926,59 +926,6 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
   });
 
   describe('props section', () => {
-    it('cuts a long string-literal union after its first members', () => {
-      const elements = Array.from({ length: 120 }, (_, index) => `"element-${index}"`);
-      const manifest: ComponentManifest = {
-        id: 'box',
-        name: 'Box',
-        reactDocgenTypescript: {
-          props: {
-            as: { name: 'as', type: { name: elements.join(' | ') }, required: false },
-            tone: { name: 'tone', type: { name: '"neutral" | "primary"' }, required: false },
-          },
-        },
-      };
-
-      const result = formatComponentManifest(manifest);
-
-      expect(result).toContain(
-        '  as?: "element-0" | "element-1" | "element-2" | "element-3" | "element-4" | "element-5" | "element-6" | "element-7" | "element-8" | "element-9" | ... (110 more);'
-      );
-      expect(result).toContain('  tone?: "neutral" | "primary";');
-    });
-
-    it('keeps a literal that contains the separator in one piece', () => {
-      const elements = Array.from({ length: 60 }, (_, index) => `"left-${index} | right-${index}"`);
-      const manifest: ComponentManifest = {
-        id: 'box',
-        name: 'Box',
-        reactDocgenTypescript: {
-          props: {
-            as: { name: 'as', type: { name: elements.join(' | ') }, required: false },
-          },
-        },
-      };
-
-      expect(formatComponentManifest(manifest)).toContain(
-        '  as?: "left-0 | right-0" | "left-1 | right-1" | "left-2 | right-2" | "left-3 | right-3" | "left-4 | right-4" | "left-5 | right-5" | "left-6 | right-6" | ... (53 more);'
-      );
-    });
-
-    it('prints a long type that is not a string-literal union whole', () => {
-      const callback = `(state: { ${Array.from({ length: 40 }, (_, index) => `field${index}: "a" | "b"`).join('; ')} }) => void`;
-      const manifest: ComponentManifest = {
-        id: 'box',
-        name: 'Box',
-        reactDocgenTypescript: {
-          props: {
-            render: { name: 'render', type: { name: `ReactNode | ${callback}` }, required: false },
-          },
-        },
-      };
-
-      expect(formatComponentManifest(manifest)).toContain(`  render?: ReactNode | ${callback};`);
-    });
-
     it('should format props from reactDocgenTypescript', () => {
       const manifest: ComponentManifest = {
         id: 'button',

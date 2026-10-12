@@ -71,9 +71,12 @@ export const printTemplateData = (
 };
 
 // A binding expression sits in a double-quoted attribute: the delimiter and text Angular's lexer
-// would decode as a character reference survive the round-trip unchanged.
+// would decode as a character reference survive the round-trip unchanged. Inside `{{ }}` Angular
+// decodes `&...;` across spaces, so a bare `&` there would swallow the next escape.
 export const escapeAttributeExpression = (expression: string): string =>
-  expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');
+  expression
+    .replace(expression.includes('{{') ? /&/g : /&(?=#|[A-Za-z\d]*;)/g, '&amp;')
+    .replace(/"/g, '&quot;');
 
 const stringifyCircular = (obj: unknown) => {
   const seen = new Set();

@@ -25,7 +25,7 @@ import type { TemplateExpansion, TemplateResult } from './story-docs-markup.ts';
 
 // The text one `argsToTemplate` site becomes, given the outputs its element leaves it to bind and
 // the outputs its element already binds.
-export type MaterializeExpansion = (
+type MaterializeExpansion = (
   expansion: TemplateExpansion,
   outputAttributes: TemplateExpansion['outputAttributes'],
   occupiedOutputs: ReadonlySet<string>

@@ -2230,6 +2230,21 @@ describe('live snippet template', () => {
     );
   });
 
+  it('binds data holding code as an input, which fills once the controls make it data', async () => {
+    const story = await liveStory(
+      `export const Default = { args: { label: 'Save', items: [{ id: 1, render: (v) => v }] } };`
+    );
+    const items = [{ id: 1, render: (value: unknown) => value }];
+
+    expect(() => fillTemplate(story.template!, { label: 'Go', items })).toThrow(
+      UnprintableArgError
+    );
+    expect(
+      splitHostComponentTemplate(fillTemplate(story.template!, { label: 'Go', items: [{ id: 2 }] }))
+        ?.template
+    ).toContain(`[label]="'Go'"\n    [items]="[{id: 2}]"`);
+  });
+
   it('leaves NaN to the host field the static snippet holds it in', async () => {
     const story = await liveStory(`export const Default = { args: { increment: NaN } };`);
 

@@ -23,7 +23,7 @@ export function fillSnippetTemplate(code: string, args: Record<string, unknown> 
       .replace(/ ?\{\.\.\.args\}( ?\/?>)?/g, (_match, closer: string | undefined, offset: number) =>
         spreadProps(
           // An element with its own children (`<Button {...args}>Solid</Button>`) overrides `children`
-          closer?.trim() === '>' ? props.filter((prop) => !/^children\b/.test(prop)) : props,
+          hasWrittenChildren(code, offset) ? props.filter((prop) => !/^children\b/.test(prop)) : props,
           lineIndent(code, offset),
           closer
         )
@@ -77,6 +77,12 @@ export function resolveArgPath(path: string, args: Record<string, unknown>) {
     consumed += segment[0].length;
   }
   return { value, rest: path.slice(consumed) };
+}
+
+/** Whether the element whose tag holds the spread at `offset` ends in `>` rather than `/>`. */
+function hasWrittenChildren(code: string, offset: number) {
+  const tagEnd = /(?<!=)\/?>/.exec(code.slice(offset));
+  return tagEnd?.[0] === '>';
 }
 
 export function lineIndent(code: string, offset: number) {

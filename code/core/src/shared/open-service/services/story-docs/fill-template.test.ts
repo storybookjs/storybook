@@ -121,3 +121,14 @@ describe('fillSnippetTemplate with written children', () => {
     ).toBe('const S = () => <Button primary>Solid</Button>;');
   });
 });
+
+describe('fillSnippetTemplate with written children and more props', () => {
+  it('leaves children out when other props follow the spread', () => {
+    expect(
+      fillSnippetTemplate(
+        'const S = () => <Button {...args} onClick={() => go()} variant="solid">Solid</Button>;',
+        { children: 'Button' }
+      )
+    ).toBe('const S = () => <Button onClick={() => go()} variant="solid">Solid</Button>;');
+  });
+});

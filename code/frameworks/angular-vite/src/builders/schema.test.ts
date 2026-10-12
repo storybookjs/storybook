@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEnvConfig } from 'storybook/internal/common';
 import {
@@ -8,17 +8,11 @@ import {
   buildStaticStandalone,
   withTelemetry,
 } from 'storybook/internal/core-server';
-import type { CLIOptions } from 'storybook/internal/types';
 
-import {
-  addSchemaOptionsToCommand,
-  parseJsonSchemaToOptions,
-} from '@angular/cli/src/command-builder/utilities/json-schema.js';
 import { Architect } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
 import * as pkg from 'empathic/package';
-import yargs from 'yargs/yargs';
 
 import buildSchema from '../../build-schema.json';
 import startSchema from '../../start-schema.json';
@@ -69,6 +63,7 @@ describe.each([
     const registry = new schema.CoreSchemaRegistry();
     registry.addPostTransform(schema.transforms.addUndefinedDefaults);
     host = new TestingArchitectHost();
+    assert(schema.isJsonSchema(builderSchema));
     host.addBuilder(builderName, handler, '', builderSchema);
     architect = new Architect(host, registry);
   });
@@ -78,22 +73,15 @@ describe.each([
   });
 
   it.each([
-    { args: [`--stats-json=${statsDirectory}`], expected: statsDirectory },
-    { args: ['--stats-json', statsDirectory], expected: statsDirectory },
-    { args: ['--stats-json=./false'], expected: './false' },
-    { args: ['--stats-json=true'], expected: 'true' },
-    { args: ['--stats-json', 'true'], expected: 'true' },
-    { args: ['--stats-json=false'], expected: 'false' },
-    { args: ['--stats-json', 'false'], expected: 'false' },
-    { args: ['--stats-json=123'], expected: '123' },
-    { args: ['--stats-json'], expected: true },
-    { args: ['--no-stats-json'], expected: false },
-    { args: [], expected: false },
-  ])('forwards CLI arguments $args as $expected', async ({ args, expected }) => {
-    const options = await parseJsonSchemaToOptions(new schema.CoreSchemaRegistry(), builderSchema);
-    const parser = yargs().exitProcess(false);
-    addSchemaOptionsToCommand(parser, options, false);
-    const statsJson = parser.parseSync(args)['stats-json'] as CLIOptions['statsJson'];
+    { statsJson: statsDirectory, expected: statsDirectory },
+    { statsJson: './false', expected: './false' },
+    { statsJson: 'true', expected: 'true' },
+    { statsJson: 'false', expected: 'false' },
+    { statsJson: '123', expected: '123' },
+    { statsJson: '', expected: true },
+    { statsJson: false, expected: false },
+    { statsJson: undefined, expected: false },
+  ])('forwards parsed stats options %j', async ({ statsJson, expected }) => {
     host.addTarget(target, builderName, {});
 
     const run = await architect.scheduleTarget(
@@ -126,15 +114,11 @@ describe.each([
   );
 
   it.each([
-    { configured: 'false', args: ['--no-stats-json'], expected: false },
-    { configured: 'true', args: ['--stats-json'], expected: true },
-    { configured: true, args: ['--stats-json=false'], expected: 'false' },
-    { configured: false, args: ['--stats-json=true'], expected: 'true' },
-  ])('overrides configured $configured with $args', async ({ configured, args, expected }) => {
-    const options = await parseJsonSchemaToOptions(new schema.CoreSchemaRegistry(), builderSchema);
-    const parser = yargs().exitProcess(false);
-    addSchemaOptionsToCommand(parser, options, false);
-    const statsJson = parser.parseSync(args)['stats-json'] as string | boolean;
+    { configured: 'false', statsJson: false, expected: false },
+    { configured: 'true', statsJson: '', expected: true },
+    { configured: true, statsJson: 'false', expected: 'false' },
+    { configured: false, statsJson: 'true', expected: 'true' },
+  ])('overrides configured stats options %j', async ({ configured, statsJson, expected }) => {
     host.addTarget(target, builderName, { statsJson: configured });
 
     const run = await architect.scheduleTarget(target, { statsJson });

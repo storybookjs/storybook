@@ -4,7 +4,7 @@ import { sourceOf, unwrapExpression } from 'storybook/internal/csf-tools';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
 import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
-import { parseHtml, printHtml } from './html-tree.ts';
+import { parseHtml, printHtml, printHtmlAttribute } from './html-tree.ts';
 import {
   escapeAttribute,
   escapeTemplateText,
@@ -57,7 +57,8 @@ interface TemplatePrintState {
   markers: Map<string, t.Expression>;
   properties: Set<string>;
   referenced: Set<string>;
-  rootListenerHoles: number[];
+  // The script folds in a root listener's handler, so a handler picked from the args has no hole.
+  rootListenerHoles: { index: number; folds: boolean }[];
   unresolved: Set<string>;
 }
 
@@ -139,7 +140,12 @@ const resolveTemplate = (
     state.listeners = [];
   }
   if (rootListenersAttachToHost) {
-    state.rootListenerHoles.forEach((index) => holes?.drop(index));
+    state.rootListenerHoles.forEach(({ index, folds }) => {
+      holes?.drop(index);
+      if (holes && !folds) {
+        holes.blocked = true;
+      }
+    });
   }
   const script = printRootListenerScript(state.listeners);
   const snippet = printHtml(nodes.snippet);
@@ -361,7 +367,7 @@ const templateAttribute = (
   holes: TemplateHoles,
   depth: number
 ): HtmlAttribute | undefined => {
-  const display = snippet ? printedAttribute(snippet) : '';
+  const display = snippet ? printHtmlAttribute(snippet) : '';
   const markers = markersIn(attribute.value, state);
   const expressions = markers.map((marker) => state.markers.get(marker)!);
   const single = markers.length === 1 && attribute.value === markers[0];
@@ -396,7 +402,10 @@ const templateAttribute = (
   }
   const printed = holes.attribute(`${attribute.name}=\${${hole}}`, display);
   if (prefix === '@' && depth === 0) {
-    state.rootListenerHoles.push(printed.index);
+    state.rootListenerHoles.push({
+      index: printed.index,
+      folds: reference !== undefined || !readsArgs(expression, state),
+    });
   }
   return printed.node;
 };
@@ -643,9 +652,6 @@ const attributeFromPrinted = (attribute: string | undefined): HtmlAttribute | un
   const [node] = parseHtml(`<x ${attribute}></x>`);
   return node?.kind === 'element' ? node.attributes[0] : undefined;
 };
-
-const printedAttribute = ({ name, value }: HtmlAttribute) =>
-  value === undefined ? name : `${name}="${escapeAttribute(value)}"`;
 
 const upsertAttribute = (attributes: HtmlAttribute[], next: HtmlAttribute): void => {
   const index = attributes.findIndex((attribute) => attribute.name === next.name);

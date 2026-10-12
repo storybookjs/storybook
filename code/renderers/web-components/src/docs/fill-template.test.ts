@@ -95,14 +95,15 @@ describe('fillTemplate', () => {
     it('prints a lit template set as a property as code', () => {
       const content = html`<b>${'Bold'}</b>`;
       expect(fillTemplate(`<my-el ${spread({ content: '.content' })}></my-el>`, { content })).toBe(
-        '<my-el .content=${html`<b>Bold</b>`}></my-el>'
+        '<my-el .content=${html`<b>${"Bold"}</b>`}></my-el>'
       );
-      expect(fillTemplate('<my-el .content=${args.content}></my-el>', { content })).toBe(
-        '<my-el .content=${html`<b>Bold</b>`}></my-el>'
+      const binding = '<my-el .content=${args.content}></my-el>';
+      expect(fillTemplate(binding, { content: html`<x-el .items=${[1]}></x-el>` })).toBe(
+        '<my-el .content=${html`<x-el .items=${[1]}></x-el>`}></my-el>'
       );
-      expect(
-        fillTemplate('<my-el .content=${args.content}></my-el>', { content: html`<i>\`</i>` })
-      ).toBe('<my-el .content=${html`<i>\\`</i>`}></my-el>');
+      expect(fillTemplate(binding, { content: html`<i>\`${'a`${b}'}</i>` })).toBe(
+        '<my-el .content=${html`<i>\\`${"a`${b}"}</i>`}></my-el>'
+      );
     });
 
     it('throws for a lit value or DOM node set as an attribute', () => {
@@ -120,6 +121,12 @@ describe('fillTemplate', () => {
     it('throws for a set arg that only the static snippet can show', () => {
       const template = `<my-el ${spread({ label: 'label', footer: '' })}></my-el>`;
       expect(fillTemplate(template, { label: 'Hi' })).toBe('<my-el label="Hi"></my-el>');
+      expect(fillTemplate(template, { label: 'Hi', footer: '' })).toBe(
+        '<my-el label="Hi"></my-el>'
+      );
+      expect(fillTemplate(template, { label: 'Hi', footer: null })).toBe(
+        '<my-el label="Hi"></my-el>'
+      );
       expect(() => fillTemplate(template, { label: 'Hi', footer: 'Bye' })).toThrow();
     });
 
@@ -230,6 +237,20 @@ describe('fillTemplate', () => {
         '<my-el class="card warm a&quot;b"></my-el>'
       );
       expect(fillTemplate(template, { tone: 'warm' })).toBe('<my-el class="card warm "></my-el>');
+    });
+
+    it('leaves out a quoted attribute a value of nothing is written into, as lit does', () => {
+      const template =
+        '<my-el class="card ${args.tone ? \'warm\' : nothing} big" label="x"></my-el>';
+      expect(fillTemplate(template, { tone: true })).toBe(
+        '<my-el class="card warm big" label="x"></my-el>'
+      );
+      expect(fillTemplate(template, { tone: false })).toBe('<my-el label="x"></my-el>');
+      expect(
+        fillTemplate('<my-el\n  label="x"\n  title="${args.title} ${args.label}"\n></my-el>', {
+          title: nothing,
+        })
+      ).toBe('<my-el\n  label="x"\n></my-el>');
     });
 
     it('drops the line of an attribute left out in a tag laid out one attribute per line', () => {

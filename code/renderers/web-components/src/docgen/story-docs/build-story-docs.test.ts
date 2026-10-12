@@ -166,6 +166,20 @@ describe('buildStoryDocsPayload template', () => {
     expect(() => fillTemplate(doc.template!, { label: 'Hi', ...args })).toThrow();
   });
 
+  it('leaves the static snippet for a root listener that reads args other than as its handler', async () => {
+    const render = (handler: string) =>
+      story(`{
+        args: { label: 'Hi', disabled: false, onShapeChange: () => {} },
+        render: (args) =>
+          html\`<test-element label=\${args.label} @shape-change=\${${handler}}></test-element>\`,
+      }`);
+    expect((await firstStoryWithTemplate(render('args.onShapeChange'))).template).toBeDefined();
+    expect(
+      (await firstStoryWithTemplate(render('args.disabled ? nothing : args.onShapeChange')))
+        .template
+    ).toBeUndefined();
+  });
+
   it('keeps the listener script of the snippet', async () => {
     const doc = await firstStoryWithTemplate(
       story(`{ args: { label: 'Hi', onShapeChange: () => {} } }`)

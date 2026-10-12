@@ -412,7 +412,7 @@ const printCompactStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>): s
   return `<${node.name}${suffix}>`;
 };
 
-const printHtmlAttribute = ({ name, value }: HtmlAttribute): string =>
+export const printHtmlAttribute = ({ name, value }: HtmlAttribute): string =>
   value === undefined ? name : `${name}="${escapeAttribute(value)}"`;
 
 const decodeAttribute = (value: string): string =>

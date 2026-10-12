@@ -48,8 +48,13 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
       const end = scanTo(template, index + 2, '}');
       const expression = pickBranch(template.slice(index + 2, end).trim(), args);
       index = end + 1;
-      if (inTag && quote) {
-        out += interpolate(expression, args);
+      const interpolated = inTag && quote ? interpolate(expression, args) : undefined;
+      if (interpolated === NOTHING) {
+        out = out.replace(new RegExp(`\\s+[^\\s"'<>=/]+=${quote}[^${quote}]*$`), '');
+        index = quoteEnd(template, index, quote!) + 1;
+        quote = undefined;
+      } else if (interpolated !== undefined) {
+        out += interpolated;
       } else if (inTag) {
         out = fillTagHole(out, expression, template[index] === '>', args);
       } else {
@@ -119,7 +124,8 @@ function toAttributes(bindings: ReadonlyMap<string, SpreadBinding>, args: Args):
   const cssProperties: { name: string; value: unknown }[] = [];
   for (const [arg, binding] of bindings) {
     const value = args[arg];
-    if (!Object.hasOwn(args, arg) || (binding.kind === 'unfillable' && value === undefined)) {
+    const cleared = value === undefined || value === null || value === '';
+    if (!Object.hasOwn(args, arg) || (binding.kind === 'unfillable' && cleared)) {
       continue;
     }
     if (binding.kind === 'property') {
@@ -177,7 +183,8 @@ function toBinding(prefix: string, name: string, expression: string, args: Args)
   }
 }
 
-function interpolate(expression: string, args: Args) {
+// The text a hole writes into a quoted attribute, or `NOTHING`, with which lit leaves it out.
+function interpolate(expression: string, args: Args): string | typeof NOTHING {
   const exact = readExact(expression, args);
   if (!exact || exact.wrapper) {
     return `\${${fillExpression(expression, args)}}`;
@@ -186,7 +193,10 @@ function interpolate(expression: string, args: Args) {
   if (value === undefined || value === null) {
     return '';
   }
-  if (value === NOTHING || isMarkup(value)) {
+  if (value === NOTHING) {
+    return NOTHING;
+  }
+  if (isMarkup(value)) {
     throw new UnprintableArgError(exact.key);
   }
   return typeof value === 'function' ? printCode(value, exact.key) : escapeAttribute(String(value));
@@ -315,8 +325,14 @@ function litTemplateHtml({ strings, values }: LitTemplate): string {
 const PRINT_OPTIONS: PrintValueOptions = {
   printCustom: (value, { name }) => {
     if (isLitTemplate(value)) {
-      const html = litTemplateHtml(value).replace(/\\|`|\$\{/g, '\\$&');
-      return `${LIT_TAGS[value._$litType$]}\`${html}\``;
+      const code = value.strings
+        .map((text, index) => {
+          const hole =
+            index === 0 ? '' : `\${${printValue(value.values[index - 1], PRINT_OPTIONS)}}`;
+          return hole + text.replace(/\\|`|\$\{/g, '\\$&');
+        })
+        .join('');
+      return `${LIT_TAGS[value._$litType$]}\`${code}\``;
     }
     if (isLitValue(value)) {
       throw new UnprintableArgError(name ?? 'an array item');
@@ -373,6 +389,17 @@ function stringEnd(code: string, start: number, quote: string) {
   let index = start;
   while (index < code.length && code[index] !== quote) {
     index += code[index] === '\\' ? 2 : 1;
+  }
+  return index;
+}
+
+// Where the quoted attribute value of a template closes, past its holes.
+function quoteEnd(template: string, start: number, quote: string) {
+  let index = start;
+  while (index < template.length && template[index] !== quote) {
+    index = template.startsWith('${', index)
+      ? scanTo(template, index + 2, '}') + 1
+      : index + (template[index] === '\\' ? 2 : 1);
   }
   return index;
 }

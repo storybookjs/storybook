@@ -47,9 +47,7 @@ describe('angular template decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `
-        The content
-      `,
+      template: ` The content `,
     })
     class WithoutSelectorComponent {}
 
@@ -321,9 +319,7 @@ describe('angular source decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `
-        The content
-      `,
+      template: ` The content `,
     })
     class WithoutSelectorComponent {}
 
@@ -628,7 +624,6 @@ describe('angular source decorator', () => {
             options: ['Normal', 'High'],
             type: 'radio',
           },
-          defaultValue: undefined,
           table: {
             category: 'inputs',
           },
@@ -658,7 +653,6 @@ describe('angular source decorator', () => {
             options: ['Normal', 'High'],
             type: 'radio',
           },
-          defaultValue: undefined,
           table: {
             category: 'inputs',
           },
@@ -703,7 +697,7 @@ describe('angular source decorator', () => {
         someDataObject,
       };
 
-      const source = computesTemplateSourceFromComponent(component, props, null);
+      const source = computesTemplateSourceFromComponent(component, props);
       // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
       // This will have to do for now
       expect(source).toEqual(
@@ -740,7 +734,7 @@ describe('angular source decorator', () => {
         someDataObject,
       };
 
-      const source = computesTemplateSourceFromComponent(component, props, null);
+      const source = computesTemplateSourceFromComponent(component, props);
       // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
       // This will have to do for now
       expect(source).toEqual(

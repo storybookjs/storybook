@@ -356,7 +356,6 @@ describe('extractFromVueComponentMeta', () => {
     expect(argType).toEqual({
       name: 'size',
       description: '',
-      defaultValue: undefined,
       type: { name: 'enum', value: ['small', 'large'], required: true },
       table: {
         type: { summary: '"small" | "large"' },

@@ -27,5 +27,3 @@ export const consolidatedPackages = {
   '@storybook/instrumenter': 'storybook/internal/instrumenter',
   '@storybook/blocks': '@storybook/addon-docs/blocks',
 } as const;
-
-export type ConsolidatedPackage = keyof typeof consolidatedPackages;

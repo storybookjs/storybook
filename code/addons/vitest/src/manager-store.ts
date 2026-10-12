@@ -1,5 +1,5 @@
 import {
-  experimental_UniversalStore,
+  internal_UniversalStore,
   experimental_getStatusStore,
   experimental_getTestProviderStore,
 } from 'storybook/manager-api';
@@ -12,7 +12,7 @@ import {
 } from './constants.ts';
 import type { StoreEvent, StoreState } from './types.ts';
 
-export const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+export const store = internal_UniversalStore.create<StoreState, StoreEvent>({
   ...storeOptions,
   leader: (globalThis as any).CONFIG_TYPE === 'PRODUCTION',
 });

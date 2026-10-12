@@ -1,3 +1,4 @@
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
@@ -466,6 +467,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Read before the automigrations, so skills that the skills automigration installs are not
+    // installed a second time below.
+    const hadSkills = await hasStorybookSkills();
+
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
     let detectedAutomigrations: AutomigrationCheckResult[] = [];
@@ -520,8 +525,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
-    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
+    // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
     if (!options.dryRun && !options.skipInstall) {
       for (const project of storybookProjects) {
@@ -547,6 +552,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
       }
     }
+
+    const skills =
+      !options.dryRun && hadSkills
+        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
+        : undefined;
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
@@ -605,6 +615,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 

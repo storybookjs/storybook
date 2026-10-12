@@ -5,7 +5,6 @@ import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
-import addonA11yPostinstall from '../../../../addons/a11y/src/postinstall.ts';
 import addonVitestPostinstall from '../../../../addons/vitest/src/postinstall.ts';
 import type { CommandOptions } from '../generators/types.ts';
 import { TelemetryService } from '../services/index.ts';
@@ -29,7 +28,7 @@ export type ExecuteAddonConfigurationResult = {
  *
  * Responsibilities:
  *
- * - Run postinstall scripts for test addons (a11y, vitest)
+ * - Run postinstall scripts for test addons
  * - Configure addons without triggering installations
  * - Handle configuration errors gracefully
  */
@@ -105,7 +104,7 @@ export class AddonConfigurationCommand {
     }
   }
 
-  /** Configure test addons (a11y and vitest) */
+  /** Configure test addons */
   private async configureAddons(configDir: string, addons: string[]) {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon.ts');
@@ -139,17 +138,6 @@ export class AddonConfigurationCommand {
 
         if (addon === '@storybook/addon-vitest') {
           await addonVitestPostinstall(options);
-        } else if (addon === '@storybook/addon-a11y') {
-          // When addon-vitest was configured in this same run, its postinstall
-          // already executed the addon-a11y-addon-test automigration; a11y's
-          // own postinstall consists of exactly that command, so running it
-          // again only spins up a second package-runner process to conclude
-          // there is nothing left to do. It still runs when vitest is absent
-          // or failed, matching the standalone `storybook add` behavior.
-          const vitestConfigured = addonResults.get('@storybook/addon-vitest') === null;
-          if (!vitestConfigured) {
-            await addonA11yPostinstall(options);
-          }
         } else {
           await postinstallAddon(addon, options);
         }

@@ -3,18 +3,16 @@ import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../project-info.ts';
 import { getDocsMarkdownUrl } from '../setup-utils/docs-markdown-url.ts';
 import { ext } from '../setup-utils/ext.ts';
+import { isReactProject } from '../setup-utils/is-react-project.ts';
 import { listDOD, listRules, listSteps } from '../setup-utils/markdown.ts';
-import type { SetupInstructionsContext } from './types.ts';
 import {
-  buildPortalStep,
-  buildSharedPreviewStep,
-  cleanupStep,
-  discoveryStepStrict,
-  interactionPlayStep,
-  mswStep,
-  verifyStep,
-  writeStoriesStep,
-} from './partials/steps.ts';
+  cssCheckDOD,
+  optionalTestInfrastructureDOD,
+  sharedPreviewDOD,
+  storyTagsV1DOD,
+  typeCheckPassesStrictDOD,
+  vitestPassesStrictDOD,
+} from './partials/dod.ts';
 import {
   batchTestsRule,
   editOverWriteRule,
@@ -26,24 +24,30 @@ import {
   toolsVsShellRule,
 } from './partials/rules.ts';
 import {
-  cssCheckDOD,
-  sharedPreviewDOD,
-  storyTagsV1DOD,
-  typeCheckPassesStrictDOD,
-  vitestPassesStrictDOD,
-} from './partials/dod.ts';
+  buildPortalStep,
+  buildSharedPreviewStep,
+  cleanupStep,
+  discoveryStepStrict,
+  interactionPlayStep,
+  mswStep,
+  verifyStep,
+  writeStoriesStep,
+} from './partials/steps.ts';
+import type { SetupInstructionsContext } from './types.ts';
 
 export function instructions(projectInfo: ProjectInfo): string {
   const { configDir, language, needsUserOnboarding, packageManager, packageManagerName } =
     projectInfo;
-  const tsx = ext(language, true);
+  const tsx = ext(language, isReactProject(projectInfo));
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
-  const mswInstall = packageManager.getInstallCommand(['msw', 'mockdate'], true);
+  const mswInstall = packageManager.getInstallCommand(['msw'], true);
+  const mockDateInstall = packageManager.getInstallCommand(['mockdate'], true);
 
   const ctx: SetupInstructionsContext = {
     configDir,
     docsUrl,
+    mockDateInstall,
     mswInstall,
     needsUserOnboarding,
     packageManager,
@@ -53,7 +57,7 @@ export function instructions(projectInfo: ProjectInfo): string {
   };
 
   return dedent`
-    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW for data, and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
+    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW or MockDate (when selected stories need them), and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
 
     ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
 
@@ -92,6 +96,7 @@ export function instructions(projectInfo: ProjectInfo): string {
       vitestPassesStrictDOD(ctx),
       typeCheckPassesStrictDOD(ctx),
       sharedPreviewDOD(ctx),
+      optionalTestInfrastructureDOD(ctx),
     ])}
 
     ## Reference (only fetch if stuck)

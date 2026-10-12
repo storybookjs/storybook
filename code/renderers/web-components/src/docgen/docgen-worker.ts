@@ -4,10 +4,11 @@ import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import type { WebComponentsDocgenOptions } from './component-docgen/build-docgen.ts';
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
-import { isFailedManifest, loadManifests } from './component-docgen/manifest/load-manifest.ts';
+import { CemManager } from './component-docgen/manifest/cem-manager.ts';
 
 export const createDocgenProvider = ({
   manifestPaths,
+  typeProperty,
 }: WebComponentsDocgenOptions): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
@@ -19,15 +20,11 @@ export const createDocgenProvider = ({
         return undefined;
       }
 
-      const loaded = await loadManifests(manifestPaths);
-      for (const manifest of loaded) {
-        if (isFailedManifest(manifest)) {
-          logger.warn(manifest.error.message);
-        } else {
-          logger.debug(`Loaded Custom Elements Manifest ${manifest.path}`);
-        }
-      }
-      return loaded;
+      return new CemManager(manifestPaths);
     },
-    extract: async (manifests, input) => buildDocgenPayload(input, { manifests }),
+    extract: async (manager, input) =>
+      buildDocgenPayload(input, {
+        cem: await manager.refresh(),
+        typeProperty,
+      }),
   });

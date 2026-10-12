@@ -25,17 +25,40 @@ vi.mock('../logger/log-tracker.ts', () => ({
   },
 }));
 
+import * as clack from '@clack/prompts';
+
 import { ClackPromptProvider } from './prompt-provider-clack.ts';
 
 describe('ClackPromptProvider', () => {
   const provider = new ClackPromptProvider();
+  const task = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(clack.taskLog).mockReturnValue(task as never);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  // Vitest workers do not write to a terminal, so the provider assumes 80 columns.
+  it('drops the colors of a task log line only when they push it onto an extra terminal row', () => {
+    const cyan = (text: string) => `\x1b[36m${text}\x1b[39m`;
+    const nearlyFull = `${'x'.repeat(51)} ${cyan('.storybook/preview')}`;
+    const short = cyan('✔ addon-mcp');
+
+    const log = provider.taskLog({ id: 'task', title: 'Task' });
+    expect(clack.taskLog).toHaveBeenCalledWith({
+      limit: 10,
+      retainLog: true,
+      id: 'task',
+      title: 'Task',
+    });
+    log.message(`${short}\n${nearlyFull}`);
+    log.success('done');
+
+    expect(task.message).toHaveBeenCalledWith(`${short}\n${'x'.repeat(51)} .storybook/preview`);
   });
 
   it('awaits an async onCancel handler before returning', async () => {

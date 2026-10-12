@@ -2,21 +2,24 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaInput,
+  MetaTypes,
+  StoryArgs,
+  TypedMetaArgKeys,
+  WithRenderArgs,
   Preview,
-  PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
   ArgsStoryFn,
-  ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as vueAnnotations from './entry-preview.ts';
 import * as vueDocsAnnotations from './entry-preview-docs.ts';
@@ -42,23 +45,21 @@ import { type VueTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<VueTypes & InferTypes<Addons>>
 ): VuePreview<VueTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,
     addons: [vueAnnotations, vueDocsAnnotations, ...(input.addons ?? [])],
-  }) as unknown as VuePreview<VueTypes & InferTypes<Addons>>;
+  }) as VuePreview<VueTypes & InferTypes<Addons>>;
 
   return preview;
 }
 
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
->;
-
-type InferVueTypes<T, TArgs, Decorators> = VueTypes &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
+// A component typed as `any` or by a `*.vue` shim has no known props, so it takes any args.
+type InferComponentArgs<C> = [keyof ComponentPropsAndSlots<C>] extends [never]
+  ? Args
+  : ComponentPropsAndSlots<C>;
 
 /**
  * Vue3-specific Preview interface that provides type-safe CSF factory methods.
@@ -92,50 +93,38 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   meta<
     C,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<ComponentPropsAndSlots<C> & T['args']>,
+    TRenderArgs = unknown,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      component?: C;
-      args?: TMetaArgs;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C> & T['args']>,
-      'decorators' | 'component' | 'args'
+      component: C;
+      render?: ArgsStoryFn<VueTypes & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
+    } & MetaInput<
+      VueTypes & T,
+      WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
     >
   ): VueMeta<
-    InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>,
-    Omit<ComponentAnnotations<InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
+    MetaTypes<
+      VueTypes & T,
+      WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
+    >,
+    TMetaArgKeys
   >;
 
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      render?: ArgsStoryFn<VueTypes & T, TArgs>;
-      args?: TMetaArgs;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<VueTypes & T, TArgs & T['args']>,
-      'decorators' | 'component' | 'args' | 'render'
-    >
-  ): VueMeta<
-    InferVueTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferVueTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+      render?: ArgsStoryFn<VueTypes & T, TArgs & T['args']>;
+    } & MetaInput<VueTypes & T, TArgs, Decorators, TMetaArgKeys>
+  ): VueMeta<MetaTypes<VueTypes & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
 
 /**
  * Vue3-specific Meta interface returned by `preview.meta()`.
@@ -144,10 +133,10 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  * provided in meta become optional in stories, while missing required args must be provided at the
  * story level.
  */
-export interface VueMeta<
-  T extends VueTypes,
-  MetaInput extends ComponentAnnotations<T>,
-> extends Meta<T, MetaInput> {
+export interface VueMeta<T extends VueTypes, TMetaArgKeys extends PropertyKey = never> extends Meta<
+  T,
+  TMetaArgKeys
+> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -201,13 +190,7 @@ export interface VueMeta<
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        T['args'],
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): VueStory<T, TInput>;
@@ -216,7 +199,7 @@ export interface VueMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -230,13 +213,14 @@ export interface VueMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): VueStory<T, {}>;
+
+  /**
+   * Add types to the stories created from the returned meta, such as an arg that only one story
+   * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
+   */
+  type<S>(): VueMeta<T & S, TypedMetaArgKeys<TMetaArgKeys, S>>;
 }
 
 /**

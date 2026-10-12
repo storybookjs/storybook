@@ -11,7 +11,6 @@ import { fileURLToPath } from 'node:url';
 
 import { resolvePropsTable } from '../props-table.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
-import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
 
 /** Contribute the descriptor for the worker module core imports and runs off the main thread. */
 export const experimental_docgenProvider = async (
@@ -21,7 +20,9 @@ export const experimental_docgenProvider = async (
   const features = await options?.presets?.apply('features', {});
 
   const descriptor: DocgenProviderDescriptor<AngularDocgenOptions> = {
-    moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
+    moduleSpecifier: fileURLToPath(
+      import.meta.resolve('@storybook/angular-vite/internal/docgen-worker')
+    ),
     options: {
       propsTable: resolvePropsTable(await options?.presets?.apply('frameworkOptions'), features),
     },

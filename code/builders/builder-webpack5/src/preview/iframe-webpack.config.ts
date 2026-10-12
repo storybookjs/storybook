@@ -8,7 +8,7 @@ import {
   stringifyProcessEnvs,
 } from 'storybook/internal/common';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
-import type { Options } from 'storybook/internal/types';
+import type { Options, SecurityConfig } from 'storybook/internal/types';
 
 import { type BuilderOptions } from '@storybook/core-webpack';
 
@@ -19,8 +19,8 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
+import webpackModule from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
 import type { TypescriptOptions } from '../types.ts';
@@ -63,6 +63,7 @@ export default async (
     modulesCount,
     build,
     tagsOptions,
+    security,
   ] = await Promise.all([
     presets.apply('core'),
     presets.apply('frameworkOptions'),
@@ -77,6 +78,7 @@ export default async (
     options.cache?.get('modulesCount', 1000),
     options.presets.apply('build'),
     presets.apply('tags', {}),
+    presets.apply<SecurityConfig | undefined>('security'),
   ]);
 
   const stories = normalizeStories(nonNormalizedStories, {
@@ -169,6 +171,7 @@ export default async (
             DOCS_OPTIONS: docsOptions,
             TAGS_OPTIONS: tagsOptions,
             ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
+            ...(security?.insecureIframeMessaging ? { INSECURE_IFRAME_MESSAGING: true } : {}),
           },
           headHtmlSnippet,
           bodyHtmlSnippet,

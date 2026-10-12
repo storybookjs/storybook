@@ -6,8 +6,10 @@ import {
   createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
+  isValidHost,
   loadManifests,
 } from 'storybook/internal/core-server';
+import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
@@ -38,6 +40,58 @@ export const experimental_devServer: PresetPropertyFn<
 
   const origin = `http://localhost:${options.port}`;
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
+
+  const core = await options.presets.apply('core', {});
+  const hostValidation = {
+    host: options.host,
+    allowedHosts: core?.allowedHosts,
+    localAddress: options.localAddress,
+    networkAddress: options.networkAddress,
+  };
+
+  // Needed for e.g. StackBlitz. Not running on developer machines so skipping validation is ok.
+  const skipOriginValidation = isWebContainer();
+
+  // Request middleware rejecting invalid origin or host configuration.
+  const rejectDisallowedOrigin = (req: IncomingMessage, res: ServerResponse): boolean => {
+    if (skipOriginValidation) {
+      return false;
+    }
+
+    // MCP clients are not browsers and send no Origin header. We only need to check the Origin
+    // of Web clients for DNS rebinding attacks, which browsers will attach for us.
+    // See https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http.
+    const { origin: requestOrigin } = req.headers;
+    if (!requestOrigin) {
+      return false;
+    }
+
+    // Check host validity.
+    try {
+      if (isValidHost(new URL(requestOrigin).host, hostValidation)) {
+        return false;
+      }
+    } catch {}
+
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Invalid origin');
+    return true;
+  };
+
+  // When allowedHosts or --host relax origin validation, a web page can still reach this endpoint
+  // cross-origin. Requiring application/json makes the browser send a CORS preflight first, which
+  // this server never approves, so the request is never sent. Only the type before `;` counts:
+  // `text/plain; x=application/json` is still a safelisted type and needs no preflight.
+  const rejectNonJsonBody = (req: IncomingMessage, res: ServerResponse): boolean => {
+    const mediaType = req.headers['content-type']?.split(';')[0].trim().toLowerCase();
+    if (mediaType === 'application/json') {
+      return false;
+    }
+
+    res.writeHead(415, { 'Content-Type': 'text/plain' });
+    res.end('Unsupported Media Type: Content-Type must be application/json');
+    return true;
+  };
 
   const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
 
@@ -102,7 +156,9 @@ export const experimental_devServer: PresetPropertyFn<
   };
 
   app!.post(endpoint, (req, res) => {
+    if (rejectDisallowedOrigin(req, res)) return;
     if (requireAuth(req, res)) return;
+    if (rejectNonJsonBody(req, res)) return;
 
     return mcpServerHandler({
       req,
@@ -135,6 +191,7 @@ export const experimental_devServer: PresetPropertyFn<
   const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
   app!.get(endpoint, (req, res) => {
+    if (rejectDisallowedOrigin(req, res)) return;
     if (!req.headers['accept']?.includes('text/html')) {
       if (requireAuth(req, res)) return;
 

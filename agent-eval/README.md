@@ -108,17 +108,21 @@ yarn workspace agent-eval run compile:checkout
 This covers what the sandbox installs up front. In the lifecycle evals
 (820–823) the agent installs Storybook itself, with `npm create storybook` or
 `storybook upgrade`. Their fixtures set `"checkoutRegistry": true` under
-`evals` in `package.json`, and setup then starts an npm registry inside the
-sandbox (`lib/checkout-registry-server.mjs`) and points the user-level npm
-config at it. The registry publishes the checkout's build of `create-storybook`,
-`@storybook/cli`, `storybook`, the React + Vite framework, the addons
-`create storybook` installs and the MCP addon (which an upgrade through 10.x
-adds), together with the monorepo packages they depend on, under the `next` dist-tag, and keeps `latest` on the published release, as
-during an 11.0 prerelease. It withholds the published versions of the
-checkout's `major.minor` and up, so nothing in that line can come from npm,
-and it redirects every other request to npm. Each lifecycle eval checks with
-`expectStorybookInstalledFromCheckout` that the agent installed the checkout's
-build.
+`evals` in `package.json`, and setup then starts a small npm registry inside
+the sandbox (`lib/checkout-registry-server.mjs`) and points the user-level npm
+config at it. The registry:
+
+- publishes the checkout's build under the `next` dist-tag and keeps `latest`
+  on the published release, as during an 11.0 prerelease. It serves
+  `create-storybook`, `@storybook/cli`, `storybook`, the React + Vite
+  framework, the addons `create storybook` installs, the MCP addon (which an
+  upgrade through 10.x adds), and the monorepo packages those depend on;
+- withholds the published versions of the checkout's `major.minor` and up,
+  so nothing in that line can come from npm;
+- redirects every other request to npm.
+
+Each lifecycle eval checks with `expectStorybookInstalledFromCheckout` that
+the agent installed the checkout's build.
 
 In the other evals, `storybook add` still adds a published addon next to the
 checkout packages, with the same version number. Right after the version on

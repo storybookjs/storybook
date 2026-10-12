@@ -1,14 +1,8 @@
+import { PackageManagerName } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../../project-info.ts';
 import type { SetupInstructionsContext } from '../types.ts';
-
-export function toolsVsShellRule(ctx: SetupInstructionsContext): string {
-  return dedent`**Discover with Glob/Grep/Read, not shell.** Never use \`ls\`, \`find\`, \`cat\`, \`head\`, \`tail\`, shell \`grep\`, \`sed\`, or \`node -e\` for discovery or for editing files in bulk — these are slower per call and violate caching. Substitute bash commands for the specific tool names listed below, or available tools with the closest semantics:
-    - List a directory → \`Glob('src/components/*')\` (alt names: \`search_files\`, \`file_search\`), not \`ls src/components\`.
-    - Search a string → \`Grep('pattern', { path: 'src' })\` (alt names: \`grep_search\`, \`search_files\`), not \`grep -rn ...\` or \`find ... | xargs grep\`.
-    - Read a file → \`Read('path/to/file')\` (alt names: \`read_file\`), not \`cat\`/\`head\`/\`tail\`.
-    - Bulk-edit many files → multiple \`Edit\` calls (alt names: \`apply_patch\`, \`replace_in_file\`, \`replace\`), or one \`Edit\` with \`replace_all\` (alt names: \`replace\` with \`allow_multiple\`), not \`sed -i\`.`;
-}
 
 export function nodeModuleReadsRule(ctx: SetupInstructionsContext): string {
   return dedent`**Never read or grep inside \`node_modules\`.** The imports shown in this prompt are correct — don't verify them by introspecting installed packages. If something seems off, re-read this prompt, not \`node_modules\`.`;
@@ -27,6 +21,9 @@ export function packageManagerRule({
   packageManagerName,
 }: SetupInstructionsContext): string {
   const storybookCmd = packageManager.getPackageCommand(['storybook']);
+  if (packageManager.type === PackageManagerName.NPM) {
+    return dedent`**Use \`npm\` for installs and \`${storybookCmd}\` for Storybook/Vitest CLI commands** (detected from this project's lockfile).`;
+  }
   if (packageManagerName) {
     return dedent`**Use \`${packageManagerName}\` for installs and \`${storybookCmd}\` for Storybook/Vitest CLI commands** (detected from this project's lockfile). Do not use \`npx\` — it invokes npm and fails when the repo enforces a different package manager.`;
   }

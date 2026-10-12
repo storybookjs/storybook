@@ -22,7 +22,7 @@ export function discoveryStepStrict(
   return {
     title: 'Discover the runtime (≤12 reads)',
     body: dedent`
-      Identify, in this order, using Glob/Grep first then targeted Reads:
+      Identify, in this order:
 
     - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
     - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports` : 'application entry file — framework initialization, shared services or providers, root CSS imports'}
@@ -48,7 +48,7 @@ export function discoveryStepRelaxed(
   return {
     title: 'Discover the runtime (≤40 reads)',
     body: dedent`
-      Identify, in this order, using Glob/Grep first then targeted Reads:
+      Identify, in this order:
 
     - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
     - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports` : 'application entry file — framework initialization, shared services or providers, root CSS imports'}
@@ -65,6 +65,23 @@ export function discoveryStepRelaxed(
   };
 }
 
+function missingVitestAddonNote(
+  { addons }: ProjectInfo,
+  packageManager: InstructionsContext['packageManager']
+): string {
+  if (addons.includes('@storybook/addon-vitest')) {
+    return '';
+  }
+  const add = packageManager.getPackageCommand([
+    'storybook',
+    'add',
+    '@storybook/addon-vitest',
+    '--yes',
+  ]);
+  const build = packageManager.getPackageCommand(['storybook', 'build']);
+  return `This project doesn't have \`@storybook/addon-vitest\` yet, which runs stories as tests. Add it first with \`${add}\`. If that fails, run \`${build}\` instead of the Vitest commands below to check that the stories compile, and tell the user that story tests need \`@storybook/addon-vitest\`.\n\n`;
+}
+
 export function verifyStep(
   projectInfo: ProjectInfo,
   { packageManager, tsx }: InstructionsContext
@@ -74,7 +91,9 @@ export function verifyStep(
 
   return {
     title: `Verify in one batch, then iterate only on failures`,
-    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
+    body:
+      missingVitestAddonNote(projectInfo, packageManager) +
+      dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
 
     \`\`\`bash
     ${vitestRunAll}
@@ -103,7 +122,9 @@ export function verifyWithAllowedFailureStep(
 
   return {
     title: `Verify in one batch, then iterate only on failures`,
-    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
+    body:
+      missingVitestAddonNote(projectInfo, packageManager) +
+      dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
 
     \`\`\`bash
     ${vitestRunAll}
@@ -129,7 +150,7 @@ export function cleanupStep(
 ): { title: string; body: string } {
   const onboardingInstructions = needsUserOnboarding
     ? 'You must preserve the components, CSS, stories and MDX docs initially created by Storybook, as they are required for user onboarding in the UI.'
-    : 'Delete the components, CSS, stories and MDX docs initially created by Storybook only if you managed to write successful stories.';
+    : "If you managed to write successful stories, delete the examples that `storybook init` generated (a `stories/` folder with `Configure.mdx` next to `Button`, `Header`, and `Page`). Don't delete any other stories.";
 
   return {
     title: `Clean up`,

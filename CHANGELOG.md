@@ -1,3 +1,16 @@
+## 9.1.21
+
+- Highlight: Prevent menu items from emitting arbitrary channel events
+- Channels: Restrict preview postMessage to known manager origins
+- Core: Separate manager and preview roles on the dev server channel
+- Core: Block iframe embedding of the dev server from non-localhost origins
+- Core: Reject component search queries outside the project
+- Core: Validate component export name when creating a story
+- Core: Add host validation warning and origin validation for MCP
+- Core: Contain save story path to the project root
+- Core: Validate save story name and arg keys as identifiers
+- Addon Vitest: Disable browser file writes and command execution
+
 ## 9.1.20
 
 - Add request validation

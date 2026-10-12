@@ -147,6 +147,20 @@ describe('renderJsx', () => {
 
       expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
         .toMatchInlineSnapshot(`
+          <MyExoticComponent>
+            I am forwardRef!
+          </MyExoticComponent>
+        `);
+    });
+
+    it('with an anonymous render function', () => {
+      // oxlint-disable-next-line react/display-name -- the render function is anonymous on purpose
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>((props, _ref) => (
+        <div>{props.children}</div>
+      ));
+
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
           <React.ForwardRef>
             I am forwardRef!
           </React.ForwardRef>

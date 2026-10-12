@@ -50,16 +50,16 @@ export const getReactSymbolName = (elementType: any): string => {
   return reactComponentName;
 };
 
-/** Name of the component wrapped by `React.memo`, also through `React.memo(React.forwardRef(...))` */
-const getMemoInnerName = (memoType: any): string | undefined => {
-  const inner = memoType.type;
-  return (
-    inner?.displayName ||
-    inner?.name ||
-    inner?.render?.displayName ||
-    inner?.render?.name ||
-    undefined
-  );
+/**
+ * Name of the component inside a `React.memo` or `React.forwardRef` wrapper, also when they are
+ * nested like `React.memo(React.forwardRef(...))`. Returns `undefined` for an anonymous component.
+ */
+const getWrappedComponentName = (type: any): string | undefined => {
+  const inner = isMemo(type) ? type.type : isForwardRef(type) ? type.render : undefined;
+  if (!inner) {
+    return undefined;
+  }
+  return inner.displayName || inner.name || getWrappedComponentName(inner);
 };
 
 // Recursively remove "_owner" property from elements to avoid crash on docs page when passing components as an array prop (#17482)
@@ -148,14 +148,14 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
     displayNameDefaults = {
       // To get exotic component names resolving properly
       displayName: (el: any): string => {
+        const wrappedComponentName = getWrappedComponentName(el.type);
+
         if (el.type.displayName) {
           return el.type.displayName;
         } else if (getDocgenSection(el.type, 'displayName')) {
           return getDocgenSection(el.type, 'displayName');
-        } else if (el.type.render?.displayName) {
-          return el.type.render.displayName;
-        } else if (isMemo(el.type) && getMemoInnerName(el.type)) {
-          return getMemoInnerName(el.type) ?? getReactSymbolName(el.type);
+        } else if (wrappedComponentName) {
+          return wrappedComponentName;
         } else if (
           typeof el.type === 'symbol' ||
           (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')
@@ -174,10 +174,6 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
             }
           }
           return 'No Display Name';
-        } else if (isForwardRef(el.type)) {
-          return el.type.render.name;
-        } else if (isMemo(el.type)) {
-          return el.type.type.name;
         } else {
           return el.type;
         }

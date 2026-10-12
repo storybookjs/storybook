@@ -345,7 +345,7 @@ class CsfObjectEditor implements CsfObject {
       return undefined;
     }
     if (logicalPath.length === 0) {
-      return this.prefix.length > 0 ? t.cloneNode(this.root.node, true) : undefined;
+      return this.prefix.length > 0 ? this.root.node : undefined;
     }
     const found = this.inspect(logicalPath);
     if (found.ok === false) {

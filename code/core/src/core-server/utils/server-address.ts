@@ -85,9 +85,8 @@ export const getServerChannelUrl = (port: number, { https }: { https?: boolean }
   return `${https ? 'wss' : 'ws'}://127.0.0.1:${port}${SERVER_CHANNEL_PATH}`;
 };
 
-const ifaces = os.networkInterfaces();
 const getExternalIpv4Addresses = () =>
-  Object.values(ifaces)
+  Object.values(os.networkInterfaces())
     .flat()
     .filter((ip) => ip && ip.family === 'IPv4' && !ip.internal)
     .map((ip) => ip!.address);

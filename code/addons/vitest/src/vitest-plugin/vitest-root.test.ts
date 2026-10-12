@@ -146,23 +146,60 @@ describe('internal setup files', () => {
 });
 
 describe('browser API permissions', () => {
-  it('disallows file writes and command execution from the browser by default', async () => {
-    const { test } = await getPluginConfig(PACKAGE_ROOT, { browser: { enabled: true } });
+  interface ApiPermissions {
+    allowWrite?: boolean;
+    allowExec?: boolean;
+  }
+  interface ProjectConfig {
+    api: ApiPermissions;
+    browser?: { enabled: boolean; api?: ApiPermissions };
+  }
 
-    expect(test.browser?.api).toEqual({ allowWrite: false, allowExec: false });
-  });
-
-  it('keeps a browser API port given as a number', async () => {
-    const { test } = await getPluginConfig(PACKAGE_ROOT, { browser: { api: 63400 } });
-
-    expect(test.browser?.api).toEqual({ port: 63400, allowWrite: false, allowExec: false });
-  });
-
-  it('keeps permissions the user set explicitly', async () => {
-    const { test } = await getPluginConfig(PACKAGE_ROOT, {
-      browser: { api: { host: '127.0.0.1', allowWrite: true, allowExec: true } },
+  const configureVitest = async (inputTestConfig: InlineConfig, projectConfig: ProjectConfig) => {
+    const { plugin } = await getPluginConfig(PACKAGE_ROOT, inputTestConfig);
+    const project = { config: { setupFiles: [], ...projectConfig } };
+    await (plugin.configureVitest as (context: unknown) => Promise<void>)({
+      vitest: { config: { coverage: { exclude: [] }, reporters: [] } },
+      project,
     });
+    return project.config;
+  };
 
-    expect(test.browser?.api).toEqual({ host: '127.0.0.1', allowWrite: true, allowExec: true });
+  // What Vitest resolves when the server is bound to loopback.
+  const loopbackDefaults = (): ApiPermissions => ({ allowWrite: true, allowExec: true });
+
+  it('disallows file writes and command execution from the browser by default', async () => {
+    const config = await configureVitest(
+      { browser: { enabled: true } },
+      { api: loopbackDefaults(), browser: { enabled: true, api: loopbackDefaults() } }
+    );
+
+    expect(config.api).toEqual({ allowWrite: false, allowExec: false });
+    expect(config.browser?.api).toEqual({ allowWrite: false, allowExec: false });
+  });
+
+  it('keeps permissions the user set on api', async () => {
+    const config = await configureVitest(
+      { browser: { enabled: true }, api: { allowWrite: true } },
+      { api: loopbackDefaults(), browser: { enabled: true } }
+    );
+
+    expect(config.api).toEqual({ allowWrite: true, allowExec: false });
+  });
+
+  it('keeps permissions the user set on browser.api, as Vitest 4 reads them', async () => {
+    const config = await configureVitest(
+      { browser: { enabled: true, api: { allowExec: true } } } as InlineConfig,
+      { api: loopbackDefaults(), browser: { enabled: true, api: loopbackDefaults() } }
+    );
+
+    expect(config.api).toEqual({ allowWrite: false, allowExec: true });
+    expect(config.browser?.api).toEqual({ allowWrite: false, allowExec: true });
+  });
+
+  it('leaves permissions alone when browser mode is disabled', async () => {
+    const config = await configureVitest({}, { api: loopbackDefaults() });
+
+    expect(config.api).toEqual(loopbackDefaults());
   });
 });

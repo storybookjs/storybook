@@ -2,6 +2,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+import { babelParse, types as t } from '@storybook/core/babel';
+
 import { getNewStoryFile } from './get-new-story-file';
 
 vi.mock('@storybook/core/common', async (importOriginal) => {
@@ -236,5 +238,91 @@ describe('get-new-story-file', () => {
         } as any
       )
     ).rejects.toThrow(/Invalid component import name/);
+  });
+
+  it('keeps a hostile component file basename inside the import specifier (named export)', async () => {
+    const hostileBasename = `Page'; fetch("evil"); const x = '`;
+    const { storyFileContent, storyFilePath } = await getNewStoryFile(
+      {
+        componentFilePath: `src/components/${hostileBasename}.tsx`,
+        componentExportName: 'Page',
+        componentIsDefaultExport: false,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as any
+    );
+
+    const { body } = babelParse(storyFileContent).program;
+    const importSources = body.flatMap((node) =>
+      t.isImportDeclaration(node) ? [node.source.value] : []
+    );
+    expect(importSources).toEqual(['@storybook/react', `./${hostileBasename}`]);
+    expect(body.some((node) => t.isExpressionStatement(node))).toBe(false);
+    expect(storyFilePath).toBe(
+      join(__dirname, 'src', 'components', `${hostileBasename}.stories.tsx`)
+    );
+  });
+
+  it('keeps a hostile component file basename inside the import specifier (default export)', async () => {
+    const hostileBasename = `Page'; fetch("evil"); const x = '`;
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: `src/components/${hostileBasename}.jsx`,
+        componentExportName: 'default',
+        componentIsDefaultExport: true,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as any
+    );
+
+    const { body } = babelParse(storyFileContent).program;
+    const importSources = body.flatMap((node) =>
+      t.isImportDeclaration(node) ? [node.source.value] : []
+    );
+    expect(importSources).toEqual([`./${hostileBasename}`]);
+    expect(body.some((node) => t.isExpressionStatement(node))).toBe(false);
+  });
+
+  it('imports a component whose file name contains a quote', async () => {
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: "src/components/it's.tsx",
+        componentExportName: 'default',
+        componentIsDefaultExport: true,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as any
+    );
+
+    expect(storyFileContent).toContain("from './it\\'s'");
+    const { body } = babelParse(storyFileContent).program;
+    const importSources = body.flatMap((node) =>
+      t.isImportDeclaration(node) ? [node.source.value] : []
+    );
+    expect(importSources).toEqual(['@storybook/react', "./it's"]);
   });
 });

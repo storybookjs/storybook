@@ -48,7 +48,7 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "preact": "^10.5.13",
+    "preact": "^11.0.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

@@ -102,6 +102,33 @@ describe('createDocgenProvider', () => {
     expect(readFile).toHaveBeenCalledTimes(1);
   });
 
+  it('prefers a manifest declaration over sources when both are configured', async () => {
+    vol.fromNestedJSON({
+      '/workspace/custom-elements.json': JSON.stringify({
+        modules: [
+          {
+            path: 'src/x-card.js',
+            declarations: [
+              { name: 'XCard', kind: 'class', customElement: true, tagName: 'x-card' },
+            ],
+          },
+        ],
+      }),
+      '/workspace/input.stories.ts': "export default { title: 'Fixture', component: 'x-card' };",
+    });
+    const provider = createDocgenProvider({
+      manifestPaths: ['/workspace/custom-elements.json'],
+      autoGenerateManifest: true,
+      typeProperty: 'parsedType',
+    })(async () => undefined);
+
+    await expect(provider({ entry })).resolves.toMatchObject({
+      name: 'x-card',
+      customElementsManifest: { manifestPath: 'custom-elements.json' },
+    });
+    expect(sourceFind).not.toHaveBeenCalled();
+  });
+
   it('falls back to sources when no manifest declares the tag', async () => {
     sourceFind.mockResolvedValue({
       declaration: {

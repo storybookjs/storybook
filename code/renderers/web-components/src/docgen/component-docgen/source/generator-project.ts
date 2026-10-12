@@ -1,4 +1,4 @@
-import { isInNodeModules, slash } from 'storybook/internal/common';
+import { isInNodeModules } from 'storybook/internal/common';
 import {
   type ComponentMetaProjectBase,
   type FileChange,
@@ -6,9 +6,8 @@ import {
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
-import { dirname, join } from 'node:path';
-
 import type * as ts from '@typescript/typescript6';
+import { dirname, join, normalize } from 'pathe';
 
 import type { ManifestPackage } from '../manifest/types.ts';
 import type { GeneratorAdapter } from './generator.ts';
@@ -49,12 +48,12 @@ export class GeneratorProject implements ComponentMetaProjectBase {
   }
 
   hasSourceFile(fileName: string): boolean {
-    const normalized = slash(fileName);
+    const normalized = normalize(fileName);
     return this.importsByFile.has(normalized) || this.rootFileNames().includes(normalized);
   }
 
   ensureFiles(fileNames: string[]): void {
-    for (const fileName of fileNames.map(slash)) {
+    for (const fileName of fileNames.map(normalize)) {
       if (!this.commandLine.fileNames.includes(fileName)) {
         this.commandLine.fileNames.push(fileName);
       }
@@ -70,7 +69,7 @@ export class GeneratorProject implements ComponentMetaProjectBase {
   onFilesChanged(changes: FileChange[]): void {
     for (const { filePath, type } of changes) {
       if (type === 'changed') {
-        this.importsByFile.delete(slash(filePath));
+        this.importsByFile.delete(normalize(filePath));
         continue;
       }
       // A created or deleted file can change how any import resolves.
@@ -85,7 +84,7 @@ export class GeneratorProject implements ComponentMetaProjectBase {
   }
 
   createManifestForRoots(rootPaths: string[]): ManifestPackage | undefined {
-    const roots = rootPaths.map(slash);
+    const roots = rootPaths.map(normalize);
     const closure = this.importClosure(roots);
     if (closure.length === 0) {
       this.debug(`none of ${rootPaths.join(', ')} could be read`);
@@ -136,7 +135,7 @@ export class GeneratorProject implements ComponentMetaProjectBase {
           this.typescript.resolveModuleName(specifier, fileName, options, sys).resolvedModule
             ?.resolvedFileName ?? []
       )
-      .map(slash);
+      .map(normalize);
     this.importsByFile.set(fileName, { mtime, imports });
     return imports;
   }

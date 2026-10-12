@@ -1,12 +1,10 @@
-import { slash } from 'storybook/internal/common';
 import type { DocgenError } from 'storybook/internal/types';
 
 import { mkdirSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import typescript from '@typescript/typescript6';
+import { join } from 'pathe';
 import { dirSync, type DirResult } from 'tmp';
 
 import type { CemTag } from '../manifest/cem-manager.ts';
@@ -195,9 +193,7 @@ describe('SourceManager', () => {
 
     await createManager().find('scan-card', { storyFilePath: storyPath });
 
-    expect(slash(generate.mock.calls[0][0])).toBe(
-      slash(join(temp.name, 'stories', 'tsconfig.json'))
-    );
+    expect(generate.mock.calls[0][0]).toBe(join(temp.name, 'stories', 'tsconfig.json'));
   });
   it('uses the declaration module as the manifest path when another module defines the tag', async () => {
     tsconfig();
@@ -450,7 +446,7 @@ describe('SourceManager', () => {
     const manager = new GeneratorManager(typescript, generator);
 
     try {
-      expect(manager.getProjectForFile(storyPath).configFileName).toBe(slash(configPath));
+      expect(manager.getProjectForFile(storyPath).configFileName).toBe(configPath);
     } finally {
       manager.dispose();
     }
@@ -482,7 +478,7 @@ describe('SourceManager', () => {
     const generationsFromMention = (): number =>
       vi
         .mocked(GeneratorProject.prototype.createManifestForRoots)
-        .mock.calls.filter(([roots]) => roots.includes(slash(mentionPath))).length;
+        .mock.calls.filter(([roots]) => roots.includes(mentionPath)).length;
 
     await manager.find('library-card', { storyFilePath: firstStoryPath });
     await manager.find('library-card', { storyFilePath: secondStoryPath });

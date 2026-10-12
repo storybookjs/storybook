@@ -1,10 +1,8 @@
-import { slash } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenError } from 'storybook/internal/types';
 
-import { isAbsolute, relative } from 'node:path';
-
 import type * as ts from '@typescript/typescript6';
+import { isAbsolute, normalize, relative } from 'pathe';
 
 import type { CemTag } from '../manifest/cem-manager.ts';
 import { buildTagIndex } from '../manifest/build-tag-index.ts';
@@ -40,8 +38,8 @@ export class SourceManager implements TagResolver {
   async find(tag: string, lookup: TagLookup): Promise<CemTag | DocgenError> {
     try {
       const manager = this.getManager();
-      const story = slash(lookup.storyFilePath);
-      const preview = this.previewFilePath ? slash(this.previewFilePath) : undefined;
+      const story = normalize(lookup.storyFilePath);
+      const preview = this.previewFilePath ? normalize(this.previewFilePath) : undefined;
       const storyProject = manager.getProjectForFile(story);
       const previewProject = preview ? manager.getProjectForFile(preview) : undefined;
       const projects = [...new Set([storyProject, previewProject ?? storyProject])];
@@ -182,7 +180,7 @@ function definitionModulePath(manifest: ManifestPackage, tag: string): string | 
       (candidate) => candidate.kind === 'custom-element-definition' && candidate.name === tag
     );
     if (defines && typeof module.path === 'string') {
-      return slash(module.path);
+      return normalize(module.path);
     }
   }
   return undefined;
@@ -194,14 +192,14 @@ function declarationModulePath(
 ): string | undefined {
   for (const module of manifest.modules) {
     if (Array.isArray(module.declarations) && module.declarations.includes(declaration)) {
-      return typeof module.path === 'string' ? slash(module.path) : undefined;
+      return typeof module.path === 'string' ? normalize(module.path) : undefined;
     }
   }
   return undefined;
 }
 
 function cwdRelative(path: string): string {
-  return slash(isAbsolute(path) ? relative(process.cwd(), path) : path);
+  return isAbsolute(path) ? relative(process.cwd(), path) : normalize(path);
 }
 
 function tagLiteralPattern(tag: string): RegExp {

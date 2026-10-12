@@ -17,7 +17,7 @@ runs:
 
     - name: Update npm to latest
       shell: bash
-      run: npm install -g npm@latest
+      run: npm install -g npm@11
 
     - name: Cache dependencies
       uses: actions/cache@v4

@@ -10,6 +10,8 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { globSync } from 'glob';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -206,9 +208,27 @@ export class NPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    const workspacePackageJsonPath = this.packageJsonPaths.find(
-      (packageJsonPath) => JsPackageManager.getPackageJson(packageJsonPath).workspaces
-    );
+    const packageJsonPath = this.packageJsonPaths[0];
+    const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      return (
+        packageJsonPath &&
+        patterns?.length &&
+        globSync(
+          patterns
+            .filter((pattern: string) => !pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern}/package.json`),
+          {
+            cwd: dirname(ancestorPath),
+            absolute: true,
+            ignore: patterns
+              .filter((pattern: string) => pattern.startsWith('!'))
+              .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+          }
+        ).includes(packageJsonPath)
+      );
+    });
 
     return executeCommand({
       command: 'npm',

@@ -41,31 +41,56 @@ describe('NPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
-    it('installs from the workspace root when invoked in a workspace package', async () => {
+    it('installs from the workspace root only for a declared workspace package', async () => {
       const workspaceRoot = await mkdtemp(join(process.cwd(), '.npm-workspace-'));
       const workspacePackage = join(workspaceRoot, 'packages', 'app');
+      const ignoredPackage = join(workspaceRoot, 'packages', 'ignored');
+      const otherPackage = join(workspaceRoot, 'examples', 'app');
 
       try {
         await mkdir(workspacePackage, { recursive: true });
+        await mkdir(ignoredPackage, { recursive: true });
+        await mkdir(otherPackage, { recursive: true });
         await writeFile(
           join(workspaceRoot, 'package.json'),
-          JSON.stringify({ workspaces: ['packages/*'] })
+          JSON.stringify({ workspaces: ['packages/*', '!packages/ignored'] })
         );
-        await writeFile(join(workspacePackage, 'package.json'), JSON.stringify({ name: 'app' }));
+        await writeFile(
+          join(workspacePackage, 'package.json'),
+          JSON.stringify({ name: 'workspace' })
+        );
+        await writeFile(join(ignoredPackage, 'package.json'), JSON.stringify({ name: 'ignored' }));
+        await writeFile(join(otherPackage, 'package.json'), JSON.stringify({ name: 'other' }));
 
-        npmProxy = new NPMProxy({ cwd: workspacePackage });
-        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
           await Promise.resolve(fn());
         });
         mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
 
-        await npmProxy.installDependencies({ force: true });
-
-        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+        await new NPMProxy({ cwd: workspacePackage }).installDependencies({ force: true });
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
           expect.objectContaining({
             command: 'npm',
             args: ['install', '--force'],
             cwd: workspaceRoot,
+          })
+        );
+
+        await new NPMProxy({ cwd: otherPackage }).installDependencies({ force: true });
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: otherPackage,
+          })
+        );
+
+        await new NPMProxy({ cwd: ignoredPackage }).installDependencies({ force: true });
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: ignoredPackage,
           })
         );
       } finally {

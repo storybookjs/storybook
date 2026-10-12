@@ -451,6 +451,15 @@ describe.each([
 ] as const)('%s spread args', (format, story) => {
   test.each([
     ['inserts missing args', '...Base, parameters: { layout: "centered" }, ...Override'],
+    ['inherits args from a single spread', '...Base'],
+    ['preserves args when the last spread has none', '...Base, ...WithoutArgs'],
+    ['handles spreads without args', '...WithoutArgs'],
+    ['handles null spreads', '...Base, ...Nothing'],
+    ['preserves explicitly cleared args', '...Base, ...Cleared'],
+    [
+      'preserves existing args when a later spread has none',
+      'args: { size: "small" }, ...WithoutArgs',
+    ],
     [
       'moves existing args past spreads',
       'args: { label: "old", disabled: true }, ...Base, ...Override',
@@ -473,23 +482,37 @@ describe.each([
        export const Saved = ${story(`{ ${properties}, name: 'Saved story' }`)};`,
       { makeTitle }
     ).parse();
-    const newArgs = { label: 'saved', disabled: true };
+    const onClick = () => {};
+    const context = {
+      Base: { args: { label: 'base', size: 'large', baseOnly: true } },
+      Override: { args: { label: 'override', size: 'small', onClick } },
+      WithoutArgs: { parameters: { layout: 'centered' } },
+      Nothing: null,
+      Cleared: { args: undefined },
+      meta: { story: (input: unknown) => input },
+    };
+    const originalExpression = generate(csf.getStoryExport('Saved')).code;
+    const originalCode = transformSync(`(${originalExpression})`, { loader: 'ts' }).code;
+    const original = runInNewContext(originalCode, context);
+    const newArgs = { label: 'saved' };
 
     await updateArgsInCsfFile(csf.getStoryExport('Saved'), newArgs);
 
     const saved = loadCsf(printCsf(csf).code, { makeTitle }).parse();
     const expression = generate(saved.getStoryExport('Saved')).code;
     const { code } = transformSync(`(${expression})`, { loader: 'ts' });
-    const result = runInNewContext(code, {
-      Base: { args: { label: 'base' } },
-      Override: { args: { label: 'override' } },
-      meta: { story: (input: unknown) => input },
-    });
+    const result = runInNewContext(code, context);
 
-    expect(result.args).toEqual(newArgs);
+    expect(result.args).toEqual({ ...original.args, ...newArgs });
     expect(result.name).toBe('Saved story');
 
     await updateArgsInCsfFile(saved.getStoryExport('Saved'), newArgs);
     expect(printCsf(saved).code).toBe(printCsf(csf).code);
+
+    await updateArgsInCsfFile(saved.getStoryExport('Saved'), { label: 'saved again' });
+    const updatedExpression = generate(saved.getStoryExport('Saved')).code;
+    const updatedCode = transformSync(`(${updatedExpression})`, { loader: 'ts' }).code;
+    const updated = runInNewContext(updatedCode, context);
+    expect(updated.args).toEqual({ ...original.args, label: 'saved again' });
   });
 });

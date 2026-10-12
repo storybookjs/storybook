@@ -23,8 +23,6 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
         
       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
 
-      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-
       if (import.meta.hot) {
         import.meta.hot.on('vite:afterUpdate', () => {
           window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
@@ -54,8 +52,6 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
       import { getProjectAnnotations } from 'virtual:/@storybook/builder-vite/project-annotations.js';
         
       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-
-      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
       if (import.meta.hot) {
         import.meta.hot.on('vite:afterUpdate', () => {
@@ -87,8 +83,6 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
         
       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
 
-      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-
       if (import.meta.hot) {
         import.meta.hot.on('vite:afterUpdate', () => {
           window.__STORYBOOK_PREVIEW__.channel.emit('storyHotUpdated');
@@ -118,8 +112,6 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
       import { getProjectAnnotations } from 'virtual:/@storybook/builder-vite/project-annotations.js';
         
       window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-
-      window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
       if (import.meta.hot) {
         import.meta.hot.on('vite:afterUpdate', () => {

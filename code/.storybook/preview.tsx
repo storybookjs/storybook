@@ -1,7 +1,5 @@
 import React, { type FC, Fragment, useEffect } from 'react';
 
-import type { Channel } from 'storybook/internal/channels';
-
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
@@ -16,7 +14,7 @@ import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
 import addonPseudoStates from 'storybook-addon-pseudo-states';
-import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
+import { useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
 import { expect, sb } from 'storybook/test';
 import {
@@ -183,38 +181,18 @@ const loaders = [
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
-    const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
-    // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
+    // __STORYBOOK_PREVIEW__ is set in the PreviewWeb constructor
     // which isn't loaded in portable stories/vitest
-    if (!relativeCsfPaths || !preview || !channel) {
+    if (!relativeCsfPaths || !preview) {
       return {};
     }
-    const csfFiles = await Promise.all(
-      (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
-        const projectRelativePath = `./addons/docs/src/blocks/${blocksRelativePath.replace(
-          /^..\//,
-          ''
-        )}.tsx`;
-        const entry = preview.storyStore.storyIndex?.importPathToEntry(projectRelativePath);
-
-        if (!entry) {
-          throw new Error(
-            `Couldn't find story file at ${projectRelativePath} (passed as ${blocksRelativePath})`
-          );
-        }
-
-        return preview.storyStore.loadCSFFileByStoryId(entry.id);
-      })
+    const docsContext = await preview.createDocsContext(
+      (relativeCsfPaths as string[]).map(
+        (blocksRelativePath) =>
+          `./addons/docs/src/blocks/${blocksRelativePath.replace(/^\.\.\//, '')}.tsx`
+      ),
+      { attach: attached }
     );
-    const docsContext = new DocsContextProps(
-      channel,
-      preview.storyStore,
-      preview.renderStoryToElement.bind(preview),
-      csfFiles
-    );
-    if (attached && csfFiles[0]) {
-      docsContext.attachCSFFile(csfFiles[0]);
-    }
     return { docsContext };
   },
 ] as Loader[];

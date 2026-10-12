@@ -65,6 +65,7 @@
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
+  - [Direct Story Store access removed](#direct-story-store-access-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1810,6 +1811,16 @@ The deprecated `getStatus` and `getGraphRevision` query aliases on the `core/mod
 
 - `getStatus` → `queries.status`
 - `getGraphRevision` → `queries.graphRevision` (same optional `{ storyFiles }` input)
+
+### Direct Story Store access removed
+
+The deprecated direct access paths to the Story Store have been removed:
+
+- The `window.__STORYBOOK_STORY_STORE__` global is no longer emitted by the vite or webpack5 builders
+- The `preview.storyStore` getter (also reachable as `window.__STORYBOOK_PREVIEW__.storyStore`) has been removed
+- The ambient type declarations for the global have been removed
+
+Code that read the store through either path should use the supported Preview API instead: `await preview.ready()` to wait for initialization, `preview.loadStory({ storyId })` to load a story, `preview.getStoryContext(story)` for a story's context, and `preview.extract()` to extract all stories. Integrators who constructed a `DocsContext` from the store can now call `await preview.createDocsContext(importPaths)`, which resolves the given CSF file paths against the story index, loads them, and returns a ready-to-use `DocsContext`. The Story Store instance itself is no longer accessible outside of the preview.
 
 ## From version 10.6.1 to 10.6.2
 

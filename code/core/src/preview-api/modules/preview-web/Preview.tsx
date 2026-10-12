@@ -1,5 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
-import { deprecate, logger } from 'storybook/internal/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 import {
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
@@ -25,7 +25,6 @@ import {
   CalledPreviewMethodBeforeInitializationError,
   MissingRenderToCanvasError,
   StoryIndexFetchError,
-  StoryStoreAccessedBeforeInitializationError,
 } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -47,6 +46,7 @@ import { global } from '@storybook/global';
 
 import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
+import { DocsContext } from './docs-context/DocsContext.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
 import type { MdxDocsRender } from './render/MdxDocsRender.ts';
 import { StoryRender } from './render/StoryRender.ts';
@@ -98,27 +98,6 @@ export class Preview<TRenderer extends Renderer> {
     if (shouldInitialize) {
       this.initialize();
     }
-  }
-
-  // Create a proxy object for `__STORYBOOK_STORY_STORE__` and `__STORYBOOK_PREVIEW__.storyStore`
-  // That proxies through to the store once ready, and errors beforehand. This means we can set
-  // `__STORYBOOK_STORY_STORE__ = __STORYBOOK_PREVIEW__.storyStore` without having to wait, and
-  // similarly integrators can access the `storyStore` on the preview at any time, although
-  // it is considered deprecated and we will no longer allow access in 9.0
-  get storyStore() {
-    return new Proxy(
-      {},
-      {
-        get: (_, method) => {
-          if (this.storyStoreValue) {
-            deprecate('Accessing the Story Store is deprecated and will be removed in 9.0');
-            return this.storyStoreValue[method as keyof StoryStore<TRenderer>];
-          }
-
-          throw new StoryStoreAccessedBeforeInitializationError();
-        },
-      }
-    ) as StoryStore<TRenderer>;
   }
 
   // INITIALIZATION
@@ -502,6 +481,54 @@ export class Preview<TRenderer extends Renderer> {
     await this.storyStoreValue.cacheAllCSFFiles();
 
     return this.storyStoreValue.extract(options);
+  }
+
+  /**
+   * Create a DocsContext for the given CSF file import paths.
+   *
+   * Used by the monorepo's dev Storybook to render docs blocks examples, and available to
+   * integrators who need to construct a DocsContext outside of core. The paths are resolved
+   * against the story index, the CSF files are loaded, and the returned DocsContext is constructed
+   * with the internal Story Store — the store instance never leaves the preview.
+   *
+   * @param importPaths the import paths of the CSF files, as they appear in the story index
+   * @param options.attach whether to attach the first CSF file to the context, making its stories
+   *   the component stories of the context. Defaults to `true`, mirroring the dev Storybook loader.
+   */
+  async createDocsContext(
+    importPaths: string[],
+    { attach = true }: { attach?: boolean } = {}
+  ): Promise<DocsContext<TRenderer>> {
+    const store = this.storyStoreValue;
+
+    if (!store) {
+      throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'createDocsContext' });
+    }
+
+    const csfFiles = await Promise.all(
+      importPaths.map(async (importPath) => {
+        const entry = store.storyIndex.importPathToEntry(importPath);
+
+        if (!entry) {
+          throw new Error(`Couldn't find story file at ${importPath}`);
+        }
+
+        return store.loadCSFFileByStoryId(entry.id);
+      })
+    );
+
+    const docsContext = new DocsContext(
+      this.channel,
+      store,
+      this.renderStoryToElement.bind(this),
+      csfFiles
+    );
+
+    if (attach && csfFiles[0]) {
+      docsContext.attachCSFFile(csfFiles[0]);
+    }
+
+    return docsContext;
   }
 
   // UTILITIES

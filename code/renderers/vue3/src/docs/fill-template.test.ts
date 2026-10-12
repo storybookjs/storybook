@@ -117,6 +117,12 @@ describe('fillTemplate', () => {
         )
       ).toBe('<Button label="Hi" v-model="modelValue" :tone="tone" @click="handle" />');
     });
+
+    it('throws for a set arg that overrides an attribute written before it', () => {
+      const template = '<Button size="small" v-bind="args" />';
+      expect(fill(template, { label: 'Hi' })).toBe('<Button size="small" label="Hi" />');
+      expect(() => fill(template, { label: 'Hi', size: 'large' })).toThrow(UnprintableArgError);
+    });
   });
 
   describe('a slot arg', () => {
@@ -138,6 +144,12 @@ describe('fillTemplate', () => {
           </template>
         </Panel>"
       `);
+    });
+
+    it('keeps an empty string as code, so the component shows no fallback', () => {
+      expect(fill('<Panel>{{ args.default }}</Panel>', { default: '' })).toBe(
+        "<Panel>{{ '' }}</Panel>"
+      );
     });
 
     it('is left out when unset, so the component shows its fallback', () => {

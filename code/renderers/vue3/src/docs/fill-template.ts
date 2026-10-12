@@ -31,8 +31,8 @@ const UNSET_SLOT_LINE = new RegExp(
   String.raw`\n[ \t]*(?:${ARG_ONLY}|<template #[\w-]+>\s*${ARG_ONLY}\s*</template>)(?=\n)`,
   'g'
 );
-// Whitespace Vue condenses in text.
-const CONDENSED = /^\s|\s$|\s\s|[^\S ]/;
+// Text Vue would condense, or drop for the slot's fallback when empty.
+const CONDENSED = /^$|^\s|\s$|\s\s|[^\S ]/;
 
 // Fills a Vue story-docs template with the current args: `v-if="args.loading"` reads
 // `v-if="true"`. Every arg path is filled in the template as written, never in a filled value.
@@ -109,33 +109,44 @@ function fillInterpolation(expression: string, args: Args): string {
 }
 
 function fillAttributes(attributes: string, args: Args): string {
-  return attributes.replace(ATTRIBUTE, (text, space: string, name: string, quoted?: string) => {
-    if (quoted === undefined || !/^(?::|@|v-)/.test(name)) {
-      return text;
+  return attributes.replace(
+    ATTRIBUTE,
+    (text, space: string, name: string, quoted: string | undefined, offset: number) => {
+      if (quoted === undefined || !/^(?::|@|v-)/.test(name)) {
+        return text;
+      }
+      const [quote] = quoted;
+      const value = quoted.slice(1, -1);
+      const slots = name === 'v-bind' ? readArgsSpread(value) : undefined;
+      if (slots) {
+        // Vue lets the later of an attribute and the spread win. The snippet cannot write an
+        // attribute twice, so a set arg that overrides one written before the spread is unprintable.
+        const after = writtenArgs(attributes.slice(offset + text.length));
+        const overridden = writtenArgs(attributes.slice(0, offset)).find(
+          (arg) => args[arg] !== undefined && !after.includes(arg) && !slots.includes(arg)
+        );
+        if (overridden !== undefined) {
+          throw new UnprintableArgError(overridden);
+        }
+        return spreadAttributes(args, new Set([...slots, ...after]))
+          .map((attribute) => space + attribute)
+          .join('');
+      }
+      const arg = BINDING.test(name) ? wholeArg(value, args) : undefined;
+      if (!arg) {
+        const stringQuote = quote === '"' ? "'" : '"';
+        const filled = fillCode(value, args, stringQuote, (code) => escapeInAttribute(code, quote));
+        return `${space}${name}=${quote}${filled}${quote}`;
+      }
+      if (arg.value === undefined) {
+        return '';
+      }
+      const prop = /^(?::|v-bind:)(.+)$/.exec(name)?.[1];
+      return prop !== undefined && typeof arg.value === 'string'
+        ? `${space}${prop}="${escapeInAttribute(arg.value)}"`
+        : `${space}${name}="${printInAttribute(arg.value, arg.key)}"`;
     }
-    const [quote] = quoted;
-    const value = quoted.slice(1, -1);
-    const slots = name === 'v-bind' ? readArgsSpread(value) : undefined;
-    if (slots) {
-      const written = new Set([...slots, ...writtenArgs(attributes)]);
-      return spreadAttributes(args, written)
-        .map((attribute) => space + attribute)
-        .join('');
-    }
-    const arg = BINDING.test(name) ? wholeArg(value, args) : undefined;
-    if (!arg) {
-      const strings = quote === '"' ? "'" : '"';
-      const filled = fillCode(value, args, strings, (code) => escapeInAttribute(code, quote));
-      return `${space}${name}=${quote}${filled}${quote}`;
-    }
-    if (arg.value === undefined) {
-      return '';
-    }
-    const prop = /^(?::|v-bind:)(.+)$/.exec(name)?.[1];
-    return prop !== undefined && typeof arg.value === 'string'
-      ? `${space}${prop}="${escapeInAttribute(arg.value)}"`
-      : `${space}${name}="${printInAttribute(arg.value, arg.key)}"`;
-  });
+  );
 }
 
 // The args a tag passes with its own attributes, so its `v-bind="args"` leaves them out.

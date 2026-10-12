@@ -64,6 +64,7 @@
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
+  - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1802,6 +1803,13 @@ Instead of `clickEvent`, menu items now accept a `clickable` property. When clic
 ```
 
 The `element` property of the `ClickEventDetails` payload no longer includes the clicked element's `outerHTML` and `attributes`, since they can carry content from the story. It keeps `tagName` and `localName`, and the payload still contains the element's position, dimensions and the matching `selectors`. Every `HIGHLIGHT` payload must now carry a string `id`. Payloads without one are ignored with a warning in the browser console.
+
+### `core/module-graph` query aliases removed
+
+The deprecated `getStatus` and `getGraphRevision` query aliases on the `core/module-graph` open service were removed in 11.0.0. If you implemented toolsets or other external consumers against them, call the canonical queries through the standard query handle (`.get()`, `.loaded()`, `.subscribe()`):
+
+- `getStatus` → `queries.status`
+- `getGraphRevision` → `queries.graphRevision` (same optional `{ storyFiles }` input)
 
 ## From version 10.6.1 to 10.6.2
 

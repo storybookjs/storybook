@@ -1779,7 +1779,7 @@ If a stories file needs a preprocessor outside of `<style>`, for example for Typ
 Highlight menu items no longer accept a `clickEvent` property naming an arbitrary channel event to emit when clicked. This allowed malicious websites to inject menu items into a preview that could send security-sensitive events to the dev server.
 
 > [!IMPORTANT]
-> If you use the Visual Tests addon, update it to version 5.4.1 or more recent.
+> If you use the Visual Tests addon, update it to version 5.5.0 or more recent.
 
 Instead of `clickEvent`, menu items now accept a `clickable` property. When clicked, menu items emit a `HIGHLIGHT_MENU_CLICK` event, which still lets addon authors implement a callback, but not emit arbitrary events. Addon authors must now pass an `id` property to `HIGHLIGHT`, which is passed back to `HIGHLIGHT_MENU_CLICK` so listeners can ignore clicks on other addons' menu items.
 

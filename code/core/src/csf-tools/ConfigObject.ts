@@ -258,7 +258,7 @@ export function createConfigObject(
         if (
           !binding?.constant ||
           seen.has(node) ||
-          !binding.referencePaths.every(isExportReference)
+          (mode === 'mutate' && !binding.referencePaths.every(isExportReference))
         ) {
           reject(
             node,

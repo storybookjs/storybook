@@ -78,6 +78,26 @@ const DIFFERS = new Map<string, { markup: string; classBody?: string }>([
     'story-docs/__testfixtures__/meta-actions/ImportedLabel',
     { markup: `<sb-meta-actions [label]="'Shared label'" (onClick)="onClick($event)" />` },
   ],
+  // Computed data is filled from the controls; only code stays in a host field.
+  [
+    '__storyshapes__/button-shapes/HoistedArgs',
+    {
+      markup: [
+        '<sb-shape-button',
+        `    [label]="'Save'"`,
+        '    [loadingError]="loadingError"',
+        '    [items]="[0, 1, 2]"',
+        '    (clicked)="clicked($event)"',
+        '/>',
+      ].join('\n'),
+      classBody: [
+        '{',
+        "  loadingError = new Error('Failed to load cards.');",
+        '  clicked(event: unknown) {}',
+        '}',
+      ].join('\n'),
+    },
+  ],
   // An action the controls add to `argsToTemplate` is bound, as the renderer binds it.
   [
     '__storyshapes__/button-shapes/ArgTypesAction',

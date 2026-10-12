@@ -75,16 +75,26 @@ describe('fillTemplate', () => {
       const cyclic: Record<string, unknown> = {};
       cyclic.self = cyclic;
 
-      for (const label of [() => {}, new Point(), new Date(0), cyclic, [1n], Symbol('s')]) {
+      for (const label of [
+        () => {},
+        new Point(),
+        new Date(0),
+        cyclic,
+        [1n],
+        Symbol('s'),
+        // Angular reads these names as component properties.
+        Number.NaN,
+        Number.POSITIVE_INFINITY,
+        [Number.NEGATIVE_INFINITY],
+      ]) {
         expect(() => fill(button, { label })).toThrow('`label`');
       }
     });
 
-    it('throws on data too long to read inline, as the static snippet names it instead', () => {
-      const items = Array.from({ length: 200 }, (_, index) => `item ${index}`);
+    it('writes long data inline, as the static snippet does', () => {
+      const items = Array.from({ length: 200 }, (_, index) => index);
 
-      expect(() => fill(button, { data: items })).toThrow('`data`');
-      expect(fill(button, { label: 'x'.repeat(600) })).toContain(`[label]="'${'x'.repeat(600)}'"`);
+      expect(fill(button, { data: items })).toContain(`[data]="[${items.join(', ')}]"`);
     });
 
     it('binds an input the story keeps in a host field to that field', () => {

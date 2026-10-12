@@ -73,15 +73,9 @@ function fillMarkup(markup: string, args: Args): string {
   return element ?? formatTemplateMarkup(filled);
 }
 
-// Data longer than this reads better by the name the static snippet gives it.
-const MAX_DATA_LENGTH = 500;
-
 const printArg = (name: string, value: unknown): string => {
   const printed = printTemplateData(value);
-  if (
-    printed === undefined ||
-    (typeof value === 'object' && value !== null && printed.length > MAX_DATA_LENGTH)
-  ) {
+  if (printed === undefined) {
     throw new UnprintableArgError(name);
   }
   return printed;

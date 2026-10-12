@@ -353,10 +353,10 @@ const renderStorySnippet = async (
       unwritableArg ||
       unbound.some(isUnboundGap);
     return withTemplate(rendered, gap, () => {
-      // A self-contained function is code the story wrote, so its field holds that code.
+      // Self-contained code the story wrote stays as written; data is filled from the controls.
       const fields = hostArgs.names.map((name) => {
         const node = shape.args[name]!;
-        return isFunctionValue(node) && isSelfContained(node)
+        return isCodeValue(node) && isSelfContained(node)
           ? { name, value: argFieldValue(node) }
           : { name, value: argMarker(name) };
       });
@@ -417,8 +417,10 @@ const renderStorySnippet = async (
     if (!markable || !canMarkSelector(selector) || snippetMeta.inputs.length === 0) {
       return undefined;
     }
-    // An arg the static snippet keeps in a host field stays there: its value is code, not data.
-    const fieldArgs = new Set(fields.map(({ name }) => name));
+    // An arg the static snippet keeps in a host field stays there when its value is code. Computed
+    // data is filled from the controls like any other input.
+    const codeFields = fields.filter(({ name }) => isCodeValue(shape.args[name]!));
+    const fieldArgs = new Set(codeFields.map(({ name }) => name));
     const items: TemplateItem[] = [
       ...orderedInputs(snippetMeta, shape).map((name) => ({
         kind: fieldArgs.has(name) ? ('field' as const) : ('input' as const),
@@ -426,7 +428,7 @@ const renderStorySnippet = async (
       })),
       ...snippetMeta.outputs.map((name) => ({ kind: 'output' as const, name })),
     ];
-    return host(elementMarker(selector, items), false, snippetMeta.outputs, fields).snippet;
+    return host(elementMarker(selector, items), false, snippetMeta.outputs, codeFields).snippet;
   });
 };
 

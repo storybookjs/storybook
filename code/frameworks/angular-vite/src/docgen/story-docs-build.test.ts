@@ -1,3 +1,4 @@
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
@@ -2182,40 +2183,61 @@ describe('live snippet template', () => {
     `);
   });
 
-  it('keeps an arg the static snippet holds in a host field, computed or a function', async () => {
+  it('fills a computed arg from the controls and keeps a function in its host field', async () => {
     const story = await liveStory(`
       export const Default = {
-        args: { label: 'Save', items: ['a'].map((item) => item), formatter: (value) => value.trim() },
+        args: {
+          label: \`Save \${1}\`,
+          increment: 1 + 1,
+          items: ['a'].map((item) => item),
+          formatter: (value) => value.trim(),
+        },
       };
     `);
 
+    expect(story.snippet).toContain('increment = 1 + 1;');
     expect(
-      fillTemplate(story.template!, { label: 'Save', items: ['a'], formatter: () => {} })
-    ).toBe(story.snippet);
-    expect(fillTemplate(story.template!, { label: 'Go', items: ['b'], formatter: () => {} }))
-      .toMatchInlineSnapshot(`
-      "import { Component } from '@angular/core';
-      import { ButtonComponent } from './button.component';
-
-      @Component({
-        selector: 'app-demo',
-        imports: [ButtonComponent],
-        template: \`
-          <sb-button
-              [label]="'Go'"
-              [items]="items"
-              [formatter]="formatter"
-              (pressed)="pressed($event)"
-              (valueChange)="valueChange($event)"
-          />\`,
+      fillTemplate(story.template!, {
+        label: 'Go',
+        increment: 5,
+        items: ['b'],
+        formatter: () => {},
       })
-      export class DemoComponent {
-        items = ['a'].map((item) => item);
-        formatter = (value) => value.trim();
-        pressed(event: unknown) {}
-        valueChange(event: unknown) {}
-      }"
-    `);
+    ).toBe(
+      [
+        "import { Component } from '@angular/core';",
+        "import { ButtonComponent } from './button.component';",
+        '',
+        '@Component({',
+        "  selector: 'app-demo',",
+        '  imports: [ButtonComponent],',
+        '  template: `',
+        '    <sb-button',
+        `        [label]="'Go'"`,
+        '        [increment]="5"',
+        `        [items]="['b']"`,
+        '        [formatter]="formatter"',
+        '        (pressed)="pressed($event)"',
+        '        (valueChange)="valueChange($event)"',
+        '    />`,',
+        '})',
+        'export class DemoComponent {',
+        '  formatter = (value) => value.trim();',
+        '  pressed(event: unknown) {}',
+        '  valueChange(event: unknown) {}',
+        '}',
+      ].join('\n')
+    );
+  });
+
+  it('leaves NaN to the host field the static snippet holds it in', async () => {
+    const story = await liveStory(`export const Default = { args: { increment: NaN } };`);
+
+    expect(story.snippet).toContain('increment = NaN;');
+    expect(() => fillTemplate(story.template!, { increment: Number.NaN })).toThrow(
+      UnprintableArgError
+    );
+    expect(fillTemplate(story.template!, { increment: 5 })).toContain('[increment]="5"');
   });
 
   it('fills the bindings argsToTemplate expands to inside the story markup', async () => {

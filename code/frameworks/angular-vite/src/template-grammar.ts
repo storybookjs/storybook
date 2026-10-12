@@ -28,8 +28,9 @@ const quoteExpressionString = (value: string): string =>
 
 // Prints plain data as the expression a story-docs snippet writes it as, in a binding and in a
 // host component field alike, or `undefined` for a value no such expression can write: a function,
-// a class instance, a cycle. The server and the preview filler print with it, so a value reads the
-// same in the static snippet and in the filled-in template.
+// a class instance, a cycle, or `NaN` and `Infinity`, which a template reads as component properties.
+// The server and the preview filler print with it, so a value reads the same in the static snippet
+// and in the filled-in template.
 export const printTemplateData = (
   value: unknown,
   ancestors: readonly object[] = []
@@ -37,7 +38,10 @@ export const printTemplateData = (
   if (typeof value === 'string') {
     return quoteExpressionString(value);
   }
-  if (typeof value === 'number' || typeof value === 'boolean' || value == null) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? `${value}` : undefined;
+  }
+  if (typeof value === 'boolean' || value == null) {
     return `${value}`;
   }
   if (typeof value !== 'object' || ancestors.includes(value)) {

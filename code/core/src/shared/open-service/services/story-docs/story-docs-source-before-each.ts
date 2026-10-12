@@ -46,8 +46,13 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   // `cancelled` so a slow load cannot emit after the story is torn down, then returns the chain
   // so navigation waits for in-flight work to settle.
   const query = service.queries.storyDocs;
-  const load = loads.get(context.parameters) ?? query.loaded({ id: componentId });
-  loads.set(context.parameters, load);
+  let load = loads.get(context.parameters);
+  if (!load) {
+    load = query.loaded({ id: componentId });
+    loads.set(context.parameters, load);
+    // A failed load is tried again on the next render.
+    load.catch(() => loads.delete(context.parameters));
+  }
   const codePanelSnippetPromise = load
     .then(() => {
       if (cancelled) {
@@ -77,7 +82,6 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     // The snippet is a Code panel nicety; a failed load must not surface as an unhandled rejection
     // that fails the story's play function.
     .catch((error: unknown) => {
-      loads.delete(context.parameters);
       logger.debug(`Story docs snippet for ${storyId} unavailable: ${String(error)}`);
     });
 

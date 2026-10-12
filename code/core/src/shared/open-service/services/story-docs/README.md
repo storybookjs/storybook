@@ -43,8 +43,8 @@ CSF files that share a `title` share a component id. The service extracts each o
 once and returns their stories in one payload, in story-index order. `id`, `name`, and `path` come
 from the file the component selection picks, which is also the only file `core/docgen` reads.
 
-`import` describes one file, so such a payload leaves it unset and each snippet carries the import
-block of its own file. A file whose extraction throws keeps its stories in the payload, each with
+`import` describes one file, so such a payload leaves it unset and each snippet and template carries
+the import block of its own file. A file whose extraction throws keeps its stories in the payload, each with
 that `error`; a file the provider returns nothing for contributes no stories.
 
 ## Import snippets

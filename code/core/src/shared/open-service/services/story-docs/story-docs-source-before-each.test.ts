@@ -271,6 +271,23 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
   });
 
+  it('loads the story docs again after a failed load', async () => {
+    const storyDocs = mockStoryDocsService(() => Promise.reject(new Error('offline')));
+    const context = { id: storyId, parameters: { __isArgsStory: true } } as unknown as StoryContext;
+    await render(context);
+    await render(context);
+    expect(storyDocs.loaded).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a loaded payload when emitting its snippet fails', async () => {
+    const storyDocs = mockStoryDocsService(() => Promise.resolve(payload));
+    mockedEmitTransformCode.mockRejectedValue(new Error('transform failed'));
+    const context = { id: storyId, parameters: { __isArgsStory: true } } as unknown as StoryContext;
+    await render(context);
+    await render(context);
+    expect(storyDocs.loaded).toHaveBeenCalledOnce();
+  });
+
   it('loads the story docs again for a hot-updated story', async () => {
     const storyDocs = mockStoryDocsService(() => Promise.resolve(payload));
     for (const parameters of [{ __isArgsStory: true }, { __isArgsStory: true }]) {

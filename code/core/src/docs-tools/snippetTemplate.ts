@@ -28,7 +28,7 @@ export const ARG_PATH_PATTERN = `${NOT_A_MEMBER}args(?:${SEGMENT})+`;
 
 const SEGMENTS = new RegExp(SEGMENT, 'g');
 
-/** The key a path segment reads: `label` for `.label`, `?.label` and `["label"]`, `0` for `[0]`. */
+// The key a path segment reads: `label` for `.label`, `?.label` and `["label"]`, `0` for `[0]`.
 const segmentKey = (segment: string) => {
   const key = segment.replace(/^\??\.?\[?|\]$/g, '');
   return /^["']/.test(key) ? key.slice(1, -1) : key;
@@ -70,6 +70,18 @@ const isPlainData = (value: unknown): value is object => {
 
 const isIdentifier = (name: string) => new RegExp(`^${IDENTIFIER}$`).test(name);
 
+const RESERVED_WORDS = new Set(
+  (
+    'await break case catch class const continue debugger default delete do else enum export ' +
+    'extends false finally for function if implements import in instanceof interface let new null ' +
+    'package private protected public return static super switch this throw true try typeof var ' +
+    'void while with yield'
+  ).split(' ')
+);
+
+// Whether `name` can stand in for a value as a variable: `onClick`, not `default` or `data-x`.
+const isReference = (name: string) => isIdentifier(name) && !RESERVED_WORDS.has(name);
+
 export interface PrintValueOptions {
   /** The arg or property the value is passed as, printed in place of a value code cannot show. */
   name?: string;
@@ -86,10 +98,19 @@ const MAX_LENGTH = 500;
  * Prints an arg value as the JavaScript expression it would be written as.
  *
  * A value that has no readable literal (a function, a class instance, a value nested too deep or too
- * long to read) prints as its `name`, so `onClick: fn()` shows as `onClick`.
+ * long to read) prints as its `name`, so `onClick: fn()` shows as `onClick`, and a property as its
+ * key. Where no name reads as a variable, such as for an array item, it throws an
+ * {@link UnprintableArgError}.
  */
 export function printValue(value: unknown, options: PrintValueOptions = {}): string {
-  return print(value, options, 0) ?? standIn(value, options.name);
+  const printed = print(value, options, 0);
+  if (printed !== undefined) {
+    return printed;
+  }
+  if (options.name !== undefined && isReference(options.name)) {
+    return options.name;
+  }
+  throw new UnprintableArgError(options.name ?? 'value');
 }
 
 /**
@@ -148,7 +169,10 @@ function printArray(items: unknown[], options: PrintValueOptions, depth: number)
   const printed: string[] = [];
   let length = 2;
   for (const item of items) {
-    const entry = print(item, { ...options, name: undefined }, depth + 1) ?? standIn(item);
+    const entry = print(item, { ...options, name: undefined }, depth + 1);
+    if (entry === undefined) {
+      return undefined;
+    }
     length += entry.length + 2;
     if (length > MAX_LENGTH) {
       return undefined;
@@ -165,9 +189,13 @@ function printObject(object: Record<string, unknown>, options: PrintValueOptions
     if (item === undefined) {
       continue;
     }
-    const printed = print(item, { ...options, name: key }, depth + 1) ?? standIn(item, key);
+    const printed = print(item, { ...options, name: key }, depth + 1);
+    // Like an arg, a property with no readable literal prints as its name: `{ onSelect }`.
+    if (printed === undefined && !isReference(key)) {
+      return undefined;
+    }
     const printedKey = isIdentifier(key) ? key : quoteString(key, options.quote ?? '"');
-    const entry = printed === key ? key : `${printedKey}: ${printed}`;
+    const entry = printed === undefined ? key : `${printedKey}: ${printed}`;
     length += entry.length + 2;
     if (length > MAX_LENGTH) {
       return undefined;
@@ -175,13 +203,6 @@ function printObject(object: Record<string, unknown>, options: PrintValueOptions
     entries.push(entry);
   }
   return entries.length > 0 ? `{ ${entries.join(', ')} }` : '{}';
-}
-
-function standIn(value: unknown, name?: string) {
-  if (name !== undefined && isIdentifier(name)) {
-    return name;
-  }
-  return typeof value === 'function' ? '() => {}' : Array.isArray(value) ? '[]' : '{}';
 }
 
 function quoteString(text: string, quote: '"' | "'") {
@@ -194,7 +215,7 @@ function quoteString(text: string, quote: '"' | "'") {
   return `${quote}${escaped}${quote}`;
 }
 
-/** The indentation of the line `offset` is on. */
+// The indentation of the line `offset` is on.
 function lineIndent(code: string, offset: number) {
   const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
   return /^[ \t]*/.exec(code.slice(lineStart))![0];

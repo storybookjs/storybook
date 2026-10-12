@@ -96,7 +96,10 @@ describe('story-docs open service', () => {
       stories: Object.fromEntries(
         entries
           .filter((story) => story.importPath === entry.importPath)
-          .map((story) => [story.id, { id: story.id, name: story.name, snippet: '<Vega />' }])
+          .map((story) => [
+            story.id,
+            { id: story.id, name: story.name, snippet: '<Vega />', template: '<Vega {...args} />' },
+          ])
       ),
     });
 
@@ -117,7 +120,7 @@ describe('story-docs open service', () => {
       expect(payload).toMatchObject({ id: 'vega', name: 'Vega', path: chart });
     });
 
-    it('gives every snippet the import block of its own file', async () => {
+    it('gives every snippet and template the import block of its own file', async () => {
       const service = registerStoryDocsService({
         getIndex: makeGetIndex(entries),
         storyDocsProvider: extractFile,
@@ -131,6 +134,9 @@ describe('story-docs open service', () => {
       );
       expect(payload!.stories['vega--heatmap']!.snippet).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega />`
+      );
+      expect(payload!.stories['vega--heatmap']!.template).toBe(
+        `import { Vega } from '${ranges}';\n\n<Vega {...args} />`
       );
     });
 

@@ -5,6 +5,7 @@ import {
   layoutAttributes,
   printArgPath,
   printValue,
+  UnprintableArgError,
   resolveArgPath,
 } from './snippetTemplate.ts';
 
@@ -127,8 +128,14 @@ describe('printValue', () => {
   it('prints a function as the name it is passed as', () => {
     expect(printValue(() => {}, { name: 'onClick' })).toBe('onClick');
     expect(printValue({ onSelect: () => {} })).toBe('{ onSelect }');
-    expect(printValue([() => {}])).toBe('[() => {}]');
-    expect(printValue(() => {}, { name: 'data-click' })).toBe('() => {}');
+    expect(printValue([() => {}], { name: 'handlers' })).toBe('handlers');
+    expect(() => printValue([() => {}])).toThrow(UnprintableArgError);
+    expect(() => printValue(() => {}, { name: 'data-click' })).toThrow(UnprintableArgError);
+    expect(() => printValue({ 'data-rows': [new Map()] })).toThrow(UnprintableArgError);
+    expect(() => printValue({ default: () => {} })).toThrow(UnprintableArgError);
+    expect(printValue({ default: 1, '1': 1, true: true })).toBe(
+      '{ "1": 1, default: 1, true: true }'
+    );
   });
 
   it('prints values without a readable literal as their name', () => {

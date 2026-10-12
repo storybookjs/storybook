@@ -903,3 +903,28 @@ test('an arg value keeps a shorthand property shorthand', () => {
         }}>Click me</Button>;"
   `);
 });
+
+function generateTemplate(code: string) {
+  const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
+
+  return Object.keys(csf._storyExports)
+    .map(
+      (name) =>
+        recast.print(getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').template)
+          .code
+    )
+    .join('\n');
+}
+
+test('template keeps args references for the preview to fill', () => {
+  const input = withCSF3(dedent`
+    export const Default: Story = {};
+    export const Loading: Story = {
+      render: (args) => (args.loading ? <Spinner /> : <Button {...args} label={args.label} />),
+    };
+  `);
+  expect(generateTemplate(input)).toMatchInlineSnapshot(`
+    "const Default = () => <Button {...args}>{args.children}</Button>;
+    const Loading = () => (args.loading ? <Spinner /> : <Button {...args} label={args.label} />);"
+  `);
+});

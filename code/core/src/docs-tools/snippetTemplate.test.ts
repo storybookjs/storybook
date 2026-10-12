@@ -92,10 +92,11 @@ describe('printArgPath', () => {
     expect(printArgPath('args.onClick.bind', { onClick: () => {} })).toBe('onClick.bind');
   });
 
-  it('wraps numbers that would otherwise read differently', () => {
+  it('wraps numbers and bigints that would otherwise read differently', () => {
     expect(printArgPath('args.count.toFixed', { count: 3 })).toBe('(3).toFixed');
     expect(printArgPath('args.delta', { delta: -1 })).toBe('(-1)');
     expect(printArgPath('args.count', { count: 3 })).toBe('3');
+    expect(printArgPath('args.delta', { delta: -1n })).toBe('(-1n)');
   });
 });
 

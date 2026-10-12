@@ -115,8 +115,9 @@ export function printValue(value: unknown, options: PrintValueOptions = {}): str
 
 /**
  * Prints the arg an arg path reads, followed by the part of the path that is not arg data:
- * `args.label.toUpperCase()` with `label: 'Go'` prints `"Go".toUpperCase()`. A negative number, or a
- * number followed by a member, is wrapped in parentheses so the code still reads the same.
+ * `args.label.toUpperCase()` with `label: 'Go'` prints `"Go".toUpperCase()`. A negative number or
+ * bigint, or a number followed by a member, is wrapped in parentheses so the code still reads the
+ * same.
  */
 export function printArgPath(
   path: string,
@@ -125,8 +126,8 @@ export function printArgPath(
 ): string {
   const { value, rest, key } = resolveArgPath(path, args);
   const printed = printValue(value, { ...options, name: key });
-  const needsParentheses =
-    typeof value === 'number' && (printed.startsWith('-') || /^\??\./.test(rest));
+  const isNumeric = typeof value === 'number' || typeof value === 'bigint';
+  const needsParentheses = isNumeric && (printed.startsWith('-') || /^\??\./.test(rest));
   return (needsParentheses ? `(${printed})` : printed) + rest;
 }
 
@@ -215,8 +216,8 @@ function quoteString(text: string, quote: '"' | "'") {
   return `${quote}${escaped}${quote}`;
 }
 
-// The indentation of the line `offset` is on.
-function lineIndent(code: string, offset: number) {
+/** The indentation of the line `offset` is on in `code`. */
+export function lineIndent(code: string, offset: number): string {
   const lineStart = code.lastIndexOf('\n', offset - 1) + 1;
   return /^[ \t]*/.exec(code.slice(lineStart))![0];
 }

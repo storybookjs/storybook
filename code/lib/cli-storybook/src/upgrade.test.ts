@@ -294,6 +294,28 @@ describe('toUpgradedDependencies', () => {
   });
 
   describe('satellite packages', () => {
+    it('preserves local workspace satellite dependencies during a prerelease upgrade', async () => {
+      const result = await generateUpgradeSpecs(
+        {
+          '@storybook/addon-designs': 'workspace:*',
+          '@storybook/react-vite': '^10.0.0',
+        },
+        {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIPrerelease: true,
+          isCLIExactPrerelease: true,
+          isCLIExactLatest: false,
+        }
+      );
+
+      expect(result).toEqual(['@storybook/react-vite@^9.0.0']);
+      expect(mockPackageManager.latestVersion).not.toHaveBeenCalledWith(
+        '@storybook/addon-designs@next'
+      );
+    });
+
     it('should include satellite dependencies for latest stable version', async () => {
       const deps = {
         '@storybook/react': '8.0.0',

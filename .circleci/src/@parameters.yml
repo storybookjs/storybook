@@ -12,3 +12,7 @@ parameters:
     description: The name of the base branch (the target of the PR)
     type: string
     default: 'next'
+  ghTrustedAuthor:
+    description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
+    type: string
+    default: 'false'

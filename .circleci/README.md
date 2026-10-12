@@ -37,6 +37,7 @@ The configuration accepts several pipeline parameters:
 - **`workflow`**: Which workflow to run (`normal`, `merged`, `daily`, `skipped`, `docs`)
 - **`ghPrNumber`**: GitHub PR number for PR-specific testing
 - **`ghBaseBranch`**: Base branch name for comparison testing
+- **`ghTrustedAuthor`**: Whether the PR author is trusted to persist to shared caches (always `false` on this branch)
 
 ### Workflows
 

@@ -1,9 +1,10 @@
 /* eslint-disable no-underscore-dangle */
 import { writeFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, isAbsolute, join, relative } from 'node:path';
 
+import { types as t } from '@storybook/core/babel';
 import type { Channel } from '@storybook/core/channels';
-import { formatFileContent } from '@storybook/core/common';
+import { formatFileContent, getProjectRoot } from '@storybook/core/common';
 import { storyNameFromExport, toId } from '@storybook/core/csf';
 import { isExampleStoryId, telemetry } from '@storybook/core/telemetry';
 import type { CoreConfig, Options } from '@storybook/core/types';
@@ -62,8 +63,21 @@ export function initializeSaveStory(channel: Channel, options: Options, coreConf
     let sourceStoryName: string | undefined;
 
     try {
+      if (name && !t.isValidIdentifier(name)) {
+        throw new SaveStoryError(`Invalid story name: ${JSON.stringify(name)}`);
+      }
+
       sourceFileName = basename(importPath);
       sourceFilePath = join(process.cwd(), importPath);
+
+      const pathFromProjectRoot = relative(getProjectRoot(), sourceFilePath);
+      if (
+        isAbsolute(pathFromProjectRoot) ||
+        // Windows strips trailing dots from path segments, so `...` is not a plain name there.
+        pathFromProjectRoot.split(/[\\/]/).some((segment) => /^\.{2,}$/.test(segment))
+      ) {
+        throw new SaveStoryError(`Invalid importPath: must resolve within the project root.`);
+      }
 
       const csf = await readCsf(sourceFilePath, {
         makeTitle: (userTitle: string) => userTitle || 'myTitle',

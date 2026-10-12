@@ -1,5 +1,5 @@
 import { logConfig } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
+import type { Options, SecurityConfig } from '@storybook/core/types';
 
 import { logger } from '@storybook/core/node-logger';
 import { MissingBuilderError } from '@storybook/core/server-errors';
@@ -16,15 +16,20 @@ import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getHostValidationMiddleware } from './utils/getHostValidationMiddleware';
+import { getSecurityHeadersMiddleware } from './utils/getSecurityHeadersMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-in-browser';
-import { getServerAddresses } from './utils/server-address';
+import { addLoopbackListener, getListenHost, getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
 
 export async function storybookDevServer(options: Options) {
-  const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
+  const [server, core, security] = await Promise.all([
+    getServer(options),
+    options.presets.apply('core'),
+    options.presets.apply<SecurityConfig | undefined>('security'),
+  ]);
   const app = polka({ server });
 
   assert(core?.channelOptions?.wsToken, 'wsToken is required for securing the server channel');
@@ -68,6 +73,7 @@ export async function storybookDevServer(options: Options) {
     })
   );
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
+  app.use(getSecurityHeadersMiddleware(security));
   app.use(getCachingMiddleware());
 
   getMiddleware(options.configDir)(app);
@@ -129,12 +135,16 @@ export async function storybookDevServer(options: Options) {
 
   const listening = new Promise<void>((resolve, reject) => {
     server.once('error', reject);
-    app.listen({ port, host }, resolve);
-  });
+    // SECURITY: If no host is set, listen on 127.0.0.1. Node binds to 0.0.0.0 by default, which
+    // makes Storybook accessible on LAN (e.g. conference WiFi). `localhost` is not used because
+    // Node binds it to one address only, often ::1, which refuses clients that connect to 127.0.0.1.
+    app.listen({ port, host: getListenHost(host) }, resolve);
+  }).then(() => addLoopbackListener(server));
 
   await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      openInBrowser(host ? networkAddress : address);
+      // Origin checks only trust loopback hostnames, and 0.0.0.0 also listens on 127.0.0.1.
+      openInBrowser(host && host !== '0.0.0.0' ? networkAddress : address);
     }
   });
   if (indexError) {

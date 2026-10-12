@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { searchFiles } from './search-files';
+import { InvalidSearchQueryError, searchFiles } from './search-files';
 
 describe('search-files', () => {
   it('should automatically convert static search to a dynamic glob search', async (t) => {
@@ -108,12 +108,62 @@ describe('search-files', () => {
     expect(files).toEqual([]);
   });
 
-  it('should not return files outside of project root', async (t) => {
-    await expect(() =>
-      searchFiles({
-        searchQuery: '../**/*',
+  it.each([
+    '../**/*',
+    '../../../../etc/*',
+    'src/../../*',
+    'src\\..\\..\\*',
+    '/etc/*',
+    '\\etc\\*',
+    'C:\\Windows\\*',
+    'C:/Windows/*',
+    'c:Windows',
+    '\\\\server\\share\\*',
+    '//server/share/*',
+    '{x,}/etc/*',
+    '{x,/etc}/*',
+    '{-..0}etc/*',
+    '{.,}./*',
+    '.{.,x}/*',
+    '.../*',
+    'src/.../*',
+    '....\\*',
+    '{.,}../*',
+  ])(
+    'should reject search query %s that reaches outside of the project root',
+    async (searchQuery) => {
+      await expect(
+        searchFiles({ searchQuery, cwd: join(__dirname, '__search-files-tests__') })
+      ).rejects.toThrow(new InvalidSearchQueryError());
+    }
+  );
+
+  it.each([
+    [
+      'src/*.js',
+      [
+        'src/commonjs-module-default.js',
+        'src/commonjs-module.js',
+        'src/es-module.js',
+        'src/no-export.js',
+      ],
+    ],
+    [
+      'src/file-extensions/*.{ts,tsx}',
+      ['src/file-extensions/extension.ts', 'src/file-extensions/extension.tsx'],
+    ],
+    ['**/es-module*', ['src/es-module.js']],
+    ['a..b.tsx', []],
+    ['a...b.tsx', []],
+  ])(
+    'should allow search query %s that stays inside the project root',
+    async (searchQuery, expected) => {
+      const files = await searchFiles({
+        searchQuery,
         cwd: join(__dirname, '__search-files-tests__'),
-      })
-    ).rejects.toThrowError();
-  });
+      });
+
+      expect(files).toEqual(expected);
+    }
+  );
 });

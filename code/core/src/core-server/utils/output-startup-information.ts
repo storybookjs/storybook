@@ -8,6 +8,7 @@ import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
+import { getReachableNetworkAddresses } from './server-address';
 import { createUpdateMessage } from './update-check';
 
 export function outputStartupInformation(options: {
@@ -15,6 +16,7 @@ export function outputStartupInformation(options: {
   version: string;
   name: string;
   address: string;
+  host?: string;
   networkAddress: string;
   allowedHosts?: string[] | true;
   managerTotalTime?: [number, number];
@@ -25,6 +27,7 @@ export function outputStartupInformation(options: {
     version,
     name,
     address,
+    host,
     networkAddress,
     allowedHosts,
     managerTotalTime,
@@ -60,7 +63,12 @@ export function outputStartupInformation(options: {
 
   serveMessage.push(
     ['Local:', picocolors.cyan(address)],
-    ['On your network:', picocolors.cyan(networkAddress)]
+    [
+      'On your network:',
+      host
+        ? picocolors.cyan(getReachableNetworkAddresses(networkAddress).join('\n'))
+        : 'run with --host <ip> to expose to local network',
+    ]
   );
 
   const otherAllowedHosts =

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -206,10 +206,14 @@ export class NPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    const workspacePackageJsonPath = this.packageJsonPaths.find(
+      (packageJsonPath) => JsPackageManager.getPackageJson(packageJsonPath).workspaces
+    );
+
     return executeCommand({
       command: 'npm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
-      cwd: this.cwd,
+      cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
       stdio: prompt.getPreferredStdio(),
     });
   }

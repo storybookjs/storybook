@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -38,6 +41,38 @@ describe('NPM Proxy', () => {
   });
 
   describe('installDependencies', () => {
+    it('installs from the workspace root when invoked in a workspace package', async () => {
+      const workspaceRoot = await mkdtemp(join(process.cwd(), '.npm-workspace-'));
+      const workspacePackage = join(workspaceRoot, 'packages', 'app');
+
+      try {
+        await mkdir(workspacePackage, { recursive: true });
+        await writeFile(
+          join(workspaceRoot, 'package.json'),
+          JSON.stringify({ workspaces: ['packages/*'] })
+        );
+        await writeFile(join(workspacePackage, 'package.json'), JSON.stringify({ name: 'app' }));
+
+        npmProxy = new NPMProxy({ cwd: workspacePackage });
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
+        });
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+        await npmProxy.installDependencies({ force: true });
+
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['install', '--force'],
+            cwd: workspaceRoot,
+          })
+        );
+      } finally {
+        await rm(workspaceRoot, { recursive: true, force: true });
+      }
+    });
+
     describe('npm6', () => {
       it('should run `npm install`', async () => {
         // sort of un-mock part of the function so executeCommand (also mocked) is called

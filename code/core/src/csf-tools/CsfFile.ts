@@ -884,7 +884,7 @@ export class CsfFile {
             throw new Error(dedent`
               Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
 
-              SB8 does not support \`storiesOf\`.
+              \`storiesOf\` was removed in Storybook 8.0. Write stories in CSF instead.
             `);
           }
           if (

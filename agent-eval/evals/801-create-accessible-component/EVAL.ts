@@ -9,13 +9,17 @@ import {
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
 
 describe('creating an accessible ToggleSwitch', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({ covering: ['toggleswitch'] });
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['toggleswitch'],
+    });
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {

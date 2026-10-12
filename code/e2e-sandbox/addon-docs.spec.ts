@@ -130,12 +130,6 @@ test.describe('addon-docs', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
-    test.skip(
-      await page.evaluate(() =>
-        Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
-      ),
-      'Server docgen renders static source snippets'
-    );
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
 
@@ -158,6 +152,46 @@ test.describe('addon-docs', () => {
     await expect(primaryCode).toContainText('Changed');
     // Check the stories one still says "Basic"
     await expect(storiesCode).toContainText('Basic');
+  });
+
+  // With server docgen the preview fills the story's snippet template with the current args, so
+  // the snippet follows the controls in dev and in static builds alike.
+  test('story snippets follow the controls in the Code panel and on the docs page', async ({
+    page,
+  }) => {
+    test.skip(
+      !(await page.evaluate(() =>
+        Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
+      )),
+      'Covers snippets filled from a server template; without server docgen, renderer source decorators make them'
+    );
+    test.skip(templateName.includes('react-native-web'), 'React Native has no Code panel snippet');
+    test.skip(
+      templateName.startsWith('lit-'),
+      'The Lit sandbox Button is a lit template function, not a custom element in a Custom Elements Manifest, so its snippet is the story as written'
+    );
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('example/button', 'primary');
+    await sbPage.viewAddonPanel('Code');
+    await expect(sbPage.panelContent()).toContainText('Button');
+
+    await sbPage.viewAddonPanel('Controls');
+    await sbPage.panelContent().locator('textarea[name=label]').fill('Live snippet');
+    await expect(sbPage.previewRoot()).toContainText('Live snippet');
+    await sbPage.viewAddonPanel('Code');
+    await expect(sbPage.panelContent()).toContainText('Live snippet');
+
+    await sbPage.navigateToStory('example/button', 'docs');
+    const root = sbPage.previewRoot();
+    await root.locator('.docblock-code-toggle').first().click();
+    const primaryCode = root.locator('pre.prismjs').first();
+    await expect(primaryCode).toContainText('Button');
+
+    const labelControl = root.locator('textarea[name=label]');
+    await labelControl.fill('Live docs snippet');
+    await labelControl.blur();
+    await expect(primaryCode).toContainText('Live docs snippet');
   });
 
   // Regression test for #28333: `useArgs` called from a story rendered in a <Stories>

@@ -6,6 +6,71 @@ export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 
+export const formatInputBinding = ({ name, expression }: TemplateInputBinding) =>
+  `[${name}]="${expression}"`;
+
+export const formatOutputBinding = (name: string) =>
+  `(${name})="${formatPropInTemplate(name)}($event)"`;
+
+// The host class member a template reaches through `formatPropInTemplate`.
+export const formatMemberName = (name: string): string =>
+  isValidIdentifier(name) ? name : `['${name}']`;
+
+export const formatOutputHandler = (name: string) => `${formatMemberName(name)}(event: unknown) {}`;
+
+// Angular expression strings support backslash escapes, so quoting stays lossless.
+const quoteExpressionString = (value: string): string =>
+  `'${value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')}'`;
+
+// Prints plain data as the expression a story-docs snippet writes it as, in a binding and in a
+// host component field alike, or `undefined` for a value no such expression can write: a function,
+// a class instance, a cycle. The server and the preview filler print with it, so a value reads the
+// same in the static snippet and in the filled-in template.
+export const printTemplateData = (
+  value: unknown,
+  ancestors: readonly object[] = []
+): string | undefined => {
+  if (typeof value === 'string') {
+    return quoteExpressionString(value);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean' || value == null) {
+    return `${value}`;
+  }
+  if (typeof value !== 'object' || ancestors.includes(value)) {
+    return undefined;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null) {
+    return undefined;
+  }
+  const nested = [...ancestors, value];
+  const printed: string[] = [];
+  for (const [key, item] of Object.entries(value)) {
+    if (item === undefined && !Array.isArray(value)) {
+      continue;
+    }
+    const itemText = printTemplateData(item ?? null, nested);
+    if (itemText === undefined) {
+      return undefined;
+    }
+    printed.push(
+      Array.isArray(value)
+        ? itemText
+        : `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${itemText}`
+    );
+  }
+  return Array.isArray(value) ? `[${printed.join(', ')}]` : `{${printed.join(', ')}}`;
+};
+
+// A binding expression sits in a double-quoted attribute: the delimiter and text Angular's lexer
+// would decode as a character reference survive the round-trip unchanged.
+export const escapeAttributeExpression = (expression: string): string =>
+  expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');
+
 const stringifyCircular = (obj: unknown) => {
   const seen = new Set();
   return JSON.stringify(obj, (key, value) => {
@@ -116,10 +181,7 @@ export const buildTemplate = (
   selector: string,
   { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
 ) => {
-  const bindings = [
-    ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
-    ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
-  ];
+  const bindings = [...inputs.map(formatInputBinding), ...outputs.map(formatOutputBinding)];
 
   const firstSelector = selector.split(',')[0];
   const withElement =
@@ -279,4 +341,49 @@ export const formatTemplateMarkup = (markup: string): string => {
     return markup;
   }
   return children.flatMap((child) => printMarkup(markup, child, 0)).join('\n');
+};
+
+// A template literal is the only quoting that survives a multi-line template carrying both quote
+// characters, so the three sequences that would end or escape it are neutralized. A template that
+// broke over lines moves onto its own lines inside the literal too.
+export const toTemplateLiteral = (template: string): string => {
+  const escaped = template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+  return escaped.includes('\n')
+    ? `\n${escaped
+        .split('\n')
+        .map((line) => (line === '' ? line : `    ${line}`))
+        .join('\n')}`
+    : escaped;
+};
+
+const fromTemplateLiteral = (literal: string): string =>
+  (literal.startsWith('\n')
+    ? literal
+        .slice(1)
+        .split('\n')
+        .map((line) => line.replace(/^ {4}/, ''))
+        .join('\n')
+    : literal
+  ).replace(/\\(\\|`|\$\{)/g, '$1');
+
+export const hostTemplateLine = (template: string) =>
+  `  template: \`${toTemplateLiteral(template)}\`,`;
+
+// Escaping leaves no bare backtick inside the literal, so the first one ends it.
+const HOST_TEMPLATE_LINE = /^( {2}template: `)((?:[^`\\]|\\[\s\S])*)`,$/m;
+
+// Splits a story-docs host component around the template its `template` literal holds.
+export const splitHostComponentTemplate = (
+  snippet: string
+): { before: string; template: string; after: string } | undefined => {
+  const match = HOST_TEMPLATE_LINE.exec(snippet);
+  if (!match) {
+    return undefined;
+  }
+  const start = match.index + match[1].length;
+  return {
+    before: snippet.slice(0, start),
+    template: fromTemplateLiteral(match[2]),
+    after: snippet.slice(start + match[2].length),
+  };
 };

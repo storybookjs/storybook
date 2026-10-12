@@ -18,6 +18,17 @@ import { CsfFourComponent } from './csf4.component.ts';
 export class DemoComponent {
   saved(event: unknown) {}
 }",
+      "template": "import { Component } from '@angular/core';
+import { CsfFourComponent } from './csf4.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [CsfFourComponent],
+  template: `{{@element sb-csf4 | label (saved)}}`,
+})
+export class DemoComponent {
+  saved(event: unknown) {}
+}",
     },
     "storydocs-csf4--primary": {
       "description": "A CSF4 factory story.",
@@ -35,6 +46,17 @@ export class DemoComponent {
   saved(event: unknown) {}
 }",
       "summary": "Factory summary",
+      "template": "import { Component } from '@angular/core';
+import { CsfFourComponent } from './csf4.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [CsfFourComponent],
+  template: `{{@element sb-csf4 | label (saved)}}`,
+})
+export class DemoComponent {
+  saved(event: unknown) {}
+}",
     },
   },
 }

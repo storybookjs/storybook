@@ -18,6 +18,17 @@ import { MetaRenderComponent } from './meta-render.component.ts';
 export class DemoComponent {
   label = 'Meta';
 }",
+      "template": "import { Component } from '@angular/core';
+import { MetaRenderComponent } from './meta-render.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [MetaRenderComponent],
+  template: `<sb-meta-render [label]="label"></sb-meta-render>`,
+})
+export class DemoComponent {
+  label = {{@args.label}};
+}",
     },
   },
 }

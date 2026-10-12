@@ -12,7 +12,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import { formatPropInTemplate } from '../template-grammar.ts';
+import { formatInputBinding, formatOutputBinding } from '../template-grammar.ts';
 
 /** One story, as much of it as reading the markup it supplies needs. */
 export interface StoryShape {
@@ -40,6 +40,8 @@ export interface Bindings {
 export interface TemplateExpansion {
   marker: string;
   inputAttributes: string[];
+  // Whether the site expands the arg of that name, as its `include`/`exclude` options decide.
+  allows: (name: string) => boolean;
   outputAttributes: { name: string; markup: string }[];
 }
 
@@ -67,10 +69,11 @@ const bindingAttributes = (
   representedInputs.forEach(({ name }) => representedArgs.add(name));
   representedOutputs.forEach((name) => representedArgs.add(name));
   return {
-    inputAttributes: representedInputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+    inputAttributes: representedInputs.map(formatInputBinding),
+    allows: allowed,
     outputAttributes: representedOutputs.map((name) => ({
       name,
-      markup: `(${name})="${formatPropInTemplate(name)}($event)"`,
+      markup: formatOutputBinding(name),
     })),
   };
 };
@@ -79,13 +82,16 @@ const bindingAttributes = (
 export type TemplateResult =
   /**
    * Read as markup, so the story is shown as written. `representedArgs` names the args whose values
-   * the markup already contains.
+   * the markup already contains. `argMarkup` is the same markup with each of those values replaced
+   * by a placeholder that `argTexts` maps back to the arg's name.
    */
   | {
       kind: 'literal';
       markup: string;
       representedArgs: readonly string[];
       expansions: readonly TemplateExpansion[];
+      argMarkup: string;
+      argTexts: ReadonlyMap<string, string>;
     }
   /**
    * A `template` or `render` exists, but its markup needs the story to run. `source` is that
@@ -209,30 +215,44 @@ const templateFrom = (
     return undefined;
   }
   if (t.isStringLiteral(node)) {
-    return literalTemplate(node.value, new Set(), []);
+    return literalTemplate({ markup: node.value, argMarkup: node.value }, new Set(), [], new Map());
   }
   const parts = templateParts(node);
   if (parts) {
     const representedArgs = new Set<string>();
     const expansions: TemplateExpansion[] = [];
-    const markup = interpolate(parts, shape, bindings, scope, representedArgs, expansions);
-    return markup === undefined
+    const argTexts = new Map<string, string>();
+    const markups = interpolate(parts, shape, bindings, scope, {
+      representedArgs,
+      expansions,
+      argTexts,
+    });
+    return markups === undefined
       ? { kind: 'unresolvable', source: sourceOf(node) }
-      : literalTemplate(markup, representedArgs, expansions);
+      : literalTemplate(markups, representedArgs, expansions, argTexts);
   }
   return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
 const literalTemplate = (
-  markup: string,
+  { markup, argMarkup }: { markup: string; argMarkup: string },
   representedArgs: ReadonlySet<string>,
-  expansions: readonly TemplateExpansion[]
+  expansions: readonly TemplateExpansion[],
+  argTexts: ReadonlyMap<string, string>
 ): Extract<TemplateResult, { kind: 'literal' }> => ({
   kind: 'literal',
   markup,
   representedArgs: [...representedArgs],
   expansions,
+  argMarkup,
+  argTexts,
 });
+
+interface InterpolationRecord {
+  representedArgs: Set<string>;
+  expansions: TemplateExpansion[];
+  argTexts: Map<string, string>;
+}
 
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
 const interpolate = (
@@ -240,32 +260,36 @@ const interpolate = (
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope,
-  representedArgs: Set<string>,
-  expansions: TemplateExpansion[]
-): string | undefined => {
+  record: InterpolationRecord
+): { markup: string; argMarkup: string } | undefined => {
   let markup = quasis[0] ?? '';
+  let argMarkup = markup;
+  const unique = (name: string, written: string, suffix: string) => {
+    while (written.includes(name) || quasis.some((quasi) => quasi.includes(name))) {
+      name += suffix;
+    }
+    return name;
+  };
 
   for (const [index, expression] of expressions.entries()) {
-    let marker = `data-storybook-args-to-template-${index}`;
-    while (markup.includes(marker) || quasis.some((quasi) => quasi.includes(marker))) {
-      marker += '-x';
-    }
-    const substituted = substituteExpression(
-      expression,
-      shape,
-      bindings,
-      scope,
-      representedArgs,
-      marker,
-      expansions
-    );
+    const marker = unique(`data-storybook-args-to-template-${index}`, markup, '-x');
+    const substituted = substituteExpression(expression, shape, bindings, scope, record, marker);
     if (substituted === undefined) {
       return undefined;
     }
-    markup += substituted + (quasis[index + 1] ?? '');
+    const rest = quasis[index + 1] ?? '';
+    markup += substituted.text + rest;
+    if (substituted.arg === undefined) {
+      argMarkup += substituted.text + rest;
+    } else {
+      // An identifier reads as the same kind of node wherever the text it stands for was written.
+      const placeholder = unique(`__storybook_arg_${index}__`, argMarkup, '_x');
+      record.argTexts.set(placeholder, substituted.arg);
+      argMarkup += placeholder + rest;
+    }
   }
 
-  return markup;
+  return { markup, argMarkup };
 };
 
 /**
@@ -285,10 +309,9 @@ const substituteExpression = (
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope,
-  representedArgs: Set<string>,
-  marker: string,
-  expansions: TemplateExpansion[]
-): string | undefined => {
+  { representedArgs, expansions }: InterpolationRecord,
+  marker: string
+): { text: string; arg?: string } | undefined => {
   if (t.isCallExpression(expression) && isImportedArgsToTemplate(expression, shape)) {
     // Only the args parameter (whole, or as a rest binding) has a knowable expansion; a derived
     // object expands to whatever the story computes at runtime.
@@ -307,7 +330,7 @@ const substituteExpression = (
       ? { ...withRest, include: filter.include.filter((name) => !excluded.includes(name)) }
       : withRest;
     expansions.push({ marker, ...bindingAttributes(bindings, allowed, representedArgs) });
-    return marker;
+    return { text: marker };
   }
 
   if (!t.isIdentifier(expression)) {
@@ -316,10 +339,11 @@ const substituteExpression = (
   const argName = scope.argBindings.get(expression.name);
   if (argName !== undefined) {
     const text = shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
-    if (text !== undefined) {
-      representedArgs.add(argName);
+    if (text === undefined) {
+      return undefined;
     }
-    return text;
+    representedArgs.add(argName);
+    return { text, arg: argName };
   }
   if (scope.parameterNames.has(expression.name)) {
     return undefined;
@@ -329,7 +353,8 @@ const substituteExpression = (
     return undefined;
   }
   const declared = declaredValue(shape, expression);
-  return declared === expression ? undefined : literalText(declared);
+  const text = declared === expression ? undefined : literalText(declared);
+  return text === undefined ? undefined : { text };
 };
 
 const ARGS_TO_TEMPLATE_MODULES = new Set(['@storybook/angular', '@storybook/angular-vite']);

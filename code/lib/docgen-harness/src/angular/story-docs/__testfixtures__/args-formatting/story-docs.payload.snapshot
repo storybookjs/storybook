@@ -26,6 +26,17 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
 export class DemoComponent {
   formatter = (value) => value.replace('"', '\'');
 }",
+      "template": "import { Component } from '@angular/core';
+import { ArgsFormattingComponent } from './args-formatting.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ArgsFormattingComponent],
+  template: `{{@element sb-args-formatting | label kind offset data tags greeting [formatter]}}`,
+})
+export class DemoComponent {
+  formatter = (value) => value.replace('"', '\'');
+}",
     },
   },
 }

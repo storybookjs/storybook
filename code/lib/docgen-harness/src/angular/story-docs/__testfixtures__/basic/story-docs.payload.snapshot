@@ -19,6 +19,17 @@ export class DemoComponent {
   pressed(event: unknown) {}
 }",
       "summary": "Primary look",
+      "template": "import { Component } from '@angular/core';
+import { BasicComponent } from './basic.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [BasicComponent],
+  template: `{{@element sb-basic | label count (pressed)}}`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
     },
     "storydocs-basic--renamed": {
       "description": "Named through the `name` annotation.",
@@ -31,6 +42,17 @@ import { BasicComponent } from './basic.component.ts';
   selector: 'app-demo',
   imports: [BasicComponent],
   template: `<sb-basic [label]="'Override'" (pressed)="pressed($event)" />`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
+      "template": "import { Component } from '@angular/core';
+import { BasicComponent } from './basic.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [BasicComponent],
+  template: `{{@element sb-basic | label count (pressed)}}`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

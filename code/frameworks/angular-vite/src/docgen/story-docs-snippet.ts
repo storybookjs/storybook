@@ -1,7 +1,8 @@
 // Wraps a story's template in the host component a reader would have to write to run it, so the
 // snippet is copy-pasteable on its own. Server-side only: the preview renderer still emits the bare
 // template, which is what the legacy runtime generator produced.
-import { isValidIdentifier } from '../template-grammar.ts';
+import { handlerMarker } from '../snippet-markers.ts';
+import { formatMemberName, formatOutputHandler, hostTemplateLine } from '../template-grammar.ts';
 
 const HOST_SELECTOR = 'app-demo';
 const HOST_CLASS = 'DemoComponent';
@@ -24,6 +25,9 @@ export interface HostComponentSnippetInput {
   ngModules?: { names: string[]; importStatements: string[] };
   /** Output binding names, each of which needs a handler for the template to compile. */
   outputs: string[];
+  // Outputs a live template only binds while their arg holds a function, so their handlers are
+  // markers the preview fills alongside the bindings.
+  liveOutputs?: ReadonlySet<string>;
   /** Args the template refers to by name, which the story supplied through `props: args`. */
   fields?: { name: string; value: string }[];
 }
@@ -33,20 +37,6 @@ export interface HostComponentSnippet {
   /** Why the snippet does not compile as written; see `StoryDoc.warning`. */
   warning?: string;
 }
-
-// A template literal is the only quoting that survives a multi-line template carrying both quote
-// characters, so the three sequences that would end or escape it are neutralized.
-const escapeTemplateLiteral = (template: string): string =>
-  template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
-
-const unescapeTemplateLiteral = (template: string): string =>
-  template
-    .replace(/\\\$\{/g, '${')
-    .replace(/\\`/g, '`')
-    .replace(/\\\\/g, '\\');
-
-// Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
-const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
 
 const memberValue = (value: string): string => value.split('\n').join('\n  ');
 
@@ -96,15 +86,6 @@ const importabilityWarning = ({
   return undefined;
 };
 
-// A template `buildTemplate` broke over lines moves onto its own lines inside the literal too.
-const embedTemplate = (template: string): string =>
-  template.includes('\n')
-    ? `\n${template
-        .split('\n')
-        .map((line) => (line === '' ? line : `    ${line}`))
-        .join('\n')}`
-    : template;
-
 export const buildHostComponentSnippet = ({
   template,
   componentName,
@@ -113,6 +94,7 @@ export const buildHostComponentSnippet = ({
   standalone,
   ngModules,
   outputs,
+  liveOutputs,
   fields = [],
 }: HostComponentSnippetInput): HostComponentSnippet => {
   // A `standalone: false` component is only reachable through its declaring NgModule, which static
@@ -135,8 +117,10 @@ export const buildHostComponentSnippet = ({
     : [...(standalone ? [componentName] : []), ...moduleNames].join(', ');
   const members = [
     ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
-    ...fields.map(({ name, value }) => `  ${memberName(name)} = ${memberValue(value)};`),
-    ...outputs.map((name) => `  ${memberName(name)}(event: unknown) {}`),
+    ...fields.map(({ name, value }) => `  ${formatMemberName(name)} = ${memberValue(value)};`),
+    ...outputs.map(
+      (name) => `  ${liveOutputs?.has(name) ? handlerMarker(name) : formatOutputHandler(name)}`
+    ),
   ];
   const body = members.length > 0 ? `{\n${members.join('\n')}\n}` : '{}';
 
@@ -146,7 +130,7 @@ export const buildHostComponentSnippet = ({
     '@Component({',
     `  selector: '${HOST_SELECTOR}',`,
     `  imports: [${declared}],`,
-    `  template: \`${embedTemplate(escapeTemplateLiteral(template))}\`,`,
+    hostTemplateLine(template),
     '})',
     `export class ${HOST_CLASS} ${body}`,
   ].join('\n');
@@ -162,26 +146,3 @@ export const buildHostComponentSnippet = ({
 
   return warning === undefined ? { snippet } : { snippet, warning };
 };
-
-const TEMPLATE_LITERAL = /^ {2}template: `([\s\S]*)`,$/m;
-
-/**
- * Recovers the template from a snippet {@link buildHostComponentSnippet} produced.
- *
- * The comparison gates read the template, not the wrapper, so they keep measuring the same thing
- * they measured when the snippet was the template alone.
- */
-export const extractHostComponentTemplate = (snippet: string): string | undefined => {
-  const match = TEMPLATE_LITERAL.exec(snippet);
-  return match ? unescapeTemplateLiteral(unembedTemplate(match[1])) : undefined;
-};
-
-// Inverse of `embedTemplate`, so extraction returns what `buildTemplate` produced.
-const unembedTemplate = (template: string): string =>
-  template.startsWith('\n')
-    ? template
-        .slice(1)
-        .split('\n')
-        .map((line) => line.replace(/^ {4}/, ''))
-        .join('\n')
-    : template;

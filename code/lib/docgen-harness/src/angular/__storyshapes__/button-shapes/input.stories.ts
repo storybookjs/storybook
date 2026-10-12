@@ -51,6 +51,16 @@ export const ArgsToTemplateWrapper = {
   }),
 };
 
+// An action the controls add through argTypes, which `argsToTemplate` binds at runtime.
+export const ArgTypesAction = {
+  args: { label: 'Save' },
+  argTypes: { clicked: { action: 'clicked' } },
+  render: (args: Record<string, unknown>) => ({
+    props: args,
+    template: `<sb-shape-button ${argsToTemplate(args)}></sb-shape-button>`,
+  }),
+};
+
 export const ArgsToTemplateInclude = {
   args: { label: 'Save', count: 7 },
   render: (args: Record<string, unknown>) => ({

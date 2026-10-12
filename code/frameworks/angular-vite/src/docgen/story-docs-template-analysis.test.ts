@@ -169,11 +169,13 @@ describe('analyzeStoryTemplate', () => {
           {
             marker: 'data-storybook-args-to-template-0',
             inputAttributes: ['[label]="\'Save\'"'],
+            allows: () => true,
             outputAttributes: [{ name: 'pressed', markup: '(pressed)="pressed($event)"' }],
           },
           {
             marker: 'data-storybook-args-to-template-1',
             inputAttributes: [],
+            allows: () => true,
             outputAttributes: [{ name: 'pressed', markup: '(pressed)="pressed($event)"' }],
           },
         ]
@@ -201,6 +203,7 @@ describe('analyzeStoryTemplate', () => {
           {
             marker: 'data-storybook-args-to-template-0',
             inputAttributes: [],
+            allows: () => true,
             outputAttributes: [{ name: 'pressed', markup: '(pressed)="pressed($event)"' }],
           },
         ]
@@ -225,6 +228,7 @@ describe('analyzeStoryTemplate', () => {
         {
           marker: 'data-storybook-args-to-template-0',
           inputAttributes: [],
+          allows: () => true,
           outputAttributes: [
             { name: 'valueChange', markup: '(valueChange)="valueChange($event)"' },
           ],
@@ -252,6 +256,7 @@ describe('analyzeStoryTemplate', () => {
           {
             marker: 'data-storybook-args-to-template-0',
             inputAttributes: ['[label]="\'Save\'"'],
+            allows: () => true,
             outputAttributes: [{ name: 'pressed', markup: '(pressed)="pressed($event)"' }],
           },
         ]
@@ -277,6 +282,7 @@ describe('analyzeStoryTemplate', () => {
         {
           marker: 'data-storybook-args-to-template-0',
           inputAttributes: ['[label]="\'Save\'"'],
+          allows: () => true,
           outputAttributes: [],
         },
       ])
@@ -300,11 +306,13 @@ describe('analyzeStoryTemplate', () => {
           {
             marker: 'data-storybook-args-to-template-0',
             inputAttributes: ['[label]="\'data-storybook-args-to-template-1\'"'],
+            allows: () => true,
             outputAttributes: [],
           },
           {
             marker: 'data-storybook-args-to-template-1',
             inputAttributes: ['[count]="1"'],
+            allows: () => true,
             outputAttributes: [],
           },
         ]

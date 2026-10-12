@@ -42,6 +42,11 @@ describe('suggestEntries', () => {
     expect(suggestedIds('reshaped-button')[0]).toBe('components-button');
   });
 
+  it('finds a multi-word name behind a source or title prefix', () => {
+    expect(suggestedIds('reshaped-toggle-button')[0]).toBe('components-togglebutton');
+    expect(suggestedIds('components-toggle-button')[0]).toBe('components-togglebutton');
+  });
+
   it('matches a kebab-case guess against a PascalCase name', () => {
     expect(suggestedIds('alert-banner')).toEqual(['feedback-alertbanner', 'components-alert']);
   });

@@ -431,32 +431,26 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     : [{ access: docsAccess! }];
 
   // An id the requested source does not have is shown from the one other source that has it.
-  // Otherwise the closest listed entries are suggested. A source whose lookup failed is left out of
-  // the suggestions.
+  // Otherwise the closest listed entries are suggested.
   const recoverMissedId = async (
     id: string,
     requestedStorybookId: string | undefined
   ): Promise<Partial<DocsShowOutput>> => {
     const others = sourceAccesses.filter((source) => source.storybookId !== requestedStorybookId);
     const lookups = await Promise.all(
-      others.map(async (source) => {
-        try {
-          return { source, entry: await source.access.resolve(id), failed: false };
-        } catch {
-          return { source, entry: undefined, failed: true };
-        }
-      })
+      others.map(async (source) => ({
+        source,
+        entry: await source.access.resolve(id).catch(() => undefined),
+      }))
     );
 
-    const hits = lookups.filter((lookup) => lookup.entry !== undefined);
+    const hits = lookups.filter(({ entry }) => entry !== undefined);
     if (hits.length === 1) {
       const [{ source, entry }] = hits;
       return { entry, storybookId: source.storybookId, requestedStorybookId };
     }
 
-    const failed = new Set(lookups.filter((lookup) => lookup.failed).map(({ source }) => source));
-    const readable = sourceAccesses.filter((source) => !failed.has(source));
-    const candidates = (await Promise.all(readable.map(listEntries))).flat();
+    const candidates = (await Promise.all(sourceAccesses.map(listEntries))).flat();
     const suggestions = suggestEntries(id, candidates);
     return suggestions.length > 0 ? { suggestions } : {};
   };

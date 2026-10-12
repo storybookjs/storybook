@@ -52,13 +52,13 @@ export interface ReactComponentManifest extends ComponentManifest {
   [key: string]: unknown;
 }
 
-const MAIN_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
+const ROOT_ENTRY_FIELDS = ['main', 'module', 'types', 'typings', 'browser'];
 
 // Whether the bare package name resolves: `exports` decides when present, the main fields otherwise.
 function hasRootEntry(pkg: Record<string, unknown>) {
   const { exports } = pkg;
   if (exports === undefined) {
-    return MAIN_FIELDS.some((field) => field in pkg);
+    return ROOT_ENTRY_FIELDS.some((field) => field in pkg);
   }
   // A string, or an array of fallbacks, is the root entry itself.
   if (typeof exports !== 'object' || Array.isArray(exports)) {

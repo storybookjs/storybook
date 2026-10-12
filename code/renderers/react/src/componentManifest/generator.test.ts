@@ -432,6 +432,18 @@ test('imports a component in a private workspace package by its package name', a
   expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
 });
 
+test('imports a component in a private package that exports its root by its package name', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { '.': './src/index.ts' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
 test('keeps the story import for a private package that exports only subpaths', async () => {
   const code = withCSF3('export const Primary = () => <Button />;');
 

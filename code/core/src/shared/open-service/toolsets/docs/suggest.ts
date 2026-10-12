@@ -8,15 +8,21 @@ const MAX_SUGGESTIONS = 5;
 // A whole name spelled out by the id outweighs any single shared word.
 const NAME_SCORE = 2;
 
-// The words of an id or a name, plus those words joined, so that `alert-banner`, `AlertBanner` and
-// `feedback-alertbanner` all share `alertbanner`.
+// The words of an id or a name, plus every run of adjacent words joined, so that `alert-banner`,
+// `AlertBanner` and `feedback-alertbanner` all share `alertbanner`.
 function tokenize(value: string): Set<string> {
   const words = value
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .toLowerCase()
     .split(/[^a-z0-9]+/)
     .filter(Boolean);
-  return new Set([...words, words.join('')]);
+  const runs = new Set<string>();
+  for (let start = 0; start < words.length; start++) {
+    for (let end = start + 1; end <= words.length; end++) {
+      runs.add(words.slice(start, end).join(''));
+    }
+  }
+  return runs;
 }
 
 export function suggestEntries(id: string, candidates: DocsListedEntry[]): DocsListedEntry[] {
@@ -46,8 +52,6 @@ export function suggestEntries(id: string, candidates: DocsListedEntry[]): DocsL
     return sharedWords + (wanted.has(joinedName) ? NAME_SCORE : 0);
   };
 
-  // The id itself comes first, then the component a story or docs id belongs to, then the entries
-  // that share words with it.
   const tierOf = (candidate: DocsListedEntry) =>
     candidate.id === id ? 0 : candidate.id === componentId ? 1 : 2;
 

@@ -235,12 +235,14 @@ function formatPropsSection(
     const hasDefault = propInfo.defaultValue !== undefined;
     const { description } = propInfo;
 
-    if (description !== undefined && !description.includes('\n')) {
-      parts.push(`  /** ${description} */`);
-    } else if (description !== undefined) {
-      parts.push('  /**');
-      parts.push(`    ${description}`);
-      parts.push('  */');
+    if (description !== undefined) {
+      if (description.includes('\n')) {
+        parts.push('  /**');
+        parts.push(`    ${description}`);
+        parts.push('  */');
+      } else {
+        parts.push(`  /** ${description} */`);
+      }
     }
 
     let propLine = `  ${propName}`;

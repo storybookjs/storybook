@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import React, { Fragment, forwardRef, memo } from 'react';
 
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
+
 import { dedent } from 'ts-dedent';
 
 import { fillTemplate } from './fill-template.ts';
@@ -165,6 +167,21 @@ describe('fillTemplate', () => {
         list: ['one'],
       })
     ).toBe('<Button label="X" n={1} first="one" />');
+  });
+
+  it('fills children written after another element as a child', () => {
+    expect(
+      fillTemplate('<Card title={args.title}><Icon />{args.children}</Card>', { title: 'Yo' })
+    ).toBe('<Card title="Yo"><Icon /></Card>');
+    expect(fillTemplate('<Card><h1>Hi</h1>{args.children}</Card>', {})).toBe(
+      '<Card><h1>Hi</h1></Card>'
+    );
+  });
+
+  it('throws for a value it can only print as a name that is not an identifier', () => {
+    expect(() => fillTemplate('<Button {...args} />', { 'data-click': () => {} })).toThrow(
+      UnprintableArgError
+    );
   });
 
   it('writes text children as text, and the rest as expressions', () => {

@@ -16,8 +16,9 @@ const childrenHole = (tagGroup: string) =>
 
 // `{...args}` with its omit comment, and the tag's closer and `{args.children}` when they follow.
 const SPREAD_HOLE = String.raw`(?<spreadSpace>[ \t]*\n[ \t]*| ?)\{\.\.\.(?<spread>${ARG_PATH_PATTERN}|args)\s*(?:${OMIT_COMMENT}\s*)?\}(?<closer> ?\/?>)?(?:(?<=>)${childrenHole('spreadTag')})?`;
-// `>{args.children}</Tag>` after the attributes written next to a spread.
-const CHILDREN_HOLE = `>${childrenHole('childrenTag')}`;
+// `>{args.children}</Tag>` after the attributes written next to a spread; the `>` must end the
+// opening tag, not a sibling's `<Icon />` or `</h1>`.
+const CHILDREN_HOLE = String.raw`(?<!\/|<\/[\w.:-]*)>${childrenHole('childrenTag')}`;
 // `name={args.x}` with the space before it, so an unset arg leaves the whole attribute out.
 const ATTRIBUTE_HOLE = String.raw`(?<attributeSpace>[ \t]*\n[ \t]*|[ \t]+)(?<attribute>[A-Za-z_][\w:-]*)=\{\s*(?<attributeValue>${ARG_PATH_PATTERN})\s*\}`;
 // `{args.x}` as a child.
@@ -32,11 +33,8 @@ const TEMPLATE_HOLE = new RegExp(
 
 type Groups = Partial<Record<string, string>>;
 
-/**
- * Fills a React story-docs template (see `buildStoryTemplate` in the component manifest) with the
- * current args, keeping the story's structure: `args.loading ? <Spinner /> : …` becomes
- * `true ? <Spinner /> : …`.
- */
+// Fills a template from `buildStoryTemplate` with the current args, keeping the story's structure:
+// `args.loading ? <Spinner /> : …` becomes `true ? <Spinner /> : …`.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   template.replace(TEMPLATE_HOLE, (...match) => {
     const [offset, , groups] = match.slice(-3) as [number, string, Groups];
@@ -94,7 +92,7 @@ function fillAttribute(space: string, name: string, path: string, args: Args) {
   return prop === undefined ? '' : `${space}${prop}`;
 }
 
-/** The end of an element whose children are `{args.children}`: ` />` when there are none. */
+// The end of an element whose children are `{args.children}`: ` />` when there are none.
 function closeElement(tag: string, args: Args): { closer: string; rest: string } {
   const children = toChildren(args.children, 'children');
   return children === ''
@@ -126,7 +124,6 @@ function toProps(values: Record<string, unknown>, omitted: ReadonlySet<string>):
   return props;
 }
 
-/** A JSX attribute for an arg, or `undefined` when an unset arg leaves it out. */
 function toProp(name: string, value: unknown): string | undefined {
   if (value === undefined || value === null) {
     return undefined;
@@ -140,7 +137,6 @@ function toProp(name: string, value: unknown): string | undefined {
   return `${name}={${printValue(value, { ...PRINT_OPTIONS, name })}}`;
 }
 
-/** An arg as JSX children: text and elements as written, anything else as an expression. */
 function toChildren(value: unknown, name: string): string {
   if (value === undefined || value === null || typeof value === 'boolean' || value === '') {
     return '';
@@ -180,7 +176,6 @@ const isElement = (value: unknown): value is ElementLike =>
   value !== null &&
   ELEMENT_TYPES.includes((value as { $$typeof?: symbol }).$$typeof!);
 
-/** A React element as the JSX that creates it, such as `<Icon size={2} />`. */
 function printElement(element: ElementLike): string {
   const name = elementName(element.type);
   const { children, ...props } = element.props ?? {};

@@ -11,14 +11,9 @@ export type StoryFunction =
 
 const ARGS = 'args';
 
-/**
- * The story as written, with every arg it reads written as `args.name` or spread as `{...args}`, for
- * the preview to fill with the current args (see `fillTemplate` in `../docs/fill-template.ts`).
- *
- * `undefined` when the story reads no args, reads them in a way the preview cannot fill, such as
- * passing `args` along whole or destructuring it with defaults, or has text that reads like an arg
- * path, which the preview would fill too; the static snippet covers those.
- */
+// The story as written, reading its args only as `args.name` and `{...args}`, for `fillTemplate`.
+// `undefined` when the preview could not fill it, such as when `args` is passed along whole or a
+// string reads like an arg path; the static snippet covers those.
 export function buildStoryTemplate(
   storyName: string,
   fnPath: NodePath<StoryFunction> | undefined,
@@ -59,10 +54,6 @@ const arrowStory = (storyName: string, body: t.BlockStatement | t.Expression, as
 type Replacement = t.Node | null | ((node: t.Node) => t.Node);
 type Replacements = Map<t.Node, Replacement>;
 
-/**
- * What to change in the story function so it reads its args only as `args.name` and `{...args}`: the
- * first parameter's references, the destructurings of it, and the elements spreading it.
- */
 function argReplacements(fnPath: NodePath<StoryFunction>): Replacements | undefined {
   const [param] = fnPath.get('params') as NodePath[];
   if (!param) {
@@ -114,7 +105,6 @@ function argReplacements(fnPath: NodePath<StoryFunction>): Replacements | undefi
   return replacements;
 }
 
-/** Drops a `const { label } = args` destructuring once its bindings read the args directly. */
 function drop(declarator: NodePath<t.VariableDeclarator>, replacements: Replacements) {
   const declaration = declarator.parentPath;
   if (!declaration.isVariableDeclaration() || !declaration.parentPath.isBlockStatement()) {
@@ -125,7 +115,6 @@ function drop(declarator: NodePath<t.VariableDeclarator>, replacements: Replacem
   return true;
 }
 
-/** Whether the identifier is spread into an element or reads a member of the args. */
 function readsArgData(reference: NodePath<t.Identifier>) {
   const { parentPath } = reference;
   if (parentPath?.isJSXSpreadAttribute()) {
@@ -140,10 +129,7 @@ function readsArgData(reference: NodePath<t.Identifier>) {
   );
 }
 
-/**
- * Replaces each binding of a `{ label, size: buttonSize }` pattern on the args with `args.label` and
- * `args.size`. Fails for patterns that cannot be written that way: defaults, rest, nesting.
- */
+// Fails for patterns that cannot be written as `args.name`: defaults, rest, nesting.
 function destructure(pattern: NodePath, replacements: Replacements): boolean {
   if (!pattern.isObjectPattern()) {
     return false;
@@ -228,11 +214,7 @@ function hasArgPathText(fnPath: NodePath<StoryFunction>) {
   return found;
 }
 
-/**
- * The element spreading the args, with its children written as `{args.children}` when it has none,
- * and the props written after the spread, which override it, listed on it so the filled spread
- * leaves them out.
- */
+// The props written after the spread override it, so the filled spread leaves them out.
 function spreadElement(element: t.JSXElement, ownReferences: ReadonlySet<t.Node>): t.JSXElement {
   const { attributes } = element.openingElement;
   const opening = {
@@ -251,7 +233,6 @@ const attributeNames = (attributes: t.JSXOpeningElement['attributes']) =>
     t.isJSXAttribute(attribute) && t.isJSXIdentifier(attribute.name) ? [attribute.name.name] : []
   );
 
-/** `{...args}`, followed by an {@link omitComment} naming the props written after it. */
 function argsSpread(omitted: readonly string[]) {
   const args = t.identifier(ARGS);
   if (omitted.length > 0) {
@@ -278,7 +259,6 @@ function withChildrenHole(element: t.JSXElement): t.JSXElement {
   };
 }
 
-/** A copy of `node` with the replacements applied; untouched subtrees stay shared. */
 function replaceNodes<T extends t.Node>(node: T, replacements: Replacements): T {
   const replacement = replacements.get(node);
   if (replacement && typeof replacement !== 'function') {

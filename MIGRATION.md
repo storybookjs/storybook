@@ -622,7 +622,7 @@ These cases keep working without changes:
 - Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
 - Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
 
-Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation:
+Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation/
 
 If you are affected, build the Storybook you want to embed with `storybook build`, and use its build output, which has no restriction. To keep embedding live `dev` content, set `security.insecureRemoteIframeEmbed` to `true` in the `.storybook/main` file of the Storybook that is being embedded:
 

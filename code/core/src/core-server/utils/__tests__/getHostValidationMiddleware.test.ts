@@ -2,6 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { getHostValidationMiddleware, isValidHost } from '../getHostValidationMiddleware.ts';
 
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:os')>();
+  const networkInterfaces = () => ({
+    lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+    eth0: [
+      { address: '10.1.2.3', family: 'IPv4', internal: false },
+      { address: 'fe80::1', family: 'IPv6', internal: false },
+    ],
+  });
+  return { ...actual, default: { ...actual, networkInterfaces }, networkInterfaces };
+});
+
 function createMockRequest(headers: Record<string, string>) {
   return { headers } as any;
 }
@@ -151,10 +163,6 @@ describe('isValidHost', () => {
     expect(isValidHost('localhost:6006', options)).toBe(true);
   });
 
-  it('returns true for 127.0.0.1 host', () => {
-    expect(isValidHost('127.0.0.1:6006', options)).toBe(true);
-  });
-
   it('when allowedHosts is undefined (default []), rejects foreign hosts', () => {
     expect(isValidHost('malicious-site.com', options)).toBe(false);
     expect(isValidHost('any-origin.example.com', options)).toBe(false);
@@ -205,17 +213,49 @@ describe('isValidHost', () => {
     expect(isValidHost('localhost:6006', strictHttpsOptions)).toBe(true);
   });
 
-  it('handles network address without port', () => {
+  it('handles a missing network address', () => {
     const optionsWithoutNetwork = {
       localAddress: 'http://localhost:6006',
     } as any;
     expect(isValidHost('localhost:6006', optionsWithoutNetwork)).toBe(true);
     const strictNoNetwork = { ...optionsWithoutNetwork, allowedHosts: [] } as any;
-    expect(isValidHost('192.168.1.100:6006', strictNoNetwork)).toBe(true);
+    expect(isValidHost('192.168.1.100:6006', strictNoNetwork)).toBe(false);
   });
 
-  it('returns true for different network IP (host-validation-middleware allows any IPv4)', () => {
-    expect(isValidHost('10.0.0.1:6006', strictOptions)).toBe(true);
+  it('rejects an IP address that is not a known address', () => {
+    expect(isValidHost('203.0.113.5:6006', strictOptions)).toBe(false);
+    expect(isValidHost('[2001:db8::5]:6006', strictOptions)).toBe(false);
+    const optionsWithHostname = { ...strictOptions, allowedHosts: ['my-app.example.com'] } as any;
+    expect(isValidHost('203.0.113.5:6006', optionsWithHostname)).toBe(false);
+  });
+
+  it('allows loopback hostnames', () => {
+    expect(isValidHost('127.0.0.1:6006', strictOptions)).toBe(true);
+    expect(isValidHost('app.localhost:6006', strictOptions)).toBe(true);
+  });
+
+  it('rejects other loopback addresses and 0.0.0.0 unless they are known', () => {
+    expect(isValidHost('127.1.2.3:6006', strictOptions)).toBe(false);
+    expect(isValidHost('[::1]:6006', strictOptions)).toBe(false);
+    expect(isValidHost('0.0.0.0:6006', strictOptions)).toBe(false);
+  });
+
+  it('allows an IP address listed in allowedHosts, in any spelling', () => {
+    const optionsWithIps = { ...strictOptions, allowedHosts: ['10.0.0.9', '[2001:db8::1]'] } as any;
+    expect(isValidHost('10.0.0.9:6006', optionsWithIps)).toBe(true);
+    expect(isValidHost('[2001:DB8:0:0:0:0:0:1]:6006', optionsWithIps)).toBe(true);
+    expect(isValidHost('10.0.0.10:6006', optionsWithIps)).toBe(false);
+  });
+
+  it('allows the IP address passed via --host', () => {
+    const optionsWithIpHost = { host: '10.0.0.5', allowedHosts: [] } as any;
+    expect(isValidHost('10.0.0.5:6006', optionsWithIpHost)).toBe(true);
+    expect(isValidHost('10.0.0.6:6006', optionsWithIpHost)).toBe(false);
+  });
+
+  it('allows the addresses of this machine', () => {
+    expect(isValidHost('10.1.2.3:6006', strictOptions)).toBe(true);
+    expect(isValidHost('[fe80::1]:6006', strictOptions)).toBe(true);
   });
 
   it('returns true when request host is in allowedHosts', () => {
@@ -281,5 +321,17 @@ describe('isValidHost', () => {
     expect(isValidHost('my-app.example.com:8443', optionsWithAllowed)).toBe(true);
     expect(isValidHost('other.example.com:8080', optionsWithAllowed)).toBe(true);
     expect(isValidHost('other-site.com:8080', optionsWithAllowed)).toBe(false);
+  });
+
+  it('allows the hostname passed via --host', () => {
+    const optionsWithHostname = {
+      host: 'my-host.com',
+      localAddress: 'http://localhost:6006/',
+      networkAddress: 'http://my-host.com:6006/',
+      allowedHosts: [],
+    } as any;
+    expect(isValidHost('my-host.com:6006', optionsWithHostname)).toBe(true);
+    expect(isValidHost('my-host.com', optionsWithHostname)).toBe(true);
+    expect(isValidHost('other-host.com:6006', optionsWithHostname)).toBe(false);
   });
 });

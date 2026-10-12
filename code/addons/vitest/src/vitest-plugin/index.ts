@@ -340,6 +340,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const projectId = oneWayHash(finalOptions.configDir);
 
+      const userBrowserApi = testConfig?.browser?.api;
+      const browserApi =
+        typeof userBrowserApi === 'number' ? { port: userBrowserApi } : userBrowserApi;
+
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
@@ -412,6 +416,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   screenshotFailures: false,
                 }
               : {}),
+
+            // Story code runs in the browser, and Vitest otherwise lets it write files and run
+            // commands in Node through the browser API whenever the server is bound to loopback.
+            api: {
+              ...browserApi,
+              allowWrite: browserApi?.allowWrite ?? false,
+              allowExec: browserApi?.allowExec ?? false,
+            },
 
             // Inject the cursor reset command we use to prevent accidental hover states when running
             // Storybook tests in Chromium on Linux. There is a known race condition / special code path

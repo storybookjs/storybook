@@ -1,6 +1,8 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
@@ -61,6 +63,11 @@
     - [`<Template>` component](#template-component)
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
+  - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
+- [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
+  - [Highlight: menu items emit a fixed event and require an `id`](#highlight-menu-items-emit-a-fixed-event-and-require-an-id)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Angular Vite: a new `propsTable` framework option](#angular-vite-a-new-propstable-framework-option)
@@ -117,6 +124,10 @@
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
+- [From version 9.1.20 to 9.1.21](#from-version-9120-to-9121)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-2)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-2)
+  - [Highlight: menu items emit a fixed event and require an `id`](#highlight-menu-items-emit-a-fixed-event-and-require-an-id-1)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -163,6 +174,10 @@
     - [Next.js: Require v14 and up](#nextjs-require-v14-and-up)
     - [Next.js: Vite builder stabilized](#nextjs-vite-builder-stabilized)
     - [Lit = Require v3 and up](#lit--require-v3-and-up)
+- [From version 8.6.18 to 8.6.19](#from-version-8618-to-8619)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-3)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-3)
+  - [Highlight: menu items emit a fixed event and require an `id`](#highlight-menu-items-emit-a-fixed-event-and-require-an-id-2)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -596,13 +611,79 @@
 
 ## From version 10.x to 11.0.0
 
+### `storybook dev` now blocks remote iframe embedding
+
+`storybook dev` now sends a [`Content-Security-Policy: frame-ancestors`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors) header with every response, for both the manager and the preview. Only Storybook itself and pages served from `localhost` or `127.0.0.1` can embed the dev server in an `<iframe>`. This prevents a malicious website from embedding your local Storybook and interacting with it.
+
+These cases keep working without changes:
+
+- Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
+- Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
+- Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
+
+Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation:
+
+If you are affected, build the Storybook you want to embed with `storybook build`, and use its build output, which has no restriction. To keep embedding live `dev` content, set `security.insecureRemoteIframeEmbed` to `true` in the `.storybook/main` file of the Storybook that is being embedded:
+
+```ts
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  // ...
+  security: {
+    insecureRemoteIframeEmbed: true,
+  },
+};
+
+export default config;
+```
+
+Composing live `dev` content from another origin also requires `security.insecureIframeMessaging`, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+With this option enabled, any website you visit can embed your local Storybook. Avoid leaving it on for longer than strictly necessary.
+
+### Storybook now restricts iframe messaging
+
+The manager and its preview iframes exchange messages with `postMessage`. The manager now only accepts messages from its own preview iframes. In `storybook dev`, the preview also only accepts messages from its own origin and from a manager served from `localhost` or `127.0.0.1`, and both address their messages to the expected origin instead of `*`. This prevents a malicious website from embedding your Storybook and exchanging messages with it.
+
+These cases keep working without changes:
+
+- Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
+- Composing a built and published Storybook
+
+These cases are affected:
+
+- Composing a live `dev` Storybook from a page served from any origin other than `localhost` or `127.0.0.1`
+- In `storybook dev`, composing a Storybook that serves no `index.json` and whose `refs` URL redirects to another origin, for example from `http://` to `https://` (use the final URL in `refs` instead)
+
+If you are affected, build the Storybook you want to compose with `storybook build`, and compose its build output, which accepts messages from any origin. To keep composing live `dev` content, set `security.insecureIframeMessaging` to `true` in the `.storybook/main` file of the Storybook that is being composed:
+
+```ts
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  // ...
+  security: {
+    insecureIframeMessaging: true,
+  },
+};
+
+export default config;
+```
+
+Composing live `dev` content from another origin also requires `security.insecureRemoteIframeEmbed`, see [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+With this option enabled, any website that embeds your Storybook can exchange messages with it. Avoid leaving it on for longer than strictly necessary.
+
 ### Legacy highlight object format removed
 
 The legacy highlight payload `{ elements, color, style }` is no longer accepted by the `HIGHLIGHT` event. Senders must use the current format, which targets elements with `selectors` and controls their appearance with `styles`:
 
-| Removed | Replacement |
-| --- | --- |
-| `elements` | `selectors` |
+| Removed             | Replacement                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| `elements`          | `selectors`                                                     |
 | `color` and `style` | `styles` (CSS properties, e.g. `{ outline: '2px dashed red' }`) |
 
 ```diff
@@ -1693,6 +1774,55 @@ Storybook used to run the preprocessors from `svelte.config.js` on a stories fil
 
 If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
 
+### Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`
+
+Highlight menu items no longer accept a `clickEvent` property naming an arbitrary channel event to emit when clicked. This allowed malicious websites to inject menu items into a preview that could send security-sensitive events to the dev server.
+
+> [!IMPORTANT]
+> If you use the Visual Tests addon, update it to version 5.4.1 or more recent.
+
+Instead of `clickEvent`, menu items now accept a `clickable` property. When clicked, menu items emit a `HIGHLIGHT_MENU_CLICK` event, which still lets addon authors implement a callback, but not emit arbitrary events. Addon authors must now pass an `id` property to `HIGHLIGHT`, which is passed back to `HIGHLIGHT_MENU_CLICK` so listeners can ignore clicks on other addons' menu items.
+
+```diff
+- import { HIGHLIGHT } from 'storybook/highlight';
++ import { HIGHLIGHT, HIGHLIGHT_MENU_CLICK } from 'storybook/highlight';
+
+  emit(HIGHLIGHT, {
++   id: 'my-highlight',
+    selectors: ['h2'],
+-   menu: [[{ id: 'details', title: 'Show details', clickEvent: 'my-addon/show-details' }]],
++   menu: [[{ id: 'details', title: 'Show details', clickable: true }]],
+  });
+
+- channel.on('my-addon/show-details', (itemId, details) => { ... });
++ channel.on(HIGHLIGHT_MENU_CLICK, (highlightId, itemId, details) => {
++   if (highlightId !== 'my-highlight') return;
++   ...
++ });
+```
+
+The `element` property of the `ClickEventDetails` payload no longer includes the clicked element's `outerHTML` and `attributes`, since they can carry content from the story. It keeps `tagName` and `localName`, and the payload still contains the element's position, dimensions and the matching `selectors`. Every `HIGHLIGHT` payload must now carry a string `id`. Payloads without one are ignored with a warning in the browser console.
+
+## From version 10.6.1 to 10.6.2
+
+### `storybook dev` now blocks remote iframe embedding
+
+Storybook 10.6.3 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+
+To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+### Storybook now restricts iframe messaging
+
+Storybook 10.6.3 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+
+To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+### Highlight: menu items emit a fixed event and require an `id`
+
+Storybook 10.6.3 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+
+See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
+
 ## From version 10.5.x to 10.6.0
 
 ### Vue 3: `vue-docgen-api` is deprecated
@@ -2298,6 +2428,26 @@ export const core = {
 #### Removed x-only builtin tags
 
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+## From version 9.1.20 to 9.1.21
+
+### `storybook dev` now blocks remote iframe embedding
+
+Storybook 9.1.21 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+
+To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+### Storybook now restricts iframe messaging
+
+Storybook 9.1.21 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+
+To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+### Highlight: menu items emit a fixed event and require an `id`
+
+Storybook 9.1.21 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+
+See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
 
 ## From version 8.x to 9.0.0
 
@@ -3038,6 +3188,26 @@ export default {
 #### Lit = Require v3 and up
 
 The minimum supported version is now v3.
+
+## From version 8.6.18 to 8.6.19
+
+### `storybook dev` now blocks remote iframe embedding
+
+Storybook 8.6.19 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+
+To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+### Storybook now restricts iframe messaging
+
+Storybook 8.6.19 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+
+To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+### Highlight: menu items emit a fixed event and require an `id`
+
+Storybook 8.6.19 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+
+See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
 
 ## From version 8.5.x to 8.6.x
 

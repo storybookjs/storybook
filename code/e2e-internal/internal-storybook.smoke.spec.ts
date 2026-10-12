@@ -30,4 +30,12 @@ test.describe('internal Storybook UI', () => {
       timeout: PREVIEW_STORY_TIMEOUT,
     });
   });
+
+  test('restricts which pages can embed the manager and the preview', async ({ request }) => {
+    const manager = await request.get(`${storybookUrl}/`);
+    expect(manager.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
+
+    const preview = await request.get(`${storybookUrl}/iframe.html`);
+    expect(preview.headers()['content-security-policy']).toContain("frame-ancestors 'self'");
+  });
 });

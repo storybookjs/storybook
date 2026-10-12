@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
@@ -50,7 +51,7 @@ afterEach(() => {
 });
 
 /** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
-async function getPluginConfig(invokingRoot: string) {
+async function getPluginConfig(invokingRoot: string, inputTestConfig?: InlineConfig) {
   const plugins = await storybookTest({ configDir: CONFIG_DIR });
   const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
 
@@ -67,7 +68,7 @@ async function getPluginConfig(invokingRoot: string) {
         throw new Error(String(message));
       },
     },
-    { root: invokingRoot },
+    { root: invokingRoot, test: inputTestConfig },
     { command: 'serve', mode: 'development' }
   );
 
@@ -117,5 +118,27 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
+  });
+});
+
+describe('browser API permissions', () => {
+  it('disallows file writes and command execution from the browser by default', async () => {
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { browser: { enabled: true } });
+
+    expect(test.browser?.api).toEqual({ allowWrite: false, allowExec: false });
+  });
+
+  it('keeps a browser API port given as a number', async () => {
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { browser: { api: 63400 } });
+
+    expect(test.browser?.api).toEqual({ port: 63400, allowWrite: false, allowExec: false });
+  });
+
+  it('keeps permissions the user set explicitly', async () => {
+    const { test } = await getPluginConfig(PACKAGE_ROOT, {
+      browser: { api: { host: '127.0.0.1', allowWrite: true, allowExec: true } },
+    });
+
+    expect(test.browser?.api).toEqual({ host: '127.0.0.1', allowWrite: true, allowExec: true });
   });
 });

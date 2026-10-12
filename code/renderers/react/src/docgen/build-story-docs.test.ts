@@ -87,6 +87,37 @@ describe('buildStoryDocsPayload', () => {
     expect(primaryStory!.snippet).toMatch(/<Button label="hi"/);
   });
 
+  it('carries a template for the preview to fill next to the static snippet', async () => {
+    tempDir = createTempDir('story-docs-build');
+
+    const files = writeFiles(tempDir, {
+      'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string; primary?: boolean }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = { args: { label: 'Save', primary: true } };
+        export const Fixed = () => <Button label="Fixed" />;
+      `,
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    const { primary, fixed } = Object.fromEntries(
+      Object.values(payload!.stories).map((story) => [story.name.toLowerCase(), story])
+    );
+    expect(primary).toMatchObject({
+      snippet: 'const Primary = () => <Button label="Save" primary />;',
+      template: 'const Primary = () => <Button {...args}>{args.children}</Button>;',
+    });
+    expect(fixed!.template).toBeUndefined();
+  });
+
   it('reflects edited story args after the story file changes on disk', async () => {
     tempDir = createTempDir('story-docs-build');
 

@@ -11,6 +11,8 @@ import {
   type StoryArgsResolver,
 } from 'storybook/internal/csf-tools';
 
+import { isJsxAttributeName } from '../docs/template-format.ts';
+import { type StoryFunction, buildStoryTemplate } from './storyTemplate.ts';
 import { invariant } from './utils.ts';
 
 function renderFunctionOf(resolution: RenderResolution) {
@@ -27,6 +29,8 @@ export interface CodeSnippet {
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
+  /** The story with its arg references kept, for the preview to fill; see `StoryDoc.template`. */
+  template?: t.VariableDeclaration | t.FunctionDeclaration;
 }
 
 export function getCodeSnippet(
@@ -36,20 +40,22 @@ export function getCodeSnippet(
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
+  const fnPath = findStoryFunction(csf, storyName, resolver.ctx);
+  const template = buildStoryTemplate(storyName, fnPath, componentName);
   return {
-    node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
+    node: buildSnippetNode(storyName, fnPath?.node, componentName, args),
     imports,
     unresolved,
+    ...(template ? { template } : {}),
   };
 }
 
-function buildSnippetNode(
+/** The story function itself, its own `render`, or the meta `render` it falls back to. */
+function findStoryFunction(
   csf: CsfFile,
   storyName: string,
-  componentName: string | undefined,
-  merged: Record<string, t.Node>,
   ctx: ReferenceContext
-): t.VariableDeclaration | t.FunctionDeclaration {
+): NodePath<StoryFunction> | undefined {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
 
   if (!storyDeclaration) {
@@ -59,12 +65,7 @@ function buildSnippetNode(
 
   const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
 
-  // Find a function (explicit story fn or render())
-  let storyFn:
-    | NodePath<
-        t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
-      >
-    | undefined;
+  let storyFn: NodePath<StoryFunction> | undefined;
 
   if (normalizedStory.type === 'fn') {
     storyFn = normalizedStory.path;
@@ -85,16 +86,23 @@ function buildSnippetNode(
       (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
 
+  return storyFn;
+}
+
+function buildSnippetNode(
+  storyName: string,
+  fn: StoryFunction | undefined,
+  componentName: string | undefined,
+  merged: Record<string, t.Node>
+): t.VariableDeclaration | t.FunctionDeclaration {
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
-  const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
-  const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
+  const validEntries = entries.filter(([k, v]) => isJsxAttributeName(k) && v != null);
+  const invalidEntries = entries.filter(([k, v]) => !isJsxAttributeName(k) && v != null);
   const injectedAttrs = validEntries.map(([k, v]) => toAttr(k, v)).filter((a) => a != null);
 
   // If we have a function, transform returned JSX
-  if (storyFn) {
-    const fn = storyFn.node;
-
+  if (fn) {
     if (t.isArrowFunctionExpression(fn) && (t.isJSXElement(fn.body) || t.isJSXFragment(fn.body))) {
       const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
       const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
@@ -182,12 +190,6 @@ function buildSnippetNode(
   return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
 }
 
-type StoryFunction =
-  | t.ArrowFunctionExpression
-  | t.FunctionExpression
-  | t.FunctionDeclaration
-  | t.ObjectMethod;
-
 /**
  * Parameters the rewritten story function still needs.
  *
@@ -229,8 +231,6 @@ function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpre
   );
   return t.jsxSpreadAttribute(t.objectExpression(objectProps));
 }
-
-const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
 
 const toAttr = (key: string, value: t.Node) => {
   if (t.isBooleanLiteral(value)) {
@@ -380,8 +380,8 @@ function transformArgsSpreadsInJsx(
     existing: ReadonlySet<string>
   ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
     const entries = Object.entries(merged).filter(([k, v]) => v != null && k !== 'children');
-    const validEntries = entries.filter(([k]) => isValidJsxAttrName(k));
-    const invalidEntries = entries.filter(([k]) => !isValidJsxAttrName(k));
+    const validEntries = entries.filter(([k]) => isJsxAttributeName(k));
+    const invalidEntries = entries.filter(([k]) => !isJsxAttributeName(k));
 
     const injectedAttrs = validEntries
       .map(([k, v]) => toAttr(k, v))

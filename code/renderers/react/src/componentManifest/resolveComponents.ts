@@ -9,6 +9,8 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
+import type { StoryDoc } from 'storybook/internal/types';
+
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
@@ -135,16 +137,7 @@ export async function resolveStoryFileComponents(options: {
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */
-export interface ResolvedStory {
-  id: string;
-  name: string;
-  snippet?: string;
-  description?: string;
-  summary?: string;
-  /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
-  warning?: string;
-  error?: { name: string; message: string };
-}
+export type ResolvedStory = StoryDoc;
 
 /** Every story's snippet, plus the imports they need beyond the components in the file. */
 export interface ExtractedStorySnippets {
@@ -182,6 +175,7 @@ export function extractStorySnippets(
           id: story.id,
           name,
           snippet: recast.print(snippet.node).code,
+          ...(snippet.template ? { template: recast.print(snippet.template).code } : {}),
           description,
           summary,
           ...(warning ? { warning } : {}),

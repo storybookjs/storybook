@@ -3,6 +3,7 @@ import {
   type FillSnippetTemplate,
   type PrintValueOptions,
   layoutAttributes,
+  lineIndent,
   printArgPath,
   printValue,
   resolveArgPath,
@@ -19,6 +20,7 @@ const ARG_PATH = new RegExp(ARG_PATH_PATTERN, 'g');
 const WHOLE_ARG_PATH = new RegExp(String.raw`^\s*(${ARG_PATH_PATTERN})\s*$`);
 const DIRECTIVE = /^(?::|@|#|v-)/;
 const BINDING = /^(?::|v-bind:|@|v-on:)[\w:-]+$/;
+const BOUND_PROP = /^(?::|v-bind:)(.+)$/;
 // Vue lets the later of an attribute and `v-bind="args"` win, but keeps listeners, v-models, slots,
 // `class` and `style` from both.
 const KEPT_FROM_BOTH = /^(?:@|v-on:|v-model|#|v-slot|(?::|v-bind:)?(?:class|style)$)/;
@@ -234,7 +236,11 @@ function fillElement(element: Element, code: string, args: Args, edits: Edit[]) 
     .map((slot) => slotLines(slot, args[slot], `${indent}  `))
     .join('');
   const opens = slotContent !== '' && element.closer.includes('/');
-  const closer = opens ? element.closer.replace(/ *\/>$/, '>') : element.closer;
+  let { closer } = element;
+  if (opens) {
+    // A `/>` on its own line keeps its indentation.
+    closer = closer.includes('\n') ? closer.replace('/>', '>') : '>';
+  }
 
   const [first, ...after] = attributes.slice(spreadIndex);
   const following = after.flatMap((attribute) => {
@@ -271,6 +277,10 @@ function fillElement(element: Element, code: string, args: Args, edits: Edit[]) 
 
 // A slot arg as the snippet writes it in the element, on lines of their own, or `''` when unset.
 function slotLines(slot: string, value: unknown, indent: string): string {
+  // A slot function renders what it returns, which the snippet cannot know.
+  if (typeof value === 'function') {
+    throw new UnprintableArgError(slot);
+  }
   const content = isUnset(value)
     ? ''
     : (toText(value, slot) ??
@@ -303,7 +313,7 @@ function fillAttribute({ name, value, quote, text }: Attribute, args: Args): str
 
 // `:label="args.label"` reads `label="Hi"`, and `@click="args.onClick"` reads `@click="onClick"`.
 function fillBinding(name: string, value: unknown, key: string): string | undefined {
-  const prop = /^(?::|v-bind:)(.+)$/.exec(name)?.[1];
+  const prop = BOUND_PROP.exec(name)?.[1];
   if (prop !== undefined) {
     return toAttribute(prop, value);
   }
@@ -320,12 +330,9 @@ function spreadAttributes(args: Args, written: ReadonlySet<string>): [string, st
     if (written.has(name) || isUnset(value)) {
       continue;
     }
-    if (typeof value === 'function') {
-      // Other functions are slots or function props, which the template writes out itself.
-      if (/^on[A-Z]/.test(name)) {
-        const event = name.charAt(2).toLowerCase() + name.slice(3);
-        listeners.push([name, `@${event}="${printInAttribute(value, name)}"`]);
-      }
+    if (typeof value === 'function' && /^on[A-Z]/.test(name)) {
+      const event = name.charAt(2).toLowerCase() + name.slice(3);
+      listeners.push([name, `@${event}="${printInAttribute(value, name)}"`]);
     } else if (/^[A-Za-z_][\w:-]*$/.test(name)) {
       props.push([name, toAttribute(name, value)!]);
     } else {
@@ -379,6 +386,9 @@ function printH(vnode: VNode, options: PrintValueOptions): string {
   const content = contentOf(vnode, options.name);
   const nested = { ...options, name: undefined };
   const { type, props } = vnode;
+  if (typeof type === 'symbol') {
+    throw new UnprintableArgError(options.name ?? 'value');
+  }
   const printed = [typeof type === 'string' ? printValue(type, nested) : componentName(type)];
   if (content !== undefined) {
     printed.push(printValue(props, nested), printValue(content, nested));
@@ -473,7 +483,7 @@ function argsOfAttribute(attribute: string): string[] {
   if (slot !== undefined) {
     return [slot];
   }
-  const prop = /^(?::|v-bind:)(.+)$/.exec(name)?.[1] ?? (name.startsWith('v-') ? undefined : name);
+  const prop = BOUND_PROP.exec(name)?.[1] ?? (name.startsWith('v-') ? undefined : name);
   return prop === undefined ? [] : [prop, camelize(prop)];
 }
 
@@ -482,9 +492,6 @@ function slotName(attribute: string): string | undefined {
   const slot = /^(?:#|v-slot:?)(.*)$/.exec(attribute);
   return slot ? slot[1] || 'default' : undefined;
 }
-
-const lineIndent = (code: string, offset: number) =>
-  /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n', offset - 1) + 1))![0];
 
 const isSlotTemplate = ({ tag, attributes }: Element) =>
   tag === 'template' && attributes.some(({ name }) => slotName(name) !== undefined);

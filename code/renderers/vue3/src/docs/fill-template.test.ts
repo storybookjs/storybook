@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
-import { defineComponent, h } from 'vue';
+import { Fragment, createTextVNode, defineComponent, h } from 'vue';
 
 import { fillTemplate } from './fill-template.ts';
 
@@ -152,7 +152,7 @@ describe('fillTemplate', () => {
       );
     });
 
-    it('leaves out unset args, empty strings and functions that are not listeners', () => {
+    it('leaves out unset args and empty strings, and binds a function prop by its name', () => {
       expect(
         fillTemplate(sfc('  <Button v-bind="args" />'), {
           label: undefined,
@@ -162,7 +162,7 @@ describe('fillTemplate', () => {
         })
       ).toMatchInlineSnapshot(`
         "<template>
-          <Button :icon="null" />
+          <Button :icon="null" :render="render" />
         </template>"
       `);
     });
@@ -216,6 +216,31 @@ describe('fillTemplate', () => {
       `);
     });
 
+    it('throws for a slot function, whose content the snippet cannot know', () => {
+      expect(() =>
+        fillTemplate(sfc('  <Panel v-bind="args /* slots: header */" />'), { header: () => 'Head' })
+      ).toThrow(UnprintableArgError);
+    });
+
+    it('keeps the indentation of a closing tag on its own line when slot content opens it', () => {
+      expect(
+        fillTemplate(sfc('  <Panel\n    v-bind="args /* slots: header */"\n  />'), {
+          label: 'Go',
+          header: 'Head',
+        })
+      ).toMatchInlineSnapshot(`
+        "<template>
+          <Panel
+            label="Go"
+          >
+            <template #header>
+              Head
+            </template>
+          </Panel>
+        </template>"
+      `);
+    });
+
     it('adds the slots the spread names after the content the element writes', () => {
       expect(
         fillTemplate(
@@ -252,7 +277,7 @@ describe('fillTemplate', () => {
       `);
     });
 
-    it('throws for a VNode whose content is a slot function, which it cannot print', () => {
+    it('throws for a VNode with a slot function, and for a fragment or text in an h() call', () => {
       const Icon = defineComponent({ name: 'Icon', setup: () => () => null });
       const template = sfc('  <Button v-bind="args">\n    {{ args.default }}\n  </Button>');
       expect(() => fillTemplate(template, { default: h(Icon, null, () => 'Inner') })).toThrow(
@@ -261,6 +286,12 @@ describe('fillTemplate', () => {
       expect(() =>
         fillTemplate(template, { icon: h(Icon, null, { default: () => 'Inner' }) })
       ).toThrow(UnprintableArgError);
+      expect(() => fillTemplate(template, { icon: h(Fragment, null, ['a']) })).toThrow(
+        UnprintableArgError
+      );
+      expect(() => fillTemplate(template, { icon: createTextVNode('a') })).toThrow(
+        UnprintableArgError
+      );
     });
   });
 

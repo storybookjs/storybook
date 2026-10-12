@@ -384,6 +384,7 @@ describe('vue3 live templates', () => {
           <BasicButton
             :as="Badge"
             :both="'It\\'s &quot;fine&quot;'"
+            :format="format"
             :icon="h(Icon, { size: 2 })"
             label='Say "hi"'
             :lines="'one\\ntwo'"

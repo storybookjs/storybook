@@ -1,5 +1,4 @@
-// The `v-bind="args"` of a live snippet template, which the story-docs provider writes and
-// `fillTemplate` reads. It names the component's slots, so a slot arg fills in as slot content:
+// The live template's args spread, naming the slots a slot arg fills in as content:
 // `v-bind="args /* slots: default, header */"`.
 export const argsSpread = (slots: readonly string[]) =>
   `v-bind="args${slots.length > 0 ? ` /* slots: ${slots.join(', ')} */` : ''}"`;

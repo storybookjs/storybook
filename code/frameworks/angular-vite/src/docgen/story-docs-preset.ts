@@ -6,7 +6,7 @@ import type { StoryDocsProviderPreset } from 'storybook/internal/types';
 import type { AngularDocgenPayload } from './build-docgen.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
-// `core/docgen` is only registered when `experimentalDocgenServer` set up its worker (see
+// `core/docgen` is only registered when `docgenServer` set up its worker (see
 // `common-preset.ts`); both services are gated by the same feature, but registration order isn't
 // a type-level guarantee, so this stays defensive rather than asserting the service exists.
 let warnedMissingDocgenService = false;

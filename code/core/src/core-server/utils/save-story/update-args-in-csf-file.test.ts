@@ -285,6 +285,15 @@ describe('success', () => {
       + 
           },
         });
+        export const Typed = meta.type<{ args: { icon: string } }>().story({
+          args: {
+            icon: "star",
+        
+      +     bordered: true,
+      +     initial: "test1",
+      + 
+          },
+        });
         "
     `);
   });

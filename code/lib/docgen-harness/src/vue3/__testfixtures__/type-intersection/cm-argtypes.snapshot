@@ -1,6 +1,5 @@
 {
   "mixed": {
-    "defaultValue": undefined,
     "description": "Combined shape contributed by the intersection.",
     "name": "mixed",
     "table": {

@@ -4,9 +4,19 @@ Per-story snippets, descriptions, and file-level import statements for docs page
 panel, and the components HTML debugger. Component prop docgen lives in the sibling `core/docgen`
 service.
 
-When `experimentalDocgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits static
+When `docgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits static
 snippets to the manager Code panel via `SNIPPET_RENDERED`, replacing renderer `jsxDecorator` while
 preserving `parameters.docs.source.transform` handling in preview.
+
+## Components spread over several story files
+
+CSF files that share a `title` share a component id. The service extracts each of those files
+once and returns their stories in one payload, in story-index order. `id`, `name`, and `path` come
+from the file the component selection picks, which is also the only file `core/docgen` reads.
+
+`import` describes one file, so such a payload leaves it unset and each snippet carries the import
+block of its own file. A file whose extraction throws keeps its stories in the payload, each with
+that `error`; a file the provider returns nothing for contributes no stories.
 
 ## Import snippets
 

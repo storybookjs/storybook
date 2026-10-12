@@ -6,7 +6,7 @@ import { SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { esMain } from './utils/esmain.ts';
 
 type RunOptions = {
-  template?: string;
+  template: string;
 };
 
 // Get sandbox directory from template name

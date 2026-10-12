@@ -141,10 +141,10 @@ export interface InputType {
   /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];
   /**
-   * @deprecated Use `table.defaultValue.summary` instead.
-   * @see https://storybook.js.org/docs/api/arg-types#defaultvalue
+   * Removed. Set the story value with `args`, or the docs-table text with `table.defaultValue`.
+   * The index signature would otherwise still accept this field.
    */
-  defaultValue?: any;
+  defaultValue?: never;
   [key: string]: any;
 }
 
@@ -270,12 +270,20 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
 export interface Canvas extends BoundFunctions<typeof queries> {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
+  extends
+    Omit<StoryContextForEnhancers<TRenderer, TArgs>, 'argTypes'>,
+    Required<StoryContextUpdate<TArgs>> {
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];
   hooks: unknown;
-  originalStoryFn: ArgsStoryFn<TRenderer>;
+  // Declared as a method rather than `originalStoryFn: ArgsStoryFn<TRenderer>`: as a property, the
+  // context parameter would make StoryContext invariant in TRenderer, so a generic
+  // PlayFunction<Renderer> could no longer be assigned to a framework-specific story.
+  originalStoryFn(
+    args: Args,
+    context: StoryContextForRender<TRenderer>
+  ): (TRenderer & { T: Args })['storyResult'];
   viewMode: ViewMode;
   step: StepFunction<TRenderer, TArgs>;
   context: this;
@@ -283,6 +291,19 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   userEvent: ReturnType<typeof userEvent.setup>;
   mount: TRenderer['mount'];
   reporting: ReportingAPI;
+}
+
+/**
+ * The story context as decorators and render functions receive it.
+ *
+ * Unlike the context passed to loaders, `beforeEach`, `play` and `afterEach`, it carries the
+ * story's `argTypes`, because renderers read them while rendering.
+ */
+export interface StoryContextForRender<
+  TRenderer extends Renderer = Renderer,
+  TArgs = Args,
+> extends StoryContext<TRenderer, TArgs> {
+  argTypes: StrictArgTypes<TArgs>;
 }
 
 /** @deprecated Use {@link StoryContext} instead. */
@@ -319,13 +340,13 @@ export type PartialStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> 
 
 // This is a passArgsFirst: false user story function
 export type LegacyStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: StoryContext<TRenderer, TArgs>
+  context: StoryContextForRender<TRenderer, TArgs>
 ) => TRenderer['storyResult'];
 
 // This is a passArgsFirst: true user story function
 export type ArgsStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   args: TArgs,
-  context: StoryContext<TRenderer, TArgs>
+  context: StoryContextForRender<TRenderer, TArgs>
 ) => (TRenderer & { T: TArgs })['storyResult'];
 
 // This is either type of user story function
@@ -335,7 +356,7 @@ export type StoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> =
 
 export type DecoratorFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   fn: PartialStoryFn<TRenderer, TArgs>,
-  c: StoryContext<TRenderer, TArgs>
+  c: StoryContextForRender<TRenderer, TArgs>
 ) => TRenderer['storyResult'];
 
 export type DecoratorApplicator<TRenderer extends Renderer = Renderer, TArgs = Args> = (
@@ -377,8 +398,8 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
-   * arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name` and `description`. These get
+   * automatically filled in by Storybook Docs.
    *
    * @see [ArgTypes](https://storybook.js.org/docs/api/arg-types)
    */

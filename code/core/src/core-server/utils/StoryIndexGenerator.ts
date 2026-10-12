@@ -9,7 +9,7 @@ import {
   normalizeStoryPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
@@ -37,7 +37,7 @@ import * as TsconfigPaths from 'tsconfig-paths';
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
 import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
 import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
-import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
+import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -71,6 +71,7 @@ export type StoryIndexGeneratorOptions = {
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
   features?: StorybookConfigRaw['features'];
+  storySorts?: StorybookConfigRaw['storySorts'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -787,7 +788,7 @@ export class StoryIndexGenerator {
 
       const sorted = await this.sortStories(
         indexEntries,
-        previewCode && getStorySortParameter(previewCode)
+        combineStorySorts(this.options.storySorts ?? [])
       );
 
       this.lastStats = stats;
@@ -889,7 +890,16 @@ export class StoryIndexGenerator {
     if (previewCode) {
       try {
         const projectAnnotations = loadConfig(previewCode).parse();
-        projectTags = projectAnnotations.getFieldValue(['tags']) ?? [];
+        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        invariant(
+          !projectAnnotations.mutationDiagnostics.some(
+            ({ code }) => code === 'unsupported-value'
+          ) &&
+            Array.isArray(tags) &&
+            tags.every((tag) => typeof tag === 'string'),
+          'Preview tags must be a static array of strings'
+        );
+        projectTags = tags;
       } catch (err) {
         once.warn(dedent`
           Unable to parse tags from project configuration. If defined, tags should be specified inline, e.g.

@@ -2,8 +2,7 @@
  * Minimal external store for the open-service sync demo stories.
  *
  * Each story mirrors its service state into one of these so the rendered demo can subscribe with
- * `useSyncExternalStore`. Extracted so the local-command, remote-command, and static-load stories
- * share one implementation instead of re-deriving the same listener set in every file.
+ * `useSyncExternalStore`. Shared by the local-command, remote-command, and static-load stories.
  */
 export type DemoStore<T> = {
   /** Reads the current value; pass as both `getSnapshot` and `getServerSnapshot`. */

@@ -14,11 +14,11 @@ const { document } = global;
 const PREPARING_DELAY = 100;
 
 enum Mode {
-  'MAIN' = 'MAIN',
-  'NOPREVIEW' = 'NOPREVIEW',
-  'PREPARING_STORY' = 'PREPARING_STORY',
-  'PREPARING_DOCS' = 'PREPARING_DOCS',
-  'ERROR' = 'ERROR',
+  MAIN = 'MAIN',
+  NOPREVIEW = 'NOPREVIEW',
+  PREPARING_STORY = 'PREPARING_STORY',
+  PREPARING_DOCS = 'PREPARING_DOCS',
+  ERROR = 'ERROR',
 }
 const classes: Record<Mode, string> = {
   PREPARING_STORY: 'sb-show-preparing-story',

@@ -336,7 +336,8 @@ export class PostMessageTransport implements ChannelTransport {
   }
 
   // A channel message reaches the manager only from a preview iframe it rendered itself: the local
-  // preview or a composed ref. `event.source` is set by the browser and cannot be forged.
+  // preview or a composed ref. `event.source` is set by the browser and cannot be forged, but it
+  // survives navigation, so in dev mode the message must also come from the origin the iframe was given.
   private isAllowedToContactManager(rawEvent: MessageEvent): boolean {
     const senderFrame = rawEvent.source
       ? Array.from(document.querySelectorAll('iframe')).find(
@@ -344,7 +345,22 @@ export class PostMessageTransport implements ChannelTransport {
         )
       : undefined;
     if (senderFrame?.hasAttribute('data-is-storybook')) {
-      return true;
+      if (!this.pinsTargetOrigin) {
+        return true;
+      }
+      const expectedOrigin = this.getIframeTargetOrigin(senderFrame);
+      if (expectedOrigin === '*' || expectedOrigin === rawEvent.origin) {
+        return true;
+      }
+      this.warnOnceAboutRejectedSender(
+        rawEvent,
+        `Ignored Storybook channel message from a registered preview iframe that is on origin ` +
+          `"${rawEvent.origin}" instead of "${expectedOrigin}". While it runs in dev mode, the manager ` +
+          `only accepts channel messages from the origin each preview iframe was given, so a page the ` +
+          `iframe navigated to cannot send them. To accept messages from any origin, set ` +
+          `"security.insecureIframeMessaging" to true.`
+      );
+      return false;
     }
     this.warnOnceAboutRejectedSender(
       rawEvent,

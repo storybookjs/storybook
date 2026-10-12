@@ -281,7 +281,7 @@ export function writeStoriesStep(
 
     **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
 
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests.
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests. If a component already has a story file, add your stories to that file instead of writing a second one.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes. This way, anything not yet verified — including stories you ran out of time to fix — stays correctly marked.
 
@@ -332,7 +332,7 @@ export function writeStoriesWithAllowedFailuresStep(
 
     **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
 
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests.
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests. If a component already has a story file, add your stories to that file instead of writing a second one.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes, and you will leave the tag if the file is not fully functional at the end of your self-healing loop.
 

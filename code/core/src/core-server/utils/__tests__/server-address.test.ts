@@ -35,13 +35,13 @@ const mockedOs = vi.mocked(os);
 describe('getServerAddresses', () => {
   it('builds addresses with a specified host', () => {
     const { address, networkAddress } = getServerAddresses(9009, '192.168.89.89', 'http');
-    expect(address).toEqual('http://localhost:9009/');
+    expect(address).toEqual('http://127.0.0.1:9009/');
     expect(networkAddress).toEqual('http://192.168.89.89:9009/');
   });
 
   it('builds addresses with local IP when host is not specified', () => {
     const { address, networkAddress } = getServerAddresses(9009, '', 'http');
-    expect(address).toEqual('http://localhost:9009/');
+    expect(address).toEqual('http://127.0.0.1:9009/');
     expect(networkAddress).toEqual(`http://${mockedNetworkAddress.address}:9009/`);
   });
 
@@ -50,7 +50,7 @@ describe('getServerAddresses', () => {
       eth0: [{ ...mockedNetworkAddress, internal: true }],
     });
     const { address, networkAddress } = getServerAddresses(9009, '', 'http');
-    expect(address).toEqual('http://localhost:9009/');
+    expect(address).toEqual('http://127.0.0.1:9009/');
     expect(networkAddress).toEqual('http://0.0.0.0:9009/');
   });
 });

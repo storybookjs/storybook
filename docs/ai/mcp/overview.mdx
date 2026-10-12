@@ -91,6 +91,8 @@ Then run this command to configure your agent to use the MCP server:
 
 You may need to update the port number in the URL. You will be prompted for a name for your MCP server (e.g. "my-project-sb-mcp"). This is the name you'll use when calling the tools from your agent, so choose something descriptive and unique to avoid confusion with other tools.
 
+The MCP server is part of the dev server, so [host validation](../../api/main-config/main-config-core.mdx#allowedhosts) applies to it. If your agent reaches Storybook through a hostname other than `localhost`, such as a reverse proxy, list that hostname in `core.allowedHosts`.
+
 [`mcp-add`](https://github.com/paoloricciuti/mcp-add) is a CLI tool designed to simplify adding MCP servers to various agents.
 
 You can also follow your agent's documentation to add the MCP server as a tool provider manually, e.g. [Claude Code](https://code.claude.com/docs/en/mcp#option-1-add-a-remote-http-server), [Google Gemini CLI](https://geminicli.com/docs/tools/mcp-server/#adding-an-http-server), [OpenAI Codex](https://developers.openai.com/codex/mcp/), [VS Code Copilot](https://code.visualstudio.com/docs/copilot/customization/mcp-servers#_configure-the-mcpjson-file), etc.

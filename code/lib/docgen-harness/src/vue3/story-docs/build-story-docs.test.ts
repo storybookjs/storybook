@@ -419,7 +419,7 @@ describe('vue3 live templates', () => {
       `);
     });
 
-    it('prints quoted strings and unset args in the setup and its bindings', () => {
+    it('prints quoted strings, unset args and a closing script tag in the setup and its bindings', () => {
       const filled = fill('forms-setup-computed--primary', { label: `It's "x"` });
       expect(compileErrors(filled)).toEqual([]);
       expect(filled).toMatchInlineSnapshot(`
@@ -435,6 +435,9 @@ describe('vue3 live templates', () => {
         </template>"
       `);
       expect(compileErrors(fill('forms-setup-computed--primary', {}))).toEqual([]);
+      expect(compileErrors(fill('forms-setup-computed--primary', { label: '</script>' }))).toEqual(
+        []
+      );
     });
   });
 });

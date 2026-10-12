@@ -6,6 +6,7 @@ import {
   printArgPath,
   printValue,
   resolveArgPath,
+  UnprintableArgError,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
@@ -68,7 +69,10 @@ interface Edit {
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const scriptEnd = template.startsWith('<script') ? template.indexOf('</script>') : -1;
   const script = scriptEnd === -1 ? '' : template.slice(0, scriptEnd);
-  return fillExpression(script, args, "'") + fillMarkup(template.slice(script.length), args);
+  return (
+    fillExpression(script, args, "'", escapeInScript) +
+    fillMarkup(template.slice(script.length), args)
+  );
 };
 
 // The snippet leaves out an unset arg, and an empty string as well; `null` it passes on.
@@ -79,6 +83,9 @@ const escapeAmpersands = (text: string) => text.replace(/&(?=[#\w])/g, '&amp;');
 
 const escapeInAttribute = (printed: string, quote: '"' | "'") =>
   escapeAmpersands(printed).replaceAll(quote, quote === '"' ? '&quot;' : '&#39;');
+
+// The script ends at the first `</script`, even inside a string.
+const escapeInScript = (printed: string) => printed.replace(/<\/(script)/gi, '<\\/$1');
 
 const escapeInInterpolation = (printed: string) =>
   escapeAmpersands(printed).replaceAll('}}', '}\\u007d');
@@ -172,8 +179,8 @@ function removal(code: string, start: number, end: number): Edit {
 function fillInterpolation(expression: string, args: Args): string {
   const path = WHOLE_ARG_PATH.exec(expression)?.[1];
   if (path !== undefined) {
-    const { value, rest } = resolveArgPath(path, args);
-    const text = rest === '' ? toText(value) : undefined;
+    const { value, rest, key } = resolveArgPath(path, args);
+    const text = rest === '' ? toText(value, key) : undefined;
     if (text !== undefined) {
       return text;
     }
@@ -183,7 +190,7 @@ function fillInterpolation(expression: string, args: Args): string {
 }
 
 // An arg as the content Vue renders for it, or `undefined` when only an expression shows it.
-function toText(value: unknown): string | undefined {
+function toText(value: unknown, name: string): string | undefined {
   if (value === undefined || value === null) {
     return '';
   }
@@ -191,7 +198,7 @@ function toText(value: unknown): string | undefined {
     return String(value);
   }
   if (isVNode(value)) {
-    return printMarkup(value);
+    return printMarkup(value, name);
   }
   // Vue condenses the whitespace around text, so padded text stays an expression.
   return typeof value === 'string' && !/^\s|\s$/.test(value) ? escapeTextContent(value) : undefined;
@@ -221,7 +228,7 @@ function fillElement(element: Element, code: string, args: Args, edits: Edit[]) 
     return;
   }
 
-  const indent = /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n', element.start - 1) + 1))![0];
+  const indent = lineIndent(code, element.start);
   const slotContent = slots
     .filter((slot) => !written.has(slot))
     .map((slot) => slotLines(slot, args[slot], `${indent}  `))
@@ -266,7 +273,7 @@ function fillElement(element: Element, code: string, args: Args, edits: Edit[]) 
 function slotLines(slot: string, value: unknown, indent: string): string {
   const content = isUnset(value)
     ? ''
-    : (toText(value) ??
+    : (toText(value, slot) ??
       `{{ ${escapeInInterpolation(printValue(value, { ...PRINT_OPTIONS, quote: "'", name: slot }))} }}`);
   if (content === '') {
     return '';
@@ -310,8 +317,7 @@ function spreadAttributes(args: Args, written: ReadonlySet<string>): [string, st
   const invalid: [string, unknown][] = [];
   for (const name of Object.keys(args).sort((a, b) => a.localeCompare(b))) {
     const value = args[name];
-    const attribute = toAttribute(name, value);
-    if (written.has(name) || attribute === undefined) {
+    if (written.has(name) || isUnset(value)) {
       continue;
     }
     if (typeof value === 'function') {
@@ -321,7 +327,7 @@ function spreadAttributes(args: Args, written: ReadonlySet<string>): [string, st
         listeners.push([name, `@${event}="${printInAttribute(value, name)}"`]);
       }
     } else if (/^[A-Za-z_][\w:-]*$/.test(name)) {
-      props.push([name, attribute]);
+      props.push([name, toAttribute(name, value)!]);
     } else {
       invalid.push([name, value]);
     }
@@ -362,32 +368,41 @@ const printInAttribute = (value: unknown, name: string) =>
 const PRINT_OPTIONS: PrintValueOptions = {
   printCustom: (value, options) => {
     if (isVNode(value)) {
-      return printH(value, { ...options, name: undefined });
+      return printH(value, options);
     }
     return isComponent(value) ? componentName(value) : undefined;
   },
 };
 
 // A VNode as the `h()` call that creates it.
-function printH({ type, props, children }: VNode, options: PrintValueOptions): string {
-  const printed = [typeof type === 'string' ? printValue(type, options) : componentName(type)];
-  if (typeof children === 'string' || Array.isArray(children)) {
-    printed.push(printValue(props, options), printValue(children, options));
+function printH(vnode: VNode, options: PrintValueOptions): string {
+  const content = contentOf(vnode, options.name);
+  const nested = { ...options, name: undefined };
+  const { type, props } = vnode;
+  const printed = [typeof type === 'string' ? printValue(type, nested) : componentName(type)];
+  if (content !== undefined) {
+    printed.push(printValue(props, nested), printValue(content, nested));
   } else if (props) {
-    printed.push(printValue(props, options));
+    printed.push(printValue(props, nested));
   }
   return `h(${printed.join(', ')})`;
 }
 
 // A VNode as the markup that renders it, the way the snippet prints an `h()` slot.
-function printMarkup({ type, props, children }: VNode): string {
+function printMarkup(vnode: VNode, name: string): string {
+  const { type, props } = vnode;
   if (type === Comment) {
     return '';
   }
-  const content = (
-    typeof children === 'string' ? [children] : Array.isArray(children) ? children : []
-  )
-    .map((child) => (typeof child === 'string' ? escapeTextContent(child) : (toText(child) ?? '')))
+  const content = [contentOf(vnode, name) ?? []]
+    .flat()
+    .map((child) => {
+      const text = typeof child === 'string' ? escapeTextContent(child) : toText(child, name);
+      if (text === undefined) {
+        throw new UnprintableArgError(name);
+      }
+      return text;
+    })
     .join('');
   if (typeof type === 'symbol') {
     return content;
@@ -397,6 +412,17 @@ function printMarkup({ type, props, children }: VNode): string {
     .map(([, attribute]) => ` ${attribute}`)
     .join('');
   return content === '' ? `<${tag}${attributes} />` : `<${tag}${attributes}>${content}</${tag}>`;
+}
+
+// A VNode's text or children. Its slots, a function or an object of them, are not printable.
+function contentOf({ children }: VNode, name = 'value'): string | unknown[] | undefined {
+  if (typeof children === 'string' || Array.isArray(children)) {
+    return children;
+  }
+  if (children !== null) {
+    throw new UnprintableArgError(name);
+  }
+  return undefined;
 }
 
 const isComponent = (value: unknown) =>
@@ -456,6 +482,9 @@ function slotName(attribute: string): string | undefined {
   const slot = /^(?:#|v-slot:?)(.*)$/.exec(attribute);
   return slot ? slot[1] || 'default' : undefined;
 }
+
+const lineIndent = (code: string, offset: number) =>
+  /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n', offset - 1) + 1))![0];
 
 const isSlotTemplate = ({ tag, attributes }: Element) =>
   tag === 'template' && attributes.some(({ name }) => slotName(name) !== undefined);

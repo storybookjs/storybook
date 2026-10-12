@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
+
 import { defineComponent, h } from 'vue';
 
 import { fillTemplate } from './fill-template.ts';
@@ -249,6 +251,17 @@ describe('fillTemplate', () => {
         </template>"
       `);
     });
+
+    it('throws for a VNode whose content is a slot function, which it cannot print', () => {
+      const Icon = defineComponent({ name: 'Icon', setup: () => () => null });
+      const template = sfc('  <Button v-bind="args">\n    {{ args.default }}\n  </Button>');
+      expect(() => fillTemplate(template, { default: h(Icon, null, () => 'Inner') })).toThrow(
+        UnprintableArgError
+      );
+      expect(() =>
+        fillTemplate(template, { icon: h(Icon, null, { default: () => 'Inner' }) })
+      ).toThrow(UnprintableArgError);
+    });
   });
 
   describe('bound attributes', () => {
@@ -296,6 +309,25 @@ describe('fillTemplate', () => {
     ).toMatchInlineSnapshot(`
       "<template>
         <a title="see args.label" aria-label="Hi">Go</a>
+      </template>"
+    `);
+  });
+
+  it('keeps a string arg from closing the setup script', () => {
+    expect(
+      fillTemplate(
+        sfc('  <Field v-model="modelValue" />', 'const modelValue = ref(args.modelValue);'),
+        {
+          modelValue: 'a </script> b </SCRIPT>',
+        }
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      const modelValue = ref('a <\\/script> b <\\/SCRIPT>');
+      </script>
+
+      <template>
+        <Field v-model="modelValue" />
       </template>"
     `);
   });

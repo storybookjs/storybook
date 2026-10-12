@@ -29,8 +29,11 @@ export function normalizeStoryDeclaration(
   storyDeclaration: NodePath<t.Node>
 ): NormalizedStoryDeclaration {
   const storyPath = declarationExpression(storyDeclaration);
-  const resolvedBindPath = bindInitializer(storyDeclaration, storyPath);
-  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(storyPath);
+  const resolvedStoryPath = storyPath.isIdentifier()
+    ? (resolveIdentifierInit(storyDeclaration, storyPath) ?? storyPath)
+    : storyPath;
+  const resolvedBindPath = bindInitializer(storyDeclaration, resolvedStoryPath);
+  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(resolvedStoryPath);
   const unwrappedPath = unwrapTypeExpression(normalizedPath);
 
   return classifyStoryPath(unwrappedPath);

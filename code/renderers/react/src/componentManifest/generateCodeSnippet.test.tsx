@@ -205,6 +205,14 @@ test('CSF1', () => {
   );
 });
 
+test('Local function story reference', () => {
+  const input = withCSF3(dedent`
+    const ParagraphStory = () => <Button />;
+    export const Example = ParagraphStory;
+  `);
+  expect(generateExample(input)).toBe('const Example = () => <Button />;');
+});
+
 test('CSF2', () => {
   const input = withCSF3(dedent`
     export const CSF2: StoryFn = (args) => <Button {...args} label="String"></Button>;

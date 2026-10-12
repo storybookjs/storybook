@@ -288,6 +288,14 @@ describe('spreads at the story config level', () => {
     expect(argsOf(code, 'Assigned')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
   });
 
+  it('resolves a story alias to a local function', () => {
+    const code = dedent`
+      const ParagraphStory = ({ text }) => text;
+      export const Example = ParagraphStory;
+    `;
+    expect(argsOf(code, 'Example')).toEqual({ args: {}, unresolved: [] });
+  });
+
   it('prefers an assignment over the args the declaration carries', () => {
     const code = dedent`
       export const Both = { args: { label: 'declared' } };

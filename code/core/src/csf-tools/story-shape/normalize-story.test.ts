@@ -170,6 +170,20 @@ describe('normalizeStoryDeclaration', () => {
     expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
   });
 
+  it('resolves a story export that references a local function', () => {
+    const normalized = normalize(
+      dedent`
+      export default { title: 'Paragraph' };
+      const ParagraphStory = ({ text }) => <p>{text}</p>;
+      export const Example = ParagraphStory;
+    `,
+      'Example'
+    );
+
+    expect(normalized.type).toBe('fn');
+    expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
+  });
+
   it('throws for factory calls with more than one argument', () => {
     expect(() =>
       normalize(dedent`

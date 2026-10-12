@@ -512,6 +512,12 @@ const declaredMembers = (
   if (factory === undefined && (t.isFunction(unwrapped) || isCanonicalCsf2BindCall(unwrapped))) {
     return { members: complete() };
   }
+  if (t.isIdentifier(unwrapped)) {
+    const referenced = resolveReference(ctx, unwrapped, position, visited);
+    if (referenced) {
+      return { members: referenced };
+    }
+  }
   if (factory === undefined) {
     return {
       members: { properties: {}, shadowed: [], unresolved: [sourceOf(unwrapped)] },

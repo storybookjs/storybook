@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { normalizeStoryPath } from 'storybook/internal/common';
-import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
+import { sanitize, storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { IndexEntry, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import leven from 'leven';
@@ -43,10 +43,21 @@ function isNonTestStory(entry: IndexEntry): entry is StoryIndexEntry {
   return entry.type === 'story' && entry.subtype !== 'test';
 }
 
+// Whether the guessed component ID differs from the entry's by a title prefix: `button` for
+// `Example/Button` (but not `Example/Icon Button`), or `components-button` for `Button`.
+function differsByTitlePrefix(entry: StoryIndexEntry, componentId: string): boolean {
+  const segments = entry.title.split('/').map(sanitize);
+  const entryComponentId = entry.id.split('--')[0];
+  return (
+    segments.some((_, index) => segments.slice(index).join('-') === componentId) ||
+    componentId.endsWith(`-${entryComponentId}`)
+  );
+}
+
 // Agents guess IDs from story names (`--error` for an `ErrorState` story named "Error"), so the
 // same component's stories come first, those whose name overlaps the guess before the rest. A
-// guess without the title prefix (`button--primary` for `example-button--primary`) counts as the
-// same component.
+// guess with a different title prefix (`button--primary` for `example-button--primary`) counts as
+// the same component.
 function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
   const [componentId, guessedSlug = ''] = storyId.split('--');
   const maxDistance = storyId.length / 3;
@@ -54,9 +65,9 @@ function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
     .filter(isNonTestStory)
     .flatMap((entry) => {
       const [entryComponentId, entrySlug = ''] = entry.id.split('--');
-      // 2: the guessed component, 1: the guessed component under a title prefix, 0: another one.
+      // 2: the guessed component, 1: it under another title prefix, 0: another component.
       const componentMatch =
-        entryComponentId === componentId ? 2 : entryComponentId.endsWith(`-${componentId}`) ? 1 : 0;
+        entryComponentId === componentId ? 2 : differsByTitlePrefix(entry, componentId) ? 1 : 0;
       const sameComponent = componentMatch > 0;
       if (!sameComponent && Math.abs(entry.id.length - storyId.length) > maxDistance) {
         return [];
@@ -90,7 +101,7 @@ function describeClosestFileStories(fileStories: StoryIndexEntry[], guessedName:
     .map(({ entry }) => `"${entry.id}" (named "${entry.name}")`);
   const more =
     fileStories.length > closest.length ? ` (+${fileStories.length - closest.length} more)` : '';
-  return `Closest stories in that file: ${closest.join(', ')}${more}. Pass one of these IDs as { storyId } instead`;
+  return `Closest stories in that file: ${closest.join(', ')}${more}. If one of these is the story you meant, pass its ID as { storyId }`;
 }
 
 /**
@@ -156,7 +167,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
               fileStories,
               explicitStoryName ?? storyNameFromExport(exportName)
             )
-          : 'Storybook has no stories indexed for that file; check the path, and that the file matches the `stories` globs in the Storybook config';
+          : 'Storybook has no stories indexed for that file. Check the path, and that the file matches the `stories` globs in the Storybook config';
       result.push({
         input: storyInput,
         errorMessage: `No story found for export name "${exportName}" with absolute file path "${absoluteStoryPath}". ${hint}`,

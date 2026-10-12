@@ -123,21 +123,60 @@ describe('findStoryIds', () => {
     );
   });
 
-  it('ranks the guessed component before one that only ends in its name', () => {
+  it('ranks the guessed component before one under a title prefix', () => {
     const index: StoryIndex = {
       v: 5,
-      entries: Object.fromEntries(
-        ['button--error-state-with-retry', 'icon-button--error'].map((id) => [
-          id,
-          { ...primaryStory, id },
-        ])
-      ),
+      entries: {
+        'example-button--error': {
+          ...primaryStory,
+          id: 'example-button--error',
+          title: 'Example/Button',
+        },
+        'button--error-state-with-retry': { ...primaryStory, id: 'button--error-state-with-retry' },
+      },
     };
 
     const [result] = findStoryIds(index, [{ storyId: 'button--error' }]);
 
     expect((result as { errorMessage: string }).errorMessage).toBe(
-      'No story found for story ID "button--error". Did you mean "button--error-state-with-retry", "icon-button--error"?'
+      'No story found for story ID "button--error". Did you mean "button--error-state-with-retry", "example-button--error"?'
+    );
+  });
+
+  it('does not count a component whose name only ends in the guess as the same one', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'icon-button--primary': {
+          ...primaryStory,
+          id: 'icon-button--primary',
+          title: 'Example/Icon Button',
+        },
+        'example-button--primary': {
+          ...primaryStory,
+          id: 'example-button--primary',
+          title: 'Example/Button',
+        },
+        'icon-button--disabled': {
+          ...primaryStory,
+          id: 'icon-button--disabled',
+          title: 'Example/Icon Button',
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--primary' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--primary". Did you mean "example-button--primary", "icon-button--primary"?'
+    );
+  });
+
+  it('suggests the same component when the guess has an extra title prefix', () => {
+    const [result] = findStoryIds(mockStoryIndex, [{ storyId: 'components-button--primary' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "components-button--primary". Did you mean "button--primary", "button--secondary"?'
     );
   });
 
@@ -283,6 +322,28 @@ describe('findStoryIds', () => {
     ]);
   });
 
+  it('does not resolve an export name to the docs entry', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--docs': {
+          type: 'docs',
+          id: 'button--docs',
+          name: 'Docs',
+          title: 'Button',
+          importPath: primaryStory.importPath,
+          storiesImports: [],
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [
+      { exportName: 'Docs', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    expect(result).toHaveProperty('errorMessage');
+  });
+
   it('says when the index has no stories for the file', () => {
     const stories: StoryInput[] = [
       {
@@ -294,7 +355,7 @@ describe('findStoryIds', () => {
     const result = findStoryIds(mockStoryIndex, stories);
 
     expect((result[0] as { errorMessage: string }).errorMessage).toBe(
-      `No story found for export name "NonExistent" with absolute file path "${process.cwd()}/src/NonExistent.stories.tsx". Storybook has no stories indexed for that file; check the path, and that the file matches the \`stories\` globs in the Storybook config`
+      `No story found for export name "NonExistent" with absolute file path "${process.cwd()}/src/NonExistent.stories.tsx". Storybook has no stories indexed for that file. Check the path, and that the file matches the \`stories\` globs in the Storybook config`
     );
   });
 
@@ -304,7 +365,7 @@ describe('findStoryIds', () => {
     ]);
 
     expect((result as { errorMessage: string }).errorMessage).toBe(
-      `No story found for export name "ErrorState" with absolute file path "${process.cwd()}/src/Button.stories.tsx". Closest stories in that file: "button--primary" (named "Primary"), "button--secondary" (named "Secondary"). Pass one of these IDs as { storyId } instead`
+      `No story found for export name "ErrorState" with absolute file path "${process.cwd()}/src/Button.stories.tsx". Closest stories in that file: "button--primary" (named "Primary"), "button--secondary" (named "Secondary"). If one of these is the story you meant, pass its ID as { storyId }`
     );
   });
 
@@ -344,7 +405,7 @@ describe('findStoryIds', () => {
       'Closest stories in that file: "button--small" (named "Small"), '
     );
     expect(errorMessage.match(/"button--[a-z]+" \(named/g)).toHaveLength(5);
-    expect(errorMessage).toContain(' (+1 more). Pass one of these IDs');
+    expect(errorMessage).toContain(' (+1 more). If one of these');
     expect(errorMessage).not.toMatch(/button--docs|:renders/);
   });
 

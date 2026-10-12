@@ -14,8 +14,6 @@ import { deprecationMessage, trimmedOrUndefined } from './utils.ts';
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
-  /** Generate declarations missing from the manifests from sources. */
-  autoGenerateManifest?: boolean;
   /** Also searched for element registrations when generating from sources. */
   previewFilePath?: string;
 }

@@ -51,8 +51,8 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...originalModule,
     JsPackageManagerFactory: Object.assign(originalModule.JsPackageManagerFactory, {
-      getPackageManager: () => ({
-        type: managerTypeHolder.type,
+      getPackageManager: ({ force }: { force?: PackageManagerName } = {}) => ({
+        type: force ?? managerTypeHolder.type,
         findInstallations: findInstallationsMock,
         getInstalledVersion: getInstalledVersionMock,
         latestVersion: async () => '8.0.0',
@@ -440,7 +440,7 @@ describe('collectProjects', () => {
   });
 });
 
-describe('Yarn 1 best-effort warning', () => {
+describe('Project collection', () => {
   const projectDirs: string[] = [];
 
   const createProjectFixture = async (): Promise<string> => {
@@ -514,5 +514,23 @@ describe('Yarn 1 best-effort warning', () => {
     expect(bestEffortWarningCount()).toBe(0);
     expect(results).toHaveLength(1);
     expect(results.every((r) => isSuccessResult(r))).toBe(true);
+  });
+
+  it('uses the requested package manager for project collection', async () => {
+    const dir = await createProjectFixture();
+    projectDirs.push(dir);
+    managerTypeHolder.type = PackageManagerName.NPM;
+    useRealProjectDataCollection();
+
+    const results = await collectProjects(
+      { force: true, packageManager: PackageManagerName.PNPM } as UpgradeOptions,
+      [join(dir, '.storybook')],
+      () => {}
+    );
+
+    expect(results).toHaveLength(1);
+    expect(isSuccessResult(results[0]) && results[0].packageManager.type).toBe(
+      PackageManagerName.PNPM
+    );
   });
 });

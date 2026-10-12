@@ -306,7 +306,7 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-    } = await getStorybookData({ configDir });
+    } = await getStorybookData({ configDir, packageManagerName: options.packageManager });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);

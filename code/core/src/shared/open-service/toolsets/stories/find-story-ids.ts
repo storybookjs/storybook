@@ -93,9 +93,20 @@ function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
     .map(({ id }) => id);
 }
 
-function describeClosestFileStories(fileStories: StoryIndexEntry[], guessedName: string): string {
+// Ranks by the closer of the export name and the story name, as either can be the typo.
+function describeClosestFileStories(
+  fileStories: StoryIndexEntry[],
+  exportName: string,
+  guessedName: string
+): string {
   const closest = fileStories
-    .map((entry) => ({ entry, distance: leven(guessedName, entry.name) }))
+    .map((entry) => ({
+      entry,
+      distance: Math.min(
+        leven(guessedName, entry.name),
+        entry.exportName === undefined ? Infinity : leven(exportName, entry.exportName)
+      ),
+    }))
     .sort((a, b) => a.distance - b.distance)
     .slice(0, MAX_FILE_STORIES)
     .map(({ entry }) => `"${entry.id}" (named "${entry.name}")`);
@@ -165,6 +176,7 @@ export function findStoryIds(index: StoryIndex, stories: StoryInput[]): FindStor
         fileStories.length > 0
           ? describeClosestFileStories(
               fileStories,
+              exportName,
               explicitStoryName ?? storyNameFromExport(exportName)
             )
           : 'Storybook has no stories indexed for that file. Check the path, and that the file matches the `stories` globs in the Storybook config';

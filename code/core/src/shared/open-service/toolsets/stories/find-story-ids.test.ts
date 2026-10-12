@@ -409,6 +409,33 @@ describe('findStoryIds', () => {
     expect(errorMessage).not.toMatch(/button--docs|:renders/);
   });
 
+  it('lists a story first when the export name is a typo of its export', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        [
+          ['ErrorState', 'Shows a retry banner'],
+          ['Small', 'Small'],
+          ['Medium', 'Medium'],
+          ['Large', 'Large'],
+          ['Huge', 'Huge'],
+          ['Tiny', 'Tiny'],
+        ].map(([exportName, name]) => [
+          `button--${exportName.toLowerCase()}`,
+          { ...primaryStory, id: `button--${exportName.toLowerCase()}`, exportName, name },
+        ])
+      ),
+    };
+
+    const [result] = findStoryIds(index, [
+      { exportName: 'ErorState', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    expect((result as { errorMessage: string }).errorMessage).toContain(
+      'Closest stories in that file: "button--errorstate" (named "Shows a retry banner"), '
+    );
+  });
+
   it('preserves input order for mixed found and not found results', () => {
     const stories: StoryInput[] = [
       { storyId: 'button--does-not-exist' },

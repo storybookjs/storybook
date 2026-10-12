@@ -63,7 +63,7 @@ export function useServiceStoryLiveSnippet(
 ): QueryState<{ snippet?: string; warning?: string }> {
   // The selector is stable, so an args change fills the template again without a new subscription,
   // which would load the story docs again.
-  const state = useServiceStory(story.id, selectPayload);
+  const state = useServiceStory(story.id, selectStoryPayload);
   const fill = getFillTemplate(story.parameters);
   const data = useMemo(
     () => selectLiveSnippetForStory(state.data, story.id, args, fill),
@@ -72,4 +72,10 @@ export function useServiceStoryLiveSnippet(
   return useMemo(() => ({ ...state, data }), [state, data]);
 }
 
-const selectPayload = (payload: StoryDocsPayload | undefined) => payload;
+// A plain copy of the payload with only this story's docs. The subscription compares what the
+// selector returns with what it returned before, and the payload itself is state that changes in
+// place, so it would always compare equal.
+function selectStoryPayload(payload: StoryDocsPayload | undefined, storyId: string) {
+  const story = payload?.stories[storyId];
+  return payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} };
+}

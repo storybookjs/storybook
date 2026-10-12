@@ -40,6 +40,26 @@ function makeGetIndex(entries: IndexEntry[]) {
 }
 
 describe('story-docs open service', () => {
+  it('updates a subscription that started before the payload was stored', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload();
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: async () => payload,
+    });
+    const selected: unknown[] = [];
+    const unsubscribe = service.queries.storyDocs.subscribe(
+      { id: 'button' },
+      (value) => value?.name,
+      (state) => selected.push(state.data)
+    );
+
+    await service.commands.extractStoryDocs({ id: 'button' });
+    unsubscribe();
+
+    expect(selected.at(-1)).toBe('Button');
+  });
+
   it('stores and returns story-docs payloads from the provider', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({

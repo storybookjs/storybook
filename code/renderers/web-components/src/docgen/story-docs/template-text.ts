@@ -2,73 +2,33 @@ import { types as t } from 'storybook/internal/babel';
 import { sourceOf } from 'storybook/internal/csf-tools';
 import { ARG_PATH_PATTERN } from 'storybook/internal/docs-tools';
 
-import { escapeTemplateText } from '../../docs/template-format.ts';
-import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
-import { printHtml } from './html-tree.ts';
-import type { TemplateScope } from './template-scope.ts';
+import type { HtmlTemplate, TemplateScope } from './template-scope.ts';
 import { argReferenceForExpression } from './template-scope.ts';
 
-interface Hole {
-  attribute: boolean;
-  display: string;
-  template: string;
-}
-
 const ARG_PATH = new RegExp(ARG_PATH_PATTERN);
-const MARKER = /\uE000(\d+)\uE001/g;
-const ATTRIBUTE_MARKER = /([ \t]*\n[ \t]*| )?\uE000(\d+)\uE001/g;
 
-// Builds the live `template` that `../../docs/template-format.ts` describes. A hole stands in the
-// printed tree as a marker measured as the snippet's text at that spot, so both are laid out alike.
-export class TemplateHoles {
-  private holes: Hole[] = [];
-
-  // Set when part of the snippet depends on the args in a way no hole can express.
-  blocked = false;
-
-  get size() {
-    return this.holes.filter((hole) => hole.template !== '').length;
+// The live `template` that `../../docs/template-format.ts` describes, or `undefined` when a hole
+// reads the args in a way the filler cannot follow or no hole reads them at all.
+export function templateSource({ quasis, expressions, scope }: HtmlTemplate): string | undefined {
+  const holes = expressions.map((expression) => normalizeExpression(expression, scope));
+  if (holes.some((hole) => hole === undefined) || !holes.some((hole) => ARG_PATH.test(hole!))) {
+    return undefined;
   }
-
-  attribute(template: string, display: string): { index: number; node: HtmlAttribute } {
-    const index = this.holes.push({ attribute: true, display, template }) - 1;
-    return { index, node: { name: marker(index), value: undefined } };
-  }
-
-  text(template: string, display: string): HtmlNode {
-    const index = this.holes.push({ attribute: false, display, template }) - 1;
-    return { kind: 'text', text: marker(index) };
-  }
-
-  drop(index: number) {
-    this.holes[index] = { attribute: true, display: '', template: '' };
-  }
-
-  print(nodes: HtmlNode[]): string {
-    const width = (text: string) => {
-      let length = 0;
-      const shown = text.replace(MARKER, (_, index: string) => {
-        const hole = this.holes[Number(index)]!;
-        length -= hole.attribute && hole.display === '' ? 1 : 0;
-        return hole.display;
-      });
-      return length + shown.length;
-    };
-    return escapeTemplateText(printHtml(nodes, width)).replace(
-      ATTRIBUTE_MARKER,
-      (_, space: string | undefined, index: string) => {
-        const hole = this.holes[Number(index)]!;
-        return hole.attribute && hole.template === '' ? '' : `${space ?? ''}${hole.template}`;
-      }
-    );
-  }
+  return dedent(
+    quasis.reduce((source, quasi, index) => `${source}\${${holes[index - 1]}}${quasi}`)
+  );
 }
 
-const marker = (index: number) => `\uE000${index}\uE001`;
-
-// `args.label`, `args.user.name`, `args["default-slot"]`.
-export const argPathSource = (reference: { name: string; path: string[] }) =>
-  sourceOf(argPathNode(reference));
+// Without the indentation the html has in the story file, as its lines after the first share it.
+const dedent = (source: string) => {
+  const lines = source.trim().split('\n');
+  const indents = lines
+    .slice(1)
+    .filter((line) => line.trim())
+    .map((line) => /^[ \t]*/.exec(line)![0].length);
+  const indent = Math.min(...indents);
+  return lines.map((line, index) => (index === 0 ? line : line.slice(indent))).join('\n');
+};
 
 const argPathNode = ({ name, path }: { name: string; path: string[] }): t.Expression =>
   [name, ...path].reduce<t.Expression>(

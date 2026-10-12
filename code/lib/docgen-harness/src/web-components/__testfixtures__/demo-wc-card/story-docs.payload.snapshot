@@ -9,15 +9,17 @@
       "snippet": "<demo-wc-card back-side rows="[]">
   <span slot="prefix"></span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card ${...args/* {"backSide":"=back-side"} */} ${...args/* {"header":"=header"} */} ${...args/* {"rows":"=rows"} */}>
-  <span slot="prefix">${args.prefix}</span>A simple card
-</demo-wc-card>",
+      "template": "<demo-wc-card .backSide=${args.backSide} .header=${args.header} .rows=${args.rows}
+  ><span slot="prefix">${args.prefix}</span>A simple card</demo-wc-card
+>",
     },
     "webcomponentsfixtures-demo-wc-card--front": {
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
       "snippet": "<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>",
-      "template": "<demo-wc-card ${...args/* {"backSide":"=back-side"} */} ${...args/* {"header":"=header"} */} ${...args/* {"rows":"=rows"} */}><span slot="prefix">${args.prefix}</span>A simple card</demo-wc-card>",
+      "template": "<demo-wc-card .backSide=${args.backSide} .header=${args.header} .rows=${args.rows}
+  ><span slot="prefix">${args.prefix}</span>A simple card</demo-wc-card
+>",
     },
     "webcomponentsfixtures-demo-wc-card--prefix": {
       "id": "webcomponentsfixtures-demo-wc-card--prefix",
@@ -25,9 +27,9 @@
       "snippet": "<demo-wc-card header="my header" rows="[]">
   <span slot="prefix">prefix:</span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card ${...args/* {"backSide":"=back-side"} */} ${...args/* {"header":"=header"} */} ${...args/* {"rows":"=rows"} */}>
-  <span slot="prefix">${args.prefix}</span>A simple card
-</demo-wc-card>",
+      "template": "<demo-wc-card .backSide=${args.backSide} .header=${args.header} .rows=${args.rows}
+  ><span slot="prefix">${args.prefix}</span>A simple card</demo-wc-card
+>",
     },
   },
 }

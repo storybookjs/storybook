@@ -14,7 +14,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events ${...args/* {"value":"=value"} */}></lit-events>
+      "template": "<lit-events ${...args/* {"value":"value"} */}></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -47,14 +47,11 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events value=${args.value}></lit-events>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('my-change', () => {});
-    host.addEventListener('my-close', () => {});
-  }
-</script>",
+      "template": "<lit-events
+  value=${args.value}
+  @my-change=${args["my-change-event"]}
+  @my-close=${args["my-close-event"]}
+></lit-events>",
     },
   },
 }

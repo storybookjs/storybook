@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-schema-warning--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-schema-warning label="Hello" count="2"></lit-schema-warning>",
-      "template": "<lit-schema-warning ${...args/* {"label":"=label","count":"=count"} */}></lit-schema-warning>",
+      "template": "<lit-schema-warning ${...args/* {"label":"label","count":"count"} */}></lit-schema-warning>",
     },
   },
 }

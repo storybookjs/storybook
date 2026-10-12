@@ -136,6 +136,9 @@ export const attributeValue = (
 export const listenerHandler = (value: HoleValue): string =>
   value.kind === 'function' ? value.handler : '() => {}';
 
+export const escapeText = (value: string): string =>
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 const resolveArg = (arg: string, node: t.Node | undefined): HoleValue => {
   if (!node) {
     return { kind: 'value', arg, value: undefined };
@@ -276,7 +279,7 @@ const literalValue = (expression: t.Node): unknown => {
   return undefined;
 };
 
-export const isIfDefinedCall = (
+const isIfDefinedCall = (
   expression: t.Node,
   bindings: Map<string, ImportBinding>
 ): expression is t.CallExpression & { arguments: [t.Expression] } =>

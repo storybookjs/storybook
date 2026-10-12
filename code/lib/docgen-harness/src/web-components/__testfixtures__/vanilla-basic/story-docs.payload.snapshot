@@ -19,7 +19,11 @@
       "id": "webcomponentsfixtures-vanilla-basic--lit-template",
       "name": "Lit Template",
       "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
-      "template": "<vanilla-basic label=${args.label} count=${args.count} ?disabled=${args.disabled}></vanilla-basic>",
+      "template": "<vanilla-basic
+  label=${args.label}
+  count=${args.count}
+  ?disabled=${args.disabled}
+></vanilla-basic>",
     },
   },
 }

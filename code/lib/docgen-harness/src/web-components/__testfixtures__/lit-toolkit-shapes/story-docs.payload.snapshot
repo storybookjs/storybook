@@ -18,7 +18,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes ${...args/* {"size":"=size","level":"=level","tags":"=tags","label":"=label","default-slot":"","label-slot":"","base-part":"","active-state":"","--toolkit-color":"--toolkit-color","--toolkit-scale":"--toolkit-scale","--toolkit-font":"--toolkit-font","--toolkit-gap":"--toolkit-gap","computed":".computed","version":".version","pressed":".pressed","oldSize":"=old-size","onSelect":".onSelect","target":"=target","when":"=when","old-size":"old-size"} */}></lit-toolkit-shapes>
+      "template": "<lit-toolkit-shapes ${...args/* {"size":"size","level":"level","tags":"tags","label":"label","default-slot":null,"label-slot":null,"base-part":null,"active-state":null,"--toolkit-color":"--toolkit-color","--toolkit-scale":"--toolkit-scale","--toolkit-font":"--toolkit-font","--toolkit-gap":"--toolkit-gap","computed":".computed","version":".version","pressed":".pressed","oldSize":"old-size","onSelect":".onSelect","target":"target","when":"when","old-size":"old-size"} */}></lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -61,15 +61,10 @@
       "template": "<lit-toolkit-shapes
   size=${args.size}
   level=${args.level}
-  ${...args/* {"tags":"=tags"} */}
+  .tags=${args.tags}
   label=${args.label}
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
+  @toolkit-resize=${args.onToolkitResize}
+></lit-toolkit-shapes>",
     },
   },
 }

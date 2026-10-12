@@ -17,7 +17,7 @@ import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybo
 import { resolve } from 'node:path';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
-import { escapeTemplateText, type SpreadBinding, spreadHole } from '../../docs/template-format.ts';
+import { escapeTemplateText, spreadHole } from '../../docs/template-format.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import {
   parseStoryFile,
@@ -29,6 +29,7 @@ import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet, printListenerScript } from './print-element.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
+import { templateSource } from './template-text.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
@@ -234,9 +235,10 @@ const renderedArgsSnippet = (
       warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
       const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
+      const live = templateSource(template);
       return {
         ...(hasSnippet ? { snippet: printed.snippet } : {}),
-        ...(printed.template === undefined ? {} : { template: printed.template }),
+        ...(live === undefined ? {} : { template: live }),
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
     }
@@ -375,11 +377,11 @@ const argsTemplate = (
   argTypes: NonNullable<WebComponentsDocgenPayload['argTypes']>,
   snippet: ElementSnippet
 ): string => {
-  const bindings = new Map<string, SpreadBinding>();
+  const bindings: Record<string, string | null> = {};
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
-    const binding = spreadBinding(classifyArg(key, false, argTypes, declaration));
-    if (binding) {
-      bindings.set(key, binding);
+    const name = spreadName(classifyArg(key, false, argTypes, declaration));
+    if (name !== undefined) {
+      bindings[key] = name;
     }
   }
   const element = `<${snippet.tag} ${spreadHole(bindings)}></${snippet.tag}>`;
@@ -387,25 +389,20 @@ const argsTemplate = (
   return script ? `${element}\n${escapeTemplateText(script)}` : element;
 };
 
-const spreadBinding = (binding: ArgBinding): SpreadBinding | undefined => {
+// What the spread sets an arg as, `null` for what only the static snippet shows (a slot, part or
+// state), or `undefined` for a listener or method, which it leaves out.
+const spreadName = (binding: ArgBinding): string | null | undefined => {
   switch (binding.kind) {
     case 'attribute':
-      return {
-        kind: 'attribute',
-        name: binding.name,
-        reflected: binding.viaField,
-        defaultsToTrue: binding.defaultValue === 'true',
-      };
+      return binding.name;
     case 'property':
-      return { kind: 'property', name: binding.name };
+      return `.${binding.name}`;
     case 'cssProperty':
-      return binding.name.startsWith('--')
-        ? { kind: 'style', name: binding.name }
-        : { kind: 'unfillable' };
+      return binding.name.startsWith('--') ? binding.name : null;
     case 'slot':
     case 'cssPart':
     case 'cssState':
-      return { kind: 'unfillable' };
+      return null;
     default:
       return undefined;
   }

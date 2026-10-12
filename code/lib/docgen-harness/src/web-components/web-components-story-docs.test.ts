@@ -4,12 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
-import { fillTemplate } from '../../../../renderers/web-components/src/docs/fill-template.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
@@ -52,107 +50,27 @@ const cases = [
   })),
 ];
 
-const buildFixturePayload = async (testDir: string, title: string) => {
-  const storyPath = join(testDir, 'input.stories.ts');
-  const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
-  const storyExports = Object.entries(csf._stories);
-  expect(storyExports.length).toBeGreaterThan(0);
-
-  const entry: IndexEntry = {
-    id: storyExports[0][1].id,
-    name: storyExports[0][1].name ?? storyExports[0][0],
-    title,
-    type: 'story',
-    subtype: 'story',
-    importPath: storyPath,
-  };
-  const docgen = createFixtureDocgen(testDir);
-  const payload = await buildStoryDocsPayload(
-    { entry },
-    { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
-  );
-  expect(payload).toBeDefined();
-  return { csf, payload: payload!, storyExports };
-};
-
-// The template keeps these as lit bindings, where the snippet leaves them out with a warning.
-const KEPT_BINDINGS: Record<string, string> = {
-  'fast-attributes/ArgsDefaultRender': [
-    '<fast-attributes',
-    '  label="Default count"',
-    '  size="large"',
-    '  max-count="2"',
-    '  .items=${["a"]}',
-    '></fast-attributes>',
-  ].join('\n'),
-  'fast-attributes/LitTemplate':
-    '<fast-attributes label="Count" size="large" max-count="5" .items=${["a"]}></fast-attributes>',
-  'lit-property-only/ArgsDefaultRender': [
-    '<lit-property-only',
-    '  label="Default render"',
-    '  .items=${[{ name: "Alpha" }, { name: "Beta" }]}',
-    '  .config=${{ dense: true, theme: "dark" }}',
-    '></lit-property-only>',
-  ].join('\n'),
-  'lit-property-only/LitTemplate':
-    '<lit-property-only label="Configured" .items=${[{ name: "Alpha" }, { name: "Beta" }]} .config=${{ dense: true, theme: "dark" }}></lit-property-only>',
-  'vanilla-multi-definition/ArgsDefaultRender':
-    '<multi-beta .betaLabel=${"Default beta"}></multi-beta>',
-  'lit-template-shapes/ClassMap':
-    '<lit-template-shapes class=${classMap({ active: Boolean(true) })}></lit-template-shapes>',
-  'lit-template-shapes/NestedListener': [
-    '<lit-template-shapes>',
-    '  <button @click=${onInnerClick}>Go</button>',
-    '</lit-template-shapes>',
-    '<script>',
-    '  {',
-    '    const host = document.currentScript.previousElementSibling;',
-    "    host.addEventListener('shape-change', () => {});",
-    '  }',
-    '</script>',
-  ].join('\n'),
-  'lit-template-shapes/PropertyOnly':
-    '<lit-template-shapes .items=${[{ name: "Alpha" }]}></lit-template-shapes>',
-};
-
-it('web-components story-docs live templates fill to the snippet', async () => {
-  const compared: string[] = [];
-  for (const { fixtureCase, testDir, title } of cases) {
-    const { csf, payload, storyExports } = await buildFixturePayload(testDir, title);
-    const resolver = createStoryArgsResolver(csf);
-    for (const [exportName, story] of storyExports) {
-      const { snippet, template } = payload.stories[story.id] ?? {};
-      const resolved = resolver.resolve(exportName);
-      const args = resolved.unresolved.length === 0 ? staticArgs(resolved.args) : undefined;
-      if (template === undefined || snippet === undefined || args === undefined) {
-        continue;
-      }
-      const key = `${fixtureCase}/${exportName}`;
-      compared.push(key);
-      expect(fillTemplate(template, args), key).toBe(KEPT_BINDINGS[key] ?? snippet);
-    }
-  }
-  expect(compared.length).toBeGreaterThan(Object.keys(KEPT_BINDINGS).length);
-  expect(compared).toEqual(expect.arrayContaining(Object.keys(KEPT_BINDINGS)));
-});
-
-// The story's args as the preview has them, when the static pass can read them all.
-const staticArgs = (nodes: Record<string, unknown>) => {
-  const args: Record<string, unknown> = {};
-  for (const [name, node] of Object.entries(nodes)) {
-    const value = evaluateArgValue(node as Parameters<typeof evaluateArgValue>[0]);
-    if (value.kind === 'unresolved') {
-      return undefined;
-    }
-    args[name] =
-      value.kind === 'value' ? value.value : value.kind === 'function' ? () => {} : undefined;
-  }
-  return args;
-};
-
 describe('web-components story-docs server snippets', () => {
   it.each(cases)('$fixtureCase', async ({ fixtureCase, testDir, title, legacyParity }) => {
-    const { payload, storyExports } = await buildFixturePayload(testDir, title);
+    const storyPath = join(testDir, 'input.stories.ts');
+    const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
+    const storyExports = Object.entries(csf._stories);
+    expect(storyExports.length).toBeGreaterThan(0);
+
+    const entry: IndexEntry = {
+      id: storyExports[0][1].id,
+      name: storyExports[0][1].name ?? storyExports[0][0],
+      title,
+      type: 'story',
+      subtype: 'story',
+      importPath: storyPath,
+    };
+    const docgen = createFixtureDocgen(testDir);
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
+    );
+    expect(payload).toBeDefined();
 
     for (const [exportName, story] of storyExports) {
       const storyDoc = payload!.stories[story.id];

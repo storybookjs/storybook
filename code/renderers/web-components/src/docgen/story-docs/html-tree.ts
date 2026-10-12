@@ -1,4 +1,4 @@
-import { escapeAttribute, MAX_LINE } from '../../docs/template-format.ts';
+import { escapeAttribute } from './print-element.ts';
 
 export interface HtmlAttribute {
   name: string;
@@ -22,7 +22,6 @@ export type HtmlNode =
 
 type ElementNode = Extract<HtmlNode, { kind: 'element' }>;
 type InlineText = { hasText: boolean; text: string };
-type Width = (text: string) => number;
 
 type Token =
   | { kind: 'comment'; text: string }
@@ -31,6 +30,7 @@ type Token =
   | { attributes: HtmlAttribute[]; kind: 'start'; name: string; selfClosing: boolean }
   | { kind: 'text'; text: string };
 
+const INLINE_LIMIT = 80;
 const INDENT = '  ';
 const RAW_TEXT_ELEMENTS = new Set(['pre', 'script', 'style', 'textarea', 'title']);
 const VOID_ELEMENTS = new Set([
@@ -114,11 +114,9 @@ export function parseHtml(source: string): HtmlNode[] {
   return root.children;
 }
 
-// `width` measures a printed line for the inline limit, so text that stands in for other text can
-// be laid out as that text would be.
-export function printHtml(nodes: HtmlNode[], width: Width = (text) => text.length): string {
+export function printHtml(nodes: HtmlNode[]): string {
   return printableChildren(nodes)
-    .map((node) => printNode(node, 0, width))
+    .map((node) => printNode(node, 0))
     .join('\n');
 }
 
@@ -227,17 +225,17 @@ const parseAttributes = (source: string): HtmlAttribute[] => {
   return attributes;
 };
 
-const printNode = (node: HtmlNode, depth: number, width: Width): string => {
+const printNode = (node: HtmlNode, depth: number): string => {
   const indent = INDENT.repeat(depth);
   switch (node.kind) {
     case 'comment':
       return `${indent}${node.text}`;
     case 'element':
-      return printElement(node, depth, width);
+      return printElement(node, depth);
     case 'malformed':
       return node.text;
     case 'rawText':
-      return printRawTextElement(node, depth, width);
+      return printRawTextElement(node, depth);
     case 'text':
       return `${indent}${collapseText(node.text)}`;
     default: {
@@ -247,9 +245,9 @@ const printNode = (node: HtmlNode, depth: number, width: Width): string => {
   }
 };
 
-const printElement = (node: ElementNode, depth: number, width: Width): string => {
+const printElement = (node: ElementNode, depth: number): string => {
   const indent = INDENT.repeat(depth);
-  const startTag = printStartTag(node, depth, width);
+  const startTag = printStartTag(node, depth);
   if (VOID_ELEMENTS.has(node.name.toLowerCase())) {
     return startTag;
   }
@@ -264,16 +262,16 @@ const printElement = (node: ElementNode, depth: number, width: Width): string =>
 
   const inline = inlineElementText(node, true)?.text;
   if (inline) {
-    if (width(`${indent}${inline}`) <= MAX_LINE) {
+    if (indent.length + inline.length <= INLINE_LIMIT) {
       return `${indent}${inline}`;
     }
   }
 
-  const body = printChildLines(node.children, depth + 1, width).join('\n');
+  const body = printChildLines(node.children, depth + 1).join('\n');
   return node.closed ? `${startTag}\n${body}\n${indent}</${node.name}>` : `${startTag}\n${body}`;
 };
 
-const printChildLines = (children: HtmlNode[], depth: number, width: Width): string[] => {
+const printChildLines = (children: HtmlNode[], depth: number): string[] => {
   const lines: string[] = [];
   let group: HtmlNode[] = [];
   const flushGroup = (): void => {
@@ -282,10 +280,10 @@ const printChildLines = (children: HtmlNode[], depth: number, width: Width): str
     }
     const inline = inlineChildrenText(group);
     const indent = INDENT.repeat(depth);
-    if (inline && inline.hasText && width(`${indent}${inline.text}`) <= MAX_LINE) {
+    if (inline && inline.hasText && indent.length + inline.text.length <= INLINE_LIMIT) {
       lines.push(`${indent}${inline.text}`);
     } else {
-      group.forEach((child) => lines.push(printNode(child, depth, width)));
+      group.forEach((child) => lines.push(printNode(child, depth)));
     }
     group = [];
   };
@@ -300,7 +298,7 @@ const printChildLines = (children: HtmlNode[], depth: number, width: Width): str
       continue;
     }
     flushGroup();
-    lines.push(printNode(child, depth, width));
+    lines.push(printNode(child, depth));
   }
   flushGroup();
   return lines;
@@ -379,21 +377,16 @@ const isInlineChildElement = (node: ElementNode): boolean =>
 
 const printRawTextElement = (
   node: Extract<HtmlNode, { kind: 'rawText' }>,
-  depth: number,
-  width: Width
+  depth: number
 ): string => {
-  const startTag = printStartTag({ attributes: node.attributes, name: node.name }, depth, width);
+  const startTag = printStartTag({ attributes: node.attributes, name: node.name }, depth);
   return node.closed ? `${startTag}${node.text}</${node.name}>` : `${startTag}${node.text}`;
 };
 
-const printStartTag = (
-  node: Pick<ElementNode, 'attributes' | 'name'>,
-  depth: number,
-  width: Width
-): string => {
+const printStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>, depth: number): string => {
   const indent = INDENT.repeat(depth);
   const compact = printCompactStartTag(node);
-  if (width(`${indent}${compact}`) <= MAX_LINE) {
+  if (indent.length + compact.length <= INLINE_LIMIT) {
     return `${indent}${compact}`;
   }
   if (node.attributes.length === 0) {
@@ -412,7 +405,7 @@ const printCompactStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>): s
   return `<${node.name}${suffix}>`;
 };
 
-export const printHtmlAttribute = ({ name, value }: HtmlAttribute): string =>
+const printHtmlAttribute = ({ name, value }: HtmlAttribute): string =>
   value === undefined ? name : `${name}="${escapeAttribute(value)}"`;
 
 const decodeAttribute = (value: string): string =>

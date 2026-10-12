@@ -23,4 +23,15 @@ describe('csf-factories', () => {
       export const Default = meta.story({});"
     `);
   });
+
+  it('escapes the component file basename in the import specifier', async () => {
+    const result = await getCsfFactoryTemplateForNewStoryFile({
+      basenameWithoutExtension: `foo'; alert(1); const x = '`,
+      componentExportName: 'Example',
+      componentIsDefaultExport: false,
+      exportedStoryName: 'Default',
+    });
+
+    expect(result).toContain(`import { Example } from './foo\\'; alert(1); const x = \\'';`);
+  });
 });

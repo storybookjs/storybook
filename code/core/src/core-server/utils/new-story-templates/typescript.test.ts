@@ -54,4 +54,16 @@ describe('typescript', () => {
       export const Default: Story = {};"
     `);
   });
+
+  it('escapes the component file basename in the import specifier', async () => {
+    const result = await getTypeScriptTemplateForNewStoryFile({
+      basenameWithoutExtension: `foo'; alert(1); const x = '`,
+      componentExportName: 'Example',
+      componentIsDefaultExport: false,
+      frameworkPackage: '@storybook/react-vite',
+      exportedStoryName: 'Default',
+    });
+
+    expect(result).toContain(`import { Example } from './foo\\'; alert(1); const x = \\'';`);
+  });
 });

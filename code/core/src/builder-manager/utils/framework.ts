@@ -4,7 +4,7 @@ import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
 } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
+import type { Options, SecurityConfig } from 'storybook/internal/types';
 
 interface PropertyObject {
   name: string;
@@ -57,6 +57,11 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const framework = pluckNameFromConfigProperty(await options.presets.apply('framework'));
   if (framework) {
     globals.STORYBOOK_FRAMEWORK = framework;
+  }
+
+  const security = await options.presets.apply<SecurityConfig | undefined>('security');
+  if (security?.insecureIframeMessaging) {
+    globals.INSECURE_IFRAME_MESSAGING = true;
   }
 
   return globals;

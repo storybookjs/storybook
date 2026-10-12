@@ -1,10 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
 
 import { describe, expect, test } from 'vitest';
 
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { generate } from 'storybook/internal/babel';
+import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
+import { transformSync } from 'esbuild';
 import { format } from 'prettier';
 
 import { getDiff } from './getDiff.ts';
@@ -429,5 +432,55 @@ describe('success', () => {
         } satisfies Story;
         "
     `);
+  });
+});
+
+describe.each([
+  ['CSF3', (object: string) => object],
+  ['CSF3 satisfies', (object: string) => `${object} satisfies Story`],
+  ['CSF4', (object: string) => `meta.story(${object})`],
+] as const)('%s spread args', (format, story) => {
+  test.each([
+    ['inserts missing args', '...Base, parameters: { layout: "centered" }, ...Override'],
+    [
+      'moves existing args past spreads',
+      'args: { label: "old", disabled: true }, ...Base, ...Override',
+    ],
+    [
+      'moves args between spreads past the last spread',
+      '...Base, args: { label: "old", disabled: true }, ...Override',
+    ],
+    [
+      'updates args already after spreads',
+      '...Base, ...Override, args: { label: "old", disabled: true }',
+    ],
+  ])('%s', async (_, properties) => {
+    const csf = loadCsf(
+      `${
+        format === 'CSF4'
+          ? `import preview from '#.storybook/preview'; const meta = preview.meta({ title: 'Button' });`
+          : `export default { title: 'Button' };`
+      }
+       export const Saved = ${story(`{ ${properties}, name: 'Saved story' }`)};`,
+      { makeTitle }
+    ).parse();
+    const newArgs = { label: 'saved', disabled: true };
+
+    await updateArgsInCsfFile(csf.getStoryExport('Saved'), newArgs);
+
+    const saved = loadCsf(printCsf(csf).code, { makeTitle }).parse();
+    const expression = generate(saved.getStoryExport('Saved')).code;
+    const { code } = transformSync(`(${expression})`, { loader: 'ts' });
+    const result = runInNewContext(code, {
+      Base: { args: { label: 'base' } },
+      Override: { args: { label: 'override' } },
+      meta: { story: (input: unknown) => input },
+    });
+
+    expect(result.args).toEqual(newArgs);
+    expect(result.name).toBe('Saved story');
+
+    await updateArgsInCsfFile(saved.getStoryExport('Saved'), newArgs);
+    expect(printCsf(saved).code).toBe(printCsf(csf).code);
   });
 });

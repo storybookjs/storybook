@@ -24,6 +24,7 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
 
   if (t.isObjectExpression(node)) {
     const properties = node.properties;
+    const lastSpreadIndex = properties.findLastIndex((property) => t.isSpreadElement(property));
     const argsProperty = properties.find((property) => {
       if (t.isObjectProperty(property)) {
         const key = property.key;
@@ -52,10 +53,17 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
               a.properties.push(t.objectProperty(t.identifier(key), value));
             });
           }
+          const argsIndex = properties.indexOf(argsProperty);
+          if (argsIndex < lastSpreadIndex) {
+            properties.splice(argsIndex, 1);
+            properties.splice(lastSpreadIndex, 0, argsProperty);
+          }
         }
       }
     } else {
-      properties.unshift(
+      properties.splice(
+        lastSpreadIndex + 1,
+        0,
         t.objectProperty(
           t.identifier('args'),
           t.objectExpression(
@@ -75,6 +83,7 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
 
       found = true;
       const properties = path.get('properties');
+      const lastSpread = properties.findLast((property) => property.isSpreadElement());
       const argsProperty = properties.find((property) => {
         if (property.isObjectProperty()) {
           const key = property.get('key');
@@ -104,18 +113,25 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
                 a.pushContainer('properties', t.objectProperty(t.identifier(key), value));
               });
             }
+            if (lastSpread && properties.indexOf(argsProperty) < properties.indexOf(lastSpread)) {
+              const argsNode = argsProperty.node;
+              argsProperty.remove();
+              lastSpread.insertAfter(argsNode);
+            }
           }
         }
       } else {
-        path.unshiftContainer(
-          'properties',
-          t.objectProperty(
-            t.identifier('args'),
-            t.objectExpression(
-              Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
-            )
+        const newArgs = t.objectProperty(
+          t.identifier('args'),
+          t.objectExpression(
+            Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
           )
         );
+        if (lastSpread) {
+          lastSpread.insertAfter(newArgs);
+        } else {
+          path.unshiftContainer('properties', newArgs);
+        }
       }
     },
 

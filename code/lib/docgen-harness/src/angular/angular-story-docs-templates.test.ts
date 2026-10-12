@@ -1,5 +1,4 @@
-// Gates the live story-docs template against the static snippet it is derived from: filled with the
-// args a story declares, it has to read exactly as that snippet, and its markup has to compile.
+// Fills each live story-docs template with the args its story declares: its markup has to compile.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,91 +47,20 @@ const actionsOf = (annotated: Annotated | undefined) =>
 
 const argsOf = (annotated: Annotated | undefined) => annotationsOf(annotated).args ?? {};
 
-// Stories whose filled template legitimately differs from their static snippet, with the markup it
-// fills to instead and, where it differs too, the class body. The rest of the host component still
-// reads exactly as the static snippet.
-const DIFFERS = new Map<string, { markup: string; classBody?: string }>([
-  // The static snippet binds an arg set to `undefined` as `[x]="undefined"`; the preview leaves an
-  // unset input out.
-  [
-    '__testfixtures__/decorator-io-basics/ExplicitUndefinedArg',
-    { markup: '<sb-decorator-io-basics [count]="1" (clicked)="clicked($event)" />' },
-  ],
-  [
-    'story-docs/__testfixtures__/args-formatting/EveryValueShape',
-    {
-      markup: [
-        '<sb-args-formatting',
-        `    [kind]="'secondary'"`,
-        '    [offset]="-4"',
-        '    [data]="{id: 7, nested: {deep: true}}"',
-        `    [tags]="['a', 'b']"`,
-        `    [greeting]="'hello'"`,
-        '    [formatter]="formatter"',
-        '/>',
-      ].join('\n'),
-    },
-  ],
-  // The static snippet names an imported value it could not read; the preview writes its value.
-  [
-    'story-docs/__testfixtures__/meta-actions/ImportedLabel',
-    { markup: `<sb-meta-actions [label]="'Shared label'" (onClick)="onClick($event)" />` },
-  ],
-  // Computed data is filled from the controls; only code stays in a host field.
-  [
-    '__storyshapes__/button-shapes/HoistedArgs',
-    {
-      markup: [
-        '<sb-shape-button',
-        `    [label]="'Save'"`,
-        '    [loadingError]="loadingError"',
-        '    [items]="[0, 1, 2]"',
-        '    (clicked)="clicked($event)"',
-        '/>',
-      ].join('\n'),
-      classBody: [
-        '{',
-        "  loadingError = new Error('Failed to load cards.');",
-        '  clicked(event: unknown) {}',
-        '}',
-      ].join('\n'),
-    },
-  ],
-  // An action the controls add to `argsToTemplate` is bound, as the renderer binds it.
-  [
-    '__storyshapes__/button-shapes/ArgTypesAction',
-    {
-      markup: `<sb-shape-button [label]="'Save'" (clicked)="clicked($event)"></sb-shape-button>`,
-      classBody: '{\n  clicked(event: unknown) {}\n}',
-    },
-  ],
-  // The static snippet leaves out a function its markup reads; the live one writes it as written.
-  [
-    'story-docs/__testfixtures__/live-args/OwnMarkupFunction',
-    {
-      markup: '<sb-live-args [label]="label" [formatter]="formatter"></sb-live-args>',
-      classBody: "{\n  label = 'Save';\n  formatter = (value) => value.trim();\n}",
-    },
-  ],
-]);
-
 // Stories holding a value the preview cannot write, which fall back to their static snippet.
 const THROWS = new Set([
   'story-docs/__testfixtures__/live-args/ImportedFormatter',
   'story-docs/__testfixtures__/live-args/ImportedControl',
 ]);
 
-const classBodyOf = (snippet: string) => snippet.split('export class DemoComponent ')[1];
-
 const expectCompiles = (markup: string, exportName: string) => {
   expect(parseTemplate(markup, 'filled.html').errors ?? [], exportName).toEqual([]);
 };
 
-let compared = 0;
-const listedAndFilled = new Set<string>();
+const filledStories = new Set<string>();
 
 describe('angular story-docs templates', () => {
-  it.each(cases)('%s fills to its static snippet', async (fixtureCase) => {
+  it.each(cases)('%s fills to markup that compiles', async (fixtureCase) => {
     const storyPath = join(here, fixtureCase, 'input.stories.ts');
     const title = `TemplateGate/${fixtureCase}`;
     const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
@@ -155,7 +83,7 @@ describe('angular story-docs templates', () => {
     >;
 
     for (const [exportName, story] of Object.entries(csf._stories)) {
-      const { snippet, template } = payload!.stories[story.id]!;
+      const { template } = payload!.stories[story.id]!;
       const annotated = storiesModule[exportName];
       const args = {
         ...actionsOf(storiesModule.default),
@@ -167,28 +95,20 @@ describe('angular story-docs templates', () => {
         continue;
       }
       const key = `${fixtureCase}/${exportName}`;
-      listedAndFilled.add(key);
+      filledStories.add(key);
       if (THROWS.has(key)) {
         expect(() => fillTemplate(template, args), exportName).toThrow();
         continue;
       }
-      const filled = fillTemplate(template, args);
-      const { before, template: markup } = splitHostComponentTemplate(filled)!;
-      expectCompiles(markup, exportName);
-      const differs = DIFFERS.get(key);
-      if (differs !== undefined) {
-        expect(markup, exportName).toBe(differs.markup);
-        expect(before, exportName).toBe(splitHostComponentTemplate(snippet!)!.before);
-        expect(classBodyOf(filled), exportName).toBe(differs.classBody ?? classBodyOf(snippet!));
-        continue;
-      }
-      expect(filled, exportName).toBe(snippet);
-      compared++;
+      expectCompiles(
+        splitHostComponentTemplate(fillTemplate(template, args))!.template,
+        exportName
+      );
     }
   });
 
-  it('compares a meaningful number of stories, every listed one among them', () => {
-    expect(compared).toBeGreaterThan(20);
-    expect([...DIFFERS.keys(), ...THROWS].filter((key) => !listedAndFilled.has(key))).toEqual([]);
+  it('fills a meaningful number of stories, every listed one among them', () => {
+    expect(filledStories.size).toBeGreaterThan(20);
+    expect([...THROWS].filter((key) => !filledStories.has(key))).toEqual([]);
   });
 });

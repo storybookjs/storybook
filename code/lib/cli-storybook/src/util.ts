@@ -468,8 +468,7 @@ export const generateUpgradeSpecs = async (
 
     const { modifier } = getVersionModifier(versionSpec);
 
-    // Use fixed version for outdated CLI or canary versions
-    const shouldUseFixed = isCLIOutdated || isCanary;
+    const shouldUseFixed = isCLIOutdated || isCanary || isCLIPrerelease;
     const finalModifier = shouldUseFixed ? '' : modifier;
 
     return `${dependency}@${finalModifier}${versions[dependency]}`;
@@ -493,7 +492,8 @@ export const generateUpgradeSpecs = async (
               return null;
             }
             const { modifier } = getVersionModifier(dependencies[dependency] ?? '');
-            return `${dependency}@${modifier}${mostRecentVersion}`;
+            const finalModifier = isCLIPrerelease && prerelease(mostRecentVersion) ? '' : modifier;
+            return `${dependency}@${finalModifier}${mostRecentVersion}`;
           } catch {
             return null;
           }

@@ -245,9 +245,10 @@ describe('toUpgradedDependencies', () => {
       ]);
     });
 
-    it('should keep caret ranges for prerelease CLI upgrades that are not canaries', async () => {
+    it('should use exact versions for prerelease CLI upgrades that are not canaries', async () => {
       const deps = {
         '@storybook/react': '^8.0.0',
+        '@storybook/addon-mcp': '^8.0.0',
       };
 
       const result = await generateUpgradeSpecs(deps, {
@@ -260,7 +261,7 @@ describe('toUpgradedDependencies', () => {
         storybookVersionSpecifier: '10.6.0-alpha.7',
       });
 
-      expect(result).toEqual(['@storybook/react@^9.0.0']);
+      expect(result).toEqual(['@storybook/react@9.0.0', '@storybook/addon-mcp@9.0.0']);
     });
 
     it('should treat pkg.pr.new Storybook specifiers as canaries during project collection', async () => {
@@ -321,7 +322,7 @@ describe('toUpgradedDependencies', () => {
     it('should include satellite dependencies with @next for prerelease version', async () => {
       const deps = {
         '@storybook/react': '^8.0.0',
-        '@storybook/addon-designs': '8.0.0',
+        '@storybook/addon-designs': '^8.0.0',
       };
 
       const result = await generateUpgradeSpecs(deps, {
@@ -333,7 +334,7 @@ describe('toUpgradedDependencies', () => {
         isCLIPrerelease: true,
       });
 
-      expect(result).toContainEqual('@storybook/react@^9.0.0');
+      expect(result).toContainEqual('@storybook/react@9.0.0');
       expect(result).toContainEqual('@storybook/addon-designs@9.0.0-beta.1');
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'

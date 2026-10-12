@@ -44,4 +44,15 @@ describe('javascript', () => {
       export const Default = {};"
     `);
   });
+
+  it('escapes the component file basename in the import specifier', async () => {
+    const result = await getJavaScriptTemplateForNewStoryFile({
+      basenameWithoutExtension: `foo'; alert(1); const x = '`,
+      componentExportName: 'Example',
+      componentIsDefaultExport: false,
+      exportedStoryName: 'Default',
+    });
+
+    expect(result).toContain(`import { Example } from './foo\\'; alert(1); const x = \\'';`);
+  });
 });

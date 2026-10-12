@@ -110,3 +110,14 @@ describe('fillSnippetTemplate', () => {
     `);
   });
 });
+
+describe('fillSnippetTemplate with written children', () => {
+  it('leaves children out of a spread on an element that has its own', () => {
+    expect(
+      fillSnippetTemplate('const S = () => <Button {...args}>Solid</Button>;', {
+        children: 'Button',
+        primary: true,
+      })
+    ).toBe('const S = () => <Button primary>Solid</Button>;');
+  });
+});

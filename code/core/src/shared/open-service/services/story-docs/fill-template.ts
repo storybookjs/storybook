@@ -21,7 +21,12 @@ export function fillSnippetTemplate(code: string, args: Record<string, unknown> 
     code
       // <Button {...args} /> => <Button label="Click" primary />
       .replace(/ ?\{\.\.\.args\}( ?\/?>)?/g, (_match, closer: string | undefined, offset: number) =>
-        spreadProps(props, lineIndent(code, offset), closer)
+        spreadProps(
+          // An element with its own children (`<Button {...args}>Solid</Button>`) overrides `children`
+          closer?.trim() === '>' ? props.filter((prop) => !/^children\b/.test(prop)) : props,
+          lineIndent(code, offset),
+          closer
+        )
       )
       // label={args.label} => label="Click", and dropped when the arg is unset
       .replace(

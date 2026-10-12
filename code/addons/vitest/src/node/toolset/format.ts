@@ -130,18 +130,15 @@ function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): str
 
 const A11Y_CHECK_FAILED = 'The accessibility check failed; see Accessibility Violations below.';
 
-function formatFailingStoriesSection(
-  statuses: ComponentTestStatus[],
-  a11yFailingStoryIds: Set<string>
-): string {
+// A story whose component test fails gets no accessibility result, so it fails for one reason.
+function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
   const entries = statuses.map((status) => {
-    const details = [
-      isFailing(status) ? status.description || 'No failure details available.' : undefined,
-      a11yFailingStoryIds.has(status.storyId) ? A11Y_CHECK_FAILED : undefined,
-    ].filter(Boolean);
+    const details = isFailing(status)
+      ? status.description || 'No failure details available.'
+      : A11Y_CHECK_FAILED;
     return `### ${status.storyId}
 
-${details.join('\n\n')}`;
+${details}`;
   });
 
   return `## Failing Stories
@@ -232,11 +229,7 @@ ${unhandledError.stack || 'No stack trace available'}`
 ${formattedErrors.join('\n\n')}`;
 }
 
-function formatA11yResult(result: TestRunResult, a11y: boolean): string {
-  if (!a11y) {
-    return 'Accessibility: skipped (a11y: false).';
-  }
-  const { success, warning, error } = result.a11yCount;
+function formatA11yCounts({ success, warning, error }: TestRunResult['a11yCount']): string {
   const checked = success + warning + error;
   if (checked === 0) {
     return 'Accessibility: not checked.';
@@ -254,19 +247,29 @@ function formatA11yResult(result: TestRunResult, a11y: boolean): string {
   return `Accessibility: ${pluralize(checked, 'story', 'stories')} checked; ${parts.join('; ')}.`;
 }
 
+function formatA11yResult(result: TestRunResult, a11y: boolean): string {
+  if (!a11y) {
+    return 'Accessibility: skipped (a11y: false).';
+  }
+  const counts = formatA11yCounts(result.a11yCount);
+  // Otherwise "no violations" reads as if the failing stories were clean too.
+  return result.componentTestCount.error > 0
+    ? `${counts} Stories with a failing component test get no accessibility result.`
+    : counts;
+}
+
+// Keyed by every failure count, so a new way to fail a run cannot be left out of the verdict.
+const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => string> = {
+  componentTests: (count) => `${pluralize(count, 'component test')} failed`,
+  a11yChecks: (count) => `${pluralize(count, 'accessibility check')} failed`,
+  unhandledErrors: (count) => pluralize(count, 'unhandled error'),
+};
+
 function formatResultSection(result: TestRunResult, a11y: boolean): string {
   const failures = countTestRunFailures(result, a11y);
-  const failureParts = [
-    failures.componentTests > 0
-      ? `${pluralize(failures.componentTests, 'component test')} failed`
-      : undefined,
-    failures.a11yChecks > 0
-      ? `${pluralize(failures.a11yChecks, 'accessibility check')} failed`
-      : undefined,
-    failures.unhandledErrors > 0
-      ? pluralize(failures.unhandledErrors, 'unhandled error')
-      : undefined,
-  ].filter(Boolean);
+  const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
+    .filter((key) => failures[key] > 0)
+    .map((key) => FAILURE_LABELS[key](failures[key]));
   const verdict =
     failureParts.length > 0
       ? `Failed: ${failureParts.join(', ')}.`
@@ -303,7 +306,7 @@ function formatCompletedRun(
   }
 
   if (failingStories.length > 0) {
-    sections.push(formatFailingStoriesSection(failingStories, a11yFailingStoryIds));
+    sections.push(formatFailingStoriesSection(failingStories));
   }
 
   const a11yReports = getA11yReports(result);

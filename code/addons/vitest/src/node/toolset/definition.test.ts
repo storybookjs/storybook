@@ -118,6 +118,7 @@ describe('test API', () => {
             'Expected button text to be "Secondary"'
           ),
         ],
+        a11yStatuses: [a11yCheck('button--primary', 'status-value:error')],
         a11yReports: {
           'button--primary': [
             {
@@ -138,9 +139,10 @@ describe('test API', () => {
     const mcpOutcome = await runForMcp();
 
     expect(outcome.markdown).toBe(mcpOutcome.markdown);
-    expect(outcome.markdown).toContain('## Passing Stories');
-    expect(outcome.markdown).toContain('- button--primary');
+    expect(outcome.markdown).not.toContain('## Passing Stories');
     expect(outcome.markdown).toContain('## Failing Stories');
+    expect(outcome.markdown).toContain('### button--primary');
+    expect(outcome.markdown).toContain('The accessibility check failed');
     expect(outcome.markdown).toContain('### button--secondary');
     expect(outcome.markdown).toContain('Expected button text to be "Secondary"');
     expect(outcome.markdown).toContain('## Accessibility Violations');
@@ -353,6 +355,7 @@ Accessibility: 2 stories checked; 1 without violations; 1 failing the run.`);
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({
           componentTestCount: { success: 1, error: 1 },
+          a11yCount: { success: 1, warning: 0, error: 0 },
           componentTestStatuses: [
             componentTest('button--primary', 'status-value:success'),
             componentTest(
@@ -380,7 +383,7 @@ Expected button text to be "Secondary"
 ## Result
 
 Failed: 1 component test failed.
-Accessibility: not checked.`);
+Accessibility: 1 story checked, no violations. Stories with a failing component test get no accessibility result.`);
     });
 
     it('reports accessibility violations with inspect links built from the origin', async () => {
@@ -498,55 +501,6 @@ ReferenceError: foo is not defined
 
 Failed: 1 unhandled error.
 Accessibility: not checked.`);
-    });
-
-    it('lists a story failing both checks once, with both details', async () => {
-      vi.mocked(runStoryTests).mockResolvedValue(
-        completed({
-          componentTestCount: { success: 0, error: 1 },
-          a11yCount: { success: 0, warning: 0, error: 1 },
-          componentTestStatuses: [
-            componentTest('button--primary', 'status-value:error', 'Expected 1 call, got 0'),
-          ],
-          a11yStatuses: [a11yCheck('button--primary', 'status-value:error')],
-          a11yReports: {
-            'button--primary': [
-              {
-                violations: [
-                  {
-                    id: 'button-name',
-                    description: 'Buttons must have discernible text',
-                    nodes: [{ html: '<button></button>', impact: 'critical' }],
-                  },
-                ],
-              },
-            ],
-          },
-        })
-      );
-
-      expect((await runForMcp()).markdown).toBe(`## Failing Stories
-
-### button--primary
-
-Expected 1 call, got 0
-
-The accessibility check failed; see Accessibility Violations below.
-
-## Accessibility Violations
-
-### button--primary - button-name
-
-Buttons must have discernible text
-
-#### Affected Elements
-- **Impact**: critical
-  **Element**: <button></button>
-
-## Result
-
-Failed: 1 component test failed, 1 accessibility check failed.
-Accessibility: 1 story checked; 1 failing the run.`);
     });
 
     it('passes a run whose accessibility violations are only warnings, and says so', async () => {

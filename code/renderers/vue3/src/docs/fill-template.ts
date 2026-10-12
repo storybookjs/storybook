@@ -42,7 +42,7 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const markup = template
     .slice(script.length)
     .replace(UNSET_SLOT_LINE, (line, text?: string, slot?: string) =>
-      wholeArg(text ?? slot!, args)?.value === undefined ? '' : line
+      resolveArgPath(text ?? slot!, args).value === undefined ? '' : line
     );
   return (
     fillCode(script, args, "'", escapeInScript) +

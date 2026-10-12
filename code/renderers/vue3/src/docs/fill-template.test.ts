@@ -91,6 +91,12 @@ describe('fillTemplate', () => {
     it('is empty when unset', () => {
       expect(fill('<p>{{ args.label }}</p>', {})).toBe('<p></p>');
     });
+
+    it('keeps a line that reads past a set arg', () => {
+      expect(fill('<p>\n  {{ args.label.length }}\n</p>', { label: 'Go' })).toBe(
+        "<p>\n  {{ 'Go'.length }}\n</p>"
+      );
+    });
   });
 
   describe('v-bind="args"', () => {

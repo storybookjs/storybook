@@ -24,8 +24,8 @@ beforeAll(async () => {
       {
         name: 'unrelated-manager-globals',
         setup(builder) {
-          builder.onResolve({ filter: /^[^./]/ }, ({ path }) => {
-            if (path === 'react' || path.startsWith('react/')) {
+          builder.onResolve({ filter: /^[^./]/ }, ({ path, kind }) => {
+            if (kind === 'entry-point' || path === 'react' || path.startsWith('react/')) {
               return;
             }
             return { path, namespace: 'empty' };

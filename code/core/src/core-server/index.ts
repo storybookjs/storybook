@@ -55,6 +55,10 @@ export {
   listServices,
   registerService as experimental_registerService,
 } from '../shared/open-service/server.ts';
+export {
+  createWorkerGatedStoryDocsProvider,
+  type WorkerGatedStoryDocsProviderOptions,
+} from '../shared/open-service/services/story-docs/provider.ts';
 
 /**
  * Toolset registration and server-side primitives for addons that host a public toolset.

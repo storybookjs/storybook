@@ -1807,19 +1807,19 @@ The `element` property of the `ClickEventDetails` payload no longer includes the
 
 ### `storybook dev` now blocks remote iframe embedding
 
-Storybook 10.6.3 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+Storybook 10.6.2 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
 
 To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
 
 ### Storybook now restricts iframe messaging
 
-Storybook 10.6.3 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+Storybook 10.6.2 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
 
 To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
 
 ### Highlight: menu items emit a fixed event and require an `id`
 
-Storybook 10.6.3 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+Storybook 10.6.2 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
 
 See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
 

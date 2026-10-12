@@ -72,6 +72,7 @@ describe('experimental_docgenProvider', () => {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/dist/custom-elements.json')],
+          autoGenerateManifest: false,
         },
       },
     ]);
@@ -92,6 +93,29 @@ describe('experimental_docgenProvider', () => {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/.storybook/custom-elements.json')],
+          autoGenerateManifest: false,
+        },
+      },
+    ]);
+  });
+
+  it('passes the auto-generated manifest option to the worker', async () => {
+    expect(
+      await experimental_docgenProvider(
+        [],
+        optionsWith(
+          {},
+          {
+            autoGenerateManifest: true,
+          }
+        )
+      )
+    ).toEqual([
+      {
+        moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
+        options: {
+          manifestPaths: [],
+          autoGenerateManifest: true,
         },
       },
     ]);

@@ -11278,6 +11278,9 @@ __metadata:
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/node": "npm:^22.19.1"
     "@types/tmp": "npm:^0.2.6"
+    "@typescript/typescript6": "npm:^6.0.2"
+    "@wc-toolkit/cem-generator": "npm:^0.1.11"
+    "@wc-toolkit/cem-generator-lit": "npm:^0.1.12"
     cross-spawn: "npm:^7.0.6"
     custom-elements-manifest: "npm:^2.1.0"
     es-toolkit: "npm:^1.43.0"
@@ -13286,6 +13289,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@typescript/old@npm:typescript@^6, typescript@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "typescript@npm:6.0.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/4a25ff5045b984370f48f196b3a0120779b1b343d40b9a68d114ea5e5fff099809b2bb777576991a63a5cd59cf7bffd96ff6fe10afcefbcb8bd6fb96ad4b6606
+  languageName: node
+  linkType: hard
+
 "@typescript/typescript-aix-ppc64@npm:7.0.2":
   version: 7.0.2
   resolution: "@typescript/typescript-aix-ppc64@npm:7.0.2"
@@ -13423,6 +13436,17 @@ __metadata:
   version: 7.0.2
   resolution: "@typescript/typescript-win32-x64@npm:7.0.2"
   conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript6@npm:^6.0.2":
+  version: 6.0.2
+  resolution: "@typescript/typescript6@npm:6.0.2"
+  dependencies:
+    "@typescript/old": "npm:typescript@^6"
+  bin:
+    tsc6: bin/tsc6
+  checksum: 10c0/0c6e5c1c3a61b79f2bc61506feb82f8ce54275b2af1aebc3dd9310d7f57b1de2aca40256d018cf736c524152ae4a731f5810ff7cd028d565158d53368e681af2
   languageName: node
   linkType: hard
 
@@ -14749,6 +14773,37 @@ __metadata:
     js-beautify: "npm:^1.14.9"
     vue-component-type-helpers: "npm:^2.0.0"
   checksum: 10c0/37fa46cb6b98f90affb2faf5aa41422617bbd23ff35bc714d08035334e593ae31d18757d5ae688f778dd8b4c28de431601c0b9b7ca17fc1b55f1401a5577375e
+  languageName: node
+  linkType: hard
+
+"@wc-toolkit/cem-generator-lit@npm:^0.1.12":
+  version: 0.1.12
+  resolution: "@wc-toolkit/cem-generator-lit@npm:0.1.12"
+  dependencies:
+    "@typescript/typescript6": "npm:^6.0.2"
+    "@wc-toolkit/cem-generator": "npm:0.1.11"
+    "@wc-toolkit/cem-generator-utils": "npm:0.1.3"
+  checksum: 10c0/9da4b03ada19ad549accecc84a583734d5e439a4d09e6b856e8f28d6b3938611a9b98a1a2133e019f0c29e53afb402fdf2b3055e179e9b470db31493cff433e9
+  languageName: node
+  linkType: hard
+
+"@wc-toolkit/cem-generator-utils@npm:0.1.3":
+  version: 0.1.3
+  resolution: "@wc-toolkit/cem-generator-utils@npm:0.1.3"
+  dependencies:
+    "@typescript/typescript6": "npm:^6.0.2"
+  checksum: 10c0/6e511214645d49c7aff85956e802cab976072b0d0eed60d290d2e0e2fd5974bd89c8286d731f5f5118abba48eacbb041a254c1b3a788d61c1482304889faedf6
+  languageName: node
+  linkType: hard
+
+"@wc-toolkit/cem-generator@npm:0.1.11, @wc-toolkit/cem-generator@npm:^0.1.11":
+  version: 0.1.11
+  resolution: "@wc-toolkit/cem-generator@npm:0.1.11"
+  dependencies:
+    "@typescript/typescript6": "npm:^6.0.2"
+    "@wc-toolkit/cem-generator-utils": "npm:0.1.3"
+    postcss: "npm:^8.5.6"
+  checksum: 10c0/53df45dfaf1eeed0470fb8dd06b3ba4d9079e48ba3e66288169454b202bef0e7730bb2e1d717dbb19a26e6820edd5c6a1ad5dc6afba81852ba051ae2aead0842
   languageName: node
   linkType: hard
 
@@ -35334,16 +35389,6 @@ __metadata:
   bin:
     tsc: bin/tsc
   checksum: 10c0/3dcee51ec8c332492325bcdbf7df48b66668751f127e622ae7d41b6c716eb19184424a45e14f7750f50f340232388b69e6287859155f06a5ce2df76f12cb31cf
-  languageName: node
-  linkType: hard
-
-"typescript@npm:^6.0.3":
-  version: 6.0.3
-  resolution: "typescript@npm:6.0.3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/4a25ff5045b984370f48f196b3a0120779b1b343d40b9a68d114ea5e5fff099809b2bb777576991a63a5cd59cf7bffd96ff6fe10afcefbcb8bd6fb96ad4b6606
   languageName: node
   linkType: hard
 

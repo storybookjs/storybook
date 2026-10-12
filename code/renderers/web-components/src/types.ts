@@ -12,6 +12,8 @@ export type WebComponentsFrameworkOptions = {
    * Please note that the runtime `setCustomElementsManifest` path is deprecated and will be removed in Storybook 12.
    */
   customElementsManifest?: string | string[];
+  /** Generate declarations from the project's sources for tags no Custom Elements Manifest declares. */
+  autoGenerateManifest?: boolean;
 };
 
 export type StoryFnHtmlReturnType =

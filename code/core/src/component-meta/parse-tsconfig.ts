@@ -49,14 +49,16 @@ export interface FileExtensionInfo {
 export function parseTsconfigCommandLine<CL extends ProjectCommandLine = ProjectCommandLine>(
   typescript: TsconfigParserModule,
   tsconfig: string,
-  extraFileExtensions?: readonly FileExtensionInfo[]
+  extraFileExtensions?: readonly FileExtensionInfo[],
+  /** Defaults applied under the tsconfig; options the tsconfig sets still win. */
+  existingOptions: Record<string, unknown> = {}
 ): CL {
   const config = typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile);
   const content = typescript.parseJsonSourceFileConfigFileContent(
     config,
     typescript.sys,
     dirname(tsconfig),
-    {},
+    existingOptions,
     tsconfig,
     undefined,
     extraFileExtensions

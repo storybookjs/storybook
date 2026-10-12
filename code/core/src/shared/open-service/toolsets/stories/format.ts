@@ -57,15 +57,7 @@ function formatChangedFilesOutsideStories(
   if (unreachableFiles.length > 0) {
     const capped = unreachableFilesTruncated ? ` (first ${unreachableFiles.length} files)` : '';
     notes.push(
-      `Coverage gap${capped}: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
-${unreachableFiles.map((file) => `- \`${file}\``).join('\n')}
-
-For each file:
-- A component: it has no stories yet. Write them, or tell the user.
-- Used by components without an import, such as a token turned into CSS variables: find those components and pass their paths to \`${getToolName(ctx)('stories.findByComponent')}\`.
-- Neither, such as an app entry file: leave it out of the review.
-
-Never invent story IDs to fill the gap.`
+      `Coverage gap${capped}: no story imports these changed files, directly or indirectly, so this result can miss stories they affect: ${formatQuotedList(unreachableFiles)}. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`${getToolName(ctx)('stories.findByComponent')}\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs.`
     );
   }
   return notes.map((note) => `\n\n${note}`).join('');

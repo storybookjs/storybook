@@ -526,15 +526,7 @@ New stories:
 
 Changed files in the Storybook config directory, which can affect every story: \`${changedPreviewFile}\`.
 
-Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
-- \`${changedThemeFile}\`
-
-For each file:
-- A component: it has no stories yet. Write them, or tell the user.
-- Used by components without an import, such as a token turned into CSS variables: find those components and pass their paths to \`stories-find-by-component\`.
-- Neither, such as an app entry file: leave it out of the review.
-
-Never invent story IDs to fill the gap.
+Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs.
 
 Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs and any you found for the coverage gap. That review link is how you finish; do not substitute individual preview URLs for it.`
       );
@@ -553,15 +545,7 @@ Next: if the change is visually observable, publish the review now — call **re
 
 Changed files in the Storybook config directory, which can affect every story: \`${changedPreviewFile}\`.
 
-Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect:
-- \`${changedThemeFile}\`
-
-For each file:
-- A component: it has no stories yet. Write them, or tell the user.
-- Used by components without an import, such as a token turned into CSS variables: find those components and pass their paths to \`stories-find-by-component\`.
-- Neither, such as an app entry file: leave it out of the review.
-
-Never invent story IDs to fill the gap.`
+Coverage gap: no story imports these changed files, directly or indirectly, so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs.`
       );
     });
   });

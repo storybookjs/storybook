@@ -1,12 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { Args, PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
-  selectSnippetForStory,
+  getFillTemplate,
+  selectLiveSnippetForStory,
   selectStoryDoc,
-  selectWarningForStory,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
@@ -53,12 +53,23 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
-/** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
-export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectSnippetForStory);
+/**
+ * One story's display snippet with `args` filled into its template by the story's renderer, or its
+ * static snippet and warning when there are no args to fill or it has no template.
+ */
+export function useServiceStoryLiveSnippet(
+  story: PreparedStory,
+  args: Args | undefined
+): QueryState<{ snippet?: string; warning?: string }> {
+  // The selector is stable, so an args change fills the template again without a new subscription,
+  // which would load the story docs again.
+  const state = useServiceStory(story.id, selectPayload);
+  const fill = getFillTemplate(story.parameters);
+  const data = useMemo(
+    () => selectLiveSnippetForStory(state.data, story.id, args, fill),
+    [state.data, story.id, args, fill]
+  );
+  return useMemo(() => ({ ...state, data }), [state, data]);
 }
 
-/** Convenience hook returning why one story's snippet is an incomplete example, when it is one. */
-export function useServiceStoryWarning(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectWarningForStory);
-}
+const selectPayload = (payload: StoryDocsPayload | undefined) => payload;

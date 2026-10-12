@@ -16,6 +16,7 @@ const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
   snippet: v.optional(v.string()),
+  template: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),

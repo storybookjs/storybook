@@ -23,12 +23,20 @@ export interface StoryDoc {
   id: string;
   name: string;
   snippet?: string;
+  /**
+   * `snippet` with its arg references kept, such as `<Button {...args} />`. The preview fills it
+   * with the current args through the renderer's `parameters.docs.source.fillTemplate` once they
+   * differ from the story's initial args, so the snippet follows the controls. Set only when every
+   * arg reference in it can be filled; a filler throws for a value it cannot print.
+   */
+  template?: string;
   description?: string;
   summary?: string;
   /**
    * What a static pass could not resolve, in the source text it was written as. Next to a
    * `snippet` it marks the example as partial; on its own it says why no static snippet could be
-   * produced at all. An `error` means the provider itself failed.
+   * produced at all. It belongs to the static snippet, which reads arg values from the source: a
+   * filled `template` has the runtime values instead. An `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;

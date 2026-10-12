@@ -4,9 +4,30 @@ Per-story snippets, descriptions, and file-level import statements for docs page
 panel, and the components HTML debugger. Component prop docgen lives in the sibling `core/docgen`
 service.
 
-When `docgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits static
-snippets to the manager Code panel via `SNIPPET_RENDERED`, replacing renderer `jsxDecorator` while
-preserving `parameters.docs.source.transform` handling in preview.
+When `docgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits each story's
+snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, replacing renderer
+`jsxDecorator` while preserving `parameters.docs.source.transform` handling in preview.
+
+## Live snippets
+
+A story's `snippet` is static: it shows the args written in the story file, and it is what agents
+and the components manifest read. So that the snippet follows the controls, a provider can also
+emit a `template`: the same story as written, with its arg references kept, such as
+`<Button {...args}>{args.children}</Button>`.
+
+The renderer fills the template in the browser with the current args through
+`parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`.
+The filler keeps the story's structure and only replaces the arg references, so
+`args.loading ? <Spinner /> : <Button {...args} />` becomes `true ? <Spinner /> : …`. Fillers can
+share `ARG_PATH_PATTERN`, `resolveArgPath`, `printArgPath` and `printValue`, which print a value
+that has no readable literal, such as a function, as the name it is passed as (`onClick={onClick}`).
+
+The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
+has the args it is written with, and fill the template once the args change, in dev and in static
+builds alike. The story docs load once per version of a story, and the server keeps them current, so
+an args change makes no request. A provider sets `template` only when it can fill every arg
+reference in it, and a filler throws for a value it cannot print; a missing template, a missing
+filler or a filler that throws falls back to the static `snippet`.
 
 ## Providers
 
@@ -14,6 +35,7 @@ Renderers contribute payloads through the `experimental_storyDocsProvider` prese
 A renderer whose snippets depend on its own docgen worker builds that preset with `createWorkerGatedStoryDocsProvider` from `storybook/internal/core-server`.
 The helper skips the renderer when its worker is not registered, reads only matching story files, logs a file it cannot read at debug level and hands it to the next provider, and merges its payload over the next provider's.
 Vue, Svelte and Web Components use it; React and Angular have no worker gate and keep their own presets.
+Each renderer that emits a `template` sets the matching `fillTemplate` in its `entry-preview-docs`.
 
 ## Components spread over several story files
 

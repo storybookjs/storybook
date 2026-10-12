@@ -98,6 +98,30 @@ describe('story test patterns', () => {
   });
 });
 
+describe('preview html', () => {
+  it('sets the framework options global ahead of the preview head', async () => {
+    const applyPreset = presetApply.getMockImplementation()!;
+    presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+      switch (key) {
+        case 'frameworkOptions':
+          return { strictMode: true };
+        case 'previewHead':
+          return '<meta name="preview-head" />';
+        default:
+          return applyPreset(key, fallback);
+      }
+    });
+
+    const plugins = await storybookTest({ configDir: CONFIG_DIR });
+    const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
+    const transformIndexHtml = plugin.transformIndexHtml as (html: string) => Promise<string>;
+
+    expect(await transformIndexHtml('<html><head></head><body></body></html>')).toBe(
+      '<html><head><script>window.FRAMEWORK_OPTIONS = {"strictMode":true};</script><meta name="preview-head" /></head><body></body></html>'
+    );
+  });
+});
+
 describe('internal setup files', () => {
   it('registers internal setup files', async () => {
     const { test, plugin } = await getPluginConfig(REPO_ROOT);

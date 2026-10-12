@@ -27,6 +27,10 @@
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",
+      "template": "<lit-slots-and-css heading=${args.heading}>
+  <p>Default slot content</p>
+  <button slot="actions">Confirm</button>
+</lit-slots-and-css>",
     },
   },
 }

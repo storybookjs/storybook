@@ -12,6 +12,7 @@
   variant="full"
   aria-label-text="Default rating"
 ></stencil-props>",
+      "template": "<stencil-props ${...args/* {"value":"=value","max":"=max","variant":"=variant","labelText":"=aria-label-text","hovered":".hovered","aria-label-text":"aria-label-text","labels":"=labels"} */}></stencil-props>",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
       "id": "webcomponentsfixtures-stencil-props--dom-node",
@@ -23,6 +24,7 @@
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
       "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+      "template": "<stencil-props value=${args.value} max=${args.max} variant=${args.variant} aria-label-text=${args.labelText}></stencil-props>",
     },
   },
 }

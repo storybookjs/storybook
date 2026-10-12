@@ -1,3 +1,4 @@
+import { printCssProperties } from '../../docs/template-format.ts';
 import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
 import { parseHtml, printHtml } from './html-tree.ts';
 
@@ -14,11 +15,6 @@ export interface ElementSnippet {
   listeners: { event: string; handler: string; tag: string }[];
   slots: { name: string; html: unknown }[];
   styleRules: { selector: string; declarations: string }[];
-}
-
-export function escapeAttribute(value: string, quote: '"' | "'" = '"'): string {
-  const escaped = value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  return quote === "'" ? escaped.replace(/'/g, '&#39;') : escaped.replace(/"/g, '&quot;');
 }
 
 export function printElementSnippet(snippet: ElementSnippet): string {
@@ -115,31 +111,6 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
     .filter((attribute): attribute is HtmlAttribute => attribute !== undefined);
   const style = printCssProperties(snippet.cssProperties);
   return [...attributes, ...(style ? [{ name: 'style', value: style }] : [])];
-};
-
-export function printAttribute({
-  name,
-  value,
-  viaField,
-}: ElementSnippet['attributes'][number]): string | undefined {
-  if (value === true) {
-    return name;
-  }
-  if (value === '') {
-    return viaField ? `${name}=""` : undefined;
-  }
-  if (value === false || value === null || value === undefined) {
-    return undefined;
-  }
-  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
-  return `${name}="${escapeAttribute(text)}"`;
-}
-
-const printCssProperties = (properties: ElementSnippet['cssProperties']): string | undefined => {
-  const declarations = properties
-    .filter(({ value }) => value !== null && value !== undefined && value !== '')
-    .map(({ name, value }) => `${name}: ${String(value)};`);
-  return declarations.length === 0 ? undefined : declarations.join(' ');
 };
 
 const attributeNode = ({

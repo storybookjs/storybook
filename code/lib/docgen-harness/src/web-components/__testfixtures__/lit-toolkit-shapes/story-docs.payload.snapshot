@@ -18,6 +18,13 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
+      "template": "<lit-toolkit-shapes ${...args/* {"size":"=size","level":"=level","tags":"=tags","label":"=label","default-slot":"","label-slot":"","base-part":"","active-state":"","--toolkit-color":"--toolkit-color","--toolkit-scale":"--toolkit-scale","--toolkit-font":"--toolkit-font","--toolkit-gap":"--toolkit-gap","computed":".computed","version":".version","pressed":".pressed","oldSize":"=old-size","onSelect":".onSelect","target":"=target","when":"=when","old-size":"old-size"} */}></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
       "id": "webcomponentsfixtures-lit-toolkit-shapes--dom-node",
@@ -44,6 +51,18 @@
   level="2"
   tags="[&quot;b&quot;]"
   label="Shaped"
+></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+      "template": "<lit-toolkit-shapes
+  size=${args.size}
+  level=${args.level}
+  ${...args/* {"tags":"=tags"} */}
+  label=${args.label}
 ></lit-toolkit-shapes>
 <script>
   {

@@ -14,6 +14,14 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
+      "template": "<lit-events ${...args/* {"value":"=value"} */}></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
     },
     "webcomponentsfixtures-lit-events--dom-node": {
       "id": "webcomponentsfixtures-lit-events--dom-node",
@@ -32,6 +40,14 @@
       "id": "webcomponentsfixtures-lit-events--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
+      "template": "<lit-events value=${args.value}></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

@@ -17,6 +17,7 @@ import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybo
 import { resolve } from 'node:path';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
+import { escapeTemplateText, type SpreadBinding, spreadHole } from '../../docs/template-format.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import {
   parseStoryFile,
@@ -25,7 +26,7 @@ import {
 import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
-import { printElementSnippet } from './print-element.ts';
+import { printElementSnippet, printListenerScript } from './print-element.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
@@ -43,7 +44,7 @@ interface StoryDocDeps {
   tag: string;
 }
 
-type SnippetResult = { snippet?: string; warning?: string };
+type SnippetResult = { snippet?: string; template?: string; warning?: string };
 type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
 type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
 
@@ -151,6 +152,7 @@ const baseStoryDoc = (
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
     ...(result.snippet === undefined ? {} : { snippet: result.snippet }),
+    ...(result.template === undefined ? {} : { template: result.template }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
     ...(summary === undefined ? {} : { summary }),
@@ -234,6 +236,7 @@ const renderedArgsSnippet = (
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
       return {
         ...(hasSnippet ? { snippet: printed.snippet } : {}),
+        ...(printed.template === undefined ? {} : { template: printed.template }),
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
     }
@@ -253,6 +256,7 @@ const renderedArgsSnippet = (
 
   return {
     ...(args.snippet ? { snippet: args.snippet } : {}),
+    ...(render.kind === 'missing' && args.template ? { template: args.template } : {}),
     ...joinWarnings(warnings),
   };
 };
@@ -348,11 +352,63 @@ const argsSnippet = (
   const allUnresolved = [...unresolvedArgs, ...unresolved];
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
   warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
+  // The filler shows attributes, properties and custom properties; anything else the snippet
+  // shows or leaves out with a warning keeps the static snippet.
+  const fillable =
+    listeners.length === 0 &&
+    unknown.length === 0 &&
+    snippet.slots.length === 0 &&
+    snippet.styleRules.length === 0;
 
   return {
     ...(printed ? { snippet: printElementSnippet(snippet) } : {}),
+    ...(fillable ? { template: argsTemplate(args, declaration, argTypes ?? {}, snippet) } : {}),
     ...joinWarnings(warnings),
   };
+};
+
+// `<tag ${...args/* … */}></tag>` with every arg the component declares, the story's own first, and
+// the snippet's listener `<script>` after it.
+const argsTemplate = (
+  args: Record<string, t.Node>,
+  declaration: ManifestDeclaration,
+  argTypes: NonNullable<WebComponentsDocgenPayload['argTypes']>,
+  snippet: ElementSnippet
+): string => {
+  const bindings = new Map<string, SpreadBinding>();
+  for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
+    const binding = spreadBinding(classifyArg(key, false, argTypes, declaration));
+    if (binding) {
+      bindings.set(key, binding);
+    }
+  }
+  const element = `<${snippet.tag} ${spreadHole(bindings)}></${snippet.tag}>`;
+  const script = printListenerScript(snippet.tag, snippet.listeners);
+  return script ? `${element}\n${escapeTemplateText(script)}` : element;
+};
+
+const spreadBinding = (binding: ArgBinding): SpreadBinding | undefined => {
+  switch (binding.kind) {
+    case 'attribute':
+      return {
+        kind: 'attribute',
+        name: binding.name,
+        reflected: binding.viaField,
+        defaultsToTrue: binding.defaultValue === 'true',
+      };
+    case 'property':
+      return { kind: 'property', name: binding.name };
+    case 'cssProperty':
+      return binding.name.startsWith('--')
+        ? { kind: 'style', name: binding.name }
+        : { kind: 'unfillable' };
+    case 'slot':
+    case 'cssPart':
+    case 'cssState':
+      return { kind: 'unfillable' };
+    default:
+      return undefined;
+  }
 };
 
 const addBoundValue = (

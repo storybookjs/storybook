@@ -65,7 +65,12 @@ const renderTemplate = (storySource: string) => {
   }
   const template = resolveHtmlTemplate(render.path, csf);
   expect(template).toBeDefined();
-  return printHtmlTemplate(template!, resolver.resolve(story).args, declaration);
+  const { template: _template, ...printed } = printHtmlTemplate(
+    template!,
+    resolver.resolve(story).args,
+    declaration
+  );
+  return printed;
 };
 
 describe('html template story snippets', () => {

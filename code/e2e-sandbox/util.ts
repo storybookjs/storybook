@@ -159,8 +159,9 @@ export class SbPage {
   async closeAnyPendingModal() {
     const popover = this.page.locator('[role="dialog"]');
     if (await popover.isVisible()) {
-      await popover.press('Escape');
-      await this.expect(popover).toBeHidden();
+      await this.page.keyboard.press('Escape');
+      await this.page.keyboard.press('Escape');
+      await popover.waitFor({ state: 'hidden', timeout: 1000 });
     }
   }
 

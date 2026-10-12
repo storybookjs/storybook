@@ -1,4 +1,8 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+import type {
+  PartialStoryFn,
+  PlayFunctionContext,
+  StoryContextForRender,
+} from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
 
@@ -8,7 +12,7 @@ export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   // Compose all the argTypes into `object`, so the pre component only needs a single prop
   decorators: [
-    (storyFn: PartialStoryFn, context: StoryContext) =>
+    (storyFn: PartialStoryFn, context: StoryContextForRender) =>
       storyFn({ args: { object: { ...context.argTypes } } }),
   ],
   argTypes: {
@@ -45,10 +49,10 @@ export const ArgTypeInference = {
   },
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     const argTypes = JSON.parse(within(canvasElement).getByTestId('pre').innerText);
-    // `prepareStory` skips `inferArgTypes` when `experimentalDocgenServer` is on; the manager
+    // `prepareStory` skips `inferArgTypes` when `docgenServer` is on; the manager
     // runs that second pass in `mergeServiceArgTypes`, so the preview canvas never sees types
     // inferred from args.
-    if (globalThis.FEATURES?.experimentalDocgenServer) {
+    if (globalThis.FEATURES?.docgenServer) {
       expect(argTypes.a).toBeUndefined();
       await expect(argTypes).toMatchObject({
         componentArg: { type: { name: 'string' } },
@@ -64,5 +68,12 @@ export const ArgTypeInference = {
       d: { type: { name: 'object', value: { a: { name: 'string' } } } },
       e: { type: { name: 'array', value: { name: 'string' } } },
     });
+  },
+};
+
+export const HiddenFromPlay = {
+  play: async (context: PlayFunctionContext<any>) => {
+    expect('argTypes' in context).toBe(false);
+    expect(() => context.argTypes).toThrow(/no longer part of the story context/);
   },
 };

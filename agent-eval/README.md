@@ -37,7 +37,7 @@ yarn eval:dry
 
 ### Run Experiments
 
-Run all configured experiments:
+Run the default experiments:
 
 ```bash
 yarn eval
@@ -46,105 +46,198 @@ yarn eval
 Run a single experiment:
 
 ```bash
-yarn exec agent-eval cc-mcp-opus-high
+yarn exec agent-eval cc-mcp-opus-5.5-medium
 ```
 
-Pull requests with the `ci:eval` label run all experiments in CI. The
-`ci:eval`/`ci:extra-*` labels are applied by **humans only** — labeled runs are
-expensive and re-trigger on every subsequent push, so an AI agent must never
-add them to a PR (nor start `workflow_dispatch` eval runs). Agents validate
-their changes locally instead: only the specific evals affected by the change
-(or the eval being fixed), one experiment at a time, via `EVAL_ONLY` — never a
-full line, never multiple experiments in parallel.
+AI agents validate their changes locally: only the evals affected by the change
+(or the eval being fixed), one experiment at a time, with `EVAL_ONLY`. Never a
+full line, and never several experiments in parallel. For runs on a pull
+request, see [Running evals in CI](#running-evals-in-ci).
 
-By default only the first core eval (`801-create-component-no-launch-config`)
-runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
+By default only the first core eval (`801-create-accessible-component`)
+runs. Set `EVAL_ALL=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals
 (`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_EXTRA_EVALS=1 yarn eval
+EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-Before a local run, rebuild the local `@storybook/addon-mcp`/`@storybook/mcp`
-builds the sandboxes inject (`yarn nx run-many -t compile --projects mcp,addon-mcp`
-from the repository root). A stale `dist` importing since-renamed core exports
-crashes the sandbox Storybook at preset load, which surfaces as the readiness
-timeout below rather than a build error.
-
-A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 3
-lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
-tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
-lifecycle eval). The budget guardrail is **$75 per full run** — check the
+A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
+lifecycle evals × 2 plugin experiments) costs roughly **$6** in agent
+tokens at the averages measured in October 2026 (under $0.01 per eval on Haiku 5.5 low, and about
+$0.05–0.17 per eval on GPT-6.1-Sol low and the medium MCP experiments). The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
 The 9xx evals are a trimmed MCP-only set for shapes the 8xx line does not
 cover (async mocks, story drift, tool params, preview-by-path/id, vitest CLI).
 They never run on the default `next` matrix; under `EVAL_STORYBOOK_LATEST=1`
-they become the active line (default smoke: `908-run-story-tests`). See
-`lib/experiment.ts`. Twins of 8xx scenarios were removed.
+they become the active line (default smoke: `908-run-story-tests`), and
+`EVAL_ONLY` accepts only 9xx names: the 8xx and 82x evals assert the current
+workflow, which the stable release does not have. See `lib/experiment.ts`.
+Twins of 8xx scenarios were removed.
 
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
-effort explicitly. Non-default model tiers (currently `cc-plugin-sonnet-medium` and `cc-mcp-sonnet-medium`)
-run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
-for the default-model experiments:
+effort explicitly, so a CLI default change cannot silently change what runs.
+
+Sandbox setup installs every Storybook package from the checkout under test,
+so an eval run measures the code of the branch it runs on. Template and fixture
+manifests list those packages as `workspace:*`. Setup compiles each of them
+with `yarn nx run-many -t compile -c production`, the build a publish uses
+(only it emits type declarations), together with the monorepo packages they
+depend on, packs them with `yarn pack`
+into `local-packages/`, and points the sandbox manifests and the root
+`overrides` at those tarballs. The sandbox `postinstall` then fails the install
+if `package-lock.json` resolves any of those packages from the registry,
+because the checkout usually carries the same version as a published release,
+so such a mix-up would otherwise go unnoticed. Each run's `result.json`
+records the commit the run used and whether the working tree was dirty, under
+`metadata.checkout`.
+
+Setup runs inside each eval's timeout, so warm the nx cache before a run,
+as CI does. A plain `yarn nx run-many -t compile` does not warm it, because the
+production build is cached separately:
 
 ```bash
-EVAL_EXTRA_MODELS=1 yarn exec agent-eval cc-plugin-sonnet-medium
+yarn workspace agent-eval run compile:checkout
 ```
 
-Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
-exact version it finds into the sandbox `package.json`, so each result snapshot
-records which version the run used. By default it pins the `next` tag and keeps
-the local `@storybook/addon-mcp`/`@storybook/mcp` builds from this checkout.
-Set `EVAL_STORYBOOK_LATEST=1` to pin the `latest` tag instead — including the
-published `@storybook/addon-mcp` and `@storybook/mcp` in place of the local
-builds — to check whether a behavior change (e.g. in the documentation tooling)
-regressed since the last stable release:
+This covers what the sandbox installs up front. An agent that installs
+Storybook packages itself still gets them from npm: 820 (init) runs whatever
+CLI the agent downloads (for example `npm create storybook@latest`), and
+`storybook add` during any eval adds a published addon next to the checkout
+packages, with the same version number. Right after the version on `next` is
+bumped and before that version is published, `storybook add` therefore fails.
+
+The tarballs are left out of the saved result projects, so a saved
+`package.json` that points at `local-packages/` cannot be installed as-is;
+rerun the eval from the commit in `metadata.checkout` instead.
+
+Set `EVAL_STORYBOOK_LATEST=1` to install the published `latest` release of
+every Storybook package instead, to check whether a behavior change (e.g. in
+the documentation tooling) regressed since the last stable release:
 
 ```bash
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
-Review mode follows the integration. The plugin experiments always run — and
-assert — the review workflow (review-create published, review section in the
-final response), because review is on by default for the `storybook ai` CLI
-channel the plugins use. The MCP experiments run review-off by default
-(stories-preview links, no review-create), matching direct MCP clients where
-the `experimentalReview` feature flag is opt-in. Set `EVAL_REVIEW=1` to enable
-the flag in every sandbox Storybook and flip the MCP assertions to the review
-workflow too:
-
-```bash
-EVAL_REVIEW=1 yarn eval
-```
-
-In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
-`ci:review` PR labels set the matching flag on labeled `ci:eval` runs, and
-manual `workflow_dispatch` runs of the `Agent eval` workflow can enable them
-through the `extra_evals`, `extra_models`, `storybook_latest`, and `review`
-inputs, or target specific evals through the `eval_only` input. All of these
-are human-triggered spend decisions; agents never apply the labels or dispatch
-the workflow.
-
-CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
-`VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
-`VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and
-Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
-runtime/build contexts.
-
 Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
-- `cc-mcp-opus-high`: Claude Code (Opus at high effort) with project-local Storybook MCP config in `.mcp.json`.
-- `cc-plugin-opus-high`: Claude Code (Opus at high effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
-- `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
-- `cc-mcp-sonnet-medium` / `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) variants; they run zero evals unless `EVAL_EXTRA_MODELS=1` is set.
+- `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
+- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`.
+- `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
+- `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+
+These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Four more plugin experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
+
+- `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
+- `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
+- `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
+- `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort). Its Codex system prompt says not to run tests unless asked, so evals do not require it to run the story tests itself.
+
+## Running evals in CI
+
+The Agent eval workflow (`.github/workflows/agent-eval.yml`) runs the evals in
+CI in two cases:
+
+- Every Monday at 08:00 UTC it runs all evals on `next`, deploys the
+  results playground to Vercel production, and posts a summary to
+  `#sb-monitoring` in Slack. Manual `workflow_dispatch` runs on `next` do the
+  same.
+- On a pull request, it runs when a maintainer adds the `agent-eval:eval`
+  label.
+
+Every run costs money in agent tokens. The default smoke eval is cheap, a
+run of all evals costs roughly $30–45.
+
+### When to use
+
+Add `agent-eval:eval` to a PR that can change how coding agents work with
+Storybook. For example, changes to:
+
+- the MCP server and addon (`code/lib/mcp`, `code/addons/mcp`)
+- the agent skills and instructions (`code/core/src/cli/skills`)
+- the `storybook tools` CLI
+- the eval suite itself (`agent-eval/`)
+
+Other PRs do not need it. The weekly run catches regressions from other
+changes.
+
+Only humans add `agent-eval:` labels. An AI agent must never add them to a PR,
+and must never start a `workflow_dispatch` eval run.
+
+### How it works
+
+Adding `agent-eval:eval` starts an eval run. Pushing more commits does not
+start a new run, because every run costs money.
+
+The workflow keeps one review thread on the PR: the eval gate thread. It is a
+file-level review comment on the first changed file, and the workflow finds it
+again by the `<!-- agent-eval-gate -->` marker in its first comment. The thread
+is the merge proof for `agent-eval:eval`: the workflow resolves it only when
+evals passed for the current PR head, and the target branch does not allow a
+merge while a conversation is unresolved.
+
+| PR state                                            | Gate thread                                                |
+| --------------------------------------------------- | ---------------------------------------------------------- |
+| Evals pending or running                            | Open: "evals required for head `<sha>`"                    |
+| Evals failed, cancelled, timed out or skipped       | Open, with the outcome and links to the run and playground |
+| Evals passed                                        | Resolved, with the results summary                         |
+| Evals passed, but new commits were pushed meanwhile | Open, with the result marked stale                         |
+| New commits pushed after that                       | Reopened: "evals required for new head `<sha>`"            |
+| `agent-eval:eval` removed                           | Resolved: "not required"                                   |
+
+The thread reopens on every push while `agent-eval:eval` is present, also when
+someone resolved it by hand.
+
+Removing `agent-eval:eval` opts the PR out of evals: the workflow cancels a
+running eval and resolves the gate thread, with a note on who removed the label.
+
+To run evals again, for example after a push or a failure, remove and re-add
+the `agent-eval:eval` label. You can also run the workflow with
+`workflow_dispatch` on the PR branch. The `pr_number` input selects the PR when
+the branch has more than one open PR. The gate thread itself also explains
+this.
+
+A push, or adding another `agent-eval:` label, cancels a running eval, because
+its result would not cover the new head or scope.
+
+### Options
+
+Add these labels next to `agent-eval:eval`. `workflow_dispatch` has a matching
+input for each.
+
+| Label / input                                      | Effect                                                                                                                                                                                                                    | When to use                                                                                                                                                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `agent-eval:all-evals` / `all_evals`               | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-accessible-component` | The smoke eval shows that the setup works and that the agent finds Storybook. Use all evals when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
+| `agent-eval:storybook-latest` / `storybook_latest` | Installs the published `latest` Storybook packages instead of the packages built from the PR, and runs the 9xx line                                                                                                       | Check whether a problem also exists in the last stable release. This is not related to the target branch of the PR: without this label, evals always use the code of the PR.                           |
+
+The `evals` input (dispatch only) runs specific evals by name, for example
+`803-edit-component`.
+
+The labels are declared in `eval-conditions.json`. An `agent-eval:` label that
+is not declared there gives a warning and has no effect.
+
+### Troubleshooting
+
+- **The label is on the PR, but evals did not start.** Evals only start when a
+  label is added, not on push. Remove and re-add `agent-eval:eval`. PRs from
+  forks never run evals, because they have no access to the secrets.
+- **Evals passed, but the gate thread is still open.** The PR head changed
+  during the run, so the result is stale. Or resolving the thread failed; the
+  job summary says so. Run evals again, or resolve the thread by hand.
+- **No Slack message after a weekly run.** The `SLACK_AGENT_EVAL_WEBHOOK_URL`
+  secret is missing or stale. The Slack step warns and continues.
+- **Vercel Sandbox authentication fails.** CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
+  `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
+  `VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and
+  Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
+  runtime/build contexts.
 
 ## Known Failures
 
@@ -218,9 +311,9 @@ Fixtures can opt into a shared starter project with package metadata:
 
 ```json
 {
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }
 ```
 
@@ -231,29 +324,19 @@ saved result project snapshots so eval runs are easy to inspect.
 Three templates exist today:
 
 - `reshaped-storybook`: the design-system shape — Reshaped components, full
-  Storybook (`next`) with the local addon builds, MSW, and the vitest story
-  test setup.
+  Storybook from the checkout, MSW, and the vitest story test setup.
 - `vite-app`: a minimal React + Vite app with **no Storybook at all**. The
   lifecycle fixtures use it directly (820 init) or layer an old Storybook on
-  top (821/822 upgrades and 823 setup-on-outdated, which also set
-  `evals.pinStorybook: false` so the harness keeps their intentionally
-  outdated versions); 812 layers a full Storybook `next` setup with zero
-  stories on top.
+  top (821/822 upgrades and 823 setup-on-outdated, which list exact versions
+  instead of `workspace:*`, so the harness keeps them); 812 layers a full
+  Storybook setup with zero stories on top.
 - `monorepo`: an npm-workspaces repo where the runnable Storybook lives in the
   `packages/ui` leaf, so evals can cover agents working inside a workspace
-  package. Storybook pinning and the local `file:` build detection cover
-  workspace package.json files too.
+  package. `workspace:*` works in workspace package.json files too.
 
 This keeps prompt variants small: each variant keeps its own `PROMPT.md`,
 `EVAL.ts`, and metadata `package.json`, while shared app files stay in the
 template.
-
-Templates can use local built Storybook MCP packages with npm `file:`
-dependencies, for example `file:./local-packages/addon-mcp`. The setup step
-copies `code/addons/mcp/dist` and `code/lib/mcp/dist` from this checkout into
-the sandbox before the sandbox runs `npm install`. CI builds those packages
-before running evals; run `yarn nx run-many -t compile --projects mcp,addon-mcp`
-locally after changing those packages.
 
 The MCP experiments configure each agent through its project-local MCP file:
 Claude Code gets `.mcp.json`, and Codex gets `.codex/config.toml`. The plugin
@@ -488,10 +571,10 @@ The `Agent eval` GitHub Actions workflow deploys the playground to Vercel
 project `storybook-evals` after eval results have been written to
 `agent-eval/results`.
 
-- Pull requests from the main repository with the `ci:eval` label create
-  preview deployments.
-- Manual runs on non-`main` branches create preview deployments.
-- Manual runs on `main` create production deployments.
+- Pull requests from the main repository with the `agent-eval:eval` label
+  create preview deployments.
+- Manual runs on branches other than `next` create preview deployments.
+- Manual and scheduled runs on `next` create production deployments.
 
 The workflow deploys from the same runner that produced `agent-eval/results`,
 so failed evals can still publish a playground with partial results. The final

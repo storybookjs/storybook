@@ -19,6 +19,7 @@ import type {
   Renderer,
   Store_CSFExports,
   StoryContext,
+  StoryContextForRender,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -38,6 +39,7 @@ import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { normalizeStory } from './normalizeStory.ts';
+import { hideArgTypes } from './hideArgTypes.ts';
 import { prepareContext, prepareStory } from './prepareStory.ts';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
@@ -139,7 +141,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   const reporting = new ReporterAPI();
 
   const initializeContext = () => {
-    const context: StoryContext<TRenderer> = prepareContext({
+    const context: StoryContextForRender<TRenderer> = prepareContext({
       hooks: new HooksContext(),
       globals,
       args: { ...story.initialArgs },
@@ -147,7 +149,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       reporting,
       loaded: {},
       abortSignal: new AbortController().signal,
-      step: (label, play) => story.runStep(label, play, context),
+      step: (label, play) => story.runStep(label, play, hideArgTypes(context)),
       canvasElement: null!,
       canvas: {} as Canvas,
       userEvent: {} as UserEventObject,
@@ -214,7 +216,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     return context;
   };
 
-  let loadedContext: StoryContext<TRenderer> | undefined;
+  let loadedContext: StoryContextForRender<TRenderer> | undefined;
 
   const play = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
@@ -223,7 +225,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       context.loaded = loadedContext.loaded;
     }
     Object.assign(context, extraContext);
-    return story.playFunction!(context);
+    return story.playFunction!(hideArgTypes(context));
   };
 
   const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
@@ -259,10 +261,11 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         cleanups.length = 0;
 
         const context = initializeContext();
+        const hookContext = hideArgTypes(context);
 
-        context.loaded = await story.applyLoaders(context);
+        context.loaded = await story.applyLoaders(hookContext);
 
-        cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+        cleanups.push(...(await story.applyBeforeEach(hookContext)).filter(Boolean));
 
         loadedContext = context;
       },
@@ -317,12 +320,13 @@ export function composeStories<TModule extends Store_CSFExports>(
 // Will make a follow up PR for that
 async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
-  context: StoryContext<TRenderer>
+  context: StoryContextForRender<TRenderer>
 ) {
   for (const callback of [...cleanups].reverse()) {
     await callback();
   }
   cleanups.length = 0;
+  const hookContext = hideArgTypes(context);
 
   if (!context.canvasElement) {
     const container = document.createElement('div');
@@ -335,13 +339,13 @@ async function runStory<TRenderer extends Renderer>(
     });
   }
 
-  context.loaded = await story.applyLoaders(context);
+  context.loaded = await story.applyLoaders(hookContext);
 
   if (context.abortSignal.aborted) {
     return;
   }
 
-  cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+  cleanups.push(...(await story.applyBeforeEach(hookContext)).filter(Boolean));
 
   const playFunction = story.playFunction;
 
@@ -361,7 +365,7 @@ async function runStory<TRenderer extends Renderer>(
         throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
       };
     }
-    await playFunction(context);
+    await playFunction(hookContext);
   }
 
   let cleanUp: CleanupCallback | undefined;
@@ -371,7 +375,7 @@ async function runStory<TRenderer extends Renderer>(
     await waitForAnimations(context.abortSignal);
   }
 
-  await story.applyAfterEach(context);
+  await story.applyAfterEach(hookContext);
 
   await cleanUp?.();
 }

@@ -3,7 +3,7 @@
 // Agents routinely edit files via `node -e "fs.writeFileSync(...)"` or
 // `python3 - <<'EOF' ... EOF` heredocs instead of the structured edit tools.
 // Those writes are invisible to both the churn tracker and the tool taxonomy:
-// shell-segments deliberately strips heredoc bodies (they are data, not
+// shell-segments keeps heredoc bodies out of the tokens (they are data, not
 // commands), and an inline `-e`/`-c` script is a single opaque token.
 //
 // This is a best-effort static scan, not an interpreter. It recognises the
@@ -30,13 +30,6 @@ const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 function basename(token: string): string {
   return token.replace(/^.*\//, '');
 }
-
-/**
- * Same shape as the segment splitter's heredoc rule, but capturing the
- * invoking line's prefix and the body instead of discarding them.
- */
-const HEREDOC_WITH_BODY =
-  /^(?<prefix>[^\n]*?)<<-?\s*['"]?(?<term>\w+)['"]?[^\n]*\n(?<body>[\s\S]*?)^\t*\k<term>$/gm;
 
 /**
  * Write idioms in write position. Each entry either captures a literal path
@@ -93,20 +86,17 @@ function collectScriptWrites(script: string, into: InlineScriptWrites): void {
  * `python3 script.py <<EOF` runs the script file and the body is mere input,
  * so write-looking text inside it must not count as an edit.
  */
-function executesHeredocAsScript(prefix: string): boolean {
-  // The heredoc attaches to the last command on the line: `cd x && python3 -`.
-  const lastCommand = prefix.split(/&&|\|\||;|\|/).at(-1) ?? '';
-  const tokens = lastCommand
-    .trim()
-    .split(/\s+/)
-    .filter((token) => token !== '' && !ENV_ASSIGNMENT.test(token));
+function executesHeredocAsScript(segmentTokens: string[]): boolean {
+  const tokens = segmentTokens.filter((token) => !ENV_ASSIGNMENT.test(token));
   const head = tokens[0];
   if (head === undefined || !INTERPRETERS.has(basename(head))) return false;
-  // Only flags and the lone stdin marker may follow: any positional argument
-  // names a script file.
-  return tokens
-    .slice(1)
-    .every((token) => token === '-' || (token.startsWith('-') && token.length > 1));
+  // A positional argument names a script file, unless `-` came first: then
+  // stdin is the script and the rest are its arguments.
+  for (const token of tokens.slice(1)) {
+    if (token === '-') return true;
+    if (!token.startsWith('-')) return false;
+  }
+  return true;
 }
 
 /**
@@ -117,11 +107,6 @@ function executesHeredocAsScript(prefix: string): boolean {
 export function inlineScriptWritesBySegment(command: string): InlineScriptWrites[] {
   const segments = splitCommandSegments(command);
   const results = segments.map((): InlineScriptWrites => ({ hasWrite: false, paths: [] }));
-
-  // Heredoc bodies in string order; segments consume them in the same order,
-  // one per `<<HEREDOC` marker the stripper left behind.
-  const heredocs = [...command.matchAll(HEREDOC_WITH_BODY)];
-  let heredocIndex = 0;
 
   for (const [index, segment] of segments.entries()) {
     const into = results[index]!;
@@ -138,13 +123,8 @@ export function inlineScriptWritesBySegment(command: string): InlineScriptWrites
     }
 
     // Heredoc scripts: `python3 - <<'EOF' ... EOF`.
-    for (const token of tokens) {
-      if (token !== '<<HEREDOC') continue;
-      const heredoc = heredocs[heredocIndex];
-      heredocIndex += 1;
-      if (heredoc === undefined) continue;
-      const { prefix = '', body = '' } = heredoc.groups ?? {};
-      if (executesHeredocAsScript(prefix)) collectScriptWrites(body, into);
+    if (executesHeredocAsScript(tokens)) {
+      for (const body of segment.heredocs) collectScriptWrites(body, into);
     }
   }
 

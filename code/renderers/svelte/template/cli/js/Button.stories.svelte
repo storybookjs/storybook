@@ -1,5 +1,5 @@
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte';
   import Button from './Button.svelte';
   import { fn } from 'storybook/test';
 

@@ -110,7 +110,7 @@ export const ArgRow: FC<ArgRowProps> = (props) => {
   const { name, description } = row;
   const table = (row.table || {}) as TableAnnotation;
   const type = table.type || toSummary(row.type);
-  const defaultValue = table.defaultValue || row.defaultValue;
+  const defaultValue = table.defaultValue;
   const required = row.type?.required;
   const hasDescription = description != null && description !== '';
 

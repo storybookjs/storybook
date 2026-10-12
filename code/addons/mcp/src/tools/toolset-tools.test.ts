@@ -27,7 +27,7 @@ function registerStubStoriesToolset(
       description: 'stub',
       methods: {
         preview: {
-          input: v.object({ id: v.string() }),
+          input: v.strictObject({ id: v.string() }),
           output: v.object({ stories: v.array(v.object({ previewUrl: v.string() })) }),
           title: 'Get story preview URLs',
           description: (ctx) => `describes ${ctx.transport}`,
@@ -134,7 +134,7 @@ describe('toolset-backed MCP tools', () => {
         description: 'stub',
         methods: {
           changed: {
-            input: v.object({}),
+            input: v.strictObject({}),
             title: 'Get changed stories metadata',
             description: 'changed',
             handler: async () => ({ ok: true, data: { stories: [] }, markdown: 'no changes' }),

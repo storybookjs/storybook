@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { invokeToolsetMethod, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocsAccess } from './access.ts';
 import { createDocsToolset } from './definition.ts';
+import { RequiresOwnMcpError } from './sources.ts';
 
 const button = {
   id: 'button',
@@ -268,6 +269,49 @@ describe('docs.showStory in a composition', () => {
 
     expect(outcome.ok).toBe(false);
     expect(outcome.markdown).toContain('Storybook source not found: "elsewhere"');
+  });
+});
+
+describe('a composed source that requires its own MCP', () => {
+  const privateSource = { id: 'private', title: 'Private', url: 'https://private.example.com' };
+  const composed = createDocsToolset({
+    sources: [
+      { source: { id: 'local', title: 'Local' }, access: docsAccess },
+      {
+        source: privateSource,
+        access: {
+          list: () => Promise.reject(new RequiresOwnMcpError(privateSource)),
+          resolve: () => Promise.reject(new RequiresOwnMcpError(privateSource)),
+        },
+      },
+    ],
+  });
+  const notice = `# Private
+id: private
+
+This composed Storybook is private and cannot be read through the local Storybook MCP proxy.
+
+Use this source's own MCP endpoint instead:
+https://private.example.com/mcp`;
+
+  it('answers show with the own-MCP notice', async () => {
+    const outcome = await composed.methods.show.handler(
+      { id: 'button', storybookId: 'private' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.markdown).toBe(notice);
+  });
+
+  it('answers showStory with the own-MCP notice', async () => {
+    const outcome = await composed.methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'private' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.markdown).toBe(notice);
   });
 });
 

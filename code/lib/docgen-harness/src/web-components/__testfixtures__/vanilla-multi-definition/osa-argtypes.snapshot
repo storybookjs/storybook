@@ -2,7 +2,6 @@
   "beta-label": {
     "description": undefined,
     "name": "beta-label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -13,13 +12,13 @@
       },
     },
     "type": {
-      "name": undefined,
+      "name": "string",
     },
   },
   "betaLabel": {
+    "control": false,
     "description": "Beta label.",
     "name": "betaLabel",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -30,7 +29,8 @@
       },
     },
     "type": {
-      "name": undefined,
+      "name": "other",
+      "value": "",
     },
   },
 }

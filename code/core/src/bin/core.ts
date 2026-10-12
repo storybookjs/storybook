@@ -1,11 +1,9 @@
 import {
   HandledError,
-  PackageManagerName,
   getEnvConfig,
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
-import { withTelemetry } from '../core-server/withTelemetry.ts';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -14,8 +12,6 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
-import { aiSetup } from '../cli/ai/index.ts';
-import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
 import { registerSkillsCommand } from '../cli/skills/register.ts';
 import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
@@ -35,7 +31,6 @@ process.env.STORYBOOK = 'true';
  * - `dev`: Start the Storybook development server
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
- * - `ai`: AI agent helpers (always bundled so agent invocations never download an extra package)
  * - `tools`: Agent tools derived from the target Storybook configuration's registered toolsets
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
@@ -123,11 +118,6 @@ command('dev')
     'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
   )
   .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option(
-    '--preview-url <string>',
-    'Disables the default storybook preview and lets your use your own'
-  )
-  .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--exact-port', 'Exit early if the desired port is not available')
   .option(
@@ -165,11 +155,6 @@ command('build')
     'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
   )
   .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option(
-    '--preview-url <string>',
-    'Disables the default storybook preview and lets your use your own'
-  )
-  .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
   .option('--preview-only', 'Use the preview without the manager UI')
@@ -231,7 +216,7 @@ command('index')
   });
 
 // Like `handleCommandFailure`, but curried and surfacing the error, matching the signature the
-// `ai` and `tools` command handlers expect.
+// `tools` and `skills` command handlers expect.
 const handleCliCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
@@ -240,44 +225,6 @@ const handleCliCommandFailure =
     }
     return handleCommandFailure(logFilePath ?? false);
   };
-
-const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
-  .option(
-    '-o, --output <path>',
-    'Write the prompt output to a file instead of printing it to stdout'
-  );
-
-aiCommand
-  .command('setup')
-  .description(
-    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills setup`)'
-  )
-  .addOption(
-    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
-      Object.values(PackageManagerName)
-    )
-  )
-  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .action(async (options, cmd) => {
-    const parentOptions = cmd.parent?.opts() ?? {};
-    const runId = Math.random().toString(36);
-    const mergedOptions = { ...parentOptions, ...options, runId };
-    await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
-      await aiSetup(mergedOptions);
-    }).catch(handleCliCommandFailure(mergedOptions.logfile));
-  });
-
-// Show available subcommands when `storybook ai` is run without arguments
-aiCommand.action(() => {
-  aiCommand.outputHelp();
-});
-
-// Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
-// (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
-if (isAiCliFeatureEnabled()) {
-  registerAiMcpPassthrough(program, aiCommand, handleCliCommandFailure);
-}
 
 // `storybook tools <toolset> <tool>`: runs the toolsets registered by the target Storybook
 // configuration in this process, disconnected from any dev server (storybookjs/storybook#35716).

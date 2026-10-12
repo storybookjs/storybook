@@ -1,6 +1,10 @@
 import { configDefaults, coverageConfigDefaults, defineConfig } from 'vitest/config';
 
+import { textAssetLoaderPlugins } from '../code/vitest.shared.ts';
+
 export default defineConfig({
+  // templates.test.ts builds the server instructions, which import .md files.
+  plugins: textAssetLoaderPlugins,
   test: {
     name: 'agent-eval',
     // .eval-cache/ contains the external repo when using `setupExternalRepo`.

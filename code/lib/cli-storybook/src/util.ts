@@ -38,6 +38,8 @@ export { getStoriesPathsFromConfig };
 // ============================================================================
 
 /** Configuration for upgrading Storybook dependencies */
+type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies';
+
 interface UpgradeConfig {
   readonly packageManager: JsPackageManager;
   readonly isCanary: boolean;
@@ -544,32 +546,26 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
     logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
     logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
 
-    await packageManager.addDependencies(
-      {
-        type: 'dependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDependencies
-    );
+    const upgrades: [DependencyType, string[]][] = [
+      ['dependencies', upgradedDependencies],
+      ['devDependencies', upgradedDevDependencies],
+      ['peerDependencies', upgradedPeerDependencies],
+    ];
 
-    await packageManager.addDependencies(
-      {
-        type: 'devDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDevDependencies
-    );
-
-    await packageManager.addDependencies(
-      {
-        type: 'peerDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedPeerDependencies
-    );
+    for (const [type, specifiers] of upgrades) {
+      const directSpecifiers = packageManager.writeCatalogUpgrades(
+        specifiers,
+        packageJson[type] ?? {}
+      );
+      await packageManager.addDependencies(
+        {
+          type,
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        directSpecifiers
+      );
+    }
   }
 };
 

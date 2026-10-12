@@ -15,6 +15,13 @@ import TsEnumProps from './TsEnumProps.vue';
   <TsEnumProps :level="1" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TsEnumProps from './TsEnumProps.vue';
+</script>
+
+<template>
+  <TsEnumProps v-bind="args /* slots: default */" />
+</template>",
       "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
     },
   },

@@ -15,6 +15,13 @@ import InheritAttrsPanel from './InheritAttrsPanel.vue';
   <InheritAttrsPanel label="Panel" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import InheritAttrsPanel from './InheritAttrsPanel.vue';
+</script>
+
+<template>
+  <InheritAttrsPanel :label="args.label" />
+</template>",
     },
   },
 }

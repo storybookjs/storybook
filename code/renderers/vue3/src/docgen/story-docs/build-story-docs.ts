@@ -33,6 +33,7 @@ import {
   type StoryArgsResolver,
   type StoryReferenceResolver,
 } from 'storybook/internal/csf-tools';
+import { ARG_PATH_PATTERN } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
@@ -43,7 +44,7 @@ import {
 } from './classify-args/classify-args.ts';
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
-import { createRenderContext } from '../shared/render-primitives.ts';
+import { createRenderContext, type LiveTemplate } from '../shared/render-primitives.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -344,7 +345,7 @@ function enrichStoryDoc(
   const resolved = resolveStaticStoryArgs(storyExport, docgenArgInfo, options);
   const { classified } = resolved;
   const { args, unresolved: classifyUnresolved } = classified;
-  const unresolved = [...classifyUnresolved, ...resolved.unresolved];
+  const unresolved = [...classifyUnresolved.values(), ...resolved.unresolved];
 
   // A snippet showing none of the args the story actually sets would be a worse example than the
   // runtime one, so no snippet is emitted and the warning names everything that was dropped.
@@ -363,11 +364,58 @@ function enrichStoryDoc(
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
 
+  const template = renderLiveTemplate(
+    renderer,
+    resolved,
+    rendered.snippet,
+    componentName,
+    docgenArgInfo,
+    options
+  );
   return {
     ...storyDoc,
     snippet: rendered.snippet,
+    ...(template !== undefined ? { template } : {}),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
+}
+
+// The snippet with the story's args kept as `args` references for the preview to fill. Function
+// args stay as the snippet prints them, as a function has no source to print in the browser.
+function renderLiveTemplate(
+  renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
+  resolved: StaticStoryArgs,
+  snippet: string,
+  componentName: string,
+  docgenArgInfo: VueDocgenArgInfo,
+  options: StoryDocsContext
+): string | undefined {
+  const { classified } = resolved;
+  // A slot or v-model the snippet could not read has no faithful place in the template.
+  const slotsAndModels = new Set([
+    ...docgenArgInfo.slots,
+    ...[...docgenArgInfo.events].flatMap((event) =>
+      event.startsWith('update:') ? [event.slice('update:'.length)] : []
+    ),
+  ]);
+  const hasUnreadSlotOrModel =
+    [...classified.unresolved.keys()].some((name) => slotsAndModels.has(name)) ||
+    (resolved.unresolved.length > 0 && slotsAndModels.size > 0);
+  // Text the snippet already reads as an arg reference would be filled in as one.
+  const readsAsArgReference = new RegExp(ARG_PATH_PATTERN).test(snippet);
+  if (hasUnreadSlotOrModel || readsAsArgReference) {
+    return undefined;
+  }
+
+  const template = renderStaticStorySnippet(
+    renderer,
+    classified,
+    componentName,
+    docgenArgInfo,
+    options,
+    { keepsReference: (name) => !classified.functions.has(name), slots: docgenArgInfo.slots }
+  )?.snippet;
+  return template === snippet ? undefined : template;
 }
 
 function staticRendererForRenderFunction(
@@ -427,10 +475,12 @@ function renderStaticStorySnippet(
   classified: ClassifyArgsResult,
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
-  options: StoryDocsContext
+  options: StoryDocsContext,
+  liveTemplate?: LiveTemplate
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
   const { args } = classified;
+  const ctx = createRenderContext(liveTemplate);
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -439,6 +489,7 @@ function renderStaticStorySnippet(
           args,
           componentImports: new Map([[componentName, componentImportStatement]]),
           componentName,
+          ctx,
           importBindings: options.importBindings,
           template: `<${componentName} v-bind="args" />`,
           unsetArgs: classified.unset,
@@ -451,6 +502,7 @@ function renderStaticStorySnippet(
       args,
       componentImports: renderer.componentImports,
       componentName,
+      ctx,
       importBindings: options.importBindings,
       setup: renderer.setup,
       template: renderer.template,
@@ -458,7 +510,6 @@ function renderStaticStorySnippet(
     });
   }
 
-  const ctx = createRenderContext();
   const printed = printH({
     argsParam: renderer.argsParam,
     componentImportStatement,

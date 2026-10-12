@@ -17,6 +17,13 @@ const items = ['alpha', 'beta'];
   <PropsGeneric :items="items" selected="alpha" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import PropsGeneric from './PropsGeneric.vue';
+</script>
+
+<template>
+  <PropsGeneric v-bind="args" />
+</template>",
     },
   },
 }

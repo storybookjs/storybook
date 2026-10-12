@@ -15,6 +15,13 @@ import AsCastButton from './AsCastButton.vue';
   <AsCastButton label="Cast" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import AsCastButton from './AsCastButton.vue';
+</script>
+
+<template>
+  <AsCastButton v-bind="args" />
+</template>",
     },
   },
 }

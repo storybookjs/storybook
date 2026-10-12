@@ -15,6 +15,13 @@ import DestructuredProps from './DestructuredProps.vue';
   <DestructuredProps label="Sized" size="large" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import DestructuredProps from './DestructuredProps.vue';
+</script>
+
+<template>
+  <DestructuredProps v-bind="args" />
+</template>",
     },
   },
 }

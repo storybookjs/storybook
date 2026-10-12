@@ -15,6 +15,13 @@ import UtilityComposedProps from './UtilityComposedProps.vue';
   <UtilityComposedProps label="Picked" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import UtilityComposedProps from './UtilityComposedProps.vue';
+</script>
+
+<template>
+  <UtilityComposedProps v-bind="args" />
+</template>",
     },
   },
 }

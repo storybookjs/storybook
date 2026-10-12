@@ -15,6 +15,13 @@ import CsfOneButton from './CsfOneButton.vue';
   <CsfOneButton label="Assigned" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CsfOneButton from './CsfOneButton.vue';
+</script>
+
+<template>
+  <CsfOneButton v-bind="args" />
+</template>",
     },
     "forms-csf1-legacy--assigned-args-override-inline": {
       "description": undefined,
@@ -28,6 +35,13 @@ import CsfOneButton from './CsfOneButton.vue';
   <CsfOneButton label="Assigned wins" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CsfOneButton from './CsfOneButton.vue';
+</script>
+
+<template>
+  <CsfOneButton v-bind="args" />
+</template>",
     },
     "forms-csf1-legacy--primary": {
       "description": undefined,

@@ -15,6 +15,13 @@ import JsdocTags from './JsdocTags.vue';
   <JsdocTags label="Old label" title="New title" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import JsdocTags from './JsdocTags.vue';
+</script>
+
+<template>
+  <JsdocTags v-bind="args" />
+</template>",
     },
   },
 }

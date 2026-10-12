@@ -17,6 +17,13 @@ const mixed = { label: 'Intersected', count: 2, extra: true };
   <IntersectionProps :mixed="mixed" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import IntersectionProps from './IntersectionProps.vue';
+</script>
+
+<template>
+  <IntersectionProps v-bind="args" />
+</template>",
     },
   },
 }

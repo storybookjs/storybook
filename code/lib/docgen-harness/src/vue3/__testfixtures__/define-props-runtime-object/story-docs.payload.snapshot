@@ -15,6 +15,13 @@ import RuntimeObjectProps from './RuntimeObjectProps.vue';
   <RuntimeObjectProps :count="3" label="Total" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RuntimeObjectProps from './RuntimeObjectProps.vue';
+</script>
+
+<template>
+  <RuntimeObjectProps v-bind="args" />
+</template>",
     },
   },
 }

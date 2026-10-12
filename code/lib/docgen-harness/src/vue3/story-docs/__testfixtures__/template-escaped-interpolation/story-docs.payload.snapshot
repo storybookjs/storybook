@@ -15,6 +15,13 @@ import TemplateEscapedInterpolation from './TemplateEscapedInterpolation.vue';
   <TemplateEscapedInterpolation>&lt;em&gt;1 &amp; 2&lt;/em&gt;</TemplateEscapedInterpolation>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateEscapedInterpolation from './TemplateEscapedInterpolation.vue';
+</script>
+
+<template>
+  <TemplateEscapedInterpolation>{{ args.label }}</TemplateEscapedInterpolation>
+</template>",
     },
   },
 }

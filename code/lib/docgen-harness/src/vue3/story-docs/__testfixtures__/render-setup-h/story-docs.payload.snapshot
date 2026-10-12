@@ -15,6 +15,13 @@ import SetupRenderButton from './SetupRenderButton.vue';
   <SetupRenderButton label="Click me" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SetupRenderButton from './SetupRenderButton.vue';
+</script>
+
+<template>
+  <SetupRenderButton :label="args.label" />
+</template>",
     },
   },
 }

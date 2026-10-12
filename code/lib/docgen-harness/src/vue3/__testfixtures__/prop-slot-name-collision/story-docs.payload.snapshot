@@ -15,6 +15,13 @@ import PropSlotNameCollision from './PropSlotNameCollision.vue';
   <PropSlotNameCollision icon="pi pi-check" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import PropSlotNameCollision from './PropSlotNameCollision.vue';
+</script>
+
+<template>
+  <PropSlotNameCollision v-bind="args /* slots: default */" />
+</template>",
     },
   },
 }

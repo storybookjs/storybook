@@ -18,6 +18,16 @@ const upper = computed(() => 'Ready'.toUpperCase());
   <SetupComputed label="Ready" :hint="upper" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { computed } from "vue";
+import SetupComputed from './SetupComputed.vue';
+
+const upper = computed(() => args.label.toUpperCase());
+</script>
+
+<template>
+  <SetupComputed :label="args.label" :hint="upper" />
+</template>",
     },
   },
 }

@@ -24,6 +24,13 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsShowcase from './SlotsShowcase.vue';
+</script>
+
+<template>
+  <SlotsShowcase v-bind="args /* slots: default, header, item */" />
+</template>",
     },
     "forms-slots--v-node-child": {
       "description": undefined,
@@ -42,6 +49,18 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsShowcase from './SlotsShowcase.vue';
+</script>
+
+<template>
+  <SlotsShowcase v-bind="args /* slots: default, header, item */">
+    <p class="body">Body content</p>
+    <template #header>
+      <strong>Header content</strong>
+    </template>
+  </SlotsShowcase>
+</template>",
     },
   },
 }

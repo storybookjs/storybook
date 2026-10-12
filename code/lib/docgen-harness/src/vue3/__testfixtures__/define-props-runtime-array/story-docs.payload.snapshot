@@ -15,6 +15,13 @@ import RuntimeArrayProps from './RuntimeArrayProps.vue';
   <RuntimeArrayProps appearance="primary" label="Go" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RuntimeArrayProps from './RuntimeArrayProps.vue';
+</script>
+
+<template>
+  <RuntimeArrayProps v-bind="args" />
+</template>",
     },
   },
 }

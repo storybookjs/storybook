@@ -15,6 +15,13 @@ import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
   <RuntimePropTypeCast kind="secondary" :measure="42" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
+</script>
+
+<template>
+  <RuntimePropTypeCast v-bind="args" />
+</template>",
     },
   },
 }

@@ -37,6 +37,13 @@ const user = { name: 'Ada', age: 36 };
   <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" scalarAlias="abc-123" shapes="circle" :user="user" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import NamedTypeDetails from './NamedTypeDetails.vue';
+</script>
+
+<template>
+  <NamedTypeDetails v-bind="args" />
+</template>",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
     },
   },

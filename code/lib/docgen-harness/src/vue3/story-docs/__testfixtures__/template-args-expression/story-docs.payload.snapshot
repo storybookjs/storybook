@@ -27,6 +27,21 @@ const status = { state: 'available', version: '1.2.3' };
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: args.isCollapsed ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression v-bind="args" />
+  </div>
+</template>",
     },
     "forms-template-args-expression--primary": {
       "description": undefined,
@@ -52,6 +67,21 @@ const status = { state: 'available', version: '1.2.3' };
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateArgsExpression from './TemplateArgsExpression.vue';
+</script>
+
+<template>
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: args.isCollapsed ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression v-bind="args" />
+  </div>
+</template>",
     },
   },
 }

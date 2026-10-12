@@ -15,6 +15,13 @@ import OptionsApiEmits from './OptionsApiEmits.vue';
   <OptionsApiEmits :step="2" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import OptionsApiEmits from './OptionsApiEmits.vue';
+</script>
+
+<template>
+  <OptionsApiEmits v-bind="args" />
+</template>",
     },
   },
 }

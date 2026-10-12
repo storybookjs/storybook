@@ -15,6 +15,13 @@ import MetaRenderButton from './MetaRenderButton.vue';
   <section class="preview"><MetaRenderButton label="Primary" variant="primary" /></section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import MetaRenderButton from './MetaRenderButton.vue';
+</script>
+
+<template>
+  <section class="preview"><MetaRenderButton v-bind="args" /></section>
+</template>",
     },
     "forms-template-meta-render--secondary": {
       "description": undefined,
@@ -28,6 +35,13 @@ import MetaRenderButton from './MetaRenderButton.vue';
   <section class="preview"><MetaRenderButton label="Secondary" variant="secondary" /></section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import MetaRenderButton from './MetaRenderButton.vue';
+</script>
+
+<template>
+  <section class="preview"><MetaRenderButton v-bind="args" /></section>
+</template>",
     },
   },
 }

@@ -27,6 +27,13 @@ import OptionsApiSlots from './OptionsApiSlots.vue';
   </OptionsApiSlots>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import OptionsApiSlots from './OptionsApiSlots.vue';
+</script>
+
+<template>
+  <OptionsApiSlots v-bind="args /* slots: default, header, item */" />
+</template>",
     },
   },
 }

@@ -15,6 +15,13 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
   <ExtendedInterfaceProps extra :id="7" name="Chained" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
+</script>
+
+<template>
+  <ExtendedInterfaceProps v-bind="args" />
+</template>",
     },
   },
 }

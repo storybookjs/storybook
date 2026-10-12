@@ -8,6 +8,7 @@ import type { DocgenPayload } from 'storybook/open-service';
 
 import { vol } from 'memfs';
 
+import { fillTemplate } from '../../docs/fill-template.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -17,9 +18,14 @@ const STORY_ID = 'example-mybutton--primary';
 
 const DOCGEN_CATEGORIES: Record<string, string> = {
   active: 'props',
+  click: 'events',
   count: 'props',
+  default: 'slots',
+  header: 'slots',
   label: 'props',
+  modelValue: 'props',
   size: 'props',
+  'update:modelValue': 'events',
 };
 
 const docgen = (id: string): DocgenPayload => ({
@@ -234,5 +240,206 @@ export const Primary = {
     expect(story?.warning).toBe(
       'Incomplete snippet: `...sharedMeta()` could not be resolved statically.'
     );
+  });
+});
+
+describe('live template', () => {
+  it('keeps the args spread, naming the slots and writing out v-models and function args', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi', modelValue: 'Draft', default: 'Body', header: 'Title', onClick: () => {} },
+};
+`);
+    expect(story?.template).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const modelValue = ref(args.modelValue);
+
+      const onClick = () => {};
+      </script>
+
+      <template>
+        <MyButton v-bind="args /* slots: default, header */" v-model="modelValue" @click="onClick" />
+      </template>"
+    `);
+    expect(
+      fillTemplate(story!.template!, {
+        label: 'Save',
+        size: 'large',
+        modelValue: 'Typed',
+        header: 'New title',
+        onClick: () => {},
+      })
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const modelValue = ref('Typed');
+
+      const onClick = () => {};
+      </script>
+
+      <template>
+        <MyButton
+          label="Save"
+          size="large"
+          v-model="modelValue"
+          @click="onClick"
+        >
+          <template #header>
+            New title
+          </template>
+        </MyButton>
+      </template>"
+    `);
+  });
+
+  it('keeps the args references of an authored template and its setup', async () => {
+    const story = await primaryStory(`
+import { computed } from 'vue';
+
+export const Primary = {
+  args: { label: 'Hi', active: true, count: 2, modelValue: 'Draft' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const upper = computed(() => args.label.toUpperCase());
+      return { args, upper };
+    },
+    template: \`
+      <div v-if="args.active">
+        <MyButton :label="upper" :count="args.count + 1" v-model="args.modelValue">{{ args.label }}</MyButton>
+      </div>
+    \`,
+  }),
+};
+`);
+    expect(story?.template).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { computed, ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const modelValue = ref(args.modelValue);
+
+      const upper = computed(() => args.label.toUpperCase());
+      </script>
+
+      <template>
+        <div v-if="args.active">
+          <MyButton :label="upper" :count="args.count + 1" v-model="modelValue">{{ args.label }}</MyButton>
+        </div>
+      </template>"
+    `);
+    expect(
+      fillTemplate(story!.template!, { label: 'Go', active: false, count: 5, modelValue: 'x' })
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { computed, ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const modelValue = ref('x');
+
+      const upper = computed(() => 'Go'.toUpperCase());
+      </script>
+
+      <template>
+        <div v-if="false">
+          <MyButton :label="upper" :count="5 + 1" v-model="modelValue">Go</MyButton>
+        </div>
+      </template>"
+    `);
+  });
+
+  it('keeps the args references of an h() render', async () => {
+    const story = await primaryStory(`
+import { h } from 'vue';
+
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => h('section', { class: 'toolbar' }, [h(MyButton, args), h('p', null, args.label)]),
+};
+`);
+    expect(story?.template).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <section class="toolbar">
+          <MyButton v-bind="args /* slots: default, header */" />
+          <p>{{ args.label }}</p>
+        </section>
+      </template>"
+    `);
+    expect(fillTemplate(story!.template!, { label: 'Go', size: 'large' })).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <section class="toolbar">
+          <MyButton label="Go" size="large" />
+          <p>Go</p>
+        </section>
+      </template>"
+    `);
+  });
+
+  it('keeps a slot function as the snippet prints it, filling the other slots after it', async () => {
+    const story = await primaryStory(`
+export const Primary = { args: { label: 'Hi', default: () => 'Body' } };
+`);
+    expect(story?.template).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton v-bind="args /* slots: default, header */">
+          Body
+        </MyButton>
+      </template>"
+    `);
+    expect(fillTemplate(story!.template!, { label: 'Hi', default: () => 'Body', header: 'Head' }))
+      .toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi">
+          Body
+          <template #header>
+            Head
+          </template>
+        </MyButton>
+      </template>"
+    `);
+  });
+
+  it('is left out when a slot arg could not be read', async () => {
+    const story = await primaryStory(`
+export const Primary = { args: { label: 'Hi', default: BODY } };
+`);
+    expect(story?.snippet).toBeDefined();
+    expect(story?.template).toBeUndefined();
+  });
+
+  it('is left out when the snippet already reads like an args reference', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args">Pass args.label</MyButton>',
+  }),
+};
+`);
+    expect(story?.snippet).toBeDefined();
+    expect(story?.template).toBeUndefined();
   });
 });

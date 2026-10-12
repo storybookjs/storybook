@@ -11,6 +11,8 @@ import type {
   ClassifiedSlotArg,
   RenderableValuePlan,
 } from '../story-docs/classify-args/classify-args.ts';
+import { escapeTextContent } from '../../docs/escape-text-content.ts';
+import { argsSpread } from '../../docs/template-format.ts';
 import { printValue } from './classify-value.ts';
 
 export interface RenderSfcMarkupInput {
@@ -39,6 +41,14 @@ export interface RenderContext {
   componentImports: Set<string>;
   /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
   statements: string[];
+  // Set when rendering the live template: an arg it keeps stays an `args` reference to fill.
+  liveTemplate?: LiveTemplate;
+}
+
+export interface LiveTemplate {
+  keepsReference: (name: string) => boolean;
+  // The story component's slots, which its `v-bind="args"` names for the filler.
+  slots: ReadonlySet<string>;
 }
 
 interface RenderPropValueInput {
@@ -85,8 +95,9 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
 }
 
 /** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(): RenderContext {
+export function createRenderContext(liveTemplate?: LiveTemplate): RenderContext {
   return {
+    liveTemplate,
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
     bindings: new Set(['ref']),
@@ -158,8 +169,12 @@ function hoistedProp(
   return { attrName: `:${input.attributeName}`, value: bindingName };
 }
 
-function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
-  const bindingName = hoistModelRef(arg.name, arg.value, ctx);
+function renderModelArg(
+  arg: ClassifiedPropLikeArg,
+  ctx: RenderContext,
+  initial: t.Node = arg.value
+): RenderedProp {
+  const bindingName = hoistModelRef(arg.name, initial, ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
 }
@@ -208,20 +223,6 @@ export function inlinePrimitiveSource(node: t.Node): string | undefined {
     default:
       return undefined;
   }
-}
-
-/**
- * Escapes a string value so it reaches the reader as the text the story passed.
- *
- * Vue compiles the generated snippet, so an unescaped `<` opens a tag and `{{` opens an
- * interpolation, both of which would render something the story never produced.
- */
-export function escapeTextContent(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('{{', '&#123;&#123;');
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -324,18 +325,29 @@ export function renderArgsBindingExpansion(
     return undefined;
   }
 
-  const props = partitioned.props.map((arg) =>
-    options.roleAware
-      ? renderPropLikeArg(arg, ctx)
-      : renderPropValue(
-          { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
-          ctx
-        )
-  );
-  const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
+  // The live template keeps `v-bind="args"`, writing out only what it cannot express.
+  const keeps = (arg: ClassifiedArg) => keepsArgReference(ctx, arg.name);
+  const props = partitioned.props.flatMap((arg) => {
+    if (keeps(arg)) {
+      return options.roleAware && arg.role === 'model'
+        ? [renderModelArg(arg, ctx, argReference(arg.name))]
+        : [];
+    }
+    return [
+      options.roleAware
+        ? renderPropLikeArg(arg, ctx)
+        : renderPropValue(
+            { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
+            ctx
+          ),
+    ];
+  });
+  const events = partitioned.events
+    .filter((arg) => !keeps(arg))
+    .map((arg) => renderEventArg(arg, ctx));
 
   const slotChildren: string[] = [];
-  for (const slot of partitioned.slots) {
+  for (const slot of partitioned.slots.filter((arg) => !keeps(arg))) {
     const content = options.renderSlotArg?.(slot);
     if (content === undefined) {
       return undefined;
@@ -343,7 +355,14 @@ export function renderArgsBindingExpansion(
     slotChildren.push(wrapSlotContent(slot.name, content));
   }
 
-  return { attributes: [...props, ...events].map(formatRenderedProp), slotChildren };
+  const attributes = [...props, ...events].map(formatRenderedProp);
+  if (!ctx.liveTemplate) {
+    return { attributes, slotChildren };
+  }
+  const slots = options.roleAware
+    ? [...ctx.liveTemplate.slots].sort((a, b) => slotSortKey(a).localeCompare(slotSortKey(b)))
+    : [];
+  return { attributes: [argsSpread(slots), ...attributes], slotChildren };
 }
 
 /** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
@@ -380,6 +399,20 @@ export function hoistModelRef(name: string, value: t.Node | undefined, ctx: Rend
   const bindingName = allocateBindingName(name, ctx);
   ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
   return bindingName;
+}
+
+export function keepsArgReference(ctx: RenderContext, name: string): boolean {
+  return ctx.liveTemplate?.keepsReference(name) ?? false;
+}
+
+// The `args` member a live template reads an arg through.
+export function argReference(name: string): t.MemberExpression {
+  const isIdentifier = t.isValidIdentifier(name, false);
+  return t.memberExpression(
+    t.identifier('args'),
+    isIdentifier ? t.identifier(name) : t.stringLiteral(name),
+    !isIdentifier
+  );
 }
 
 /**

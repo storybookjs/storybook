@@ -15,6 +15,13 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
   <ArgsReferencesButton label="Declared label" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsReferencesButton from './ArgsReferencesButton.vue';
+</script>
+
+<template>
+  <ArgsReferencesButton v-bind="args" />
+</template>",
     },
     "forms-args-references--spread-object-arg": {
       "description": undefined,
@@ -33,6 +40,13 @@ const options = {
   <ArgsReferencesButton :options="options" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsReferencesButton from './ArgsReferencesButton.vue';
+</script>
+
+<template>
+  <ArgsReferencesButton v-bind="args" />
+</template>",
     },
     "forms-args-references--unreadable-spread-arg": {
       "description": undefined,

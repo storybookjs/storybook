@@ -15,6 +15,13 @@ import DefineSlotsWithProps from './DefineSlotsWithProps.vue';
   <DefineSlotsWithProps disabled label="Save" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import DefineSlotsWithProps from './DefineSlotsWithProps.vue';
+</script>
+
+<template>
+  <DefineSlotsWithProps v-bind="args /* slots: default, icon */" />
+</template>",
     },
   },
 }

@@ -17,6 +17,15 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </div>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <div>
+    <RenderFunctionButton :label="args.label" />
+  </div>
+</template>",
     },
     "forms-render-function--args-on-wrapper-and-component": {
       "description": undefined,
@@ -32,6 +41,15 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <section class="toolbar" v-bind="args">
+    <RenderFunctionButton v-bind="args" />
+  </section>
+</template>",
     },
     "forms-render-function--nested": {
       "description": undefined,
@@ -49,6 +67,17 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </section>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <section class="toolbar">
+    <h2>Actions</h2>
+    <RenderFunctionButton v-bind="args" />
+    <RenderFunctionButton label="Cancel" />
+  </section>
+</template>",
     },
     "forms-render-function--primary": {
       "description": undefined,
@@ -62,6 +91,13 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   <RenderFunctionButton label="Render" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton v-bind="args" />
+</template>",
     },
     "forms-render-function--slot-children": {
       "description": undefined,
@@ -80,6 +116,18 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   </RenderFunctionButton>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton v-bind="args">
+    <span>Extra</span>
+    <template #footer>
+      <strong>Note</strong>
+    </template>
+  </RenderFunctionButton>
+</template>",
     },
     "forms-render-function--spread-override": {
       "description": undefined,
@@ -93,6 +141,13 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
   <RenderFunctionButton label="Overridden" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
+  <RenderFunctionButton v-bind="args" label="Overridden" />
+</template>",
     },
   },
 }

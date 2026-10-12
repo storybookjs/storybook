@@ -15,6 +15,13 @@ import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
   <ImportedInterfaceProps :count="2" label="Imported" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
+</script>
+
+<template>
+  <ImportedInterfaceProps v-bind="args" />
+</template>",
     },
   },
 }

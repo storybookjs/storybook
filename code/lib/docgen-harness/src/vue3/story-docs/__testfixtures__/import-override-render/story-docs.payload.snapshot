@@ -15,6 +15,13 @@ import { OverrideButton as ImportOverrideRenderButton } from 'my-design-system';
   <ImportOverrideRenderButton label="Override" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { OverrideButton as ImportOverrideRenderButton } from 'my-design-system';
+</script>
+
+<template>
+  <ImportOverrideRenderButton v-bind="args" />
+</template>",
     },
   },
 }

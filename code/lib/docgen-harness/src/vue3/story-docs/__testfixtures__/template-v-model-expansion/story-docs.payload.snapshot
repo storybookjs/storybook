@@ -18,6 +18,16 @@ const modelValue = ref('Draft text');
   <TemplateVModelExpansion label="Message" v-model="modelValue" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
+
+const modelValue = ref(args.modelValue);
+</script>
+
+<template>
+  <TemplateVModelExpansion v-bind="args" v-model="modelValue" />
+</template>",
     },
   },
 }

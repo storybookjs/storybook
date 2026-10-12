@@ -15,6 +15,13 @@ import CsfFourButton from './CsfFourButton.vue';
   <CsfFourButton />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CsfFourButton from './CsfFourButton.vue';
+</script>
+
+<template>
+  <CsfFourButton v-bind="args" />
+</template>",
     },
     "forms-csf4--primary": {
       "description": "CSF4 button description.",
@@ -28,6 +35,13 @@ import CsfFourButton from './CsfFourButton.vue';
   <CsfFourButton label="Save" />
 </template>",
       "summary": "CSF4 button summary.",
+      "template": "<script lang="ts" setup>
+import CsfFourButton from './CsfFourButton.vue';
+</script>
+
+<template>
+  <CsfFourButton v-bind="args" />
+</template>",
     },
   },
 }

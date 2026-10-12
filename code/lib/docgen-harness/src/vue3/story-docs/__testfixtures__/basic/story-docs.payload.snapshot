@@ -15,6 +15,13 @@ import BasicButton from './BasicButton.vue';
   <BasicButton label="Submit" />
 </template>",
       "summary": "Primary button summary.",
+      "template": "<script lang="ts" setup>
+import BasicButton from './BasicButton.vue';
+</script>
+
+<template>
+  <BasicButton v-bind="args" />
+</template>",
     },
   },
 }

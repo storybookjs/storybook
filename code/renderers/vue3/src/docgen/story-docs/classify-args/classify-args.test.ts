@@ -187,7 +187,7 @@ function classify(
   return {
     args: result.args.map(formatArg),
     ...(result.unset.size > 0 ? { unset: Array.from(result.unset) } : {}),
-    ...(result.unresolved.length > 0 ? { unresolved: result.unresolved } : {}),
+    ...(result.unresolved.size > 0 ? { unresolved: [...result.unresolved.values()] } : {}),
   };
 }
 

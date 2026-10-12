@@ -16,13 +16,15 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
+import { escapeTextContent } from '../../../docs/escape-text-content.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
+  argReference,
   createRenderContext,
-  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
+  keepsArgReference,
   importStatementForBinding,
   inlinePrimitiveSource,
   renderArgsBindingExpansion,
@@ -264,18 +266,16 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
-      const rendered = arg
-        ? arg.role === 'prop'
-          ? arg.plan.kind === 'inline'
-            ? printValue(unwrapExpression(arg.value))
-            : hoistArgValue(arg.name, arg.value, state.ctx)
-          : undefined
-        : state.unsetArgs.has(read.name)
-          ? 'undefined'
-          : undefined;
-      if (rendered === undefined) {
+      if (arg ? arg.role !== 'prop' : !state.unsetArgs.has(read.name)) {
         return false;
       }
+      const rendered = keepsArgReference(state.ctx, read.name)
+        ? printValue(argReference(read.name))
+        : arg?.role !== 'prop'
+          ? 'undefined'
+          : arg.plan.kind === 'inline'
+            ? printValue(unwrapExpression(arg.value))
+            : hoistArgValue(arg.name, arg.value, state.ctx);
       const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
@@ -345,6 +345,9 @@ function transformInterpolation(
     return true;
   }
 
+  if (keepsArgReference(state.ctx, argName)) {
+    return true;
+  }
   const arg = state.argsByName.get(argName);
   if (!arg && state.unsetArgs.has(argName)) {
     state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: '' });
@@ -536,6 +539,10 @@ function transformDirective(
     if ((attributesByName.get(boundProp)?.length ?? 0) > 1) {
       return false;
     }
+    const keepsReference = keepsArgReference(state.ctx, argName);
+    if (keepsReference && arg?.role !== 'slot') {
+      return true;
+    }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
       state.edits.push(replacementFor(directive, '', state.template));
@@ -549,12 +556,9 @@ function transformDirective(
       if (!element.storyTag) {
         return false;
       }
-      const content = renderSlotArgContent(
-        arg,
-        state.ctx,
-        state.importBindings,
-        state.componentImports
-      );
+      const content = keepsReference
+        ? `{{ ${printValue(argReference(argName))} }}`
+        : renderSlotArgContent(arg, state.ctx, state.importBindings, state.componentImports);
       if (content === undefined) {
         return false;
       }
@@ -572,6 +576,9 @@ function transformDirective(
 
   // <MyButton @click="args.onClick" />
   if (directive.name === 'on' && boundProp && argName && expressionNode) {
+    if (keepsArgReference(state.ctx, argName)) {
+      return true;
+    }
     const arg = state.argsByName.get(argName);
     if (!arg && state.unsetArgs.has(argName)) {
       // An undefined handler attaches no listener, exactly as an absent binding does.
@@ -605,7 +612,11 @@ function transformDirective(
     state.edits.push({
       start: expressionNode.loc.start.offset,
       end: expressionNode.loc.end.offset,
-      text: hoistModelRef(argName, arg?.value, state.ctx),
+      text: hoistModelRef(
+        argName,
+        keepsArgReference(state.ctx, argName) ? argReference(argName) : arg?.value,
+        state.ctx
+      ),
     });
     return true;
   }
@@ -654,8 +665,9 @@ function substituteArgsExpression(
     return undefined;
   }
 
+  const substituted = references.filter(({ name }) => !keepsArgReference(state.ctx, name));
   const replacements = new Map<string, string>();
-  for (const reference of references) {
+  for (const reference of substituted) {
     const replacement =
       replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
     if (!replacement) {
@@ -664,7 +676,7 @@ function substituteArgsExpression(
     replacements.set(reference.name, replacement);
   }
 
-  const text = references
+  const text = substituted
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
       const wrapped = wrapSubstitution(

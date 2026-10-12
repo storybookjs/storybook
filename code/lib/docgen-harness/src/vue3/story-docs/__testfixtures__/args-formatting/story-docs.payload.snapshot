@@ -21,6 +21,13 @@ const quotationLabel = 'She said "hi" and it\'s fine';
   <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" :quotationLabel="quotationLabel" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+</script>
+
+<template>
+  <ArgsFormattingButton v-bind="args" />
+</template>",
     },
     "forms-args-formatting--unset-arg": {
       "description": undefined,
@@ -34,6 +41,13 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
   <ArgsFormattingButton :count="3" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+</script>
+
+<template>
+  <ArgsFormattingButton v-bind="args" />
+</template>",
     },
   },
 }

@@ -20,6 +20,13 @@ import SlotsPanel from './SlotsPanel.vue';
   </SlotsPanel>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsPanel from './SlotsPanel.vue';
+</script>
+
+<template>
+  <SlotsPanel v-bind="args /* slots: default, header */" />
+</template>",
     },
   },
 }

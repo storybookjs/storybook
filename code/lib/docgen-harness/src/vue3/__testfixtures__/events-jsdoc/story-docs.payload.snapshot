@@ -19,6 +19,17 @@ const onSave = () => {};
   <EventsJsdoc label="Save" @cancel="onCancel" @save="onSave" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import EventsJsdoc from './EventsJsdoc.vue';
+
+const onCancel = () => {};
+
+const onSave = () => {};
+</script>
+
+<template>
+  <EventsJsdoc v-bind="args" @cancel="onCancel" @save="onSave" />
+</template>",
     },
   },
 }

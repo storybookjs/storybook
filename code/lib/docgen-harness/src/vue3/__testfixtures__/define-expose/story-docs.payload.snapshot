@@ -15,6 +15,13 @@ import DefineExpose from './DefineExpose.vue';
   <DefineExpose label="Increment" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import DefineExpose from './DefineExpose.vue';
+</script>
+
+<template>
+  <DefineExpose v-bind="args" />
+</template>",
     },
   },
 }

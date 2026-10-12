@@ -15,6 +15,13 @@ import PropsUnionEnum from './PropsUnionEnum.vue';
   <PropsUnionEnum size="medium" status="ok" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import PropsUnionEnum from './PropsUnionEnum.vue';
+</script>
+
+<template>
+  <PropsUnionEnum v-bind="args" />
+</template>",
     },
   },
 }

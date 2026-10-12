@@ -18,6 +18,16 @@ const modelValue = ref('draft');
   <ModelWithRuntimeEmits v-model="modelValue" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import ModelWithRuntimeEmits from './ModelWithRuntimeEmits.vue';
+
+const modelValue = ref(args.modelValue);
+</script>
+
+<template>
+  <ModelWithRuntimeEmits v-bind="args" v-model="modelValue" />
+</template>",
     },
   },
 }

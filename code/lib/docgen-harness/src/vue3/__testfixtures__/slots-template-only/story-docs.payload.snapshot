@@ -27,6 +27,13 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
   </TemplateOnlySlots>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateOnlySlots from './TemplateOnlySlots.vue';
+</script>
+
+<template>
+  <TemplateOnlySlots v-bind="args /* slots: default, header, item */" />
+</template>",
     },
   },
 }

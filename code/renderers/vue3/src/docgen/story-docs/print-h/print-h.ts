@@ -11,9 +11,9 @@ import {
   type ClassifiedSlotArg,
   type VueDocgenArgInfo,
 } from '../classify-args/classify-args.ts';
+import { escapeTextContent } from '../../../docs/escape-text-content.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import {
-  escapeTextContent,
   formatRenderedProp,
   importStatementForBinding,
   indent,

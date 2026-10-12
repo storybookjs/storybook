@@ -58,7 +58,7 @@ const changeDetectionReadinessSchema = v.variant('status', [
     status: v.literal('unavailable'),
     reason: v.pipe(
       v.string(),
-      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+      v.description('Why change detection cannot publish statuses, such as no git.')
     ),
     error: v.optional(
       v.object({
@@ -109,7 +109,7 @@ export const moduleGraphServiceDef = defineService({
     },
     changeDetectionReadiness: {
       description:
-        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while git is unusable or the initial scan has failed.',
       input: noInputSchema,
       output: changeDetectionReadinessSchema,
       load: async (_input, ctx) => {

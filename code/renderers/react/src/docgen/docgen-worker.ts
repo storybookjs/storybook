@@ -30,7 +30,7 @@ export const createDocgenProvider = (): DocgenMiddleware =>
     createManager: async () => {
       try {
         const ts = await import('typescript');
-        return new ComponentMetaManager(ts);
+        return new ComponentMetaManager(ts.default ?? ts);
       } catch {
         return undefined;
       }

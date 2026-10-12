@@ -1,9 +1,9 @@
 /**
- * Prompt variant: `pattern-copy-play` (current default for `npx storybook ai setup`)
+ * Prompt variant: `pattern-copy-play`
  *
- * - Created: 2026-04-22 (eval iteration 2, default since this PR)
- * - Status: shipping default — produced by every `ai setup` invocation
- *   without `EVAL_SETUP_PROMPT` set.
+ * - Created: 2026-04-22 (eval iteration 2)
+ * - Status: available only to the eval harness, which sets
+ *   `EVAL_SETUP_PROMPT=pattern-copy-play`.
  * - Reference eval results:
  *   https://github.com/search?q=is:pr label:"prompt:pattern-copy-play" org:storybook-tmp&type=pullrequests
  *

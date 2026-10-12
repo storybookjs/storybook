@@ -1043,7 +1043,7 @@ http://remote.example.com/mcp`);
     });
   });
 
-  describe('resolveEntry hook (dev / experimentalDocgenServer)', () => {
+  describe('resolveEntry hook (dev / docgenServer)', () => {
     beforeEach(() => {
       manifestProvider.mockClear();
     });

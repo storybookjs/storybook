@@ -20,6 +20,7 @@
     "**/agent-eval/baselines/**",
     "**/agent-eval/.eval-cache/**",
     "**/agent-eval/results/**",
+    "**/agent-eval/templates/*/public/mockServiceWorker.js",
     "storybook-static",
     "built-storybooks",
     "ember-output",

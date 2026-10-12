@@ -6,14 +6,16 @@ import {
   writeClaudeMcpConfig,
 } from '../lib/templates.ts';
 
+const model = 'claude-opus-5-5';
+
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
   agent: 'claude-code', // direct Anthropic API, requires ANTHROPIC_API_KEY
-  model: 'claude-opus-5-5',
+  model,
   agentOptions: { effort: 'medium' },
   evals: WORKFLOW_STORYBOOK_EVALS,
   setup: async (sandbox) => {
-    await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp' });
+    await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp', model });
     await writeClaudeMcpConfig(sandbox);
     await writeClaudeInAppBrowserMock(sandbox);
   },

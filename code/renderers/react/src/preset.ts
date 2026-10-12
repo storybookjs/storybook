@@ -28,6 +28,18 @@ export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
+// the optional `typescript` peer, so a project without it keeps builder docgen.
+export const isDocgenProviderEnabled = () => {
+  try {
+    import.meta.resolve('typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const features: PresetProperty<'features'> = async (existing) => ({

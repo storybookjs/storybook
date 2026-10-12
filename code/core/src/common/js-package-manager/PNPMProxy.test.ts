@@ -88,6 +88,20 @@ describe('PNPM Proxy', () => {
       );
     });
 
+    it('installs every workspace project from the workspace root', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '12.4.2' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
     it('should rethrow minimum-release-age install errors as handled errors', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -194,6 +208,20 @@ describe('PNPM Proxy', () => {
         expect.objectContaining({
           command: 'pnpm',
           args: ['add', '-D', 'storybook'],
+        })
+      );
+    });
+
+    it('adds to the root project from the workspace root', async () => {
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '9.15.9' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['add', '-D', 'storybook', '-w'],
         })
       );
     });

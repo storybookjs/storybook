@@ -79,8 +79,8 @@ export function readStaticDocgen({
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
       `No docgen snapshots at ${docgenDir}.\n` +
-        `Build the sandbox first, and check that its main config enables both ` +
-        `features.experimentalDocgenServer and features.componentsManifest.`,
+        `Build the sandbox first, and check that its framework supports server docgen, ` +
+        `features.componentsManifest is enabled, and features.docgenServer is not disabled.`,
       { cause }
     );
   }

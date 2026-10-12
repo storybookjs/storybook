@@ -71,18 +71,6 @@ export interface ClickEventDetails {
   };
 }
 
-// Legacy format
-export interface LegacyHighlightOptions {
-  /** @deprecated Use selectors instead */
-  elements: string[];
-  /** @deprecated Use styles instead */
-  color: string;
-  /** @deprecated Use styles instead */
-  style: 'dotted' | 'dashed' | 'solid' | 'double';
-}
-
-export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
-
 export type Highlight = {
   id?: string;
   priority: number;

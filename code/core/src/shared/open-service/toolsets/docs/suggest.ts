@@ -7,9 +7,11 @@ export type DocsListedEntry = { id: string; name: string; storybookId?: string }
 const MAX_SUGGESTIONS = 5;
 // A whole name spelled out by the id outweighs any single shared word.
 const NAME_SCORE = 2;
+// A component name is rarely longer, and the bound keeps the tokens linear in the length of an id.
+const MAX_RUN_WORDS = 5;
 
-// The words of an id or a name, plus every run of adjacent words joined, so that `alert-banner`,
-// `AlertBanner` and `feedback-alertbanner` all share `alertbanner`.
+// The words of an id or a name, plus every short run of adjacent words joined, so that
+// `alert-banner`, `AlertBanner` and `feedback-alertbanner` all share `alertbanner`.
 function tokenize(value: string): Set<string> {
   const words = value
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -18,7 +20,8 @@ function tokenize(value: string): Set<string> {
     .filter(Boolean);
   const runs = new Set<string>();
   for (let start = 0; start < words.length; start++) {
-    for (let end = start + 1; end <= words.length; end++) {
+    const longestEnd = Math.min(words.length, start + MAX_RUN_WORDS);
+    for (let end = start + 1; end <= longestEnd; end++) {
       runs.add(words.slice(start, end).join(''));
     }
   }

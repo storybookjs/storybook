@@ -47,6 +47,10 @@ describe('suggestEntries', () => {
     expect(suggestedIds('components-toggle-button')[0]).toBe('components-togglebutton');
   });
 
+  it('handles an id of thousands of words', () => {
+    expect(suggestedIds(`${'x-'.repeat(5000)}button`)[0]).toBe('components-button');
+  });
+
   it('matches a kebab-case guess against a PascalCase name', () => {
     expect(suggestedIds('alert-banner')).toEqual(['feedback-alertbanner', 'components-alert']);
   });

@@ -235,7 +235,7 @@ describe('installSkills', () => {
       }),
     });
     vi.mocked(packageManager.runPackageCommand)
-      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined as never)
       .mockRejectedValueOnce(new Error('remove failed'));
 
     const result = await installSkills({ packageManager, source: 'refresh' });

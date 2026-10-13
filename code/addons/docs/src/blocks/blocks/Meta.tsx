@@ -1,12 +1,17 @@
 import type { FC } from 'react';
 import React, { useContext } from 'react';
 
-import type { BaseAnnotations, ModuleExports } from 'storybook/internal/types';
+import type {
+  BaseAnnotations,
+  ComponentAnnotations,
+  ModuleExports,
+} from 'storybook/internal/types';
 
 import { Anchor } from './Anchor';
 import { DocsContext } from './DocsContext';
 
-type MetaProps = BaseAnnotations & { id?: string; of?: ModuleExports; title?: string };
+type MetaProps = BaseAnnotations &
+  Pick<ComponentAnnotations, 'id' | 'title'> & { of?: ModuleExports };
 
 /**
  * This component is used to declare component metadata in docs and gets transformed into a default

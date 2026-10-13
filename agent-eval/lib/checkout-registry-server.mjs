@@ -1,7 +1,8 @@
 // npm registry for the sandbox that publishes this checkout's Storybook packages under the `next`
 // dist-tag and redirects every other request to the npm registry, so `npm create storybook@next`
-// and `npx storybook@next upgrade` install the branch under test. Zero dependencies: it runs before
-// the sandbox installs anything.
+// and `npx storybook@next upgrade` install the branch under test. Once npm's stable release is on
+// the checkout's major, it publishes them under `latest` too. Zero dependencies: it runs before the
+// sandbox installs anything.
 //
 // Usage: node checkout-registry-server.mjs <dir> <port>, where <dir> holds registry.json and the
 // tarballs.
@@ -109,6 +110,11 @@ async function packument(name, accept) {
   if (manifest) {
     versions[manifest.version] = manifest;
     distTags.next = manifest.version;
+    // The skills install from `latest` once the stable release has reached the checkout's major.
+    const stable = upstream['dist-tags']?.latest;
+    if (stable && releaseLine(stable)[0] >= checkoutLine[0]) {
+      distTags.latest = manifest.version;
+    }
   }
   return { ...upstream, versions, 'dist-tags': distTags };
 }

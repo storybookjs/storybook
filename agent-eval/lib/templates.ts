@@ -754,7 +754,8 @@ export function checkoutRegistryPackages(workspace: StorybookWorkspace): Workspa
 // For evals whose agent installs Storybook itself (`evals.checkoutRegistry` in the fixture), so
 // `npm create storybook@next` and `npx storybook@next upgrade` install this checkout instead of the
 // published prerelease. The registry publishes the checkout under `next`, keeps `latest` on the
-// published release, and sends every other request on to npm.
+// published release until that release is on the checkout's major, and sends every other request
+// on to npm.
 async function startCheckoutRegistry(
   sandbox: Sandbox,
   workspace: StorybookWorkspace

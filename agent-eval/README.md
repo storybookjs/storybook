@@ -113,7 +113,10 @@ the sandbox (`lib/checkout-registry-server.mjs`) and points the user-level npm
 config at it. The registry:
 
 - publishes the checkout's build under the `next` dist-tag and keeps `latest`
-  on the published release, as during an 11.0 prerelease. It serves
+  on the published release, as during an 11.0 prerelease. Once the published
+  `latest` is on the checkout's major (after the 11.0 release), the skills
+  tell agents to install `@latest`, so the checkout's build is published under
+  `latest` as well. It serves
   `create-storybook`, `@storybook/cli`, `storybook`, the React + Vite
   framework, the addons `create storybook` installs, the MCP addon (which an
   upgrade through 10.x adds), and the monorepo packages those depend on;

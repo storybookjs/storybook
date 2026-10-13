@@ -1,5 +1,4 @@
-import { types as t } from 'storybook/internal/babel';
-import type { collectImportBindings } from 'storybook/internal/csf-tools';
+import type { ESTreeNode as Node, collectImportBindings } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
   keyOf,
@@ -23,43 +22,49 @@ export interface StoryNgModules {
 // The decorator is matched by its conventional local name: resolving the import binding would only
 // rule out a foreign function that happens to be called `moduleMetadata`, which does not arise.
 export const ngModulesFromDecorators = (
-  decorators: t.Node | undefined,
+  decorators: Node | undefined,
   componentName: string | undefined
 ): StoryNgModules => {
   const result: StoryNgModules = { names: [], declaresComponent: false };
   const list = decorators === undefined ? undefined : unwrapExpression(decorators);
-  if (!list || !t.isArrayExpression(list)) {
+  if (list?.type !== 'ArrayExpression') {
     return result;
   }
   for (const element of list.elements) {
-    if (!element || t.isSpreadElement(element)) {
+    if (!element || element.type === 'SpreadElement') {
       continue;
     }
     const call = unwrapExpression(element);
-    if (!t.isCallExpression(call) || !t.isIdentifier(call.callee, { name: 'moduleMetadata' })) {
+    if (
+      call.type !== 'CallExpression' ||
+      call.callee.type !== 'Identifier' ||
+      call.callee.name !== 'moduleMetadata'
+    ) {
       continue;
     }
     const [metadataArg] = call.arguments;
     const metadata =
-      metadataArg && t.isExpression(metadataArg) ? unwrapExpression(metadataArg) : undefined;
-    if (!metadata || !t.isObjectExpression(metadata)) {
+      metadataArg && metadataArg.type !== 'SpreadElement'
+        ? unwrapExpression(metadataArg)
+        : undefined;
+    if (metadata?.type !== 'ObjectExpression') {
       continue;
     }
     for (const property of metadata.properties) {
-      if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+      if (property.type !== 'Property' || property.method || property.kind !== 'init') {
         continue;
       }
       const key = keyOf(property);
       const value = unwrapExpression(property.value);
-      if ((key !== 'imports' && key !== 'declarations') || !t.isArrayExpression(value)) {
+      if ((key !== 'imports' && key !== 'declarations') || value.type !== 'ArrayExpression') {
         continue;
       }
       for (const item of value.elements) {
-        if (!item || t.isSpreadElement(item)) {
+        if (!item || item.type === 'SpreadElement') {
           continue;
         }
         const entry = unwrapExpression(item);
-        if (!t.isIdentifier(entry)) {
+        if (entry.type !== 'Identifier') {
           continue;
         }
         if (key === 'imports') {
@@ -78,7 +83,7 @@ export const ngModulesFromDecorators = (
 // A story that declares the component itself wires it without a module the snippet could name, so
 // the builder's warning path stays the honest output.
 export const storyNgModules = (
-  storyDecorators: t.Node | undefined,
+  storyDecorators: Node | undefined,
   { metaNgModules, componentName, importBindings }: StoryNgModulesContext
 ): HostComponentSnippetInput['ngModules'] => {
   const story = ngModulesFromDecorators(storyDecorators, componentName);

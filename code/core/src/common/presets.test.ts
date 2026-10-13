@@ -105,6 +105,23 @@ describe('presets', () => {
     await expect(getPresets(['preset-foo'], { isCritical: true })).rejects.toThrow();
   });
 
+  it('loads a framework preset from the project config directory', async () => {
+    mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier, parent }) =>
+      specifier === '@storybook/web-components-vite/preset' && parent === '/project/.storybook'
+        ? '/project/node_modules/@storybook/web-components-vite/preset.js'
+        : undefined
+    );
+    mockedResolveUtils.importModule.mockResolvedValue({});
+
+    await loadPreset('@storybook/web-components-vite/preset', 0, {
+      configDir: '/project/.storybook',
+    } as any);
+
+    expect(mockedResolveUtils.importModule).toHaveBeenCalledWith(
+      '/project/node_modules/@storybook/web-components-vite/preset.js'
+    );
+  });
+
   it('loads and applies presets when they are combined in another preset', async () => {
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       if (path === 'preset-first') {

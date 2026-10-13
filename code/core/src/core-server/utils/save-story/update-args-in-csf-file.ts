@@ -7,6 +7,9 @@ import { valueToAST } from './valueToAST.ts';
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
   const args = Object.fromEntries(
     Object.entries(input).map(([k, v]) => {
+      if (!t.isValidIdentifier(k, false)) {
+        throw new SaveStoryError(`Invalid arg name: ${JSON.stringify(k)}`);
+      }
       return [k, valueToAST(v)];
     })
   );

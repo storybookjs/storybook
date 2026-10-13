@@ -46,4 +46,89 @@ test.describe('pseudo-states addon', () => {
     const storyBRoot = page.frameLocator('#storybook-preview-iframe').locator('#storybook-root');
     await expect(storyBRoot).toHaveClass(/pseudo-hover-all/, { timeout: PREVIEW_STORY_TIMEOUT });
   });
+
+  test('preserves native hover and keyboard focus for negated states', async ({ page }) => {
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--native&viewMode=story`
+    );
+    const row = page.locator('.negation-row');
+    const icon = page.locator('.negation-icon');
+    await page.mouse.move(800, 0);
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+
+    await row.hover();
+    await expect(icon).toHaveCSS('visibility', 'visible');
+
+    await page.locator('body').click({ position: { x: 800, y: 0 } });
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+    await page.keyboard.press('Tab');
+    await expect(row).toBeFocused();
+    await expect(icon).toHaveCSS('visibility', 'visible');
+  });
+
+  test('preserves native interactions when forcing is unrelated or elsewhere', async ({ page }) => {
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--unrelated-active&viewMode=story`
+    );
+    const row = page.locator('.negation-row');
+    const icon = page.locator('.negation-icon');
+    await page.mouse.move(800, 0);
+    await expect(page.locator('#storybook-root')).toHaveClass(/pseudo-active-all/);
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+    await row.hover();
+    await expect(icon).toHaveCSS('visibility', 'visible');
+    await page.locator('body').click({ position: { x: 800, y: 0 } });
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+    await page.keyboard.press('Tab');
+    await expect(row).toBeFocused();
+    await expect(icon).toHaveCSS('visibility', 'visible');
+
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--hover-elsewhere&viewMode=story`
+    );
+    await page.mouse.move(800, 0);
+    await expect(page.locator('.other-target')).toHaveClass(/pseudo-hover/);
+    await expect(row).not.toHaveClass(/pseudo-hover/);
+    await expect(page.locator('#storybook-root')).not.toHaveClass(/pseudo-hover-all/);
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+    await row.hover();
+    await expect(icon).toHaveCSS('visibility', 'visible');
+    await page.locator('body').click({ position: { x: 800, y: 0 } });
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+    await page.keyboard.press('Tab');
+    await expect(row).toBeFocused();
+    await expect(icon).toHaveCSS('visibility', 'visible');
+    await page.locator('body').click({ position: { x: 800, y: 0 } });
+    await expect(icon).toHaveCSS('visibility', 'hidden');
+  });
+
+  test('preserves global simulated hover and focus for negated states', async ({ page }) => {
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--hover&viewMode=story`
+    );
+    await page.mouse.move(800, 0);
+    await expect(page.locator('#storybook-root')).toHaveClass(/pseudo-hover-all/);
+    await expect(page.locator('.negation-icon')).toHaveCSS('visibility', 'visible');
+
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--focus-visible&viewMode=story`
+    );
+    await expect(page.locator('#storybook-root')).toHaveClass(/pseudo-focus-visible-all/);
+    await expect(page.locator('.negation-icon')).toHaveCSS('visibility', 'visible');
+  });
+
+  test('preserves targeted simulated hover and focus for negated states', async ({ page }) => {
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--targeted-hover&viewMode=story`
+    );
+    await page.mouse.move(800, 0);
+    await expect(page.locator('.negation-row')).toHaveClass(/pseudo-hover/);
+    await expect(page.locator('.negation-icon')).toHaveCSS('visibility', 'visible');
+
+    await page.goto(
+      `${storybookUrl}/iframe.html?id=addons-pseudo-states-negation--targeted-focus-visible&viewMode=story`
+    );
+    await expect(page.locator('.negation-row')).toHaveClass(/pseudo-focus-visible/);
+    await expect(page.locator('.negation-icon')).toHaveCSS('visibility', 'visible');
+  });
 });

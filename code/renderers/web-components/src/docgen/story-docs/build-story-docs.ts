@@ -12,12 +12,12 @@ import {
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
+import { hasHoleBracket } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
-import { escapeTemplateText, spreadHole } from '../../docs/template-format.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import {
   parseStoryFile,
@@ -27,9 +27,9 @@ import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet, printListenerScript } from './print-element.ts';
+import { argsTemplate, litTemplate } from './story-template.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
-import { templateSource } from './template-text.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
@@ -235,7 +235,12 @@ const renderedArgsSnippet = (
       warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
       const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
-      const live = templateSource(template);
+      // A render function from another file has no source in this one to keep as written.
+      const inOtherFile =
+        render.path.findParent((path) => path.isProgram())?.node !== deps.csf._ast.program;
+      const live = inOtherFile
+        ? undefined
+        : litTemplate(template, render.path.node.params[0], deps.csf._file.code);
       return {
         ...(hasSnippet ? { snippet: printed.snippet } : {}),
         ...(live === undefined ? {} : { template: live }),
@@ -354,58 +359,19 @@ const argsSnippet = (
   const allUnresolved = [...unresolvedArgs, ...unresolved];
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
   warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
-  // The filler shows attributes, properties and custom properties; anything else the snippet
-  // shows or leaves out with a warning keeps the static snippet.
-  const fillable =
-    listeners.length === 0 &&
-    unknown.length === 0 &&
-    snippet.slots.length === 0 &&
-    snippet.styleRules.length === 0;
+  // Slot content and part or state styles are left to the static snippet.
+  const element =
+    snippet.slots.length + snippet.styleRules.length === 0
+      ? argsTemplate(tag, Object.keys(args), argTypes ?? {}, declaration)
+      : undefined;
+  const script = printListenerScript(tag, snippet.listeners);
+  const template = !script ? element : hasHoleBracket(script) ? undefined : `${element}\n${script}`;
 
   return {
     ...(printed ? { snippet: printElementSnippet(snippet) } : {}),
-    ...(fillable ? { template: argsTemplate(args, declaration, argTypes ?? {}, snippet) } : {}),
+    ...(element && template ? { template } : {}),
     ...joinWarnings(warnings),
   };
-};
-
-// `<tag ${...args/* … */}></tag>` with every arg the component declares, the story's own first, and
-// the snippet's listener `<script>` after it.
-const argsTemplate = (
-  args: Record<string, t.Node>,
-  declaration: ManifestDeclaration,
-  argTypes: NonNullable<WebComponentsDocgenPayload['argTypes']>,
-  snippet: ElementSnippet
-): string => {
-  const bindings: Record<string, string | null> = {};
-  for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes)])) {
-    const name = spreadName(key, classifyArg(key, false, argTypes, declaration));
-    if (name !== undefined) {
-      bindings[key] = name;
-    }
-  }
-  const element = `<${snippet.tag} ${spreadHole(bindings)}></${snippet.tag}>`;
-  const script = printListenerScript(snippet.tag, snippet.listeners);
-  return script ? `${element}\n${escapeTemplateText(script)}` : element;
-};
-
-// What the spread sets an arg as, `null` for what only the static snippet shows (a slot, part or
-// state), or `undefined` for a listener or method, which it leaves out.
-const spreadName = (key: string, binding: ArgBinding): string | null | undefined => {
-  switch (binding.kind) {
-    case 'attribute':
-      return binding.viaField ? `.${key}=${binding.name}` : binding.name;
-    case 'property':
-      return `.${binding.name}`;
-    case 'cssProperty':
-      return binding.name.startsWith('--') ? binding.name : null;
-    case 'slot':
-    case 'cssPart':
-    case 'cssState':
-      return null;
-    default:
-      return undefined;
-  }
 };
 
 const addBoundValue = (

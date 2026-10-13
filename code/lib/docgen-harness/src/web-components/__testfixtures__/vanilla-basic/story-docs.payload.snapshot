@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-vanilla-basic--args-default-render",
       "name": "Args Default Render",
       "snippet": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
-      "template": "<vanilla-basic ${...args/* {"label":"label","count":"count","disabled":"disabled","legacy-label":"legacy-label"} */}></vanilla-basic>",
+      "template": "<vanilla-basic⟦props label=label count=count disabled=disabled legacy-label=legacy-label⟧></vanilla-basic>",
     },
     "webcomponentsfixtures-vanilla-basic--dom-node": {
       "id": "webcomponentsfixtures-vanilla-basic--dom-node",
@@ -19,10 +19,7 @@
       "id": "webcomponentsfixtures-vanilla-basic--lit-template",
       "name": "Lit Template",
       "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
-      "template": "<vanilla-basic
-  label=${args.label}
-  count=${args.count}
-  ?disabled=${args.disabled}
+      "template": "<vanilla-basic⟦attr label label⟧⟦attr count count⟧⟦bool disabled disabled⟧
 ></vanilla-basic>",
     },
   },

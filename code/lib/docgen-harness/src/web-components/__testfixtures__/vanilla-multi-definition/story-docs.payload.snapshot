@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
       "name": "Args Default Render",
       "snippet": "<multi-beta></multi-beta>",
-      "template": "<multi-beta ${...args/* {"betaLabel":".betaLabel","beta-label":"beta-label"} */}></multi-beta>",
+      "template": "<multi-beta⟦props .betaLabel=betaLabel beta-label=beta-label⟧></multi-beta>",
       "warning": "Incomplete snippet: properties without an attribute: `betaLabel`.",
     },
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
@@ -21,7 +21,7 @@ Incomplete snippet: properties without an attribute: `betaLabel`.",
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
       "snippet": "<multi-beta beta-label="Beta"></multi-beta>",
-      "template": "<multi-beta beta-label=${args.betaLabel}></multi-beta>",
+      "template": "<multi-beta⟦attr beta-label betaLabel⟧></multi-beta>",
     },
   },
 }

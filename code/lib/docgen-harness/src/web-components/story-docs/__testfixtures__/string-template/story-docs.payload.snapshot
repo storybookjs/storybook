@@ -7,7 +7,7 @@
       "id": "webcomponentsstorydocs-string-template--default",
       "name": "Default",
       "snippet": "<string-template label="Default"></string-template>",
-      "template": "<string-template ${...args/* {"label":".label=label"} */}></string-template>",
+      "template": "<string-template⟦props label=label⟧></string-template>",
     },
     "webcomponentsstorydocs-string-template--plain-string": {
       "id": "webcomponentsstorydocs-string-template--plain-string",

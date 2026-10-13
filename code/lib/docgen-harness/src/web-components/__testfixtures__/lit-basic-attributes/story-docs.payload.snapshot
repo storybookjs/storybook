@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-basic-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes ${...args/* {"label":".label=label","count":".count=count","disabled":".disabled=disabled","isOpen":".isOpen=is-open","is-open":"is-open"} */}></lit-basic-attributes>",
+      "template": "<lit-basic-attributes⟦props label=label count=count disabled=disabled is-open=isOpen⟧></lit-basic-attributes>",
     },
     "webcomponentsfixtures-lit-basic-attributes--dom-node": {
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
@@ -19,11 +19,7 @@
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes
-  label=${args.label}
-  count=${args.count}
-  ?disabled=${args.disabled}
-  ?is-open=${args.isOpen}
+      "template": "<lit-basic-attributes⟦attr label label⟧⟦attr count count⟧⟦bool disabled disabled⟧⟦bool is-open isOpen⟧
 ></lit-basic-attributes>",
     },
   },

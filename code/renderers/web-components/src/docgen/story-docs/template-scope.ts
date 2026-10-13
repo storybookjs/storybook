@@ -21,8 +21,6 @@ export interface TemplateScope {
   aliases: AliasMap;
   args?: string;
   destructured: Map<string, string>;
-  // Every name the render function's parameters bind, read as an arg or not.
-  params: ReadonlySet<string>;
 }
 
 export type AliasMap = Map<string, AliasValue>;
@@ -145,10 +143,7 @@ const returnedTemplateExpression = (
 
 const scopeForRenderFunction = (renderFunction: RenderFunctionPath): TemplateScope => {
   const [first] = renderFunction.node.params;
-  const params = new Set(
-    renderFunction.node.params.flatMap((param) => Object.keys(t.getBindingIdentifiers(param)))
-  );
-  const scope: TemplateScope = { aliases: new Map(), destructured: new Map(), params };
+  const scope: TemplateScope = { aliases: new Map(), destructured: new Map() };
   if (t.isIdentifier(first)) {
     scope.args = first.name;
     return scope;

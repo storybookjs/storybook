@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-property-only--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-property-only label="Default render"></lit-property-only>",
-      "template": "<lit-property-only ${...args/* {"label":".label=label","items":".items","config":".config"} */}></lit-property-only>",
+      "template": "<lit-property-only⟦props label=label .items=items .config=config⟧></lit-property-only>",
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
     "webcomponentsfixtures-lit-property-only--dom-node": {
@@ -21,10 +21,9 @@ Incomplete snippet: properties without an attribute: `items`, `config`.",
       "id": "webcomponentsfixtures-lit-property-only--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-property-only label="Configured"></lit-property-only>",
-      "template": "<lit-property-only
-  label=${args.label}
-  .items=${args.items}
-  .config=${args.config}
+      "template": "<lit-property-only⟦attr label label⟧
+  .items=${⟦value items⟧}
+  .config=${⟦value config⟧}
 ></lit-property-only>",
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },

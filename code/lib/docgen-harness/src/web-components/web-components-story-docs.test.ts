@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
@@ -60,7 +61,8 @@ const staticArgs = (nodes: Record<string, Parameters<typeof evaluateArgValue>[0]
     if (value.kind === 'unresolved') {
       return undefined;
     }
-    args[name] = value.kind === 'value' ? value.value : () => {};
+    args[name] =
+      value.kind === 'function' ? () => {} : value.kind === 'value' ? value.value : undefined;
   }
   return args;
 };
@@ -94,8 +96,13 @@ describe('web-components story-docs server snippets', () => {
       const storyDoc = payload!.stories[story.id];
       const args = staticArgs(resolver.resolve(exportName).args);
       if (storyDoc?.template !== undefined && args !== undefined) {
-        expect(() => fillTemplate(storyDoc.template!, args), `${exportName} fills`).not.toThrow();
-        filled += 1;
+        try {
+          fillTemplate(storyDoc.template, args);
+          filled += 1;
+        } catch (error) {
+          // A function in a value hole, such as a nested listener, keeps the static snippet.
+          expect(error, `${exportName} fills`).toBeInstanceOf(UnprintableArgError);
+        }
       }
       expect(storyDoc, `${exportName} missing from payload`).toBeDefined();
       expect(storyDoc?.error, `${exportName} produced an error`).toBeUndefined();

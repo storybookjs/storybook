@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-union-jsdoc--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-union-jsdoc variant="ghost" old-label="Legacy" label="Default render"></lit-union-jsdoc>",
-      "template": "<lit-union-jsdoc ${...args/* {"variant":".variant=variant","oldLabel":".oldLabel=old-label","label":".label=label","old-label":"old-label"} */}></lit-union-jsdoc>",
+      "template": "<lit-union-jsdoc⟦props variant=variant old-label=oldLabel label=label⟧></lit-union-jsdoc>",
     },
     "webcomponentsfixtures-lit-union-jsdoc--dom-node": {
       "id": "webcomponentsfixtures-lit-union-jsdoc--dom-node",
@@ -19,10 +19,7 @@
       "id": "webcomponentsfixtures-lit-union-jsdoc--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>",
-      "template": "<lit-union-jsdoc
-  variant=${args.variant}
-  old-label=${args.oldLabel}
-  label=${args.label}
+      "template": "<lit-union-jsdoc⟦attr variant variant⟧⟦attr old-label oldLabel⟧⟦attr label label⟧
 ></lit-union-jsdoc>",
     },
   },

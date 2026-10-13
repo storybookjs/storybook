@@ -276,6 +276,16 @@ describe('writeStorybookAgentInstructions', () => {
 
     expect(files['CLAUDE.md']).toBe(`# Project rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
   });
+
+  it('writes nothing when it cannot tell whether a file exists', async () => {
+    const files: Record<string, string> = { 'AGENTS.md': '# Project rules\n' };
+    const sandbox = createSandbox(files);
+    sandbox.runCommand = async () => ({ stdout: '', stderr: 'test: I/O error', exitCode: 2 });
+
+    await expect(writeStorybookAgentInstructions(sandbox)).rejects.toThrow('I/O error');
+
+    expect(files).toEqual({ 'AGENTS.md': '# Project rules\n' });
+  });
 });
 
 function findStorybookMainFiles(rootDir: string): string[] {

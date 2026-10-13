@@ -14,7 +14,7 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
     })
   );
 
-  const story = unwrapExpression(node);
+  const story = unwrapExpression(t.isVariableDeclarator(node) && node.init ? node.init : node);
   const isCsf4Story = isCsfFactoryCall(story);
 
   if (!isCsf4Story && (t.isArrowFunctionExpression(story) || t.isCallExpression(story))) {

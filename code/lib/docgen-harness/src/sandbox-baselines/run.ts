@@ -21,7 +21,6 @@ import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 import { resolve } from 'node:path';
-import { captureLegacy } from './capture/legacy-browser.ts';
 import { captureServer } from './capture/server.ts';
 import { captureMetadata, writeCapture } from './capture/files.ts';
 import { compareCaptures } from './compare-captures.ts';
@@ -140,7 +139,9 @@ async function main(): Promise<void> {
       const components =
         options.engine === 'server'
           ? captureServer(staticDir)
-          : await captureLegacy({ staticDir, snippetTimeout: options.snippetTimeout });
+          : await (
+              await import('./capture/legacy-browser.ts')
+            ).captureLegacy({ staticDir, snippetTimeout: options.snippetTimeout });
       writeCapture(options.out, components, metadata, dirname(staticDir));
       logger.info(`Captured ${Object.keys(components).length} components into ${options.out}`);
     }

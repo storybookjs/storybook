@@ -1,10 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createEventWrapper } from './entry-preview.tsx';
 
 describe('createEventWrapper', () => {
+  let act: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    act = vi.fn((cb: () => void) => cb());
+  });
+
   it('avoids nested act calls while already within an act scope', () => {
-    const act = vi.fn((cb) => cb());
     const wrapper = createEventWrapper(act);
     const inner = vi.fn();
 
@@ -18,7 +23,7 @@ describe('createEventWrapper', () => {
 
   it('restores the wrapper state when a callback throws', () => {
     let actCallCount = 0;
-    const act = vi.fn((cb) => {
+    act.mockImplementation((cb: () => void) => {
       actCallCount += 1;
       if (actCallCount === 1) {
         throw new Error('boom');

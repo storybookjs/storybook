@@ -96,8 +96,28 @@ const cleanups: CleanupCallback[] = [];
 export async function cleanup(): Promise<void> {
   const callbacks = [...cleanups].reverse();
   cleanups.length = 0;
+  const errors: unknown[] = [];
   for (const callback of callbacks) {
-    await callback();
+    try {
+      await callback();
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+  if (errors.length > 1) {
+    if (typeof AggregateError !== 'undefined') {
+      throw new AggregateError(errors, 'Cleanups failed with multiple errors');
+    }
+    const combinedError = new Error(
+      `Cleanups failed with multiple errors:\n${errors
+        .map((e) => (e instanceof Error ? (e.stack ?? e.message) : String(e)))
+        .join('\n')}`
+    );
+    (combinedError as any).errors = errors;
+    throw combinedError;
   }
 }
 

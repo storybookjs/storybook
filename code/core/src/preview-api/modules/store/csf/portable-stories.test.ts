@@ -592,4 +592,79 @@ describe('cleanup', () => {
     await cleanup();
     expect(order).toEqual([2, 1]);
   });
+
+  it('executes later callbacks even when an earlier callback fails, preserves reverse order, and reports single failure', async () => {
+    const executionOrder: string[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        // Registered 2nd: will execute 1st in reverse order
+        renderToCanvas: () => () => {
+          executionOrder.push('first-to-run (failing)');
+          throw new Error('first cleanup error');
+        },
+        // Registered 1st: will execute 2nd in reverse order
+        beforeEach: () => () => {
+          executionOrder.push('second-to-run (succeeding)');
+        },
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+
+    await expect(cleanup()).rejects.toThrow('first cleanup error');
+    expect(executionOrder).toEqual(['first-to-run (failing)', 'second-to-run (succeeding)']);
+
+    // Repeated call is safe and does not throw or re-run
+    await expect(cleanup()).resolves.toBeUndefined();
+    expect(executionOrder).toEqual(['first-to-run (failing)', 'second-to-run (succeeding)']);
+  });
+
+  it('collects multiple errors and rejects after all callbacks have executed, supporting async rejections', async () => {
+    const executionOrder: string[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        // Registered 2nd: will execute 1st in reverse order
+        renderToCanvas: () => async () => {
+          executionOrder.push('first');
+          throw new Error('async error 1');
+        },
+        // Registered 1st: will execute 2nd in reverse order
+        beforeEach: () => () => {
+          executionOrder.push('second');
+          throw new Error('sync error 2');
+        },
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+
+    let caughtError: unknown;
+    try {
+      await cleanup();
+    } catch (e) {
+      caughtError = e;
+    }
+
+    expect(executionOrder).toEqual(['first', 'second']);
+    expect(caughtError).toBeDefined();
+    if (typeof AggregateError !== 'undefined') {
+      expect(caughtError).toBeInstanceOf(AggregateError);
+      expect((caughtError as AggregateError).errors.map((e: Error) => e.message)).toEqual([
+        'async error 1',
+        'sync error 2',
+      ]);
+    } else {
+      expect((caughtError as any).errors.map((e: Error) => e.message)).toEqual([
+        'async error 1',
+        'sync error 2',
+      ]);
+    }
+
+    // Repeated call is safe and does not re-throw old errors
+    await expect(cleanup()).resolves.toBeUndefined();
+  });
 });

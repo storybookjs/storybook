@@ -88,6 +88,20 @@ describe('PNPM Proxy', () => {
       );
     });
 
+    it('installs every workspace project from the workspace root', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '12.4.2' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
     it('should rethrow minimum-release-age install errors as handled errors', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
         await Promise.resolve(fn());
@@ -194,6 +208,20 @@ describe('PNPM Proxy', () => {
         expect.objectContaining({
           command: 'pnpm',
           args: ['add', '-D', 'storybook'],
+        })
+      );
+    });
+
+    it('adds to the root project from the workspace root', async () => {
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(true);
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '9.15.9' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['add', '-D', 'storybook', '-w'],
         })
       );
     });
@@ -482,6 +510,13 @@ describe('PNPM Proxy', () => {
   });
 
   describe('precheckStorybookPackageInstall', () => {
+    const packageTimeMap = {
+      created: '2025-01-01T00:00:00.000Z',
+      modified: '2026-05-11T12:00:00.000Z',
+      '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+      '10.3.2': '2026-05-01T00:00:00.000Z',
+    };
+
     beforeEach(() => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-05-11T12:00:00.000Z'));
@@ -495,15 +530,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
@@ -537,15 +565,8 @@ describe('PNPM Proxy', () => {
         .mockResolvedValueOnce({
           stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']),
         } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
         .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
         .mockResolvedValueOnce({ stdout: '' } as any);
       vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
@@ -602,15 +623,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any);
+        .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any);
       vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
 
       const rerunPromise = pnpmProxy.precheckStorybookPackageInstall({
@@ -632,15 +646,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
-        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
-        .mockResolvedValueOnce({
-          stdout: JSON.stringify({
-            created: '2025-01-01T00:00:00.000Z',
-            modified: '2026-05-11T12:00:00.000Z',
-            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
-            '10.3.2': '2026-05-01T00:00:00.000Z',
-          }),
-        } as any);
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any);
       vi.mocked(prompt.select).mockImplementationOnce(async (_options: any, promptOptions: any) => {
         promptOptions.onCancel();
         return 'exclude';
@@ -654,6 +661,53 @@ describe('PNPM Proxy', () => {
         })
       ).rejects.toThrow(
         /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
+      );
+    });
+
+    describe('release-time checks', () => {
+      beforeEach(() => {
+        mockedExecuteCommand
+          .mockResolvedValueOnce({ stdout: '1440\n' } as Awaited<ReturnType<typeof executeCommand>>)
+          .mockResolvedValueOnce({ stdout: '[]' } as Awaited<ReturnType<typeof executeCommand>>)
+          .mockImplementation(
+            ({ args = [] }) =>
+              Promise.resolve({
+                stdout: args.includes('time') ? JSON.stringify(packageTimeMap) : '',
+              }) as ReturnType<typeof executeCommand>
+          );
+        vi.mocked(prompt.select).mockResolvedValue('rerun');
+      });
+
+      it('should prompt before installing a release that is too recent', async () => {
+        await expect(
+          pnpmProxy.precheckStorybookPackageInstall({
+            storybookVersion: '10.4.0-alpha.17',
+            nonInteractive: false,
+            installContext: 'create',
+          })
+        ).rejects.toThrow(MinimumReleaseAgeHandledError);
+
+        expect(prompt.select).toHaveBeenCalled();
+      });
+
+      it.each([
+        { version: '10.3.2', condition: 'already satisfies the minimum release age' },
+        { version: '10.4.0-alpha.18', condition: 'has no release time' },
+      ])(
+        'should continue without prompting when the requested version $condition',
+        async ({ version }) => {
+          await expect(
+            pnpmProxy.precheckStorybookPackageInstall({
+              storybookVersion: version,
+              nonInteractive: false,
+              installContext: 'create',
+            })
+          ).resolves.toBeUndefined();
+
+          expect(prompt.select).not.toHaveBeenCalled();
+          expect(logger.warn).not.toHaveBeenCalled();
+          expect(prompt.executeTaskWithSpinner).not.toHaveBeenCalled();
+        }
       );
     });
 

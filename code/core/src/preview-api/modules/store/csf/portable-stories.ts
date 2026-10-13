@@ -105,11 +105,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     normalizeComponentAnnotations<TRenderer>(componentAnnotations);
 
   const storyName =
-    exportsName ||
-    storyAnnotations.storyName ||
-    storyAnnotations.story?.name ||
-    storyAnnotations.name ||
-    DEFAULT_STORY_NAME;
+    exportsName || storyAnnotations.storyName || storyAnnotations.name || DEFAULT_STORY_NAME;
 
   const normalizedStory = normalizeStory<TRenderer>(
     storyName,

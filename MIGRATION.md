@@ -68,6 +68,7 @@
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
+  - [CSF `.story` annotations removed](#csf-story-annotations-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1847,6 +1848,35 @@ The deprecated `getStatus` and `getGraphRevision` query aliases on the `core/mod
 The `ExternalDocs` and `ExternalDocsContainer` components have been removed from `@storybook/addon-docs/blocks`, along with their supporting implementation. They rendered docs pages outside of the Storybook UI, an approach that was never stabilized.
 
 To write documentation, use Doc Blocks inside MDX docs entries rendered by Storybook. To build a custom block, use the `useOf` hook. There is no supported standalone docs renderer. To show docs outside of Storybook, embed a built Storybook.
+
+### CSF `.story` annotations removed
+
+Storybook 11 no longer reads annotations nested under `Story.story`. That form was deprecated in Storybook 6.0. Move each field onto the story. When the story is a function, `name` becomes `storyName`.
+
+```diff
+ export const Basic = () => <Button />;
+-Basic.story = {
+-  name: 'foo',
+-  parameters: { layout: 'centered' },
+-  decorators: [withLayout],
+-};
++Basic.storyName = 'foo';
++Basic.parameters = { layout: 'centered' };
++Basic.decorators = [withLayout];
+```
+
+Assignments one property at a time move the same way: `Basic.story.name = 'foo'` becomes `Basic.storyName = 'foo'`, and `Basic.story.parameters = { ... }` becomes `Basic.parameters = { ... }`.
+
+If the value is not a static object, move the fields yourself. This includes a variable, a function call, a spread, or a computed key:
+
+```diff
+ const shared = { parameters: { layout: 'centered' }, decorators: [withLayout] };
+-Basic.story = shared;
++Basic.parameters = shared.parameters;
++Basic.decorators = shared.decorators;
+```
+
+`storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
 
 ## From version 10.6.1 to 10.6.2
 

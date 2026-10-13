@@ -4,9 +4,17 @@ import { createEventWrapper } from './entry-preview.tsx';
 
 describe('createEventWrapper', () => {
   let act: ReturnType<typeof vi.fn>;
+  let shouldThrow = false;
 
   beforeEach(() => {
-    act = vi.fn((cb: () => void) => cb());
+    shouldThrow = false;
+    act = vi.fn((cb: () => void) => {
+      if (shouldThrow) {
+        shouldThrow = false;
+        throw new Error('boom');
+      }
+      return cb();
+    });
   });
 
   it('avoids nested act calls while already within an act scope', () => {
@@ -22,14 +30,7 @@ describe('createEventWrapper', () => {
   });
 
   it('restores the wrapper state when a callback throws', () => {
-    let actCallCount = 0;
-    act.mockImplementation((cb: () => void) => {
-      actCallCount += 1;
-      if (actCallCount === 1) {
-        throw new Error('boom');
-      }
-      return cb();
-    });
+    shouldThrow = true;
     const wrapper = createEventWrapper(act);
 
     expect(() => wrapper(() => undefined)).toThrow('boom');

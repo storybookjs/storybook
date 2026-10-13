@@ -19,6 +19,13 @@ import {
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { logger } from 'storybook/internal/node-logger';
+import { resolve } from 'node:path';
+import { captureLegacy } from './capture/legacy-browser.ts';
+import { captureServer } from './capture/server.ts';
+import { captureMetadata, writeCapture } from './capture/files.ts';
+import { compareCaptures } from './compare-captures.ts';
+
 import { docgenServerTemplates } from '../../../cli-storybook/src/sandbox-templates.ts';
 import { SANDBOX_DIRECTORY } from '../perf/docgen-shared/paths.ts';
 import { compareBaselines, formatFindings } from './compare-baselines.ts';
@@ -87,19 +94,19 @@ function runTemplate(template: string, sandboxDirOverride: string | undefined, u
 
   const candidate = readStaticDocgen({ staticDir, sandboxDir });
   const documented = Object.values(candidate).filter((entry) => entry.argTypes).length;
-  console.log(
+  logger.info(
     `${template}: read ${Object.keys(candidate).length} component(s) from ${staticDir} (${documented} documented)`
   );
 
   if (update) {
     write(baselineDir, candidate);
-    console.log(`Recorded ${Object.keys(candidate).length} baseline(s) into ${baselineDir}`);
+    logger.info(`Recorded ${Object.keys(candidate).length} baseline(s) into ${baselineDir}`);
     return true;
   }
 
   const committed = readCommittedBaselines(baselineDir);
   if (Object.keys(committed).length === 0) {
-    console.error(
+    logger.error(
       `No baselines committed for ${template}. Record them with:\n  yarn baselines:sandbox --template ${template} --update`
     );
     return false;
@@ -107,24 +114,44 @@ function runTemplate(template: string, sandboxDirOverride: string | undefined, u
 
   const findings = compareBaselines(committed, candidate);
   if (findings.length === 0) {
-    console.log(`${template}: baselines match.`);
+    logger.info(`${template}: baselines match.`);
     return true;
   }
 
-  console.error(`\n${template}: docgen baselines drifted.\n${formatFindings(findings)}`);
-  console.error(
+  logger.error(`\n${template}: docgen baselines drifted.\n${formatFindings(findings)}`);
+  logger.error(
     `\nRegressions mean docgen got worse and want a fix, not a re-record. Once the diff is understood:\n  yarn baselines:sandbox --template ${template} --update`
   );
   return false;
 }
 
-function main(): void {
-  const { template, sandboxDir, update } = parseBaselineRunOptions(process.argv.slice(2));
+async function main(): Promise<void> {
+  const options = parseBaselineRunOptions(process.argv.slice(2));
+  if ('mode' in options) {
+    if (options.mode === 'compare') {
+      const report = compareCaptures(options);
+      logger.info(
+        `Comparison ${report.passed ? 'passed' : 'failed'}: ${report.unwaived.length} unwaived violations, ${report.staleWaivers.length} stale waivers. Reports: ${options.report}`
+      );
+      if (!report.passed) process.exitCode = 1;
+    } else {
+      const staticDir = resolve(options.staticDir);
+      const metadata = captureMetadata(staticDir, options.engine);
+      const components =
+        options.engine === 'server'
+          ? captureServer(staticDir)
+          : await captureLegacy({ staticDir, snippetTimeout: options.snippetTimeout });
+      writeCapture(options.out, components, metadata, dirname(staticDir));
+      logger.info(`Captured ${Object.keys(components).length} components into ${options.out}`);
+    }
+    return;
+  }
+  const { template, sandboxDir, update } = options;
   const templates = template ? [template] : docgenServerTemplates();
 
   if (templates.length === 0) {
     // Silence here would read as "everything passed" while nothing had been checked.
-    console.error(
+    logger.error(
       'No sandbox template enables server docgen, so there is nothing to baseline. Use a ' +
         'supported default-on framework and enable features.componentsManifest first.'
     );
@@ -138,4 +165,7 @@ function main(): void {
   }
 }
 
-main();
+main().catch((error) => {
+  logger.error(error);
+  process.exitCode = 1;
+});

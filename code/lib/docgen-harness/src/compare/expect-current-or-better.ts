@@ -43,8 +43,21 @@ export type ExpectCurrentOrBetterInput =
         declaredOmissions?: readonly string[];
       });
 
-/** Throws a single error listing every violation, so a failure shows the whole gap at once. */
-export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
+export function collectCurrentOrBetterViolations(input: ExpectCurrentOrBetterInput): Violation[] {
+  try {
+    return collectViolations(input);
+  } catch (error) {
+    return [
+      {
+        kind: 'invalid-comparison',
+        arg: 'comparison',
+        message: error instanceof Error ? error.message : String(error),
+      },
+    ];
+  }
+}
+
+function collectViolations(input: ExpectCurrentOrBetterInput): Violation[] {
   if (input.kind === 'argTypes') {
     const violations = compareArgTypes(input.baseline, input.candidate, {
       legacyBaseline: input.legacyBaseline,
@@ -68,11 +81,11 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
       );
     }
     const declaredArgs = new Set(declaredDefaultOmissions.map(({ arg }) => arg));
-    throwOnViolations(
-      violations.filter(
-        (violation) => violation.kind !== 'lost-default' || !declaredArgs.has(violation.arg)
-      )
+    const remaining = violations.filter(
+      (violation) => violation.kind !== 'lost-default' || !declaredArgs.has(violation.arg)
     );
+
+    if (remaining.length > 0) return remaining;
 
     const omittedDefaults = new Set(
       violations
@@ -86,13 +99,14 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
         `The candidate argTypes now record defaults for ${stale.map(({ arg }) => arg).join(', ')} — remove them from declaredDefaultOmissions`
       );
     }
-    return;
+    return remaining;
   }
 
   const declaredOmissions = input.declaredOmissions ?? [];
   const violations = compareSnippet(input);
   // An unparsable candidate leaves nothing omitted
-  throwOnViolations(violations.filter((v) => v.kind !== 'lost-representation'));
+  const structural = violations.filter((v) => v.kind !== 'lost-representation');
+  if (structural.length > 0) return structural;
 
   const omitted = new Set(violations.map((v) => v.arg));
   const stale = declaredOmissions.filter((arg) => !omitted.has(arg));
@@ -103,7 +117,17 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
     );
   }
 
-  throwOnViolations(violations.filter((v) => !declaredOmissions.includes(v.arg)));
+  return violations.filter((v) => !declaredOmissions.includes(v.arg));
+}
+
+export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
+  const violations = collectCurrentOrBetterViolations(input);
+  const invalid = violations.find((v) => v.kind === 'invalid-comparison');
+  if (invalid) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(invalid.message);
+  }
+  throwOnViolations(violations);
 }
 
 function throwOnViolations(violations: Violation[]): void {

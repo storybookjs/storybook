@@ -46,3 +46,39 @@ These want a fix rather than a re-record.
 
 `change` is everything else: a new component, a newly documented one, an added arg, a type that resolved differently, reworded prose.
 These are adopted with `--update` once the diff has been read.
+
+## Comparing legacy and server builds
+
+Run these commands from `code/lib/docgen-harness`. Build both versions at the same repository SHA, with legacy docgen on the base version and server docgen on the head version.
+
+```bash
+yarn baselines:sandbox --capture legacy --static /repo/storybook-static --out /captures/before
+yarn baselines:sandbox --capture server --static /repo/storybook-static --out /captures/after
+yarn baselines:sandbox --compare /captures/before /captures/after --framework svelte --report /captures/report
+```
+
+Capture and compare cannot be combined or used with `--template`, `--sandbox` or `--update`. Comparison supports `svelte`, `vue3`, `angular` and `web-components`.
+
+Each capture has one JSON file per component with its id, name, description, argTypes and stories keyed by story id. Each story records a snippet string or `null`. Absolute project paths become `<root>`. `capture.json` records the engine, installed Storybook version, repository remote, SHA and capture time. The output directory must be empty. The static directory must be directly under the project root containing `package.json`. The installed `storybook` package must resolve from that project, including workspace hoisting.
+
+The legacy capture serves the static build on localhost and uses Playwright Chromium. Install it with `yarn playwright install chromium` if needed. It calls the preview's component extractors and listens for `SNIPPET_RENDERED` before each render. `--snippet-timeout <milliseconds>` changes the default 1000 ms wait. Stories that do not emit a snippet in time record `"timeout"`; baseline timeouts are excluded from snippet comparison and counted in the report. Server capture reads `services/core/docgen` and `services/core/story-docs` directly.
+
+Comparison collects all argument and snippet regressions. Missing components fail; added components are reported as gains. A baseline snippet with no candidate snippet fails. Component descriptions must remain present. Captures with different repositories or SHAs are rejected.
+
+`--waivers /path/waivers.json` accepts an array such as:
+
+```json
+[
+  {
+    "componentId": "button",
+    "storyId": "button--primary",
+    "violation": "lost-representation",
+    "reason": "The static printer cannot resolve this binding",
+    "approvedBy": "Review Lead"
+  }
+]
+```
+
+Omit `storyId` for component argument violations. A waiver matches the exact component, optional story and violation kind. Reasons and approvers must be nonempty. An unmatched waiver fails the run. The checked-in `waivers.json` starts empty; waivers require review approval.
+
+`report.md` contains the repository summary and violation table for the PR body. `report.json` includes build metadata, component and story counts, timeouts, gains, violations, waivers and stale waivers. The command exits with code 1 for unwaived violations or stale waivers. Attach both capture directories and the reports as PR artifacts; do not commit third-party repositories or their captures.

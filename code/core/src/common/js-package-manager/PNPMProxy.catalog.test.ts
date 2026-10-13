@@ -1,14 +1,19 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 import { fs as memfs, vol } from 'memfs';
 
+import { executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('node:fs', { spy: true });
+vi.mock('../utils/command.ts', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('../utils/paths.ts', { spy: true });
 vi.mock('storybook/internal/node-logger', () => ({
@@ -276,6 +281,70 @@ describe('PNPMProxy catalogs', () => {
       expect(remaining).toEqual(['@storybook/addon-docs@^11.0.0']);
       expect(writtenYaml()).toBe(
         '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
+      );
+    });
+  });
+
+  describe('allowStorybookBuildScripts (workspace reader with createIfMissing)', () => {
+    const allowBuildScripts = () => (pnpmProxy as any).allowStorybookBuildScripts();
+    const createdYaml = () =>
+      join(pnpmProxy.primaryPackageJson.operationDir, 'pnpm-workspace.yaml');
+
+    beforeEach(() => {
+      vi.mocked(executeCommandSync).mockReturnValue('11.0.0');
+    });
+
+    it('creates pnpm-workspace.yaml next to the package.json when no workspace file exists', () => {
+      vi.mocked(find.up).mockReturnValue(undefined);
+      vol.mkdirSync(pnpmProxy.primaryPackageJson.operationDir, { recursive: true });
+
+      allowBuildScripts();
+
+      expect(vol.toJSON()).toEqual({ [createdYaml()]: 'allowBuilds:\n  esbuild: true\n' });
+    });
+
+    it('edits the workspace file found up the tree instead of creating one next to package.json', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: '# ws\npackages:\n  - "packages/*"\n' });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe(
+        '# ws\npackages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n'
+      );
+      expect(vol.toJSON()[createdYaml()]).toBeUndefined();
+    });
+
+    it('does not create a workspace file for readers that only look up catalogs', async () => {
+      vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'catalog:' });
+      vi.mocked(find.up).mockReturnValue(undefined);
+
+      await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBeNull();
+
+      expect(vol.toJSON()).toEqual({});
+      expect(writeFileSync).not.toHaveBeenCalled();
+    });
+
+    it('warns and writes nothing when the workspace file is malformed', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds: [\n' });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe('allowBuilds: [\n');
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Could not allow build scripts of esbuild')
+      );
+    });
+
+    it('warns instead of throwing when the workspace file cannot be written', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n' });
+      vi.mocked(writeFileSync).mockImplementation(() => {
+        throw new Error('EACCES: permission denied');
+      });
+
+      expect(allowBuildScripts).not.toThrow();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('failed to write to /root/pnpm-workspace.yaml')
       );
     });
   });

@@ -1,3 +1,7 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -44,12 +48,32 @@ const expectedMinimumReleaseAgeExcludePackages = [
 
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
+  /** Scratch dir standing in for the project, so `allowBuilds` writes never touch the repo. */
+  let projectDir: string;
+  let workspaceYamlPath: string;
+
+  const stubWorkspaceYaml = (proxy: PNPMProxy) => {
+    vi.spyOn(proxy as any, 'findWorkspaceYamlPath').mockImplementation(() =>
+      existsSync(workspaceYamlPath) ? workspaceYamlPath : undefined
+    );
+    vi.spyOn(proxy, 'primaryPackageJson', 'get').mockReturnValue({
+      operationDir: projectDir,
+      packageJson: { dependencies: {}, devDependencies: {}, peerDependencies: {} },
+    } as any);
+  };
 
   beforeEach(() => {
+    projectDir = mkdtempSync(join(tmpdir(), 'sb-pnpm-proxy-'));
+    workspaceYamlPath = join(projectDir, 'pnpm-workspace.yaml');
     mockPnpmVersion('11.18.0');
     pnpmProxy = new PNPMProxy();
+    stubWorkspaceYaml(pnpmProxy);
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  afterEach(() => {
+    rmSync(projectDir, { recursive: true, force: true });
   });
 
   it('type should be pnpm', () => {
@@ -120,6 +144,97 @@ describe('PNPM Proxy', () => {
       expect(error).toMatchObject({ cause: originalError });
       expect(error?.message).toContain('minimumReleaseAge');
       expect(error?.message).toContain('minimumReleaseAgeExclude');
+    });
+  });
+
+  describe('allowBuilds for Storybook build scripts', () => {
+    const unmockSpinner = () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+    };
+
+    it('creates pnpm-workspace.yaml next to package.json, allowing esbuild, before `pnpm install`', async () => {
+      unmockSpinner();
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(readFileSync(workspaceYamlPath, 'utf8')).toBe('allowBuilds:\n  esbuild: true\n');
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
+    it('also allows esbuild before `pnpm add`', async () => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(readFileSync(workspaceYamlPath, 'utf8')).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    it('adds esbuild to an existing pnpm-workspace.yaml without disturbing its content', async () => {
+      writeFileSync(
+        workspaceYamlPath,
+        '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\n'
+      );
+      unmockSpinner();
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(readFileSync(workspaceYamlPath, 'utf8')).toBe(
+        '# my workspace\npackages:\n  - "packages/*"\n\ncatalog:\n  react: ^19 # pinned\nallowBuilds:\n  esbuild: true\n'
+      );
+    });
+
+    it('leaves a decision the user already recorded alone', async () => {
+      writeFileSync(workspaceYamlPath, 'allowBuilds:\n  esbuild: false\n');
+      unmockSpinner();
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(readFileSync(workspaceYamlPath, 'utf8')).toBe('allowBuilds:\n  esbuild: false\n');
+    });
+
+    it('resolves the placeholder pnpm 12 writes for unreviewed packages', async () => {
+      writeFileSync(workspaceYamlPath, 'allowBuilds:\n  esbuild: set this to true or false\n');
+      unmockSpinner();
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(readFileSync(workspaceYamlPath, 'utf8')).toBe('allowBuilds:\n  esbuild: true\n');
+    });
+
+    it('still runs the install, with a warning, when pnpm-workspace.yaml is malformed', async () => {
+      writeFileSync(workspaceYamlPath, 'packages: [\n');
+      unmockSpinner();
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(readFileSync(workspaceYamlPath, 'utf8')).toBe('packages: [\n');
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('Could not allow build scripts of esbuild')
+      );
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
+    it('does nothing on pnpm < 10.26, which has no allowBuilds setting', async () => {
+      mockPnpmVersion('10.25.0');
+      pnpmProxy = new PNPMProxy();
+      stubWorkspaceYaml(pnpmProxy);
+      unmockSpinner();
+      mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(existsSync(workspaceYamlPath)).toBe(false);
     });
   });
 

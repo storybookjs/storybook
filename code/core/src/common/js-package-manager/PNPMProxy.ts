@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
-import { type Document, parseDocument } from 'yaml';
+import { Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
@@ -52,10 +52,14 @@ type PnpmListItem = {
 
 export type PnpmListOutput = PnpmListItem[];
 
-const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
-
 /** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
 const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
+
+/** `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0). */
+const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
+
+/** Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved. */
+const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
 
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
@@ -311,17 +315,74 @@ export class PNPMProxy extends JsPackageManager {
     return match ? match[1].trim() : null;
   }
 
-  /**
-   * Locate and parse the `pnpm-workspace.yaml` that governs this project's catalogs, walking up
-   * from the package.json we operate on. Returns null when the file is missing or malformed.
-   */
-  #readWorkspaceYaml(): { path: string; doc: Document } | null {
-    const path = find.up('pnpm-workspace.yaml', {
+  /** Looks for a `pnpm-workspace.yaml` all the way down to the project root. */
+  protected findWorkspaceYamlPath(): string | undefined {
+    return find.up('pnpm-workspace.yaml', {
       cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
+  }
+
+  /**
+   * pnpm 10+ refuses to run dependency build scripts until the user approves them, and from pnpm 11
+   * an unreviewed script fails a non-interactive install (`ERR_PNPM_IGNORED_BUILDS`). pnpm install
+   * has no `--allow-builds` flag, so we need to pre-approve builds. The only way to do this is to
+   * record the allowed builds in the `pnpm-workspace.yaml` like pnpm approve-builds does.
+   */
+  protected allowStorybookBuildScripts(): void {
+    if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
+      return;
+    }
+
+    // Find workspace file, create one if needed.
+    const workspace = this.#readWorkspaceYaml({ createIfMissing: true });
+    if (!workspace) {
+      logger.warn(
+        `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')}: pnpm-workspace.yaml is unreadable`
+      );
+      return;
+    }
+
+    const { path, doc } = workspace;
+    let changed = false;
+
+    // Add dependencies that need a build approval, unless a user decision already exists for them.
+    for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
+      if (typeof doc.getIn(['allowBuilds', pkg]) !== 'boolean') {
+        doc.setIn(['allowBuilds', pkg], true);
+        changed = true;
+      }
+    }
+
+    // Write file back only if changes were needed.
+    if (changed) {
+      try {
+        writeFileSync(path, doc.toString(), 'utf8');
+      } catch (e) {
+        logger.warn(
+          `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')}: failed to write to ${path}: ${String(e)}`
+        );
+      }
+    }
+  }
+
+  /**
+   * Locate and parse the `pnpm-workspace.yaml` that governs this project, walking up from the
+   * package.json we operate on. Returns null when the file is malformed, or when it is missing
+   * and `createIfMissing` is unset. If `createIfMissing` is set, an empty document is returned
+   * with the location to which it can be written (next to `package.json`).
+   */
+  #readWorkspaceYaml(options?: {
+    createIfMissing: boolean;
+  }): { path: string; doc: Document } | null {
+    const path = this.findWorkspaceYamlPath();
     if (!path) {
-      return null;
+      return options?.createIfMissing
+        ? {
+            path: join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml'),
+            doc: new Document(),
+          }
+        : null;
     }
     try {
       const doc = parseDocument(readFileSync(path, 'utf8'));
@@ -399,6 +460,7 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
@@ -538,6 +600,7 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
+    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: commandArgs,

@@ -129,9 +129,9 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
-- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`.
+- `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md` and `CLAUDE.md`.
 - `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
-- `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+- `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 
 These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Four more plugin experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
 

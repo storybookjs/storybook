@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -10,6 +10,8 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { globSync } from 'glob';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -206,10 +208,32 @@ export class NPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    const packageJsonPath = this.packageJsonPaths[0];
+    const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
+      const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
+      const patterns = Array.isArray(workspaces) ? workspaces : workspaces?.packages;
+      return (
+        packageJsonPath &&
+        patterns?.length &&
+        globSync(
+          patterns
+            .filter((pattern: string) => !pattern.startsWith('!'))
+            .map((pattern: string) => `${pattern}/package.json`),
+          {
+            cwd: dirname(ancestorPath),
+            absolute: true,
+            ignore: patterns
+              .filter((pattern: string) => pattern.startsWith('!'))
+              .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+          }
+        ).includes(packageJsonPath)
+      );
+    });
+
     return executeCommand({
       command: 'npm',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
-      cwd: this.cwd,
+      cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
       stdio: prompt.getPreferredStdio(),
     });
   }

@@ -1,6 +1,6 @@
-import { babelParseExpression } from 'storybook/internal/babel';
-
 import { describe, expect, it } from 'vitest';
+
+import { expressionFromSource } from 'storybook/internal/csf-tools';
 
 import { evaluateArgValue, type ArgValue } from './arg-values.ts';
 
@@ -24,9 +24,9 @@ describe('evaluateArgValue', () => {
     { source: `() => 1`, expected: { kind: 'function' } },
     { source: `function () {}`, expected: { kind: 'function' } },
     { source: `name`, expected: { kind: 'unresolved', source: 'name' } },
-    { source: `({ ...name })`, expected: { kind: 'unresolved', source: '{ ...name }' } },
+    { source: `{ ...name }`, expected: { kind: 'unresolved', source: '{ ...name }' } },
     { source: '`hello ${name}`', expected: { kind: 'unresolved', source: '`hello ${name}`' } },
   ])('$source', ({ source, expected }) => {
-    expect(evaluateArgValue(babelParseExpression(source))).toEqual(expected);
+    expect(evaluateArgValue(expressionFromSource(source))).toEqual(expected);
   });
 });

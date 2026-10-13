@@ -327,7 +327,7 @@ describe('buildStoryDocsPayload', () => {
 <script>
   {
     const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => event.preventDefault());
+    host.addEventListener('shape-change', (event) => event.preventDefault());
   }
 </script>`,
       },
@@ -367,7 +367,7 @@ describe('buildStoryDocsPayload', () => {
 <script>
   {
     const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => first(event));
+    host.addEventListener('shape-change', (event) => first(event));
   }
 </script>`,
       },

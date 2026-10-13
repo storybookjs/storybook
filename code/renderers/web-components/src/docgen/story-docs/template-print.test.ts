@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createStoryArgsResolver,
   loadCsf,
-  normalizeStoryDeclaration,
-  resolveRenderFunction,
+  resolveEffectiveRender,
 } from 'storybook/internal/csf-tools';
 
 import type {
@@ -50,20 +49,12 @@ const renderTemplate = (storySource: string) => {
   const csf = loadCsf(storySource, { makeTitle: (title) => title ?? 'Example/Template' }).parse();
   const resolver = createStoryArgsResolver(csf);
   const story = 'Primary';
-  const normalized = normalizeStoryDeclaration(csf._storyDeclarationPath[story]);
-  const render =
-    normalized.type === 'fn'
-      ? { kind: 'resolved' as const, path: normalized.path }
-      : resolveRenderFunction(
-          normalized.type === 'config' ? normalized.path : undefined,
-          csf._storyDeclarationPath[story],
-          resolver.ctx
-        );
+  const render = resolveEffectiveRender(csf, story, resolver.ctx);
   expect(render.kind).toBe('resolved');
   if (render.kind !== 'resolved') {
     throw new Error('Expected render to resolve');
   }
-  const template = resolveHtmlTemplate(render.path, csf);
+  const template = resolveHtmlTemplate(render.node, csf);
   expect(template).toBeDefined();
   return printHtmlTemplate(template!, resolver.resolve(story).args, declaration);
 };
@@ -125,7 +116,7 @@ describe('html template story snippets', () => {
         listeners: [
           {
             event: 'shape-change',
-            handler: 'event => event.preventDefault()',
+            handler: '(event) => event.preventDefault()',
           },
         ],
         properties: [],
@@ -134,7 +125,7 @@ describe('html template story snippets', () => {
 <script>
   {
     const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => event.preventDefault());
+    host.addEventListener('shape-change', (event) => event.preventDefault());
   }
 </script>`,
         unresolved: [],
@@ -1096,19 +1087,11 @@ describe('html template story snippets', () => {
   ])('rejects block body with $name', ({ source }) => {
     const csf = loadCsf(source, { makeTitle: (title) => title ?? 'Example/Template' }).parse();
     const resolver = createStoryArgsResolver(csf);
-    const normalized = normalizeStoryDeclaration(csf._storyDeclarationPath.Primary);
-    const render =
-      normalized.type === 'fn'
-        ? { kind: 'resolved' as const, path: normalized.path }
-        : resolveRenderFunction(
-            normalized.type === 'config' ? normalized.path : undefined,
-            csf._storyDeclarationPath.Primary,
-            resolver.ctx
-          );
+    const render = resolveEffectiveRender(csf, 'Primary', resolver.ctx);
     expect(render.kind).toBe('resolved');
     if (render.kind !== 'resolved') {
       throw new Error('Expected render to resolve');
     }
-    expect(resolveHtmlTemplate(render.path, csf)).toBeUndefined();
+    expect(resolveHtmlTemplate(render.node, csf)).toBeUndefined();
   });
 });

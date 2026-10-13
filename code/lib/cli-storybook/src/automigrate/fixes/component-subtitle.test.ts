@@ -76,18 +76,11 @@ describe('component-subtitle', () => {
     });
 
     expect(failures).toEqual([]);
-    expect(preview).toMatchInlineSnapshot(`
-      "export default { parameters: { docs: {
-        subtitle: 'Preview'
-      } } };"
-    `);
+    expect(preview).toMatchInlineSnapshot(
+      `"export default { parameters: { docs: { subtitle: 'Preview' } } };"`
+    );
     expect(story).toMatchInlineSnapshot(`
-      "export default { parameters: {
-        docs: {
-          source: { type: 'code' },
-          subtitle: 'Meta'
-        }
-      } };
+      "export default { parameters: { docs: { source: { type: 'code' }, subtitle: 'Meta' } } };
       export const Primary = { parameters: { componentSubtitle: 'Story' } };"
     `);
   });
@@ -98,11 +91,9 @@ describe('component-subtitle', () => {
         "export default { parameters: { componentSubtitle: 'Legacy', docs: { subtitle: 'Current' } } };",
     });
 
-    expect(story).toMatchInlineSnapshot(`
-      "export default { parameters: {
-        docs: { subtitle: 'Current' }
-      } };"
-    `);
+    expect(story).toMatchInlineSnapshot(
+      `"export default { parameters: { docs: { subtitle: 'Current' } } };"`
+    );
   });
 
   it('skips a file it cannot migrate safely and reports it', async () => {

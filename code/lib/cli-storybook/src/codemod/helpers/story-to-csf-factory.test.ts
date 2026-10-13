@@ -63,7 +63,6 @@ describe('stories codemod', () => {
          * Copyright 2024
          */
         import preview from "#.storybook/preview";
-
         const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
@@ -77,11 +76,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
     });
@@ -210,11 +205,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         const someData = {};
 
         export const A = meta.story();
@@ -324,9 +315,7 @@ describe('stories codemod', () => {
         import * as BaseStories from "./Button.stories";
         import { Primary as ImportedPrimary } from "./Card.stories";
 
-        const meta = preview.meta({
-          title: "Component",
-        });
+        const meta = preview.meta({ title: "Component" });
 
         export const A = meta.story({
           args: BaseStories.Primary.input.args,
@@ -487,7 +476,7 @@ describe('stories codemod', () => {
           )
         )
       ).resolves.toMatchInlineSnapshot(`
-        import preview from "../.rnstorybook/preview";
+        import preview from '../.rnstorybook/preview';
         const meta = preview.meta({});
         export const A = meta.story();
       `);
@@ -1234,9 +1223,7 @@ describe('stories codemod', () => {
           name: string;
         }
 
-        const meta = preview.meta({
-          title: "Table",
-        });
+        const meta = preview.meta({ title: "Table" });
 
         export const A = meta.story({
           render: () => {
@@ -1267,14 +1254,10 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { Meta } from "@storybook/react";
         import { Button } from "./Button";
-
         type ThisShouldNotBeRemoved = Meta<typeof Button>;
         const something: ThisShouldNotBeRemoved = {};
 
-        const meta = preview.meta({
-          title: "Button",
-        });
-
+        const meta = preview.meta({ title: "Button" });
         export const A = meta.story();
       `);
     });
@@ -1453,11 +1436,9 @@ describe('stories codemod', () => {
         const meta = preview.meta({
           component: Component,
           args: { getUsers: fn(), onClick: fn() },
-
           beforeEach: ({ args }) => {
             mocked(args.getUsers).mockResolvedValue([]);
           },
-
           loaders: [
             async ({ args }) => {
               mocked(args.getUsers).mockClear();

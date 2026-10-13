@@ -61,11 +61,7 @@ describe('docgen-server', () => {
       await migrate(
         'export default { features: { docgenServer: true, experimentalDocgenServer: false } };'
       )
-    ).toMatchInlineSnapshot(`
-      "export default { features: {
-        docgenServer: true
-      } };"
-    `);
+    ).toMatchInlineSnapshot(`"export default { features: { docgenServer: true } };"`);
   });
 
   it.each([

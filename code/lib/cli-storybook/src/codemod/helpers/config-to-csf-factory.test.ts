@@ -36,7 +36,7 @@ describe('main/preview codemod: general parsing functionality', () => {
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: ['@storybook/addon-essentials'],
-        framework: '@storybook/react-vite'
+        framework: '@storybook/react-vite',
       });
     `);
   });
@@ -53,7 +53,6 @@ describe('main/preview codemod: general parsing functionality', () => {
       `)
     ).resolves.toMatchInlineSnapshot(`
       import { defineMain } from '@storybook/react-vite/node';
-
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
         addons: ['@storybook/addon-essentials'],
@@ -76,10 +75,9 @@ describe('main/preview codemod: general parsing functionality', () => {
       // @ts-check
       /** @license MIT */
       import { defineMain } from '@storybook/react-vite/node';
-
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-        framework: '@storybook/react-vite'
+        framework: '@storybook/react-vite',
       });
     `);
   });
@@ -104,7 +102,6 @@ describe('main/preview codemod: general parsing functionality', () => {
         `)
       ).resolves.toMatchInlineSnapshot(`
         import { defineMain } from '@storybook/react-vite/node';
-
         export default defineMain({
           stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
           addons: ['@storybook/addon-essentials'],
@@ -127,11 +124,10 @@ describe('main/preview codemod: general parsing functionality', () => {
       `)
     ).resolves.toMatchInlineSnapshot(`
       import { defineMain } from '@storybook/react-vite/node';
-
       export default defineMain({
         tags: [],
         viteFinal: () => { return config },
-        framework: '@storybook/react-vite'
+        framework: '@storybook/react-vite',
       });
     `);
   });
@@ -145,7 +141,6 @@ describe('main/preview codemod: general parsing functionality', () => {
       `)
     ).resolves.toMatchInlineSnapshot(`
       import { defineMain } from '@storybook/react-vite/node';
-
       export default defineMain({
         stories: () => { return ['../src/**/*.stories.@(js|jsx|ts|tsx)'] },
         addons: ['@storybook/addon-essentials'],
@@ -268,7 +263,7 @@ describe('preview specific functionality', () => {
     ).resolves.toMatchInlineSnapshot(`
       import { definePreview } from '@storybook/react-vite';
       export default definePreview({
-        tags: ['test']
+        tags: ['test'],
       });
     `);
   });
@@ -307,7 +302,6 @@ describe('preview specific functionality', () => {
       import { definePreview } from '@storybook/react-vite';
 
       export const withStore: Decorator = () => {}
-
       export default definePreview({
         tags: []
       });
@@ -325,8 +319,8 @@ describe('preview specific functionality', () => {
       import { definePreview } from "@storybook/react-vite";
       export default definePreview({
         decorators: [1],
-        parameters: {}
-      });
+        parameters: {},
+      })
     `);
   });
 
@@ -378,8 +372,8 @@ describe('preview specific functionality', () => {
       import { definePreview } from '@storybook/react-vite';
 
       export default definePreview({
-        decorators: [],
 
+        decorators: [],
         parameters: {
           options: {}
         }

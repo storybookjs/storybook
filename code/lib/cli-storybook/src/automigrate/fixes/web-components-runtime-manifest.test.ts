@@ -458,10 +458,7 @@ describe('run', (): void => {
       "export default {
         framework: {
           name: '@storybook/web-components-vite',
-          options: {
-            builder: { viteConfigPath: 'vite.config.ts' },
-            customElementsManifest: '../custom-elements.json'
-          },
+          options: { builder: { viteConfigPath: 'vite.config.ts' }, customElementsManifest: '../custom-elements.json' },
         },
       };"
     `);
@@ -475,13 +472,7 @@ describe('run', (): void => {
     await runWith();
 
     expect(vol.readFileSync(MAIN, 'utf8')).toMatchInlineSnapshot(`
-      "export default { framework: {
-        name: '@storybook/web-components-vite',
-
-        options: {
-          customElementsManifest: '../custom-elements.json'
-        }
-      } };"
+      "export default { framework: { name: '@storybook/web-components-vite', options: { customElementsManifest: '../custom-elements.json' } } };"
     `);
   });
 
@@ -493,13 +484,7 @@ describe('run', (): void => {
     await runWith();
 
     expect(vol.readFileSync(MAIN, 'utf8')).toMatchInlineSnapshot(`
-      "export default { framework: {
-        name: '@storybook/web-components-vite',
-
-        options: {
-          customElementsManifest: '../custom-elements.json'
-        }
-      } };"
+      "export default { framework: { name: '@storybook/web-components-vite', options: { customElementsManifest: '../custom-elements.json' } } };"
     `);
   });
 
@@ -629,7 +614,6 @@ describe('run', (): void => {
     expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
       "import { setCustomElements } from "@storybook/web-components";
       import customElements from "../custom-elements.json";
-
       setCustomElements(customElements);
 
       export const configure = setCustomElements;"
@@ -658,13 +642,7 @@ describe('run', (): void => {
 
     expect(vol.readFileSync(PREVIEW, 'utf8')).toBe(preview);
     expect(vol.readFileSync(MAIN, 'utf8')).toMatchInlineSnapshot(`
-      "export default { framework: {
-        name: '@storybook/web-components-vite',
-
-        options: {
-          customElementsManifest: '../custom-elements.json'
-        }
-      } };"
+      "export default { framework: { name: '@storybook/web-components-vite', options: { customElementsManifest: '../custom-elements.json' } } };"
     `);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('is not called at the top level')

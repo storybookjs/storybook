@@ -100,6 +100,8 @@ describe('tag-filter-api', () => {
         'api.experimental_setFilter("x", () => true);',
         'api?.experimental_setFilters({});',
         'const { experimental_setFilter } = api;',
+        'experimental_setFilter("y", () => true);',
+        'const { experimental_setFilters = fallback } = api;',
       ].join('\n'),
     });
 
@@ -109,7 +111,9 @@ describe('tag-filter-api', () => {
     expect(story).toContain('const config = { experimental_setFilter: 1, setFilter: 2 };');
     expect(story).toContain('api.setFilter("x", () => true);');
     expect(story).toContain('api?.setFilters({});');
-    expect(story).toContain('const { setFilter } = api;');
+    expect(story).toContain('const { setFilter: experimental_setFilter } = api;');
+    expect(story).toContain('experimental_setFilter("y", () => true);');
+    expect(story).toContain('const { setFilters: experimental_setFilters = fallback } = api;');
   });
 
   it('keeps a story hidden when only the deprecated alias is true', async () => {

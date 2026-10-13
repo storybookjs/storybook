@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { babelParse } from 'storybook/internal/babel';
 import { formatExistingFile } from 'storybook/internal/common';
+import { parseModule } from 'storybook/internal/csf-tools';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
@@ -93,7 +93,10 @@ describe('wrapGetAbsolutePath', () => {
           },
         };
         export default config;
-
+        /**
+         * This function is used to resolve the absolute path of a package.
+         * It is needed in projects that are set up within a monorepo.
+         */
         function getAbsolutePath(value) {
           return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }
@@ -111,7 +114,7 @@ describe('wrapGetAbsolutePath', () => {
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
       const output = String(writeFile.mock.calls.at(-1)?.[1]);
 
-      expect(() => babelParse(output)).not.toThrow();
+      expect(() => parseModule(output, 'main.js')).not.toThrow();
       expect(output).toMatchInlineSnapshot(`
         "import { dirname as pathDirname } from 'node:path';
         import path from 'node:path';
@@ -126,7 +129,10 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: path.resolve(dirname, '..') }),
         };
         export default config;
-
+        /**
+         * This function is used to resolve the absolute path of a package.
+         * It is needed in projects that are set up within a monorepo.
+         */
         function getAbsolutePath(value) {
           return pathDirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }
@@ -154,7 +160,10 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: value(import.meta.url) }),
         };
         export default config;
-
+        /**
+         * This function is used to resolve the absolute path of a package.
+         * It is needed in projects that are set up within a monorepo.
+         */
         function getAbsolutePath(_value) {
           return value(fileURLToPath(import.meta.resolve(\`\${_value}/package.json\`)));
         }
@@ -172,7 +181,7 @@ describe('wrapGetAbsolutePath', () => {
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
       const output = String(writeFile.mock.calls.at(-1)?.[1]);
 
-      expect(() => babelParse(output)).not.toThrow();
+      expect(() => parseModule(output, 'main.js')).not.toThrow();
       expect(output).toMatchInlineSnapshot(`
         "import { fileURLToPath } from 'node:url';
         import { dirname as pathDirname } from 'node:path';
@@ -186,7 +195,10 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: dirname(import.meta.url) }),
         };
         export default config;
-
+        /**
+         * This function is used to resolve the absolute path of a package.
+         * It is needed in projects that are set up within a monorepo.
+         */
         function getAbsolutePath(value) {
           return pathDirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }
@@ -214,7 +226,10 @@ describe('wrapGetAbsolutePath', () => {
           viteFinal: (viteConfig) => ({ ...viteConfig, root: pathDirname(import.meta.url) }),
         };
         export default config;
-
+        /**
+         * This function is used to resolve the absolute path of a package.
+         * It is needed in projects that are set up within a monorepo.
+         */
         function getAbsolutePath(value) {
           return pathDirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }

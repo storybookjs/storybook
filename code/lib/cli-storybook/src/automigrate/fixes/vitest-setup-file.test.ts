@@ -1037,7 +1037,6 @@ describe('transformSetupFile', () => {
       //
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });
@@ -1062,7 +1061,6 @@ describe('transformSetupFile', () => {
       "// Copyright Example
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });

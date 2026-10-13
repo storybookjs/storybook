@@ -73,18 +73,7 @@ describe('set-config-layout transform', () => {
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
 
-      addons.setConfig({
-        layout: {
-          showNav: false,
-          panelPosition: 'right'
-        },
-
-        ui: {
-          enableShortcuts: false
-        },
-
-        theme
-      });"
+      addons.setConfig({ layout: { showNav: false, panelPosition: 'right' }, ui: { enableShortcuts: false }, theme });"
     `);
   });
 
@@ -125,9 +114,7 @@ describe('set-config-layout transform', () => {
 
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ layout: {
-        showNav: false
-      } } satisfies Addon_Config);"
+      addons.setConfig({ layout: { showNav: false } } satisfies Addon_Config);"
     `);
   });
 
@@ -139,9 +126,7 @@ describe('set-config-layout transform', () => {
 
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ layout: {
-        showNav: false
-      } } as Addon_Config);"
+      addons.setConfig({ layout: { showNav: false } } as Addon_Config);"
     `);
   });
 
@@ -153,9 +138,7 @@ describe('set-config-layout transform', () => {
 
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ layout: {
-        showNav: false
-      } }!);"
+      addons.setConfig({ layout: { showNav: false } }!);"
     `);
   });
 
@@ -171,9 +154,7 @@ describe('set-config-layout transform', () => {
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({
-        layout: {
-          showNav: false as const
-        } satisfies Partial<Addon_Config['layout']>
+        layout: { showNav: false as const } satisfies Partial<Addon_Config['layout']>,
       });"
     `);
   });
@@ -211,9 +192,7 @@ describe('set-config-layout transform', () => {
 
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "const { addons } = require('storybook/manager-api');
-      addons.setConfig({ layout: {
-        showNav: false
-      } });"
+      addons.setConfig({ layout: { showNav: false } });"
     `);
   });
 
@@ -227,9 +206,7 @@ describe('set-config-layout transform', () => {
     expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: { showNav: false } });
-      addons.setConfig({ layout: {
-        showPanel: false
-      } });"
+      addons.setConfig({ layout: { showPanel: false } });"
     `);
   });
 
@@ -442,9 +419,7 @@ describe('setConfigLayout', () => {
 
     await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ layout: {
-        showToolbar: false
-      } });"
+      addons.setConfig({ layout: { showToolbar: false } });"
     `);
   });
 

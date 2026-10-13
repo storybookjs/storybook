@@ -1,49 +1,70 @@
-import { type NodePath, traverse, types as t } from 'storybook/internal/babel';
+import {
+  type ConfigFile,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type SourceEditor,
+  walk,
+} from 'storybook/internal/csf-tools';
+
+import { removeStatements, setImportSpecifiers } from './source-edits.ts';
 
 export type RemoveTopLevelCallResult =
   | { removed: false; reason: string }
   | { removed: true; keptArguments: string[] };
 
-export const isTopLevelCall = (node: t.Statement, callee: string): node is t.ExpressionStatement =>
-  t.isExpressionStatement(node) &&
-  t.isCallExpression(node.expression) &&
-  t.isIdentifier(node.expression.callee, { name: callee });
+export const isTopLevelCall = (node: Node, callee: string): node is E.ExpressionStatement =>
+  node.type === 'ExpressionStatement' &&
+  node.expression.type === 'CallExpression' &&
+  node.expression.callee.type === 'Identifier' &&
+  node.expression.callee.name === callee;
 
-export const topLevelCalls = (program: t.Program, callee: string): t.ExpressionStatement[] =>
-  program.body.filter((node): node is t.ExpressionStatement => isTopLevelCall(node, callee));
+export const topLevelCalls = (program: E.Program, callee: string): E.ExpressionStatement[] =>
+  program.body.filter((node): node is E.ExpressionStatement => isTopLevelCall(node, callee));
 
-/** Reads of `name` that resolve to the program-level binding or to a global, skipping shadowed ones. */
-export const referencePaths = (program: t.Program, name: string): NodePath<t.Identifier>[] => {
-  const paths: NodePath<t.Identifier>[] = [];
-  traverse(t.file(program), {
-    Identifier(path): void {
-      if (path.node.name !== name || path.parentPath?.isImportDefaultSpecifier()) {
-        return;
-      }
-      if (!path.isReferencedIdentifier()) {
-        return;
-      }
-      const binding = path.scope.getBinding(name);
-      if (binding && binding.scope !== path.scope.getProgramParent()) {
-        return;
-      }
-      paths.push(path);
-    },
+const isWithin = (node: Node, statements: readonly Node[]) =>
+  statements.some((statement) => statement.start <= node.start && node.end <= statement.end);
+
+/**
+ * Reads of `name` outside `excluded` that resolve to the program-level binding or to a global,
+ * skipping shadowed ones.
+ */
+export const referenceNodes = (
+  editor: SourceEditor,
+  name: string,
+  excluded: readonly Node[] = []
+): Node[] => {
+  const { scopes } = editor;
+  const binding = scopes.program.bindings.get(name);
+  if (binding) {
+    return binding.references.filter((reference) => !isWithin(reference, excluded));
+  }
+  const references: Node[] = [];
+  walk(editor.program, (node, parent) => {
+    if (isWithin(node, excluded)) {
+      return false;
+    }
+    const isKey =
+      (parent?.type === 'MemberExpression' && parent.property === node && !parent.computed) ||
+      (parent?.type === 'Property' && parent.key === node && !parent.computed && !parent.shorthand);
+    if (node.type === 'Identifier' && node.name === name && !isKey && !scopes.bindingOf(node)) {
+      references.push(node);
+    }
   });
-  return paths;
+  return references;
 };
 
-export const countReferences = (program: t.Program, name: string): number =>
-  referencePaths(program, name).length;
+export const countReferences = (
+  editor: SourceEditor,
+  name: string,
+  excluded: readonly Node[] = []
+): number => referenceNodes(editor, name, excluded).length;
 
-export const topLevelReaders = (program: t.Program, name: string): t.Statement[] => {
-  const readers = new Set<t.Node>(
-    referencePaths(program, name).flatMap((path): t.Node[] => {
-      const statement = path.find((parent) => parent.parentPath?.isProgram() ?? false);
-      return statement ? [statement.node] : [];
-    })
+/** Top-level statements that read `name`, in source order. */
+export const topLevelReaders = (editor: SourceEditor, name: string): Node[] => {
+  const references = referenceNodes(editor, name);
+  return editor.program.body.filter((statement) =>
+    references.some((reference) => isWithin(reference, [statement]))
   );
-  return program.body.filter((node) => readers.has(node));
 };
 
 /**
@@ -54,48 +75,49 @@ export const topLevelReaders = (program: t.Program, name: string): t.Statement[]
  * is not worth the risk, so anything that is not a plain top-level call is reported instead.
  */
 export const removeTopLevelCall = (
-  program: t.Program,
+  preview: ConfigFile,
   { callee, calleeSources }: { callee: string; calleeSources: ReadonlySet<string> }
 ): RemoveTopLevelCallResult => {
-  const callsToDrop = topLevelCalls(program, callee);
+  const editor = preview._editorSource;
+  const callsToDrop = topLevelCalls(editor.program, callee);
   if (callsToDrop.length === 0) {
     return { removed: false, reason: `${callee} is not called at the top level` };
   }
 
-  const dropped = new Set<t.Statement>(callsToDrop);
-  const withoutCalls = t.program(program.body.filter((node) => !dropped.has(node)));
-  if (countReferences(withoutCalls, callee) > 0) {
+  if (countReferences(editor, callee, callsToDrop) > 0) {
     return { removed: false, reason: `${callee} is still used elsewhere` };
   }
 
   const argumentNames = new Set(
     callsToDrop.flatMap((node): string[] => {
-      const [argument] = (node.expression as t.CallExpression).arguments;
-      return t.isIdentifier(argument) ? [argument.name] : [];
+      const [argument] = (node.expression as E.CallExpression).arguments;
+      return argument?.type === 'Identifier' ? [argument.name] : [];
     })
   );
   const keptArguments = [...argumentNames].filter(
-    (name) => countReferences(withoutCalls, name) > 0
+    (name) => countReferences(editor, name, callsToDrop) > 0
   );
 
-  const remaining: t.Statement[] = [];
-  for (const node of withoutCalls.body) {
-    if (t.isImportDeclaration(node) && node.specifiers.length > 0) {
-      node.specifiers = node.specifiers.filter(
-        (specifier) =>
-          !(
-            (calleeSources.has(node.source.value) && specifier.local.name === callee) ||
-            (argumentNames.has(specifier.local.name) &&
-              !keptArguments.includes(specifier.local.name))
-          )
-      );
-      if (node.specifiers.length === 0) {
-        continue;
-      }
+  const statementsToDrop = new Set<Node>(callsToDrop);
+  for (const node of editor.program.body) {
+    // A declaration without specifiers is imported for its side effects, so it stays as it is.
+    if (node.type !== 'ImportDeclaration' || node.specifiers.length === 0) {
+      continue;
     }
-    remaining.push(node);
+    const kept = node.specifiers.filter(
+      (specifier) =>
+        !(
+          (calleeSources.has(node.source.value) && specifier.local.name === callee) ||
+          (argumentNames.has(specifier.local.name) && !keptArguments.includes(specifier.local.name))
+        )
+    );
+    if (kept.length === 0) {
+      statementsToDrop.add(node);
+    } else if (kept.length < node.specifiers.length) {
+      setImportSpecifiers(editor, node, kept);
+    }
   }
-
-  program.body = remaining;
+  removeStatements(editor, statementsToDrop);
+  preview._commit();
   return { removed: true, keptArguments };
 };

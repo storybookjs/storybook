@@ -15,7 +15,7 @@ afterEach((): void => {
 
 it('omits runtime docs extractors when docgen server is enabled', async (): Promise<void> => {
   vi.resetModules();
-  vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+  vi.stubGlobal('FEATURES', { docgenServer: true });
 
   await expect(loadParameters()).resolves.toEqual({});
 });

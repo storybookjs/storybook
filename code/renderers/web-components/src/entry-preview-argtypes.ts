@@ -4,8 +4,7 @@ import type { ArgTypesEnhancer } from 'storybook/internal/types';
 import { extractArgTypes, extractComponentDescription } from './docs/custom-elements.ts';
 import type { WebComponentsRenderer } from './types.ts';
 
-const useServiceArgTypes =
-  'FEATURES' in globalThis && globalThis.FEATURES?.experimentalDocgenServer;
+const useServiceArgTypes = 'FEATURES' in globalThis && globalThis.FEATURES?.docgenServer;
 
 export const parameters = useServiceArgTypes
   ? {}

@@ -13,7 +13,7 @@ import {
 } from './framework-api.ts';
 
 const RUNTIME_MANIFEST_DEPRECATION =
-  'The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.experimentalDocgenServer instead.';
+  'The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.docgenServer instead.';
 
 describe('framework-api', (): void => {
   beforeEach((): void => {

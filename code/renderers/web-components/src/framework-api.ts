@@ -3,9 +3,9 @@ import { global } from '@storybook/global';
 import { deprecate } from 'storybook/internal/client-logger';
 
 const RUNTIME_MANIFEST_DEPRECATION =
-  'The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.experimentalDocgenServer instead.';
+  'The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.docgenServer instead.';
 
-/** @deprecated Use framework.options.customElementsManifest with features.experimentalDocgenServer instead. This runtime manifest helper will be removed in Storybook 12. */
+/** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest helper will be removed in Storybook 12. */
 export function isValidComponent(tagName: string): boolean {
   if (!tagName) {
     return false;
@@ -16,7 +16,7 @@ export function isValidComponent(tagName: string): boolean {
   throw new Error('Provided component needs to be a string. e.g. component: "my-element"');
 }
 
-/** @deprecated Use framework.options.customElementsManifest with features.experimentalDocgenServer instead. This runtime manifest helper will be removed in Storybook 12. */
+/** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest helper will be removed in Storybook 12. */
 export function isValidMetaData(customElements: any): boolean {
   if (!customElements) {
     return false;
@@ -33,19 +33,19 @@ export function isValidMetaData(customElements: any): boolean {
   );
 }
 
-/** @deprecated Use framework.options.customElementsManifest with features.experimentalDocgenServer instead. This runtime manifest setter will be removed in Storybook 12. */
+/** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest setter will be removed in Storybook 12. */
 export function setCustomElements(customElements: any): void {
   deprecate(`setCustomElements() is deprecated: ${RUNTIME_MANIFEST_DEPRECATION}`);
   global.__STORYBOOK_CUSTOM_ELEMENTS__ = customElements;
 }
 
-/** @deprecated Use framework.options.customElementsManifest with features.experimentalDocgenServer instead. This runtime manifest setter will be removed in Storybook 12. */
+/** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest setter will be removed in Storybook 12. */
 export function setCustomElementsManifest(customElements: any): void {
   deprecate(`setCustomElementsManifest() is deprecated: ${RUNTIME_MANIFEST_DEPRECATION}`);
   global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ = customElements;
 }
 
-/** @deprecated Use framework.options.customElementsManifest with features.experimentalDocgenServer instead. This runtime manifest getter will be removed in Storybook 12. */
+/** @deprecated Use framework.options.customElementsManifest with features.docgenServer instead. This runtime manifest getter will be removed in Storybook 12. */
 export function getCustomElements(): any {
   return global.__STORYBOOK_CUSTOM_ELEMENTS_MANIFEST__ || global.__STORYBOOK_CUSTOM_ELEMENTS__;
 }

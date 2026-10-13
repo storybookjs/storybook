@@ -11109,12 +11109,13 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
+    "@types/estree": "npm:^1.0.6"
     "@types/node": "npm:^22.19.1"
     magic-string: "npm:^1.1.0"
     svelte: "npm:^5.39.5"
     svelte2tsx: "npm:^0.7.55"
     sveltedoc-parser: "npm:^4.2.1"
-    typescript: "npm:^6.0.3"
+    typescript: "npm:^5.9.0 || ^6.0.0"
     vite: "npm:^7.0.4"
   peerDependencies:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
@@ -11129,9 +11130,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte@workspace:code/renderers/svelte"
   dependencies:
-    "@storybook/builder-vite": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@testing-library/svelte": "npm:^5.2.4"
+    "@types/estree": "npm:^1.0.6"
     es-toolkit: "npm:^1.43.0"
     esrap: "npm:1.2.2"
     magic-string: "npm:^0.30.12"

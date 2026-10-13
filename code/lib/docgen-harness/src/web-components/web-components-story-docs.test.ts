@@ -15,6 +15,8 @@ import {
   recordServerSnippet,
 } from '../compare/server-snippet-recorder.ts';
 
+const STYLE_BLOCK_REGEXP = /^<style>[\s\S]*?<\/style>\n/;
+
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const storyDocsFixturesDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -82,6 +84,7 @@ describe('web-components story-docs server snippets', () => {
       ].join('\n\n');
       await recordServerSnippet({
         framework: 'web-components',
+        normalize: (snippet) => snippet.replace(STYLE_BLOCK_REGEXP, ''),
         prefix: 'server-snippet-',
         testDir,
         exportName,

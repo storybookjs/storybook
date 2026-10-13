@@ -14,6 +14,7 @@ import {
 } from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
+  UpgradeStorybookConfigDirNotFoundError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -23,7 +24,7 @@ import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
-import { lt, prerelease } from 'semver';
+import { lt, prerelease, rsort } from 'semver';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -37,6 +38,8 @@ export { getStoriesPathsFromConfig };
 // ============================================================================
 
 /** Configuration for upgrading Storybook dependencies */
+type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies';
+
 interface UpgradeConfig {
   readonly packageManager: JsPackageManager;
   readonly isCanary: boolean;
@@ -225,14 +228,6 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
 
-    if (storybookDirs.length === 0) {
-      const answer = await prompt.text({
-        message:
-          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
-      });
-      return [answer];
-    }
-
     return storybookDirs;
   } catch (error) {
     logger.error('Failed to find Storybook projects');
@@ -311,7 +306,7 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-    } = await getStorybookData({ configDir });
+    } = await getStorybookData({ configDir, packageManagerName: options.packageManager });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
@@ -483,14 +478,20 @@ export const generateUpgradeSpecs = async (
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
   if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
+    const satelliteDependencies = Object.keys(dependencies).filter(
+      (dependency) =>
+        isSatelliteAddon(dependency) && !dependencies[dependency]?.startsWith('workspace:')
+    );
 
     if (satelliteDependencies.length > 0) {
       try {
         const upgradePromises = satelliteDependencies.map(async (dependency) => {
           try {
-            const packageName = isCLIPrerelease ? `${dependency}@next` : dependency;
-            const mostRecentVersion = (await packageManager.latestVersion(packageName))!;
+            const tags = isCLIPrerelease ? [dependency, `${dependency}@next`] : [dependency];
+            const versions = await Promise.all(
+              tags.map((tag) => packageManager.latestVersion(tag))
+            );
+            const [mostRecentVersion] = rsort(versions.filter((version) => version !== null));
             if (!mostRecentVersion) {
               return null;
             }
@@ -548,32 +549,26 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
     logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
     logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
 
-    await packageManager.addDependencies(
-      {
-        type: 'dependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDependencies
-    );
+    const upgrades: [DependencyType, string[]][] = [
+      ['dependencies', upgradedDependencies],
+      ['devDependencies', upgradedDevDependencies],
+      ['peerDependencies', upgradedPeerDependencies],
+    ];
 
-    await packageManager.addDependencies(
-      {
-        type: 'devDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDevDependencies
-    );
-
-    await packageManager.addDependencies(
-      {
-        type: 'peerDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedPeerDependencies
-    );
+    for (const [type, specifiers] of upgrades) {
+      const directSpecifiers = packageManager.writeCatalogUpgrades(
+        specifiers,
+        packageJson[type] ?? {}
+      );
+      await packageManager.addDependencies(
+        {
+          type,
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        directSpecifiers
+      );
+    }
   }
 };
 
@@ -713,6 +708,18 @@ export const getProjects = async (
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
     }
+    if (detectedConfigDirs.length === 0) {
+      task.stop('No .storybook directory found');
+      if (options.yes) {
+        throw new UpgradeStorybookConfigDirNotFoundError();
+      }
+      const configDir = await prompt.text({
+        message:
+          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
+      });
+      detectedConfigDirs = [configDir];
+      task.start('Detecting projects...');
+    }
 
     let count = 0;
     const projects = await collectProjects(options, detectedConfigDirs, () =>
@@ -756,7 +763,9 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    if (!(error instanceof HandledError)) {
+    if (
+      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
+    ) {
       logger.error('Failed to get projects');
     }
 

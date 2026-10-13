@@ -12,12 +12,7 @@ export type ServerInstructionsInputs = {
   docsEnabled: boolean;
   /** `stories-find-by-component` is registered, so the workflow can point at it. */
   moduleGraphSupported: boolean;
-  /** The story instructions follow in the same document, so the workflow points at them there. */
-  storyInstructionsInline?: boolean;
 };
-
-const INLINE_STORY_INSTRUCTIONS_STEP =
-  'Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.';
 
 /**
  * The full rule for how the agent should present links in its final
@@ -66,9 +61,7 @@ export function buildServerInstructions({
       devInstructions
         .replace(
           '{{STORY_INSTRUCTIONS_STEP}}',
-          options.storyInstructionsInline
-            ? INLINE_STORY_INSTRUCTIONS_STEP
-            : `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
+          `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
         )
         .replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
         .replace('{{FINAL_LINKS_STEP}}', finalLinksStep)

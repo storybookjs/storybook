@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/addons/a11y/parameters.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "addons-a11y-parameters",
+  "jsDocTags": {},
+  "name": "parameters",
+  "path": "./template-stories/addons/a11y/parameters.stories.ts"
+}

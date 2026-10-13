@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/core/controls/conditional.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "core-controls-conditional",
+  "jsDocTags": {},
+  "name": "conditional",
+  "path": "./template-stories/core/controls/conditional.stories.ts"
+}

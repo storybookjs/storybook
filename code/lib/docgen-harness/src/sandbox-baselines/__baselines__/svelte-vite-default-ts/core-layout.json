@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/core/layout.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "core-layout",
+  "jsDocTags": {},
+  "name": "layout",
+  "path": "./template-stories/core/layout.stories.ts"
+}

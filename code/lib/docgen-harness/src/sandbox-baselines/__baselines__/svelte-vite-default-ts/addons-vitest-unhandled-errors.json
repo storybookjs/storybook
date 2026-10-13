@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/addons/vitest/unhandled-errors.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "addons-vitest-unhandled-errors",
+  "jsDocTags": {},
+  "name": "unhandled-errors",
+  "path": "./template-stories/addons/vitest/unhandled-errors.stories.ts"
+}

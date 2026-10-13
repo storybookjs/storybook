@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/core/test/ClearModuleMocksMocking.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "core-test-clearmodulemocksmocking",
+  "jsDocTags": {},
+  "name": "ClearModuleMocksMocking",
+  "path": "./template-stories/core/test/ClearModuleMocksMocking.stories.ts"
+}

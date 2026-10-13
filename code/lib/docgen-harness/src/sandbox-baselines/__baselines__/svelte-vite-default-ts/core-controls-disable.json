@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/core/controls/disable.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "core-controls-disable",
+  "jsDocTags": {},
+  "name": "disable",
+  "path": "./template-stories/core/controls/disable.stories.ts"
+}

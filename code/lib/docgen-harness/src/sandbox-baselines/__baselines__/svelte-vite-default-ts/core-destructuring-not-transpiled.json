@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/core/destructuring-not-transpiled.stories.ts",
+    "name": "Svelte docgen failed"
+  },
+  "id": "core-destructuring-not-transpiled",
+  "jsDocTags": {},
+  "name": "destructuring-not-transpiled",
+  "path": "./template-stories/core/destructuring-not-transpiled.stories.ts"
+}

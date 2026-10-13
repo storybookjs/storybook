@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Could not resolve @storybook/global export global from <sandbox>/template-stories/core/test/NodeModuleMocking.stories.js",
+    "name": "Svelte docgen failed"
+  },
+  "id": "core-test-nodemodulemocking",
+  "jsDocTags": {},
+  "name": "NodeModuleMocking",
+  "path": "./template-stories/core/test/NodeModuleMocking.stories.js"
+}

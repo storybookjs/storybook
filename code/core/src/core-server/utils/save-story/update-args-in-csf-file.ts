@@ -1,4 +1,5 @@
-import { types as t, traverse } from 'storybook/internal/babel';
+import { types as t } from 'storybook/internal/babel';
+import { isCsfFactoryCall, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import { SaveStoryError } from './utils.ts';
 import { valueToAST } from './valueToAST.ts';
@@ -10,28 +11,15 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
     })
   );
 
-  const isCsf4Story =
-    t.isCallExpression(node) &&
-    t.isMemberExpression(node.callee) &&
-    t.isIdentifier(node.callee.property) &&
-    node.callee.property.name === 'story';
+  const story = unwrapExpression(node);
+  const isCsf4Story = isCsfFactoryCall(story);
 
-  // detect CSF2 and throw
-  if (!isCsf4Story && (t.isArrowFunctionExpression(node) || t.isCallExpression(node))) {
+  if (!isCsf4Story && (t.isArrowFunctionExpression(story) || t.isCallExpression(story))) {
     throw new SaveStoryError(`Updating a CSF2 story is not supported`);
   }
 
-  let object = t.isObjectExpression(node) ? node : undefined;
-  if (!object) {
-    traverse(node, {
-      ObjectExpression(path) {
-        object = path.node;
-        path.stop();
-      },
-      noScope: true,
-    });
-  }
-  if (!object) {
+  const object = isCsf4Story ? story.arguments[0] && unwrapExpression(story.arguments[0]) : story;
+  if (!t.isObjectExpression(object)) {
     return;
   }
 

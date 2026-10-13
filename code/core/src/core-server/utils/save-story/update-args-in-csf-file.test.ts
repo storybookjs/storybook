@@ -4,7 +4,7 @@ import { runInNewContext } from 'node:vm';
 
 import { describe, expect, test } from 'vitest';
 
-import { generate } from 'storybook/internal/babel';
+import { generate, parser } from 'storybook/internal/babel';
 import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { transformSync } from 'esbuild';
@@ -12,6 +12,7 @@ import { format } from 'prettier';
 
 import { getDiff } from './getDiff.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
+import { SaveStoryError } from './utils.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 
@@ -582,4 +583,60 @@ test('prints composed args for a CSF4 input spread', async () => {
     meta: { story: (input: unknown) => input },
   });
   expect(result.args).toEqual({ label: 'saved', size: 'large' });
+});
+
+describe('story expressions', () => {
+  test.each([
+    'meta.story({ args: { label: "old" } }) as Story',
+    'meta.story({ args: { label: "old" } } satisfies Story)',
+    'Base.extend({ args: { label: "old" } })',
+  ])('updates the story object in %s', async (source) => {
+    const node = parser.parseExpression(source, { plugins: ['typescript'] });
+
+    await updateArgsInCsfFile(node, { label: 'saved' });
+
+    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    const result = runInNewContext(code, {
+      meta: { story: (input: unknown) => input },
+      Base: { extend: (input: unknown) => input },
+    });
+    expect(result.args).toEqual({ label: 'saved' });
+  });
+
+  test.each([
+    'meta.story(withDefaults({ args: { label: "old" } }))',
+    'meta.story()',
+    'meta.story(storyArgs)',
+    'meta.story(...[{ args: { label: "old" } }])',
+  ])('leaves unsupported story inputs unchanged: %s', async (source) => {
+    const node = parser.parseExpression(source);
+    const before = generate(node).code;
+
+    await updateArgsInCsfFile(node, { label: 'saved' });
+
+    expect(generate(node).code).toBe(before);
+  });
+
+  test('rejects a CSF2 story wrapped in a type assertion', async () => {
+    const node = parser.parseExpression('Template.bind({}) as Story', { plugins: ['typescript'] });
+
+    await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(SaveStoryError);
+  });
+
+  test('updates only top-level CSF4 args', async () => {
+    const node = parser.parseExpression(`meta.story({
+      args: { label: 'old', options: { label: 'nested' } },
+      parameters: { args: { label: 'parameter' } },
+    })`);
+
+    await updateArgsInCsfFile(node, { label: 'saved' });
+
+    const result = runInNewContext(`(${generate(node).code})`, {
+      meta: { story: (input: unknown) => input },
+    });
+    expect(result).toEqual({
+      args: { label: 'saved', options: { label: 'nested' } },
+      parameters: { args: { label: 'parameter' } },
+    });
+  });
 });

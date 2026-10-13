@@ -93,6 +93,19 @@ TypeSystems.forEach((x) => {
         expect(propDef.defaultValue?.summary).toBe('"Default"');
       });
 
+      it('should not quote string defaults twice when the value is already quoted', () => {
+        const component = createComponent({
+          ...createStringType(x),
+          defaultValue: {
+            value: "'Default'",
+          },
+        });
+
+        const { propDef } = extractComponentProps(component, DOCGEN_SECTION)[0];
+
+        expect(propDef.defaultValue?.summary).toBe("'Default'");
+      });
+
       it('should map defaults docgen info properly, RDT broken enums', () => {
         const component = createComponent({
           [x.typeProperty]: createType('enum', {

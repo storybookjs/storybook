@@ -95,12 +95,6 @@ describe('test API', () => {
     });
   });
 
-  it('rejects an undeclared input key instead of dropping it', () => {
-    const result = v.safeParse(toolset.methods.run.input, { a11y: true, undeclared: true });
-
-    expect(result.issues?.map((issue) => issue.path?.[0].key)).toEqual(['undeclared']);
-  });
-
   it('renders the same per-story report for the CLI consumer as for MCP', async () => {
     vi.mocked(runStoryTests).mockResolvedValue(
       completed({

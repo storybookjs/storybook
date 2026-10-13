@@ -144,7 +144,9 @@ export const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) 
   if (kinds.has('config')) {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
-    const configFiles = await globby(`${project.configDir}/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}`, {
+    // A pattern with a Windows path in it matches nothing, because glob patterns read `\` as an escape.
+    const configFiles = await globby('**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}', {
+      cwd: project.configDir,
       absolute: true,
       ignore: ['**/node_modules/**', '**/dist/**'],
     });

@@ -1,3 +1,5 @@
+import { relative } from 'node:path';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
@@ -27,9 +29,10 @@ const deps = () => ({
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
     renderer: '@storybook/react',
-    changeDetectionEnabled: true,
+    csfFactories: false,
+    previewFile: '.storybook/preview.ts',
+    typescript: true,
     moduleGraphSupported: true,
-    reviewEnabled: true,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,
@@ -108,7 +111,7 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
-  it('stories assembles CLI-transport server instructions using the CLI review gate', async () => {
+  it('stories prints the workflow with CLI commands', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
     expect(result.exitCode).toBe(0);
@@ -125,7 +128,7 @@ describe('runSkillsCommand', () => {
     });
 
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-    expect(stories.output).toContain('Documentation Workflow');
+    expect(stories.output).toContain('npx storybook tools docs show --id <id>');
 
     const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
     expect(writeStory.output).toContain('npx storybook tools docs list');
@@ -134,7 +137,7 @@ describe('runSkillsCommand', () => {
   it('omits the docs workflow when the CLI docs gate is off', async () => {
     const d = deps();
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-    expect(stories.output).not.toContain('Documentation Workflow');
+    expect(stories.output).not.toContain('npx storybook tools docs');
   });
 
   it('write-story assembles CLI-transport story instructions', async () => {
@@ -145,25 +148,27 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('npx storybook tools stories changed');
   });
 
-  it('stories carries the write-story text and ends with a reference of the tools it names', async () => {
+  it('stories teaches each command inline, without a command reference', async () => {
     const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabledForCli: true,
+      a11yEnabled: true,
+    });
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-    const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
 
-    expect(stories.output).toContain(writeStory.output.split('# Command reference')[0]);
-    expect(describedTools(stories.output)).toEqual([
-      'stories preview',
-      'stories changed',
-      'stories find-by-component',
-      'review create',
-      'test run',
-    ]);
+    expect(describedTools(stories.output)).toEqual([]);
+    expect(stories.output).toContain("npx storybook tools test run --stories '[{");
+    expect(stories.output).toContain("npx storybook tools review create --input '{");
+    expect(stories.output.length).toBeLessThan(10000);
   });
 
-  it('--all prints the write-story text once', async () => {
+  it('--all prints each skill once', async () => {
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
 
+    expect(result.output.split('# Storybook workflow')).toHaveLength(2);
     expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
+    expect(result.output.split('# Storybook Setup')).toHaveLength(2);
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {
@@ -172,6 +177,20 @@ describe('runSkillsCommand', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toBe('# Storybook Setup');
     expect(d.loadStorybook).not.toHaveBeenCalled();
+  });
+
+  it('reports the setup run only when the setup skill itself was requested', async () => {
+    const setup = await runSkillsCommand({ tokens: ['setup'], target: {} }, deps());
+    const all = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(setup.setupRun).toEqual({
+      projectInfo: {
+        rendererPackage: '@storybook/react',
+        builderPackage: '@storybook/builder-vite',
+      },
+      prompt: 'optimized-tests',
+    });
+    expect(all.setupRun).toBeUndefined();
   });
 
   it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
@@ -262,8 +281,14 @@ describe('runSkillsCommand', () => {
     const target = { cwd: '/some/other/project', configDir: 'custom-storybook' };
     await runSkillsCommand({ tokens: ['setup'], target }, d);
     expect(d.getProjectInfo).toHaveBeenCalledWith({
-      configDir: resolveStorybookConfigDir(target),
+      configDir: relative(process.cwd(), resolveStorybookConfigDir(target)),
     });
+  });
+
+  it('setup probes `--config-dir .` as the project directory itself', async () => {
+    const d = deps();
+    await runSkillsCommand({ tokens: ['setup'], target: { configDir: '.' } }, d);
+    expect(d.getProjectInfo).toHaveBeenCalledWith({ configDir: '.' });
   });
 
   it('reports a clean one-line message when loading the target Storybook fails, no stack trace', async () => {

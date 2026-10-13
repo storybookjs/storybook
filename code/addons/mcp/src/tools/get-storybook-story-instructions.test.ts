@@ -160,7 +160,6 @@ describe('getUIBuildingInstructionsTool', () => {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
@@ -213,7 +212,6 @@ describe('getUIBuildingInstructionsTool', () => {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
@@ -235,7 +233,6 @@ describe('getUIBuildingInstructionsTool', () => {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
@@ -254,12 +251,11 @@ describe('getUIBuildingInstructionsTool', () => {
   // instructions about how to present links. It previously told the agent to
   // list the review page AND the preview URLs together, contradicting the
   // "show one set of links — never both" server rule.
-  it('tells the agent to show only the review section when review is enabled', async () => {
+  it('tells the agent to show only the review section', async () => {
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: true };
           return undefined;
         }),
       },
@@ -292,90 +288,13 @@ describe('getUIBuildingInstructionsTool', () => {
 
     // The story-linking workflow must route discovery into the review, not
     // the preview list, and forbid hand-constructed story IDs — matching
-    // the server instructions that `storybook ai --help` also embeds.
+    // the server instructions.
     // While this line contradicted them, agents were observed publishing
     // reviews with IDs derived from file names and no discovery call.
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
     expect(instructions).toContain('Feed the discovered IDs into **review-create**');
     expect(instructions).not.toContain('first, then use `stories-preview`');
-  });
-
-  it('tells the agent to include preview URLs when review is disabled', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') return '@storybook/react-vite';
-          if (presetName === 'features') return { changeDetection: false };
-          return undefined;
-        }),
-      },
-    };
-
-    const response = await server.receive(
-      {
-        jsonrpc: '2.0' as const,
-        id: 1,
-        method: 'tools/call',
-        params: { name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME, arguments: {} },
-      },
-      {
-        sessionId: 'test-session',
-        custom: {
-          origin: 'http://localhost:6006',
-          options: mockOptions as any,
-          disableTelemetry: true,
-        },
-      }
-    );
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain('include every returned preview URL');
-    expect(instructions).not.toContain('## 👀 Review your changes');
-    expect(instructions).not.toContain('present links in this order');
-  });
-
-  it('should not mention changed stories workflow when change detection is disabled', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn(async (presetName: string) => {
-          if (presetName === 'framework') {
-            return '@storybook/react-vite';
-          }
-          if (presetName === 'features') {
-            return { changeDetection: false };
-          }
-          return undefined;
-        }),
-      },
-    };
-
-    const testContext: AddonContext = {
-      origin: 'http://localhost:6006',
-      options: mockOptions as any,
-      disableTelemetry: true,
-    };
-
-    const request = {
-      jsonrpc: '2.0' as const,
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-        arguments: {},
-      },
-    };
-
-    const response = await server.receive(request, {
-      sessionId: 'test-session',
-      custom: testContext,
-    });
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
-    expect(instructions).not.toContain(GET_CHANGED_STORIES_TOOL_NAME);
   });
 
   it('should handle Vue framework', async () => {

@@ -63,7 +63,9 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   import { getProjectAnnotations } from '${PROJECT_ANNOTATIONS_VIRTUAL_ID}';
     
   window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-
+  
+  window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+  
   ${generateHMRHandler()};
   
   `.trim();

@@ -29,6 +29,7 @@ if (global.CONFIG_TYPE === 'DEVELOPMENT') {
 const preview = new PreviewWeb(importFn, getProjectAnnotations);
 
 window.__STORYBOOK_PREVIEW__ = preview;
+window.__STORYBOOK_STORY_STORE__ = preview.storyStore;
 
 if (import.meta.webpackHot) {
   import.meta.webpackHot.addStatusHandler((status) => {

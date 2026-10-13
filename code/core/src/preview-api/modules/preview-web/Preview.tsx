@@ -1,5 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
-import { logger } from 'storybook/internal/client-logger';
+import { deprecate, logger } from 'storybook/internal/client-logger';
 import {
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
@@ -25,6 +25,7 @@ import {
   CalledPreviewMethodBeforeInitializationError,
   MissingRenderToCanvasError,
   StoryIndexFetchError,
+  StoryStoreAccessedBeforeInitializationError,
 } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -98,6 +99,27 @@ export class Preview<TRenderer extends Renderer> {
     if (shouldInitialize) {
       this.initialize();
     }
+  }
+
+  // Create a proxy object for `__STORYBOOK_STORY_STORE__` and `__STORYBOOK_PREVIEW__.storyStore`
+  // That proxies through to the store once ready, and errors beforehand. This means we can set
+  // `__STORYBOOK_STORY_STORE__ = __STORYBOOK_PREVIEW__.storyStore` without having to wait, and
+  // similarly integrators can access the `storyStore` on the preview at any time, although
+  // it is considered deprecated and we will no longer allow access in 9.0
+  get storyStore() {
+    return new Proxy(
+      {},
+      {
+        get: (_, method) => {
+          if (this.storyStoreValue) {
+            deprecate('Accessing the Story Store is deprecated and will be removed in 9.0');
+            return this.storyStoreValue[method as keyof StoryStore<TRenderer>];
+          }
+
+          throw new StoryStoreAccessedBeforeInitializationError();
+        },
+      }
+    ) as StoryStore<TRenderer>;
   }
 
   // INITIALIZATION
@@ -484,16 +506,14 @@ export class Preview<TRenderer extends Renderer> {
   }
 
   /**
-   * Create a DocsContext for the given CSF file import paths.
+   * Create a DocsContext for the given CSF file import paths, without exposing the Story Store.
    *
-   * Used by the monorepo's dev Storybook to render docs blocks examples, and available to
-   * integrators who need to construct a DocsContext outside of core. The paths are resolved
-   * against the story index, the CSF files are loaded, and the returned DocsContext is constructed
-   * with the internal Story Store — the store instance never leaves the preview.
+   * Resolves the paths against the story index, loads the CSF files, and returns a ready-to-use
+   * `DocsContext`. The first CSF file is attached to the context by default, mirroring the dev
+   * Storybook loader.
    *
-   * @param importPaths the import paths of the CSF files, as they appear in the story index
-   * @param options.attach whether to attach the first CSF file to the context, making its stories
-   *   the component stories of the context. Defaults to `true`, mirroring the dev Storybook loader.
+   * @throws `CalledPreviewMethodBeforeInitializationError` if the preview is not initialized yet
+   * @throws if an import path is not in the story index
    */
   async createDocsContext(
     importPaths: string[],

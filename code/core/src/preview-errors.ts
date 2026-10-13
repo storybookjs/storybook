@@ -219,6 +219,21 @@ export class MissingStoryFromCsfFileError extends StorybookError {
   }
 }
 
+export class StoryStoreAccessedBeforeInitializationError extends StorybookError {
+  constructor() {
+    super({
+      name: 'StoryStoreAccessedBeforeInitializationError',
+      category: Category.PREVIEW_API,
+      code: 11,
+      message: dedent`
+        Cannot access the Story Store until the index is ready.
+
+        It is not recommended to use methods directly on the Story Store anyway, in Storybook 9 we will
+        remove access to the store entirely`,
+    });
+  }
+}
+
 export class MountMustBeDestructuredError extends StorybookError {
   // name: 'MountMustBeDestructuredError';
   constructor(public data: { playFunction: string }) {

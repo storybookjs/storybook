@@ -1,7 +1,7 @@
 // Follows the references a story hides its config behind: a spread of a constant, of a sibling
 // story, or of something another module owns, applying every write in the order it runs.
-import { generate, type NodePath, types as t } from 'storybook/internal/babel';
-
+import { type E, type Node, expressionFromSource, isStringLiteral, textOf } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
 import { importedName, isTypeSpecifier } from './imports.ts';
 import {
   csfFactoryReceiver,
@@ -10,11 +10,15 @@ import {
   keyOf,
   unwrapExpression,
 } from './utils.ts';
+import { isFunction } from '../estree/ast.ts';
 
 /** Members of an object, and what reading it statically could not account for. */
 export interface ResolvedMembers {
-  /** Member name → value node, as of the last write this pass could read. */
-  properties: Record<string, t.Node>;
+  /**
+   * Member name → value node, as of the last write this pass could read. A method keeps its whole
+   * `Property` node, so it stays distinguishable from a property holding a function.
+   */
+  properties: Record<string, Node>;
   /**
    * Names whose value an `unresolved` entry written after them may replace at runtime. A member
    * absent from `properties` is only knowably absent when `unresolved` is empty.
@@ -26,8 +30,8 @@ export interface ResolvedMembers {
 
 /** A module a reference reaches into, parsed and paired with the path it was read from. */
 export interface ReferenceModule {
-  program: NodePath<t.Program>;
-  /** Absolute path `program` was parsed from; the base every import specifier resolves against. */
+  editor: SourceEditor;
+  /** Absolute path `editor` was parsed from; the base every import specifier resolves against. */
   filePath: string;
 }
 
@@ -43,7 +47,7 @@ export interface ReferenceContext extends ReferenceModule {
    * was written as means nothing where the snippet lands. Returning `undefined` rejects the value,
    * leaving the reference that reached it unresolved.
    */
-  externalize?: (node: t.Node) => t.Node | undefined;
+  externalize?: (node: Node) => Node | undefined;
 }
 
 /** The half of a {@link ReferenceContext} that is not specific to one story file. */
@@ -55,15 +59,26 @@ export interface StoryReferences extends StoryReferenceResolver {
   filePath: string;
 }
 
-/** Source text of a node, for naming an expression a static pass could not read. */
-export const sourceOf = (node: t.Node): string =>
-  generate(node, { concise: true, comments: false }).code;
+/** Source text of a node exactly as written, for printing it or building code around it. */
+export const codeOf = (node: Node): string => {
+  const text = textOf(node);
+  if (text === undefined) {
+    throw new Error(`Cannot print a ${node.type} node whose source is unknown`);
+  }
+  return text;
+};
 
-const complete = (properties: Record<string, t.Node> = {}): ResolvedMembers => ({
+/** Source text of a node on one line, for naming an expression a static pass could not read. */
+export const sourceOf = (node: Node): string => codeOf(node).replace(/\s*\n\s*/g, ' ');
+
+const complete = (properties: Record<string, Node> = {}): ResolvedMembers => ({
   properties,
   shadowed: [],
   unresolved: [],
 });
+
+const isMethod = (node: Node): node is E.ObjectProperty =>
+  node.type === 'Property' && (node.method || node.kind !== 'init');
 
 /**
  * Members of an object literal, absorbing every spread the context can follow.
@@ -72,7 +87,7 @@ const complete = (properties: Record<string, t.Node> = {}): ResolvedMembers => (
  * or generator does not, because reading it runs code.
  */
 export const resolveObjectMembers = (
-  object: t.ObjectExpression,
+  object: E.ObjectExpression,
   ctx: ReferenceContext
 ): ResolvedMembers => membersOf(object, ctx, new Set());
 
@@ -83,25 +98,31 @@ export const resolveObjectMembers = (
  * is reported rather than kept, wherever a spread copied it from.
  */
 export const resolveArgsRecord = (
-  node: t.Node | undefined,
+  node: Node | undefined,
   ctx: ReferenceContext
 ): ResolvedMembers => {
   if (node === undefined) {
     return complete();
   }
   const unwrapped = unwrapExpression(node);
-  if (t.isObjectExpression(unwrapped)) {
+  if (unwrapped.type === 'ObjectExpression') {
     return asArgsRecord(membersOf(unwrapped, ctx, new Set()));
   }
   // `args: shared` names its record instead of writing one, which reads the same as spreading it.
-  const referenced = resolveReference(ctx, unwrapped, node.start ?? undefined, new Set());
+  const referenced = resolveReference(ctx, unwrapped, startOf(node), new Set());
   return referenced
     ? asArgsRecord(referenced)
-    : { properties: {}, shadowed: [], unresolved: [`args: ${sourceOf(unwrapped)}`] };
+    : {
+        properties: {},
+        shadowed: [],
+        unresolved: [`args: ${sourceOf(unwrapped)}`],
+      };
 };
 
+const startOf = (node: Node) => (node as Node & { start: number }).start;
+
 const asArgsRecord = (members: ResolvedMembers): ResolvedMembers => {
-  const methods = Object.entries(members.properties).filter(([, node]) => t.isObjectMethod(node));
+  const methods = Object.entries(members.properties).filter(([, node]) => isMethod(node));
   if (methods.length === 0) {
     return members;
   }
@@ -142,8 +163,8 @@ export const resolveBindingMembers = (
  */
 export const resolveReferencedValue = (
   ctx: ReferenceContext,
-  expression: t.Node
-): { node: t.Node; ctx: ReferenceContext } | undefined => {
+  expression: Node
+): { node: Node; ctx: ReferenceContext } | undefined => {
   const chain = memberChain(expression);
   if (!chain || chain.path.length === 0) {
     return undefined;
@@ -171,7 +192,7 @@ export const resolveReferencedValue = (
       return { node: value, ctx: scope };
     }
     const unwrapped = unwrapExpression(value);
-    if (!t.isObjectExpression(unwrapped)) {
+    if (unwrapped.type !== 'ObjectExpression') {
       return undefined;
     }
     members = membersOf(unwrapped, scope, visited);
@@ -181,11 +202,11 @@ export const resolveReferencedValue = (
 };
 
 const membersOf = (
-  object: t.ObjectExpression,
+  object: E.ObjectExpression,
   ctx: ReferenceContext,
   visited: Set<string>
 ): ResolvedMembers => {
-  const properties: Record<string, t.Node> = {};
+  const properties: Record<string, Node> = {};
   const unresolved: string[] = [];
   const shadowed = new Set<string>();
 
@@ -199,7 +220,7 @@ const membersOf = (
   };
 
   for (const property of object.properties) {
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       const spread = spreadMembers(ctx, property, visited);
       if (spread === undefined || spread.unresolved.length > 0) {
         shadowKnownMembers(sourceOf(property));
@@ -220,7 +241,7 @@ const membersOf = (
       shadowKnownMembers(sourceOf(property));
       continue;
     }
-    if (t.isObjectMethod(property) && (property.kind !== 'method' || property.generator)) {
+    if (property.kind !== 'init' || (property.method && (property.value as E.Function).generator)) {
       // An accessor or generator replaces exactly the member it names, with a value only running
       // the story produces.
       delete properties[key];
@@ -228,7 +249,7 @@ const membersOf = (
       unresolved.push(sourceOf(property));
       continue;
     }
-    properties[key] = t.isObjectMethod(property) ? property : property.value;
+    properties[key] = property.method ? property : property.value;
     shadowed.delete(key);
   }
 
@@ -238,24 +259,24 @@ const membersOf = (
 /** The object a spread copies from, whether it is written out or named. */
 const spreadMembers = (
   ctx: ReferenceContext,
-  spread: t.SpreadElement,
+  spread: E.SpreadElement,
   visited: Set<string>
 ): ResolvedMembers | undefined => {
   const argument = unwrapExpression(spread.argument);
-  return t.isObjectExpression(argument)
+  return argument.type === 'ObjectExpression'
     ? membersOf(argument, ctx, visited)
-    : resolveReference(ctx, argument, spread.start ?? undefined, visited);
+    : resolveReference(ctx, argument, startOf(spread), visited);
 };
 
 /** A member chain of statically-known keys, like `HeaderStories.LoggedIn.input.args`. */
-const memberChain = (node: t.Node): { root: string; path: string[] } | undefined => {
+const memberChain = (node: Node): { root: string; path: string[] } | undefined => {
   const path: string[] = [];
   let current = unwrapExpression(node);
-  while (t.isMemberExpression(current)) {
+  while (current.type === 'MemberExpression') {
     const key =
-      t.isIdentifier(current.property) && !current.computed
+      current.property.type === 'Identifier' && !current.computed
         ? current.property.name
-        : t.isStringLiteral(current.property)
+        : isStringLiteral(current.property)
           ? current.property.value
           : undefined;
     if (key === undefined) {
@@ -264,7 +285,7 @@ const memberChain = (node: t.Node): { root: string; path: string[] } | undefined
     path.unshift(key);
     current = unwrapExpression(current.object);
   }
-  return t.isIdentifier(current) ? { root: current.name, path } : undefined;
+  return current.type === 'Identifier' ? { root: current.name, path } : undefined;
 };
 
 /**
@@ -276,7 +297,7 @@ const memberChain = (node: t.Node): { root: string; path: string[] } | undefined
  */
 const resolveReference = (
   ctx: ReferenceContext,
-  expression: t.Node,
+  expression: Node,
   position: number | undefined,
   visited: Set<string>
 ): ResolvedMembers | undefined => {
@@ -322,7 +343,7 @@ const unguardedResolveReference = (
       return index === located.path.length - 1 ? complete() : undefined;
     }
     const unwrapped = unwrapExpression(value);
-    if (!t.isObjectExpression(unwrapped)) {
+    if (unwrapped.type !== 'ObjectExpression') {
       return undefined;
     }
     members = membersOf(unwrapped, scope, visited);
@@ -393,7 +414,7 @@ const externalized = (
   if (!ctx.externalize) {
     return members;
   }
-  const properties: Record<string, t.Node> = {};
+  const properties: Record<string, Node> = {};
   for (const [key, node] of Object.entries(members.properties)) {
     const value = ctx.externalize(node);
     if (value === undefined) {
@@ -443,13 +464,13 @@ const unguardedBindingMembers = (
   position: number | undefined,
   visited: Set<string>
 ): BoundMembers | undefined => {
-  const binding = ctx.program.scope.getBinding(name);
+  const binding = ctx.editor.scopes.program.bindings.get(name);
   if (!binding) {
     return undefined;
   }
 
-  if (binding.kind === 'module') {
-    return importedBinding(ctx, binding.path, visited);
+  if (binding.kind === 'import') {
+    return importedBinding(ctx, binding.node, binding.declaration, visited);
   }
 
   if (!binding.constant) {
@@ -457,10 +478,10 @@ const unguardedBindingMembers = (
   }
 
   const rootName = localAliasRoot(ctx, name);
-  const rootBinding = ctx.program.scope.getBinding(rootName);
+  const rootBinding = ctx.editor.scopes.program.bindings.get(rootName);
   const declared = declaredBindingMembers(
     ctx,
-    rootBinding?.path.node ?? binding.path.node,
+    rootBinding?.node ?? binding.node,
     position,
     visited
   );
@@ -485,18 +506,18 @@ const unguardedBindingMembers = (
 
 const declaredBindingMembers = (
   ctx: ReferenceContext,
-  node: t.Node,
+  node: Node,
   position: number | undefined,
   visited: Set<string>
 ): { members: ResolvedMembers; accessor?: 'input' } | undefined => {
-  if (t.isFunctionDeclaration(node)) {
+  if (node.type === 'FunctionDeclaration') {
     // Hoisted, so it is readable at any position; the CSF2 form gives it members by assignment.
     return { members: complete() };
   }
-  if (!t.isVariableDeclarator(node)) {
+  if (node.type !== 'VariableDeclarator' || node.id.type !== 'Identifier') {
     return undefined;
   }
-  if (position !== undefined && (node.start ?? Number.POSITIVE_INFINITY) > position) {
+  if (position !== undefined && node.start > position) {
     return undefined;
   }
   return node.init ? declaredMembers(ctx, node.init, position, visited) : { members: complete() };
@@ -505,34 +526,41 @@ const declaredBindingMembers = (
 /** Members an initializer declares, plus the accessor a CSF factory keeps them behind. */
 const declaredMembers = (
   ctx: ReferenceContext,
-  init: t.Expression,
+  init: E.Expression,
   position: number | undefined,
   visited: Set<string>
 ): { members: ResolvedMembers; accessor?: 'input' } | undefined => {
   const unwrapped = unwrapExpression(init);
 
-  if (t.isObjectExpression(unwrapped)) {
+  if (unwrapped.type === 'ObjectExpression') {
     return { members: membersOf(unwrapped, ctx, visited) };
   }
 
   const factory = factoryCall(unwrapped);
-  if (factory === undefined && (t.isFunction(unwrapped) || isCanonicalCsf2BindCall(unwrapped))) {
+  if (factory === undefined && (isFunction(unwrapped) || isCanonicalCsf2BindCall(unwrapped))) {
     return { members: complete() };
   }
-  if (t.isIdentifier(unwrapped)) {
+  if (unwrapped.type === 'Identifier') {
     const referenced = bindingMembers(ctx, unwrapped.name, position, visited);
     if (referenced?.kind === 'members') {
       const members = referenced.external
         ? ctx.externalize && externalized(referenced.members, referenced.ctx)
         : referenced.members;
       if (members) {
-        return { members, ...(referenced.accessor ? { accessor: referenced.accessor } : {}) };
+        return {
+          members,
+          ...(referenced.accessor ? { accessor: referenced.accessor } : {}),
+        };
       }
     }
   }
   if (factory === undefined) {
     return {
-      members: { properties: {}, shadowed: [], unresolved: [sourceOf(unwrapped)] },
+      members: {
+        properties: {},
+        shadowed: [],
+        unresolved: [sourceOf(unwrapped)],
+      },
     };
   }
 
@@ -569,22 +597,24 @@ const declaredMembers = (
 /** Annotations `extend` merges per key rather than replacing outright. */
 const MERGED_ANNOTATIONS = ['args', 'argTypes', 'parameters', 'globals'];
 
+/** Name a chain of constant local aliases (`const Alias = Base`) bottoms out at. */
 const localAliasRoot = (ctx: ReferenceContext, name: string): string => {
+  const { bindings } = ctx.editor.scopes.program;
   const visited = new Set<string>();
   let current = name;
   while (!visited.has(current)) {
     visited.add(current);
-    const binding = ctx.program.scope.getBinding(current);
-    const node = binding?.path.node;
-    if (!binding?.constant || !t.isVariableDeclarator(node) || !node.init) {
+    const binding = bindings.get(current);
+    const node = binding?.node;
+    if (!binding?.constant || node?.type !== 'VariableDeclarator' || !node.init) {
       break;
     }
     const init = unwrapExpression(node.init);
-    if (!t.isIdentifier(init)) {
+    if (init.type !== 'Identifier') {
       break;
     }
-    const target = ctx.program.scope.getBinding(init.name);
-    if (!target?.constant || target.kind === 'module') {
+    const target = bindings.get(init.name);
+    if (!target?.constant || target.kind === 'import') {
       break;
     }
     current = init.name;
@@ -592,11 +622,12 @@ const localAliasRoot = (ctx: ReferenceContext, name: string): string => {
   return current;
 };
 
+/** Every name aliasing `root`, mapped to where it starts aliasing it. */
 const localAliases = (ctx: ReferenceContext, root: string): Map<string, number> => {
   const aliases = new Map<string, number>([[root, Number.NEGATIVE_INFINITY]]);
-  for (const [name, binding] of Object.entries(ctx.program.scope.bindings)) {
+  for (const [name, binding] of ctx.editor.scopes.program.bindings) {
     if (name !== root && binding.constant && localAliasRoot(ctx, name) === root) {
-      aliases.set(name, binding.path.node.start ?? Number.POSITIVE_INFINITY);
+      aliases.set(name, (binding.node as { start?: number }).start ?? Number.POSITIVE_INFINITY);
     }
   }
   return aliases;
@@ -613,30 +644,34 @@ const localAliases = (ctx: ReferenceContext, root: string): Map<string, number> 
 const mergedAnnotations = (
   parent: Pick<ResolvedMembers, 'properties'>,
   child: Pick<ResolvedMembers, 'properties'>
-): { properties: Record<string, t.Node> } => {
+): { properties: Record<string, Node> } => {
   const properties = { ...parent.properties, ...child.properties };
 
   for (const key of MERGED_ANNOTATIONS) {
     const from = parent.properties[key];
     const over = child.properties[key];
-    if (
-      from === undefined ||
-      over === undefined ||
-      !t.isExpression(from) ||
-      !t.isExpression(over)
-    ) {
+    if (from === undefined || over === undefined || isMethod(from) || isMethod(over)) {
       continue;
     }
-    properties[key] = t.objectExpression([t.spreadElement(from), t.spreadElement(over)]);
+    properties[key] = spreadPair(from, over);
   }
 
   return { properties };
 };
 
+// The spreads point at the original nodes, so each still resolves in the scope it was written in.
+const spreadPair = (from: Node, over: Node): E.ObjectExpression => {
+  const merged = expressionFromSource(`{ ...${codeOf(from)}, ...${codeOf(over)} }`);
+  const object = unwrapExpression(merged) as E.ObjectExpression;
+  (object.properties[0] as E.SpreadElement).argument = from as E.Expression;
+  (object.properties[1] as E.SpreadElement).argument = over as E.Expression;
+  return object;
+};
+
 /** A CSF factory call, which holds its config behind `input` rather than as its own members. */
 const factoryCall = (
-  node: t.Node
-): { method: 'story' | 'extend'; parent: string; config?: t.ObjectExpression } | undefined => {
+  node: Node
+): { method: 'story' | 'extend'; parent: string; config?: E.ObjectExpression } | undefined => {
   if (!isCsfFactoryCall(node)) {
     return undefined;
   }
@@ -646,13 +681,13 @@ const factoryCall = (
   }
   const [argument] = node.arguments;
   const config = argument && unwrapExpression(argument);
-  if (argument !== undefined && (config === undefined || !t.isObjectExpression(config))) {
+  if (argument !== undefined && config?.type !== 'ObjectExpression') {
     return undefined;
   }
   return {
     method,
     parent: csfFactoryReceiver(node).name,
-    ...(config && t.isObjectExpression(config) ? { config } : {}),
+    ...(config?.type === 'ObjectExpression' ? { config } : {}),
   };
 };
 
@@ -668,37 +703,40 @@ const assignedMembers = (
   aliases: Map<string, number>,
   position: number | undefined
 ): {
-  properties: Record<string, t.Node>;
+  properties: Record<string, Node>;
   unresolved: string[];
 } => {
-  const properties: Record<string, t.Node> = {};
+  const properties: Record<string, Node> = {};
   const unresolved: string[] = [];
 
-  for (const statement of ctx.program.node.body) {
-    if (!t.isExpressionStatement(statement) || !t.isAssignmentExpression(statement.expression)) {
+  for (const statement of ctx.editor.program.body) {
+    if (
+      statement.type !== 'ExpressionStatement' ||
+      statement.expression.type !== 'AssignmentExpression'
+    ) {
       continue;
     }
     const assignment = statement.expression;
-    let target: t.Node = assignment.left;
+    let target: Node = assignment.left;
     let depth = 0;
     let outermost: string | undefined;
-    while (t.isMemberExpression(target)) {
+    while (target.type === 'MemberExpression') {
       depth += 1;
       outermost =
-        t.isIdentifier(target.property) && !target.computed
+        target.property.type === 'Identifier' && !target.computed
           ? target.property.name
-          : t.isStringLiteral(target.property)
+          : isStringLiteral(target.property)
             ? target.property.value
             : undefined;
       target = target.object;
     }
-    if (depth === 0 || !t.isIdentifier(target) || !aliases.has(target.name)) {
+    if (depth === 0 || target.type !== 'Identifier' || !aliases.has(target.name)) {
       continue;
     }
-    if ((assignment.start ?? 0) < aliases.get(target.name)!) {
+    if (assignment.start < aliases.get(target.name)!) {
       continue;
     }
-    if (position !== undefined && (assignment.start ?? 0) > position) {
+    if (position !== undefined && assignment.start > position) {
       continue;
     }
     if (depth > 1 || outermost === undefined || assignment.operator !== '=') {
@@ -713,18 +751,17 @@ const assignedMembers = (
 
 const importedBinding = (
   ctx: ReferenceContext,
-  specifierPath: NodePath<t.Node>,
+  specifier: Node,
+  declaration: Node | undefined,
   visited: Set<string>
 ): BoundMembers | undefined => {
-  const specifier = specifierPath.node;
-  const declaration = specifierPath.parent;
   if (
-    !t.isImportDeclaration(declaration) ||
+    declaration?.type !== 'ImportDeclaration' ||
     declaration.importKind === 'type' ||
     !(
-      t.isImportSpecifier(specifier) ||
-      t.isImportDefaultSpecifier(specifier) ||
-      t.isImportNamespaceSpecifier(specifier)
+      specifier.type === 'ImportSpecifier' ||
+      specifier.type === 'ImportDefaultSpecifier' ||
+      specifier.type === 'ImportNamespaceSpecifier'
     ) ||
     isTypeSpecifier(specifier)
   ) {
@@ -736,13 +773,12 @@ const importedBinding = (
     return undefined;
   }
 
-  if (t.isImportNamespaceSpecifier(specifier)) {
+  if (specifier.type === 'ImportNamespaceSpecifier') {
     return { kind: 'namespace', ctx: target };
   }
 
-  const exportName = t.isImportDefaultSpecifier(specifier)
-    ? 'default'
-    : importedName(specifier.imported);
+  const exportName =
+    specifier.type === 'ImportDefaultSpecifier' ? 'default' : importedName(specifier.imported);
   return exportedBinding(target, exportName, visited);
 };
 
@@ -763,13 +799,13 @@ const exportedBinding = (
   const asExternal = (bound: BoundMembers | undefined) =>
     bound === undefined || bound.kind === 'namespace' ? bound : { ...bound, external: true };
 
-  for (const statement of ctx.program.node.body) {
-    if (t.isExportDefaultDeclaration(statement) && exportName === 'default') {
-      const declaration = unwrapExpression(statement.declaration);
-      if (t.isIdentifier(declaration)) {
+  for (const statement of ctx.editor.program.body) {
+    if (statement.type === 'ExportDefaultDeclaration' && exportName === 'default') {
+      const declaration = unwrapExpression(statement.declaration as Node);
+      if (declaration.type === 'Identifier') {
         return asExternal(bindingMembers(ctx, declaration.name, undefined, visited));
       }
-      return t.isObjectExpression(declaration)
+      return declaration.type === 'ObjectExpression'
         ? {
             kind: 'members',
             ctx,
@@ -779,16 +815,14 @@ const exportedBinding = (
         : undefined;
     }
 
-    if (!t.isExportNamedDeclaration(statement) || statement.exportKind === 'type') {
+    if (statement.type !== 'ExportNamedDeclaration' || statement.exportKind === 'type') {
       continue;
     }
     const specifier = statement.specifiers.find(
-      (candidate): candidate is t.ExportSpecifier =>
-        t.isExportSpecifier(candidate) &&
-        candidate.exportKind !== 'type' &&
-        importedName(candidate.exported) === exportName
+      (candidate) =>
+        candidate.exportKind !== 'type' && importedName(candidate.exported) === exportName
     );
-    if (!specifier) {
+    if (!specifier || specifier.local.type !== 'Identifier') {
       continue;
     }
     if (!statement.source) {

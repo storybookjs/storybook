@@ -179,6 +179,24 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
   };
 };
 
+interface ApiPermissions {
+  allowWrite?: boolean;
+  allowExec?: boolean;
+}
+
+const toApiPermissions = (api: unknown): ApiPermissions =>
+  api && typeof api === 'object' ? (api as ApiPermissions) : {};
+
+// Users on Vitest 4 may have set the permissions on `browser.api`, which Vitest 5 no longer types.
+const getUserApiPermissions = (testConfig: ViteUserConfig['test']): ApiPermissions => {
+  const api = toApiPermissions(testConfig?.api);
+  const browserApi = toApiPermissions((testConfig?.browser as { api?: unknown } | undefined)?.api);
+  return {
+    allowWrite: api.allowWrite ?? browserApi.allowWrite,
+    allowExec: api.allowExec ?? browserApi.allowExec,
+  };
+};
+
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   if (!optionalEnvToBoolean(process.env.VITEST)) {
     return [];
@@ -268,6 +286,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
 
+  let userApiPermissions: ApiPermissions = {};
+
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
@@ -343,6 +363,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.includeStories = includeStories;
 
       const projectId = oneWayHash(finalOptions.configDir);
+
+      userApiPermissions = getUserApiPermissions(testConfig);
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
@@ -489,6 +511,20 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
         if (!context.project.config.setupFiles.includes(browserSetupFile)) {
           context.project.config.setupFiles.push(browserSetupFile);
+        }
+
+        // Story code runs in the browser, and Vitest otherwise lets it write files and run commands
+        // in Node through its API whenever the server is bound to loopback. Vitest 5 reads these
+        // permissions from `api`; Vitest 4 reads `browser.api` as well.
+        const { api, browser } = context.project.config as {
+          api: ApiPermissions;
+          browser: { api?: ApiPermissions };
+        };
+        for (const target of [api, browser.api]) {
+          if (target) {
+            target.allowWrite = userApiPermissions.allowWrite ?? false;
+            target.allowExec = userApiPermissions.allowExec ?? false;
+          }
         }
       }
 

@@ -181,6 +181,7 @@ it('has the agent add the Vitest addon only when the project lacks it', async ()
   });
 
   expect(without.markdown).toContain('npx storybook add @storybook/addon-vitest --yes');
+  expect(without.markdown).not.toContain('storybook build');
   expect(withAddon.markdown).not.toContain('storybook add @storybook/addon-vitest');
 });
 

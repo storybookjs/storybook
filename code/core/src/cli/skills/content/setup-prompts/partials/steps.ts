@@ -78,8 +78,7 @@ function missingVitestAddonNote(
     '@storybook/addon-vitest',
     '--yes',
   ]);
-  const build = packageManager.getPackageCommand(['storybook', 'build']);
-  return `This project doesn't have \`@storybook/addon-vitest\` yet, which runs stories as tests. Add it first with \`${add}\`. If that fails, run \`${build}\` instead of the Vitest commands below to check that the stories compile, and tell the user that story tests need \`@storybook/addon-vitest\`.\n\n`;
+  return `This project doesn't have \`@storybook/addon-vitest\` yet, which runs stories as tests. Add it first with \`${add}\`; the steps below need it.\n\n`;
 }
 
 export function verifyStep(

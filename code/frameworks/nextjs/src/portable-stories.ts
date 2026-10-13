@@ -12,6 +12,7 @@ import type {
 import type { Meta, ReactRenderer } from '@storybook/react';
 
 import {
+  cleanup,
   composeConfigs,
   composeStories as originalComposeStories,
   composeStory as originalComposeStory,
@@ -141,3 +142,5 @@ export function composeStories<TModule extends Store_CSFExports<ReactRenderer, a
     keyof Store_CSFExports
   >;
 }
+
+export { cleanup };

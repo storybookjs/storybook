@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup as rtlCleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
@@ -9,7 +9,7 @@ import type { Meta } from '@storybook/react';
 import { expectTypeOf } from 'expect-type';
 import { addons, useEffect } from 'storybook/preview-api';
 
-import { composeStories, composeStory, setProjectAnnotations } from '../index.ts';
+import { cleanup, composeStories, composeStory, setProjectAnnotations } from '../index.ts';
 import type { Button } from './Button.tsx';
 import * as ButtonStories from './Button.stories.tsx';
 import * as ComponentWithErrorStories from './ComponentWithError.stories.tsx';
@@ -27,8 +27,9 @@ beforeAll(async () => {
   await projectAnnotations.beforeAll?.();
 });
 
-afterEach(() => {
-  cleanup();
+afterEach(async () => {
+  rtlCleanup();
+  await cleanup();
 });
 
 // example with composeStory, returns a single story composed with args/decorators
@@ -237,4 +238,81 @@ it.each(testCases)('Renders %s story', async (_storyName, Story) => {
   }
   await Story.run();
   expect(document.body).toMatchSnapshot();
+});
+
+describe('cleanup', () => {
+  it('unmounts previous story when next story runs, and unmounts last story on cleanup', async () => {
+    const firstMountSpy = vi.fn();
+    const firstUnmountSpy = vi.fn();
+    const lastMountSpy = vi.fn();
+    const lastUnmountSpy = vi.fn();
+
+    const FirstComponent = () => {
+      React.useEffect(() => {
+        firstMountSpy();
+        return () => {
+          firstUnmountSpy();
+        };
+      }, []);
+      return <div data-testid="first-story">First</div>;
+    };
+
+    const LastComponent = () => {
+      React.useEffect(() => {
+        lastMountSpy();
+        return () => {
+          lastUnmountSpy();
+        };
+      }, []);
+      return <div data-testid="last-story">Last</div>;
+    };
+
+    const First = composeStory({ render: () => <FirstComponent /> }, {});
+    const Last = composeStory({ render: () => <LastComponent /> }, {});
+
+    // 1. Run First
+    await First.run();
+    expect(firstMountSpy).toHaveBeenCalledTimes(1);
+    expect(firstUnmountSpy).not.toHaveBeenCalled();
+    const firstElement = screen.getByTestId('first-story');
+    expect(firstElement).not.toBeNull();
+    const firstContainer = firstElement.parentElement;
+    expect(document.body.contains(firstContainer)).toBe(true);
+
+    // 2. Run Last: verify First unmounts when Last starts
+    await Last.run();
+    expect(firstUnmountSpy).toHaveBeenCalledTimes(1);
+    expect(document.body.contains(firstContainer)).toBe(false);
+    expect(screen.queryByTestId('first-story')).toBeNull();
+
+    expect(lastMountSpy).toHaveBeenCalledTimes(1);
+    expect(lastUnmountSpy).not.toHaveBeenCalled();
+    const lastElement = screen.getByTestId('last-story');
+    expect(lastElement).not.toBeNull();
+    const lastContainer = lastElement.parentElement;
+    expect(document.body.contains(lastContainer)).toBe(true);
+
+    // 3. Verify Last unmounts and its DOM is removed after await cleanup()
+    await cleanup();
+    expect(lastUnmountSpy).toHaveBeenCalledTimes(1);
+    expect(document.body.contains(lastContainer)).toBe(false);
+    expect(screen.queryByTestId('last-story')).toBeNull();
+
+    // 4. Verify cleanup is safe to call repeatedly
+    await cleanup();
+    expect(lastUnmountSpy).toHaveBeenCalledTimes(1);
+
+    // 5. Verify a subsequent story run still works
+    await First.run();
+    expect(firstMountSpy).toHaveBeenCalledTimes(2);
+    const subsequentElement = screen.getByTestId('first-story');
+    expect(subsequentElement).not.toBeNull();
+    const subsequentContainer = subsequentElement.parentElement;
+    expect(document.body.contains(subsequentContainer)).toBe(true);
+
+    await cleanup();
+    expect(firstUnmountSpy).toHaveBeenCalledTimes(2);
+    expect(document.body.contains(subsequentContainer)).toBe(false);
+    expect(screen.queryByTestId('first-story')).toBeNull();
+  });
 });

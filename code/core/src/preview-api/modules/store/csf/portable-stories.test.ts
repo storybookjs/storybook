@@ -14,7 +14,12 @@ import { definePreview } from '../../../../csf/csf-factories.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import * as defaultExportAnnotations from './__mocks__/defaultExportAnnotations.mockfile.ts';
 import * as namedExportAnnotations from './__mocks__/namedExportAnnotations.mockfile.ts';
-import { composeStories, composeStory, setProjectAnnotations } from './portable-stories.ts';
+import {
+  cleanup,
+  composeStories,
+  composeStory,
+  setProjectAnnotations,
+} from './portable-stories.ts';
 
 type StoriesModule = Store_CSFExports & Record<string, any>;
 
@@ -558,5 +563,33 @@ describe('setProjectAnnotations', () => {
     expect(() => setProjectAnnotations({})).toThrow(
       'setProjectAnnotations() was called from a Vitest setup file'
     );
+  });
+});
+
+describe('cleanup', () => {
+  it('executes cleanups in reverse order and clears the registry', async () => {
+    const order: number[] = [];
+    const story = composeStory(
+      { render: () => {} },
+      {},
+      {
+        renderToCanvas: () => () => {
+          order.push(2);
+        },
+        beforeEach: () => () => {
+          order.push(1);
+        },
+      }
+    );
+
+    await story.run({ canvasElement: {} as HTMLElement });
+    expect(order).toEqual([]);
+
+    await cleanup();
+    expect(order).toEqual([2, 1]);
+
+    // Repeated call is safe and does not re-run callbacks
+    await cleanup();
+    expect(order).toEqual([2, 1]);
   });
 });

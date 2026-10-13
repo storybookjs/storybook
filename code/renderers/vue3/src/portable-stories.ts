@@ -10,6 +10,7 @@ import type {
 } from 'storybook/internal/types';
 
 import {
+  cleanup,
   composeStories as originalComposeStories,
   composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
@@ -165,3 +166,5 @@ export function composeStories<TModule extends Store_CSFExports<VueRenderer, any
     Omit<StoriesWithPartialProps<VueRenderer, TModule>, keyof Store_CSFExports>
   >;
 }
+
+export { cleanup };

@@ -42,54 +42,67 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Configure
 
-Storybook for Web components with Vite works without extra configuration, but component documentation depends on where Storybook reads your Custom Elements Manifest. The sections below cover the available setup paths and framework options.
+Storybook for Web components with Vite works without extra configuration. It reads your elements from your sources or a Custom Elements Manifest you provide. The sections below cover the available setup paths and framework options.
 
 ### Component documentation
 
-JSDoc comments on your elements, attributes, properties, events, slots and CSS API reach [automatic documentation](../../writing-docs/autodocs.mdx) and the [controls](../../essentials/controls.mdx) table through a Custom Elements Manifest.
+Docgen reads your elements from your sources, or from a Custom Elements Manifest you provide. You choose the generator: Storybook's built-in one reads your sources with no setup, or you provide a manifest produced by the tool you prefer, such as `@custom-elements-manifest/analyzer` or the `@wc-toolkit/cem-generator` CLI. Your JSDoc comments on elements, attributes, properties, events, slots and CSS API reach [automatic documentation](../../writing-docs/autodocs.mdx) and the [controls](../../essentials/controls.mdx) table.
 
-Two paths can read the manifest, and which one you get depends on a single feature flag:
+Two paths provide component documentation, and which one you get depends on a single feature flag:
 
-|                       | [`docgenServer`](../../api/main-config/main-config-features.mdx) on, the default         | flag off                                                              |
-| --------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Reads the manifest    | on the Storybook server, from the manifest file                                          | in the browser, from a manifest you import in `.storybook/preview.ts` |
-| Configure with        | `framework.options.customElementsManifest` or `package.json#customElements`              | `setCustomElementsManifest()` in the preview                          |
-| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx) | controls and autodocs                                                 |
-| Updates while running | yes, the file is watched                                                                 | no, restart or reload after regenerating the manifest                 |
+|                       | [`docgenServer`](../../api/main-config/main-config-features.mdx) on, the default                             | flag off                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| Reads your elements   | on the Storybook server, from your sources or from a manifest file                                           | in the browser, from a manifest you import in `.storybook/preview.ts` |
+| Configure with        | nothing, or `framework.options.customElementsManifest` / `package.json#customElements` to provide a manifest | `setCustomElementsManifest()` in the preview                          |
+| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx)                     | controls and autodocs                                                 |
+| Updates while running | yes, your sources and the manifest file are watched                                                          | no, restart or reload after regenerating the manifest                 |
 
 Server-side extraction is what you get unless you turn the flag off with `features: { docgenServer: false }`. The flag-off column is the path projects created before Storybook 11 use.
 
 Attributes, properties, events, slots, CSS custom properties, CSS parts and CSS states from the manifest become argTypes. Event, slot, part and state arg keys are suffixed, such as `my-change-event`, `default-slot`, `panel-part` and `active-state`, so they never collide with attributes. CSS custom properties keep their `--name` key.
 
-#### Generating a manifest
+#### Choosing a manifest generator
 
-Install and run `@custom-elements-manifest/analyzer` to generate a Custom Elements Manifest:
+Any tool that writes a Custom Elements Manifest (`schemaVersion` 1.x or 2.x) works. Reasons to provide your own manifest instead of using the built-in generator: you already ship one with your package, you want your library's own analyzer plugins (FAST, Stencil, Catalyst), or you want the same manifest in Storybook and in your build.
+
+For example, with `@custom-elements-manifest/analyzer`:
 
 <CodeSnippets path="web-components-custom-elements-manifest-generate.md" />
 
-The manifest must use Custom Elements Manifest `schemaVersion` 1.x or 2.x, generated by `@custom-elements-manifest/analyzer`. Drop `--litelement` for elements that do not extend `LitElement`. Add the command to your `package.json` scripts so it runs before `storybook dev`, or run the analyzer in `--watch` mode next to Storybook.
+The analyzer writes the same manifest format for every library. Pass the plugin flag that matches how your elements declare their attributes: `--litelement` for Lit, `--fast` for FAST, `--stencil` for Stencil, `--catalyst` for Catalyst, and no flag for elements built on `HTMLElement` directly. Without the matching flag, decorator-declared attributes such as Lit's `@property()` are missing from the manifest, and Storybook cannot pair those args with attributes. Add the command to your `package.json` scripts so it runs before `storybook dev`, or run the analyzer in `--watch` mode next to Storybook.
 
 The analyzer writes `custom-elements.json` in the current directory. If your `package.json` has a `customElements` field that points at that file, server-side docgen uses it without more configuration.
 
 #### Server-side extraction
 
-Point Storybook at the manifest file:
+Nothing to set up. Storybook's built-in generator reads the elements your stories import from your TypeScript or JavaScript sources. It understands Lit and plain `HTMLElement` elements and ships with `@storybook/web-components`.
+
+To use a manifest from another generator instead, point Storybook at the file:
 
 <CodeSnippets path="web-components-main-config-custom-elements-manifest.md" />
 
-Storybook resolves manifests in this order:
+Storybook looks up your elements in this order:
 
-- `framework.options.customElementsManifest`, relative to the Storybook config directory
-- The `customElements` field in the nearest `package.json`, relative to that `package.json`
-- Nothing, so server-side docgen is skipped
+1. Manifests you provide:
+   1. `framework.options.customElementsManifest`, relative to the Storybook config directory.
+   2. The `customElements` field in the nearest `package.json`, relative to that `package.json`.
+2. Sources, through the built-in generator, for tags your manifests do not declare:
+   1. The file that defined the tag last time.
+   2. The story file and the files reachable through its imports.
+   3. The preview file and the files reachable through its imports.
+   4. The tsconfig files whose sources contain the tag as a string literal.
 
-When the manifest cannot be resolved and the flag is on, Storybook logs that docgen is skipped and the runtime path still works.
+Storybook selects the tsconfig for each story file, so monorepos and project references work. For a JavaScript project without a tsconfig, it scans only the story's folder.
+
+Editing an element updates its controls and descriptions while Storybook runs. If the generator or TypeScript fails to load, Storybook warns once and manifest docgen keeps working.
 
 If Storybook cannot read complete metadata, it reports the problem in the Controls table for the affected component and in the tools CLI (`npx storybook tools docs show`). These messages do not fail the build.
 
 - Missing manifest file: `Custom Elements Manifest <path> not found yet; docs load once the analyzer writes it`
-- Tag missing from the manifest: `No declaration for "<tag>" was found in <paths>. If the element is new, rerun the custom elements manifest analyzer.`
+- Tag not found in manifests or sources: `No declaration for "<tag>" was found from story file <story> and preview file <preview>. Searched the tsconfig files covering those files: <tsconfigs>. Import the element module in the story or configure customElementsManifest.`
 - Older web-component-analyzer manifest shape: `<path> uses the web-component-analyzer manifest shape. The Storybook docgen server reads Custom Elements Manifests only; generate one with @custom-elements-manifest/analyzer.`
+
+The tag-not-found message includes `and preview file <preview>` only when a preview file exists. `<tsconfigs>` is `none` when no tsconfig covers the files.
 
 If a watched manifest becomes invalid after Storybook has loaded a valid version, Storybook keeps the last valid version and reports a warning that ends with `; using the last valid version`.
 
@@ -158,11 +171,15 @@ These apply to the default server-side extraction path.
 
 The snippets shown in autodocs and the Code panel are generated from your story's source, so they show the story as you wrote it. Changing a value in the controls table updates the rendered component but not the snippet next to it.
 
-### Elements must be declared in the manifest
+### Elements must be reachable from the story
 
-A `meta.component` whose tag is not in the manifest gets the `No declaration` message listed above and no controls.
+The generator follows imports from your story file and preview file. An element registered in a module neither file imports is not found. Import the element module, or provide a manifest.
 
 Template-function components, like the `Button`, `Header` and `Page` the starter generates, have no custom element and therefore no docgen. Their Code panel shows the story source.
+
+### The built-in generator reads Lit and plain elements
+
+Elements built with FAST, Stencil or Catalyst are not read from sources. Provide a manifest from the analyzer with the matching plugin, see [Choosing a manifest generator](#choosing-a-manifest-generator).
 
 ### Properties without an attribute cannot be shown in HTML
 
@@ -194,9 +211,9 @@ The available options are:
 
 Type: `string | string[]`
 
-Default: the `customElements` field of your `package.json`
+Default: the `customElements` field of your `package.json`, else none; elements are generated from sources
 
-Path or paths to Custom Elements Manifest files, relative to the Storybook config directory. This option is ignored when `docgenServer` is off.
+Path or paths to Custom Elements Manifest files, relative to the Storybook config directory. Use it to bring a manifest from the generator of your choice; elements it does not declare are still read from your sources. This option is ignored when `docgenServer` is off.
 
 #### `docgen`
 

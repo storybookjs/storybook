@@ -1,7 +1,10 @@
 {
   "id": "button",
   "name": "Button",
-  "argTypes": { "label": { "name": "label", "type": { "name": "string" } } },
+  "argTypes": {
+    "label": { "name": "label", "type": { "name": "string" } },
+    "size": { "name": "size", "type": { "name": "string" } }
+  },
   "stories": {
     "button--primary": { "snippet": "<Button label=\"Hi\" disabled />" },
     "button--slow": { "snippet": "timeout" }

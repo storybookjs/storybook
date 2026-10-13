@@ -73,12 +73,13 @@ Comparison collects all argument and snippet regressions. Missing components fai
     "componentId": "button",
     "storyId": "button--primary",
     "violation": "lost-representation",
+    "arg": "onclick",
     "reason": "The static printer cannot resolve this binding",
     "approvedBy": "Review Lead"
   }
 ]
 ```
 
-Omit `storyId` for component argument violations. A waiver matches the exact component, optional story and violation kind. Reasons and approvers must be nonempty. An unmatched waiver fails the run. The checked-in `waivers.json` starts empty; waivers require review approval.
+Omit `storyId` for component argument violations. `arg` is the violation's `arg` from `report.json`: the argument or snippet attribute name, `component` for `lost-description`, the component id for `component-removed` and `snippet` for `snippet-removed`. A waiver matches the exact component, optional story, violation kind and `arg`, so each lost argument or attribute needs its own waiver. Reasons and approvers must be nonempty. An unmatched waiver fails the run. The checked-in `waivers.json` starts empty; waivers require review approval.
 
 `report.md` contains the repository summary and violation table for the PR body. `report.json` includes build metadata, component and story counts, timeouts, gains, violations, waivers and stale waivers. The command exits with code 1 for unwaived violations or stale waivers. Attach both capture directories and the reports as PR artifacts; do not commit third-party repositories or their captures.

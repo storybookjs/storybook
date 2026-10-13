@@ -15,6 +15,7 @@ const waiversSchema = z.array(
     componentId: z.string().min(1),
     storyId: z.string().min(1).optional(),
     violation: z.string().min(1),
+    arg: z.string().min(1),
     reason: z.string().trim().min(1),
     approvedBy: z.string().trim().min(1),
   })
@@ -95,7 +96,8 @@ export function compareCaptures(options: CompareRunOptions) {
   const matches = (waiver: z.infer<typeof waiversSchema>[number], violation: CaptureViolation) =>
     waiver.componentId === violation.componentId &&
     waiver.storyId === violation.storyId &&
-    waiver.violation === violation.kind;
+    waiver.violation === violation.kind &&
+    waiver.arg === violation.arg;
   const staleWaivers = waivers.filter(
     (waiver) => !violations.some((violation) => matches(waiver, violation))
   );
@@ -146,7 +148,7 @@ export function compareCaptures(options: CompareRunOptions) {
       '',
       `Gained components: ${report.gains.join(', ') || 'none'}.`,
       ...staleWaivers.map(
-        (w) => `Stale waiver: ${w.componentId} ${w.storyId ?? ''} ${w.violation}.`
+        (w) => `Stale waiver: ${w.componentId} ${w.storyId ?? ''} ${w.violation} ${w.arg}.`
       ),
       '',
     ].join('\n')

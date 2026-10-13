@@ -28,6 +28,14 @@ const waivers = [
   {
     componentId: 'button',
     violation: 'lost-arg',
+    arg: 'label',
+    reason: 'Accepted fixture loss',
+    approvedBy: 'Review Lead',
+  },
+  {
+    componentId: 'button',
+    violation: 'lost-arg',
+    arg: 'size',
     reason: 'Accepted fixture loss',
     approvedBy: 'Review Lead',
   },
@@ -35,6 +43,7 @@ const waivers = [
     componentId: 'button',
     storyId: 'button--primary',
     violation: 'lost-attribute',
+    arg: 'disabled',
     reason: 'Accepted fixture loss',
     approvedBy: 'Review Lead',
   },
@@ -46,6 +55,7 @@ describe('capture comparison', () => {
     expect(result.passed).toBe(false);
     expect(result.violations.map((v) => [v.kind, v.arg])).toEqual([
       ['lost-arg', 'label'],
+      ['lost-arg', 'size'],
       ['lost-attribute', 'disabled'],
     ]);
     expect(result.gains).toEqual(['gained']);
@@ -63,6 +73,7 @@ describe('capture comparison', () => {
     const stale = {
       componentId: 'gained',
       violation: 'lost-arg',
+      arg: 'label',
       reason: 'Obsolete',
       approvedBy: 'Review Lead',
     };
@@ -70,6 +81,15 @@ describe('capture comparison', () => {
     const result = compareCaptures({ ...options, waivers: file });
     expect(result.unwaived).toEqual([]);
     expect(result.staleWaivers).toEqual([stale]);
+    expect(result.passed).toBe(false);
+  });
+  it('waives only the named argument', () => {
+    const options = setup();
+    const file = join(options.report, 'waivers.json');
+    writeFileSync(file, JSON.stringify(waivers.filter((waiver) => waiver.arg !== 'size')));
+    const result = compareCaptures({ ...options, waivers: file });
+    expect(result.unwaived.map((v) => [v.kind, v.arg])).toEqual([['lost-arg', 'size']]);
+    expect(result.staleWaivers).toEqual([]);
     expect(result.passed).toBe(false);
   });
 });

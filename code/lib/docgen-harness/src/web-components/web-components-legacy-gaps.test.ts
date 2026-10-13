@@ -138,7 +138,7 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     extractArgTypes('lit-basic-attributes');
     expect(warn.mock.calls).toEqual([
       [
-        'setCustomElementsManifest() is deprecated: The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.experimentalDocgenServer instead.',
+        'setCustomElementsManifest() is deprecated: The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.docgenServer instead.',
       ],
       [
         'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.',

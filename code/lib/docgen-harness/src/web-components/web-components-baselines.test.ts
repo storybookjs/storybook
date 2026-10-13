@@ -33,7 +33,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 // The unprefixed custom-elements.json is the analyzer's 1.0.0 capture; these are hand-written shapes recorded under a prefix.
 const MANIFEST_VARIANTS = ['v2', 'wca', 'unflattened'] as const;
 const EXPECTED_DEPRECATIONS = new Set([
-  'setCustomElementsManifest() is deprecated: The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.experimentalDocgenServer instead.',
+  'setCustomElementsManifest() is deprecated: The runtime Custom Elements Manifest is deprecated and will be removed in Storybook 12. Set framework.options.customElementsManifest in .storybook/main and enable features.docgenServer instead.',
   'The web-component-analyzer Custom Elements Manifest shape is deprecated and will be removed in Storybook 12. Generate a Custom Elements Manifest with @custom-elements-manifest/analyzer instead.',
 ]);
 

@@ -336,6 +336,26 @@ describe('PNPMProxy catalogs', () => {
       );
     });
 
+    it('fills in an `allowBuilds:` key that was left empty', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\nallowBuilds:\n' });
+
+      allowBuildScripts();
+
+      expect(writtenYaml()).toBe('packages:\n  - "packages/*"\nallowBuilds:\n  esbuild: true\n');
+    });
+
+    it('warns instead of throwing when `allowBuilds` holds something other than a map', () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds: [esbuild]\n' });
+
+      expect(allowBuildScripts).not.toThrow();
+      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Could not allow build scripts of esbuild in /root/pnpm-workspace.yaml'
+        )
+      );
+    });
+
     it('warns instead of throwing when the workspace file cannot be written', () => {
       vol.fromJSON({ [WORKSPACE_YAML]: 'packages:\n  - "packages/*"\n' });
       vi.mocked(writeFileSync).mockImplementation(() => {
@@ -344,7 +364,7 @@ describe('PNPMProxy catalogs', () => {
 
       expect(allowBuildScripts).not.toThrow();
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('failed to write to /root/pnpm-workspace.yaml')
+        expect.stringContaining('in /root/pnpm-workspace.yaml: Error: EACCES')
       );
     });
   });

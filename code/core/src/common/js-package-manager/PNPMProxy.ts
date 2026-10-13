@@ -346,23 +346,30 @@ export class PNPMProxy extends JsPackageManager {
     const { path, doc } = workspace;
     let changed = false;
 
-    // Add dependencies that need a build approval, unless a user decision already exists for them.
-    for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
-      if (typeof doc.getIn(['allowBuilds', pkg]) !== 'boolean') {
-        doc.setIn(['allowBuilds', pkg], true);
-        changed = true;
+    try {
+      // An `allowBuilds:` key left empty (e.g. after its last entry was removed) is a null, which
+      // `setIn` cannot descend into; start a map there. Other non-map values are user errors pnpm
+      // rejects too, so just let the update fail below.
+      if (doc.getIn(['allowBuilds']) == null) {
+        doc.setIn(['allowBuilds'], doc.createNode({}));
       }
-    }
 
-    // Write file back only if changes were needed.
-    if (changed) {
-      try {
-        writeFileSync(path, doc.toString(), 'utf8');
-      } catch (e) {
-        logger.warn(
-          `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')}: failed to write to ${path}: ${String(e)}`
-        );
+      // Add dependencies that need a build approval, unless a user decision already exists for them.
+      for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
+        if (typeof doc.getIn(['allowBuilds', pkg]) !== 'boolean') {
+          doc.setIn(['allowBuilds', pkg], true);
+          changed = true;
+        }
       }
+
+      // Write file back only if changes were needed.
+      if (changed) {
+        writeFileSync(path, doc.toString(), 'utf8');
+      }
+    } catch (e) {
+      logger.warn(
+        `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
+      );
     }
   }
 

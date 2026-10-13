@@ -65,6 +65,7 @@
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
+  - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -1811,6 +1812,12 @@ The deprecated `getStatus` and `getGraphRevision` query aliases on the `core/mod
 - `getStatus` → `queries.status`
 - `getGraphRevision` → `queries.graphRevision` (same optional `{ storyFiles }` input)
 
+### ExternalDocs and ExternalDocsContainer are removed
+
+The `ExternalDocs` and `ExternalDocsContainer` components have been removed from `@storybook/addon-docs/blocks`, along with their supporting implementation. They rendered docs pages outside of the Storybook UI, an approach that was never stabilized.
+
+To write documentation, use Doc Blocks inside MDX docs entries rendered by Storybook. To build a custom block, use the `useOf` hook. There is no supported standalone docs renderer. To show docs outside of Storybook, embed a built Storybook.
+
 ## From version 10.6.1 to 10.6.2
 
 ### `storybook dev` now blocks remote iframe embedding
@@ -2032,7 +2039,7 @@ Direct imports of `@storybook/csf-plugin` in custom builders or standalone Vite/
 
 The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon-docs` are deprecated and will be removed in Storybook 11. These components allowed rendering Storybook docs pages outside of the Storybook UI, but the approach was never stabilized and is redundant with other embedding options.
 
-If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
+If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions. Removed in Storybook 11.0; see the [11.0 section above](#externaldocs-and-externaldocscontainer-are-removed).
 
 ## From version 10.3.0 to 10.4.0
 

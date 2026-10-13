@@ -14,7 +14,10 @@ import { argTypesSchema } from './arg-types-schema.ts';
 const componentSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.preprocess(
+    (description) => (description === null ? undefined : description),
+    z.string().optional()
+  ),
   argTypes: argTypesSchema,
   stories: z.record(z.object({ snippet: z.string().nullable() })),
 });

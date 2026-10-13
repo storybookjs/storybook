@@ -127,3 +127,17 @@ it('rewrites native and POSIX absolute Windows paths before JSON encoding', asyn
     '<root>\\Button.svelte and <root>/Button.svelte'
   );
 });
+
+it('reads a legacy null component description as absent', async () => {
+  const { readCapture } = await import('./capture/files.ts');
+  const options = setup();
+  writeFileSync(
+    join(options.report, 'capture.json'),
+    readFileSync(join(options.before, 'capture.json'))
+  );
+  writeFileSync(
+    join(options.report, 'button.json'),
+    JSON.stringify({ id: 'button', name: 'Button', description: null, argTypes: {}, stories: {} })
+  );
+  expect(readCapture(options.report).components.button.description).toBeUndefined();
+});

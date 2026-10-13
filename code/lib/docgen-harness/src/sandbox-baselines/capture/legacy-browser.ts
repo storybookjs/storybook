@@ -12,6 +12,7 @@ import type { Channel } from 'storybook/internal/channels';
 import type { CapturedComponents } from './types.ts';
 
 import { readCaptureIndex } from './read-index.ts';
+import { argTypesSchema } from './arg-types-schema.ts';
 
 declare global {
   interface Window {
@@ -100,7 +101,7 @@ export async function captureLegacy({
             const docs = meta.parameters?.docs;
             return {
               name: meta.component?.name ?? meta.title,
-              description: docs?.extractComponentDescription?.(meta.component),
+              description: docs?.extractComponentDescription?.(meta.component) ?? undefined,
               argTypes: docs?.extractArgTypes?.(meta.component) ?? {},
             };
           },
@@ -133,7 +134,12 @@ export async function captureLegacy({
             stories[story.id] = { snippet: 'timeout' };
           }
         }
-        components[id] = { id, ...component, stories };
+        components[id] = {
+          id,
+          ...component,
+          argTypes: argTypesSchema.parse(component.argTypes),
+          stories,
+        };
       }
       return components;
     } finally {

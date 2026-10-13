@@ -78,11 +78,10 @@ function text(name: string, arg: unknown): string {
     : `{{ ${value(name, arg)} }}`;
 }
 
-// A literal in an attribute value or an interpolation, both of which decode `&quot;`. A VNode is a
-// plain object, but no literal renders it.
-function value(name: string, arg: unknown): string {
-  if (isVNode(arg)) {
-    throw new UnprintableArgError(name);
-  }
-  return printValue(arg, name, "'").replaceAll('"', '&quot;');
-}
+// A literal in an attribute value or an interpolation, both of which decode entities; `}\}` keeps a
+// string from ending the interpolation. A VNode is a plain object, but no literal renders it.
+const value = (name: string, arg: unknown) =>
+  printValue(arg, name, { quote: "'", opaque: isVNode })
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('}}', '}\\}');

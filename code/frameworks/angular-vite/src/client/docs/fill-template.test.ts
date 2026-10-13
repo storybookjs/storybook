@@ -31,5 +31,6 @@ describe('fillTemplate', () => {
 
   it('throws for a value it cannot print', () => {
     expect(() => fillTemplate('⟦props date⟧', { date: new Date() })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate('⟦props max⟧', { max: [Infinity] })).toThrow(UnprintableArgError);
   });
 });

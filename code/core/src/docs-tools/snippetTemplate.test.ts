@@ -18,7 +18,7 @@ describe('fillHoles', () => {
 describe('printValue', () => {
   it('prints primitives as literals', () => {
     expect(printValue('Go', 'label')).toBe('"Go"');
-    expect(printValue('it\'s "x"\n', 'label', "'")).toBe("'it\\'s \"x\"\\n'");
+    expect(printValue('it\'s "x"\n', 'label', { quote: "'" })).toBe("'it\\'s \"x\"\\n'");
     expect(printValue(3, 'n')).toBe('3');
     expect(printValue(false, 'b')).toBe('false');
     expect(printValue(null, 'x')).toBe('null');
@@ -34,5 +34,12 @@ describe('printValue', () => {
   it('throws for a value with no literal', () => {
     expect(() => printValue(() => {}, 'onClick')).toThrow(new UnprintableArgError('onClick'));
     expect(() => printValue([new Date(0)], 'dates')).toThrow(UnprintableArgError);
+  });
+
+  it('throws for a value opaque matches, at any depth', () => {
+    const opaque = (value: unknown) => Object(value).secret === true;
+    expect(() => printValue({ a: [{ secret: true }] }, 'data', { opaque })).toThrow(
+      new UnprintableArgError('data')
+    );
   });
 });

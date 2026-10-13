@@ -24,10 +24,10 @@ export interface StoryDoc {
   name: string;
   snippet?: string;
   /**
-   * `snippet` with its arg references kept, such as `<Button {...args} />`. The preview fills it
-   * with the current args through the renderer's `parameters.docs.source.fillTemplate` once they
-   * differ from the story's initial args, so the snippet follows the controls. Set only when every
-   * arg reference in it can be filled; a filler throws for a value it cannot print.
+   * The story's code with a hole, `⟦kind word…⟧`, wherever it reads an arg, such as
+   * `<Button⟦props⟧ />`; see `FillSnippetTemplate`. Once the args differ from the story's initial
+   * args, the preview fills it through the renderer's `parameters.docs.source.fillTemplate`, so the
+   * snippet follows the controls. Set only when every arg read is a hole.
    */
   template?: string;
   description?: string;

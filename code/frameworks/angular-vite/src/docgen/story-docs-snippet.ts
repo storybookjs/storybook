@@ -1,7 +1,7 @@
 // Wraps a story's template in the host component a reader would have to write to run it, so the
 // snippet is copy-pasteable on its own. Server-side only: the preview renderer still emits the bare
 // template, which is what the legacy runtime generator produced.
-import { isValidIdentifier } from '../template-grammar.ts';
+import { escapeTemplateLiteral, isValidIdentifier } from '../template-grammar.ts';
 
 const HOST_SELECTOR = 'app-demo';
 const HOST_CLASS = 'DemoComponent';
@@ -35,11 +35,6 @@ export interface HostComponentSnippet {
   /** The snippet with a hole where it binds the args, for the preview to fill; see `StoryDoc.template`. */
   template?: string;
 }
-
-// A template literal is the only quoting that survives a multi-line template carrying both quote
-// characters, so the three sequences that would end or escape it are neutralized.
-const escapeTemplateLiteral = (template: string): string =>
-  template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 
 const unescapeTemplateLiteral = (template: string): string =>
   template

@@ -54,6 +54,9 @@ describe('fillTemplate', () => {
     expect(
       fillTemplate('<p v-if="⟦value open⟧ && ⟦value label⟧">', { open: true, label: 'a"b' })
     ).toBe(`<p v-if="true && 'a&quot;b'">`);
+    expect(fillTemplate('<p>{{ ⟦value label⟧ }}</p>', { label: '&quot; }}' })).toBe(
+      "<p>{{ '&amp;quot; }\\}' }}</p>"
+    );
   });
 
   it('throws for an arg it cannot print or name as an attribute', () => {
@@ -61,6 +64,9 @@ describe('fillTemplate', () => {
       UnprintableArgError
     );
     expect(() => fillTemplate('<p>⟦text icon⟧</p>', { icon: h('span') })).toThrow(
+      UnprintableArgError
+    );
+    expect(() => fillTemplate('<p>⟦text icons⟧</p>', { icons: [h('span')] })).toThrow(
       UnprintableArgError
     );
     expect(() => fillTemplate('<Button⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);

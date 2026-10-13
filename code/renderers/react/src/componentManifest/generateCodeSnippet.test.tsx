@@ -948,6 +948,16 @@ test('template: a render function stays as written, with a hole for each arg it 
     `);
 });
 
+test('template: an element with only the spread is the component with every arg', () => {
+  const input = withCSF3(dedent`
+    export const Spread: Story = { render: (args) => <div><Button {...args} /></div> };
+  `);
+  expect(template(input, 'Spread')).toBe('const Spread = () => <div>⟦element Button⟧</div>;');
+  expect(filled(input, 'Spread', { children: 'Save', size: 'sm' })).toBe(
+    'const Spread = () => <div><Button size="sm">Save</Button></div>;'
+  );
+});
+
 test('template: destructured args are holes too', () => {
   const input = withCSF3(dedent`
     export const Destructured: Story = {
@@ -969,8 +979,12 @@ test('template: none for args no hole stands for', () => {
     export const BesideSpread: Story = { render: (args) => <Button size="sm" {...args} /> };
     export const ObjectSpread: Story = { render: (args) => <Button {...{ ...args }} /> };
     export const NoArgs: Story = { render: () => <Button /> };
+    export const Written: Story = { render: (args) => { args.label = 'x'; return <Button {...args} />; } };
+    export const Reassigned: Story = { render: ({ label }) => { label = 'x'; return <Button label={label} />; } };
+    export const Shadowed: Story = { render: (args) => <Button label={args.label} />, ...Base };
   `);
-  for (const story of ['PassedAlong', 'Rest', 'BesideSpread', 'ObjectSpread', 'NoArgs']) {
+  const stories = ['PassedAlong', 'Rest', 'BesideSpread', 'ObjectSpread', 'NoArgs'];
+  for (const story of [...stories, 'Written', 'Reassigned', 'Shadowed']) {
     expect(template(input, story)).toBeUndefined();
   }
 });

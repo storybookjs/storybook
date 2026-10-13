@@ -3,6 +3,11 @@
 
 export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
+// A template literal is the only quoting that survives a multi-line template carrying both quote
+// characters, so the three sequences that would end or escape it are neutralized.
+export const escapeTemplateLiteral = (template: string): string =>
+  template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 

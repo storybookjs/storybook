@@ -52,6 +52,9 @@ describe(getStoryContentTemplate.name, () => {
       '<Button {args} />',
       '<Button data={args} />',
       '<Button label={args[name]} />',
+      '<Input bind:value={args.value} />',
+      '<Button onclick={() => args.count++} />',
+      '<Button onclick={() => (args.label = "x")} />',
       '<p>⟦text label⟧ {args.label}</p>',
       '<p>{unclosed</p>',
     ]) {

@@ -48,7 +48,12 @@ function argEdit(node: Node, path: Node[], code: string): Edit | undefined {
     return spreadEdit(parent, grandparent!, code);
   }
   const arg = parent && argName(parent, node);
-  if (arg === undefined) {
+  // `bind:value={args.value}`, `args.count++` or `args.label = …` changes the arg too.
+  const writes =
+    path.some((ancestor) => ancestor.type === 'BindDirective') ||
+    grandparent?.type === 'UpdateExpression' ||
+    (grandparent?.type === 'AssignmentExpression' && grandparent.left === parent);
+  if (arg === undefined || writes) {
     return undefined;
   }
   // `args?.label` reads the arg through the chain around the member.

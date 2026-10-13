@@ -1,4 +1,5 @@
-import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { logger } from 'storybook/internal/client-logger';
+import { SourceType, SNIPPET_RENDERED, UnprintableArgError } from 'storybook/internal/docs-tools';
 import { addons } from 'storybook/internal/preview-api';
 
 import { fillTemplate } from '../../docs/fill-template.ts';
@@ -27,8 +28,11 @@ export const emitCode = (params: Params) => {
   let codeToEmit = rawCode;
   try {
     codeToEmit = template ? fillTemplate(template, params.args) : rawCode;
-  } catch {
+  } catch (error) {
     // An arg the template cannot show, such as a snippet, leaves the raw code.
+    if (!(error instanceof UnprintableArgError)) {
+      logger.warn(error);
+    }
   }
 
   // Using setTimeout here to ensure we're emitting after the base @storybook/svelte emits its version of the code

@@ -90,7 +90,7 @@ export function renderTemplate(
     return node.children.every(visit);
   };
 
-  if (!root.children.every(visit) || invalid) {
+  if (!root.children.every(visit) || invalid || edits.length === 0) {
     return undefined;
   }
   let templateCode = template;

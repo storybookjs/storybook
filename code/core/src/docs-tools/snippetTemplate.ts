@@ -45,33 +45,54 @@ export const fillHoles = (template: string, fill: (kind: string, words: string[]
   });
 
 /**
- * Prints an arg value as the JavaScript literal it would be written as. A value with no literal,
- * such as a function or a class instance, throws an {@link UnprintableArgError} for `name`.
+ * Code cut from a story file, without the indentation its lines after the first share there, as
+ * the first starts where the cut does.
  */
-export function printValue(value: unknown, name: string, quote: '"' | "'" = '"'): string {
-  if (typeof value === 'string') {
-    const escaped = value
-      .replace(/\\/g, '\\\\')
-      .replace(/\n/g, '\\n')
-      .replaceAll(quote, `\\${quote}`);
-    return `${quote}${escaped}${quote}`;
-  }
-  if (value === null || ['undefined', 'number', 'boolean'].includes(typeof value)) {
-    return String(value);
-  }
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => printValue(item, name, quote)).join(', ')}]`;
-  }
-  if (isPlainObject(value)) {
-    const entries = Object.entries(value)
-      .filter(([, item]) => item !== undefined)
-      .map(([key, item]) => {
-        const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) ? key : printValue(key, name, quote);
-        return `${printedKey}: ${printValue(item, name, quote)}`;
-      });
-    return entries.length === 0 ? '{}' : `{ ${entries.join(', ')} }`;
-  }
-  throw new UnprintableArgError(name);
+export function dedentStoryCode(text: string): string {
+  const [first, ...rest] = text.split('\n');
+  const indents = rest.filter((line) => line.trim()).map((line) => /^\s*/.exec(line)![0].length);
+  const indent = Math.min(...indents);
+  return [first, ...rest.map((line) => line.slice(indent))].join('\n');
+}
+
+/**
+ * Prints an arg value as the JavaScript literal it would be written as. A value with no literal,
+ * such as a function, a class instance or anything `opaque` matches at any depth, throws an
+ * {@link UnprintableArgError} for `name`.
+ */
+export function printValue(
+  value: unknown,
+  name: string,
+  { quote = '"', opaque }: { quote?: '"' | "'"; opaque?: (value: unknown) => boolean } = {}
+): string {
+  const print = (item: unknown): string => {
+    if (opaque?.(item)) {
+      throw new UnprintableArgError(name);
+    }
+    if (typeof item === 'string') {
+      const escaped = item
+        .replace(/\\/g, '\\\\')
+        .replace(/\n/g, '\\n')
+        .replaceAll(quote, `\\${quote}`);
+      return `${quote}${escaped}${quote}`;
+    }
+    if (item === null || ['undefined', 'number', 'boolean'].includes(typeof item)) {
+      return String(item);
+    }
+    if (Array.isArray(item)) {
+      return `[${item.map(print).join(', ')}]`;
+    }
+    if (isPlainObject(item)) {
+      const entries = Object.entries(item)
+        .filter(([, entry]) => entry !== undefined)
+        .map(
+          ([key, entry]) => `${/^[A-Za-z_$][\w$]*$/.test(key) ? key : print(key)}: ${print(entry)}`
+        );
+      return entries.length === 0 ? '{}' : `{ ${entries.join(', ')} }`;
+    }
+    throw new UnprintableArgError(name);
+  };
+  return print(value);
 }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {

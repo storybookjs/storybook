@@ -51,5 +51,8 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate('<p⟦props .icon=icon⟧></p>', { icon: html`<b></b>` })).toThrow(
       UnprintableArgError
     );
+    expect(() => fillTemplate('${⟦value icons⟧}', { icons: [html`<b></b>`] })).toThrow(
+      UnprintableArgError
+    );
   });
 });

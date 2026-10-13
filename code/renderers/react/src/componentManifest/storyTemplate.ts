@@ -1,5 +1,5 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
-import { hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
+import { dedentStoryCode, hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
 
 export type StoryFunction =
   | t.ArrowFunctionExpression
@@ -39,7 +39,7 @@ export function buildStoryTemplate(
   for (const { start, end, text: replacement } of edits.sort((a, b) => b.start - a.start)) {
     text = text.slice(0, start - body.start) + replacement + text.slice(end - body.start);
   }
-  const lines = dedent(text).split('\n');
+  const lines = dedentStoryCode(text).split('\n');
   const expression =
     lines.length > 1 && !t.isBlockStatement(body)
       ? `(\n${lines.map((line) => (line ? `  ${line}` : line)).join('\n')}\n)`
@@ -54,10 +54,10 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
     const edits = references?.map((reference) => {
       const parent = reference.parentPath!;
       if (parent.isJSXSpreadAttribute()) {
-        return spreadEdit(parent);
+        return spreadEdit(parent, code);
       }
       const arg = argName(parent, reference.node);
-      return arg === undefined ? undefined : readEdit(parent, arg, code);
+      return arg === undefined || isWrittenTo(parent) ? undefined : readEdit(parent, arg, code);
     });
     return edits?.every((edit) => edit !== undefined) ? (edits as Edit[]) : undefined;
   }
@@ -71,7 +71,11 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
     if (!property.isObjectProperty() || computed || !t.isIdentifier(value) || arg === undefined) {
       return undefined;
     }
-    for (const reference of referencesOf(param, value.name) ?? []) {
+    const references = referencesOf(param, value.name);
+    if (!references) {
+      return undefined;
+    }
+    for (const reference of references) {
       const shorthand = reference.parentPath;
       if (shorthand?.isObjectProperty() && shorthand.node.shorthand) {
         edits.push(nodeEdit(shorthand.node, `${arg}: ${hole('value', arg)}`));
@@ -107,16 +111,26 @@ function argName(member: NodePath, object: t.Node): string | undefined {
   return name !== undefined && isHoleWord(name) ? name : undefined;
 }
 
-// `<Button {...args}>` passes every arg but the children the element writes itself.
-function spreadEdit(spread: NodePath<t.JSXSpreadAttribute>): Edit | undefined {
+// `args.label = …`, `args.count++` or `delete args.label` changes the arg rather than reading it.
+const isWrittenTo = ({ node, parent }: NodePath) =>
+  t.isAssignmentExpression(parent, { left: node }) ||
+  t.isUpdateExpression(parent) ||
+  t.isUnaryExpression(parent, { operator: 'delete' });
+
+// `<Button {...args}>` passes every arg but the children the element writes itself, and
+// `<Button {...args} />` is the component with every arg, its children as content.
+function spreadEdit(spread: NodePath<t.JSXSpreadAttribute>, code: string): Edit | undefined {
   const opening = spread.parentPath.node as t.JSXOpeningElement;
   const element = spread.parentPath.parent as t.JSXElement;
   // Another attribute would override a spread arg or be overridden by it.
   if (opening.attributes.length > 1) {
     return undefined;
   }
-  const words = element.children.length > 0 ? ['-children'] : [];
-  return { start: opening.name.end!, end: spread.node.end!, text: hole('props', ...words) };
+  const name = code.slice(opening.name.start!, opening.name.end!);
+  if (element.children.length === 0) {
+    return isHoleWord(name) ? nodeEdit(element, hole('element', name)) : undefined;
+  }
+  return { start: opening.name.end!, end: spread.node.end!, text: hole('props', '-children') };
 }
 
 // `label={args.label}`, `{args.label}` as a child, or `args.label` in code.
@@ -140,11 +154,3 @@ const nodeEdit = (node: t.Node, text: string): Edit => ({
   end: node.end!,
   text,
 });
-
-// Without the indentation the code has in the story file, which its lines after the first share.
-function dedent(text: string): string {
-  const [first, ...rest] = text.split('\n');
-  const indents = rest.filter((line) => line.trim()).map((line) => /^\s*/.exec(line)![0].length);
-  const indent = Math.min(...indents);
-  return [first, ...rest.map((line) => line.slice(indent))].join('\n');
-}

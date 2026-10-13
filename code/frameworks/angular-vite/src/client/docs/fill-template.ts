@@ -1,5 +1,7 @@
 import { type FillSnippetTemplate, fillHoles, printValue } from 'storybook/internal/docs-tools';
 
+import { escapeTemplateLiteral } from '../../template-grammar.ts';
+
 // Fills a template from the story-docs build. Its only hole is `⟦props label size⟧`, the inputs
 // the story's args may bind, which lands in the host component's `template` literal.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
@@ -16,11 +18,10 @@ function binding(name: string, value: unknown): string {
   // Angular reads `{{` in a plain attribute as an interpolation.
   return typeof value === 'string' && !value.includes('{{')
     ? ` ${name}="${escapeAttribute(value)}"`
-    : ` [${name}]="${escapeAttribute(printValue(value, name, "'"))}"`;
+    : ` [${name}]="${escapeAttribute(printValue(value, name, { quote: "'", opaque: isNonFinite }))}"`;
 }
 
 const escapeAttribute = (text: string) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
-// The template sits in a template literal, so what would end or escape it is escaped.
-const escapeTemplateLiteral = (text: string) =>
-  text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+// An Angular template has no `NaN` or `Infinity`; it would read them as component fields.
+const isNonFinite = (value: unknown) => typeof value === 'number' && !Number.isFinite(value);

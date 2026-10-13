@@ -1,5 +1,5 @@
 import { types as t } from 'storybook/internal/babel';
-import { hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
+import { dedentStoryCode, hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
 import type { StrictArgTypes } from 'storybook/internal/types';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
@@ -79,7 +79,7 @@ export function litTemplate(
     text += next;
   }
   // The code has no hole bracket, so a bracket in the text is a hole written for an arg.
-  return hasHoleBracket(text) ? dedent(text.trim()) : undefined;
+  return hasHoleBracket(text) ? dedentStoryCode(text.trim()) : undefined;
 }
 
 // The expression as written with `⟦value arg⟧` for each arg it reads, or `undefined` when it reads
@@ -129,11 +129,3 @@ function argName(expression: t.Expression, scope: TemplateScope): string | undef
 
 const bindsName = (param: t.Node, names: Set<string>) =>
   Object.keys(t.getBindingIdentifiers(param)).some((name) => names.has(name));
-
-// Without the indentation the html has in the story file, which its lines after the first share.
-function dedent(text: string): string {
-  const [first, ...rest] = text.split('\n');
-  const indents = rest.filter((line) => line.trim()).map((line) => /^\s*/.exec(line)![0].length);
-  const indent = Math.min(...indents);
-  return [first, ...rest.map((line) => line.slice(indent))].join('\n');
-}

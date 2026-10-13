@@ -365,11 +365,14 @@ const argsSnippet = (
       ? argsTemplate(tag, Object.keys(args), argTypes ?? {}, declaration)
       : undefined;
   const script = printListenerScript(tag, snippet.listeners);
-  const template = !script ? element : hasHoleBracket(script) ? undefined : `${element}\n${script}`;
+  const template =
+    element && !(script && hasHoleBracket(script))
+      ? [element, script].filter(Boolean).join('\n')
+      : undefined;
 
   return {
     ...(printed ? { snippet: printElementSnippet(snippet) } : {}),
-    ...(element && template ? { template } : {}),
+    ...(template ? { template } : {}),
     ...joinWarnings(warnings),
   };
 };

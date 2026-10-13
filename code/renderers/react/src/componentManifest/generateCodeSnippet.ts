@@ -39,13 +39,14 @@ export function getCodeSnippet(
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
-  const fnPath = findStoryFunction(csf, storyName, resolver.ctx);
+  const { fnPath, runs } = findStoryFunction(csf, storyName, resolver.ctx);
   // A render function from another file has no source in this one to keep as written.
   const inOtherFile =
     fnPath && fnPath.findParent((path) => path.isProgram())?.node !== csf._ast.program;
-  const template = inOtherFile
-    ? undefined
-    : buildStoryTemplate(storyName, fnPath, componentName, csf._file.code);
+  const template =
+    runs && !inOtherFile
+      ? buildStoryTemplate(storyName, fnPath, componentName, csf._file.code)
+      : undefined;
   return {
     node: buildSnippetNode(storyName, fnPath?.node, componentName, args),
     imports,
@@ -54,12 +55,15 @@ export function getCodeSnippet(
   };
 }
 
-/** The story function itself, its own `render`, or the meta `render` it falls back to. */
+/**
+ * The story function itself, its own `render`, or the meta `render` it falls back to. `runs` is
+ * whether that is the function the story renders with, or that it has none, rather than a guess.
+ */
 function findStoryFunction(
   csf: CsfFile,
   storyName: string,
   ctx: ReferenceContext
-): NodePath<StoryFunction> | undefined {
+): { fnPath?: NodePath<StoryFunction>; runs: boolean } {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
 
   if (!storyDeclaration) {
@@ -69,10 +73,8 @@ function findStoryFunction(
 
   const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
 
-  let storyFn: NodePath<StoryFunction> | undefined;
-
   if (normalizedStory.type === 'fn') {
-    storyFn = normalizedStory.path;
+    return { fnPath: normalizedStory.path, runs: true };
   }
 
   const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
@@ -83,14 +85,9 @@ function findStoryFunction(
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
   // A render shadowed by a later spread is still the best static guess for this manifest,
-  // which degrades to synthesis rather than suppressing snippets.
-  if (!storyFn) {
-    storyFn =
-      renderFunctionOf(storyRender) ??
-      (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
-  }
-
-  return storyFn;
+  // which degrades to synthesis rather than suppressing snippets, but gets no template.
+  const render = storyRender.kind === 'missing' ? metaRender : storyRender;
+  return { fnPath: renderFunctionOf(render), runs: render.kind !== 'unresolved' };
 }
 
 function buildSnippetNode(

@@ -65,12 +65,10 @@ function text(name: string, value: unknown): string {
 }
 
 // A lit template or directive has no literal; only the story's own render shows it.
-function literal(name: string, value: unknown): string {
-  if (Object.keys(Object(value)).some((key) => key.includes('$lit'))) {
-    throw new UnprintableArgError(name);
-  }
-  return printValue(value, name);
-}
+const literal = (name: string, value: unknown) =>
+  printValue(value, name, {
+    opaque: (item) => Object.keys(Object(item)).some((key) => key.includes('$lit')),
+  });
 
 const isUnset = (value: unknown) =>
   [undefined, null, false, ''].includes(value as never) || typeof value === 'function';

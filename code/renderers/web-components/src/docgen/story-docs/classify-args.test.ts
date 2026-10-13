@@ -93,4 +93,15 @@ describe('classifyArg', () => {
   ])('$key', ({ key, isFunction, expected }) => {
     expect(classifyArg(key, isFunction, argTypes, declaration)).toEqual(expected);
   });
+
+  it('reads past a manifest event without a name', () => {
+    const nameless = {
+      ...declaration,
+      events: [{} as { name: string }, ...declaration.events],
+    };
+    expect(classifyArg('onShapeChange', true, argTypes, nameless)).toEqual({
+      event: 'shape-change',
+      kind: 'listener',
+    });
+  });
 });

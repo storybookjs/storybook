@@ -27,7 +27,7 @@ const renderAppDirectoryStory = (Story: React.FC) => {
 describe('RouterDecorator with parameters.nextjs.appDirectory: true', () => {
   it('exposes parentRenderTree.data.bfcacheId via LayoutRouterContext', () => {
     const Probe = () => {
-      // `parentRenderTree` is only in the LayoutRouterContext type of Next.js >= v16
+      // `parentRenderTree` is only in the LayoutRouterContext type of Next.js >= v16.4
       const layoutRouterContext = useContext(LayoutRouterContext) as unknown as {
         parentRenderTree?: { data?: { bfcacheId?: number } };
       } | null;
@@ -37,6 +37,7 @@ describe('RouterDecorator with parameters.nextjs.appDirectory: true', () => {
     expect(renderAppDirectoryStory(Probe)).toBe('<span>0</span>');
   });
 
+  // The regression requires Next.js >= 16.4; the first test guards the missing context field.
   it('supports useRouter() consumers', () => {
     const Probe = () => {
       const router = useRouter();

@@ -155,9 +155,9 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
                   parentCacheNode: newLazyCacheNode,
                   // END
 
-                  // START Next.js v16 support
+                  // START Next.js v16.4 support
                   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-ignore Only available in Next.js >= v16.0.0
+                  // @ts-ignore Only available in Next.js >= v16.4.0
                   parentRenderTree: { data: { bfcacheId: 0 } },
                   // END
                   url: pathname,

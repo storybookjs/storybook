@@ -8,7 +8,7 @@ import {
   getStoryImportPathFromEntry,
 } from 'storybook/internal/common';
 import { getService } from 'storybook/internal/core-server';
-import { storyNameFromExport } from 'storybook/internal/csf';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
   buildImportStatements,
   collectImportBindings,

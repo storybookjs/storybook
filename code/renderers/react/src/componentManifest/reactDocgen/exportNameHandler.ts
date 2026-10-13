@@ -163,9 +163,12 @@ const exportNameHandler: Handler = (documentation, componentDefinition) => {
       }
     }
 
-    // C) `export default Foo`
+    // C) `export default Foo`, `export default Foo as FooType`
     if (stmt.isExportDefaultDeclaration()) {
-      const decl = stmt.get('declaration');
+      let decl: NodePath<t.Node> = stmt.get('declaration');
+      while (decl.isTSAsExpression() || decl.isParenthesizedExpression()) {
+        decl = decl.get('expression') as NodePath<t.Node>;
+      }
       if (decl.isIdentifier() && decl.node.name === localName) {
         documentation.set('exportName', 'default');
         return;

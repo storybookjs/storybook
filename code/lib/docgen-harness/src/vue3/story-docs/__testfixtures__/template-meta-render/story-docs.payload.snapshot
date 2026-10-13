@@ -20,7 +20,7 @@ import MetaRenderButton from './MetaRenderButton.vue';
 </script>
 
 <template>
-  <section class="preview"><MetaRenderButton v-bind="args" /></section>
+  <section class="preview"><MetaRenderButton⟦props⟧ /></section>
 </template>",
     },
     "forms-template-meta-render--secondary": {
@@ -40,7 +40,7 @@ import MetaRenderButton from './MetaRenderButton.vue';
 </script>
 
 <template>
-  <section class="preview"><MetaRenderButton v-bind="args" /></section>
+  <section class="preview"><MetaRenderButton⟦props⟧ /></section>
 </template>",
     },
   },

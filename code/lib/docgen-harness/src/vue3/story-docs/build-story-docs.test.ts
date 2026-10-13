@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { sanitize, storyNameFromExport } from 'storybook/internal/csf';
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { Args, IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -263,8 +264,21 @@ function compileErrors(code: string): string[] {
   return [...errors, ...(template?.errors ?? [])].map(String);
 }
 
-describe('vue3 live templates', () => {
+// A story whose args the snippet cannot show falls back to its static snippet.
+function fill({ template, args }: { template: string; args: Args }): string | undefined {
+  try {
+    return fillTemplate(template, args);
+  } catch (error) {
+    if (error instanceof UnprintableArgError) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+describe('vue3 story templates', () => {
   it.each(liveStories)('$id compiles when filled with its args', (story) => {
-    expect(compileErrors(fillTemplate(story.template, story.args))).toEqual([]);
+    const filled = fill(story);
+    expect(filled === undefined ? [] : compileErrors(filled)).toEqual([]);
   });
 });

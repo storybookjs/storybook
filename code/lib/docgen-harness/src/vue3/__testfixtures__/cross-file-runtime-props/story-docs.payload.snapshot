@@ -20,7 +20,7 @@ import CrossFileRuntimeProps from './CrossFileRuntimeProps.vue';
 </script>
 
 <template>
-  <CrossFileRuntimeProps v-bind="args" />
+  ⟦element CrossFileRuntimeProps⟧
 </template>",
     },
   },

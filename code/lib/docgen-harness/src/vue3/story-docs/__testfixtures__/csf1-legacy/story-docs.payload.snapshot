@@ -20,7 +20,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  <CsfOneButton v-bind="args" />
+  ⟦element CsfOneButton⟧
 </template>",
     },
     "forms-csf1-legacy--assigned-args-override-inline": {
@@ -40,7 +40,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  <CsfOneButton v-bind="args" />
+  ⟦element CsfOneButton⟧
 </template>",
     },
     "forms-csf1-legacy--primary": {

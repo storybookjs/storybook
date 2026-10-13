@@ -20,7 +20,7 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
 </script>
 
 <template>
-  <ExtendedInterfaceProps v-bind="args" />
+  ⟦element ExtendedInterfaceProps⟧
 </template>",
     },
   },

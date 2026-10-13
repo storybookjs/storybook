@@ -20,7 +20,7 @@ import RuntimeArrayProps from './RuntimeArrayProps.vue';
 </script>
 
 <template>
-  <RuntimeArrayProps v-bind="args" />
+  ⟦element RuntimeArrayProps⟧
 </template>",
     },
   },

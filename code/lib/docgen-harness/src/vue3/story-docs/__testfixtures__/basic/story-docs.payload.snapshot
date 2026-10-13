@@ -20,7 +20,7 @@ import BasicButton from './BasicButton.vue';
 </script>
 
 <template>
-  <BasicButton v-bind="args" />
+  ⟦element BasicButton⟧
 </template>",
     },
   },

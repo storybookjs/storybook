@@ -23,16 +23,10 @@ const onSubmit = (payload: { value: string }) => console.log(payload);
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import EventListenerForm from './EventListenerForm.vue';
-
-const formatter = (value: string) => value.toUpperCase();
-
-const onSubmit = (payload: { value: string }) => console.log(payload);
 </script>
 
 <template>
-  <EventListenerForm v-bind="args /* slots: default */" :formatter="formatter" @submit="onSubmit">
-    Submit now
-  </EventListenerForm>
+  ⟦element EventListenerForm default⟧
 </template>",
     },
   },

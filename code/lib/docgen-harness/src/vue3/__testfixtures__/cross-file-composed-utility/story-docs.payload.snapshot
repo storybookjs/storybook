@@ -20,7 +20,7 @@ import UtilityComposedProps from './UtilityComposedProps.vue';
 </script>
 
 <template>
-  <UtilityComposedProps v-bind="args" />
+  ⟦element UtilityComposedProps⟧
 </template>",
     },
   },

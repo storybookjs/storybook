@@ -20,7 +20,7 @@ import CsfFourButton from './CsfFourButton.vue';
 </script>
 
 <template>
-  <CsfFourButton v-bind="args" />
+  ⟦element CsfFourButton⟧
 </template>",
     },
     "forms-csf4--primary": {
@@ -40,7 +40,7 @@ import CsfFourButton from './CsfFourButton.vue';
 </script>
 
 <template>
-  <CsfFourButton v-bind="args" />
+  ⟦element CsfFourButton⟧
 </template>",
     },
   },

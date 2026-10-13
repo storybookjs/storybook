@@ -21,16 +21,11 @@ const modelValue = ref('Accepted');
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
-import { ref } from "vue";
 import ModelToggle from './ModelToggle.vue';
-
-const checked = ref(args.checked);
-
-const modelValue = ref(args.modelValue);
 </script>
 
 <template>
-  <ModelToggle v-bind="args" v-model:checked="checked" v-model="modelValue" />
+  ⟦element ModelToggle⟧
 </template>",
     },
   },

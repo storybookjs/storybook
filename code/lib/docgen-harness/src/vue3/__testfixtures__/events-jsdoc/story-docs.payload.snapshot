@@ -21,14 +21,10 @@ const onSave = () => {};
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import EventsJsdoc from './EventsJsdoc.vue';
-
-const onCancel = () => {};
-
-const onSave = () => {};
 </script>
 
 <template>
-  <EventsJsdoc v-bind="args" @cancel="onCancel" @save="onSave" />
+  ⟦element EventsJsdoc⟧
 </template>",
     },
   },

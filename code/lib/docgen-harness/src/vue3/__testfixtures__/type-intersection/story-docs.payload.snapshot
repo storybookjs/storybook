@@ -22,7 +22,7 @@ import IntersectionProps from './IntersectionProps.vue';
 </script>
 
 <template>
-  <IntersectionProps v-bind="args" />
+  ⟦element IntersectionProps⟧
 </template>",
     },
   },

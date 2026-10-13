@@ -20,7 +20,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes v-bind="args" />
+  ⟦element PropsBasicTypes⟧
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
@@ -47,12 +47,10 @@ const token = Symbol('fixture');
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import PropsBasicTypes from './PropsBasicTypes.vue';
-
-const formatter = (value: number) => `#${value}`;
 </script>
 
 <template>
-  <PropsBasicTypes v-bind="args" :formatter="formatter" />
+  ⟦element PropsBasicTypes⟧
 </template>",
     },
   },

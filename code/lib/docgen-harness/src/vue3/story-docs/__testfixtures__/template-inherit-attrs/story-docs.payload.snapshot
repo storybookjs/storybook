@@ -20,7 +20,7 @@ import InheritAttrsPanel from './InheritAttrsPanel.vue';
 </script>
 
 <template>
-  <InheritAttrsPanel :label="args.label" />
+  <InheritAttrsPanel⟦attr label label⟧ />
 </template>",
     },
   },

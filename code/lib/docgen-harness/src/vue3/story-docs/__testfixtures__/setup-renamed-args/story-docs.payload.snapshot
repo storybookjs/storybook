@@ -18,16 +18,6 @@ const title = heading;
   <SetupRenamedArgs label="Renamed" :title="title" />
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
-import SetupRenamedArgs from './SetupRenamedArgs.vue';
-
-const heading = args.label;
-const title = heading;
-</script>
-
-<template>
-  <SetupRenamedArgs :label="args.label" :title="title" />
-</template>",
     },
   },
 }

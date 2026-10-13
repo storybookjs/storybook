@@ -20,7 +20,7 @@ import RuntimeObjectProps from './RuntimeObjectProps.vue';
 </script>
 
 <template>
-  <RuntimeObjectProps v-bind="args" />
+  ⟦element RuntimeObjectProps⟧
 </template>",
     },
   },

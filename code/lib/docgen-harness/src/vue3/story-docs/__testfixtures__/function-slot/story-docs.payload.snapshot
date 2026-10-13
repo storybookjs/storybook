@@ -19,14 +19,11 @@ import FunctionSlotPanel from './FunctionSlotPanel.vue';
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
-import ChildButton from './ChildButton.vue';
 import FunctionSlotPanel from './FunctionSlotPanel.vue';
 </script>
 
 <template>
-  <FunctionSlotPanel v-bind="args /* slots: default */">
-    <ChildButton label="Click me" />
-  </FunctionSlotPanel>
+  ⟦element FunctionSlotPanel default⟧
 </template>",
     },
   },

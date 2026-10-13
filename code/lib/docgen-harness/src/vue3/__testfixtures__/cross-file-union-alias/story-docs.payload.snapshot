@@ -20,9 +20,7 @@ import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
 </script>
 
 <template>
-  <CrossFileUnionAlias v-bind="args /* slots: default */">
-    {{ args.default }}
-  </CrossFileUnionAlias>
+  ⟦element CrossFileUnionAlias default⟧
 </template>",
     },
   },

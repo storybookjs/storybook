@@ -20,7 +20,7 @@ import TemplateEscapedInterpolation from './TemplateEscapedInterpolation.vue';
 </script>
 
 <template>
-  <TemplateEscapedInterpolation>{{ args.label }}</TemplateEscapedInterpolation>
+  <TemplateEscapedInterpolation>⟦text label⟧</TemplateEscapedInterpolation>
 </template>",
     },
   },

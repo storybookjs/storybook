@@ -20,7 +20,7 @@ import JsdocTags from './JsdocTags.vue';
 </script>
 
 <template>
-  <JsdocTags v-bind="args" />
+  ⟦element JsdocTags⟧
 </template>",
     },
   },

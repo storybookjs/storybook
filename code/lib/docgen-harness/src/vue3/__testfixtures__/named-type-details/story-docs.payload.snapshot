@@ -42,7 +42,7 @@ import NamedTypeDetails from './NamedTypeDetails.vue';
 </script>
 
 <template>
-  <NamedTypeDetails v-bind="args" />
+  ⟦element NamedTypeDetails⟧
 </template>",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
     },

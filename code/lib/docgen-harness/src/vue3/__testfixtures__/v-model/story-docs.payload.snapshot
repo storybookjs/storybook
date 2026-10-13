@@ -21,16 +21,11 @@ const modelValue = ref('typed text');
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
-import { ref } from "vue";
 import VModelInput from './VModelInput.vue';
-
-const checked = ref(args.checked);
-
-const modelValue = ref(args.modelValue);
 </script>
 
 <template>
-  <VModelInput v-bind="args" v-model:checked="checked" v-model="modelValue" />
+  ⟦element VModelInput⟧
 </template>",
     },
   },

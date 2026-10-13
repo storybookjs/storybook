@@ -20,7 +20,7 @@ import PropSlotCollision from './PropSlotCollision.vue';
 </script>
 
 <template>
-  <PropSlotCollision v-bind="args" />
+  ⟦element PropSlotCollision⟧
 </template>",
     },
   },

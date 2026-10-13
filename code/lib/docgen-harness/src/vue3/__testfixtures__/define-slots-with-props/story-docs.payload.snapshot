@@ -20,12 +20,7 @@ import DefineSlotsWithProps from './DefineSlotsWithProps.vue';
 </script>
 
 <template>
-  <DefineSlotsWithProps v-bind="args /* slots: default, icon */">
-    {{ args.default }}
-    <template #icon>
-      {{ args.icon }}
-    </template>
-  </DefineSlotsWithProps>
+  ⟦element DefineSlotsWithProps default icon⟧
 </template>",
     },
   },

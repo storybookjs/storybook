@@ -20,7 +20,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  <ArgsReferencesButton v-bind="args" />
+  ⟦element ArgsReferencesButton⟧
 </template>",
     },
     "forms-args-references--spread-object-arg": {
@@ -45,7 +45,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  <ArgsReferencesButton v-bind="args" />
+  ⟦element ArgsReferencesButton⟧
 </template>",
     },
     "forms-args-references--unreadable-spread-arg": {

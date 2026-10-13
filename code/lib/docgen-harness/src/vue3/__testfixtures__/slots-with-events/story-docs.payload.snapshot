@@ -25,12 +25,7 @@ import SlotsWithEvents from './SlotsWithEvents.vue';
 </script>
 
 <template>
-  <SlotsWithEvents v-bind="args /* slots: default, leading */">
-    {{ args.default }}
-    <template #leading>
-      {{ args.leading }}
-    </template>
-  </SlotsWithEvents>
+  ⟦element SlotsWithEvents default leading⟧
 </template>",
     },
   },

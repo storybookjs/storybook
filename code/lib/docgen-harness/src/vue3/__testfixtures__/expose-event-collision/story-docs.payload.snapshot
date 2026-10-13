@@ -20,7 +20,7 @@ import ExposeEventCollision from './ExposeEventCollision.vue';
 </script>
 
 <template>
-  <ExposeEventCollision v-bind="args" />
+  ⟦element ExposeEventCollision⟧
 </template>",
     },
   },

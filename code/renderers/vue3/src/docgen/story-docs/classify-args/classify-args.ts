@@ -74,10 +74,8 @@ export interface ClassifyArgsResult {
    * ignore them even where Vue itself would treat a present-but-undefined value differently.
    */
   unset: Set<string>;
-  /** Args dropped because their values do not resolve statically, by name, as `name: source`. */
-  unresolved: Map<string, string>;
-  /** Args whose value is a function, which no control can change. */
-  functions: Set<string>;
+  /** Source text of args dropped because their values do not resolve statically. */
+  unresolved: string[];
 }
 
 /**
@@ -100,25 +98,21 @@ export function classifyArgs(
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
   const unset = new Set<string>();
-  const unresolved = new Map<string, string>();
-  const functions = new Set<string>();
+  const unresolved: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
     const result = classifyArg(name, value, docgen);
-    if (isFunctionExpression(value)) {
-      functions.add(name);
-    }
 
     if (result.kind === 'classified') {
       classified.push(result.arg);
     } else if (result.kind === 'unset') {
       unset.add(name);
     } else if (result.kind === 'unrepresentable') {
-      unresolved.set(name, `${name}: ${printValue(value)}`);
+      unresolved.push(`${name}: ${printValue(value)}`);
     }
   }
 
-  return { args: classified, unset, unresolved, functions };
+  return { args: classified, unset, unresolved };
 }
 
 /**

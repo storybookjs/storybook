@@ -16,21 +16,18 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { escapeTextContent } from '../../../docs/escape-text-content.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
-  argReference,
   createRenderContext,
+  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
-  keepsArgReference,
   importStatementForBinding,
   inlinePrimitiveSource,
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
-  slotSortKey,
   wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
@@ -267,16 +264,18 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
-      if (arg ? arg.role !== 'prop' : !state.unsetArgs.has(read.name)) {
+      const rendered = arg
+        ? arg.role === 'prop'
+          ? arg.plan.kind === 'inline'
+            ? printValue(unwrapExpression(arg.value))
+            : hoistArgValue(arg.name, arg.value, state.ctx)
+          : undefined
+        : state.unsetArgs.has(read.name)
+          ? 'undefined'
+          : undefined;
+      if (rendered === undefined) {
         return false;
       }
-      const rendered = keepsArgReference(state.ctx, read.name)
-        ? printValue(argReference(read.name))
-        : arg?.role !== 'prop'
-          ? 'undefined'
-          : arg.plan.kind === 'inline'
-            ? printValue(unwrapExpression(arg.value))
-            : hoistArgValue(arg.name, arg.value, state.ctx);
       const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
@@ -346,9 +345,6 @@ function transformInterpolation(
     return true;
   }
 
-  if (keepsArgReference(state.ctx, argName)) {
-    return true;
-  }
   const arg = state.argsByName.get(argName);
   if (!arg && state.unsetArgs.has(argName)) {
     state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: '' });
@@ -423,17 +419,13 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     }
   }
 
-  // Slot children joining an element that already renders its own content would reorder or
-  // duplicate what the story shows, so only an empty element takes them.
-  if (element.slotChildren.length > 0 && hasNonWhitespaceChildren(node)) {
-    return false;
-  }
-  const children = [
-    ...element.slotChildren,
-    ...(plan.directive && element.storyTag ? slotArgPlaceholders(node, state.ctx) : []),
-  ];
-  if (children.length > 0) {
-    const edit = slotChildrenEdit(node, children, state.template);
+  if (element.slotChildren.length > 0) {
+    // Slot children joining an element that already renders its own content would reorder or
+    // duplicate what the story shows, so only an empty element takes them.
+    if (hasNonWhitespaceChildren(node)) {
+      return false;
+    }
+    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
     if (!edit) {
       return false;
     }
@@ -441,30 +433,6 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
   }
 
   return node.children.every((child) => transformNode(child, state));
-}
-
-// In a live template, `{{ args.header }}` shows each slot arg its `v-bind="args"` passes, where
-// the element's own content does not already fill that slot.
-function slotArgPlaceholders(node: ElementNode, ctx: RenderContext): string[] {
-  const written = new Set(
-    node.children.flatMap((child) => {
-      const slot =
-        child.type === NodeTypes.ELEMENT && child.tag === 'template'
-          ? child.props.find((prop) => prop.type === NodeTypes.DIRECTIVE && prop.name === 'slot')
-          : undefined;
-      if (slot?.type === NodeTypes.DIRECTIVE) {
-        return [slot.arg?.type === NodeTypes.SIMPLE_EXPRESSION ? slot.arg.content : 'default'];
-      }
-      const blank =
-        child.type === NodeTypes.COMMENT ||
-        (child.type === NodeTypes.TEXT && child.content.trim() === '');
-      return blank ? [] : ['default'];
-    })
-  );
-  return [...(ctx.liveTemplate?.slots ?? [])]
-    .filter((slot) => keepsArgReference(ctx, slot) && !written.has(slot))
-    .sort((a, b) => slotSortKey(a).localeCompare(slotSortKey(b)))
-    .map((slot) => wrapSlotContent(slot, `{{ ${printValue(argReference(slot))} }}`));
 }
 
 /**
@@ -568,10 +536,6 @@ function transformDirective(
     if ((attributesByName.get(boundProp)?.length ?? 0) > 1) {
       return false;
     }
-    const keepsReference = keepsArgReference(state.ctx, argName);
-    if (keepsReference && arg?.role !== 'slot') {
-      return true;
-    }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
       state.edits.push(replacementFor(directive, '', state.template));
@@ -585,9 +549,12 @@ function transformDirective(
       if (!element.storyTag) {
         return false;
       }
-      const content = keepsReference
-        ? `{{ ${printValue(argReference(argName))} }}`
-        : renderSlotArgContent(arg, state.ctx, state.importBindings, state.componentImports);
+      const content = renderSlotArgContent(
+        arg,
+        state.ctx,
+        state.importBindings,
+        state.componentImports
+      );
       if (content === undefined) {
         return false;
       }
@@ -605,9 +572,6 @@ function transformDirective(
 
   // <MyButton @click="args.onClick" />
   if (directive.name === 'on' && boundProp && argName && expressionNode) {
-    if (keepsArgReference(state.ctx, argName)) {
-      return true;
-    }
     const arg = state.argsByName.get(argName);
     if (!arg && state.unsetArgs.has(argName)) {
       // An undefined handler attaches no listener, exactly as an absent binding does.
@@ -641,11 +605,7 @@ function transformDirective(
     state.edits.push({
       start: expressionNode.loc.start.offset,
       end: expressionNode.loc.end.offset,
-      text: hoistModelRef(
-        argName,
-        keepsArgReference(state.ctx, argName) ? argReference(argName) : arg?.value,
-        state.ctx
-      ),
+      text: hoistModelRef(argName, arg?.value, state.ctx),
     });
     return true;
   }
@@ -694,9 +654,8 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  const substituted = references.filter(({ name }) => !keepsArgReference(state.ctx, name));
   const replacements = new Map<string, string>();
-  for (const reference of substituted) {
+  for (const reference of references) {
     const replacement =
       replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
     if (!replacement) {
@@ -705,7 +664,7 @@ function substituteArgsExpression(
     replacements.set(reference.name, replacement);
   }
 
-  const text = substituted
+  const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
       const wrapped = wrapSubstitution(
@@ -966,14 +925,6 @@ function slotChildrenEdit(
     return { start, end: node.loc.end.offset, text: `>${joined}</${node.tag}>` };
   }
 
-  // Only slot arg placeholders join an element's own content, after it.
-  if (hasNonWhitespaceChildren(node)) {
-    const closeTag = template.lastIndexOf('</', node.loc.end.offset);
-    const end = template.slice(0, closeTag).trimEnd().length;
-    const text = children.map((child) => `\n${indentBy(child, `${baseIndent}  `)}`).join('');
-    return { start: end, end, text };
-  }
-
   if (node.children.length > 0) {
     const start = node.children[0].loc.start.offset;
     const end = node.children[node.children.length - 1].loc.end.offset;
@@ -1064,7 +1015,7 @@ function attributePropsByName(node: ElementNode): Map<string, ElementProp[]> {
  * Import statement for a template tag, matched the way Vue resolves components: the literal tag
  * first, then its PascalCase form (`<my-button>` -> `MyButton`).
  */
-function componentImportForTag(
+export function componentImportForTag(
   tag: string,
   componentImports: Map<string, string>
 ): string | undefined {

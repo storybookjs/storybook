@@ -20,7 +20,7 @@ import OptionsApiEmits from './OptionsApiEmits.vue';
 </script>
 
 <template>
-  <OptionsApiEmits v-bind="args" />
+  ⟦element OptionsApiEmits⟧
 </template>",
     },
   },

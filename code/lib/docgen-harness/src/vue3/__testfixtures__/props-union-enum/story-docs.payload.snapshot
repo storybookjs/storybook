@@ -20,7 +20,7 @@ import PropsUnionEnum from './PropsUnionEnum.vue';
 </script>
 
 <template>
-  <PropsUnionEnum v-bind="args" />
+  ⟦element PropsUnionEnum⟧
 </template>",
     },
   },

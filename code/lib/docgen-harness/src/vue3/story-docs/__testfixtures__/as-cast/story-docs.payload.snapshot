@@ -20,7 +20,7 @@ import AsCastButton from './AsCastButton.vue';
 </script>
 
 <template>
-  <AsCastButton v-bind="args" />
+  ⟦element AsCastButton⟧
 </template>",
     },
   },

@@ -19,14 +19,11 @@ const modelValue = ref('Draft text');
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
-import { ref } from "vue";
 import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
-
-const modelValue = ref(args.modelValue);
 </script>
 
 <template>
-  <TemplateVModelExpansion v-bind="args" v-model="modelValue" />
+  <TemplateVModelExpansion⟦props⟧ />
 </template>",
     },
   },

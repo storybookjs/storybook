@@ -20,7 +20,7 @@ import { ImportOverride as ImportOverrideButton } from 'my-design-system';
 </script>
 
 <template>
-  <ImportOverrideButton v-bind="args" />
+  ⟦element ImportOverrideButton⟧
 </template>",
     },
   },

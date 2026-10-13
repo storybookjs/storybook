@@ -35,11 +35,11 @@ import TemplateArgsExpression from './TemplateArgsExpression.vue';
   <div
     :style="{
       '--sidebar-width-collapsed': '52px',
-      width: args.isCollapsed ? '52px' : '176px',
+      width: ⟦value isCollapsed⟧ ? '52px' : '176px',
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression v-bind="args" />
+    <TemplateArgsExpression⟦props⟧ />
   </div>
 </template>",
     },
@@ -75,11 +75,11 @@ import TemplateArgsExpression from './TemplateArgsExpression.vue';
   <div
     :style="{
       '--sidebar-width-collapsed': '52px',
-      width: args.isCollapsed ? '52px' : '176px',
+      width: ⟦value isCollapsed⟧ ? '52px' : '176px',
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression v-bind="args" />
+    <TemplateArgsExpression⟦props⟧ />
   </div>
 </template>",
     },

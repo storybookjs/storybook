@@ -26,7 +26,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  <ArgsFormattingButton v-bind="args" />
+  ⟦element ArgsFormattingButton⟧
 </template>",
     },
     "forms-args-formatting--unset-arg": {
@@ -46,7 +46,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  <ArgsFormattingButton v-bind="args" />
+  ⟦element ArgsFormattingButton⟧
 </template>",
     },
   },

@@ -20,7 +20,7 @@ import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';
 </script>
 
 <template>
-  <RuntimeMultiConstructor v-bind="args" />
+  ⟦element RuntimeMultiConstructor⟧
 </template>",
     },
   },

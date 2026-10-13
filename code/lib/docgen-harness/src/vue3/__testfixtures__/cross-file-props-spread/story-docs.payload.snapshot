@@ -20,7 +20,7 @@ import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
 </script>
 
 <template>
-  <CrossFilePropsSpread v-bind="args" />
+  ⟦element CrossFilePropsSpread⟧
 </template>",
     },
   },

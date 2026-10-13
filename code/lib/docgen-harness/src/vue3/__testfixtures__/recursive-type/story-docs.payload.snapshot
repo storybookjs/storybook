@@ -25,7 +25,7 @@ import RecursiveTree from './RecursiveTree.vue';
 </script>
 
 <template>
-  <RecursiveTree v-bind="args" />
+  ⟦element RecursiveTree⟧
 </template>",
     },
   },

@@ -20,7 +20,7 @@ import DestructuredProps from './DestructuredProps.vue';
 </script>
 
 <template>
-  <DestructuredProps v-bind="args" />
+  ⟦element DestructuredProps⟧
 </template>",
     },
   },

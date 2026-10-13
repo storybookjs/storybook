@@ -20,7 +20,7 @@ import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
 </script>
 
 <template>
-  <ImportedInterfaceProps v-bind="args" />
+  ⟦element ImportedInterfaceProps⟧
 </template>",
     },
   },

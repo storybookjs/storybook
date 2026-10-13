@@ -20,7 +20,7 @@ import DefineExpose from './DefineExpose.vue';
 </script>
 
 <template>
-  <DefineExpose v-bind="args" />
+  ⟦element DefineExpose⟧
 </template>",
     },
   },

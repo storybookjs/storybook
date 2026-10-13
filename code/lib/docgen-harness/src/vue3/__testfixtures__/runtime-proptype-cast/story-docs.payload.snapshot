@@ -20,7 +20,7 @@ import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
 </script>
 
 <template>
-  <RuntimePropTypeCast v-bind="args" />
+  ⟦element RuntimePropTypeCast⟧
 </template>",
     },
   },

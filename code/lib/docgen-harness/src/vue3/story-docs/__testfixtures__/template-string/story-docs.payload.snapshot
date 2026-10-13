@@ -20,7 +20,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <TemplateStringButton v-bind="args" />
+  <TemplateStringButton⟦props⟧ />
 </template>",
     },
     "forms-template-string--primary": {
@@ -42,7 +42,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton v-bind="args" /></div>
+  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton⟦props⟧ /></div>
 </template>",
     },
   },

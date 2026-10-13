@@ -22,7 +22,7 @@ import PropsGeneric from './PropsGeneric.vue';
 </script>
 
 <template>
-  <PropsGeneric v-bind="args" />
+  ⟦element PropsGeneric⟧
 </template>",
     },
   },

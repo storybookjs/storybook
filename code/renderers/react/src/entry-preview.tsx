@@ -6,7 +6,7 @@ import { global } from '@storybook/global';
 
 import { configure } from 'storybook/test';
 
-import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
+import { createEventWrapper, getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
 import type { Decorator } from './public-types.ts';
 
 export { render } from './render.tsx';
@@ -46,25 +46,6 @@ export const parameters = {
   renderer: 'react',
 };
 
-export const createEventWrapper = (act: (cb: () => unknown) => unknown) => {
-  let actDepth = 0;
-
-  return (cb: () => unknown) => {
-    // React clears the active act queue when a nested act exits, so keep the wrapper re-entrant
-    // while we are already inside the outer flush from user-event's focus/blur handlers.
-    if (actDepth > 0) {
-      return cb();
-    }
-
-    actDepth += 1;
-    try {
-      return act(() => cb());
-    } finally {
-      actDepth -= 1;
-    }
-  };
-};
-
 export const beforeAll = async () => {
   try {
     // copied from
@@ -102,14 +83,7 @@ export const beforeAll = async () => {
           setReactActEnvironment(previousActEnvironment);
         }
       },
-      eventWrapper: createEventWrapper((cb) => {
-        let result;
-        act(() => {
-          result = cb();
-          return result;
-        });
-        return result;
-      }),
+      eventWrapper: createEventWrapper(act),
     });
   } catch (e) {
     // no-op

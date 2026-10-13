@@ -1,19 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createEventWrapper } from './entry-preview.tsx';
+import { createEventWrapper } from './act-compat.ts';
 
 describe('createEventWrapper', () => {
   let act: ReturnType<typeof vi.fn>;
   let shouldThrow = false;
+  let shouldReturnThenable = false;
 
   beforeEach(() => {
     shouldThrow = false;
-    act = vi.fn((cb: () => void) => {
+    shouldReturnThenable = false;
+    act = vi.fn((cb: () => unknown) => {
       if (shouldThrow) {
         shouldThrow = false;
         throw new Error('boom');
       }
-      return cb();
+      const result = cb();
+      return shouldReturnThenable ? { then: () => undefined } : result;
     });
   });
 
@@ -37,4 +40,11 @@ describe('createEventWrapper', () => {
     expect(() => wrapper(() => undefined)).not.toThrow();
     expect(act).toHaveBeenCalledTimes(2);
   });
+  it('returns the callback result rather than the act thenable', () => {
+    shouldReturnThenable = true;
+    const wrapper = createEventWrapper(act);
+
+    expect(wrapper(() => 'callback result')).toBe('callback result');
+  });
+
 });

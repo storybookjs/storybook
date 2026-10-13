@@ -62,6 +62,27 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
   };
 }
 
+export function createEventWrapper(act: (cb: () => unknown) => unknown) {
+  let actDepth = 0;
+
+  return <T>(cb: () => T): T => {
+    if (actDepth > 0) {
+      return cb();
+    }
+
+    actDepth += 1;
+    try {
+      let result!: T;
+      act(() => {
+        result = cb();
+      });
+      return result;
+    } finally {
+      actDepth -= 1;
+    }
+  };
+}
+
 export const getAct = async ({ disableAct = false }: { disableAct?: boolean } = {}) => {
   if (process.env.NODE_ENV === 'production' || disableAct) {
     return (cb: (...args: any[]) => any) => cb();

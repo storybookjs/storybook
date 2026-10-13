@@ -306,7 +306,7 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-    } = await getStorybookData({ configDir });
+    } = await getStorybookData({ configDir, packageManagerName: options.packageManager });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
@@ -478,7 +478,10 @@ export const generateUpgradeSpecs = async (
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
   if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
+    const satelliteDependencies = Object.keys(dependencies).filter(
+      (dependency) =>
+        isSatelliteAddon(dependency) && !dependencies[dependency]?.startsWith('workspace:')
+    );
 
     if (satelliteDependencies.length > 0) {
       try {

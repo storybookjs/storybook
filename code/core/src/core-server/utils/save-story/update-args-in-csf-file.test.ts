@@ -449,30 +449,48 @@ describe.each([
   ['CSF3 satisfies', (object: string) => `${object} satisfies Story`],
   ['CSF4', (object: string) => `meta.story(${object})`],
 ] as const)('%s spread args', (format, story) => {
+  const onClick = () => {};
+  const inheritedArgs = { size: 'small', baseOnly: true, onClick };
+
   test.each([
-    ['inserts missing args', '...Base, parameters: { layout: "centered" }, ...Override'],
-    ['inherits args from a single spread', '...Base'],
-    ['preserves args when the last spread has none', '...Base, ...WithoutArgs'],
-    ['handles spreads without args', '...WithoutArgs'],
-    ['handles null spreads', '...Base, ...Nothing'],
-    ['preserves explicitly cleared args', '...Base, ...Cleared'],
+    [
+      'merges args from multiple spreads',
+      '...Base, parameters: { layout: "centered" }, ...Override',
+      inheritedArgs,
+    ],
+    ['inherits args from a single spread', '...Base', { size: 'large', baseOnly: true }],
+    [
+      'preserves args when the last spread has none',
+      '...Base, ...WithoutArgs',
+      { size: 'large', baseOnly: true },
+    ],
+    ['handles spreads without args', '...WithoutArgs', {}],
+    [
+      'merges args when a later spread has undefined args',
+      '...Base, ...Cleared',
+      { size: 'large', baseOnly: true },
+    ],
     [
       'preserves existing args when a later spread has none',
       'args: { size: "small" }, ...WithoutArgs',
+      { size: 'small' },
     ],
     [
       'moves existing args past spreads',
-      'args: { label: "old", disabled: true }, ...Base, ...Override',
+      'args: { label: "old", size: "medium", disabled: true }, ...Base, ...Override',
+      { ...inheritedArgs, disabled: true },
     ],
     [
-      'moves args between spreads past the last spread',
-      '...Base, args: { label: "old", disabled: true }, ...Override',
+      'merges args between spreads in source order',
+      '...Base, args: { label: "old", size: "medium", disabled: true }, ...Override',
+      { ...inheritedArgs, disabled: true },
     ],
     [
       'updates args already after spreads',
       '...Base, ...Override, args: { label: "old", disabled: true }',
+      { disabled: true },
     ],
-  ])('%s', async (_, properties) => {
+  ])('%s', async (_, properties, expectedArgs) => {
     const csf = loadCsf(
       `${
         format === 'CSF4'
@@ -482,18 +500,13 @@ describe.each([
        export const Saved = ${story(`{ ${properties}, name: 'Saved story' }`)};`,
       { makeTitle }
     ).parse();
-    const onClick = () => {};
     const context = {
       Base: { args: { label: 'base', size: 'large', baseOnly: true } },
       Override: { args: { label: 'override', size: 'small', onClick } },
       WithoutArgs: { parameters: { layout: 'centered' } },
-      Nothing: null,
       Cleared: { args: undefined },
       meta: { story: (input: unknown) => input },
     };
-    const originalExpression = generate(csf.getStoryExport('Saved')).code;
-    const originalCode = transformSync(`(${originalExpression})`, { loader: 'ts' }).code;
-    const original = runInNewContext(originalCode, context);
     const newArgs = { label: 'saved' };
 
     await updateArgsInCsfFile(csf.getStoryExport('Saved'), newArgs);
@@ -503,7 +516,7 @@ describe.each([
     const { code } = transformSync(`(${expression})`, { loader: 'ts' });
     const result = runInNewContext(code, context);
 
-    expect(result.args).toEqual({ ...original.args, ...newArgs });
+    expect(result.args).toEqual({ ...expectedArgs, ...newArgs });
     expect(result.name).toBe('Saved story');
 
     await updateArgsInCsfFile(saved.getStoryExport('Saved'), newArgs);
@@ -513,6 +526,60 @@ describe.each([
     const updatedExpression = generate(saved.getStoryExport('Saved')).code;
     const updatedCode = transformSync(`(${updatedExpression})`, { loader: 'ts' }).code;
     const updated = runInNewContext(updatedCode, context);
-    expect(updated.args).toEqual({ ...original.args, label: 'saved again' });
+    expect(updated.args).toEqual({ ...expectedArgs, label: 'saved again' });
   });
+});
+
+test('prints composed args for a CSF3 story spread', async () => {
+  const csf = loadCsf(
+    `export default { title: 'Button' };
+     export const Saved = { ...Base };`,
+    { makeTitle }
+  ).parse();
+
+  await updateArgsInCsfFile(csf.getStoryExport('Saved'), { label: 'saved' });
+
+  expect(await format(printCsf(csf).code, { parser: 'typescript' })).toMatchInlineSnapshot(`
+    "export default { title: "Button" };
+    export const Saved = {
+      ...Base,
+
+      args: {
+        ...Base.args,
+        label: "saved",
+      },
+    };
+    "
+  `);
+});
+
+test('prints composed args for a CSF4 input spread', async () => {
+  const csf = loadCsf(
+    `import preview from '#.storybook/preview';
+     const meta = preview.meta({ title: 'Button' });
+     export const Saved = meta.story({ ...Base.input });`,
+    { makeTitle }
+  ).parse();
+
+  await updateArgsInCsfFile(csf.getStoryExport('Saved'), { label: 'saved' });
+
+  expect(await format(printCsf(csf).code, { parser: 'typescript' })).toMatchInlineSnapshot(`
+    "import preview from "#.storybook/preview";
+    const meta = preview.meta({ title: "Button" });
+    export const Saved = meta.story({
+      ...Base.input,
+
+      args: {
+        ...Base.input.args,
+        label: "saved",
+      },
+    });
+    "
+  `);
+  const expression = generate(csf.getStoryExport('Saved')).code;
+  const result = runInNewContext(`(${expression})`, {
+    Base: { input: { args: { label: 'base', size: 'large' } } },
+    meta: { story: (input: unknown) => input },
+  });
+  expect(result.args).toEqual({ label: 'saved', size: 'large' });
 });

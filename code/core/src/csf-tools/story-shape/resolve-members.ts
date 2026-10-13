@@ -523,7 +523,7 @@ const declaredMembers = (
     const referenced = bindingMembers(ctx, unwrapped.name, position, visited);
     if (referenced?.kind === 'members') {
       const members = referenced.external
-        ? externalized(referenced.members, referenced.ctx)
+        ? ctx.externalize && externalized(referenced.members, referenced.ctx)
         : referenced.members;
       if (members) {
         return { members, ...(referenced.accessor ? { accessor: referenced.accessor } : {}) };

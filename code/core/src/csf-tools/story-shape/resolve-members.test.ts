@@ -320,6 +320,33 @@ describe('spreads at the story config level', () => {
     expect(argsOf(code, 'Story')).toEqual({ args: { label: "'last'" }, unresolved: [] });
   });
 
+  it('does not read an imported alias with local names when externalization is unavailable', () => {
+    const ctx = contextOf({
+      'shared.ts': dedent`
+        const defaults = { label: 'remote' };
+        export const Shared = { args: { ...defaults } };
+      `,
+      'entry.ts': dedent`
+        import { Shared } from './shared';
+        const defaults = { label: 'local' };
+        export const Alias = Shared;
+      `,
+    });
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: {}, unresolved: ['Shared'] });
+  });
+
+  it('reads a self-contained imported alias when its values can be externalized', () => {
+    const ctx = contextOf(
+      {
+        'shared.ts': `export const Shared = { args: { label: 'remote' } };`,
+        'entry.ts': `import { Shared } from './shared'; export const Alias = Shared;`,
+      },
+      'entry.ts',
+      (node) => (isSelfContained(node) ? node : undefined)
+    );
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: { label: "'remote'" }, unresolved: [] });
+  });
+
   it('prefers an assignment over the args the declaration carries', () => {
     const code = dedent`
       export const Both = { args: { label: 'declared' } };

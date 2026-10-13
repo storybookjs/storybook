@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 
 import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
 import { dedent } from 'ts-dedent';
 
@@ -933,8 +934,8 @@ test('template: a render function stays as written, with a hole for each arg it 
   `);
   expect(template(input, 'Loading')).toMatchInlineSnapshot(`
     "const Loading = () => (
-      <Card⟦attr title title⟧>
-        {⟦value loading⟧ ? <Spinner /> : <Button⟦props -children⟧>⟦text label⟧</Button>}
+      <Card ⟦attr title title⟧>
+        {⟦value loading⟧ ? <Spinner /> : <Button ⟦props -children⟧>⟦text label⟧</Button>}
       </Card>
     );"
   `);
@@ -965,10 +966,70 @@ test('template: destructured args are holes too', () => {
     };
   `);
   expect(template(input, 'Destructured')).toBe(
-    'const Destructured = () => <List⟦attr label label⟧ items={⟦value items⟧.map((item) => item)} />;'
+    'const Destructured = () => <List ⟦attr label label⟧ items={⟦operand items⟧.map((item) => item)} />;'
   );
   expect(filled(input, 'Destructured', { label: 'L', items: ['a'] })).toBe(
     'const Destructured = () => <List label="L" items={["a"].map((item) => item)} />;'
+  );
+});
+
+test('template: keeps the layout, and an unset attribute leaves no gap', () => {
+  const input = withCSF3(dedent`
+    export const Layout: Story = {
+      render: (args) => (
+        <Button
+          {...args}
+          label={args.label}
+          size={args.size}
+          disabled
+        />
+      ),
+    };
+  `);
+  expect(filled(input, 'Layout', { label: 'Go', primary: true })).toMatchInlineSnapshot(`
+    "const Layout = () => (
+      <Button
+        primary
+        label="Go"
+        disabled
+      />
+    );"
+  `);
+});
+
+test('template: shows the static snippet once an arg overrides an attribute before the spread', () => {
+  const input = withCSF3(
+    `export const Before: Story = { render: (args) => <Button size="sm" {...args} /> };`
+  );
+  expect(template(input, 'Before')).toBe(
+    'const Before = () => <Button size="sm" ⟦props ^size⟧ />;'
+  );
+  expect(filled(input, 'Before', { label: 'Go' })).toBe(
+    'const Before = () => <Button size="sm" label="Go" />;'
+  );
+  expect(() => filled(input, 'Before', { size: 'lg' })).toThrow(UnprintableArgError);
+});
+
+test('template: keeps a literal the code reads on apart', () => {
+  const input = withCSF3(dedent`
+    export const Fields: Story = {
+      render: (args) => (
+        <Meter value={-args.n} text={args.n.toFixed(2)} big={args.n ** 2} />
+      ),
+    };
+    export const Body: Story = { render: (args) => args.style };
+  `);
+  expect(filled(input, 'Fields', { n: -1 })).toBe(
+    'const Fields = () => <Meter value={-(-1)} text={(-1).toFixed(2)} big={(-1) ** 2} />;'
+  );
+  expect(filled(input, 'Body', { style: { a: 1 } })).toBe('const Body = () => ({ a: 1 });');
+});
+
+test('template: writes a component arg by its name', () => {
+  const input = withCSF3(`export const Icon: Story = {};`);
+  const HeartIcon = () => null;
+  expect(filled(input, 'Icon', { icon: HeartIcon, onClick: () => {} })).toBe(
+    'const Icon = () => <Button icon={HeartIcon} />;'
   );
 });
 
@@ -976,15 +1037,17 @@ test('template: none for args no hole stands for', () => {
   const input = withCSF3(dedent`
     export const PassedAlong: Story = { render: (args) => <Button {...wrap(args)} /> };
     export const Rest: Story = { render: ({ label, ...rest }) => <Button {...rest} /> };
-    export const BesideSpread: Story = { render: (args) => <Button size="sm" {...args} /> };
     export const ObjectSpread: Story = { render: (args) => <Button {...{ ...args }} /> };
     export const NoArgs: Story = { render: () => <Button /> };
     export const Written: Story = { render: (args) => { args.label = 'x'; return <Button {...args} />; } };
     export const Reassigned: Story = { render: ({ label }) => { label = 'x'; return <Button label={label} />; } };
     export const Shadowed: Story = { render: (args) => <Button label={args.label} />, ...Base };
+    export const Tag: Story = { render: ({ as: Tag, label }) => <Tag>{label}</Tag> };
+    export const Spaced: Story = { render: ({ 'a b': x }) => <Button title={x} /> };
   `);
-  const stories = ['PassedAlong', 'Rest', 'BesideSpread', 'ObjectSpread', 'NoArgs'];
-  for (const story of [...stories, 'Written', 'Reassigned', 'Shadowed']) {
+  const stories = ['PassedAlong', 'Rest', 'ObjectSpread', 'NoArgs'];
+  const unusual = ['Written', 'Reassigned', 'Shadowed', 'Tag', 'Spaced'];
+  for (const story of [...stories, ...unusual]) {
     expect(template(input, story)).toBeUndefined();
   }
 });

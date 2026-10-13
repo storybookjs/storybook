@@ -6,9 +6,9 @@ import { getStoryContentTemplate } from './template.ts';
 
 describe(getStoryContentTemplate.name, () => {
   it('marks a spread as the props the element does not write itself', () => {
-    expect(getStoryContentTemplate('<Button {...args} />')).toBe('<Button⟦props⟧ />');
+    expect(getStoryContentTemplate('<Button {...args} />')).toBe('<Button ⟦props⟧ />');
     expect(getStoryContentTemplate('<Button {...args} onclick={handleClick}>Go</Button>')).toBe(
-      '<Button⟦props -onclick -children⟧ onclick={handleClick}>Go</Button>'
+      '<Button ⟦props -onclick -children⟧ onclick={handleClick}>Go</Button>'
     );
   });
 
@@ -22,7 +22,8 @@ describe(getStoryContentTemplate.name, () => {
         {#if args['loading']}…{/if}
       </Button>`);
     expect(template).toMatchInlineSnapshot(`
-      "<Button⟦attr label label⟧
+      "<Button
+        ⟦attr label label⟧
         size="small"
       >
         ⟦text children⟧
@@ -31,7 +32,8 @@ describe(getStoryContentTemplate.name, () => {
     `);
     expect(fillTemplate(template!, { label: 'Go', children: 'Save', loading: true }))
       .toMatchInlineSnapshot(`
-        "<Button label="Go"
+        "<Button
+          label="Go"
           size="small"
         >
           Save
@@ -40,10 +42,19 @@ describe(getStoryContentTemplate.name, () => {
       `);
   });
 
-  it('leaves out of a spread the props the element writes itself', () => {
-    expect(getStoryContentTemplate('<Input bind:value size="sm" {...args} />')).toBe(
-      '<Input bind:value size="sm"⟦props -value -size⟧ />'
+  it('leaves out of a spread the props the element writes after it, and marks those before', () => {
+    expect(getStoryContentTemplate('<Input label="L" {...args} bind:value size="sm" />')).toBe(
+      '<Input label="L" ⟦props ^label -value -size⟧ bind:value size="sm" />'
     );
+  });
+
+  it('reads TypeScript, and keeps a literal the code reads on apart', () => {
+    const template = getStoryContentTemplate('<Meter value={-args.n} text={args.n.toFixed(2)} />');
+    expect(template).toBe('<Meter value={-⟦operand n⟧} text={⟦operand n⟧.toFixed(2)} />');
+    expect(fillTemplate(template!, { n: -1 })).toBe(
+      '<Meter value={-(-1)} text={(-1).toFixed(2)} />'
+    );
+    expect(getStoryContentTemplate('<p>{args.label!}</p>')).toBe('<p>{⟦value label⟧!}</p>');
   });
 
   it('is undefined for args no hole stands for', () => {

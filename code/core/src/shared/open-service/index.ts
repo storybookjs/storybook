@@ -53,8 +53,10 @@ export type { StoryDocsService } from './services/story-docs/definition.ts';
 export {
   argsToFill,
   getFillTemplate,
-  prependImportToSnippet,
   selectLiveSnippetForStory,
+} from './services/story-docs/live-snippet.ts';
+export {
+  prependImportToSnippet,
   selectSnippetForStory,
   selectStoryDoc,
   selectWarningForStory,

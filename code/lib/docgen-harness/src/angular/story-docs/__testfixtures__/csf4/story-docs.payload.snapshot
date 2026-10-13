@@ -24,7 +24,7 @@ import { CsfFourComponent } from './csf4.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfFourComponent],
-  template: `<sb-csf4⟦props label⟧ (saved)="saved($event)" />`,
+  template: `<sb-csf4 ⟦props label⟧ (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}
@@ -52,7 +52,7 @@ import { CsfFourComponent } from './csf4.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfFourComponent],
-  template: `<sb-csf4⟦props label⟧ (saved)="saved($event)" />`,
+  template: `<sb-csf4 ⟦props label⟧ (saved)="saved($event)" />`,
 })
 export class DemoComponent {
   saved(event: unknown) {}

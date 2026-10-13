@@ -4,7 +4,7 @@ import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from './fill-template.ts';
 
-const template = 'template: `<app-button⟦props label size data⟧ (clicked)="clicked($event)" />`,';
+const template = 'template: `<app-button ⟦props label size data⟧ (clicked)="clicked($event)" />`,';
 
 describe('fillTemplate', () => {
   it('binds each set input the props hole lists, a string as a plain attribute', () => {
@@ -20,17 +20,17 @@ describe('fillTemplate', () => {
   });
 
   it('escapes a value for the attribute and the template literal around it', () => {
-    expect(fillTemplate('⟦props label⟧', { label: 'say "hi" & `go` ${x}' })).toBe(
+    expect(fillTemplate(' ⟦props label⟧', { label: 'say "hi" & `go` ${x}' })).toBe(
       ' label="say &quot;hi&quot; &amp; \\`go\\` \\${x}"'
     );
-    expect(fillTemplate('⟦props label⟧', { label: ["it's", '{{ x }}'] })).toBe(
+    expect(fillTemplate(' ⟦props label⟧', { label: ["it's", '{{ x }}'] })).toBe(
       ` [label]="['it\\\\'s', '{{ x }}']"`
     );
-    expect(fillTemplate('⟦props label⟧', { label: '{{ x }}' })).toBe(` [label]="'{{ x }}'"`);
+    expect(fillTemplate(' ⟦props label⟧', { label: '{{ x }}' })).toBe(` [label]="'{{ x }}'"`);
   });
 
   it('throws for a value it cannot print', () => {
-    expect(() => fillTemplate('⟦props date⟧', { date: new Date() })).toThrow(UnprintableArgError);
-    expect(() => fillTemplate('⟦props max⟧', { max: [Infinity] })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate(' ⟦props date⟧', { date: new Date() })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate(' ⟦props max⟧', { max: [Infinity] })).toThrow(UnprintableArgError);
   });
 });

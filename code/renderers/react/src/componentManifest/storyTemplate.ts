@@ -1,4 +1,5 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
+import { isOperand } from 'storybook/internal/csf-tools';
 import { dedentStoryCode, hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
 
 export type StoryFunction =
@@ -50,25 +51,30 @@ export function buildStoryTemplate(
 // An edit per arg reference, or `undefined` when one is not a hole.
 function argEdits(param: NodePath, code: string): Edit[] | undefined {
   if (param.isIdentifier()) {
-    const references = referencesOf(param, param.node.name);
-    const edits = references?.map((reference) => {
+    const edits = referencesOf(param, param.node.name)?.map((reference) => {
       const parent = reference.parentPath!;
       if (parent.isJSXSpreadAttribute()) {
         return spreadEdit(parent, code);
       }
       const arg = argName(parent, reference.node);
-      return arg === undefined || isWrittenTo(parent) ? undefined : readEdit(parent, arg, code);
+      return arg === undefined ? undefined : readEdit(parent, arg);
     });
     return edits?.every((edit) => edit !== undefined) ? (edits as Edit[]) : undefined;
   }
   if (!param.isObjectPattern()) {
     return undefined;
   }
-  const edits: Edit[] = [];
+  const edits: (Edit | undefined)[] = [];
   for (const property of param.get('properties')) {
     const { key, value, computed } = property.node as t.ObjectProperty;
     const arg = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : undefined;
-    if (!property.isObjectProperty() || computed || !t.isIdentifier(value) || arg === undefined) {
+    if (
+      !property.isObjectProperty() ||
+      computed ||
+      !t.isIdentifier(value) ||
+      arg === undefined ||
+      !isHoleWord(arg)
+    ) {
       return undefined;
     }
     const references = referencesOf(param, value.name);
@@ -80,11 +86,12 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
       if (shorthand?.isObjectProperty() && shorthand.node.shorthand) {
         edits.push(nodeEdit(shorthand.node, `${arg}: ${hole('value', arg)}`));
       } else {
-        edits.push(readEdit(reference, arg, code));
+        // `<Tag>` for `{ as: Tag }` names a component, which no literal can.
+        edits.push(reference.isJSXIdentifier() ? undefined : readEdit(reference, arg));
       }
     }
   }
-  return edits;
+  return edits.every((edit) => edit !== undefined) ? (edits as Edit[]) : undefined;
 }
 
 // The places a parameter's name is read; `undefined` when the story assigns to it.
@@ -111,42 +118,51 @@ function argName(member: NodePath, object: t.Node): string | undefined {
   return name !== undefined && isHoleWord(name) ? name : undefined;
 }
 
-// `args.label = …`, `args.count++` or `delete args.label` changes the arg rather than reading it.
-const isWrittenTo = ({ node, parent }: NodePath) =>
-  t.isAssignmentExpression(parent, { left: node }) ||
-  t.isUpdateExpression(parent) ||
-  t.isUnaryExpression(parent, { operator: 'delete' });
-
-// `<Button {...args}>` passes every arg but the children the element writes itself, and
-// `<Button {...args} />` is the component with every arg, its children as content.
+// `<Button {...args}>` passes every arg but the children and the attributes written after it, which
+// win, and `<Button {...args} />` is the component with every arg, its children as content.
 function spreadEdit(spread: NodePath<t.JSXSpreadAttribute>, code: string): Edit | undefined {
   const opening = spread.parentPath.node as t.JSXOpeningElement;
   const element = spread.parentPath.parent as t.JSXElement;
-  // Another attribute would override a spread arg or be overridden by it.
-  if (opening.attributes.length > 1) {
+  const index = opening.attributes.indexOf(spread.node);
+  if (!opening.attributes.every((attribute, i) => i === index || t.isJSXAttribute(attribute))) {
     return undefined;
   }
-  const name = code.slice(opening.name.start!, opening.name.end!);
-  if (element.children.length === 0) {
-    return isHoleWord(name) ? nodeEdit(element, hole('element', name)) : undefined;
+  const nameOf = (attribute: t.Node) =>
+    code.slice((attribute as t.JSXAttribute).name.start!, (attribute as t.JSXAttribute).name.end!);
+  const tag = code.slice(opening.name.start!, opening.name.end!);
+  if (element.children.length === 0 && opening.attributes.length === 1) {
+    return isHoleWord(tag) ? nodeEdit(element, hole('element', tag)) : undefined;
   }
-  return { start: opening.name.end!, end: spread.node.end!, text: hole('props', '-children') };
+  const words = [
+    ...opening.attributes.slice(0, index).map((attribute) => `^${nameOf(attribute)}`),
+    ...opening.attributes.slice(index + 1).map((attribute) => `-${nameOf(attribute)}`),
+    ...(element.children.length > 0 ? ['-children'] : []),
+  ];
+  return nodeEdit(spread.node, hole('props', ...words));
 }
 
-// `label={args.label}`, `{args.label}` as a child, or `args.label` in code.
-function readEdit(read: NodePath, arg: string, code: string): Edit {
+// `label={args.label}`, `{args.label}` as a child, or `args.label` in code; `undefined` for a read
+// the story writes to, such as `args.count++`.
+function readEdit(read: NodePath, arg: string): Edit | undefined {
+  const { node, parent } = read;
+  if (
+    t.isAssignmentExpression(parent, { left: node }) ||
+    t.isUpdateExpression(parent) ||
+    t.isUnaryExpression(parent, { operator: 'delete' })
+  ) {
+    return undefined;
+  }
   const container = read.parentPath;
   if (container?.isJSXExpressionContainer()) {
     const attribute = container.parentPath;
     if (attribute.isJSXAttribute() && t.isJSXIdentifier(attribute.node.name)) {
-      const start = code.slice(0, attribute.node.start!).trimEnd().length;
-      return { start, end: attribute.node.end!, text: hole('attr', attribute.node.name.name, arg) };
+      return nodeEdit(attribute.node, hole('attr', attribute.node.name.name, arg));
     }
     if (attribute.isJSXElement() || attribute.isJSXFragment()) {
       return nodeEdit(container.node, hole('text', arg));
     }
   }
-  return nodeEdit(read.node, hole('value', arg));
+  return nodeEdit(node, hole(isOperand(node, parent) ? 'operand' : 'value', arg));
 }
 
 const nodeEdit = (node: t.Node, text: string): Edit => ({

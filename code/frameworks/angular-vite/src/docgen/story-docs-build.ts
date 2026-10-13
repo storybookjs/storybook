@@ -29,7 +29,7 @@ import {
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
-import { sourceOf, userTemplate } from './story-docs-markup.ts';
+import { rendersWithArgs, sourceOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
@@ -312,17 +312,19 @@ const renderStorySnippet = async (
     // Only markup that reads its args through `argsToTemplate` alone follows the controls.
     const { expansions, representedArgs } = userMarkup;
     const onlyExpanded = representedArgs.every((arg) => expansions.some((e) => e.allows(arg)));
-    if (expansions.length === 0 || !onlyExpanded || hostArgs.fields.length > 0) {
+    if (
+      expansions.length === 0 ||
+      !onlyExpanded ||
+      hostArgs.fields.length > 0 ||
+      !rendersWithArgs(shape)
+    ) {
       return rendered;
     }
     // Each expansion stands in for its own marker until the markup is formatted, then for a hole.
     const marked = expansions.map((e) => ({ ...e, inputAttributes: [e.marker] }));
     let markup = formatTemplateMarkup(analyzeStoryTemplate(userMarkup.markup, marked).markup);
     for (const { marker, allows } of expansions) {
-      markup = markup.replace(
-        new RegExp(`\\s*${marker}(?![\\w-])`),
-        propsHole(snippetMeta, allows)
-      );
+      markup = markup.replace(new RegExp(`${marker}(?![\\w-])`), propsHole(snippetMeta, allows));
     }
     return withTemplate(
       rendered,
@@ -351,8 +353,9 @@ const renderStorySnippet = async (
     unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
     unboundArgsWarning(localName, snippetMeta, shape)
   );
-  // The component's own element follows the controls, unless the story binds an input to code.
-  if (userMarkup || fields.length > 0) {
+  // The component's own element follows the controls, unless the story binds an input to code or
+  // renders it with other props than its args.
+  if (userMarkup || fields.length > 0 || !rendersWithArgs(shape)) {
     return rendered;
   }
   const element = buildTemplate(snippetMeta.selector, {
@@ -360,7 +363,10 @@ const renderStorySnippet = async (
     outputs: snippetMeta.outputs,
     selfClosing: true,
   });
-  const markup = element.replace(/^<[\w-]+/, (tag) => tag + propsHole(snippetMeta, () => true));
+  const markup = element.replace(
+    /^<[\w-]+/,
+    (tag) => `${tag} ${propsHole(snippetMeta, () => true)}`
+  );
   // An output arg the snippet cannot read, such as `fn()`, changes nothing the template shows.
   const outputArgs = new Set(
     snippetMeta.outputs.map((name) => shape.args[name] && sourceOf(shape.args[name]))
@@ -373,7 +379,7 @@ const renderStorySnippet = async (
   return withTemplate(rendered, template);
 };
 
-// The hole a story's input args are printed into, right after the tag name, as attributes.
+// The hole a story's input args are printed into, as attributes.
 const propsHole = (snippetMeta: AngularComponentSnippetMeta, allows: (name: string) => boolean) =>
   hole('props', ...snippetMeta.inputs.filter((name) => allows(name) && isHoleWord(name)));
 

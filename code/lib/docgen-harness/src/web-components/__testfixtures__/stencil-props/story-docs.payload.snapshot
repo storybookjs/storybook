@@ -12,7 +12,7 @@
   variant="full"
   aria-label-text="Default rating"
 ></stencil-props>",
-      "template": "<stencil-props⟦props value=value max=max variant=variant aria-label-text=labelText .hovered=hovered labels=labels⟧></stencil-props>",
+      "template": "<stencil-props ⟦props value=value max=max variant=variant aria-label-text=labelText .hovered=hovered labels=labels⟧></stencil-props>",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
       "id": "webcomponentsfixtures-stencil-props--dom-node",
@@ -24,7 +24,11 @@
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
       "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
-      "template": "<stencil-props⟦attr value value⟧⟦attr max max⟧⟦attr variant variant⟧⟦attr aria-label-text labelText⟧
+      "template": "<stencil-props
+  ⟦attr value value⟧
+  ⟦attr max max⟧
+  ⟦attr variant variant⟧
+  ⟦attr aria-label-text labelText⟧
 ></stencil-props>",
     },
   },

@@ -23,7 +23,7 @@ import { LegacyButtonModule } from './non-standalone-module.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LegacyButtonModule],
-  template: `<sb-legacy-button⟦props label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-legacy-button ⟦props label⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

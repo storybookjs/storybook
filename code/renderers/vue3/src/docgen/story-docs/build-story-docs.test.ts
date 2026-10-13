@@ -287,8 +287,8 @@ export const Primary = {
         '',
         '<template>',
         '  <div v-if="⟦value active⟧" :title="⟦value label⟧ + \'!\'">',
-        '    <Icon⟦attr name size⟧ />',
-        '    <MyButton⟦props -default -header⟧>⟦text label⟧</MyButton>',
+        '    <Icon ⟦attr name size⟧ />',
+        '    <MyButton ⟦props -default -header⟧>⟦text label⟧</MyButton>',
         '  </div>',
         '</template>',
       ].join('\n')
@@ -326,8 +326,21 @@ export const Primary = {
     ['an event handler reading an arg', '<MyButton @click="args.onClick" />'],
     ['a v-model on an arg', '<MyButton v-model="args.label" />'],
     ['the args passed whole', '<MyButton :item="args" />'],
-    ['an attribute next to the args spread', '<MyButton label="x" v-bind="args" />'],
   ])('is none for %s', (_, template) => {
     expect(renderTemplate(template, new Map(), [])).toBeUndefined();
+  });
+
+  it('marks the attributes written before the args spread and leaves out those after it', () => {
+    const template = '<MyButton label="x" v-bind="args" :size="args.size" />';
+    expect(renderTemplate(template, new Map(), [])).toContain(
+      '<MyButton label="x" ⟦props ^label -size⟧ ⟦attr size size⟧ />'
+    );
+  });
+
+  it('keeps a binding the element also writes as an attribute, or binds with a modifier', () => {
+    const template = '<MyButton class="a" :class="args.c" :label.prop="args.label" />';
+    expect(renderTemplate(template, new Map(), [])).toContain(
+      '<MyButton class="a" :class="⟦value c⟧" :label.prop="⟦value label⟧" />'
+    );
   });
 });

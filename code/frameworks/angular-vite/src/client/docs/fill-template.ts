@@ -6,7 +6,10 @@ import { escapeTemplateLiteral } from '../../template-grammar.ts';
 // the story's args may bind, which lands in the host component's `template` literal.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (_kind, inputs) =>
-    inputs.map((name) => escapeTemplateLiteral(binding(name, args[name]))).join('')
+    inputs
+      .map((name) => escapeTemplateLiteral(binding(name, args[name])))
+      .filter(Boolean)
+      .join(' ')
   );
 
 // A function arg, such as an action, is left out, as no control changes it; the snippet binds an
@@ -17,8 +20,8 @@ function binding(name: string, value: unknown): string {
   }
   // Angular reads `{{` in a plain attribute as an interpolation.
   return typeof value === 'string' && !value.includes('{{')
-    ? ` ${name}="${escapeAttribute(value)}"`
-    : ` [${name}]="${escapeAttribute(printValue(value, name, { quote: "'", opaque: isNonFinite }))}"`;
+    ? `${name}="${escapeAttribute(value)}"`
+    : `[${name}]="${escapeAttribute(printValue(value, name, { quote: "'", opaque: isNonFinite }))}"`;
 }
 
 const escapeAttribute = (text: string) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');

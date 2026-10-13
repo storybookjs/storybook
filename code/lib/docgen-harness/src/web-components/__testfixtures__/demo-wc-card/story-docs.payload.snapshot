@@ -9,7 +9,7 @@
       "snippet": "<demo-wc-card back-side rows="[]">
   <span slot="prefix"></span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card .backSide=${⟦value backSide⟧} .header=${⟦value header⟧} .rows=${⟦value rows⟧}
+      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
   ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
 >",
     },
@@ -17,7 +17,7 @@
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
       "snippet": "<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>",
-      "template": "<demo-wc-card .backSide=${⟦value backSide⟧} .header=${⟦value header⟧} .rows=${⟦value rows⟧}
+      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
   ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
 >",
     },
@@ -27,7 +27,7 @@
       "snippet": "<demo-wc-card header="my header" rows="[]">
   <span slot="prefix">prefix:</span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card .backSide=${⟦value backSide⟧} .header=${⟦value header⟧} .rows=${⟦value rows⟧}
+      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
   ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
 >",
     },

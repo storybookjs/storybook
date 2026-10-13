@@ -17,23 +17,23 @@ describe('fillTemplate', () => {
   });
 
   it('leaves out an unset arg and a function arg', () => {
-    expect(fillTemplate('<Button⟦props⟧ />', { a: undefined, b: null, onClick: () => {} })).toBe(
+    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined, b: null, onClick: () => {} })).toBe(
       '<Button />'
     );
-    expect(fillTemplate('<Button⟦attr label text⟧ />', {})).toBe('<Button />');
+    expect(fillTemplate('<Button ⟦attr label text⟧ />', {})).toBe('<Button />');
   });
 
   it('leaves out the args a props hole names', () => {
-    expect(fillTemplate('<Card⟦props -default⟧ />', { default: 'x', a: 'b' })).toBe(
+    expect(fillTemplate('<Card ⟦props -default⟧ />', { default: 'x', a: 'b' })).toBe(
       '<Card a="b" />'
     );
   });
 
   it('escapes a string attribute and binds any other value', () => {
-    expect(fillTemplate('<Button⟦attr label text⟧ />', { text: 'say "hi" & go' })).toBe(
+    expect(fillTemplate('<Button ⟦attr label text⟧ />', { text: 'say "hi" & go' })).toBe(
       '<Button label="say &quot;hi&quot; &amp; go" />'
     );
-    expect(fillTemplate('<Button⟦props⟧ />', { items: ['a', "it's"], style: { gap: 1 } })).toBe(
+    expect(fillTemplate('<Button ⟦props⟧ />', { items: ['a', "it's"], style: { gap: 1 } })).toBe(
       `<Button :items="['a', 'it\\'s']" :style="{ gap: 1 }" />`
     );
   });
@@ -69,6 +69,6 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate('<p>⟦text icons⟧</p>', { icons: [h('span')] })).toThrow(
       UnprintableArgError
     );
-    expect(() => fillTemplate('<Button⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
   });
 });

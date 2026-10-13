@@ -1,16 +1,17 @@
 import {
   type FillSnippetTemplate,
   UnprintableArgError,
+  asOperand,
   fillHoles,
   printValue,
+  spreadArgs,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import { isVNode } from 'vue';
 
 // Fills a Vue story template. Besides the shared holes, `⟦element Card default header⟧` is the
-// component with every arg, the slots its words name as content, and `⟦props -default⟧` leaves out
-// the args its words name.
+// component with every arg and the slots its words name as content.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', second = ''] = words;
@@ -18,14 +19,13 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
       case 'element':
         return element(first, words.slice(1), args);
       case 'props':
-        return attributesOf(
-          args,
-          words.map((word) => word.slice(1))
-        );
+        return attributesOf(Object.fromEntries(spreadArgs(args, words)), []);
       case 'attr':
         return attribute(first, args[second]);
       case 'text':
         return text(first, args[first]);
+      case 'operand':
+        return asOperand(value(first, args[first]));
       default:
         return value(first, args[first]);
     }
@@ -39,7 +39,7 @@ function element(name: string, slots: string[], args: Args): string {
     .map(([slot, printed]) =>
       slot === 'default' ? printed : `<template #${slot}>${printed}</template>`
     );
-  const open = `<${name}${attributesOf(args, slots)}`;
+  const open = `<${[name, attributesOf(args, slots)].filter(Boolean).join(' ')}`;
   return content.length === 0
     ? `${open} />`
     : `${open}>\n${content.map((line) => `    ${line}\n`).join('')}  </${name}>`;
@@ -49,7 +49,8 @@ const attributesOf = (args: Args, leftOut: string[]) =>
   Object.entries(args)
     .filter(([name]) => !leftOut.includes(name))
     .map(([name, arg]) => attribute(name, arg))
-    .join('');
+    .filter(Boolean)
+    .join(' ');
 
 // A function arg, such as an action, is left out, as no control changes it.
 function attribute(name: string, arg: unknown): string {
@@ -60,11 +61,11 @@ function attribute(name: string, arg: unknown): string {
     throw new UnprintableArgError(name);
   }
   if (arg === true) {
-    return ` ${name}`;
+    return name;
   }
   return typeof arg === 'string'
-    ? ` ${name}="${arg.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}"`
-    : ` :${name}="${value(name, arg)}"`;
+    ? `${name}="${arg.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}"`
+    : `:${name}="${value(name, arg)}"`;
 }
 
 // Vue collapses whitespace in text and reads `<`, `{{` and `&` as markup.

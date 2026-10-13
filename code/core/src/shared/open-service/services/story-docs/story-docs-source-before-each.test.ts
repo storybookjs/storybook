@@ -7,14 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import type { StoryDocsService } from './definition.ts';
-import {
-  argsToFill,
-  getFillTemplate,
-  prependImportToSnippet,
-  selectLiveSnippetForStory,
-  selectSnippetForStory,
-  selectWarningForStory,
-} from './snippet.ts';
+import { argsToFill, getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
+import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
   storyDocsSourceBeforeEach,
@@ -24,6 +18,9 @@ import type { StoryDocsPayload } from './types.ts';
 vi.mock('storybook/preview-api', { spy: true });
 
 const mockedEmitTransformCode = vi.mocked(emitTransformCode);
+
+// Lets the story docs load and the emit after it run.
+const settled = () => new Promise((resolve) => setTimeout(resolve));
 const mockedGetService = vi.mocked(getService);
 
 const storyId = 'button--primary';
@@ -225,8 +222,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, undefined);
     await cleanup?.();
@@ -271,6 +267,39 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
   });
 
+  it('emits only the newest args when they change before an emit is done', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
+    let finishTransform = () => {};
+    mockedEmitTransformCode.mockReturnValueOnce(
+      new Promise<void>((resolve) => (finishTransform = resolve))
+    );
+    const parameters = { __isArgsStory: true, docs: { source: { fillTemplate } } };
+    const withLabel = (label: string) =>
+      ({
+        id: storyId,
+        args: { label },
+        unmappedArgs: { label },
+        initialArgs: { label: 'hi' },
+        parameters,
+      }) as unknown as StoryContext;
+
+    storyDocsSourceBeforeEach(withLabel('Go'));
+    await settled();
+    storyDocsSourceBeforeEach(withLabel('Stop'));
+    storyDocsSourceBeforeEach(withLabel('Wait'));
+    await settled();
+    expect(mockedEmitTransformCode).toHaveBeenCalledOnce();
+
+    finishTransform();
+    await settled();
+    expect(mockedEmitTransformCode).toHaveBeenCalledTimes(2);
+    expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
+      `import { Button } from './Button';\n\n<Button label="Wait" />`,
+      expect.anything(),
+      undefined
+    );
+  });
+
   it('loads the story docs again after a failed load', async () => {
     const storyDocs = mockStoryDocsService(() => Promise.reject(new Error('offline')));
     const context = { id: storyId, parameters: { __isArgsStory: true } } as unknown as StoryContext;
@@ -304,8 +333,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
     await cleanup?.();
@@ -327,8 +355,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
@@ -355,8 +382,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
@@ -382,8 +408,7 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await settled();
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',

@@ -2100,6 +2100,15 @@ describe('buildStoryDocsPayload', () => {
     const fill = (template: string | undefined, args: Record<string, unknown>) =>
       extractHostComponentTemplate(fillTemplate(template!, args));
 
+    it('is the element for a render that passes its args as props', async () => {
+      const template = await templateOf(
+        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args }) };`
+      );
+      expect(fill(template, { label: 'Stop' })).toBe(
+        '<sb-button label="Stop" (clicked)="clicked($event)" />'
+      );
+    });
+
     it("is the component's element with a props hole when the story writes no markup", async () => {
       const template = await templateOf(`export const S = { args: { label: 'Go' } };`);
       expect(template).toMatchInlineSnapshot(`
@@ -2109,7 +2118,7 @@ describe('buildStoryDocsPayload', () => {
         @Component({
           selector: 'app-demo',
           imports: [ButtonComponent],
-          template: \`<sb-button⟦props label count⟧ (clicked)="clicked($event)" />\`,
+          template: \`<sb-button ⟦props label count⟧ (clicked)="clicked($event)" />\`,
         })
         export class DemoComponent {
           clicked(event: unknown) {}
@@ -2148,7 +2157,7 @@ describe('buildStoryDocsPayload', () => {
       `);
       expect(extractHostComponentTemplate(template!)).toMatchInlineSnapshot(`
         "<div>
-            <sb-button⟦props label⟧>Hi</sb-button>
+            <sb-button ⟦props label⟧>Hi</sb-button>
         </div>"
       `);
       expect(fill(template, { label: 'Stop', count: 2 })).toBe(
@@ -2168,6 +2177,10 @@ describe('buildStoryDocsPayload', () => {
       ],
       ['an input bound to code', `export const S = { args: { label: [1, 2].join('-') } };`],
       ['a snippet with a warning', `export const S = { args: { other: 1 } };`],
+      [
+        'a render with other props than its args',
+        `export const S = { args: { label: 'Go' }, render: () => ({ props: { label: 'Fixed' } }) };`,
+      ],
     ])('is left out for %s', async (_, story) => {
       expect(await templateOf(story)).toBeUndefined();
     });

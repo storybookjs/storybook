@@ -61,3 +61,4 @@ export {
   withoutTypeCalls,
   type TemplateParts,
 } from './utils.ts';
+export { isOperand } from './operand.ts';

@@ -1,4 +1,5 @@
 import { types as t } from 'storybook/internal/babel';
+import { isOperand } from 'storybook/internal/csf-tools';
 import { dedentStoryCode, hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
 import type { StrictArgTypes } from 'storybook/internal/types';
 
@@ -29,7 +30,7 @@ export function argsTemplate(
     }
   }
   return [...words.values()].every(isHoleWord)
-    ? `<${tag}${hole('props', ...words.values())}></${tag}>`
+    ? `<${tag} ${hole('props', ...words.values())}></${tag}>`
     : undefined;
 }
 
@@ -58,19 +59,18 @@ export function litTemplate(
       return undefined;
     }
     const arg = argName(expression, scope);
-    const before = quasis.slice(0, index + 1).join('');
-    const inTag = before.lastIndexOf('<') > before.lastIndexOf('>');
-    // `name=${…}` or `name="${…}"`, written after the tag name or the attribute before it.
-    const binding = /\s+([?@]?)([^\s"'<>/=.?@][^\s"'<>/=]*)=("?)$/.exec(quasis[index]!);
+    const inTag = isInTag(quasis.slice(0, index + 1).join(''));
+    // `name=${…}`, `name="${…}"`, `?name=${…}` or `.name=${…}`, after the tag name or an attribute.
+    const binding = /(?<=\s)([?@.]?)([^\s"'<>/=.?@][^\s"'<>/=]*)=("?)$/.exec(quasis[index]!);
     // An event binding that reads an arg passes a listener, which the snippet leaves out.
     const listener = binding?.[1] === '@' && hasHoleBracket(value);
     if (inTag && binding && next.startsWith(binding[3]!) && (arg || listener)) {
       const [whole, prefix, name, quote] = binding;
-      text = text.slice(0, -whole.length);
+      const kind = prefix === '?' ? 'bool' : prefix === '.' ? 'prop' : 'attr';
+      text = listener
+        ? text.slice(0, -whole.length).trimEnd()
+        : text.slice(0, -whole.length) + hole(kind, name!, arg!);
       next = next.slice(quote!.length);
-      if (!listener) {
-        text += hole(prefix === '?' ? 'bool' : 'attr', name!, arg!);
-      }
     } else if (arg && !inTag) {
       text += hole('text', arg);
     } else {
@@ -90,11 +90,12 @@ function valueText(
   names: Set<string>,
   code: string
 ): string | undefined {
-  const edits: { start: number; end: number; arg: string }[] = [];
-  const visit = (node: t.Node): boolean => {
+  const edits: { start: number; end: number; text: string }[] = [];
+  const visit = (node: t.Node, parent?: t.Node): boolean => {
     const arg = t.isExpression(node) ? argName(node, scope) : undefined;
     if (arg !== undefined) {
-      edits.push({ start: node.start!, end: node.end!, arg });
+      const kind = isOperand(node, parent) ? 'operand' : 'value';
+      edits.push({ start: node.start!, end: node.end!, text: hole(kind, arg) });
       return isHoleWord(arg);
     }
     if (
@@ -107,18 +108,33 @@ function valueText(
     return t.VISITOR_KEYS[node.type]!.every((key) => {
       const named = !('computed' in node && node.computed) && ['property', 'key'].includes(key);
       const child = (node as unknown as Record<string, unknown>)[key];
-      return named || [child].flat().every((item) => !t.isNode(item) || visit(item));
+      return named || [child].flat().every((item) => !t.isNode(item) || visit(item, node));
     });
   };
   if (!visit(expression)) {
     return undefined;
   }
   let text = code.slice(expression.start!, expression.end!);
-  for (const { start, end, arg } of edits.sort((a, b) => b.start - a.start)) {
+  for (const { start, end, text: hole } of edits.sort((a, b) => b.start - a.start)) {
     const offset = expression.start!;
-    text = text.slice(0, start - offset) + hole('value', arg) + text.slice(end - offset);
+    text = text.slice(0, start - offset) + hole + text.slice(end - offset);
   }
   return text;
+}
+
+// Whether html that ends with `before` is inside a tag, where `>` in a quoted value does not end it.
+function isInTag(before: string): boolean {
+  let state: 'text' | 'tag' | '"' | "'" = 'text';
+  for (const [index, char] of [...before].entries()) {
+    if (state === 'text') {
+      state = char === '<' && /[a-zA-Z/]/.test(before[index + 1] ?? '') ? 'tag' : 'text';
+    } else if (state === 'tag') {
+      state = char === '>' ? 'text' : char === '"' || char === "'" ? char : 'tag';
+    } else if (char === state) {
+      state = 'tag';
+    }
+  }
+  return state !== 'text';
 }
 
 // The arg `args.label`, a destructured `label` or an alias of it reads.

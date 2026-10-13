@@ -44,7 +44,7 @@ import { MetaActionsComponent } from './meta-actions.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [MetaActionsComponent],
-  template: `<sb-meta-actions⟦props label primary⟧ (onClick)="onClick($event)" />`,
+  template: `<sb-meta-actions ⟦props label primary⟧ (onClick)="onClick($event)" />`,
 })
 export class DemoComponent {
   onClick(event: unknown) {}

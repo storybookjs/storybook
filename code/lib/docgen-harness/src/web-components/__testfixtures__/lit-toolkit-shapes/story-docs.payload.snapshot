@@ -18,7 +18,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes⟦props size=size level=level tags=tags label=label --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap .computed=computed .version=version .pressed=pressed old-size=oldSize .onSelect=onSelect target=target when=when⟧></lit-toolkit-shapes>
+      "template": "<lit-toolkit-shapes ⟦props size=size level=level tags=tags label=label --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap .computed=computed .version=version .pressed=pressed old-size=oldSize .onSelect=onSelect target=target when=when⟧></lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -58,8 +58,11 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes⟦attr size size⟧⟦attr level level⟧
-  .tags=${⟦value tags⟧}⟦attr label label⟧
+      "template": "<lit-toolkit-shapes
+  ⟦attr size size⟧
+  ⟦attr level level⟧
+  ⟦prop tags tags⟧
+  ⟦attr label label⟧
 ></lit-toolkit-shapes>",
     },
   },

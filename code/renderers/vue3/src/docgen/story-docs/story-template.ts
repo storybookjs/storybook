@@ -1,4 +1,5 @@
 import {
+  type ElementNode,
   NodeTypes,
   parse,
   type SimpleExpressionNode,
@@ -6,6 +7,7 @@ import {
 } from '@vue/compiler-dom';
 
 import { babelParseExpression, types as t } from 'storybook/internal/babel';
+import { isOperand } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole } from 'storybook/internal/docs-tools';
 
 import { createRenderContext, renderPreparedSfcSnippet } from '../shared/render-primitives.ts';
@@ -54,32 +56,39 @@ export function renderTemplate(
     if (importStatement) {
       ctx.componentImports.add(importStatement);
     }
-    for (const prop of node.props) {
+    for (const [index, prop] of node.props.entries()) {
       if (prop.type !== NodeTypes.DIRECTIVE || !prop.exp) {
         continue;
       }
       const exp = prop.exp as SimpleExpressionNode;
       const arg = prop.arg as SimpleExpressionNode | undefined;
-      // The hole prints its own space, so it replaces the one before the attribute too.
-      const attribute = (text: string) => ({
-        start: template.slice(0, prop.loc.start.offset).trimEnd().length,
-        end: prop.loc.end.offset,
-        text,
-      });
-      // `v-bind="args"` passes every arg but the slots; another attribute could override one.
+      const { start, end } = prop.loc;
+      // `v-bind="args"` passes every arg but the slots and the attributes written after it, which
+      // win; see `spreadArgs`.
       if (prop.name === 'bind' && !arg && exp.content.trim() === 'args') {
-        const attributes = node.props.filter(
-          (other) => other.type === NodeTypes.ATTRIBUTE || ['bind', 'model'].includes(other.name)
-        );
-        if (attributes.length > 1) {
-          return false;
-        }
-        edits.push(attribute(hole('props', ...slots.map((slot) => `-${slot}`))));
+        const written = node.props.map(attributeName);
+        const before = written.slice(0, index).filter((name) => name !== undefined);
+        const after = written.slice(index + 1).filter((name) => name !== undefined);
+        const words = [
+          ...before.map((name) => `^${name}`),
+          ...[...slots, ...after].map((name) => `-${name}`),
+        ];
+        edits.push({ start: start.offset, end: end.offset, text: hole('props', ...words) });
         continue;
       }
-      // `:label="args.label"` is one attribute.
-      const holes = argHoles(exp, template, (name) =>
-        prop.name === 'bind' && arg ? attribute(hole('attr', arg.content, name)) : undefined
+      // `:label="args.label"` is one attribute, unless a modifier changes how it binds or the
+      // element writes `label` itself too, as `class` next to `:class`.
+      const name =
+        prop.name === 'bind' && arg?.isStatic && prop.modifiers.length === 0
+          ? arg.content
+          : undefined;
+      const owned = node.props.every(
+        (other) => other === prop || other.type !== NodeTypes.ATTRIBUTE || other.name !== name
+      );
+      const holes = argHoles(exp, template, (word) =>
+        name !== undefined && owned
+          ? { start: start.offset, end: end.offset, text: hole('attr', name, word) }
+          : undefined
       );
       const unusual = prop.name === 'on' || prop.name === 'model' || (arg && !arg.isStatic);
       if (!holes || (holes.length > 0 && unusual)) {
@@ -140,9 +149,22 @@ function argHoles(
         : (parent === ast && whole(name)) || {
             start: offset + parent.start!,
             end: offset + parent.end!,
-            text: hole('value', name),
+            text: hole(isOperand(parent, ancestors.at(-2)?.node) ? 'operand' : 'value', name),
           }
     );
   });
   return holes.every((edit) => edit !== undefined) ? holes : undefined;
+}
+
+// The name of an attribute, a bound attribute or a `v-model`, which a `v-bind="args"` spread could
+// also set.
+function attributeName(prop: ElementNode['props'][number]): string | undefined {
+  if (prop.type === NodeTypes.ATTRIBUTE) {
+    return prop.name;
+  }
+  const arg = prop.arg as SimpleExpressionNode | undefined;
+  if (prop.name === 'model') {
+    return arg?.content ?? 'modelValue';
+  }
+  return prop.name === 'bind' && arg ? arg.content : undefined;
 }

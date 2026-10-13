@@ -5,7 +5,7 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { argsToFill, getFillTemplate, selectLiveSnippetForStory } from './snippet.ts';
+import { argsToFill, getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
@@ -13,6 +13,10 @@ export { shouldSkipStoryDocsEmit };
 // them current after that. Keyed on the story's parameters, which an args change keeps and a hot
 // update replaces, so filling in new args needs no request.
 const loads = new WeakMap<object, Promise<unknown>>();
+
+// The latest emit of each story. An args change waits for the one before it and skips its own
+// emit once a newer one has started, so with an async `transform` the newest args still win.
+const emits = new Map<string, Promise<unknown>>();
 
 /**
  * Preview `beforeEach` hook that emits a story-docs snippet to the manager Code panel via
@@ -53,9 +57,10 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     // A failed load is tried again on the next render.
     load.catch(() => loads.delete(context.parameters));
   }
-  const codePanelSnippetPromise = load
+  const previous = emits.get(storyId);
+  const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, previous])
     .then(() => {
-      if (cancelled) {
+      if (cancelled || emits.get(storyId) !== codePanelSnippetPromise) {
         return;
       }
       const { snippet, warning } = selectLiveSnippetForStory(
@@ -84,6 +89,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     .catch((error: unknown) => {
       logger.debug(`Story docs snippet for ${storyId} unavailable: ${String(error)}`);
     });
+  emits.set(storyId, codePanelSnippetPromise);
 
   return () => {
     cancelled = true;

@@ -55,7 +55,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args⟦props control formatter label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args ⟦props control formatter label⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

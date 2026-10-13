@@ -17,20 +17,20 @@ describe('fillTemplate', () => {
   });
 
   it('leaves out an unset arg and a function arg', () => {
-    expect(fillTemplate('<Button⟦props⟧ />', { a: undefined, b: null, onClick: () => {} })).toBe(
+    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined, b: null, onClick: () => {} })).toBe(
       '<Button />'
     );
-    expect(fillTemplate('<Button⟦attr label text⟧ />', {})).toBe('<Button />');
+    expect(fillTemplate('<Button ⟦attr label text⟧ />', {})).toBe('<Button />');
   });
 
   it('leaves out the args a props hole names', () => {
-    expect(fillTemplate('<Button⟦props -children⟧>Hi</Button>', { children: 'x', a: 'b' })).toBe(
+    expect(fillTemplate('<Button ⟦props -children⟧>Hi</Button>', { children: 'x', a: 'b' })).toBe(
       '<Button a="b">Hi</Button>'
     );
   });
 
   it('writes a string an attribute cannot hold as an expression', () => {
-    expect(fillTemplate('<Button⟦attr label text⟧ />', { text: 'say "hi" & go' })).toBe(
+    expect(fillTemplate('<Button ⟦attr label text⟧ />', { text: 'say "hi" & go' })).toBe(
       '<Button label={"say \\"hi\\" & go"} />'
     );
   });
@@ -52,6 +52,6 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate('<p>⟦text icon⟧</p>', { icon: <span /> })).toThrow(
       UnprintableArgError
     );
-    expect(() => fillTemplate('<Button⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
   });
 });

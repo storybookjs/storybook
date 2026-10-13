@@ -145,7 +145,7 @@ describe('buildStoryDocsPayload template', () => {
   it('is the element with a props hole for a story without a render function', async () => {
     const written = (await template(`{ args: { label: 'Hi', isOpen: true } }`))!;
     expect(written).toMatchInlineSnapshot(
-      `"<test-element⟦props label=label is-open=isOpen --accent=--accent .items=items count=count disabled=disabled active=active variant=variant heading=heading⟧></test-element>"`
+      `"<test-element ⟦props label=label is-open=isOpen --accent=--accent .items=items count=count disabled=disabled active=active variant=variant heading=heading⟧></test-element>"`
     );
     expect(
       fillTemplate(written, { label: 'Bye', isOpen: true, items: [1], '--accent': 'red' })
@@ -157,7 +157,7 @@ describe('buildStoryDocsPayload template', () => {
   it('keeps the listener script of the static snippet', async () => {
     expect(await template(`{ args: { label: 'Hi', onShapeChange: () => {} } }`))
       .toMatchInlineSnapshot(`
-        "<test-element⟦props label=label --accent=--accent is-open=isOpen .items=items count=count disabled=disabled active=active variant=variant heading=heading⟧></test-element>
+        "<test-element ⟦props label=label --accent=--accent is-open=isOpen .items=items count=count disabled=disabled active=active variant=variant heading=heading⟧></test-element>
         <script>
           {
             const host = document.currentScript.previousElementSibling;
@@ -184,15 +184,19 @@ describe('buildStoryDocsPayload template', () => {
       },
     }`);
     expect(written).toMatchInlineSnapshot(`
-      "<test-element⟦attr label label⟧⟦bool disabled disabled⟧
-        .heading=\${⟦value heading⟧}
+      "<test-element
+        ⟦attr label label⟧
+        ⟦bool disabled disabled⟧
+        ⟦prop heading heading⟧
       >
-        <span>⟦text label⟧ \\u2014 \${⟦value items⟧.map((item) => html\`<i>\${item}</i>\`)}</span>
+        <span>⟦text label⟧ \\u2014 \${⟦operand items⟧.map((item) => html\`<i>\${item}</i>\`)}</span>
       </test-element>"
     `);
     expect(fillTemplate(written!, { label: 'a < b', disabled: true, heading: 'H', items: [1] }))
       .toMatchInlineSnapshot(`
-        "<test-element label="a &lt; b" disabled
+        "<test-element
+          label="a &lt; b"
+          disabled
           .heading=\${"H"}
         >
           <span>a &lt; b \\u2014 \${[1].map((item) => html\`<i>\${item}</i>\`)}</span>

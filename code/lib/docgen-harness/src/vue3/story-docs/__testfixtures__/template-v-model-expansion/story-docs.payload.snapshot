@@ -23,7 +23,7 @@ import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
 </script>
 
 <template>
-  <TemplateVModelExpansion⟦props⟧ />
+  <TemplateVModelExpansion ⟦props⟧ />
 </template>",
     },
   },

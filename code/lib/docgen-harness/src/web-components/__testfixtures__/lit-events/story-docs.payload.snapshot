@@ -14,7 +14,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events⟦props value=value⟧></lit-events>
+      "template": "<lit-events ⟦props value=value⟧></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -47,7 +47,8 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events⟦attr value value⟧
+      "template": "<lit-events
+  ⟦attr value value⟧
 ></lit-events>",
     },
   },

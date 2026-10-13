@@ -39,7 +39,7 @@ import TemplateArgsExpression from './TemplateArgsExpression.vue';
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression⟦props⟧ />
+    <TemplateArgsExpression ⟦props⟧ />
   </div>
 </template>",
     },
@@ -79,7 +79,7 @@ import TemplateArgsExpression from './TemplateArgsExpression.vue';
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression⟦props⟧ />
+    <TemplateArgsExpression ⟦props⟧ />
   </div>
 </template>",
     },

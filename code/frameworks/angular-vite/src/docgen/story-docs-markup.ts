@@ -540,6 +540,36 @@ const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined 
   return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
 };
 
+/**
+ * Whether the story renders its component with the args as they are: it has no `render` and is no
+ * CSF2 function, or the one it has returns `props: args`, so the controls reach every input.
+ */
+export const rendersWithArgs = (shape: StoryShape): boolean => {
+  const csf2 = csf2Shape(shape);
+  const render = [shape.members, shape.metaMembers]
+    .map((members) => resolvedMember(members, 'render'))
+    .find((resolution) => resolution.kind !== 'missing');
+  if (!csf2 && !render) {
+    return true;
+  }
+  const fn = csf2?.fn ?? (render?.kind === 'value' ? declaredValue(shape, render.node) : undefined);
+  const returned = csf2?.returned ?? returnedObject(fn);
+  const [param] = t.isFunction(fn) ? fn.params : [];
+  const props = returned && resolvedProperty(returned, 'props');
+  if (!t.isIdentifier(param) || props?.kind !== 'value') {
+    return false;
+  }
+  const value = unwrapExpression(props.node as t.Expression);
+  const [spread] = t.isObjectExpression(value) ? value.properties : [];
+  return (
+    t.isIdentifier(value, { name: param.name }) ||
+    (t.isObjectExpression(value) &&
+      value.properties.length === 1 &&
+      t.isSpreadElement(spread) &&
+      t.isIdentifier(spread.argument, { name: param.name }))
+  );
+};
+
 /** The CSF2 function story and the object it returns, for `export const S = () => ({ template })`. */
 const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpression } | undefined => {
   const declared = shape.csf._storyExports[shape.exportName];

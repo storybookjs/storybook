@@ -32,7 +32,7 @@ describe('emitCode', () => {
 
   it('emits the template filled with the current args', () => {
     const rawCode = '<Button {...args}>{args.children}</Button>';
-    const template = '<Button⟦props -children⟧>⟦text children⟧</Button>';
+    const template = '<Button ⟦props -children⟧>⟦text children⟧</Button>';
     expect(emitted({ rawCode, template }, { primary: true, children: 'Save' })).toBe(
       '<Button primary>Save</Button>'
     );

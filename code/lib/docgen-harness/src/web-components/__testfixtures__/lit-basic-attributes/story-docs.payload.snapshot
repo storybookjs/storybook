@@ -12,7 +12,7 @@
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",

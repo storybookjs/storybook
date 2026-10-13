@@ -169,13 +169,14 @@ export interface SubAPI {
   setIndex: (index: API_PreparedStoryIndex) => Promise<void>;
 
   /**
-   * Jumps to the next or previous component in the index.
+   * Jumps to the first entry of the next or previous component, or to the next or previous docs
+   * page that is not attached to a component.
    *
-   * @param {Direction} direction - The direction to jump. Use -1 to jump to the previous component,
-   *   and 1 to jump to the next component.
+   * @param {Direction} direction - The direction to jump. Use -1 to jump backwards and 1 to jump
+   *   forwards.
    * @returns {void}
    */
-  jumpToComponent: (direction: Direction) => void;
+  jumpToSubtree: (direction: Direction) => void;
   /**
    * Jumps to the next or previous story in the story index.
    *
@@ -557,7 +558,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       // so this strange logic needs to be here until various client code is updated.
       return parameters || undefined;
     },
-    jumpToComponent: (direction) => {
+    jumpToSubtree: (direction) => {
       const { filteredIndex, storyId, refs, refId } = store.getState();
       const story = api.getData(storyId, refId);
 

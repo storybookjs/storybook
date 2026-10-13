@@ -939,6 +939,10 @@ Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs`
 Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
 `api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
 
+`api.jumpToComponent` is renamed to `api.jumpToSubtree`, because it now also stops on docs pages that are not attached to a component.
+Its menu entries and shortcut labels read `Previous component or page` and `Next component or page`.
+The shortcut keys `prevComponent` and `nextComponent` keep their names, so customized shortcuts carry over.
+
 ### Test runner support ended
 
 Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.

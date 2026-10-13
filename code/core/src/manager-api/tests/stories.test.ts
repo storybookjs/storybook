@@ -1047,7 +1047,7 @@ describe('stories API', () => {
       expect(result).toEqual(['component-a--story-1', 'component-a--story-2']);
     });
   });
-  describe('jumpToComponent', () => {
+  describe('jumpToSubtree', () => {
     it('works forward', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });
@@ -1055,7 +1055,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).toHaveBeenCalledWith('/story/b-c--1', undefined);
     });
     it('works backwards', () => {
@@ -1069,7 +1069,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(-1);
+      api.jumpToSubtree(-1);
       expect(navigate).toHaveBeenCalledWith('/story/a--1', undefined);
     });
     it('does nothing if you are in the last component and go forward', () => {
@@ -1083,7 +1083,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).not.toHaveBeenCalled();
     });
     it('lands on an unattached docs page', () => {
@@ -1106,7 +1106,7 @@ describe('stories API', () => {
           },
         },
       });
-      api.jumpToComponent(1);
+      api.jumpToSubtree(1);
       expect(navigate).toHaveBeenCalledWith('/docs/intro--docs', undefined);
     });
     it('does nothing if you are at the first component and go backward', () => {
@@ -1116,7 +1116,7 @@ describe('stories API', () => {
       const { navigate } = moduleArgs;
 
       api.setIndex({ v: 5, entries: navigationEntries });
-      api.jumpToComponent(-1);
+      api.jumpToSubtree(-1);
       expect(navigate).not.toHaveBeenCalled();
     });
   });

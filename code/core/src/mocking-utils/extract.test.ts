@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parse } from '@babel/parser';
 import { readFileSync } from 'fs';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -41,8 +40,7 @@ vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
 }));
 
-const parser = (input: string) =>
-  parse(input, { sourceType: 'module', plugins: ['jsx', 'typescript'] });
+const parser = extractModule.parseModuleAst;
 
 describe('isModuleDirectory', () => {
   it('returns true for node_modules path', () => {
@@ -220,9 +218,9 @@ describe('extractMockCalls', () => {
 
       const result = extractModule.rewriteSbMockImportCalls(code);
       expect(result.code).toMatchInlineSnapshot(`
-        "sb.mock("./bar/baz", {
-          spy: true
-        });"
+        "
+                sb.mock("./bar/baz", { spy: true });
+              "
       `);
     });
 
@@ -233,7 +231,9 @@ describe('extractMockCalls', () => {
 
       const result = extractModule.rewriteSbMockImportCalls(code);
       expect(result.code).toMatchInlineSnapshot(`
-        "sb.mock("./bar/baz");"
+        "
+                sb.mock("./bar/baz");
+              "
       `);
     });
   });

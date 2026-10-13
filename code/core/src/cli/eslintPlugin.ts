@@ -1,7 +1,23 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
-import { type CsfValue, readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import {
+  type CsfValue,
+  type ESTree as E,
+  type ESTreeNode as Node,
+  SourceEditor,
+  appendToList,
+  arrayList,
+  generateUid,
+  importedName,
+  isStringLiteral,
+  prependStatement,
+  printString,
+  readConfig,
+  unwrapESTreeExpression as unwrapExpression,
+  walk,
+  writeConfig,
+} from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import commentJson from 'comment-json';
@@ -9,8 +25,6 @@ import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
-
-import { type NodePath, babelParse, recast, types as t, traverse } from '../babel/index.ts';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -42,62 +56,56 @@ export const findEslintFile = (instanceDir: string) => {
 };
 
 const STORYBOOK_PLUGIN = 'eslint-plugin-storybook';
-const FLAT_CONFIG_DOCS_COMMENT = {
-  type: 'CommentLine',
-  value:
-    ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
-};
+const FLAT_CONFIG_DOCS_COMMENT =
+  '// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format';
 
-type Scope = NodePath['scope'];
 type ConfigHelperNames = { tsEslint: string; defineConfig: string };
-type ConfigTarget = t.ArrayExpression | t.CallExpression;
+type ConfigTarget = E.ArrayExpression | E.CallExpression;
 
-function unwrapTSExpression(expr: t.Node | null | undefined): t.Node | null | undefined {
-  if (t.isTSAsExpression(expr) || t.isTSSatisfiesExpression(expr)) {
-    return unwrapTSExpression(expr.expression);
-  }
-  return expr;
-}
+const isIdentifierNamed = (node: Node | null | undefined, name: string) =>
+  node?.type === 'Identifier' && node.name === name;
 
-function isRequireOf(node: t.Node | null | undefined, source: string): node is t.CallExpression {
+function isRequireOf(node: Node | null | undefined, source: string): node is E.CallExpression {
   return (
-    t.isCallExpression(node) &&
-    t.isIdentifier(node.callee, { name: 'require' }) &&
-    t.isStringLiteral(node.arguments[0], { value: source })
+    node?.type === 'CallExpression' &&
+    isIdentifierNamed(node.callee, 'require') &&
+    isStringLiteral(node.arguments[0]) &&
+    node.arguments[0].value === source
   );
 }
 
-function findConfigHelperNames(program: t.Program): ConfigHelperNames {
+function findConfigHelperNames(program: E.Program): ConfigHelperNames {
   const names: ConfigHelperNames = { tsEslint: '', defineConfig: '' };
   for (const statement of program.body) {
-    if (t.isImportDeclaration(statement)) {
+    if (statement.type === 'ImportDeclaration') {
       for (const specifier of statement.specifiers) {
         if (
           statement.source.value === 'typescript-eslint' &&
-          t.isImportDefaultSpecifier(specifier)
+          specifier.type === 'ImportDefaultSpecifier'
         ) {
           names.tsEslint = specifier.local.name;
         }
         if (
           statement.source.value === 'eslint/config' &&
-          t.isImportSpecifier(specifier) &&
-          t.isIdentifier(specifier.imported, { name: 'defineConfig' })
+          specifier.type === 'ImportSpecifier' &&
+          importedName(specifier.imported) === 'defineConfig'
         ) {
           names.defineConfig = specifier.local.name;
         }
       }
     }
-    if (t.isVariableDeclaration(statement)) {
+    if (statement.type === 'VariableDeclaration') {
       for (const { id, init } of statement.declarations) {
-        if (isRequireOf(init, 'typescript-eslint') && t.isIdentifier(id)) {
+        if (isRequireOf(init, 'typescript-eslint') && id.type === 'Identifier') {
           names.tsEslint = id.name;
         }
-        if (isRequireOf(init, 'eslint/config') && t.isObjectPattern(id)) {
+        if (isRequireOf(init, 'eslint/config') && id.type === 'ObjectPattern') {
           for (const property of id.properties) {
             if (
-              t.isObjectProperty(property) &&
-              t.isIdentifier(property.key, { name: 'defineConfig' }) &&
-              t.isIdentifier(property.value)
+              property.type === 'Property' &&
+              !property.computed &&
+              isIdentifierNamed(property.key, 'defineConfig') &&
+              property.value.type === 'Identifier'
             ) {
               names.defineConfig = property.value.name;
             }
@@ -110,43 +118,44 @@ function findConfigHelperNames(program: t.Program): ConfigHelperNames {
 }
 
 function findConfigTarget(
-  expression: t.Node | null | undefined,
-  scope: Scope,
+  expression: Node | null | undefined,
+  editor: SourceEditor,
   helpers: ConfigHelperNames,
   followIdentifier = true
 ): ConfigTarget | undefined {
-  const config = unwrapTSExpression(expression);
+  const config = unwrapExpression(expression);
 
-  if (t.isArrayExpression(config)) {
+  if (config?.type === 'ArrayExpression') {
     return config;
   }
 
-  if (t.isIdentifier(config) && followIdentifier) {
-    const binding = scope.getBinding(config.name);
+  if (config?.type === 'Identifier') {
+    const binding = followIdentifier ? editor.scopes.program.bindings.get(config.name) : undefined;
     if (
       binding?.constant &&
-      binding.path.isVariableDeclarator() &&
-      t.isIdentifier(binding.path.node.id)
+      binding.node.type === 'VariableDeclarator' &&
+      binding.node.id.type === 'Identifier'
     ) {
-      return findConfigTarget(binding.path.node.init, scope, helpers, false);
+      return findConfigTarget(binding.node.init, editor, helpers, false);
     }
     return undefined;
   }
 
-  if (!t.isCallExpression(config)) {
+  if (config?.type !== 'CallExpression') {
     return undefined;
   }
 
-  if (helpers.defineConfig && t.isIdentifier(config.callee, { name: helpers.defineConfig })) {
-    const configs = unwrapTSExpression(config.arguments[0]);
-    return t.isArrayExpression(configs) ? configs : undefined;
+  if (helpers.defineConfig && isIdentifierNamed(config.callee, helpers.defineConfig)) {
+    const configs = unwrapExpression(config.arguments[0] as Node | undefined);
+    return configs?.type === 'ArrayExpression' ? configs : undefined;
   }
 
   if (
     helpers.tsEslint &&
-    t.isMemberExpression(config.callee) &&
-    t.isIdentifier(config.callee.object, { name: helpers.tsEslint }) &&
-    t.isIdentifier(config.callee.property, { name: 'config' })
+    config.callee.type === 'MemberExpression' &&
+    !config.callee.computed &&
+    isIdentifierNamed(config.callee.object, helpers.tsEslint) &&
+    isIdentifierNamed(config.callee.property, 'config')
   ) {
     return config;
   }
@@ -154,66 +163,69 @@ function findConfigTarget(
   return undefined;
 }
 
-function addStorybookConfig(target: ConfigTarget, storybookLocalName: string) {
-  const storybookConfig = t.memberExpression(
-    t.memberExpression(t.identifier(storybookLocalName), t.identifier('configs')),
-    t.stringLiteral('flat/recommended'),
-    true
-  );
-  if (t.isArrayExpression(target)) {
-    target.elements.push(t.spreadElement(storybookConfig));
+function addStorybookConfig(editor: SourceEditor, target: ConfigTarget, localName: string) {
+  const storybookConfig = `${localName}.configs["flat/recommended"]`;
+  if (target.type === 'ArrayExpression') {
+    appendToList(editor, arrayList(target), [`...${storybookConfig}`], '');
   } else {
-    target.arguments.push(storybookConfig);
+    const open = editor.code.indexOf('(', target.callee.end) + 1;
+    appendToList(editor, { open, close: target.end - 1, items: target.arguments }, [
+      storybookConfig,
+    ]);
   }
 }
 
 function hasStorybookConfig(target: ConfigTarget, storybookLocalNames: Set<string>) {
-  const entries = t.isArrayExpression(target) ? target.elements : target.arguments;
+  const entries = target.type === 'ArrayExpression' ? target.elements : target.arguments;
   return entries.some((entry) => {
-    const config = t.isSpreadElement(entry) ? entry.argument : entry;
+    const config = entry?.type === 'SpreadElement' ? entry.argument : entry;
     if (
-      !t.isMemberExpression(config) ||
-      !t.isStringLiteral(config.property, { value: 'flat/recommended' }) ||
-      !t.isMemberExpression(config.object) ||
-      !t.isIdentifier(config.object.property, { name: 'configs' })
+      config?.type !== 'MemberExpression' ||
+      !isStringLiteral(config.property) ||
+      config.property.value !== 'flat/recommended' ||
+      config.object.type !== 'MemberExpression' ||
+      config.object.computed ||
+      !isIdentifierNamed(config.object.property, 'configs')
     ) {
       return false;
     }
 
     const plugin = config.object.object;
     return (
-      (t.isIdentifier(plugin) && storybookLocalNames.has(plugin.name)) ||
+      (plugin.type === 'Identifier' && storybookLocalNames.has(plugin.name)) ||
       isRequireOf(plugin, STORYBOOK_PLUGIN)
     );
   });
 }
 
-function findCommonJsExport(ast: t.File) {
-  let exportedConfig: t.Expression | undefined;
+function findCommonJsExport(program: E.Program) {
+  const topLevelAssignments = new Set<Node>(
+    program.body.flatMap((statement) =>
+      statement.type === 'ExpressionStatement' ? [statement.expression] : []
+    )
+  );
+  let exportedConfig: Node | undefined;
   let isSupported = true;
 
-  traverse(ast, {
-    AssignmentExpression(path) {
-      const { left } = path.node;
-      if (!t.isMemberExpression(left) || !t.isIdentifier(left.object, { name: 'module' })) {
-        return;
-      }
-      if (!left.computed && !t.isIdentifier(left.property, { name: 'exports' })) {
-        return;
-      }
+  walk(program, (node) => {
+    if (node.type !== 'AssignmentExpression') {
+      return;
+    }
+    const { left } = node;
+    if (left.type !== 'MemberExpression' || !isIdentifierNamed(left.object, 'module')) {
+      return;
+    }
+    if (!left.computed && !isIdentifierNamed(left.property, 'exports')) {
+      return;
+    }
 
-      const isSingleTopLevelExport =
-        !left.computed &&
-        !exportedConfig &&
-        path.node.operator === '=' &&
-        path.parentPath?.isExpressionStatement() &&
-        path.parentPath.parentPath?.isProgram();
-      if (isSingleTopLevelExport) {
-        exportedConfig = path.node.right;
-      } else {
-        isSupported = false;
-      }
-    },
+    const isSingleTopLevelExport =
+      !left.computed && !exportedConfig && node.operator === '=' && topLevelAssignments.has(node);
+    if (isSingleTopLevelExport) {
+      exportedConfig = node.right;
+    } else {
+      isSupported = false;
+    }
   });
 
   return { exportedConfig, isSupported };
@@ -232,69 +244,55 @@ function findCommonJsExport(ast: t.File) {
  * unchanged, with a warning to add the Storybook config manually.
  */
 export const configureFlatConfig = async (code: string, configFile: string) => {
-  const ast = babelParse(code);
+  const editor = new SourceEditor(code);
+  const { program } = editor;
 
+  // Some configs load plugins with import() (e.g. eslint-flat-config-utils), where we can't safely
+  // add the spread.
   let hasStorybookImport = false;
-  let hasDestructuredStorybookRequire = false;
-  const storybookRequires: { localName: string; end: number }[] = [];
-  let programScope = undefined as Scope | undefined;
-  traverse(ast, {
-    Program(path) {
-      programScope = path.scope;
-    },
-    ImportDeclaration(path) {
-      if (path.node.source.value === STORYBOOK_PLUGIN) {
-        hasStorybookImport = true;
-        path.stop();
-      }
-    },
-    CallExpression(path) {
-      // Some configs load plugins with import() (e.g. eslint-flat-config-utils), where we can't safely add the spread
-      if (
-        t.isImport(path.node.callee) &&
-        t.isStringLiteral(path.node.arguments[0], { value: STORYBOOK_PLUGIN })
-      ) {
-        hasStorybookImport = true;
-        path.stop();
-        return;
-      }
-
-      const declarator = path.parentPath;
-      if (
-        !isRequireOf(path.node, STORYBOOK_PLUGIN) ||
-        !declarator?.isVariableDeclarator() ||
-        !declarator.parentPath.parentPath?.isProgram()
-      ) {
-        return;
-      }
-
-      // Only `const storybook = require(...)` gives a binding we can spread `storybook.configs` from
-      if (t.isIdentifier(declarator.node.id)) {
-        storybookRequires.push({
-          localName: declarator.node.id.name,
-          end: declarator.node.end ?? 0,
-        });
-      } else {
-        hasDestructuredStorybookRequire = true;
-        path.stop();
-      }
-    },
+  walk(program, (node) => {
+    if (
+      (node.type === 'ImportDeclaration' && node.source.value === STORYBOOK_PLUGIN) ||
+      (node.type === 'ImportExpression' &&
+        isStringLiteral(node.source) &&
+        node.source.value === STORYBOOK_PLUGIN)
+    ) {
+      hasStorybookImport = true;
+    }
+    return !hasStorybookImport;
   });
-  if (hasStorybookImport || hasDestructuredStorybookRequire || !programScope) {
+  if (hasStorybookImport) {
     return code;
   }
 
-  const helpers = findConfigHelperNames(ast.program);
-  const commonJsExport = findCommonJsExport(ast);
+  const storybookRequires: { localName: string; end: number }[] = [];
+  for (const statement of program.body) {
+    if (statement.type !== 'VariableDeclaration') {
+      continue;
+    }
+    for (const declarator of statement.declarations) {
+      if (!isRequireOf(declarator.init, STORYBOOK_PLUGIN)) {
+        continue;
+      }
+      // Only `const storybook = require(...)` gives a binding we can spread `storybook.configs` from
+      if (declarator.id.type !== 'Identifier') {
+        return code;
+      }
+      storybookRequires.push({ localName: declarator.id.name, end: declarator.end });
+    }
+  }
+
+  const helpers = findConfigHelperNames(program);
+  const commonJsExport = findCommonJsExport(program);
 
   if (
     commonJsExport.exportedConfig ||
     !commonJsExport.isSupported ||
     storybookRequires.length > 0
   ) {
-    const target =
-      commonJsExport.isSupported &&
-      findConfigTarget(commonJsExport.exportedConfig, programScope, helpers);
+    const target = commonJsExport.isSupported
+      ? findConfigTarget(commonJsExport.exportedConfig, editor, helpers)
+      : undefined;
     if (!target) {
       logger.warn(
         `Could not automatically add eslint-plugin-storybook to ${configFile}. Please add it manually: const storybook = require('eslint-plugin-storybook'); then add ...storybook.configs['flat/recommended'] to the exported config. See https://storybook.js.org/docs/configure/integration/eslint-plugin`
@@ -306,44 +304,37 @@ export const configureFlatConfig = async (code: string, configFile: string) => {
       return code;
     }
 
-    const requiredBeforeTarget = storybookRequires.find(({ end }) => end <= (target.start ?? 0));
+    const requiredBeforeTarget = storybookRequires.find(({ end }) => end <= target.start);
     if (requiredBeforeTarget) {
-      addStorybookConfig(target, requiredBeforeTarget.localName);
-      return recast.print(ast).code;
+      addStorybookConfig(editor, target, requiredBeforeTarget.localName);
+      return editor.toString();
     }
 
-    let localName = 'storybook';
-    for (let suffix = 1; programScope.hasBinding(localName); suffix++) {
-      localName = `_storybook${suffix > 1 ? suffix : ''}`;
-    }
-    addStorybookConfig(target, localName);
-    const storybookRequire = t.variableDeclaration('const', [
-      t.variableDeclarator(
-        t.identifier(localName),
-        t.callExpression(t.identifier('require'), [t.stringLiteral(STORYBOOK_PLUGIN)])
-      ),
-    ]);
-    Object.assign(storybookRequire, { comments: [FLAT_CONFIG_DOCS_COMMENT] });
-    ast.program.body.unshift(storybookRequire);
-    return recast.print(ast).code;
+    const localName = editor.scopes.program.bindings.has('storybook')
+      ? generateUid(editor.scopes, 'storybook')
+      : 'storybook';
+    addStorybookConfig(editor, target, localName);
+    prependStatement(
+      editor,
+      `${FLAT_CONFIG_DOCS_COMMENT}\nconst ${localName} = require(${printString(STORYBOOK_PLUGIN, editor.quote)});`
+    );
+    return editor.toString();
   }
 
-  const exportDefault = ast.program.body.find((statement) =>
-    t.isExportDefaultDeclaration(statement)
-  ) as t.ExportDefaultDeclaration | undefined;
-  const target = findConfigTarget(exportDefault?.declaration, programScope, helpers);
-  if (target) {
-    addStorybookConfig(target, 'storybook');
-  }
-
-  const importDecl = t.importDeclaration(
-    [t.importDefaultSpecifier(t.identifier('storybook'))],
-    t.stringLiteral(STORYBOOK_PLUGIN)
+  const exportDefault = program.body.find(
+    (node): node is E.ExportDefaultDeclaration => node.type === 'ExportDefaultDeclaration'
   );
-  Object.assign(importDecl, { comments: [FLAT_CONFIG_DOCS_COMMENT] });
-  ast.program.body.unshift(importDecl);
+  const target = findConfigTarget(exportDefault?.declaration as Node | undefined, editor, helpers);
+  if (target) {
+    addStorybookConfig(editor, target, 'storybook');
+  }
 
-  return recast.print(ast).code;
+  prependStatement(
+    editor,
+    `${FLAT_CONFIG_DOCS_COMMENT}\nimport storybook from ${printString(STORYBOOK_PLUGIN, editor.quote)};`
+  );
+
+  return editor.toString();
 };
 
 export async function extractEslintInfo(packageManager: JsPackageManager): Promise<{

@@ -1,11 +1,11 @@
-import { parse } from '@babel/parser';
 import { dedent } from 'ts-dedent';
 import { describe, expect, it } from 'vitest';
 
 import { analyzeMdx, extractImports } from './analyze-mdx.ts';
 
-const estreeParse = (code: string) =>
-  parse(code, { sourceType: 'module', plugins: ['jsx', 'estree'] }).program;
+import { parseModule } from '../../csf-tools/estree/ast.ts';
+
+const estreeParse = (code: string) => parseModule(code).program as any;
 
 describe('extractImports', () => {
   it('single block', () => {

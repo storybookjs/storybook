@@ -22,8 +22,9 @@ describe('setupAddonInConfig', () => {
     vi.clearAllMocks();
 
     mockMain = {
+      _quote: "'",
+      getBodyDeclarations: () => [],
       getFieldNode: vi.fn(),
-      valueToNode: vi.fn(),
       appendNodeToArray: vi.fn(),
       appendValueToArray: vi.fn(),
     } as any;
@@ -50,7 +51,6 @@ describe('setupAddonInConfig', () => {
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(mockMain.appendNodeToArray).not.toHaveBeenCalled();
-    expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
       configDir: '.storybook',
@@ -64,12 +64,8 @@ describe('setupAddonInConfig', () => {
   });
 
   it('should add addon with getAbsolutePath wrapper when wrapper exists', async () => {
-    const mockAddonNode = { type: 'StringLiteral' } as any;
-
     vi.mocked(mockMain.getFieldNode).mockReturnValue({} as any);
-    vi.mocked(mockMain.valueToNode).mockReturnValue(mockAddonNode);
     vi.mocked(wrapUtils.getAbsolutePathWrapperName).mockReturnValue('getAbsolutePath');
-    vi.mocked(wrapUtils.wrapValueWithGetAbsolutePathWrapper).mockImplementation(() => {});
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
@@ -78,12 +74,9 @@ describe('setupAddonInConfig', () => {
       configDir: '.storybook',
     });
 
-    expect(mockMain.valueToNode).toHaveBeenCalledWith('@storybook/addon-docs');
-    expect(mockMain.appendNodeToArray).toHaveBeenCalledWith(['addons'], mockAddonNode);
-    expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).toHaveBeenCalledWith(
-      mockMain,
-      mockAddonNode
-    );
+    const [path, node] = vi.mocked(mockMain.appendNodeToArray).mock.calls[0];
+    expect(path).toEqual(['addons']);
+    expect(csfTools.printExpression(node)).toBe("getAbsolutePath('@storybook/addon-docs')");
     expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({

@@ -24,7 +24,7 @@ import {
 } from './installSkills.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('./agentInstructions.ts', () => ({ addStorybookAgentInstructions: vi.fn() }));
+vi.mock('./agentInstructions.ts', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {

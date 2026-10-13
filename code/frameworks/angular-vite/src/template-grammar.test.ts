@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { type ASTWithSource, type LiteralPrimitive, parseTemplate } from '@angular/compiler';
-
 import type { BuildTemplateInput } from './template-grammar.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
-  escapeAttributeExpression,
   formatInputValue,
   formatTemplateMarkup,
-  printTemplateData,
 } from './template-grammar.ts';
 
 describe('formatInputValue', () => {
@@ -50,25 +46,6 @@ describe('formatInputValue', () => {
     const value: Record<string, unknown> = { name: 'loop' };
     value.self = value;
     expect(formatInputValue(value)).toBe("{name: 'loop', self: '[Circular]'}");
-  });
-});
-
-describe('escapeAttributeExpression', () => {
-  it('writes text Angular decodes as a character reference so it reads back unchanged', () => {
-    for (const label of [
-      '&lt;',
-      '&#169;',
-      'T & C',
-      'a &; b',
-      '{{ & "q" }}',
-      '{{ a & b; }} &amp;',
-    ]) {
-      const expression = escapeAttributeExpression(printTemplateData(label)!);
-      const element = parseTemplate(`<b [label]="${expression}"></b>`, 'x.html')
-        .nodes[0] as unknown as { inputs: { value: ASTWithSource<LiteralPrimitive> }[] };
-
-      expect(element.inputs[0].value.ast.value).toBe(label);
-    }
   });
 });
 

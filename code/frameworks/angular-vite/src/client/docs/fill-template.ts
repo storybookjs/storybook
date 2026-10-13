@@ -1,99 +1,26 @@
-import { type FillSnippetTemplate, UnprintableArgError } from 'storybook/internal/docs-tools';
-import type { Args } from 'storybook/internal/types';
+import { type FillSnippetTemplate, fillHoles, printValue } from 'storybook/internal/docs-tools';
 
-import {
-  FIELD_MARKER,
-  HANDLER_MARKER,
-  MARKUP_MARKER,
-  type TemplateItem,
-  parseItems,
-} from '../../snippet-markers.ts';
-import {
-  type TemplateInputBinding,
-  buildTemplate,
-  escapeAttributeExpression,
-  formatInputBinding,
-  formatOutputBinding,
-  formatOutputHandler,
-  formatPropInTemplate,
-  formatTemplateMarkup,
-  printTemplateData,
-  splitHostComponentTemplate,
-  toTemplateLiteral,
-} from '../../template-grammar.ts';
-
-// Fills a story-docs template (see `snippet-markers.ts`) with the current args, in one pass per
-// marker kind over each part of the host component, so a filled-in value is never read as a marker.
-// An arg it cannot write as the code the story runs throws, and the preview shows the static snippet,
-// warning included, instead.
-export const fillTemplate: FillSnippetTemplate = (template, args) => {
-  const { before, template: markup, after } = splitHostComponentTemplate(template)!;
-  return (
-    fillFields(before, args) +
-    toTemplateLiteral(fillMarkup(markup, args)) +
-    fillFields(fillHandlers(after, args), args)
+// Fills a template from the story-docs build. Its only hole is `⟦props label size⟧`, the inputs
+// the story's args may bind, which lands in the host component's `template` literal.
+export const fillTemplate: FillSnippetTemplate = (template, args) =>
+  fillHoles(template, (_kind, inputs) =>
+    inputs.map((name) => escapeTemplateLiteral(binding(name, args[name]))).join('')
   );
-};
 
-const fillFields = (code: string, args: Args) =>
-  code.replace(FIELD_MARKER, (_match, name: string) => printArg(name, args[name]));
-
-const fillHandlers = (code: string, args: Args) =>
-  code
-    .replace(HANDLER_MARKER, (_match, name: string) =>
-      isBoundOutput(args[name]) ? `\n  ${formatOutputHandler(name)}` : ''
-    )
-    .replace(/ \{\n\}$/, ' {}');
-
-function fillMarkup(markup: string, args: Args): string {
-  let element: string | undefined;
-  const filled = markup.replace(MARKUP_MARKER, (...match) => {
-    const groups = match.at(-1) as Record<string, string | undefined>;
-    if (groups.selector !== undefined) {
-      const items = parseItems(groups.elementItems!);
-      element = buildTemplate(groups.selector, {
-        inputs: inputsOf(items, args),
-        outputs: outputsOf(items),
-        selfClosing: true,
-      });
-      return element;
-    }
-    if (groups.text !== undefined) {
-      return String(args[groups.text]);
-    }
-    const items = parseItems(groups.bindingItems!);
-    const bindings = [
-      ...inputsOf(items, args).map(formatInputBinding),
-      ...outputsOf(items)
-        .filter((name) => isBoundOutput(args[name]))
-        .map(formatOutputBinding),
-    ];
-    return bindings.length === 0 ? '' : `${groups.space}${bindings.join(' ')}`;
-  });
-  return element ?? formatTemplateMarkup(filled);
+// A function arg, such as an action, is left out, as no control changes it; the snippet binds an
+// output to a host method of its own.
+function binding(name: string, value: unknown): string {
+  if (value === undefined || typeof value === 'function') {
+    return '';
+  }
+  // Angular reads `{{` in a plain attribute as an interpolation.
+  return typeof value === 'string' && !value.includes('{{')
+    ? ` ${name}="${escapeAttribute(value)}"`
+    : ` [${name}]="${escapeAttribute(printValue(value, name, "'"))}"`;
 }
 
-const printArg = (name: string, value: unknown): string => {
-  const printed = printTemplateData(value);
-  if (printed === undefined) {
-    throw new UnprintableArgError(name);
-  }
-  return printed;
-};
+const escapeAttribute = (text: string) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
-const isBoundOutput = (value: unknown) => typeof value === 'function';
-
-// An unset input is left out, as the static snippet leaves it out.
-const inputsOf = (items: readonly TemplateItem[], args: Args): TemplateInputBinding[] =>
-  items.flatMap(({ kind, name }) => {
-    if (kind === 'field') {
-      return [{ name, expression: formatPropInTemplate(name) }];
-    }
-    if (kind !== 'input' || args[name] === undefined) {
-      return [];
-    }
-    return [{ name, expression: escapeAttributeExpression(printArg(name, args[name])) }];
-  });
-
-const outputsOf = (items: readonly TemplateItem[]) =>
-  items.flatMap(({ kind, name }) => (kind === 'output' ? [name] : []));
+// The template sits in a template literal, so what would end or escape it is escaped.
+const escapeTemplateLiteral = (text: string) =>
+  text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');

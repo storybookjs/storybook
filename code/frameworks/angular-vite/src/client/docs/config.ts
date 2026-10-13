@@ -15,7 +15,8 @@ export const parameters: Parameters = {
     source: {
       type: SourceType.DYNAMIC,
       language: useStaticServiceSnippets ? 'ts' : 'html',
-      fillTemplate,
+      // Fills the story-docs `template`, so the snippet follows the controls.
+      ...(useStaticServiceSnippets ? { fillTemplate } : {}),
     },
   },
 };

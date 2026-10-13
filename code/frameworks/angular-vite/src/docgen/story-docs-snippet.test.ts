@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { splitHostComponentTemplate } from '../template-grammar.ts';
-import { buildHostComponentSnippet } from './story-docs-snippet.ts';
+import { buildHostComponentSnippet, extractHostComponentTemplate } from './story-docs-snippet.ts';
 
 const build = (overrides: Partial<Parameters<typeof buildHostComponentSnippet>[0]> = {}) =>
   buildHostComponentSnippet({
@@ -157,14 +156,14 @@ describe('buildHostComponentSnippet', () => {
   ])('survives a template containing %s', (_name, template) => {
     const { snippet } = build({ template });
 
-    expect(splitHostComponentTemplate(snippet)?.template).toBe(template);
+    expect(extractHostComponentTemplate(snippet)).toBe(template);
     // The template literal must be closed by the delimiter the builder wrote, not by the payload.
     expect(snippet.endsWith('export class DemoComponent {}')).toBe(true);
   });
 });
 
-describe('splitHostComponentTemplate', () => {
+describe('extractHostComponentTemplate', () => {
   it('returns undefined for text that is not a host-component snippet', () => {
-    expect(splitHostComponentTemplate('<sb-button></sb-button>')).toBeUndefined();
+    expect(extractHostComponentTemplate('<sb-button></sb-button>')).toBeUndefined();
   });
 });

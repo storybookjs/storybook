@@ -21,7 +21,7 @@ import { ImportAliasComponent as Alias } from './aliased.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [Alias],
-  template: `{{@element sb-import-alias | heading}}`,
+  template: `<sb-import-alias⟦props heading⟧ />`,
 })
 export class DemoComponent {}",
     },

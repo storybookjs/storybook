@@ -12,7 +12,7 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import { fillTemplate } from '../../../../frameworks/angular-vite/src/client/docs/fill-template.ts';
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
-import { splitHostComponentTemplate } from '../../../../frameworks/angular-vite/src/template-grammar.ts';
+import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-snippet.ts';
 import { createFixtureDocgen } from './docgen-fixture.ts';
 import { listFixtureCases } from './snippet-recorder.ts';
 
@@ -28,30 +28,10 @@ afterAll(() => {
   docgen.dispose();
 });
 
-type Annotations = {
-  args?: Record<string, unknown>;
-  argTypes?: Record<string, { action?: string } | undefined>;
-};
-type Annotated = Annotations & { input?: Annotations };
+type Annotations = { args?: Record<string, unknown> };
 
-const annotationsOf = (annotated: Annotated | undefined) => annotated?.input ?? annotated ?? {};
-
-// The actions addon gives an arg its argTypes mark as an action a function, which the story's own
-// args override.
-const actionsOf = (annotated: Annotated | undefined) =>
-  Object.fromEntries(
-    Object.entries(annotationsOf(annotated).argTypes ?? {})
-      .filter(([, argType]) => argType?.action !== undefined)
-      .map(([name]) => [name, () => {}])
-  );
-
-const argsOf = (annotated: Annotated | undefined) => annotationsOf(annotated).args ?? {};
-
-// Stories holding a value the preview cannot write, which fall back to their static snippet.
-const THROWS = new Set([
-  'story-docs/__testfixtures__/live-args/ImportedFormatter',
-  'story-docs/__testfixtures__/live-args/ImportedControl',
-]);
+const argsOf = (annotated: (Annotations & { input?: Annotations }) | undefined) =>
+  (annotated?.input ?? annotated)?.args ?? {};
 
 const expectCompiles = (markup: string, exportName: string) => {
   expect(parseTemplate(markup, 'filled.html').errors ?? [], exportName).toEqual([]);
@@ -79,36 +59,21 @@ describe('angular story-docs templates', () => {
     );
     const storiesModule = (await import(/* @vite-ignore */ storyPath)) as Record<
       string,
-      Annotated | undefined
+      Annotations | undefined
     >;
 
     for (const [exportName, story] of Object.entries(csf._stories)) {
       const { template } = payload!.stories[story.id]!;
-      const annotated = storiesModule[exportName];
-      const args = {
-        ...actionsOf(storiesModule.default),
-        ...actionsOf(annotated),
-        ...argsOf(storiesModule.default),
-        ...argsOf(annotated),
-      };
       if (template === undefined) {
         continue;
       }
-      const key = `${fixtureCase}/${exportName}`;
-      filledStories.add(key);
-      if (THROWS.has(key)) {
-        expect(() => fillTemplate(template, args), exportName).toThrow();
-        continue;
-      }
-      expectCompiles(
-        splitHostComponentTemplate(fillTemplate(template, args))!.template,
-        exportName
-      );
+      filledStories.add(`${fixtureCase}/${exportName}`);
+      const args = { ...argsOf(storiesModule.default), ...argsOf(storiesModule[exportName]) };
+      expectCompiles(extractHostComponentTemplate(fillTemplate(template, args))!, exportName);
     }
   });
 
-  it('fills a meaningful number of stories, every listed one among them', () => {
+  it('fills a meaningful number of stories', () => {
     expect(filledStories.size).toBeGreaterThan(20);
-    expect([...THROWS].filter((key) => !filledStories.has(key))).toEqual([]);
   });
 });

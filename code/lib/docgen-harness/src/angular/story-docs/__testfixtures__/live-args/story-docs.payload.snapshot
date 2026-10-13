@@ -17,17 +17,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
-      "template": "import { Component } from '@angular/core';
-import { LiveArgsComponent } from './live-args.component.ts';
-
-@Component({
-  selector: 'app-demo',
-  imports: [LiveArgsComponent],
-  template: `{{@element sb-live-args | control formatter label (pressed)}}`,
-})
-export class DemoComponent {
-  pressed(event: unknown) {}
-}",
       "warning": "Incomplete snippet: `SHARED_CONTROL` could not be resolved statically.",
     },
     "storydocs-live-args--imported-formatter": {
@@ -40,17 +29,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
   selector: 'app-demo',
   imports: [LiveArgsComponent],
   template: `<sb-live-args [label]="'Go'" [formatter]="shout" (pressed)="pressed($event)" />`,
-})
-export class DemoComponent {
-  pressed(event: unknown) {}
-}",
-      "template": "import { Component } from '@angular/core';
-import { LiveArgsComponent } from './live-args.component.ts';
-
-@Component({
-  selector: 'app-demo',
-  imports: [LiveArgsComponent],
-  template: `{{@element sb-live-args | label formatter control (pressed)}}`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -77,7 +55,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `{{@element sb-live-args | label control formatter (pressed)}}`,
+  template: `<sb-live-args⟦props control formatter label⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -96,18 +74,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
 })
 export class DemoComponent {
   label = 'Save';
-}",
-      "template": "import { Component } from '@angular/core';
-import { LiveArgsComponent } from './live-args.component.ts';
-
-@Component({
-  selector: 'app-demo',
-  imports: [LiveArgsComponent],
-  template: `<sb-live-args [label]="label" [formatter]="formatter"></sb-live-args>`,
-})
-export class DemoComponent {
-  label = {{@args.label}};
-  formatter = (value) => value.trim();
 }",
       "warning": "Incomplete snippet: `value => value.trim()` could not be resolved statically.",
     },

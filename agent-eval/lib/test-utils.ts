@@ -754,15 +754,23 @@ export function expectSkillInvoked(skillName: string): void {
 
   if (agent === 'claude-code') {
     // Match the skill argument exactly — a substring match would credit any
-    // Skill invocation whose free-text args merely mention the word.
+    // Skill invocation whose free-text args merely mention the word. When
+    // AGENTS.md names a skill, Claude Code sometimes reads its SKILL.md
+    // instead, which loads the same instructions.
+    const skillFile = `/skills/${skillName}/SKILL.md`;
     const invoked = getTranscript().events.some(
       (event) =>
         event.type === 'tool_call' &&
-        event.tool?.originalName === 'Skill' &&
-        isRecord(event.tool.args) &&
-        event.tool.args.skill === skillName
+        isRecord(event.tool?.args) &&
+        ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
+          (event.tool.originalName === 'Read' &&
+            typeof event.tool.args.file_path === 'string' &&
+            event.tool.args.file_path.endsWith(skillFile)))
     );
-    expect(invoked, `Expected the ${skillName} skill to be invoked via the Skill tool`).toBe(true);
+    expect(
+      invoked,
+      `Expected the ${skillName} skill to be invoked via the Skill tool, or its SKILL.md to be read`
+    ).toBe(true);
     return;
   }
 

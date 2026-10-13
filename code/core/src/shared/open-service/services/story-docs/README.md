@@ -12,21 +12,25 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls, a provider can also
-emit a `template`: the same story as written, with its arg references kept, such as
-`<Button {...args}>{args.children}</Button>`.
+emit a `template`: the same story as written, with a hole wherever it reads an arg. The provider
+knows what each arg reference is, so it marks it. A story that renders
+`args.loading ? <Spinner /> : <Button {...args} />` has this template:
 
-The renderer fills the template in the browser with the current args through
-`parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`.
-The filler keeps the story's structure and only replaces the arg references, so
-`args.loading ? <Spinner /> : <Button {...args} />` becomes `true ? <Spinner /> : …`. Fillers can
-share `ARG_PATH_PATTERN`, `resolveArgPath`, `printArgPath` and `printValue`, which print a value
-that has no readable literal, such as a function, as the name it is passed as (`onClick={onClick}`).
+```tsx
+⟦value loading⟧ ? <Spinner /> : <Button⟦props⟧ />
+```
+
+The renderer fills the holes in the browser with the current args through
+`parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`,
+where `snippetTemplate.ts` lists the hole kinds. Everything between the holes stays as written,
+so with `{ loading: false, label: "Go" }` it fills to
+`false ? <Spinner /> : <Button loading={false} label="Go" />`.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
 builds alike. The story docs load once per version of a story, and the server keeps them current, so
-an args change makes no request. A provider sets `template` only when it can fill every arg
-reference in it, and a filler throws for a value it cannot print; a missing template, a missing
+an args change makes no request. A provider sets `template` only for a story whose every arg
+reference is a hole, and a filler throws for a value it cannot print; a missing template, a missing
 filler or a filler that throws falls back to the static `snippet`.
 
 ## Providers

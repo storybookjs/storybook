@@ -267,7 +267,7 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
   });
 
-  it('emits only the newest args when they change before an emit is done', async () => {
+  it('emits every args change in order, even when an emit before it is not done', async () => {
     mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
     let finishTransform = () => {};
     mockedEmitTransformCode.mockReturnValueOnce(
@@ -292,7 +292,7 @@ describe('storyDocsSourceBeforeEach', () => {
 
     finishTransform();
     await settled();
-    expect(mockedEmitTransformCode).toHaveBeenCalledTimes(2);
+    expect(mockedEmitTransformCode).toHaveBeenCalledTimes(3);
     expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
       `import { Button } from './Button';\n\n<Button label="Wait" />`,
       expect.anything(),

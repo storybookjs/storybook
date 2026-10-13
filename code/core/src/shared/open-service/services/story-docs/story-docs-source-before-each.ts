@@ -14,8 +14,9 @@ export { shouldSkipStoryDocsEmit };
 // update replaces, so filling in new args needs no request.
 const loads = new WeakMap<object, Promise<unknown>>();
 
-// The latest emit of each story. An args change waits for the one before it and skips its own
-// emit once a newer one has started, so with an async `transform` the newest args still win.
+// The latest emit of each story. Each emit waits for the one before it, so with an async
+// `transform` the Code panel, which shows the last one, ends on the newest args. None is skipped:
+// a docs page renders a story with its current and its initial args, and looks each one up.
 const emits = new Map<string, Promise<unknown>>();
 
 /**
@@ -60,7 +61,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   const previous = emits.get(storyId);
   const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, previous])
     .then(() => {
-      if (cancelled || emits.get(storyId) !== codePanelSnippetPromise) {
+      if (cancelled) {
         return;
       }
       const { snippet, warning } = selectLiveSnippetForStory(

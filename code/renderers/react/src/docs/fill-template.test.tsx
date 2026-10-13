@@ -41,6 +41,38 @@ describe('fillTemplate', () => {
     expect(fillTemplate('<p>⟦text label⟧</p>', { label: ['a', 1] })).toBe('<p>{["a", 1]}</p>');
   });
 
+  it('leaves out the args an element hole names', () => {
+    expect(fillTemplate('⟦element Button -label⟧', { label: 'x', children: 'Hi', a: 'b' })).toBe(
+      '<Button a="b">Hi</Button>'
+    );
+  });
+
+  it('prints the args as an object, without a function arg and the args it names', () => {
+    const HeartIcon = () => null;
+    const args = {
+      label: 'Go',
+      'data-id': 1,
+      icon: HeartIcon,
+      onClick: () => {},
+      unset: undefined,
+    };
+    expect(fillTemplate('use(⟦args⟧)', args)).toBe(
+      'use({ label: "Go", "data-id": 1, icon: HeartIcon })'
+    );
+    expect(fillTemplate('use(⟦args -label -icon⟧)', args)).toBe('use({ "data-id": 1 })');
+    expect(fillTemplate('use(⟦args⟧)', {})).toBe('use({})');
+  });
+
+  it('prints the code after `=` for an unset arg', () => {
+    const template =
+      "<a ⟦attr size size ='md'⟧>⟦text label =a = b⟧</a> ⟦value n =1⟧ ⟦operand n =(1)⟧";
+    expect(fillTemplate(template, {})).toBe("<a size={'md'}>{a = b}</a> 1 (1)");
+    expect(fillTemplate(template, { size: 'lg', label: 'Go', n: 2 })).toBe(
+      '<a size="lg">Go</a> 2 (2)'
+    );
+    expect(fillTemplate(template, { size: null, label: null, n: null })).toBe('<a></a> null null');
+  });
+
   it('prints a value hole as a literal in the code around it', () => {
     expect(fillTemplate('⟦value loading⟧ ? a : b', { loading: true })).toBe('true ? a : b');
   });

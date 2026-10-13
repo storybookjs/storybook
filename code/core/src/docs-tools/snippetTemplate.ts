@@ -14,6 +14,9 @@ import type { Args } from 'storybook/internal/types';
  * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`, or that starts an arrow
  *   body or a statement; see {@link asOperand}.
  *
+ * A renderer may add holes and words of its own, such as React's `⟦args⟧` for the args as an object
+ * and a `=code` tail for the default of a destructured arg; its filler documents them.
+ *
  * The template keeps the code around a hole as written, including the whitespace before it; a hole
  * that prints nothing takes that whitespace along, so an unset attribute leaves no gap or empty
  * line. A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an

@@ -1,12 +1,20 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
-import { dedentStoryCode, hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
+import {
+  asOperand,
+  dedentStoryCode,
+  hasHoleBracket,
+  hole,
+  isHoleWord,
+} from 'storybook/internal/docs-tools';
 
 export type StoryFunction =
   | t.ArrowFunctionExpression
   | t.FunctionExpression
   | t.FunctionDeclaration
   | t.ObjectMethod;
+
+type Scope = NodePath['scope'];
 
 interface Edit {
   start: number;
@@ -50,58 +58,92 @@ export function buildStoryTemplate(
 
 // An edit per arg reference, or `undefined` when one is not a hole.
 function argEdits(param: NodePath, code: string): Edit[] | undefined {
-  if (param.isIdentifier()) {
-    const edits = referencesOf(param, param.node.name)?.map((reference) => {
+  const spreadInto = new Set<t.Node>();
+
+  // The references of a name that holds every arg but `omitted`: the parameter, or a `...rest`.
+  const objectEdits = (scope: Scope, name: string, omitted: string[]): (Edit | undefined)[] =>
+    referencesOf(scope, name)?.flatMap((reference) => {
       const parent = reference.parentPath!;
       if (parent.isJSXSpreadAttribute()) {
-        return spreadEdit(parent, code);
+        // A second spread of the args on one element would write each attribute twice.
+        const first = !spreadInto.has(parent.parent);
+        spreadInto.add(parent.parent);
+        return [first ? spreadEdit(parent, omitted, code) : undefined];
       }
-      const arg = argName(parent, reference.node);
-      return arg === undefined ? undefined : readEdit(parent, arg);
-    });
-    return edits?.every((edit) => edit !== undefined) ? (edits as Edit[]) : undefined;
-  }
-  if (!param.isObjectPattern()) {
-    return undefined;
-  }
-  const edits: (Edit | undefined)[] = [];
-  for (const property of param.get('properties')) {
-    const { key, value, computed } = property.node as t.ObjectProperty;
-    const arg = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : undefined;
-    if (
-      !property.isObjectProperty() ||
-      computed ||
-      !t.isIdentifier(value) ||
-      arg === undefined ||
-      !isHoleWord(arg)
-    ) {
-      return undefined;
+      const arg = memberName(parent, reference.node);
+      if (arg !== undefined) {
+        return [isHoleWord(arg) && !omitted.includes(arg) ? readEdit(parent, arg) : undefined];
+      }
+      const declaration = ownDeclaration(parent);
+      const taken = declaration && patternEdits(parent.get('id') as NodePath, omitted);
+      return taken?.every((edit) => edit !== undefined)
+        ? [...taken, removeEdit(declaration!, code)]
+        : [wholeEdit(reference, omitted)];
+    }) ?? [undefined];
+
+  // `{ label, size = 'md', ...rest }`, taken from an object that holds every arg but `omitted`.
+  const patternEdits = (pattern: NodePath, omitted: string[]): (Edit | undefined)[] => {
+    if (!pattern.isObjectPattern()) {
+      return [undefined];
     }
-    const references = referencesOf(param, value.name);
-    if (!references) {
-      return undefined;
-    }
-    for (const reference of references) {
-      const shorthand = reference.parentPath;
-      if (shorthand?.isObjectProperty() && shorthand.node.shorthand) {
-        edits.push(nodeEdit(shorthand.node, `${arg}: ${hole('value', arg)}`));
-      } else {
-        // `<Tag>` for `{ as: Tag }` names a component, which no literal can.
-        edits.push(reference.isJSXIdentifier() ? undefined : readEdit(reference, arg));
+    const taken: string[] = [];
+    const edits: (Edit | undefined)[] = [];
+    for (const property of pattern.get('properties')) {
+      if (property.isRestElement()) {
+        const { argument } = property.node;
+        edits.push(
+          ...(t.isIdentifier(argument)
+            ? objectEdits(pattern.scope, argument.name, [...omitted, ...taken])
+            : [undefined])
+        );
+        continue;
+      }
+      const { key, value, computed } = property.node as t.ObjectProperty;
+      const arg = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : undefined;
+      const local = t.isAssignmentPattern(value) ? value.left : value;
+      const fallback = t.isAssignmentPattern(value)
+        ? fallbackCode(property.get('value.right') as NodePath<t.Expression>, pattern, code)
+        : '';
+      const references = t.isIdentifier(local) && referencesOf(pattern.scope, local.name);
+      if (
+        computed ||
+        arg === undefined ||
+        !isHoleWord(arg) ||
+        omitted.includes(arg) ||
+        fallback === undefined ||
+        !references
+      ) {
+        return [undefined];
+      }
+      taken.push(arg);
+      for (const reference of references) {
+        const shorthand = reference.parentPath;
+        if (shorthand?.isObjectProperty() && shorthand.node.shorthand) {
+          const name = (local as t.Identifier).name;
+          edits.push(nodeEdit(shorthand.node, `${name}: ${argHole('value', [arg], fallback)}`));
+        } else {
+          // `<Tag>` for `{ as: Tag }` names a component, which no literal can.
+          edits.push(reference.isJSXIdentifier() ? undefined : readEdit(reference, arg, fallback));
+        }
       }
     }
-  }
+    return edits;
+  };
+
+  const edits = param.isIdentifier()
+    ? objectEdits(param.scope, param.node.name, [])
+    : patternEdits(param, []);
   return edits.every((edit) => edit !== undefined) ? (edits as Edit[]) : undefined;
 }
 
-// The places a parameter's name is read; `undefined` when the story assigns to it.
-function referencesOf(param: NodePath, name: string): NodePath[] | undefined {
-  const binding = param.scope.getBinding(name);
+// The places a name is read; `undefined` when the story assigns to it.
+function referencesOf(scope: Scope, name: string): NodePath[] | undefined {
+  const binding = scope.getBinding(name);
   return binding && binding.constantViolations.length === 0 ? binding.referencePaths : undefined;
 }
 
 // The arg `args.label` or `args['label']` reads.
-function argName(member: NodePath, object: t.Node): string | undefined {
+function memberName(member: NodePath, object: t.Node): string | undefined {
   if (!member.isMemberExpression() && !member.isOptionalMemberExpression()) {
     return undefined;
   }
@@ -109,65 +151,171 @@ function argName(member: NodePath, object: t.Node): string | undefined {
   if (member.node.object !== object) {
     return undefined;
   }
-  const name =
-    !computed && t.isIdentifier(property)
-      ? property.name
-      : computed && t.isStringLiteral(property)
-        ? property.value
-        : undefined;
-  return name !== undefined && isHoleWord(name) ? name : undefined;
+  return !computed && t.isIdentifier(property)
+    ? property.name
+    : computed && t.isStringLiteral(property)
+      ? property.value
+      : undefined;
+}
+
+// The statement of `const { label, ...rest } = args;`, which the template can leave out.
+function ownDeclaration(declarator: NodePath): t.Node | undefined {
+  const declaration = declarator.parentPath;
+  return declarator.isVariableDeclarator() &&
+    declaration?.isVariableDeclaration() &&
+    declaration.node.declarations.length === 1 &&
+    declaration.parentPath.isBlockStatement()
+    ? declaration.node
+    : undefined;
+}
+
+// A statement, with its line when it has that to itself.
+function removeEdit(statement: t.Node, code: string): Edit {
+  const line = code.lastIndexOf('\n', statement.start! - 1) + 1;
+  const after = /^[ \t]*\n?/.exec(code.slice(statement.end!))![0];
+  const ownLine = !code.slice(line, statement.start!).trim() && after.endsWith('\n');
+  return {
+    start: ownLine ? line : statement.start!,
+    end: statement.end! + (ownLine ? after.length : after.trimEnd().length),
+    text: '',
+  };
+}
+
+// The code of a default, as in `{ size = 'md' }`, to write wherever the arg is read; `undefined` for
+// one that reads the story's own names, or is not the same value at each read, such as a call.
+function fallbackCode(
+  fallback: NodePath<t.Expression>,
+  pattern: NodePath,
+  code: string
+): string | undefined {
+  const story = pattern.getFunctionParent()!;
+  let inlinable = true;
+  const visit = (path: NodePath) => {
+    if (
+      path.isCallExpression() ||
+      path.isOptionalCallExpression() ||
+      path.isNewExpression() ||
+      path.isTaggedTemplateExpression() ||
+      path.isAssignmentExpression() ||
+      path.isUpdateExpression() ||
+      path.isAwaitExpression() ||
+      path.isYieldExpression() ||
+      path.isSequenceExpression()
+    ) {
+      inlinable = false;
+    }
+    if (path.isReferencedIdentifier()) {
+      const declared = path.scope.getBinding(path.node.name)?.path;
+      const within = ({ node }: NodePath) => declared?.findParent((parent) => parent.node === node);
+      inlinable &&= !within(story) || !!within(fallback);
+    }
+  };
+  visit(fallback);
+  fallback.traverse({ enter: visit });
+  const written = code.slice(fallback.node.start!, fallback.node.end!);
+  const { node } = fallback;
+  const atom =
+    t.isLiteral(node) ||
+    t.isIdentifier(node) ||
+    t.isMemberExpression(node) ||
+    t.isArrayExpression(node) ||
+    t.isObjectExpression(node) ||
+    t.isJSXElement(node);
+  return !inlinable ? undefined : atom ? written : `(${written})`;
 }
 
 // `<Button {...args}>` passes every arg but the children and the attributes written after it, which
 // win, and `<Button {...args} />` is the component with every arg, its children as content.
-function spreadEdit(spread: NodePath<t.JSXSpreadAttribute>, code: string): Edit | undefined {
+function spreadEdit(
+  spread: NodePath<t.JSXSpreadAttribute>,
+  omitted: string[],
+  code: string
+): Edit | undefined {
   const opening = spread.parentPath.node as t.JSXOpeningElement;
   const element = spread.parentPath.parent as t.JSXElement;
   const index = opening.attributes.indexOf(spread.node);
-  if (!opening.attributes.every((attribute, i) => i === index || t.isJSXAttribute(attribute))) {
-    return undefined;
-  }
-  const nameOf = (attribute: t.Node) =>
-    code.slice((attribute as t.JSXAttribute).name.start!, (attribute as t.JSXAttribute).name.end!);
+  const namesOf = (attributes: t.Node[]) =>
+    attributes.flatMap((attribute) =>
+      t.isJSXAttribute(attribute) ? [code.slice(attribute.name.start!, attribute.name.end!)] : []
+    );
+  const left = omitted.map((name) => `-${name}`);
   const tag = code.slice(opening.name.start!, opening.name.end!);
   if (element.children.length === 0 && opening.attributes.length === 1) {
-    return isHoleWord(tag) ? nodeEdit(element, hole('element', tag)) : undefined;
+    return isHoleWord(tag) ? nodeEdit(element, hole('element', tag, ...left)) : undefined;
   }
   const words = [
-    ...opening.attributes.slice(0, index).map((attribute) => `^${nameOf(attribute)}`),
-    ...opening.attributes.slice(index + 1).map((attribute) => `-${nameOf(attribute)}`),
+    ...left,
+    ...namesOf(opening.attributes.slice(0, index)).map((name) => `^${name}`),
+    ...namesOf(opening.attributes.slice(index + 1)).map((name) => `-${name}`),
     ...(element.children.length > 0 ? ['-children'] : []),
-  ];
+  ].filter(
+    (word, i, all) => !all.slice(0, i).some((earlier) => earlier.slice(1) === word.slice(1))
+  );
   return nodeEdit(spread.node, hole('props', ...words));
 }
 
 // `label={args.label}`, `{args.label}` as a child, or `args.label` in code; `undefined` for a read
 // the story writes to, such as `args.count++`.
-function readEdit(read: NodePath, arg: string): Edit | undefined {
-  const { node, parent } = read;
-  if (
-    t.isAssignmentExpression(parent, { left: node }) ||
-    t.isUpdateExpression(parent) ||
-    t.isUnaryExpression(parent, { operator: 'delete' })
-  ) {
+function readEdit(read: NodePath, arg: string, fallback = ''): Edit | undefined {
+  const { node } = read;
+  if (isWritten(read)) {
     return undefined;
   }
   const container = read.parentPath;
   if (container?.isJSXExpressionContainer()) {
     const attribute = container.parentPath;
     if (attribute.isJSXAttribute() && t.isJSXIdentifier(attribute.node.name)) {
-      return nodeEdit(attribute.node, hole('attr', attribute.node.name.name, arg));
+      return nodeEdit(attribute.node, argHole('attr', [attribute.node.name.name, arg], fallback));
     }
     if (attribute.isJSXElement() || attribute.isJSXFragment()) {
-      return nodeEdit(container.node, hole('text', arg));
+      return nodeEdit(container.node, argHole('text', [arg], fallback));
     }
   }
-  const ancestors = read
-    .getAncestry()
-    .slice(1)
-    .map((path) => path.node);
-  return nodeEdit(node, hole(isOperand(node, ancestors) ? 'operand' : 'value', arg));
+  return startsOperand(read)
+    ? nodeEdit(node, argHole('operand', [arg], fallback && asOperand(fallback)))
+    : nodeEdit(node, argHole('value', [arg], fallback));
 }
+
+// The args passed along whole, as in `useState(args)`: the object they are, as a literal. It is
+// `undefined` where another object with the same args would not do: one the story may change, or
+// compares by identity, as a hook's dependency list does.
+function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
+  const { node, parentPath: parent } = read;
+  const passedTo = parent?.isCallExpression() && parent.node.callee !== node && parent.parentPath;
+  if (
+    !read.isIdentifier() ||
+    !parent ||
+    parent.isTSTypeQuery() ||
+    parent.isArrayExpression() ||
+    (passedTo && passedTo.isExpressionStatement()) ||
+    (parent.isMemberExpression() && isWritten(parent))
+  ) {
+    return undefined;
+  }
+  const literal = hole('args', ...omitted.map((name) => `-${name}`));
+  if (parent.isObjectProperty() && parent.node.shorthand) {
+    return nodeEdit(parent.node, `${read.node.name}: ${literal}`);
+  }
+  return nodeEdit(node, startsOperand(read) ? `(${literal})` : literal);
+}
+
+const isWritten = ({ node, parent }: NodePath) =>
+  t.isAssignmentExpression(parent, { left: node }) ||
+  t.isUpdateExpression(parent) ||
+  t.isUnaryExpression(parent, { operator: 'delete' });
+
+const startsOperand = (read: NodePath) =>
+  isOperand(
+    read.node,
+    read
+      .getAncestry()
+      .slice(1)
+      .map((path) => path.node)
+  );
+
+// A hole for one arg; `=code` is what the story defaults it to while it is unset.
+const argHole = (kind: string, words: string[], fallback: string) =>
+  hole(kind, ...words, ...(fallback ? [`=${fallback}`] : []));
 
 const nodeEdit = (node: t.Node, text: string): Edit => ({
   start: node.start!,

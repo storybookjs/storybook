@@ -971,6 +971,12 @@ test('template: destructured args are holes too', () => {
   expect(filled(input, 'Destructured', { label: 'L', items: ['a'] })).toBe(
     'const Destructured = () => <List label="L" items={["a"].map((item) => item)} />;'
   );
+  const renamed = withCSF3(
+    `export const Renamed: Story = { render: ({ label: text }) => <List style={{ text }} /> };`
+  );
+  expect(template(renamed, 'Renamed')).toBe(
+    'const Renamed = () => <List style={{ text: ⟦value label⟧ }} />;'
+  );
 });
 
 test('template: keeps the indentation of lines after the first', () => {
@@ -1057,20 +1063,173 @@ test('template: writes a component arg by its name', () => {
   );
 });
 
+test('template: a rest of the args is every arg but those taken before it', () => {
+  const input = withCSF3(dedent`
+    export const Rest: Story = {
+      render: ({ label, ...rest }) => <Button {...rest}>{label}</Button>,
+    };
+    export const Alone: Story = {
+      render: ({ disabled, ...rest }) => <Field disabled={disabled}><Button {...rest} /></Field>,
+    };
+    export const Read: Story = {
+      render: ({ label, ...rest }) => <Button size="sm" title={rest.title} label={label} {...rest} />,
+    };
+    export const Taken: Story = { render: ({ label, ...rest }) => <Button title={rest.label} /> };
+  `);
+  expect(template(input, 'Rest')).toBe(
+    'const Rest = () => <Button ⟦props -label -children⟧>⟦text label⟧</Button>;'
+  );
+  expect(filled(input, 'Rest', { label: 'Go', children: 'x', size: 'sm' })).toBe(
+    'const Rest = () => <Button size="sm">Go</Button>;'
+  );
+  expect(template(input, 'Alone')).toBe(
+    'const Alone = () => <Field ⟦attr disabled disabled⟧>⟦element Button -disabled⟧</Field>;'
+  );
+  expect(filled(input, 'Alone', { disabled: true, children: 'Save', size: 'sm' })).toBe(
+    'const Alone = () => <Field disabled><Button size="sm">Save</Button></Field>;'
+  );
+  expect(template(input, 'Read')).toBe(
+    'const Read = () => <Button size="sm" ⟦attr title title⟧ ⟦attr label label⟧ ⟦props -label ^size ^title⟧ />;'
+  );
+  expect(template(input, 'Taken')).toBeUndefined();
+});
+
+test('template: a default stands for its arg while that is unset', () => {
+  const input = withCSF3(dedent`
+    export const Defaults: Story = {
+      render: ({ size = 'md', count = 2, label = 'Go', style = { a: 1 }, ...rest }) => (
+        <Button size={size} style={style} title={count.toFixed()} {...rest}>
+          {label}
+          {{ size, total: count + 1 }.size}
+        </Button>
+      ),
+    };
+    export const Computed: Story = { render: ({ a = 1, b = a ? 2 : 3 }) => <Button a={a} b={b} /> };
+    export const Called: Story = { render: ({ id = uniqueId() }) => <Button id={id} /> };
+    export const Outer: Story = { render: ({ size = sizes.md }) => <Button size={size} /> };
+  `);
+  expect(template(input, 'Defaults')).toMatchInlineSnapshot(`
+    "const Defaults = () => (
+      <Button ⟦attr size size ='md'⟧ ⟦attr style style ={ a: 1 }⟧ title={⟦operand count =(2)⟧.toFixed()} ⟦props -size -count -label -style ^title -children⟧>
+        ⟦text label ='Go'⟧
+        {{ size: ⟦value size ='md'⟧, total: ⟦value count =2⟧ + 1 }.size}
+      </Button>
+    );"
+  `);
+  expect(filled(input, 'Defaults', {})).toMatchInlineSnapshot(`
+    "const Defaults = () => (
+      <Button size={'md'} style={{ a: 1 }} title={(2).toFixed()}>
+        {'Go'}
+        {{ size: 'md', total: 2 + 1 }.size}
+      </Button>
+    );"
+  `);
+  expect(filled(input, 'Defaults', { size: 'lg', count: 3, label: null, style: undefined }))
+    .toMatchInlineSnapshot(`
+      "const Defaults = () => (
+        <Button size="lg" style={{ a: 1 }} title={(3).toFixed()}>
+          {{ size: "lg", total: 3 + 1 }.size}
+        </Button>
+      );"
+    `);
+  expect(filled(input, 'Outer', {})).toBe('const Outer = () => <Button size={sizes.md} />;');
+  expect(template(input, 'Computed')).toBeUndefined();
+  expect(template(input, 'Called')).toBeUndefined();
+});
+
+test('template: args destructured in the body are holes, without the statement', () => {
+  const input = withCSF3(dedent`
+    export const Body: Story = {
+      render: (args) => {
+        const { count = 3, ...buttonProps } = args;
+        const { onChange, ...rest } = buttonProps;
+        return <Button {...rest} title={args.title}>{count}</Button>;
+      },
+    };
+    export const Nested: Story = {
+      render: (args) => {
+        const { style: { color } } = args;
+        return <Button color={color} />;
+      },
+    };
+  `);
+  expect(template(input, 'Body')).toMatchInlineSnapshot(`
+    "const Body = () => {
+      return <Button ⟦props -count -onChange -title -children⟧ ⟦attr title title⟧>⟦text count =3⟧</Button>;
+    };"
+  `);
+  expect(filled(input, 'Body', { title: 'Hi', onChange: () => {}, count: 5, size: 'sm' }))
+    .toMatchInlineSnapshot(`
+      "const Body = () => {
+        return <Button size="sm" title="Hi">5</Button>;
+      };"
+    `);
+  expect(filled(input, 'Nested', { style: { color: 'red' } })).toMatchInlineSnapshot(`
+    "const Nested = () => {
+      const { style: { color } } = { style: { color: "red" } };
+      return <Button color={color} />;
+    };"
+  `);
+});
+
+test('template: args passed along whole are the object they are', () => {
+  const input = withCSF3(dedent`
+    export const Prop: Story = { render: (args) => <Tabs tabProps={args} /> };
+    export const Called: Story = {
+      render: ({ label, ...rest }) => <Button size={sizeOf(rest)} {...wrap(rest)}>{label}</Button>,
+    };
+    export const Spread: Story = {
+      render: (args) => {
+        const props = { ...args, args, value: (args as any)[key] };
+        return <Button {...props} />;
+      },
+    };
+    export const Body: Story = { render: (args) => args };
+  `);
+  expect(template(input, 'Prop')).toBe('const Prop = () => <Tabs tabProps={⟦args⟧} />;');
+  const HeartIcon = () => null;
+  expect(
+    filled(input, 'Prop', { 'aria-label': 'a"b', icon: HeartIcon, onClick: () => {}, n: 1 })
+  ).toBe(
+    'const Prop = () => <Tabs tabProps={{ "aria-label": "a\\"b", icon: HeartIcon, n: 1 }} />;'
+  );
+  expect(filled(input, 'Called', { label: 'Go', size: 'sm' })).toBe(
+    'const Called = () => <Button size={sizeOf({ size: "sm" })} {...wrap({ size: "sm" })}>Go</Button>;'
+  );
+  expect(filled(input, 'Spread', {})).toContain(
+    'const props = { ...{}, args: {}, value: ({} as any)[key] };'
+  );
+  expect(filled(input, 'Body', { a: 1 })).toBe('const Body = () => ({ a: 1 });');
+});
+
+test('template: keeps another spread on the element as written', () => {
+  const input = withCSF3(dedent`
+    export const Dynamic: Story = {
+      render: (args) => <Button size="sm" {...args} {...dynamicArgs} onClick={log} />,
+    };
+  `);
+  expect(template(input, 'Dynamic')).toBe(
+    'const Dynamic = () => <Button size="sm" ⟦props ^size -onClick⟧ {...dynamicArgs} onClick={log} />;'
+  );
+});
+
 test('template: none for args no hole stands for', () => {
   const input = withCSF3(dedent`
-    export const PassedAlong: Story = { render: (args) => <Button {...wrap(args)} /> };
-    export const Rest: Story = { render: ({ label, ...rest }) => <Button {...rest} /> };
-    export const ObjectSpread: Story = { render: (args) => <Button {...{ ...args }} /> };
     export const NoArgs: Story = { render: () => <Button /> };
+    export const Twice: Story = { render: (args) => <Button {...args} {...args} /> };
+    export const Changed: Story = { render: (args) => { normalize(args); return <Button {...args} />; } };
+    export const Compared: Story = { render: (args) => { useEffect(log, [args]); return <Button {...args} />; } };
     export const Written: Story = { render: (args) => { args.label = 'x'; return <Button {...args} />; } };
+    export const Keyed: Story = { render: (args) => { args[key] = 'x'; return <Button {...args} />; } };
     export const Reassigned: Story = { render: ({ label }) => { label = 'x'; return <Button label={label} />; } };
     export const Shadowed: Story = { render: (args) => <Button label={args.label} />, ...Base };
     export const Tag: Story = { render: ({ as: Tag, label }) => <Tag>{label}</Tag> };
+    export const Member: Story = { render: (args) => <args.Icon /> };
     export const Spaced: Story = { render: ({ 'a b': x }) => <Button title={x} /> };
+    export const SpacedRead: Story = { render: (args) => <Button title={args['a b']} /> };
   `);
-  const stories = ['PassedAlong', 'Rest', 'ObjectSpread', 'NoArgs'];
-  const unusual = ['Written', 'Reassigned', 'Shadowed', 'Tag', 'Spaced'];
+  const stories = ['NoArgs', 'Twice', 'Changed', 'Compared', 'Written', 'Keyed', 'Reassigned'];
+  const unusual = ['Shadowed', 'Tag', 'Member', 'Spaced', 'SpacedRead'];
   for (const story of [...stories, ...unusual]) {
     expect(template(input, story)).toBeUndefined();
   }

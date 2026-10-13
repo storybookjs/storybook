@@ -9,27 +9,33 @@ import {
 import type { Args } from 'storybook/internal/types';
 
 // Fills a template from `buildStoryTemplate`. Besides the shared holes, `⟦element Button⟧` is the
-// component with every arg.
+// component with every arg and `⟦args⟧` the args as an object, both without their `-name` words.
+// A hole for one arg may end in `=code`, which stands for the arg while it is unset.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', second = ''] = words;
+    const at = kind === 'attr' ? 2 : 1;
+    const fallback = words[at]?.startsWith('=') ? words.slice(at).join(' ').slice(1) : '';
+    const unset = args[words[at - 1]!] === undefined && fallback;
     switch (kind) {
       case 'element': {
-        const { children, ...props } = args;
+        const { children, ...props } = Object.fromEntries(spreadArgs(args, words.slice(1)));
         const content = text('children', children);
         const open = [first, attributesOf(props)].filter(Boolean).join(' ');
         return content ? `<${open}>${content}</${first}>` : `<${open} />`;
       }
       case 'props':
         return attributesOf(Object.fromEntries(spreadArgs(args, words)));
+      case 'args':
+        return object(spreadArgs(args, words));
       case 'attr':
-        return attribute(first, args[second]);
+        return unset ? `${first}={${unset}}` : attribute(first, args[second]);
       case 'text':
-        return text(first, args[first]);
+        return unset ? `{${unset}}` : text(first, args[first]);
       case 'operand':
-        return asOperand(literal(first, args[first]));
+        return unset || asOperand(literal(first, args[first]));
       default:
-        return literal(first, args[first]);
+        return unset || literal(first, args[first]);
     }
   });
 
@@ -59,6 +65,19 @@ function attribute(name: string, value: unknown): string {
 }
 
 const literal = (name: string, value: unknown) => componentName(value) ?? printValue(value, name);
+
+// As a spread of the args leaves a function arg out, so does the object they are.
+const object = (entries: [string, unknown][]) => {
+  const properties = entries
+    .filter(
+      ([, value]) => value !== undefined && (typeof value !== 'function' || componentName(value))
+    )
+    .map(
+      ([name, value]) =>
+        `${/^[A-Za-z_$][\w$]*$/.test(name) ? name : printValue(name, name)}: ${literal(name, value)}`
+    );
+  return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
+};
 
 // A function named like a component, which a mock such as `fn()` never is.
 const componentName = (value: unknown) =>

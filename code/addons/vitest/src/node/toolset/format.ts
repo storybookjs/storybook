@@ -229,10 +229,16 @@ ${unhandledError.stack || 'No stack trace available'}`
 ${formattedErrors.join('\n\n')}`;
 }
 
-function formatA11yCounts({ success, warning, error }: TestRunResult['a11yCount']): string {
+function formatA11yCounts(
+  { success, warning, error }: TestRunResult['a11yCount'],
+  a11yEnabled: boolean
+): string {
   const checked = success + warning + error;
   if (checked === 0) {
-    return 'Accessibility: not checked.';
+    // Without addon-a11y every run ends here, so the reason keeps it from reading as a fault.
+    return a11yEnabled
+      ? 'Accessibility: not checked.'
+      : 'Accessibility: not checked (addon-a11y is not enabled).';
   }
   if (warning === 0 && error === 0) {
     return `Accessibility: ${pluralize(checked, 'story', 'stories')} checked, no violations.`;
@@ -247,11 +253,14 @@ function formatA11yCounts({ success, warning, error }: TestRunResult['a11yCount'
   return `Accessibility: ${pluralize(checked, 'story', 'stories')} checked; ${parts.join('; ')}.`;
 }
 
-function formatA11yResult(result: TestRunResult, a11y: boolean): string {
+function formatA11yResult(
+  result: TestRunResult,
+  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+): string {
   if (!a11y) {
     return 'Accessibility: skipped (a11y: false).';
   }
-  const counts = formatA11yCounts(result.a11yCount);
+  const counts = formatA11yCounts(result.a11yCount, a11yEnabled);
   // Otherwise "no violations" reads as if the failing stories were clean too.
   return result.componentTestCount.error > 0
     ? `${counts} Stories with a failing component test get no accessibility result.`
@@ -265,7 +274,10 @@ const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => stri
   unhandledErrors: (count) => pluralize(count, 'unhandled error'),
 };
 
-function formatResultSection(result: TestRunResult, a11y: boolean): string {
+function formatResultSection(
+  result: TestRunResult,
+  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+): string {
   const failures = countTestRunFailures(result, a11y);
   const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
     .filter((key) => failures[key] > 0)
@@ -280,13 +292,13 @@ function formatResultSection(result: TestRunResult, a11y: boolean): string {
   return `## Result
 
 ${verdict}
-${formatA11yResult(result, a11y)}`;
+${formatA11yResult(result, { a11y, a11yEnabled })}`;
 }
 
 // Only the sections that carry information are emitted before the closing result.
 function formatCompletedRun(
   result: TestRunResult,
-  { a11y, origin }: { a11y: boolean; origin?: string }
+  { a11y, a11yEnabled, origin }: { a11y: boolean; a11yEnabled: boolean; origin?: string }
 ): string {
   const sections: string[] = [];
   // An error-level accessibility result fails the run without failing the component test, so the
@@ -322,7 +334,7 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, a11y));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled }));
 
   return sections.join('\n\n');
 }
@@ -333,7 +345,11 @@ function formatCompletedRun(
  * Failed and cancelled runs read as `Error: …` because the MCP tool surfaced them by throwing; the
  * `isError` flag that accompanied them belongs to the adapter, not to text.
  */
-export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
+export function formatTestRun(
+  data: TestRunData,
+  ctx: ToolsetCtx,
+  { a11yEnabled }: { a11yEnabled: boolean }
+): string {
   switch (data.status) {
     case 'no-stories':
       return data.notFoundMessages.length === 0
@@ -342,7 +358,11 @@ export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
 
 ${data.notFoundMessages.join('\n')}`;
     case 'completed':
-      return formatCompletedRun(data.result, { a11y: data.a11y, origin: ctx.origin });
+      return formatCompletedRun(data.result, {
+        a11y: data.a11y,
+        a11yEnabled,
+        origin: ctx.origin,
+      });
     case 'error':
       return `Error: ${data.error.message}`;
     case 'cancelled':

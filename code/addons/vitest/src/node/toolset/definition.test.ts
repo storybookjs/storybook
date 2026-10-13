@@ -270,6 +270,27 @@ Passed: 1 component test passed.
 Accessibility: not checked.`);
     });
 
+    it('says why accessibility was not checked when addon-a11y is not enabled', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          storyIds: ['button--primary'],
+          totalTestCount: 1,
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        })
+      );
+      toolset = createTestToolset({ channel, storyIndex, a11yEnabled: false });
+
+      expect((await runForMcp()).markdown).toBe(`## Passing Stories
+
+- button--primary
+
+## Result
+
+Passed: 1 component test passed.
+Accessibility: not checked (addon-a11y is not enabled).`);
+    });
+
     it('says the accessibility check found nothing rather than staying silent', async () => {
       vi.mocked(runStoryTests).mockResolvedValue(
         completed({

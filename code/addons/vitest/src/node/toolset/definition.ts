@@ -244,7 +244,7 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };
-            const markdown = formatTestRun(data, ctx);
+            const markdown = formatTestRun(data, ctx, { a11yEnabled });
             const telemetry = runTelemetry(data, input);
             return isFailedRun(data)
               ? { ok: false, data, markdown, telemetry }

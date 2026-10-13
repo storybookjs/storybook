@@ -180,6 +180,48 @@ describe('findStoryIds', () => {
     );
   });
 
+  it('counts a misspelled component ID as the same component', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        ['input--default', 'input--disabled', 'input--invalid', 'forms-input--default'].map(
+          (id) => [
+            id,
+            { ...primaryStory, id, title: id.startsWith('forms') ? 'Forms/Input' : 'Input' },
+          ]
+        )
+      ),
+    };
+
+    const [sameName, otherName] = findStoryIds(index, [
+      { storyId: 'form-input--default' },
+      { storyId: 'form-input--primary' },
+    ]);
+
+    expect((sameName as { errorMessage: string }).errorMessage).toMatch(
+      /Did you mean "forms-input--default", "input--default", /
+    );
+    expect((otherName as { errorMessage: string }).errorMessage).toMatch(
+      /Did you mean "forms-input--default", /
+    );
+  });
+
+  it('does not count a short component ID two edits away as misspelled', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'bar--default': { ...primaryStory, id: 'bar--default', title: 'Bar' },
+        'ui-tab--selected': { ...primaryStory, id: 'ui-tab--selected', title: 'Ui/Tab' },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'tab--default' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "tab--default". Did you mean "ui-tab--selected", "bar--default"?'
+    );
+  });
+
   it('does not suggest docs or test entries for a story ID', () => {
     const index: StoryIndex = {
       v: 5,
@@ -259,12 +301,12 @@ describe('findStoryIds', () => {
 
   it('suggests an ID of another component only when it is a few edits away', () => {
     const [nearMiss, farMiss] = findStoryIds(mockStoryIndex, [
-      { storyId: 'inputs--default' },
+      { storyId: 'btn--primary' },
       { storyId: 'checkbox--checked' },
     ]);
 
     expect((nearMiss as { errorMessage: string }).errorMessage).toBe(
-      'No story found for story ID "inputs--default". Did you mean "input--default"?'
+      'No story found for story ID "btn--primary". Did you mean "button--primary"?'
     );
     expect((farMiss as { errorMessage: string }).errorMessage).toBe(
       'No story found for story ID "checkbox--checked"'

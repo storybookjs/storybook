@@ -38,6 +38,7 @@ function normalizeImportPath(importPath: string): string {
 
 const MAX_SUGGESTIONS = 3;
 const MAX_FILE_STORIES = 5;
+const MAX_COMPONENT_TYPOS = 2;
 
 function isNonTestStory(entry: IndexEntry): entry is StoryIndexEntry {
   return entry.type === 'story' && entry.subtype !== 'test';
@@ -54,10 +55,18 @@ function differsByTitlePrefix(entry: StoryIndexEntry, componentId: string): bool
   );
 }
 
+// Whether the guessed component ID is the entry's with a typo: `form-input` for `forms-input`.
+// Short IDs allow fewer typos, as `tab` is two edits away from `bar`.
+function isMisspelled(componentId: string, entryComponentId: string): boolean {
+  return (
+    leven(componentId, entryComponentId) <= Math.min(MAX_COMPONENT_TYPOS, componentId.length / 3)
+  );
+}
+
 // Agents guess IDs from story names (`--error` for an `ErrorState` story named "Error"), so the
 // same component's stories come first, those whose name overlaps the guess before the rest. A
-// guess with a different title prefix (`button--primary` for `example-button--primary`) counts as
-// the same component.
+// guess with a different title prefix (`button--primary` for `example-button--primary`) or a typo
+// in the component (`form-input--default` for `forms-input--default`) counts as the same component.
 function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
   const [componentId, guessedSlug = ''] = storyId.split('--');
   const maxDistance = storyId.length / 3;
@@ -65,9 +74,14 @@ function suggestStoryIds(entries: IndexEntry[], storyId: string): string[] {
     .filter(isNonTestStory)
     .flatMap((entry) => {
       const [entryComponentId, entrySlug = ''] = entry.id.split('--');
-      // 2: the guessed component, 1: it under another title prefix, 0: another component.
+      // 2: the guessed component, 1: it under another title prefix or misspelled, 0: another
+      // component.
       const componentMatch =
-        entryComponentId === componentId ? 2 : differsByTitlePrefix(entry, componentId) ? 1 : 0;
+        entryComponentId === componentId
+          ? 2
+          : differsByTitlePrefix(entry, componentId) || isMisspelled(componentId, entryComponentId)
+            ? 1
+            : 0;
       const sameComponent = componentMatch > 0;
       if (!sameComponent && Math.abs(entry.id.length - storyId.length) > maxDistance) {
         return [];

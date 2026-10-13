@@ -140,7 +140,8 @@ describe(transformStoriesCode.name, () => {
       			description: { story: "Description for the default story" }
       		},
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
+      			template: "<Example⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
       		}
       	}
       });
@@ -156,7 +157,8 @@ describe(transformStoriesCode.name, () => {
       			description: { story: "Description for the rounded story" }
       		},
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
+      			template: "<Example⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
       		}
       	}
       });
@@ -172,7 +174,8 @@ describe(transformStoriesCode.name, () => {
       			description: { story: "Description for the squared story" }
       		},
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
+      			template: "<Example⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
       		}
       	}
       });
@@ -219,7 +222,8 @@ describe(transformStoriesCode.name, () => {
       	$$slots: { default: true },
       	parameters: {
       		__svelteCsf: {
-      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>",
+      			template: "<Example⟦props -children⟧>\\n  Forwarded label\\n</Example>"
       		}
       	}
       });

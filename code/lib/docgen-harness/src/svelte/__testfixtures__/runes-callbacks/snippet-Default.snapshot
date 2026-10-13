@@ -1,5 +1,1 @@
-<Callbacks 
-  onclick={onclick}
-  onchange={onchange}
-  format={format}
- />
+<Callbacks onclick={onclick} onchange={onchange} format={format} />

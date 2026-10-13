@@ -7,6 +7,7 @@ import type {
   extractSvelteASTNodes,
 } from '../../../parser/extract/svelte/nodes.ts';
 import { getStoryContentRawCode } from '../../../parser/analyse/story/content.ts';
+import { getStoryContentTemplate } from '../../../parser/analyse/story/template.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
@@ -58,6 +59,7 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
     },
     originalCode,
   });
+  const template = getStoryContentTemplate(rawCode);
 
   appendASTProperty(
     getParametersPropertyValue({
@@ -72,6 +74,7 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
           type: 'Literal',
           value: rawCode,
         }),
+        ...(template ? [createASTProperty('template', { type: 'Literal', value: template })] : []),
       ])
     )
   );

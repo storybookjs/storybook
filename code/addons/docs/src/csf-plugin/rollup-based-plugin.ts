@@ -20,14 +20,13 @@ export async function transformCsf(
   const sourceCode = await readFile(id, 'utf-8');
   try {
     const makeTitle = (userTitle: string) => userTitle || 'default';
-    const csf = loadCsf(code, { makeTitle }).parse();
-    // Built-in enrichment reads each comment before it changes the meta node and only appends story
-    // statements, so it can share `csf`. An `enrichCsf` hook runs after the meta is changed, so it
-    // gets a separate parse.
+    const csf = loadCsf(code, { makeTitle, fileName: id }).parse();
+    // Enrichment edits the source text and leaves the parsed nodes untouched, so `csf` can double as
+    // the source. An `enrichCsf` hook may print the edited file, so it gets a separate parse.
     const csfSource =
       code === sourceCode && !options.enrichCsf ? csf : loadCsf(sourceCode, { makeTitle }).parse();
     await enrichCsf(csf, csfSource, options);
-    return formatCsf(csf, { sourceMaps: true, sourceFileName: id }, code);
+    return formatCsf(csf, { sourceMaps: true, sourceFileName: id });
   } catch (err: unknown) {
     // Any .stories file that fails to parse (legacy or broken) passes through unmodified so doc generation does not crash.
     const message = err instanceof Error ? err.message : String(err);

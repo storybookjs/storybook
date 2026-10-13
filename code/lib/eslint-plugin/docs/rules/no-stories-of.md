@@ -1,4 +1,4 @@
-# storiesOf is deprecated and should not be used (no-stories-of)
+# storiesOf was removed in Storybook 8.0; use CSF instead (no-stories-of)
 
 <!-- RULE-CATEGORIES:START -->
 
@@ -47,10 +47,4 @@ export const Primary = {
 
 ## Further Reading
 
-For more information about the change from `storiesOf` to `CSF`, read here: https://github.com/storybookjs/storybook/blob/master/lib/core/docs/storiesOf.md
-
-To automatically migrate all of your codebase, run this codemod in the root folder of your project:
-
-```sh
-npx storybook@latest migrate storiesof-to-csf --glob="*/**/*.stories.@(tsx|jsx|ts|js)"
-```
+For more information about the change from `storiesOf` to `CSF`, read the [Storybook 8.0 migration guide](https://storybook.js.org/docs/8/migration-guide/from-older-version), and write your stories in [CSF](https://storybook.js.org/docs/api/csf) instead.

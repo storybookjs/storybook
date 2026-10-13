@@ -58,7 +58,7 @@ const changeDetectionReadinessSchema = v.variant('status', [
     status: v.literal('unavailable'),
     reason: v.pipe(
       v.string(),
-      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+      v.description('Why change detection cannot publish statuses, such as no git.')
     ),
     error: v.optional(
       v.object({
@@ -109,7 +109,7 @@ export const moduleGraphServiceDef = defineService({
     },
     changeDetectionReadiness: {
       description:
-        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while git is unusable or the initial scan has failed.',
       input: noInputSchema,
       output: changeDetectionReadinessSchema,
       load: async (_input, ctx) => {
@@ -187,37 +187,6 @@ export const moduleGraphServiceDef = defineService({
         revision: ctx.self.state.graphRevision,
         storyFiles: ctx.self.state.latestChangedStoryFiles,
       }),
-    },
-    /** @deprecated Use {@link status} instead. */
-    getStatus: {
-      description: 'Deprecated alias for `status`. Use `status` instead.',
-      input: noInputSchema,
-      output: moduleGraphStatusSchema,
-      handler: (input, ctx) => ctx.self.queries.status.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.status.loaded(input);
-      },
-    },
-    /** @deprecated Use {@link graphRevision} instead. */
-    getGraphRevision: {
-      description: 'Deprecated alias for `graphRevision`. Use `graphRevision` instead.',
-      input: v.optional(
-        v.object({
-          storyFiles: v.array(
-            v.pipe(
-              v.string(),
-              v.description(
-                'Story file to scope the watch to. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`. Pass an empty array to watch nothing (returns 0).'
-              )
-            )
-          ),
-        })
-      ),
-      output: v.number(),
-      handler: (input, ctx) => ctx.self.queries.graphRevision.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.graphRevision.loaded(input);
-      },
     },
   },
   commands: {

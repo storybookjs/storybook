@@ -148,8 +148,6 @@ export async function buildStorybookStoryInstructions(
     transport: 'mcp',
     framework: inputs.framework,
     renderer: inputs.renderer,
-    changeDetectionEnabled: inputs.changeDetectionEnabled,
-    reviewEnabled: inputs.reviewEnabled,
     testSupported: (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
     a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
     docsEnabled: (toolsets?.docs ?? true) && (docsEnabled ?? inputs.docsEnabled),

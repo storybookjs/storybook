@@ -139,6 +139,41 @@ describe('dependenciesVersions blocker', () => {
     expect(result).toBe(false);
   });
 
+  test.each(['2.70.3', '3.0.0-next.30'])(
+    '@sveltejs/kit %s is blocked with message and migration anchor',
+    async (version) => {
+      const packageManager = createPackageManager({ '@sveltejs/kit': version });
+
+      const result = await blocker.check(createCheckOptions(packageManager));
+
+      expect(result).toEqual({
+        packageName: '@sveltejs/kit',
+        installedVersion: version,
+        minimumVersion: '3.0.0',
+      });
+
+      if (!result) {
+        throw new Error(`Expected @sveltejs/kit ${version} to be blocked`);
+      }
+
+      const logged = blocker.log(result);
+
+      expect(logged.title).toBe('Require SvelteKit v3 and up');
+      expect(logged.message).toContain('npx sv migrate sveltekit-3');
+      expect(logged.link).toBe(
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up'
+      );
+    }
+  );
+
+  test.each(['3.0.0', '3.1.2'])('@sveltejs/kit %s is not blocked', async (version) => {
+    const packageManager = createPackageManager({ '@sveltejs/kit': version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
   test('missing @angular/core does not block', async () => {
     const packageManager = createPackageManager({});
 

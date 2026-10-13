@@ -1,16 +1,28 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { loadConfig } from './ConfigFile.ts';
-import type { CsfValue } from './CsfObject.ts';
+import { type CsfValue, parseExpression, printExpression } from './CsfObject.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
 
 describe('CsfObject', () => {
   afterEach(() => vi.unstubAllGlobals());
+
+  it.each(['<T>(value: T) => value', '<number>size'])(
+    'reads %s, which only a .ts file allows',
+    (expression) => {
+      const csf = loadCsf(`const size = 1;\nexport default { parameters: ${expression} };`, {
+        fileName: 'Button.stories.ts',
+        makeTitle: (title) => title ?? 'title',
+      }).parse();
+      const [meta] = csf.objects({ stories: false });
+
+      expect(printExpression(meta.get(['parameters'])!)).toBe(expression);
+      expect(printExpression(parseExpression(expression))).toBe(expression);
+    }
+  );
 
   it.each([
     { expression: 'false', expected: false },
@@ -143,13 +155,11 @@ describe('CsfObject', () => {
     const [story] = csf.objects({ meta: false });
     story.rename(['play'], 'beforeEach');
     story.transform(['beforeEach'], (value) => {
-      if (!t.isFunctionExpression(value)) {
+      if (value.type !== 'FunctionExpression') {
         throw new Error('Expected a function expression');
       }
-      return {
-        ...value,
-        body: t.blockStatement([...value.body.body, t.returnStatement(t.booleanLiteral(true))]),
-      };
+      const source = printExpression(value);
+      return parseExpression(`${source.slice(0, source.lastIndexOf('}'))} return true; }`);
     });
     expect(printCsf(csf).code).toContain('beforeEach()');
     expect(printCsf(csf).code).toContain('return true;');
@@ -212,7 +222,7 @@ describe('CsfObject', () => {
     });
     const output = parse(printCsf(csf).code);
     const [updated] = output.objects({ meta: true, stories: false });
-    expect(updated.get(destination)).toMatchObject({ type: 'StringLiteral', value: 'mobile' });
+    expect(updated.get(destination)).toMatchObject({ type: 'Literal', value: 'mobile' });
     if (destination[0] === 'globals') {
       expect(updated.get(['parameters'])).toBeUndefined();
     } else if (destination.length === 2) {
@@ -318,7 +328,7 @@ describe('CsfObject', () => {
     const [updated] = parse(printCsf(csf).code).objects({ meta: false });
     expect(updated.get(['args', 'appearance', 'dark'])).toMatchObject({ value: true });
     expect(updated.get(['args', 'labels'])).toMatchObject({
-      elements: [{ type: 'StringLiteral', value: 'original' }],
+      elements: [{ type: 'Literal', value: 'original' }],
     });
   });
 
@@ -326,13 +336,13 @@ describe('CsfObject', () => {
     const csf = parse(`export default { title: 'Original' };`);
     const [meta] = csf.objects({ meta: true, stories: false });
     const value = meta.get(['title']);
-    const replacement = t.stringLiteral('Replacement');
+    const replacement = parseExpression('"Replacement"');
 
-    if (t.isStringLiteral(value)) {
+    if (value?.type === 'Literal') {
       value.value = 'Mutated';
     }
     expect(meta.set(['title'], replacement)).toEqual({ ok: true, changed: true });
-    replacement.value = 'Mutated replacement';
+    (replacement as { value: unknown }).value = 'Mutated replacement';
 
     expect(printCsf(csf).code).toContain('title: "Replacement"');
     expect(printCsf(csf).code).not.toContain('Mutated');
@@ -350,7 +360,7 @@ describe('CsfObject', () => {
     expect(stories).toHaveLength(1);
     expect(stories[0].target).toEqual({ kind: 'story', exportName: 'First', localName: 'Local' });
     expect(stories[0].get(['parameters', 'componentSubtitle'])).toMatchObject({
-      type: 'StringLiteral',
+      type: 'Literal',
       value: 'Aliased',
     });
   });
@@ -487,8 +497,8 @@ describe('CsfObject', () => {
 
     expect(
       meta.transform(['parameters', 'backgrounds', 'values'], (values) =>
-        t.isArrayExpression(values) && t.isExpression(values.elements[0])
-          ? t.objectExpression([t.objectProperty(t.identifier('gray'), values.elements[0])])
+        values.type === 'ArrayExpression' && values.elements[0]
+          ? parseExpression(`{\n  gray: ${printExpression(values.elements[0])}\n}`)
           : undefined
       )
     ).toEqual({ ok: true, changed: true });
@@ -550,12 +560,12 @@ describe('CsfObject', () => {
     const csf = parse(source);
     const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(meta.set(['parameters', '__proto__', 'polluted'], t.booleanLiteral(true))).toMatchObject(
-      {
-        ok: false,
-        diagnostic: { code: 'unsupported-member' },
-      }
-    );
+    expect(
+      meta.set(['parameters', '__proto__', 'polluted'], parseExpression('true'))
+    ).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'unsupported-member' },
+    });
     expect(printCsf(csf).code).toBe(source);
   });
 
@@ -682,10 +692,10 @@ describe('CsfObject', () => {
   it('replaces a shorthand property value', () => {
     const csf = parse('const name = "old"; export default { name };');
     const [meta] = csf.objects({ stories: false });
-    meta.set(['name'], t.stringLiteral('new'));
+    meta.set(['name'], parseExpression("'new'"));
 
     const [updated] = parse(printCsf(csf).code).objects({ stories: false });
-    expect(updated.get(['name'])).toMatchObject({ type: 'StringLiteral', value: 'new' });
+    expect(updated.get(['name'])).toMatchObject({ type: 'Literal', value: 'new' });
   });
 
   it('preserves a shorthand property value when renaming its key', () => {
@@ -748,7 +758,7 @@ describe('CsfObject', () => {
     `);
     const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
+    expect(meta.get(['title'])).toMatchObject({ type: 'Literal', value: 'Example' });
   });
 
   it('rejects mutable identifier-backed factory meta configuration', () => {

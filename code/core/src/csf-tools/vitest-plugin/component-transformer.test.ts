@@ -33,33 +33,22 @@ describe('component transformer', () => {
     expect(result.code).toContain('_test("Badge", _testStory({');
 
     expect(result.code).toMatchInlineSnapshot(`
-      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-      import { test as _test, expect as _expect } from "vitest";
+      "
+            import { test as _test, expect as _expect } from "vitest";
+      import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       import { Body } from '../typography';
-      export const Badge = ({
-        text
-      }: {
-        text: string;
-      }) => <div>
+
+            export const Badge = ({ text }: { text: string }) => (
+              <div>
                 <Body>{text}</Body>
-              </div>;
+              </div>
+            );
+          
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Badge", _testStory({
-          exportName: "Badge",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Badge",
-            component: Badge
-          },
-          skipTags: [],
-          storyId: "generated-Badge",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Badge"
-        }));
-      }"
+        _test("Badge", _testStory({ exportName: "Badge", story: { args: {} }, meta: { title: "generated/tests/Badge", component: Badge }, skipTags: [], storyId: "generated-Badge", componentPath: "src/components/Badge.tsx", componentName: "Badge" }));
+      }
+      "
     `);
   });
 
@@ -75,27 +64,17 @@ describe('component transformer', () => {
     expect(result.code).toContain('_test("Spinner", _testStory({');
 
     expect(result.code).toMatchInlineSnapshot(`
-      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-      import { test as _test, expect as _expect } from "vitest";
+      "
+            import { test as _test, expect as _expect } from "vitest";
+      import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       const _Spinner = () => <div />;
       export default _Spinner;
+          
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Spinner", _testStory({
-          exportName: "Spinner",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Spinner",
-            component: _Spinner
-          },
-          skipTags: [],
-          storyId: "generated-Spinner",
-          componentPath: "src/components/Spinner.tsx",
-          componentName: "_Spinner"
-        }));
-      }"
+        _test("Spinner", _testStory({ exportName: "Spinner", story: { args: {} }, meta: { title: "generated/tests/Spinner", component: _Spinner }, skipTags: [], storyId: "generated-Spinner", componentPath: "src/components/Spinner.tsx", componentName: "_Spinner" }));
+      }
+      "
     `);
   });
 
@@ -138,97 +117,48 @@ describe('component transformer', () => {
     expect(result.code).toContain('_test("Spinner", _testStory({');
 
     expect(result.code).toMatchInlineSnapshot(`
-      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-      import { test as _test, expect as _expect } from "vitest";
+      "
+            import { test as _test, expect as _expect } from "vitest";
+      import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       import { someWrapper } from '../lib/util';
-      function Component() {}
-      const _Spinner = someWrapper(Component);
+            function Component() {}
+
+            const _Spinner = someWrapper(Component);
       export default _Spinner;
-      export function withErrorBoundary<P extends object, R>(Component: ComponentType<P>) {
-        return forwardRef<R, P>(function WithErrorBoundary(props, ref) {
-          return <ErrorBoundary>
+
+            export function withErrorBoundary<P extends object, R>(
+              Component: ComponentType<P>,
+            ) {
+              return forwardRef<R, P>(function WithErrorBoundary(props, ref) {
+                return (
+                  <ErrorBoundary>
                     <Component {...props} ref={ref} />
-                  </ErrorBoundary>;
-        });
-      }
-      export const FancyButton = React.forwardRef((props, ref) => <button ref={ref}>
+                  </ErrorBoundary>
+                )
+              })
+            }
+            
+            export const FancyButton = React.forwardRef((props, ref) => (
+              <button ref={ref}>
                 {props.children}
-              </button>);
-      export const Label = memo(() => <div />);
-      export { Label };
+              </button>
+            ));
+
+            export const Label = memo(() => <div />);
+            
+            export {
+              Label,
+            };
+          
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Spinner", _testStory({
-          exportName: "Spinner",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Spinner",
-            component: _Spinner
-          },
-          skipTags: [],
-          storyId: "generated-Spinner",
-          componentPath: "src/components/Spinner.tsx",
-          componentName: "_Spinner"
-        }));
-        _test("withErrorBoundary", _testStory({
-          exportName: "withErrorBoundary",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/withErrorBoundary",
-            component: withErrorBoundary
-          },
-          skipTags: [],
-          storyId: "generated-withErrorBoundary",
-          componentPath: "src/components/Spinner.tsx",
-          componentName: "withErrorBoundary"
-        }));
-        _test("FancyButton", _testStory({
-          exportName: "FancyButton",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/FancyButton",
-            component: FancyButton
-          },
-          skipTags: [],
-          storyId: "generated-FancyButton",
-          componentPath: "src/components/Spinner.tsx",
-          componentName: "FancyButton"
-        }));
-        _test("Label", _testStory({
-          exportName: "Label",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Label",
-            component: Label
-          },
-          skipTags: [],
-          storyId: "generated-Label",
-          componentPath: "src/components/Spinner.tsx",
-          componentName: "Label"
-        }));
-        _test("Label", _testStory({
-          exportName: "Label",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Label",
-            component: Label
-          },
-          skipTags: [],
-          storyId: "generated-Label",
-          componentPath: "src/components/Spinner.tsx",
-          componentName: "Label"
-        }));
-      }"
+        _test("Spinner", _testStory({ exportName: "Spinner", story: { args: {} }, meta: { title: "generated/tests/Spinner", component: _Spinner }, skipTags: [], storyId: "generated-Spinner", componentPath: "src/components/Spinner.tsx", componentName: "_Spinner" }));
+        _test("withErrorBoundary", _testStory({ exportName: "withErrorBoundary", story: { args: {} }, meta: { title: "generated/tests/withErrorBoundary", component: withErrorBoundary }, skipTags: [], storyId: "generated-withErrorBoundary", componentPath: "src/components/Spinner.tsx", componentName: "withErrorBoundary" }));
+        _test("FancyButton", _testStory({ exportName: "FancyButton", story: { args: {} }, meta: { title: "generated/tests/FancyButton", component: FancyButton }, skipTags: [], storyId: "generated-FancyButton", componentPath: "src/components/Spinner.tsx", componentName: "FancyButton" }));
+        _test("Label", _testStory({ exportName: "Label", story: { args: {} }, meta: { title: "generated/tests/Label", component: Label }, skipTags: [], storyId: "generated-Label", componentPath: "src/components/Spinner.tsx", componentName: "Label" }));
+        _test("Label", _testStory({ exportName: "Label", story: { args: {} }, meta: { title: "generated/tests/Label", component: Label }, skipTags: [], storyId: "generated-Label", componentPath: "src/components/Spinner.tsx", componentName: "Label" }));
+      }
+      "
     `);
   });
 
@@ -251,88 +181,30 @@ describe('component transformer', () => {
     expect(result.code).toContain('_test("Badge", _testStory({');
     expect(result.code).toContain('_test("Tag", _testStory({');
     expect(result.code).toMatchInlineSnapshot(`
-      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-      import { test as _test, expect as _expect } from "vitest";
+      "
+            import { test as _test, expect as _expect } from "vitest";
+      import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       export const Label = () => <div />;
-      export const Tag = () => <span />;
-      const _Badge = () => <div />;
+            export const Tag = () => <span />;
+            const _Badge = () => <div />;
       export default _Badge;
-      const Input = () => <input />;
-      const Checkbox = () => <input type="checkbox" />;
-      export { Input, Checkbox as CheckboxInput };
+
+            const Input = () => <input />;
+            const Checkbox = () => <input type="checkbox" />;
+            export {
+              Input,
+              Checkbox as CheckboxInput
+            };
+          
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Label", _testStory({
-          exportName: "Label",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Label",
-            component: Label
-          },
-          skipTags: [],
-          storyId: "generated-Label",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Label"
-        }));
-        _test("Tag", _testStory({
-          exportName: "Tag",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Tag",
-            component: Tag
-          },
-          skipTags: [],
-          storyId: "generated-Tag",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Tag"
-        }));
-        _test("Badge", _testStory({
-          exportName: "Badge",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Badge",
-            component: _Badge
-          },
-          skipTags: [],
-          storyId: "generated-Badge",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "_Badge"
-        }));
-        _test("Input", _testStory({
-          exportName: "Input",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/Input",
-            component: Input
-          },
-          skipTags: [],
-          storyId: "generated-Input",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Input"
-        }));
-        _test("CheckboxInput", _testStory({
-          exportName: "CheckboxInput",
-          story: {
-            args: {}
-          },
-          meta: {
-            title: "generated/tests/CheckboxInput",
-            component: Checkbox
-          },
-          skipTags: [],
-          storyId: "generated-CheckboxInput",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Checkbox"
-        }));
-      }"
+        _test("Label", _testStory({ exportName: "Label", story: { args: {} }, meta: { title: "generated/tests/Label", component: Label }, skipTags: [], storyId: "generated-Label", componentPath: "src/components/Badge.tsx", componentName: "Label" }));
+        _test("Tag", _testStory({ exportName: "Tag", story: { args: {} }, meta: { title: "generated/tests/Tag", component: Tag }, skipTags: [], storyId: "generated-Tag", componentPath: "src/components/Badge.tsx", componentName: "Tag" }));
+        _test("Badge", _testStory({ exportName: "Badge", story: { args: {} }, meta: { title: "generated/tests/Badge", component: _Badge }, skipTags: [], storyId: "generated-Badge", componentPath: "src/components/Badge.tsx", componentName: "_Badge" }));
+        _test("Input", _testStory({ exportName: "Input", story: { args: {} }, meta: { title: "generated/tests/Input", component: Input }, skipTags: [], storyId: "generated-Input", componentPath: "src/components/Badge.tsx", componentName: "Input" }));
+        _test("CheckboxInput", _testStory({ exportName: "CheckboxInput", story: { args: {} }, meta: { title: "generated/tests/CheckboxInput", component: Checkbox }, skipTags: [], storyId: "generated-CheckboxInput", componentPath: "src/components/Badge.tsx", componentName: "Checkbox" }));
+      }
+      "
     `);
   });
 
@@ -407,41 +279,23 @@ describe('component transformer', () => {
 
     expect(result.code).toContain('import { fn as _fn } from "storybook/test"');
     expect(result.code).toMatchInlineSnapshot(`
-      "import { fn as _fn } from "storybook/test";
+      "
+            import { test as _test, expect as _expect } from "vitest";
       import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-      import { test as _test, expect as _expect } from "vitest";
+      import { fn as _fn } from "storybook/test";
       import { Body } from '../typography';
-      export const Badge = ({
-        text
-      }: {
-        text: string;
-      }) => <div>
+
+            export const Badge = ({ text }: { text: string }) => (
+              <div>
                 <Body>{text}</Body>
-              </div>;
+              </div>
+            );
+          
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Badge", _testStory({
-          exportName: "Badge",
-          story: {
-            args: {
-              photoUrl: "photoUrl",
-              onClick: _fn(),
-              someObject: {
-                category: "category",
-                onClick: _fn()
-              }
-            }
-          },
-          meta: {
-            title: "generated/tests/Badge",
-            component: Badge
-          },
-          skipTags: [],
-          storyId: "generated-Badge",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Badge"
-        }));
-      }"
+        _test("Badge", _testStory({ exportName: "Badge", story: { args: { photoUrl: "photoUrl", onClick: _fn(), someObject: { category: "category", onClick: _fn() } } }, meta: { title: "generated/tests/Badge", component: Badge }, skipTags: [], storyId: "generated-Badge", componentPath: "src/components/Badge.tsx", componentName: "Badge" }));
+      }
+      "
     `);
   });
 
@@ -481,31 +335,16 @@ describe('component transformer', () => {
     // Check that valid identifiers still use identifier syntax
     expect(result.code).toContain('validKey: "validKey"');
     expect(result.code).toMatchInlineSnapshot(`
-      "import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-      import { test as _test, expect as _expect } from "vitest";
+      "
+            import { test as _test, expect as _expect } from "vitest";
+      import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
       export const Badge = () => <div />;
+          
       const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
       if (_isRunningFromThisFile) {
-        _test("Badge", _testStory({
-          exportName: "Badge",
-          story: {
-            args: {
-              "data-testid": "data-testid",
-              "aria-label": "aria-label",
-              "2invalid": "2invalid",
-              validKey: "validKey"
-            }
-          },
-          meta: {
-            title: "generated/tests/Badge",
-            component: Badge
-          },
-          skipTags: [],
-          storyId: "generated-Badge",
-          componentPath: "src/components/Badge.tsx",
-          componentName: "Badge"
-        }));
-      }"
+        _test("Badge", _testStory({ exportName: "Badge", story: { args: { "data-testid": "data-testid", "aria-label": "aria-label", "2invalid": "2invalid", validKey: "validKey" } }, meta: { title: "generated/tests/Badge", component: Badge }, skipTags: [], storyId: "generated-Badge", componentPath: "src/components/Badge.tsx", componentName: "Badge" }));
+      }
+      "
     `);
   });
 

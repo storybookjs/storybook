@@ -45,19 +45,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
-        export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+         title: 'Button',
+        }
+        export const Basic = () => React.createElement(Button)
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
     it('csf2', async () => {
@@ -85,23 +76,12 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
-        const Template = args => React.createElement(Button, args);
+          title: 'Button',
+        }
+        const Template = (args) => React.createElement(Button, args);
         export const Basic = Template.bind({});
-        Basic.parameters = {
-          foo: 'bar'
-        };
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "args => <Button {...args} />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { foo: 'bar' }
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "(args) => <Button {...args} />", ...Basic.parameters?.docs?.source } } };
       `);
     });
     it('csf3', async () => {
@@ -127,23 +107,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
-        export const Basic = {
-          parameters: {
-            foo: 'bar'
-          }
-        };
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "{\\n  parameters: {\\n    foo: 'bar'\\n  }\\n}",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+          title: 'Button',
+        }
+        export const Basic = { parameters: { foo: 'bar' } }
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "{\\n  parameters: { foo: 'bar' }\\n}", ...Basic.parameters?.docs?.source } } };
       `);
     });
     it('csf factories', async () => {
@@ -172,23 +139,14 @@ describe('enrichCsf', () => {
         )
       ).toMatchInlineSnapshot(`
         // compiled code
-        import { config } from "/.storybook/preview.ts";
+        import {config} from "/.storybook/preview.ts";
         const meta = config.meta({
-          args: {
-            label: "Hello world!"
-          }
+            args: {
+              label: "Hello world!"
+            }
         });
         export const Story = meta.story({});
-        Story.input.parameters = {
-          ...Story.input.parameters,
-          docs: {
-            ...Story.input.parameters?.docs,
-            source: {
-              originalSource: "meta.story({})",
-              ...Story.input.parameters?.docs?.source
-            }
-          }
-        };
+        Story.input.parameters = { ...Story.input.parameters, docs: { ...Story.input.parameters?.docs, source: { originalSource: "meta.story({})", ...Story.input.parameters?.docs?.source } } };
       `);
     });
     it('csf factories typed with meta.type<>(), reused and extended', async () => {
@@ -215,42 +173,15 @@ describe('enrichCsf', () => {
         )
       ).toMatchInlineSnapshot(`
         // compiled code
-        import { config } from "/.storybook/preview.ts";
+        import {config} from "/.storybook/preview.ts";
         const meta = config.meta({});
         const withIcon = meta.type();
         export const Story = meta.type().story({});
         export const Reused = withIcon.story({});
         export const Extended = Reused.extend({});
-        Story.input.parameters = {
-          ...Story.input.parameters,
-          docs: {
-            ...Story.input.parameters?.docs,
-            source: {
-              originalSource: "meta.type<{\\n  args: {\\n    icon: string;\\n  };\\n}>().story({})",
-              ...Story.input.parameters?.docs?.source
-            }
-          }
-        };
-        Reused.input.parameters = {
-          ...Reused.input.parameters,
-          docs: {
-            ...Reused.input.parameters?.docs,
-            source: {
-              originalSource: "withIcon.story({})",
-              ...Reused.input.parameters?.docs?.source
-            }
-          }
-        };
-        Extended.input.parameters = {
-          ...Extended.input.parameters,
-          docs: {
-            ...Extended.input.parameters?.docs,
-            source: {
-              originalSource: "Reused.extend({})",
-              ...Extended.input.parameters?.docs?.source
-            }
-          }
-        };
+        Story.input.parameters = { ...Story.input.parameters, docs: { ...Story.input.parameters?.docs, source: { originalSource: "meta.type<{ args: { icon: string } }>().story({})", ...Story.input.parameters?.docs?.source } } };
+        Reused.input.parameters = { ...Reused.input.parameters, docs: { ...Reused.input.parameters?.docs, source: { originalSource: "withIcon.story({})", ...Reused.input.parameters?.docs?.source } } };
+        Extended.input.parameters = { ...Extended.input.parameters, docs: { ...Extended.input.parameters?.docs, source: { originalSource: "Reused.extend({})", ...Extended.input.parameters?.docs?.source } } };
       `);
     });
     it('multiple stories', async () => {
@@ -276,30 +207,12 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
-        export const A = {};
-        export const B = {};
-        A.parameters = {
-          ...A.parameters,
-          docs: {
-            ...A.parameters?.docs,
-            source: {
-              originalSource: "{}",
-              ...A.parameters?.docs?.source
-            }
-          }
-        };
-        B.parameters = {
-          ...B.parameters,
-          docs: {
-            ...B.parameters?.docs,
-            source: {
-              originalSource: "{}",
-              ...B.parameters?.docs?.source
-            }
-          }
-        };
+          title: 'Button',
+        }
+        export const A = {}
+        export const B = {}
+        A.parameters = { ...A.parameters, docs: { ...A.parameters?.docs, source: { originalSource: "{}", ...A.parameters?.docs?.source } } };
+        B.parameters = { ...B.parameters, docs: { ...B.parameters?.docs, source: { originalSource: "{}", ...B.parameters?.docs?.source } } };
       `);
     });
   });
@@ -328,20 +241,11 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         // The most basic button
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -367,19 +271,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
-        export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+         title: 'Button',
+        }
+        export const Basic = () => React.createElement(Button)
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -405,23 +300,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            },
-            description: {
-              story: "The most basic button",
-              ...Basic.parameters?.docs?.description
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source }, description: { story: "The most basic button", ...Basic.parameters?.docs?.description } } };
       `);
     });
 
@@ -451,23 +333,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            },
-            description: {
-              story: "The most basic button\\n\\nIn a block!",
-              ...Basic.parameters?.docs?.description
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source }, description: { story: "The most basic button\\n\\nIn a block!", ...Basic.parameters?.docs?.description } } };
       `);
     });
 
@@ -497,23 +366,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            },
-            description: {
-              story: "- A bullet list\\n  - A sub-bullet\\n- A second bullet",
-              ...Basic.parameters?.docs?.description
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source }, description: { story: "- A bullet list\\n  - A sub-bullet\\n- A second bullet", ...Basic.parameters?.docs?.description } } };
       `);
     });
   });
@@ -541,19 +397,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+          title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -579,19 +426,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement();
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -617,26 +455,11 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button',
-          parameters: {
-            docs: {
-              description: {
-                component: "The most basic button"
-              }
-            }
-          }
-        };
-        export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+         title: 'Button',
+         parameters: { docs: { description: { component: "The most basic button" } } }
+        }
+        export const Basic = () => React.createElement(Button)
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -666,26 +489,11 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button',
-          parameters: {
-            docs: {
-              description: {
-                component: "The most basic button\\n\\nIn a block!"
-              }
-            }
-          }
-        };
+         title: 'Button',
+         parameters: { docs: { description: { component: "The most basic button\\n\\nIn a block!" } } },
+        }
         export const Basic = () => React.createElement();
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -715,26 +523,11 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button',
-          parameters: {
-            docs: {
-              description: {
-                component: "- A bullet list\\n  - A sub-bullet\\n- A second bullet"
-              }
-            }
-          }
-        };
+         title: 'Button',
+         parameters: { docs: { description: { component: "- A bullet list\\n  - A sub-bullet\\n- A second bullet" } } },
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -770,27 +563,11 @@ describe('enrichCsf', () => {
           title: 'Button',
           parameters: {
             foo: 'bar',
-            docs: {
-              story: {
-                inline: true
-              },
-              description: {
-                component: "The most basic button"
-              }
-            }
+            docs: { story: { inline: true }, description: { component: "The most basic button" } }
           }
-        };
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -838,18 +615,9 @@ describe('enrichCsf', () => {
               }
             }
           }
-        };
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -879,26 +647,11 @@ describe('enrichCsf', () => {
         // compiled code
         const meta = {
           title: 'Button',
-          parameters: {
-            docs: {
-              description: {
-                component: "The most basic button"
-              }
-            }
-          }
-        };
+          parameters: { docs: { description: { component: "The most basic button" } } }
+        }
         export default meta;
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
   });
@@ -927,19 +680,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            description: {
-              story: "The most basic button",
-              ...Basic.parameters?.docs?.description
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, description: { story: "The most basic button", ...Basic.parameters?.docs?.description } } };
       `);
     });
 
@@ -966,19 +710,10 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
-        Basic.parameters = {
-          ...Basic.parameters,
-          docs: {
-            ...Basic.parameters?.docs,
-            source: {
-              originalSource: "() => <Button />",
-              ...Basic.parameters?.docs?.source
-            }
-          }
-        };
+        Basic.parameters = { ...Basic.parameters, docs: { ...Basic.parameters?.docs, source: { originalSource: "() => <Button />", ...Basic.parameters?.docs?.source } } };
       `);
     });
 
@@ -1005,8 +740,8 @@ describe('enrichCsf', () => {
       ).toMatchInlineSnapshot(`
         // compiled code
         export default {
-          title: 'Button'
-        };
+         title: 'Button',
+        }
         export const Basic = () => React.createElement(Button);
       `);
     });
@@ -1020,7 +755,7 @@ const source = (csfExport: string) => {
   `;
   const csf = loadCsf(code, { makeTitle: (userTitle) => userTitle }).parse();
   const exportNode = Object.values(csf._storyExports)[0];
-  return extractSource(exportNode);
+  return extractSource(exportNode, csf._code);
 };
 
 describe('extractSource', () => {
@@ -1036,7 +771,7 @@ describe('extractSource', () => {
       source(dedent`
         export const Basic =  (args) => <Button {...args} />;
       `)
-    ).toMatchInlineSnapshot(`args => <Button {...args} />`);
+    ).toMatchInlineSnapshot(`(args) => <Button {...args} />`);
   });
   it('csf3', () => {
     expect(
@@ -1047,9 +782,7 @@ describe('extractSource', () => {
       `)
     ).toMatchInlineSnapshot(`
       {
-        parameters: {
-          foo: 'bar'
-        }
+        parameters: { foo: 'bar' }
       }
     `);
   });

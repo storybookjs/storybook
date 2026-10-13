@@ -21,7 +21,7 @@ export async function transformCsf(code: string, id: string, options: EnrichCsfO
     await enrichCsf(csf, csfSource, options);
     return formatCsf(csf, { sourceMaps: true, sourceFileName: id }, code);
   } catch (err: unknown) {
-    // This can be called on legacy storiesOf files, so ignore CSF parse errors.
+    // Any .stories file that fails to parse (legacy or broken) passes through unmodified so doc generation does not crash.
     const message = err instanceof Error ? err.message : String(err);
     if (!message.startsWith('CSF:')) {
       logger.warn(message);

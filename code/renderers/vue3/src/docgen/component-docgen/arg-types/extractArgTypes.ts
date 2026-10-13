@@ -178,7 +178,6 @@ export const extractFromVueComponentMeta = (
     return {
       name: propInfo.name,
       description: formatDescriptionWithTags(propInfo.description, propInfo.tags),
-      defaultValue,
       type,
       // A TS enum member is selected by its runtime value, so the qualified name it is written
       // as can only be a label. "control.type" is left to inferControls, which picks radio or

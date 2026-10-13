@@ -1,219 +1,46 @@
 # Storybook Agent Instructions
 
-Keep this file, `AGENTS.md`, up to date when Storybook's architecture, tooling, workflows, or contributor guidance changes.
+This file is the canonical instruction source for coding agents; `CLAUDE.md` and other entrypoints point here.
+Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scripts/`, and every PR targets `next`.
 
-This file is the canonical instruction source for coding agents. Files like `CLAUDE.md` should point here instead of duplicating instructions.
+## Always
 
-## Repository Overview
+- Run commands from the repository root unless stated otherwise.
+- After editing, format with `cd code && yarn fmt:write`.
+- Test React components with stories and `play` functions, never `*.test.tsx`.
+- Log through `storybook/internal/node-logger` or `storybook/internal/client-logger`, not `console.*`.
+- Use explicit extensions on relative TS imports (`./foo.ts`), except framework component files such as `.vue` and `.svelte`.
+- Do not commit incidental changes to generated files such as `code/core/src/manager/globals/exports.ts`.
 
-Storybook is a large TypeScript monorepo. The git root is the repo root, the main code lives in `code/`, and build tooling lives in `scripts/`. The default branch is `next`.
+## Never Run
 
-- **Base branch**: `next` (all PRs should target `next`, not `main`)
-- **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
-- **Package Manager**: Yarn Berry
-- **Task orchestration**: NX plus the custom `yarn task` runner
-- **Linting**: oxlint (root `.oxlintrc.json`, extended by `code/.oxlintrc.json` and `scripts/.oxlintrc.json`; custom rules load via `jsPlugins`). ESLint is no longer used for repo linting — `code/lib/eslint-plugin` remains as the published `eslint-plugin-storybook` package.
-- **Formatting**: oxfmt (root `.oxfmtrc.json`)
-- **CI environment**: Linux and Windows
-- **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
-- **Type checking**: Per-package checks (`yarn task check`, `scripts/check/check-package.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias); diagnostics are filtered to the checked package. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (e.g. no `baseUrl`).
+- `yarn task dev` without an explicit sandbox template
+- `yarn start`
 
-## Common Commands
+Both start long-running dev servers.
+`.github/workflows/claude.yml` `--disallowed-tools` mirrors this list; update both together.
 
-Run commands from the repository root unless stated otherwise.
+## Read Before You Start
 
-For routine agent work, prefer the faster non-production commands first. Add `-c production` only when you need sandbox-related NX tasks or you are explicitly matching CI behavior.
+| Before you...                                             | Read                                                                                                            |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| install, compile, lint, run commands, or debug a build    | [Development workflow](.agents/guidelines/development.md)                                                       |
+| write or edit code                                        | [Code authoring](.agents/guidelines/code-authoring.md) and [Comments and JSDoc](.agents/guidelines/comments-and-jsdoc.md) |
+| write or run tests                                        | [Testing](.agents/guidelines/testing.md)                                                                        |
+| open or update a PR                                       | [Pull requests](.agents/guidelines/pull-requests.md)                                                            |
+| touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                  |
+| do sandbox, E2E, or CI-parity work                        | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)   |
+| add or change an automigration                            | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)          |
 
-### Install and compile
+Contributor skills live in `.agents/skills/`; `.claude/skills/` references them.
 
-```bash
-yarn
-yarn task compile
-yarn nx run-many -t compile
-yarn nx compile <nx-project-name>
-```
+## Code Review
 
-### Lint and typecheck
+Before reviewing a pull request or a diff, read [`.agents/guidelines/code-review.md`](.agents/guidelines/code-review.md) and follow it.
 
-```bash
-yarn lint
-yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix
-yarn task check
-yarn nx run-many -t check
-```
+## Maintaining These Instructions
 
-### Development and tests
-
-```bash
-cd code && yarn storybook:ui
-cd code && yarn storybook:ui:build
-yarn test
-yarn test:watch
-yarn storybook:vitest
-```
-
-### Common task scenarios
-
-| Scenario                        | Command                                                                        |
-| ------------------------------- | ------------------------------------------------------------------------------ |
-| Compile everything quickly      | `yarn nx run-many -t compile`                                                  |
-| Compile one project             | `yarn nx compile <nx-project-name>`                                            |
-| Check TypeScript errors quickly | `yarn nx run-many -t check`                                                    |
-| Start the internal Storybook UI | `cd code && yarn storybook:ui`                                                 |
-| Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                           |
-| Run unit tests                  | `yarn test`                                                                    |
-| Run Storybook Vitest tests      | `yarn storybook:vitest`                                                        |
-| Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
-| Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
-| Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
-| Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
-| Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
-| Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
-| List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
-| Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |
-
-## Sandbox Notes
-
-- If sandbox generation fails, fall back to `cd code && yarn storybook:ui`
-
-## How To Work In This Repo
-
-### For normal code changes
-
-1. Install if needed: `yarn`
-2. Compile with NX: `yarn nx run-many -t compile`
-3. Make changes
-4. Recompile affected packages
-5. Validate there are no TypeScript errors with `yarn nx run-many -t check`
-6. Run relevant lint and tests
-7. Validate behavior in the internal Storybook UI first, then switch to sandbox or `-c production` flows only if you need template or CI parity
-
-### For addon, framework, or renderer work
-
-1. Edit the relevant package under `code/addons/`, `code/frameworks/`, or `code/renderers/`
-2. Recompile with NX, starting without `-c production`
-3. Generate a matching sandbox
-4. Run the relevant test-runner, E2E, or Storybook UI validation flow
-
-## Pull Request Requirements
-
-The `Danger` status check validates PR metadata, not the diff.
-It reads only the title, body, labels, and reviews, and it executes `scripts/dangerfile.ts` from the base branch, so nothing committed inside a PR can change that PR's own Danger result.
-Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth token)" node_modules/.bin/danger pr <pr-url> --dangerfile scripts/dangerfile.ts`.
-
-- **Title** must match `Area: Summary`, with both parts starting with a capital letter, for example `CSF: Add conservative story mutation API`. Conventional-commit titles such as `fix(csf-tools): add ...` fail the check, even though commit messages in this repo do use that form.
-- **Body** must contain a `#### Manual testing` heading followed by steps a maintainer can follow. The check bypasses `OWNER` and `MEMBER` authors, but private org membership resolves to `CONTRIBUTOR` for the CI token, so write the section even when you are a member.
-- **For non-release PRs targeting `next`, labels** must satisfy the exactly-one rules in [`scripts/dangerfile.ts`](scripts/dangerfile.ts). The valid change types come from the `pr-log` configuration in [`code/package.json`](code/package.json); the `ci:` and `qa:` label sets are defined in the dangerfile. Check those sources instead of copying their current values into agent guidance. The dangerfile also defines the separate release-PR rule. `other` is listed in the PR template but is not a valid change type for Danger, and `BREAKING CHANGE` is rejected while the dangerfile pins the branch version to minor.
-- **Review** must include an approving review from the `core` or `developer-experience` team. The author's own approval is ignored, so this one clears only once a human on those teams approves.
-
-## Testing Expectations
-
-> [!IMPORTANT]
-> **For React components, write Storybook stories with `play` functions — do NOT write `*.test.tsx` unit tests.** Behavior, accessibility, and interaction assertions belong in `*.stories.tsx` co-located with the component, executed via the Storybook Vitest project (`yarn storybook:vitest` or `vitest run --config code/vitest.config.storybook.ts`). Unit tests (`*.test.ts(x)`) are reserved for pure utilities, hooks, and non-React modules where rendering is not involved.
-
-- Use `yarn storybook:vitest` to run Storybook story tests (the primary test path for components)
-- Use `yarn test` for unit tests of utilities, hooks, and non-React modules
-- Prefer focused unit-test runs during iteration — the full suite is large: `yarn test <pattern>` (e.g. `yarn test csf-tools`)
-- Use Storybook UI or Chromatic for visual validation
-- Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
-- Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
-- Use `yarn task smoke-test --start-from auto` for smoke checks
-- Use `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` for tools attach coverage (same checkout as the running internal UI)
-
-## Quality and Logging
-
-After changing files:
-
-1. **Always** format with `yarn fmt:write`, run from the `code/` directory (`cd code && yarn fmt:write`), once you are done editing. The repo uses `oxfmt`, so hand-written formatting will frequently be wrong — do not skip this step.
-2. Lint with `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` or `cd code && yarn lint:js:cmd <file-relative-to-code-folder>`
-3. Run relevant tests before submitting a PR
-
-Use Storybook loggers instead of raw `console.*` in normal code paths:
-
-- Server-side: `storybook/internal/node-logger`
-- Client-side: `storybook/internal/client-logger`
-
-For TypeScript source in the repo, prefer explicit file extensions for relative code imports and exports such as `./foo.ts` or `./bar.tsx` when the target is another TS/JS module in this repository. Keep framework-specific component imports like `.vue` and `.svelte` in the form already expected by their package tooling.
-
-The pre-commit hook automatically detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is auto-fixed when agents commit.
-
-Avoid `console.log`, `console.warn`, and `console.error` unless the file is isolated enough that importing the logger is not reasonable.
-
-## Troubleshooting
-
-- Build failures are often fixed by rerunning `yarn` and `yarn nx run-many -t compile`
-- Storybook UI uses port `6006` by default
-- Large compiles may require more Node.js memory
-- Sandbox paths are `../storybook-sandboxes/`, not `./sandbox` or `code/sandbox/`
-- Use `--debug` for verbose CLI output
-- Check generated sandbox directories and `.cache/` for build artifacts
-
-## Canary Releases
-
-When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.agents/skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](CONTRIBUTING/RELEASING.md).
-
-## Commands To Avoid
-
-- **DO NOT RUN** `yarn task dev` without an explicit sandbox template
-- **DO NOT RUN** `yarn start`
-
-These usually start long-running development servers and are the wrong default for agents.
-
-## Repository skills
-
-- Canonical contributor skills live in `.agents/skills/`; `.claude/skills/` contains references to them.
-- Use [principle-encode-lessons-in-structure](.agents/skills/principle-encode-lessons-in-structure/SKILL.md) to turn recurring corrections into enforceable checks.
-
-## Code Authoring Principles
-
-These are recurring failure modes in agent-authored changes to this repo. Apply them when writing or reviewing code, not just when asked.
-
-- **Write comments only for the two reasons in [Comments and JSDoc](#comments-and-jsdoc).** That section is the rule; this list does not restate it.
-- **Verify environment assumptions empirically before encoding them.** If a design rests on "the bundler strips X" or "this metadata is empty here", prove it with a throwaway probe before building on it (and before writing it into a comment as fact). A 10-line experiment is cheaper than a wrong architecture.
-- **Encode assumptions with static checks first.** If an assumption is expected to always hold, prefer making it impossible via TypeScript types and existing lint rules. When static checks are not practical, add a cheap runtime assertion close to the boundary so violations fail loudly at the source.
-- **Avoid redundant tests already covered elsewhere.** Do not add tests for code patterns already guaranteed by TypeScript or linting, and do not duplicate coverage that already exists in Storybook `play` functions or Playwright tests.
-- **Test contracts (including side effects), not private implementation details.** It is valid to assert side effects when they are part of the public contract. Avoid assertions about internals that are not part of an exported contract, user-visible DOM output, or externally observable behavior.
-- **Bias toward broader coverage for security and migrations.** For security-sensitive code paths and legacy data migration logic, prefer handling more edge cases and documenting evidence for the chosen safeguards. Migration compatibility code should be explicitly version-scoped so it can be removed once the support window ends.
-- **Prefer deletion and simplicity over speculative generality.** No abstraction, fallback, or "flexibility" for a consumer or scenario that does not exist in this codebase today. If a change adds many lines, check whether the right change removes them.
-- **Don't commit accidental overrides to generated code.** Files like `code/core/src/manager/globals/exports.ts` are auto-generated, as stated in their JSDoc header. Only commit changes if they match changes you made on your PR, otherwise leave them untouched and flag flaky generated files in the PR description.
-
-## Comments and JSDoc
-
-Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious _why_) or when a public API needs explanation. Never comment to record that you did x, y, z.
-
-Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
-
-## Maintenance Rules For Agents
-
-- `AGENTS.md` owns the kickstart: identity, base rules, common commands,
-  guardrails, and the pointers below. Keep it lean; push detail into the
-  linked documents instead of inlining it.
-- Each linked document is canonical for its topic. Update that document, not
-  this file, when its topic changes. If a topic disappears, remove the
-  document and its pointer together.
-- Keep `CLAUDE.md` and other agent entrypoints as thin references to
-  `AGENTS.md`.
-- `.github/workflows/claude.yml` `--disallowed-tools` mirrors the Commands To
-  Avoid section; update both together.
-- Do not reintroduce duplicated instruction files when a reference will do.
-
-## Deep dives
-
-Read these when the task calls for them, not by default. Each document is
-canonical for its topic; this file owns the pointers.
-
-- [Architecture and repository structure](.agents/guidelines/architecture.md) — read before
-  touching `code/core` internals, presets, open services, or the tools CLI.
-- [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) — read before sandbox, E2E, or
-  CI-parity work. Includes the environment variable reference.
-- [Sandboxes](.agents/guidelines/sandboxes.md) — read before generating or debugging a sandbox.
-- [Testing](.agents/guidelines/testing.md) — read before writing or running tests beyond the
-  commands above; covers memfs filesystem tests and global stubbing rules.
-
-## Learned User Preferences
-
-- Prefer git worktrees for parallel or experimental work; keep the primary workspace clean and base feature branches on `origin/next`, not a dirty local `next`.
-- Prefer simplicity: avoid premature helpers and one-off abstractions; implement small logic inline when a shared helper is not clearly reused.
-- Keep e2e and long interaction tests as a readable continuous flow; do not force DRY with loops or heavy helpers when repetition is clearer.
-- For Storybook stories, put human-facing description in JSDoc above the `meta` const rather than a `description` parameter.
-- When renaming tools or APIs that emit telemetry, keep historical telemetry string names stable across Storybook versions unless the field is brand-new and has no existing data.
+- Keep this file to the always-on rules and pointers. Put detail in the linked document that owns the topic, and update that document when its topic changes.
+- If a topic disappears, remove its document and its pointer together.
+- Keep `CLAUDE.md` and other agent entrypoints as thin references to this file.
+- Turn recurring corrections into enforceable checks with [principle-encode-lessons-in-structure](.agents/skills/principle-encode-lessons-in-structure/SKILL.md).

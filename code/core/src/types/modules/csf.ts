@@ -53,6 +53,7 @@ export type {
   StoryContext,
   StoryContextForEnhancers,
   StoryContextForLoaders,
+  StoryContextForRender,
   StoryContextUpdate,
   StoryFn,
   StoryId,

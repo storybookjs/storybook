@@ -1,5 +1,10 @@
-import { expectFinalResponseContains, expectWorkflowCalls, getEvalContext } from '#test-utils';
-import { describe, test } from 'vitest';
+import {
+  expectFinalResponseContains,
+  expectWorkflowCalls,
+  getEvalContext,
+  getWorkflowToolResults,
+} from '#test-utils';
+import { describe, expect, test } from 'vitest';
 
 describe('answering which props ReviewCard accepts', () => {
   // Skipped for Claude Code+MCP: answers props questions via find+Read on
@@ -13,6 +18,8 @@ describe('answering which props ReviewCard accepts', () => {
 
   test.skipIf(claudeCodeMcp)('uses the documentation tooling to resolve props and usage', () => {
     expectWorkflowCalls(['docs-list', 'docs-show']);
+    // The answer can come from source after a failed call; at least one `docs show` must succeed.
+    expect(getWorkflowToolResults('docs-show').some((result) => !result.isError)).toBe(true);
   });
 
   // The fixture component has exactly these three props; a grounded answer

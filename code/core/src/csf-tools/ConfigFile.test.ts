@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint } from 'storybook/internal/babel';
+import * as babelParser from '@babel/parser';
+import { babelPrint, parserOptions } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
-import { loadConfig, printConfig } from './ConfigFile.ts';
+import { ConfigFile, formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -1166,6 +1167,38 @@ describe('ConfigFile', () => {
     });
   });
 
+  describe('quote inference under EOL reconstruction', () => {
+    it('keeps single quotes when token offsets index a CRLF reconstruction (Windows)', () => {
+      const source = `export default {\n  framework: '@storybook/react-vite',\n};\n`;
+      // On Windows, recast rebuilds the parser input with `os.EOL` before babel sees it, so
+      // babel's token offsets index a CRLF string while `_code` is the original LF source.
+      // Parsing the CRLF variant directly with @babel/parser recreates exactly that
+      // misalignment; quote inference must not depend on token offsets to survive it.
+      const ast = babelParser.parse(source.replaceAll('\n', '\r\n'), { ...parserOptions });
+      const config = new ConfigFile(ast, source);
+      config.parse();
+      config.setImport(['fileURLToPath'], 'node:url');
+      const printed = printConfig(config).code;
+      expect(printed).toContain("from 'node:url'");
+      expect(printed).not.toContain('from "node:url"');
+    });
+
+    it('infers quotes and prints LF output for CRLF sources', () => {
+      const source = [
+        "import { addons } from 'storybook/manager-api';",
+        '',
+        'export const tags = [];',
+      ].join('\r\n');
+      const config = loadConfig(source).parse();
+      config.set(['tags'], ['autodocs']);
+
+      const printed = printConfig(config).code;
+      expect(printed).not.toContain('\r');
+      expect(printed).toContain("'autodocs'");
+      expect(printed).not.toContain('"autodocs"');
+    });
+  });
+
   describe('config helpers', () => {
     describe('getNameFromPath', () => {
       it(`supports string literal node`, () => {
@@ -1402,6 +1435,81 @@ describe('ConfigFile', () => {
   });
 
   describe('setImport', () => {
+    it('keeps a license header above the imports it adds', () => {
+      const source = dedent`
+        /*
+         * Copyright Example
+         */
+
+        import type { StorybookConfig } from '@storybook/react-vite';
+
+        const config: StorybookConfig = { stories: [] };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+      config.setImport(['fileURLToPath'], 'node:url');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        /*
+         * Copyright Example
+         */
+
+        import type { StorybookConfig } from '@storybook/react-vite';
+
+        import { dirname } from 'node:path';
+        import { fileURLToPath } from 'node:url';
+
+        const config: StorybookConfig = { stories: [] };
+        export default config;
+      `);
+    });
+
+    it('keeps a directive on its statement when moving the license header', () => {
+      const source = dedent`
+        // Copyright Example
+
+        // @ts-expect-error not a number
+        const config: number = {};
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        // Copyright Example
+
+        import { dirname } from "node:path";
+
+        // @ts-expect-error not a number
+        const config: number = {};
+        export default config;
+      `);
+    });
+
+    it('keeps a license header above a require it adds to a file without imports', () => {
+      const source = dedent`
+        // Copyright Example
+
+        module.exports = { stories: [] };
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['dirname'], 'node:path');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        // Copyright Example
+
+        const {
+          dirname
+        } = require("node:path");
+
+        module.exports = { stories: [] };
+      `);
+    });
+
     it(`supports setting a default import for a field that does not exist`, () => {
       const source = dedent`
         const config: StorybookConfig = { };

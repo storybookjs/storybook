@@ -64,6 +64,16 @@ set). `--json` keeps only the tool result.
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
+Tool arguments are `--key value` flags spelled exactly like the input schema keys (camelCase, e.g.
+`--storybookId`); there are no kebab-case aliases. Toolset inputs are `v.strictObject`, so a flag
+or `--input` key the tool does not declare is an invalid-input error, and the CLI names the flag
+and lists the valid ones.
+
+`docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
+source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote
+manifests are fetched without credentials and with a 3 second timeout in every mode; a ref that
+cannot be read gets its own error section.
+
 ```bash
 npx storybook tools docs list
 npx storybook tools --attach docs list

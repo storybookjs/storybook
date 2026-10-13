@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook Themes addon: Switch between themes from the toolbar",
   "keywords": [
     "css",
@@ -33,6 +33,7 @@
   },
   "license": "MIT",
   "author": "Shaun Evening",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

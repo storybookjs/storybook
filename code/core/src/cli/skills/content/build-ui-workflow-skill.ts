@@ -119,14 +119,18 @@ ${ref('stories.preview')} --stories '[{"storyId":"<id>"}]'   # direct links to s
 Only for a look at one story while you iterate, or when the user asks for a direct link. It does not replace the review, unless \`review create\` keeps failing after you fixed what it reported: then share these links and say why.`;
 }
 
+function reuseSection(): string {
+  return `## Reuse components first
+
+Before you edit any file, run \`${getSkillRef('cli')('component-docs')}\` if you have not yet, and follow it: it finds the components your change can reuse.`;
+}
+
 export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
-  const reuse = inputs.docsEnabled
-    ? ` Before you edit any file, look up the components your change can reuse with the \`component-docs\` skill (\`${getSkillRef('cli')('component-docs')}\`).`
-    : '';
   return [
     `# Storybook UI workflow
 
-Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) name only some of these steps, for example stories and tests, skip the others. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.${reuse}`,
+Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) name only some of these steps, for example stories and tests, skip the others. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
+    inputs.docsEnabled && reuseSection(),
     writeSection(inputs),
     inputs.testSupported && testSection(inputs.a11yEnabled),
     discoverSection(inputs),

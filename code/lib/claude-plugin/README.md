@@ -101,10 +101,10 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 ```md
 ## Storybook
 
-Whenever you make updates that could affect the UI:
+When you change the UI, or the user asks to see components or stories, use both Storybook skills, in this order:
 
-- Reuse existing components: look them up with the `component-docs` skill.
-- Update your stories, run the tests, and publish a review of the results with the `ui-workflow` skill.
+1. `component-docs`: look up the components to reuse, before you edit any file.
+2. `ui-workflow`: update your stories, run the tests, and publish a review of the results.
 ```
 
 Edit that section to change when the agent uses the skills, for example to leave out the review, or remove it to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.

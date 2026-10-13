@@ -13,6 +13,15 @@ describe('buildComponentDocsSkill', () => {
     expect(text).toContain('--storybookId acme');
   });
 
+  it.each([true, false])(
+    'continues with ui-workflow for UI changes (docs enabled: %s)',
+    (docsEnabled) => {
+      expect(buildComponentDocsSkill({ docsEnabled })).toContain(
+        'When you change the UI, continue with the `ui-workflow` skill (`npx storybook skills ui-workflow`)'
+      );
+    }
+  );
+
   it('sends the agent to the source files when the project has no components manifest', () => {
     const text = buildComponentDocsSkill({ docsEnabled: false });
 

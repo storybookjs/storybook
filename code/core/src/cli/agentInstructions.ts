@@ -8,10 +8,10 @@ import { join } from 'node:path';
  */
 export const STORYBOOK_AGENT_INSTRUCTIONS = `## Storybook
 
-Whenever you make updates that could affect the UI:
+When you change the UI, or the user asks to see components or stories, use both Storybook skills, in this order:
 
-- Reuse existing components: look them up with the \`component-docs\` skill.
-- Update your stories, run the tests, and publish a review of the results with the \`ui-workflow\` skill.
+1. \`component-docs\`: look up the components to reuse, before you edit any file.
+2. \`ui-workflow\`: update your stories, run the tests, and publish a review of the results.
 `;
 
 // Claude Code reads AGENTS.md only when the project has no CLAUDE.md of its own, so a CLAUDE.md

@@ -27,7 +27,7 @@ describe('buildUiWorkflowSkill', () => {
 
   it('points to component-docs only when the project has component docs', () => {
     expect(buildUiWorkflowSkill(everything)).toContain(
-      'look up the components your change can reuse with the `component-docs` skill'
+      '## Reuse components first\n\nBefore you edit any file, run `npx storybook skills component-docs`'
     );
     expect(buildUiWorkflowSkill({ ...everything, docsEnabled: false })).not.toContain(
       'component-docs'

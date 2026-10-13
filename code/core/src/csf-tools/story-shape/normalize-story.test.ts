@@ -184,6 +184,29 @@ describe('normalizeStoryDeclaration', () => {
     expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
   });
 
+  it('resolves a typed chain of immutable local story aliases', () => {
+    expect(
+      printedShape(dedent`
+        type Story = unknown;
+        export default { title: 'Paragraph' };
+        const Impl = ({ text }) => <p>{text}</p>;
+        const Alias = Impl as Story;
+        export const A = Alias satisfies Story;
+      `)
+    ).toEqual({ code: '({ text }) => <p>{text}</p>', type: 'fn' });
+  });
+
+  it('does not use the initial value of a reassigned story helper', () => {
+    expect(() =>
+      normalize(dedent`
+        export default { title: 'Paragraph' };
+        let Helper = () => null;
+        Helper = { args: {} };
+        export const A = Helper;
+      `)
+    ).toThrow('Expected story to be csf factory, function or an object expression');
+  });
+
   it('throws for factory calls with more than one argument', () => {
     expect(() =>
       normalize(dedent`

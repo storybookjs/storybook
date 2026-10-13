@@ -296,6 +296,30 @@ describe('spreads at the story config level', () => {
     expect(argsOf(code, 'Example')).toEqual({ args: {}, unresolved: [] });
   });
 
+  it('keeps the input accessor when a CSF factory story is aliased', () => {
+    const code = dedent`
+      const meta = preview.meta({ component: Button });
+      const Primary = meta.story({ args: { label: 'saved' } });
+      const Alias = Primary;
+      export const Sibling = meta.story({ args: { ...Alias.input.args, size: 'small' } });
+    `;
+    expect(argsOf(code, 'Sibling')).toEqual({
+      args: { label: "'saved'", size: "'small'" },
+      unresolved: [],
+    });
+  });
+
+  it('applies assignments through aliases in source order', () => {
+    const code = dedent`
+      const Base = () => null;
+      const Alias = Base;
+      Alias.args = { label: 'first' };
+      Base.args = { label: 'last' };
+      export const Story = Alias;
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: { label: "'last'" }, unresolved: [] });
+  });
+
   it('prefers an assignment over the args the declaration carries', () => {
     const code = dedent`
       export const Both = { args: { label: 'declared' } };

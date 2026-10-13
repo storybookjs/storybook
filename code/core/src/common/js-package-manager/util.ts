@@ -69,6 +69,12 @@ export const parseReleaseTime = (value: unknown): Date | null => {
 };
 
 export const parsePackageTimeMap = (value: unknown): Record<string, string> | null => {
+  // pnpm < 11 forwards `view` to npm. With npm 12, the time map is wrapped in an array.
+  // https://github.com/npm/cli/releases/tag/v12.0.0
+  if (Array.isArray(value) && value.length === 1) {
+    value = value[0];
+  }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }

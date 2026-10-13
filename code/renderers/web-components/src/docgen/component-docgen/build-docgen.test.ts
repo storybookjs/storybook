@@ -54,7 +54,6 @@ const context = ({
     errors: loadErrors,
     paths,
   },
-  typeProperty: 'parsedType',
 });
 
 const tag = (declaration: ManifestDeclaration, warning?: string): [string, CemTag] => [

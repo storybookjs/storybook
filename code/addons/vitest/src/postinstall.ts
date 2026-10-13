@@ -2,7 +2,6 @@ import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
-import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
@@ -11,6 +10,7 @@ import {
   getStorybookInfo,
   versions,
 } from 'storybook/internal/common';
+import { type ESTree as E, SourceEditor, parseModule, walk } from 'storybook/internal/csf-tools';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
 import {
@@ -26,7 +26,7 @@ import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 import {
-  injectAngularVitestIntoAst,
+  injectAngularVitestIntoEditor,
   injectAngularVitestIntoConfig,
   isAngularVitestAlreadyWired,
 } from './angular-vitest-postinstall.ts';
@@ -231,9 +231,8 @@ export default async function postInstall(options: PostinstallOptions) {
         CONFIG_DIR: getTemplateConfigDir(rootConfig, options.configDir),
       });
 
-      const source = babelParse(configTemplate);
-      target = babelParse(configFile);
-      updated = updateConfigFile(source, target);
+      target = new SourceEditor(configFile, rootConfig);
+      updated = updateConfigFile(configTemplate, target);
     }
 
     if (alreadyConfigured) {
@@ -248,11 +247,11 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.log(`  ${rootConfig}`);
 
       // Inject the Angular bridge into the already-merged target so it co-locates with the freshly
-      // added storybookTest call, before the single generate/format/write below. Arrow-function
+      // added storybookTest call, before the single format/write below. Arrow-function
       // configs are rejected by updateConfigFile (updated is falsy), so they never reach here and
       // defer to the manual-setup error in the else branch.
       if (isAngularVite && !isAngularVitestAlreadyWired(configFile)) {
-        if (injectAngularVitestIntoAst(target)) {
+        if (injectAngularVitestIntoEditor(target)) {
           logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
         } else {
           logger.error(dedent`
@@ -268,7 +267,7 @@ export default async function postInstall(options: PostinstallOptions) {
         }
       }
 
-      const formattedContent = await formatFileContent(rootConfig, generate(target).code);
+      const formattedContent = await formatFileContent(rootConfig, target.toString());
       // Only add triple slash reference to vite.config files, not vitest.config files
       // vitest.config files already have the vitest/config types available
       const shouldAddReference = !configFileHasTypeReference && !vitestConfigFile;
@@ -346,46 +345,32 @@ function isStorybookTestPluginSource(value: string) {
 }
 
 export function isConfigAlreadySetup(_configPath: string, configContent: string) {
-  let ast: ReturnType<typeof babelParse>;
+  let program: E.Program;
   try {
-    ast = babelParse(configContent);
-  } catch (e) {
+    ({ program } = parseModule(configContent));
+  } catch {
     return false;
   }
 
-  const pluginIdentifiers = new Set<string>();
-
-  traverse(ast, {
-    ImportDeclaration(path) {
-      const source = path.node.source.value;
-      if (typeof source === 'string' && isStorybookTestPluginSource(source)) {
-        path.node.specifiers.forEach((specifier) => {
-          if ('local' in specifier && specifier.local?.name) {
-            pluginIdentifiers.add(specifier.local.name);
-          }
-        });
-      }
-    },
-  });
+  const pluginIdentifiers = new Set<string>(['storybookTest']);
+  for (const node of program.body) {
+    if (node.type === 'ImportDeclaration' && isStorybookTestPluginSource(node.source.value)) {
+      node.specifiers.forEach((specifier) => pluginIdentifiers.add(specifier.local.name));
+    }
+  }
 
   let pluginReferenced = false;
-
-  traverse(ast, {
-    CallExpression(path) {
-      if (pluginReferenced) {
-        path.stop();
-        return;
-      }
-      const callee = path.node.callee;
-      if (
-        callee.type === 'Identifier' &&
-        (pluginIdentifiers.has(callee.name) || callee.name === 'storybookTest')
-      ) {
-        pluginReferenced = true;
-        path.stop();
-      }
-    },
+  walk(program, (node) => {
+    if (pluginReferenced) {
+      return false;
+    }
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      pluginIdentifiers.has(node.callee.name)
+    ) {
+      pluginReferenced = true;
+    }
   });
-
   return pluginReferenced;
 }

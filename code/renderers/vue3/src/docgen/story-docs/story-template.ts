@@ -143,24 +143,15 @@ function argHoles(
       t.isMemberExpression(parent, { object: node, computed: false }) &&
       t.isIdentifier(parent.property) &&
       parent.property.name;
+    const around = ancestors.slice(0, -1).map((ancestor) => ancestor.node);
+    const kind = isOperand(parent!, around.reverse()) ? 'operand' : 'value';
     holes.push(
       !name
         ? undefined
         : (parent === ast && whole(name)) || {
             start: offset + parent.start!,
             end: offset + parent.end!,
-            text: hole(
-              isOperand(
-                parent,
-                ancestors
-                  .slice(0, -1)
-                  .map(({ node }) => node)
-                  .reverse()
-              )
-                ? 'operand'
-                : 'value',
-              name
-            ),
+            text: hole(kind, name),
           }
     );
   });
@@ -169,15 +160,16 @@ function argHoles(
 
 // The prop an attribute, a bound attribute or a `v-model` sets, which a `v-bind="args"` spread
 // could also set: `max-count` sets `maxCount`.
-function propName(prop: ElementNode['props'][number]): string | undefined {
-  const arg = prop.type === NodeTypes.DIRECTIVE ? (prop.arg as SimpleExpressionNode) : undefined;
-  const name =
-    prop.type === NodeTypes.ATTRIBUTE
-      ? prop.name
-      : prop.name === 'model'
-        ? (arg?.content ?? 'modelValue')
-        : prop.name === 'bind'
-          ? arg?.content
-          : undefined;
-  return name?.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
+const propName = (prop: ElementNode['props'][number]) =>
+  attributeName(prop)?.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
+
+function attributeName(prop: ElementNode['props'][number]): string | undefined {
+  if (prop.type === NodeTypes.ATTRIBUTE) {
+    return prop.name;
+  }
+  const arg = prop.arg as SimpleExpressionNode | undefined;
+  if (prop.name === 'model') {
+    return arg?.content ?? 'modelValue';
+  }
+  return prop.name === 'bind' && arg ? arg.content : undefined;
 }

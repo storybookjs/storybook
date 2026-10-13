@@ -79,7 +79,9 @@ export function litTemplate(
     text += next;
   }
   // The code has no hole bracket, so a bracket in the text is a hole written for an arg.
-  return hasHoleBracket(text) ? dedentStoryCode(text.trim()) : undefined;
+  // The html starts after the backtick, mostly on a new line whose indentation the others share.
+  const column = /^\s*\n([ \t]*)/.exec(text)?.[1]!.length;
+  return hasHoleBracket(text) ? dedentStoryCode(text.trim(), column) : undefined;
 }
 
 // The expression as written with `⟦value arg⟧` for each arg it reads, or `undefined` when it reads

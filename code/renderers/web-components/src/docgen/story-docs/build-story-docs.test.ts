@@ -204,6 +204,17 @@ describe('buildStoryDocsPayload template', () => {
       `);
   });
 
+  it('keeps the indentation of the lines after the first', async () => {
+    const written = await template(`{
+      render: (args) => html\`
+        <test-element
+          label=\${args.label}
+          variant="a"></test-element>
+      \`,
+    }`);
+    expect(written).toBe('<test-element\n  ⟦attr label label⟧\n  variant="a"></test-element>');
+  });
+
   it.each([
     ['slot content', `{ args: { 'default-slot': 'Body' } }`],
     ['a css part', `{ args: { 'panel-part': 'color: red;' } }`],

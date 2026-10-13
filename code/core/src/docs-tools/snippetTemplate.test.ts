@@ -27,9 +27,9 @@ describe('spreadArgs', () => {
     expect(spreadArgs({ a: 1, b: 2 }, ['-b'])).toEqual([['a', 1]]);
   });
 
-  it('throws for a set arg written before the spread, but an action', () => {
+  it('throws for a set arg written before the spread', () => {
     expect(() => spreadArgs({ a: 1 }, ['^a'])).toThrow(new UnprintableArgError('a'));
-    expect(spreadArgs({ a: () => {}, b: 2 }, ['^a'])).toEqual([['b', 2]]);
+    expect(spreadArgs({ b: 2 }, ['^a'])).toEqual([['b', 2]]);
   });
 });
 

@@ -11,7 +11,8 @@ import type { Args } from 'storybook/internal/types';
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
- * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`; see {@link asOperand}.
+ * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`, or that starts an arrow
+ *   body or a statement; see {@link asOperand}.
  *
  * The template keeps the code around a hole as written, including the whitespace before it; a hole
  * that prints nothing takes that whitespace along, so an unset attribute leaves no gap or empty
@@ -56,13 +57,11 @@ export const asOperand = (printed: string) => (/^[-\d{(]/.test(printed) ? `(${pr
 /**
  * The args a `⟦props …⟧` spread passes: every arg but those its `-name` words name, which the
  * element writes after the spread. A `^name` word is written before it, where a set arg would win
- * over what the snippet shows, so the snippet cannot show that arg. A function arg there, such as
- * an action, is left out instead, as no control changes it.
+ * over what the snippet shows, so the snippet cannot show that arg.
  */
 export function spreadArgs(args: Args, words: string[]): [string, unknown][] {
   for (const word of words) {
-    const value = args[word.slice(1)];
-    if (word.startsWith('^') && value !== undefined && typeof value !== 'function') {
+    if (word.startsWith('^') && args[word.slice(1)] !== undefined) {
       throw new UnprintableArgError(word.slice(1));
     }
   }

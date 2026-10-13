@@ -39,10 +39,7 @@ function element(name: string, slots: string[], args: Args): string {
     .map(([slot, printed]) =>
       slot === 'default' ? printed : `<template #${slot}>${printed}</template>`
     );
-  const props = spreadArgs(
-    args,
-    slots.map((slot) => `-${slot}`)
-  );
+  const props = Object.entries(args).filter(([prop]) => !slots.includes(prop));
   const open = `<${[name, attributesOf(props)].filter(Boolean).join(' ')}`;
   return content.length === 0
     ? `${open} />`

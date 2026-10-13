@@ -1,1 +1,9 @@
-undefined
+{
+  "description": undefined,
+  "id": "sveltefixtures-bindablerest",
+  "jsDocTags": {},
+  "name": "BindableRest",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

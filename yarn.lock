@@ -11134,6 +11134,7 @@ __metadata:
     es-toolkit: "npm:^1.43.0"
     esrap: "npm:1.2.2"
     magic-string: "npm:^0.30.12"
+    memfs: "npm:^4.11.1"
     rollup: "npm:^4.43.0"
     svelte: "npm:^5.39.5"
     svelte-check: "npm:^4.4.8"

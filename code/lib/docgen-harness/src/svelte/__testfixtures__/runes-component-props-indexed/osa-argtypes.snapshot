@@ -1,1 +1,150 @@
-{}
+{
+  "confirmType": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Confirm button variant.",
+    "name": "confirmType",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""primary"",
+      },
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "any",
+    },
+  },
+  "content": {
+    "control": false,
+    "description": "Main content.",
+    "name": "content",
+    "table": {
+      "category": "slots",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Snippet<[]>",
+    },
+  },
+  "error": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Error message.",
+    "name": "error",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "jsDocTags": {
+        "bindable": [
+          "",
+        ],
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "footer": {
+    "control": false,
+    "description": "Footer content.",
+    "name": "footer",
+    "table": {
+      "category": "slots",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Snippet<[]>",
+    },
+  },
+  "id": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Dialog id.",
+    "name": "id",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "onCancelModal": {
+    "control": false,
+    "description": "Cancel callback.",
+    "name": "onCancelModal",
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "() => void",
+    },
+  },
+  "open": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Open state.",
+    "name": "open",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "jsDocTags": {
+        "bindable": [
+          "",
+        ],
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+}

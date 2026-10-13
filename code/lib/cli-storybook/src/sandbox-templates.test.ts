@@ -11,6 +11,7 @@ describe('docgenServerTemplates', () => {
   it('includes supported default-on templates that record component manifests', () => {
     expect(docgenServerTemplates()).toEqual([
       'vue3-vite/default-ts',
+      'svelte-vite/default-ts',
       'angular-vite/default-ts',
       'lit-vite/default-ts',
     ]);

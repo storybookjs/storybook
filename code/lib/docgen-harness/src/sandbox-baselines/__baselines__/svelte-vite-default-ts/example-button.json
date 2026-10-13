@@ -1,0 +1,103 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "control": {
+        "type": "text"
+      },
+      "description": "What background color to use",
+      "name": "backgroundColor",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "label": {
+      "control": {
+        "type": "text"
+      },
+      "description": "Button contents",
+      "name": "label",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "onclick": {
+      "control": false,
+      "description": "The onclick event handler",
+      "name": "onclick",
+      "table": {
+        "category": "events",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "primary": {
+      "control": {
+        "type": "boolean"
+      },
+      "description": "Is this the principal call to action on the page?",
+      "name": "primary",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "size": {
+      "control": {
+        "type": "radio"
+      },
+      "description": "How large should the button be?",
+      "name": "size",
+      "options": ["small", "medium", "large"],
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "\"medium\""
+        },
+        "type": {
+          "summary": "\"small\" | \"medium\" | \"large\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": ["small", "medium", "large"]
+      }
+    }
+  },
+  "id": "example-button",
+  "jsDocTags": {},
+  "name": "Button",
+  "path": "./src/stories/Button.stories.svelte"
+}

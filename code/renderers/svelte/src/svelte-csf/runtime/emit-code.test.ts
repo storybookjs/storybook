@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { addons } from 'storybook/internal/preview-api';
 
 import { emitCode } from './emit-code.ts';
 
-const emit = vi.hoisted(() => vi.fn());
+vi.mock('storybook/internal/preview-api', { spy: true });
 
-vi.mock('storybook/internal/preview-api', () => ({
-  addons: { getChannel: () => ({ emit }) },
-}));
+const emit = vi.fn();
 
 const emitted = (__svelteCsf: object, args: Record<string, any>, docs = {}) => {
   const storyContext = {
@@ -25,6 +24,7 @@ describe('emitCode', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     emit.mockClear();
+    vi.mocked(addons.getChannel).mockReturnValue({ emit } as any);
   });
   afterEach(() => {
     vi.useRealTimers();

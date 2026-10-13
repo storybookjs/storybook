@@ -41,7 +41,7 @@ describe('fillTemplate', () => {
     expect(fillTemplate('${⟦value on⟧ ? a : b}', { on: true })).toBe('${true ? a : b}');
   });
 
-  it('throws for a function value or a lit template it cannot print', () => {
+  it('throws for a value it cannot print', () => {
     expect(() => fillTemplate('${⟦value onClick⟧}', { onClick: () => {} })).toThrow(
       UnprintableArgError
     );
@@ -52,6 +52,9 @@ describe('fillTemplate', () => {
       UnprintableArgError
     );
     expect(() => fillTemplate('${⟦value icons⟧}', { icons: [html`<b></b>`] })).toThrow(
+      UnprintableArgError
+    );
+    expect(() => fillTemplate('<p⟦props --gap=gap⟧></p>', { gap: 'red; color: blue' })).toThrow(
       UnprintableArgError
     );
   });

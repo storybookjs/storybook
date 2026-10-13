@@ -35,7 +35,7 @@ function props(words: string[], args: Args): string {
     if (isUnset(args[name])) {
       continue;
     } else if (binding.startsWith('--')) {
-      style += ` ${binding}: ${args[name]};`;
+      style += ` ${binding}: ${cssValue(name, args[name])};`;
     } else if (binding.startsWith('.')) {
       attributes += ` ${binding}=\${${literal(name, args[name])}}`;
     } else {
@@ -43,6 +43,14 @@ function props(words: string[], args: Args): string {
     }
   }
   return style ? `${attributes}${attribute('style', style.trim())}` : attributes;
+}
+
+// A value that would end its declaration, or is no CSS value at all, has no place in `style`.
+function cssValue(name: string, value: unknown): string {
+  if (typeof value !== 'number' && (typeof value !== 'string' || /[;{}]/.test(value))) {
+    throw new UnprintableArgError(name);
+  }
+  return String(value);
 }
 
 // A function arg, such as an action, is left out, as no control changes it.

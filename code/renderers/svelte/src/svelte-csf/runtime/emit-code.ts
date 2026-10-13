@@ -10,8 +10,6 @@ type Params = {
   storyContext: StoryContext<Record<string, any>>;
 };
 
-const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.getChannel();
-
 /**
  * Fills the story's template, written by the compiler next to its raw code, with the current args,
  * and emits the result to Storybook's internal code provider, so that the source code viewer shows
@@ -38,7 +36,7 @@ export const emitCode = (params: Params) => {
   // Using setTimeout here to ensure we're emitting after the base @storybook/svelte emits its version of the code
   // TODO: fix this in @storybook/svelte, don't emit when using stories.svelte files
   setTimeout(() => {
-    channel.emit(SNIPPET_RENDERED, {
+    addons.getChannel().emit(SNIPPET_RENDERED, {
       id: storyContext.id,
       args: storyContext.unmappedArgs,
       source: codeToEmit,

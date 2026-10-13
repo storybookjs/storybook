@@ -851,6 +851,8 @@ export default {
 
 The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When that property cannot be removed, the file is left unchanged and listed in `automigrations-summary.md`.
 
+The automigration covers Storybook config and configured story files, including static CSF2 `Story.argTypes` assignments. It does not scan shared utility modules; remove deprecated fields in those modules manually.
+
 ### Docs Code panel enabled by default
 
 When `@storybook/addon-docs` is installed, the Code panel is now available for stories without setting `parameters.docs.codePanel` to `true`.

@@ -40,7 +40,7 @@ export function buildStoryTemplate(
   for (const { start, end, text: replacement } of edits.sort((a, b) => b.start - a.start)) {
     text = text.slice(0, start - body.start) + replacement + text.slice(end - body.start);
   }
-  const lines = dedentStoryCode(text).split('\n');
+  const lines = dedentStoryCode(text, body.loc!.start.column).split('\n');
   const expression =
     lines.length > 1 && !t.isBlockStatement(body)
       ? `(\n${lines.map((line) => (line ? `  ${line}` : line)).join('\n')}\n)`
@@ -162,7 +162,11 @@ function readEdit(read: NodePath, arg: string): Edit | undefined {
       return nodeEdit(container.node, hole('text', arg));
     }
   }
-  return nodeEdit(node, hole(isOperand(node, parent) ? 'operand' : 'value', arg));
+  const ancestors = read
+    .getAncestry()
+    .slice(1)
+    .map((path) => path.node);
+  return nodeEdit(node, hole(isOperand(node, ancestors) ? 'operand' : 'value', arg));
 }
 
 const nodeEdit = (node: t.Node, text: string): Edit => ({

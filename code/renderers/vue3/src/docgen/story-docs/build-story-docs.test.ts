@@ -337,6 +337,13 @@ export const Primary = {
     );
   });
 
+  it('names an attribute around the args spread by the prop it sets', () => {
+    const template = '<MyButton max-count="3" v-bind="args" :is-open="args.open" />';
+    expect(renderTemplate(template, new Map(), [])).toContain(
+      '<MyButton max-count="3" ⟦props ^maxCount -isOpen⟧ ⟦attr is-open open⟧ />'
+    );
+  });
+
   it('keeps a binding the element also writes as an attribute, or binds with a modifier', () => {
     const template = '<MyButton class="a" :class="args.c" :label.prop="args.label" />';
     expect(renderTemplate(template, new Map(), [])).toContain(

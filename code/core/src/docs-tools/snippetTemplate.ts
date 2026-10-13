@@ -11,12 +11,11 @@ import type { Args } from 'storybook/internal/types';
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
- * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()` or `-args.n`; see
- *   {@link asOperand}.
+ * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`; see {@link asOperand}.
  *
- * The template keeps the code around a hole as written, including the whitespace before it; a hole that prints
- * nothing takes that whitespace along, so an unset attribute leaves no gap or empty line. A
- * renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
+ * The template keeps the code around a hole as written, including the whitespace before it; a hole
+ * that prints nothing takes that whitespace along, so an unset attribute leaves no gap or empty
+ * line. A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
  * {@link UnprintableArgError} for a value the snippet cannot show, and the static snippet is shown
  * instead.
  */
@@ -40,7 +39,7 @@ export const isHoleWord = (word: string) => /^[^\s⟦⟧]+$/.test(word);
 /** Whether code already holds a hole bracket, so holes written in it could not be found again. */
 export const hasHoleBracket = (code: string) => /[⟦⟧]/.test(code);
 
-/** Replaces every hole in a template with what `fill` prints for it; see {@link FillSnippetTemplate}. */
+/** Replaces every hole in a template with what `fill` prints; see {@link FillSnippetTemplate}. */
 export const fillHoles = (template: string, fill: (kind: string, words: string[]) => string) =>
   template.replace(/(\s*)⟦([^⟧]*)⟧/g, (_, space: string, body: string) => {
     const [kind, ...words] = body.split(' ');
@@ -57,11 +56,13 @@ export const asOperand = (printed: string) => (/^[-\d{(]/.test(printed) ? `(${pr
 /**
  * The args a `⟦props …⟧` spread passes: every arg but those its `-name` words name, which the
  * element writes after the spread. A `^name` word is written before it, where a set arg would win
- * over what the snippet shows, so the snippet cannot show that arg.
+ * over what the snippet shows, so the snippet cannot show that arg. A function arg there, such as
+ * an action, is left out instead, as no control changes it.
  */
 export function spreadArgs(args: Args, words: string[]): [string, unknown][] {
   for (const word of words) {
-    if (word.startsWith('^') && args[word.slice(1)] !== undefined) {
+    const value = args[word.slice(1)];
+    if (word.startsWith('^') && value !== undefined && typeof value !== 'function') {
       throw new UnprintableArgError(word.slice(1));
     }
   }
@@ -70,13 +71,13 @@ export function spreadArgs(args: Args, words: string[]): [string, unknown][] {
 }
 
 /**
- * Code cut from a story file, without the indentation its lines after the first share there, as
- * the first starts where the cut does.
+ * Code cut from a story file at `column`, without the indentation its lines after the first share
+ * there, as the first starts where the cut does.
  */
-export function dedentStoryCode(text: string): string {
+export function dedentStoryCode(text: string, column = Infinity): string {
   const [first, ...rest] = text.split('\n');
   const indents = rest.filter((line) => line.trim()).map((line) => /^\s*/.exec(line)![0].length);
-  const indent = Math.min(...indents);
+  const indent = Math.min(column, ...indents);
   return [first, ...rest.map((line) => line.slice(indent))].join('\n');
 }
 
@@ -112,14 +113,17 @@ export function printValue(
       throw new UnprintableArgError(name);
     }
     parents.add(item);
-    const printed = Array.isArray(item)
-      ? `[${item.map(print).join(', ')}]`
-      : printObject(
-          Object.entries(item).filter(([, entry]) => entry !== undefined),
-          print
-        );
+    const printed = Array.isArray(item) ? `[${item.map(print).join(', ')}]` : printObject(item);
     parents.delete(item);
     return printed;
+  };
+  const printObject = (object: Record<string, unknown>) => {
+    const properties = Object.entries(object)
+      .filter(([, entry]) => entry !== undefined)
+      .map(
+        ([key, entry]) => `${/^[A-Za-z_$][\w$]*$/.test(key) ? key : print(key)}: ${print(entry)}`
+      );
+    return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
   };
   const printed = print(value);
   if (printed.length > MAX_LITERAL_LENGTH) {
@@ -130,15 +134,6 @@ export function printValue(
 
 // Longer data, such as a GeoJSON file, would bury the rest of the snippet.
 const MAX_LITERAL_LENGTH = 2000;
-
-const printObject = (entries: [string, unknown][], print: (item: unknown) => string) =>
-  entries.length === 0
-    ? '{}'
-    : `{ ${entries
-        .map(
-          ([key, entry]) => `${/^[A-Za-z_$][\w$]*$/.test(key) ? key : print(key)}: ${print(entry)}`
-        )
-        .join(', ')} }`;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null) {

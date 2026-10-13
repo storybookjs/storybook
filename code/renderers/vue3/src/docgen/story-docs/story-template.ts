@@ -66,7 +66,7 @@ export function renderTemplate(
       // `v-bind="args"` passes every arg but the slots and the attributes written after it, which
       // win; see `spreadArgs`.
       if (prop.name === 'bind' && !arg && exp.content.trim() === 'args') {
-        const written = node.props.map(attributeName);
+        const written = node.props.map(propName);
         const before = written.slice(0, index).filter((name) => name !== undefined);
         const after = written.slice(index + 1).filter((name) => name !== undefined);
         const words = [
@@ -149,22 +149,35 @@ function argHoles(
         : (parent === ast && whole(name)) || {
             start: offset + parent.start!,
             end: offset + parent.end!,
-            text: hole(isOperand(parent, ancestors.at(-2)?.node) ? 'operand' : 'value', name),
+            text: hole(
+              isOperand(
+                parent,
+                ancestors
+                  .slice(0, -1)
+                  .map(({ node }) => node)
+                  .reverse()
+              )
+                ? 'operand'
+                : 'value',
+              name
+            ),
           }
     );
   });
   return holes.every((edit) => edit !== undefined) ? holes : undefined;
 }
 
-// The name of an attribute, a bound attribute or a `v-model`, which a `v-bind="args"` spread could
-// also set.
-function attributeName(prop: ElementNode['props'][number]): string | undefined {
-  if (prop.type === NodeTypes.ATTRIBUTE) {
-    return prop.name;
-  }
-  const arg = prop.arg as SimpleExpressionNode | undefined;
-  if (prop.name === 'model') {
-    return arg?.content ?? 'modelValue';
-  }
-  return prop.name === 'bind' && arg ? arg.content : undefined;
+// The prop an attribute, a bound attribute or a `v-model` sets, which a `v-bind="args"` spread
+// could also set: `max-count` sets `maxCount`.
+function propName(prop: ElementNode['props'][number]): string | undefined {
+  const arg = prop.type === NodeTypes.DIRECTIVE ? (prop.arg as SimpleExpressionNode) : undefined;
+  const name =
+    prop.type === NodeTypes.ATTRIBUTE
+      ? prop.name
+      : prop.name === 'model'
+        ? (arg?.content ?? 'modelValue')
+        : prop.name === 'bind'
+          ? arg?.content
+          : undefined;
+  return name?.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
 }

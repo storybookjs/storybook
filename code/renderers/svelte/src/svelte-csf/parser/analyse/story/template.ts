@@ -62,7 +62,8 @@ function argEdit(node: Node, path: Node[]): Edit | undefined {
   // `args?.label` reads the arg through the chain around the member.
   const chained = grandparent?.type === 'ChainExpression';
   const read = chained ? grandparent : parent!;
-  const [owner, tag] = path.slice(0, chained ? -2 : -1).slice(-2);
+  const ancestors = path.slice(0, chained ? -2 : -1).reverse();
+  const [tag, owner] = ancestors;
   // `args.count++` or `args.label = …` changes the arg rather than reading it.
   if (
     tag?.type === 'UpdateExpression' ||
@@ -76,7 +77,7 @@ function argEdit(node: Node, path: Node[]): Edit | undefined {
   if (tag?.type === 'ExpressionTag' && owner?.type === 'Fragment') {
     return { start: tag.start, end: tag.end, text: hole('text', arg) };
   }
-  const kind = isOperand(read as never, tag as never) ? 'operand' : 'value';
+  const kind = isOperand(read as never, ancestors as never) ? 'operand' : 'value';
   return { start: read.start, end: read.end, text: hole(kind, arg) };
 }
 

@@ -61,8 +61,11 @@ function cssValue(name: string, value: unknown): string {
   return String(value);
 }
 
+// A property is set to whatever the arg holds, `false` and `null` too, but an action.
 const property = (name: string, arg: string, args: Args) =>
-  isUnset(args[arg]) ? '' : `.${name}=\${${literal(arg, args[arg])}}`;
+  args[arg] === undefined || typeof args[arg] === 'function'
+    ? ''
+    : `.${name}=\${${literal(arg, args[arg])}}`;
 
 // A function arg, such as an action, is left out, as no control changes it.
 function attribute(name: string, value: unknown): string {

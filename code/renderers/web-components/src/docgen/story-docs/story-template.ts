@@ -91,10 +91,10 @@ function valueText(
   code: string
 ): string | undefined {
   const edits: { start: number; end: number; text: string }[] = [];
-  const visit = (node: t.Node, parent?: t.Node): boolean => {
+  const visit = (node: t.Node, ancestors: t.Node[] = []): boolean => {
     const arg = t.isExpression(node) ? argName(node, scope) : undefined;
     if (arg !== undefined) {
-      const kind = isOperand(node, parent) ? 'operand' : 'value';
+      const kind = isOperand(node, ancestors) ? 'operand' : 'value';
       edits.push({ start: node.start!, end: node.end!, text: hole(kind, arg) });
       return isHoleWord(arg);
     }
@@ -108,7 +108,10 @@ function valueText(
     return t.VISITOR_KEYS[node.type]!.every((key) => {
       const named = !('computed' in node && node.computed) && ['property', 'key'].includes(key);
       const child = (node as unknown as Record<string, unknown>)[key];
-      return named || [child].flat().every((item) => !t.isNode(item) || visit(item, node));
+      return (
+        named ||
+        [child].flat().every((item) => !t.isNode(item) || visit(item, [node, ...ancestors]))
+      );
     });
   };
   if (!visit(expression)) {

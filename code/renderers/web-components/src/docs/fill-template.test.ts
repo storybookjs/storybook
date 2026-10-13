@@ -16,11 +16,18 @@ describe('fillTemplate', () => {
   });
 
   it('leaves out an unset, false or function arg, and an arg no word names', () => {
-    const template = '<x-card ⟦props label=label .open=open size=size⟧></x-card>';
-    expect(fillTemplate(template, { label: '', open: false, size: () => {}, other: 1 })).toBe(
+    const template = '<x-card ⟦props label=label .open=open size=size .onClose=onClose⟧></x-card>';
+    expect(fillTemplate(template, { label: '', size: false, onClose: () => {}, other: 1 })).toBe(
       '<x-card></x-card>'
     );
     expect(fillTemplate('<x-card ⟦attr label text⟧></x-card>', {})).toBe('<x-card></x-card>');
+  });
+
+  it('sets a property to whatever its arg holds, false and null too', () => {
+    const template = '<x-card ⟦prop open open⟧ ⟦prop data data⟧></x-card>';
+    expect(fillTemplate(template, { open: false, data: null })).toBe(
+      '<x-card .open=${false} .data=${null}></x-card>'
+    );
   });
 
   it('escapes attribute values and text', () => {

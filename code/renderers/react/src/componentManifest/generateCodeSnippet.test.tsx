@@ -973,6 +973,24 @@ test('template: destructured args are holes too', () => {
   );
 });
 
+test('template: keeps the indentation of lines after the first', () => {
+  const input = withCSF3(dedent`
+    export const Indented: Story = {
+      render: (args) =>
+        args.loading
+          ? <Spinner />
+          : <Button label={args.label} />,
+    };
+  `);
+  expect(filled(input, 'Indented', { loading: false, label: 'Go' })).toMatchInlineSnapshot(`
+    "const Indented = () => (
+      false
+        ? <Spinner />
+        : <Button label="Go" />
+    );"
+  `);
+});
+
 test('template: keeps the layout, and an unset attribute leaves no gap', () => {
   const input = withCSF3(dedent`
     export const Layout: Story = {
@@ -1010,6 +1028,15 @@ test('template: shows the static snippet once an arg overrides an attribute befo
   expect(() => filled(input, 'Before', { size: 'lg' })).toThrow(UnprintableArgError);
 });
 
+test('template: an action written before the spread stays as written', () => {
+  const input = withCSF3(
+    `export const Action: Story = { render: (args) => <Button onClick={log} {...args} /> };`
+  );
+  expect(filled(input, 'Action', { onClick: () => {}, label: 'Go' })).toBe(
+    'const Action = () => <Button onClick={log} label="Go" />;'
+  );
+});
+
 test('template: keeps a literal the code reads on apart', () => {
   const input = withCSF3(dedent`
     export const Fields: Story = {
@@ -1018,11 +1045,15 @@ test('template: keeps a literal the code reads on apart', () => {
       ),
     };
     export const Body: Story = { render: (args) => args.style };
+    export const Starts: Story = { render: (args) => args.user && <Button /> };
   `);
   expect(filled(input, 'Fields', { n: -1 })).toBe(
     'const Fields = () => <Meter value={-(-1)} text={(-1).toFixed(2)} big={(-1) ** 2} />;'
   );
   expect(filled(input, 'Body', { style: { a: 1 } })).toBe('const Body = () => ({ a: 1 });');
+  expect(filled(input, 'Starts', { user: { a: 1 } })).toBe(
+    'const Starts = () => ({ a: 1 }) && <Button />;'
+  );
 });
 
 test('template: writes a component arg by its name', () => {

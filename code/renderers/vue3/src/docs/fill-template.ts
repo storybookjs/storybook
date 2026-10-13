@@ -19,7 +19,7 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
       case 'element':
         return element(first, words.slice(1), args);
       case 'props':
-        return attributesOf(Object.fromEntries(spreadArgs(args, words)), []);
+        return attributesOf(spreadArgs(args, words));
       case 'attr':
         return attribute(first, args[second]);
       case 'text':
@@ -39,15 +39,18 @@ function element(name: string, slots: string[], args: Args): string {
     .map(([slot, printed]) =>
       slot === 'default' ? printed : `<template #${slot}>${printed}</template>`
     );
-  const open = `<${[name, attributesOf(args, slots)].filter(Boolean).join(' ')}`;
+  const props = spreadArgs(
+    args,
+    slots.map((slot) => `-${slot}`)
+  );
+  const open = `<${[name, attributesOf(props)].filter(Boolean).join(' ')}`;
   return content.length === 0
     ? `${open} />`
     : `${open}>\n${content.map((line) => `    ${line}\n`).join('')}  </${name}>`;
 }
 
-const attributesOf = (args: Args, leftOut: string[]) =>
-  Object.entries(args)
-    .filter(([name]) => !leftOut.includes(name))
+const attributesOf = (props: [string, unknown][]) =>
+  props
     .map(([name, arg]) => attribute(name, arg))
     .filter(Boolean)
     .join(' ');

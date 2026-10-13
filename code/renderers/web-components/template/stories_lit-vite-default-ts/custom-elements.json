@@ -180,7 +180,7 @@
               "privacy": "public",
               "description": "Date shown after the value, only settable as a property",
               "type": {
-                "text": "Date"
+                "text": "Date | undefined"
               },
               "default": "undefined"
             }

@@ -124,7 +124,7 @@ export class DemoWcCounter extends LitElement {
     /**
      * Date shown after the value, only settable as a property
      *
-     * @type {Date}
+     * @type {Date | undefined}
      */
     this.deadline = undefined;
   }

@@ -146,7 +146,7 @@
           "summary": "undefined"
         },
         "type": {
-          "summary": "Date"
+          "summary": "Date | undefined"
         }
       },
       "type": {

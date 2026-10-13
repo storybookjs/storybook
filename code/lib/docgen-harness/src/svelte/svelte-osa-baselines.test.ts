@@ -178,3 +178,16 @@ describe('svelte server-side argTypes hold the legacy baseline', () => {
     });
   }
 });
+
+it('preserves component argTypes and description through a plain CSF barrel import', async () => {
+  vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, 'runes-basic-props'));
+  const entry = entries.get('runes-basic-props')!;
+  const direct = await provider({ entry });
+  const barrel = await provider({ entry: { ...entry, importPath: './barrel.stories.ts' } });
+
+  expect(Object.keys(direct?.argTypes ?? {})).not.toHaveLength(0);
+  expect(barrel?.argTypes).toEqual(direct?.argTypes);
+  expect(barrel?.description).toEqual(direct?.description);
+  expect(barrel?.name).toEqual(direct?.name);
+  expect(barrel?.error).toBeUndefined();
+});

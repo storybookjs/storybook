@@ -3,13 +3,10 @@ import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/
 import { extractComponentDescription } from 'storybook/internal/csf-tools';
 
 import { createServerArgTypes } from './arg-types/create-server-arg-types.ts';
-import {
-  resolveStoryComponent,
-  type ResolveComponentContext,
-} from './resolve-component/resolve-component.ts';
+import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
 import { generateDocgen, type DocgenCache } from './svelte2tsx/generate-docgen.ts';
 
-export type BuildDocgenContext = ResolveComponentContext & { cache: DocgenCache };
+export type BuildDocgenContext = { cache: DocgenCache };
 
 export async function buildDocgenPayload(
   input: DocgenProviderInput,
@@ -25,7 +22,7 @@ export async function buildDocgenPayload(
     renderer: 'svelte',
   };
   try {
-    const component = await resolveStoryComponent(input.entry, context);
+    const component = await resolveStoryComponent(input.entry);
     if (!component) return undefined;
     const docgen = generateDocgen(component.componentPath, context.cache);
     return {

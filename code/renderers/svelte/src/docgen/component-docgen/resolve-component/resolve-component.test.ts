@@ -76,3 +76,43 @@ it('reports an unresolved component import', async () => {
 
   await expect(resolveStoryComponent(entry)).rejects.toThrow('Could not resolve ./Missing.svelte');
 });
+
+it.each([
+  "export { default as Button } from './Button.svelte';",
+  "export { Button } from './nested';",
+  "export * from './nested';",
+  "import Component from './Button.svelte'; export { Component as Button };",
+])('resolves a plain CSF component through a barrel: %s', async (barrel) => {
+  vol.fromJSON(
+    {
+      'Button.stories.ts':
+        "import { Button } from './lib'; export default { component: Button }; export const Primary = {};",
+      'lib/index.ts': barrel,
+      'lib/nested.ts': "export { default as Button } from './Button.svelte';",
+      'lib/Button.svelte': '<button>Save</button>',
+    },
+    resolve('/project')
+  );
+
+  expect(await resolveStoryComponent(entry)).toEqual({
+    componentPath: resolve('/project/lib/Button.svelte'),
+    exportName: 'Button',
+    name: 'Button',
+  });
+});
+
+it('reports a circular barrel export instead of publishing empty argTypes', async () => {
+  vol.fromJSON(
+    {
+      'Button.stories.ts':
+        "import { Button } from './lib'; export default { component: Button }; export const Primary = {};",
+      'lib/index.ts': "export * from './nested';",
+      'lib/nested.ts': "export * from './index';",
+    },
+    resolve('/project')
+  );
+
+  await expect(resolveStoryComponent(entry)).rejects.toThrow(
+    'Could not resolve ./lib export Button'
+  );
+});

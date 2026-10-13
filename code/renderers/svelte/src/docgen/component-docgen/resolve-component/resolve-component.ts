@@ -15,10 +15,6 @@ import { getSvelteAST } from '../../../svelte-csf/parser/ast.ts';
 import { getDefineMetaComponentValue } from '../../../svelte-csf/parser/analyse/define-meta/component-identifier.ts';
 import { extractSvelteASTNodes } from '../../../svelte-csf/parser/extract/svelte/nodes.ts';
 
-export interface ResolveComponentContext {
-  resolvePath?: (specifier: string, from: string) => string | undefined;
-}
-
 function resolveImport(specifier: string, from: string): string | undefined {
   const configPath = ts.findConfigFile(dirname(from), ts.sys.fileExists);
   const options = configPath
@@ -43,10 +39,97 @@ function resolveImport(specifier: string, from: string): string | undefined {
   return module.resolvedFileName.replace(/\.svelte\.ts$/, '.svelte');
 }
 
-export async function resolveStoryComponent(
-  entry: IndexEntry,
-  context: ResolveComponentContext = {}
-) {
+async function resolveExport(
+  filename: string,
+  exportName: string,
+  visited = new Set<string>()
+): Promise<string | undefined> {
+  if (filename.endsWith('.svelte')) {
+    return filename;
+  }
+  const key = `${filename}:${exportName}`;
+  if (visited.has(key)) {
+    return undefined;
+  }
+  visited.add(key);
+  const source = ts.createSourceFile(
+    filename,
+    await readFile(filename, 'utf8'),
+    ts.ScriptTarget.Latest
+  );
+  for (const statement of source.statements) {
+    if (
+      !ts.isExportDeclaration(statement) ||
+      !statement.moduleSpecifier ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.isTypeOnly
+    ) {
+      continue;
+    }
+    const clause = statement.exportClause;
+    const binding =
+      clause && ts.isNamedExports(clause)
+        ? clause.elements.find((element) => element.name.text === exportName && !element.isTypeOnly)
+        : undefined;
+    if ((clause && !binding) || (!clause && exportName === 'default')) {
+      continue;
+    }
+    const target = resolveImport(statement.moduleSpecifier.text, filename);
+    if (target) {
+      const resolved = await resolveExport(
+        target,
+        binding?.propertyName?.text ?? exportName,
+        visited
+      );
+      if (resolved) return resolved;
+    }
+  }
+  const localName = source.statements.flatMap((statement) =>
+    ts.isExportDeclaration(statement) &&
+    !statement.moduleSpecifier &&
+    statement.exportClause &&
+    ts.isNamedExports(statement.exportClause)
+      ? statement.exportClause.elements
+          .filter((element) => element.name.text === exportName)
+          .map((element) => element.propertyName?.text ?? element.name.text)
+      : ts.isExportAssignment(statement) &&
+          exportName === 'default' &&
+          ts.isIdentifier(statement.expression)
+        ? [statement.expression.text]
+        : []
+  )[0];
+  if (localName) {
+    for (const statement of source.statements) {
+      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier))
+        continue;
+      const clause = statement.importClause;
+      const bindings = clause?.namedBindings;
+      const binding =
+        bindings && ts.isNamedImports(bindings)
+          ? bindings.elements.find((element) => element.name.text === localName)
+          : undefined;
+      const importedName =
+        clause?.name?.text === localName
+          ? 'default'
+          : (binding?.propertyName?.text ?? binding?.name.text);
+      if (!importedName) continue;
+      const target = resolveImport(statement.moduleSpecifier.text, filename);
+      if (target) return resolveExport(target, importedName, visited);
+    }
+  }
+  return undefined;
+}
+
+async function resolveComponent(specifier: string, from: string, exportName: string) {
+  const filename = resolveImport(specifier, from);
+  const componentPath = filename && (await resolveExport(filename, exportName));
+  if (!componentPath) {
+    throw new Error(`Could not resolve ${specifier} export ${exportName} from ${from}`);
+  }
+  return componentPath;
+}
+
+export async function resolveStoryComponent(entry: IndexEntry) {
   const importPath = getStoryImportPathFromEntry(entry);
   if (!importPath) {
     return undefined;
@@ -69,23 +152,15 @@ export async function resolveStoryComponent(
       return undefined;
     }
     const specifier = declaration.specifiers.find((s) => s.local.name === component.name);
-    const componentPath = (context.resolvePath ?? resolveImport)(
-      declaration.source.value,
-      storyPath
-    );
-    if (!componentPath || !specifier) {
-      throw new Error(`Could not resolve ${declaration.source.value} from ${importPath}`);
-    }
-    return {
-      componentPath,
-      exportName:
-        specifier.type === 'ImportSpecifier'
-          ? specifier.imported.type === 'Identifier'
-            ? specifier.imported.name
-            : String(specifier.imported.value)
-          : 'default',
-      name: component.name,
-    };
+    if (!specifier) return undefined;
+    const exportName =
+      specifier.type === 'ImportSpecifier'
+        ? specifier.imported.type === 'Identifier'
+          ? specifier.imported.name
+          : String(specifier.imported.value)
+        : 'default';
+    const componentPath = await resolveComponent(declaration.source.value, storyPath, exportName);
+    return { componentPath, exportName, name: component.name };
   }
   const csf = loadCsf(source, { makeTitle: () => entry.title }).parse();
   if (!csf._meta?.component) {
@@ -95,9 +170,7 @@ export async function resolveStoryComponent(
   if (!ref.importId) {
     return undefined;
   }
-  const componentPath = (context.resolvePath ?? resolveImport)(ref.importId, storyPath);
-  if (!componentPath) {
-    throw new Error(`Could not resolve ${ref.importId} from ${importPath}`);
-  }
-  return { componentPath, exportName: ref.importName ?? 'default', name: csf._meta.component };
+  const exportName = ref.importName ?? 'default';
+  const componentPath = await resolveComponent(ref.importId, storyPath, exportName);
+  return { componentPath, exportName, name: csf._meta.component };
 }

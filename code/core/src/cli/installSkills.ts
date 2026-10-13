@@ -11,11 +11,7 @@ import { addStorybookAgentInstructions } from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
-/**
- * Skills that the skills repository no longer has. `stories` became `ui-workflow` and
- * `component-docs` in 11.0, so projects that installed the skills from an 11.0 prerelease still
- * have it.
- */
+// Skills of 11.0 prereleases that the skills repository no longer has, so a refresh removes them.
 const REMOVED_SKILLS = ['stories'];
 
 export type SkillsSource = 'ai-feature' | 'refresh' | 'automigration';
@@ -63,7 +59,6 @@ export function supportsAiSetup(
   );
 }
 
-/** The names of the installed skills that come from the official Storybook skills repository. */
 async function getStorybookSkillNames(): Promise<string[]> {
   try {
     const lock: { skills?: Record<string, { source?: string }> } = JSON.parse(
@@ -86,10 +81,9 @@ export async function hasStorybookSkills(): Promise<boolean> {
  * Install the official Storybook skills into the project root through Vercel's `skills` CLI, and
  * add the section that tells agents when to use them to `AGENTS.md`.
  *
- * A refresh leaves `AGENTS.md` alone, so a user who removed the section keeps it removed, unless it
- * replaces skills that the skills repository no longer has.
- *
- * Never runs in CI, and a failed install is reported in the result instead of thrown.
+ * A refresh leaves `AGENTS.md` alone, so an edited or removed section stays that way, unless the
+ * refresh replaces the `stories` skill of an 11.0 prerelease. Never runs in CI, and a failed
+ * install is reported in the result instead of thrown.
  */
 export async function installSkills({
   packageManager,
@@ -189,7 +183,7 @@ async function addAgentInstructions(): Promise<void> {
       );
     }
   } catch (error) {
-    logger.warn('Could not add the Storybook section to AGENTS.md.');
+    logger.warn('Could not add the Storybook section for agents to AGENTS.md.');
     logger.debug(error);
   }
 }

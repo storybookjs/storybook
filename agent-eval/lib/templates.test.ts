@@ -233,29 +233,37 @@ describe('writeClaudeInAppBrowserMock', () => {
         Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
       },
     });
-    expect(files['CLAUDE.md']).toContain('<built_in_browser>');
+    expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
+    expect(files['CLAUDE.md']).toBeUndefined();
     expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
-  });
-
-  it('keeps an existing CLAUDE.md and appends the prompt block', async () => {
-    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules' };
-
-    await writeClaudeInAppBrowserMock(createSandbox(files));
-
-    expect(files['CLAUDE.md']).toMatch(/^# Project rules\n\n[\s\S]*<built_in_browser>/);
   });
 });
 
 describe('writeStorybookAgentInstructions', () => {
-  it('writes the section of create storybook to AGENTS.md and to the sandbox CLAUDE.md', async () => {
+  let STORYBOOK_AGENT_INSTRUCTIONS: string;
+
+  beforeAll(async () => {
+    ({ STORYBOOK_AGENT_INSTRUCTIONS } = await import(
+      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
+    ));
+  });
+
+  it('writes the section of create storybook to AGENTS.md, next to the browser rule', async () => {
     const files: Record<string, string> = {};
     await writeClaudeInAppBrowserMock(createSandbox(files));
 
     await writeStorybookAgentInstructions(createSandbox(files));
 
-    expect(files['AGENTS.md']).toMatch(/^## Storybook\n[\s\S]*`ui-workflow` skill/);
-    // Claude Code reads CLAUDE.md instead of AGENTS.md, so the section must be there too.
-    expect(files['CLAUDE.md']).toMatch(/<built_in_browser>[\s\S]*`component-docs` skill/);
+    expect(files['AGENTS.md']).toBe(STORYBOOK_AGENT_INSTRUCTIONS);
+    expect(files['CLAUDE.md']).toBeUndefined();
+  });
+
+  it('also writes it to a CLAUDE.md of the template', async () => {
+    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules\n' };
+
+    await writeStorybookAgentInstructions(createSandbox(files));
+
+    expect(files['CLAUDE.md']).toBe(`# Project rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
   });
 });
 

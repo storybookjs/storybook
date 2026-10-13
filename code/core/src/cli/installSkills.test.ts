@@ -224,6 +224,26 @@ describe('installSkills', () => {
     expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
   });
 
+  it('keeps the installed skills when removing the stories skill fails', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: { stories: { source: 'storybookjs/skills' } },
+      }),
+    });
+    vi.mocked(packageManager.runPackageCommand)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('remove failed'));
+
+    const result = await installSkills({ packageManager, source: 'refresh' });
+
+    expect(result).toEqual({ result: 'installed', source: 'refresh' });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not remove the replaced Storybook skills stories. Remove them with: npx skills@latest remove stories --yes'
+    );
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+  });
+
   it('does not remove a stories skill from another repository', async () => {
     vol.fromNestedJSON({
       [LOCK_PATH]: JSON.stringify({ version: 1, skills: { stories: { source: 'acme/skills' } } }),
@@ -240,7 +260,9 @@ describe('installSkills', () => {
     const result = await installSkills({ packageManager, source: 'ai-feature' });
 
     expect(result).toEqual({ result: 'installed', source: 'ai-feature' });
-    expect(logger.warn).toHaveBeenCalledWith('Could not add the Storybook section to AGENTS.md.');
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not add the Storybook section for agents to AGENTS.md.'
+    );
   });
 
   it('spawns nothing under CI', async () => {

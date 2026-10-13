@@ -1,5 +1,4 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
-import { getSkillRef } from './skill-refs.ts';
 
 export type ComponentDocsSkillInputs = {
   docsEnabled: boolean;
@@ -7,7 +6,8 @@ export type ComponentDocsSkillInputs = {
 
 const ref = getToolName({ transport: 'cli' });
 
-const next = `When you change the UI, continue with the \`ui-workflow\` skill (\`${getSkillRef('cli')('ui-workflow')}\`): it writes the stories, runs the tests and publishes the review.`;
+const next =
+  "When the project's agent instructions (such as `AGENTS.md`) also name the `ui-workflow` skill, invoke it next for a UI change: it writes the stories, runs the tests and publishes the review.";
 
 export function buildComponentDocsSkill({ docsEnabled }: ComponentDocsSkillInputs): string {
   if (!docsEnabled) {

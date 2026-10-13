@@ -39,36 +39,53 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('AGENTS.md')).toBe(`# Rules\n\nUse pnpm.\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
   });
 
-  it('leaves a file alone that already names the ui-workflow skill, also when customized', async () => {
-    const custom = '## Storybook\n\nUpdate stories and test with the `ui-workflow` skill.\n';
+  it.each([
+    '## Storybook\n\n2. `ui-workflow`: update your stories and run the tests.\n',
+    'Run /component-docs before UI work.\n',
+  ])('leaves a file alone that already names a Storybook skill (%j)', async (custom) => {
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
 
     expect(await addStorybookAgentInstructions(ROOT)).toEqual([]);
     expect(read('AGENTS.md')).toBe(custom);
   });
 
-  it('also adds the section to a CLAUDE.md, which Claude Code reads instead of AGENTS.md', async () => {
+  it('also adds the section to CLAUDE.md, which Claude Code reads instead of AGENTS.md', async () => {
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', 'CLAUDE.md']);
+    expect(read('CLAUDE.md')).toBe(`Be brief.\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
+  });
+
+  it('adds one copy for Claude Code when the project has both CLAUDE.md files', async () => {
     vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
     vol.writeFileSync(join(ROOT, '.claude/CLAUDE.md'), 'Be kind.\n');
 
-    expect(await addStorybookAgentInstructions(ROOT)).toEqual([
-      'AGENTS.md',
-      'CLAUDE.md',
-      '.claude/CLAUDE.md',
-    ]);
-    expect(read('CLAUDE.md')).toBe(`Be brief.\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
-    expect(read('.claude/CLAUDE.md')).toBe(`Be kind.\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', 'CLAUDE.md']);
+    expect(read('.claude/CLAUDE.md')).toBe('Be kind.\n');
   });
 
-  it.each(['@AGENTS.md\n', 'Read these first: @./AGENTS.md\n'])(
-    'skips a CLAUDE.md that imports AGENTS.md (%j)',
-    async (claudeMd) => {
-      vol.writeFileSync(join(ROOT, 'CLAUDE.md'), claudeMd);
+  it('adds the section to .claude/CLAUDE.md when it is the only CLAUDE.md', async () => {
+    vol.writeFileSync(join(ROOT, '.claude/CLAUDE.md'), 'Be kind.\n');
 
-      expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md']);
-      expect(read('CLAUDE.md')).toBe(claudeMd);
-    }
-  );
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', '.claude/CLAUDE.md']);
+  });
+
+  it.each([
+    ['CLAUDE.md', '@AGENTS.md\n'],
+    ['CLAUDE.md', 'Read these first: @./AGENTS.md\n'],
+    ['.claude/CLAUDE.md', '@../AGENTS.md\n'],
+  ])('writes no CLAUDE.md when %s imports AGENTS.md (%j)', async (file, content) => {
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
+    vol.writeFileSync(join(ROOT, file), content);
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md']);
+  });
+
+  it('does not count an import of .claude/AGENTS.md as an import of the root AGENTS.md', async () => {
+    vol.writeFileSync(join(ROOT, '.claude/CLAUDE.md'), '@AGENTS.md\n');
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', '.claude/CLAUDE.md']);
+  });
 
   it('creates no CLAUDE.md', async () => {
     await addStorybookAgentInstructions(ROOT);

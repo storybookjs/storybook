@@ -27,7 +27,7 @@ A skill is a folder with a `SKILL.md` file: instructions that an agent loads whe
 
 ### With Storybook
 
-When you [install Storybook](../get-started/install.mdx), `create storybook` asks whether you want AI features. When you answer yes, it installs the skills into your project for Claude Code and every agent that reads `.agents/skills`, and it adds a section to your `AGENTS.md` that tells agents [when to use them](#choose-when-agents-use-the-skills). Agents that run `create storybook`, and runs with `--yes`, get the AI features without the question.
+When you [install Storybook](../get-started/install.mdx), `create storybook` asks whether you want AI features. When you answer yes, it installs the skills into your project for Claude Code and every agent that reads `.agents/skills`, and it adds a section to your `AGENTS.md` that tells agents [when to use them](#choose-when-agents-use-the-skills). When an agent runs `create storybook`, or you run it with `--yes`, you get the AI features without the question.
 
 [Upgrading](../releases/upgrading.mdx) to Storybook 11 offers the same through the `skills` automigration. To install the skills in a project that does not have them, run:
 
@@ -35,21 +35,21 @@ When you [install Storybook](../get-started/install.mdx), `create storybook` ask
 npx storybook automigrate skills
 ```
 
-Each later `storybook upgrade` updates the skills to the version of Storybook you upgrade to, so the skills always match the `storybook skills` and `storybook tools` commands of your project.
+Each later `storybook upgrade` updates the skills to the version of Storybook you upgrade to, so the skills always match the `storybook skills` and `storybook tools` commands of your project. It leaves the `AGENTS.md` section alone, so your edits stay, and so does its removal.
 
 ### With the skills CLI
 
-Storybook installs its skills from the [`storybookjs/skills`](https://github.com/storybookjs/skills) repository with Vercel's [`skills` CLI](https://skills.sh/). You can also run it yourself, for example to pick other agents:
+Storybook installs its skills from the [`storybookjs/skills`](https://github.com/storybookjs/skills) repository with Vercel's [`skills` CLI](https://skills.sh/). You can also run it yourself, for example to pick other agents. Use the tag of your Storybook version, such as `v11.0.0`, so the skills match your project:
 
 ```shell
-npx skills@latest add storybookjs/skills
+npx skills@latest add storybookjs/skills#v11.0.0
 ```
 
 Then add the [Storybook section](#choose-when-agents-use-the-skills) to your `AGENTS.md` yourself.
 
 ### With the Claude Code or Codex plugin
 
-The Storybook plugins for [Claude Code](https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin#installation) and [Codex](https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin#installation) contain the same skills. The plugin installs them once for every project you open, instead of per project. The plugin does not add the `AGENTS.md` section, so a project that should use the skills still needs it.
+The Storybook plugins for [Claude Code](https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin#installation) and [Codex](https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin#installation) contain the same skills. The plugin installs them once for every project you open, instead of per project. The plugin does not add the `AGENTS.md` section, so add the [Storybook section](#choose-when-agents-use-the-skills) to each project that should use the skills, unless Storybook already added it.
 
 ## Choose when agents use the skills
 
@@ -58,13 +58,13 @@ The skills do not take over every UI change on their own. A section in your `AGE
 ```md title="AGENTS.md"
 ## Storybook
 
-When you change the UI, or the user asks to see components or stories, use both Storybook skills, in this order:
+When you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories, use both Storybook skills, in this order:
 
 1. `component-docs`: look up the components to reuse, before you edit any file.
 2. `ui-workflow`: update your stories, run the tests, and publish a review of the results.
 ```
 
-Storybook adds this section when it installs the skills, and leaves the file alone when it already names the `ui-workflow` skill. Edit it to fit how you work. For example, to skip the review, change the last line to:
+Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. Edit it to fit how you work. For example, to skip the review, change the last line to:
 
 ```md title="AGENTS.md"
 2. `ui-workflow`: update your stories and run the tests.
@@ -74,7 +74,7 @@ To stop agents from using the skills on their own, remove the section. You can s
 
 <Callout variant="info" icon="💡">
 
-Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` of its own. When your project has a `CLAUDE.md` that does not import `AGENTS.md`, Storybook adds the section to `CLAUDE.md` as well.
+Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` or `CLAUDE.local.md`, and only from version 2.1.277. When your project has a `CLAUDE.md` that does not import `AGENTS.md`, Storybook adds the section to that `CLAUDE.md` as well, so edit both copies. To keep one copy, import `AGENTS.md` from your `CLAUDE.md` with a line that says `@AGENTS.md`, and remove the section from `CLAUDE.md`.
 
 </Callout>
 
@@ -92,11 +92,11 @@ In the Codex plugin, the last three skills are called `init`, `setup`, and `upgr
 
 ## Skills or the MCP server?
 
-The skills and the [MCP server](./mcp/overview.mdx) give agents the same tools. The skills run them as `storybook tools` commands in your project, so they need no running server and no MCP configuration. We recommend them for coding agents that can run shell commands. Use the MCP server for agents that cannot, and to [share your Storybook](./mcp/sharing.mdx) with agents outside your project.
+The skills and the [MCP server](./mcp/overview.mdx) give agents the same tools. The skills run them as `storybook tools` commands in your project, so they need no MCP server and no MCP configuration. We recommend them for coding agents that can run shell commands. Use the MCP server for agents that cannot, and to [share your Storybook](./mcp/sharing.mdx) with agents outside your project.
 
 ## Remove the skills
 
-To remove the skills, run the following command and remove the Storybook section from your `AGENTS.md`:
+To remove the skills, run the following command, select the Storybook skills, and remove the Storybook section from your `AGENTS.md`:
 
 ```shell
 npx skills@latest remove

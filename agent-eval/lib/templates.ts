@@ -93,7 +93,7 @@ const CLAUDE_BROWSER_PROMPT_SOURCE_PATH = path.join(
   'mcp',
   'claude-browser-prompt.md'
 );
-const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = 'CLAUDE.md';
+const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = '.claude/rules/built-in-browser.md';
 const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
   'lib',
@@ -871,17 +871,16 @@ tool_timeout_sec = 180
   await appendCodexConfig(sandbox, config);
 }
 
-// The sandbox CLAUDE.md stands in for the `<built_in_browser>` block the
-// desktop app injects, so the agent knows it has that browser.
+// This rule stands in for the `<built_in_browser>` block the desktop app
+// injects, so the agent knows it has that browser. A rule, unlike a
+// CLAUDE.md, does not stop Claude Code from reading AGENTS.md.
 export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
-  let existingClaudeMd = '';
-  try {
-    existingClaudeMd = `${(await sandbox.readFile(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH)).trimEnd()}\n\n`;
-  } catch {}
   await sandbox.writeFiles({
     [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
-    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]:
-      existingClaudeMd + (await fs.readFile(CLAUDE_BROWSER_PROMPT_SOURCE_PATH, 'utf8')),
+    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]: await fs.readFile(
+      CLAUDE_BROWSER_PROMPT_SOURCE_PATH,
+      'utf8'
+    ),
   });
   await writeClaudeMcpServer(sandbox, CLAUDE_BROWSER_MCP_SERVER_NAME, {
     command: 'node',
@@ -907,12 +906,9 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
   });
 }
 
-/**
- * Add the section that `create storybook` and `storybook upgrade` write next to the skills: it is
- * what makes agents use the `component-docs` and `ui-workflow` skills. Call it last, after every
- * other step that writes `AGENTS.md` or `CLAUDE.md`, as a user's own files exist before Storybook
- * adds the section.
- */
+// The section that `create storybook` and `storybook upgrade` add next to the skills, which makes
+// agents use them. Call it after every other step that writes AGENTS.md or CLAUDE.md, as a user's
+// own files exist before Storybook adds the section.
 export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise<void> {
   // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
   const { planStorybookAgentInstructions } = (await import(

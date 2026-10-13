@@ -1423,12 +1423,12 @@ The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI
 
 The `stories` skill is replaced by two skills: `ui-workflow` writes stories, runs the story tests and publishes a review, and `component-docs` looks up the components to reuse. Run `npx storybook skills ui-workflow` and `npx storybook skills component-docs` instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship the two new skills instead of `stories`.
 
-The skills no longer run for every UI change on their own. A section in `AGENTS.md` tells agents when to use them; edit it to change when, or remove it to opt out. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md` that does not import `AGENTS.md`, because Claude Code reads `CLAUDE.md` instead. When `storybook upgrade` updates skills that still include `stories`, it removes that skill and adds the section. If you install the skills yourself, add the section yourself:
+The skills no longer run for every UI change on their own. A section in `AGENTS.md` tells agents when to use them; edit it to change when, or remove it to opt out. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md` that does not import `AGENTS.md`, because Claude Code reads `CLAUDE.md` instead. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
 
 ```md
 ## Storybook
 
-When you change the UI, or the user asks to see components or stories, use both Storybook skills, in this order:
+When you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories, use both Storybook skills, in this order:
 
 1. `component-docs`: look up the components to reuse, before you edit any file.
 2. `ui-workflow`: update your stories, run the tests, and publish a review of the results.

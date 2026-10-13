@@ -54,12 +54,12 @@ To remove a plugin:
 
 ## Usage
 
-The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. You decide when the agent uses them. When you set up or upgrade to Storybook 11 with AI features, Storybook adds this section to the `AGENTS.md` of your project (and to your `CLAUDE.md`, if it does not import `AGENTS.md`):
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. You decide when the agent uses them. Add this section to the `AGENTS.md` of each project where the agent should use them. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md`, if it does not import `AGENTS.md`):
 
 ```md
 ## Storybook
 
-When you change the UI, or the user asks to see components or stories, use both Storybook skills, in this order:
+When you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories, use both Storybook skills, in this order:
 
 1. `component-docs`: look up the components to reuse, before you edit any file.
 2. `ui-workflow`: update your stories, run the tests, and publish a review of the results.
@@ -85,13 +85,13 @@ Sets up your Storybook for agentic workflows, automatically configures your proj
 
 Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. The agent also uses it to answer questions about a component's props, API, or usage.
 
-### `upgrade`
-
-Upgrades your Storybook to the latest version. This is the same as running [`npx storybook upgrade`](https://storybook.js.org/docs/releases/upgrading) in your project.
-
 ### `ui-workflow`
 
 The workflow for UI changes: the agent writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of the result.
+
+### `upgrade`
+
+Upgrades your Storybook to the latest version. This is the same as running [`npx storybook upgrade`](https://storybook.js.org/docs/releases/upgrading) in your project.
 
 ## Tools
 

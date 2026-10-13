@@ -90,6 +90,15 @@ describe('resolveSkillsIntent', () => {
     }
   });
 
+  it('names the two skills that replace stories', () => {
+    expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({
+      kind: 'error',
+      message: expect.stringContaining(
+        'Run `npx storybook skills ui-workflow` or `npx storybook skills component-docs`.'
+      ),
+    });
+  });
+
   it('rejects surplus positional arguments and an id combined with --all', () => {
     expect(resolveSkillsIntent({ tokens: ['ui-workflow', 'typo'] })).toEqual({
       kind: 'error',

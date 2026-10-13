@@ -75,6 +75,13 @@ export function resolveSkillsIntent({
   if (id === undefined) {
     return all ? { kind: 'all' } : { kind: 'catalog' };
   }
+  if (id === 'stories') {
+    return {
+      kind: 'error',
+      message:
+        'The `stories` skill is split into `ui-workflow` (write stories, test, review) and `component-docs` (look up components to reuse). Run `npx storybook skills ui-workflow` or `npx storybook skills component-docs`.',
+    };
+  }
   if (!isSkillId(id)) {
     return {
       kind: 'error',

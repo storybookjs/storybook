@@ -14,10 +14,10 @@ describe('buildComponentDocsSkill', () => {
   });
 
   it.each([true, false])(
-    'continues with ui-workflow for UI changes (docs enabled: %s)',
+    'hands over to ui-workflow when the agent instructions name it (docs enabled: %s)',
     (docsEnabled) => {
       expect(buildComponentDocsSkill({ docsEnabled })).toContain(
-        'When you change the UI, continue with the `ui-workflow` skill (`npx storybook skills ui-workflow`)'
+        'also name the `ui-workflow` skill, invoke it next for a UI change'
       );
     }
   );

@@ -29,6 +29,17 @@ describe('fillTemplate', () => {
     expect(fillTemplate(' ⟦props label⟧', { label: '{{ x }}' })).toBe(` [label]="'{{ x }}'"`);
   });
 
+  it('prints a value hole as the literal of a host field', () => {
+    expect(fillTemplate('  label = ⟦value label⟧;', { label: "it's `x`" })).toBe(
+      "  label = 'it\\'s `x`';"
+    );
+    expect(fillTemplate('  data = ⟦value data⟧;', { data: { a: [1] } })).toBe(
+      '  data = { a: [1] };'
+    );
+    expect(fillTemplate('  label = ⟦value label⟧;', {})).toBe('  label = undefined;');
+    expect(() => fillTemplate('  on = ⟦value on⟧;', { on: () => {} })).toThrow(UnprintableArgError);
+  });
+
   it('throws for a value it cannot print', () => {
     expect(() => fillTemplate(' ⟦props date⟧', { date: new Date() })).toThrow(UnprintableArgError);
     expect(() => fillTemplate(' ⟦props max⟧', { max: [Infinity] })).toThrow(UnprintableArgError);

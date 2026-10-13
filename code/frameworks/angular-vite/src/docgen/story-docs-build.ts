@@ -309,13 +309,15 @@ const renderStorySnippet = async (
         ...referencedNames,
       ])
     );
-    // Only markup that reads its args through `argsToTemplate` alone follows the controls.
+    // Markup follows the controls where it reads its args through `argsToTemplate` or by name; an
+    // arg read by name is a host field, whose value is the hole.
     const { expansions, representedArgs } = userMarkup;
     const onlyExpanded = representedArgs.every((arg) => expansions.some((e) => e.allows(arg)));
+    const fieldNames = hostArgs.fields.map(({ name }) => name);
     if (
-      expansions.length === 0 ||
+      (expansions.length === 0 && fieldNames.length === 0) ||
       !onlyExpanded ||
-      hostArgs.fields.length > 0 ||
+      !fieldNames.every(isHoleWord) ||
       !rendersWithArgs(shape)
     ) {
       return rendered;
@@ -326,9 +328,10 @@ const renderStorySnippet = async (
     for (const { marker, allows } of expansions) {
       markup = markup.replace(new RegExp(`${marker}(?![\\w-])`), propsHole(snippetMeta, allows));
     }
+    const holeFields = fieldNames.map((field) => ({ name: field, value: hole('value', field) }));
     return withTemplate(
       rendered,
-      withWarnings(host(markup, false, boundOutputs), rendered.warning)
+      withWarnings(host(markup, false, boundOutputs, holeFields), rendered.warning)
     );
   }
 

@@ -2165,11 +2165,63 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
+    it('makes the host field of an arg the markup reads by name a value hole', async () => {
+      const template = await templateOf(dedent`
+        export const S = {
+          args: { label: 'Go', count: 1 },
+          render: (args) => ({
+            props: args,
+            template: '<sb-button [label]="label" [count]="count">{{ label }}</sb-button>',
+          }),
+        };
+      `);
+      expect(template).toBe(
+        [
+          `import { Component } from '@angular/core';`,
+          `import { ButtonComponent } from './button.component';`,
+          '',
+          '@Component({',
+          `  selector: 'app-demo',`,
+          '  imports: [ButtonComponent],',
+          '  template: `<sb-button [label]="label" [count]="count">{{ label }}</sb-button>`,',
+          '})',
+          'export class DemoComponent {',
+          '  label = ⟦value label⟧;',
+          '  count = ⟦value count⟧;',
+          '}',
+        ].join('\n')
+      );
+      expect(fillTemplate(template!, { label: "It's", count: undefined })).toContain(
+        "  label = 'It\\'s';\n  count = undefined;"
+      );
+    });
+
+    it('fills a props hole and a value hole in the same markup', async () => {
+      const template = await templateOf(dedent`
+        export const S = {
+          args: { label: 'Go', count: 1 },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args, { exclude: ['label'] })} [label]="label.toUpperCase()" />\`,
+          }),
+        };
+      `);
+      const filled = fillTemplate(template!, { label: 'Stop', count: 2 });
+      expect(extractHostComponentTemplate(filled)).toBe(
+        '<sb-button [count]="2" [label]="label.toUpperCase()" />'
+      );
+      expect(filled).toContain("  label = 'Stop';");
+    });
+
     it.each([
       ['markup without arg reads', `export const S = { template: '<sb-button></sb-button>' };`],
       [
-        'markup reading an arg by name',
-        `export const S = { args: { label: 'Go' }, template: '<sb-button [label]="label" />' };`,
+        'markup reading an arg the story does not set',
+        `export const S = { template: '<sb-button [label]="label" />' };`,
+      ],
+      [
+        'markup reading an arg by name in a render with other props',
+        `export const S = { args: { label: 'Go' }, render: () => ({ props: { label: 'Fixed' }, template: '<sb-button [label]="label" />' }) };`,
       ],
       [
         'markup interpolating an arg',

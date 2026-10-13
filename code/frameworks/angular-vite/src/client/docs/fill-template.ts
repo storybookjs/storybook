@@ -2,14 +2,17 @@ import { type FillSnippetTemplate, fillHoles, printValue } from 'storybook/inter
 
 import { escapeTemplateLiteral } from '../../template-grammar.ts';
 
-// Fills a template from the story-docs build. Its only hole is `⟦props label size⟧`, the inputs
-// the story's args may bind, which lands in the host component's `template` literal.
+// Fills a template from the story-docs build. `⟦props label size⟧` is the inputs the story's args
+// may bind, which lands in the host component's `template` literal. `⟦value label⟧` is the value
+// of a host field, for an arg the markup reads by name.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
-  fillHoles(template, (_kind, inputs) =>
-    inputs
-      .map((name) => escapeTemplateLiteral(binding(name, args[name])))
-      .filter(Boolean)
-      .join(' ')
+  fillHoles(template, (kind, words) =>
+    kind === 'value'
+      ? printValue(args[words[0]!], words[0]!, { quote: "'" })
+      : words
+          .map((name) => escapeTemplateLiteral(binding(name, args[name])))
+          .filter(Boolean)
+          .join(' ')
   );
 
 // A function arg, such as an action, is left out, as no control changes it; the snippet binds an

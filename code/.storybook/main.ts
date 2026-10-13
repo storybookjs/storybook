@@ -22,6 +22,7 @@ const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-co
 const config = defineMain({
   stories: [
     './bench/*.stories.@(js|jsx|ts|tsx)',
+    './qa-35513/*.@(mdx|stories.tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',

@@ -8,12 +8,18 @@ import { escapeTemplateLiteral } from '../../template-grammar.ts';
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) =>
     kind === 'value'
-      ? printValue(args[words[0]!], words[0]!, { quote: "'" })
+      ? fieldValue(args[words[0]!], words[0]!)
       : words
           .map((name) => escapeTemplateLiteral(binding(name, args[name])))
           .filter(Boolean)
           .join(' ')
   );
+
+// A host field is TypeScript, which can hold a date an Angular template has no literal for.
+const fieldValue = (value: unknown, name: string) =>
+  value instanceof Date && !Number.isNaN(value.getTime())
+    ? `new Date('${value.toISOString()}')`
+    : printValue(value, name, { quote: "'" });
 
 // A function arg, such as an action, is left out, as no control changes it; the snippet binds an
 // output to a host method of its own.

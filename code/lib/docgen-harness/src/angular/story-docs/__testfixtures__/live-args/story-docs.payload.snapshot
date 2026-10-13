@@ -75,6 +75,17 @@ import { LiveArgsComponent } from './live-args.component.ts';
 export class DemoComponent {
   label = 'Save';
 }",
+      "template": "import { Component } from '@angular/core';
+import { LiveArgsComponent } from './live-args.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LiveArgsComponent],
+  template: `<sb-live-args [label]="label" [formatter]="formatter"></sb-live-args>`,
+})
+export class DemoComponent {
+  label = ⟦value label⟧;
+}",
       "warning": "Incomplete snippet: `value => value.trim()` could not be resolved statically.",
     },
   },

@@ -30,9 +30,10 @@ an unset attribute, takes the whitespace before it along.
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
 builds alike. The story docs load once per version of a story, and the server keeps them current, so
-an args change makes no request. A provider sets `template` only for a story whose every arg
-reference is a hole, and a filler throws for a value it cannot print; a missing template, a missing
-filler or a filler that throws falls back to the static `snippet`.
+an args change makes no request. A provider sets `template` only where the filled snippet is as
+right as the static one: what the static snippet leaves out with a `warning`, the filled one leaves
+out too. A filler throws for a value it cannot print; a missing template, a missing filler or a
+filler that throws falls back to the static `snippet`.
 
 ## Providers
 

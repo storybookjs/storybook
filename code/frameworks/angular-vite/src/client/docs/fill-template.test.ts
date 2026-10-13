@@ -37,6 +37,12 @@ describe('fillTemplate', () => {
       '  data = { a: [1] };'
     );
     expect(fillTemplate('  label = ⟦value label⟧;', {})).toBe('  label = undefined;');
+    expect(fillTemplate('  min = ⟦value min⟧;', { min: new Date(Date.UTC(2024, 5, 1)) })).toBe(
+      "  min = new Date('2024-06-01T00:00:00.000Z');"
+    );
+    expect(() => fillTemplate('  min = ⟦value min⟧;', { min: new Date(NaN) })).toThrow(
+      UnprintableArgError
+    );
     expect(() => fillTemplate('  on = ⟦value on⟧;', { on: () => {} })).toThrow(UnprintableArgError);
   });
 

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
-import { userTemplate } from './story-docs-markup.ts';
+import { renderedProps, userTemplate } from './story-docs-markup.ts';
 import { analyzeStoryTemplate } from './story-docs-template-analysis.ts';
 
 const shapeOf = (source: string, exportName: string): StoryShape => {
@@ -270,5 +270,79 @@ describe('userTemplate', () => {
         "source": "html\`<sb-button></sb-button>\`",
       }
     `);
+  });
+});
+
+describe('renderedProps', () => {
+  const propsOf = (render: string, names: string[]) => {
+    const props = renderedProps(
+      shapeOf(
+        dedent`
+          export default { title: 'Example/Button' };
+          export const Default = { ${render} };
+        `,
+        'Default'
+      )
+    );
+    return props && Object.fromEntries(names.map((name) => [name, describeProp(props(name))]));
+  };
+  const describeProp = (prop: ReturnType<NonNullable<ReturnType<typeof renderedProps>>>) =>
+    prop && [prop.arg, prop.code && 'code'].filter(Boolean).join(' or ');
+
+  it('holds every arg under its own name without a render', () => {
+    expect(propsOf(`args: { label: 'Save' }`, ['label', 'other'])).toEqual({
+      label: 'label',
+      other: 'other',
+    });
+  });
+
+  it.each([`(args) => ({ props: args })`, `({ ...args }) => ({ props: { ...args } })`])(
+    'holds every arg for %s',
+    (render) => {
+      expect(propsOf(`render: ${render}`, ['label'])).toEqual({ label: 'label' });
+    }
+  );
+
+  it('holds only the args a render names, under the name it gives them', () => {
+    expect(
+      propsOf(
+        `render: ({ label, size: scale, on = true }) => ({ props: { label, scale, on, id: 1 } })`,
+        ['label', 'scale', 'size', 'on', 'id']
+      )
+    ).toEqual({ label: 'label', scale: 'size', size: undefined, on: 'code', id: 'code' });
+  });
+
+  it('reads an arg off the args object or a rest of it', () => {
+    expect(
+      propsOf(
+        `render: ({ label, ...rest }) => ({ props: { ...rest, text: rest['size'], label: rest.label } })`,
+        ['size', 'text', 'label']
+      )
+    ).toEqual({ size: 'size', text: 'size', label: 'code' });
+  });
+
+  it('lets a spread arg replace a prop written before it, and not one written after', () => {
+    expect(
+      propsOf(`render: (args) => ({ props: { before: 1, ...args, after: 2 } })`, [
+        'before',
+        'after',
+        'label',
+      ])
+    ).toEqual({ before: 'before or code', after: 'code', label: 'label' });
+  });
+
+  it('holds nothing for a render without props', () => {
+    expect(propsOf(`render: (args) => ({ template: '<sb-button />' })`, ['label'])).toEqual({
+      label: undefined,
+    });
+  });
+
+  it.each([
+    `(args) => ({ props: { ...args, ...extra() } })`,
+    `(args) => ({ props: build(args) })`,
+    `(args) => { args.label = 'x'; return { props: args }; }`,
+    `(args) => (args.on ? { props: args } : {})`,
+  ])('cannot read the props of %s', (render) => {
+    expect(propsOf(`render: ${render}`, ['label'])).toBeUndefined();
   });
 });

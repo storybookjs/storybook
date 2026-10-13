@@ -2100,11 +2100,11 @@ describe('buildStoryDocsPayload', () => {
     const fill = (template: string | undefined, args: Record<string, unknown>) =>
       extractHostComponentTemplate(fillTemplate(template!, args));
 
-    it('is the element for a render that passes its args as props', async () => {
-      const template = await templateOf(
-        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args }) };`
-      );
-      expect(fill(template, { label: 'Stop' })).toBe(
+    it.each([
+      `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args }) };`,
+      `export const S = { args: { label: 'Go' }, render: ({ ...args }) => ({ props: args }) };`,
+    ])('is the element for a render that passes its args as props: %s', async (story) => {
+      expect(fill(await templateOf(story), { label: 'Stop' })).toBe(
         '<sb-button label="Stop" (clicked)="clicked($event)" />'
       );
     });

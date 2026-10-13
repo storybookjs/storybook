@@ -555,18 +555,22 @@ export const rendersWithArgs = (shape: StoryShape): boolean => {
   const fn = csf2?.fn ?? (render?.kind === 'value' ? declaredValue(shape, render.node) : undefined);
   const returned = csf2?.returned ?? returnedObject(fn);
   const [param] = t.isFunction(fn) ? fn.params : [];
+  // `(args) => …`, or `({ ...args }) => …`, which takes the same args.
+  const [rest] = t.isObjectPattern(param) && param.properties.length === 1 ? param.properties : [];
+  const named = t.isRestElement(rest) ? rest.argument : param;
   const props = returned && resolvedProperty(returned, 'props');
-  if (!t.isIdentifier(param) || props?.kind !== 'value') {
+  if (!t.isIdentifier(named) || props?.kind !== 'value') {
     return false;
   }
+  const { name } = named;
   const value = unwrapExpression(props.node as t.Expression);
   const [spread] = t.isObjectExpression(value) ? value.properties : [];
   return (
-    t.isIdentifier(value, { name: param.name }) ||
+    t.isIdentifier(value, { name }) ||
     (t.isObjectExpression(value) &&
       value.properties.length === 1 &&
       t.isSpreadElement(spread) &&
-      t.isIdentifier(spread.argument, { name: param.name }))
+      t.isIdentifier(spread.argument, { name }))
   );
 };
 

@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { types as t, type NodePath } from 'storybook/internal/babel';
 import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
@@ -10,28 +9,30 @@ import {
 import { getService } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type ImportBinding,
+  type RenderFunction,
+  type StoryArgsResolver,
+  type StoryReferenceResolver,
   buildImportStatements,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
-  jsDocTagsForPath,
+  jsDocTagsForNode,
   keyOf,
   loadCsf,
-  metaObjectPath,
+  metaObject,
   noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
+  resolveEffectiveRender,
   resolveReturnedObjectExpression,
   returnedExpression,
-  returnedExpressionPath,
   unresolvedWarning,
   unwrapExpression,
-  type ImportBinding,
-  type RenderFunctionPath,
-  type StoryArgsResolver,
-  type StoryReferenceResolver,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
@@ -49,7 +50,6 @@ import {
   transformTemplate,
   type TemplateRenderConfig,
 } from './transform-template/transform-template.ts';
-import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
@@ -70,7 +70,6 @@ interface StoryDocsContext {
   /** Present only when the component identifier and docgen data can synthesize snippets. */
   snippet: StorySnippetContext | undefined;
   importBindings: Map<string, ImportBinding>;
-  metaPath: NodePath<t.ObjectExpression> | undefined;
   /** Resolves each story's args, following a spread or a name out of the story file. */
   resolver: StoryArgsResolver;
   /** Story file source, for forwarding setup statements verbatim. */
@@ -100,7 +99,7 @@ type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
 type StaticStoryRenderer =
   | { kind: 'bail'; warning: string }
-  | { kind: 'h'; argsParam?: string; expression: t.Expression }
+  | { kind: 'h'; argsParam?: string; expression: E.Expression }
   | { kind: 'sfc' }
   | {
       kind: 'template';
@@ -147,7 +146,7 @@ export async function buildStoryDocsPayload(
     return undefined;
   }
 
-  const metaPath = metaObjectPath(csf);
+  const meta = metaObject(csf);
   const id = getComponentIdFromEntry(input.entry);
   let docgenPayload: DocgenPayload | undefined;
   try {
@@ -155,12 +154,12 @@ export async function buildStoryDocsPayload(
   } catch {
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
-  const componentName = resolveMetaComponentIdentifier(metaPath);
-  const importBindings = collectImportBindings(csf._file.path);
+  const componentName = resolveMetaComponentIdentifier(meta);
+  const importBindings = collectImportBindings(csf._program);
   const importStatement = createImportStatement(
     componentName,
     importBindings,
-    metaPath,
+    jsDocTagsForNode(meta, csf._editor),
     docgenPayload
   );
   const docgenArgInfo =
@@ -172,7 +171,6 @@ export async function buildStoryDocsPayload(
   const extracted = extractStories(csf, {
     snippet,
     importBindings,
-    metaPath,
     resolver: createStoryArgsResolver(csf, {
       filePath: storyPath,
       ...(context.references ?? openStoryReferences()),
@@ -199,11 +197,9 @@ function fallbackTitle(title: string): string {
  *
  * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
  */
-function resolveMetaComponentIdentifier(
-  metaPath: NodePath<t.ObjectExpression> | undefined
-): string | undefined {
-  const value = propertyValue(metaPath?.node, 'component');
-  return t.isIdentifier(value) ? value.name : undefined;
+function resolveMetaComponentIdentifier(meta: E.ObjectExpression | undefined): string | undefined {
+  const value = propertyValue(meta, 'component');
+  return value?.type === 'Identifier' ? value.name : undefined;
 }
 
 /**
@@ -219,7 +215,7 @@ function resolveMetaComponentIdentifier(
 function createImportStatement(
   componentName: string | undefined,
   importBindings: Map<string, ImportBinding>,
-  metaPath: NodePath<t.ObjectExpression> | undefined,
+  metaJsDocTags: Record<string, string[]>,
   docgenPayload: DocgenPayload | undefined
 ): string | undefined {
   if (!componentName) {
@@ -229,8 +225,7 @@ function createImportStatement(
   // The override supplies the source and specifier kind, but the local name has to stay the one the
   // snippet renders, so the statement and the snippet keep referring to the same identifier.
   const ref = resolveComponentImport(componentName, importBindings);
-  const importOverride =
-    jsDocTagsForPath(metaPath).import?.[0] ?? docgenPayload?.jsDocTags.import?.[0];
+  const importOverride = metaJsDocTags.import?.[0] ?? docgenPayload?.jsDocTags.import?.[0];
   return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 }
 
@@ -270,7 +265,10 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
-      const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
+      const { description, summary } = extractStoryJSDocInfo(
+        csf._storyStatements[storyExport],
+        csf._editor
+      );
       const storyDoc: StoryDoc = {
         id: story.id,
         name: story.name ?? storyNameFromExport(storyExport),
@@ -312,7 +310,7 @@ function enrichStoryDoc(
 
   let normalized;
   try {
-    normalized = normalizeStoryDeclaration(csf._storyDeclarationPath[storyExport]);
+    normalized = normalizeStoryDeclaration(csf._storyExports[storyExport], csf._editor);
   } catch {
     return plain;
   }
@@ -324,7 +322,7 @@ function enrichStoryDoc(
   const effectiveRender = resolveEffectiveRender(csf, storyExport, options.resolver.ctx);
   const renderer =
     effectiveRender.kind === 'resolved'
-      ? staticRendererForRenderFunction(effectiveRender.path, options)
+      ? staticRendererForRenderFunction(effectiveRender.node, options)
       : effectiveRender.kind === 'missing'
         ? { kind: 'sfc' as const }
         : undefined;
@@ -371,13 +369,16 @@ function enrichStoryDoc(
 }
 
 function staticRendererForRenderFunction(
-  renderFunction: RenderFunctionPath,
+  renderFunction: RenderFunction,
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
-  const renderObject = resolveReturnedObjectExpression(renderFunction);
+  const renderObject = resolveReturnedObjectExpression(
+    renderFunction,
+    options.resolver.ctx.editor.program
+  );
   if (renderObject) {
     const resolution = readTemplateRenderConfig(renderObject, options.importBindings, {
-      argsParam: argsParameterName(renderFunction.node),
+      argsParam: argsParameterName(renderFunction),
       componentImportStatement: options.snippet?.componentImportStatement,
       componentName: options.snippet?.componentName,
       source: options.source,
@@ -392,17 +393,17 @@ function staticRendererForRenderFunction(
     const setupExpression = setupReturnedRenderExpression(renderObject);
     if (setupExpression) {
       return {
-        argsParam: argsParameterName(renderFunction.node),
+        argsParam: argsParameterName(renderFunction),
         expression: setupExpression,
         kind: 'h',
       };
     }
   }
 
-  const hExpression = returnedExpressionPath(renderFunction)?.node;
+  const hExpression = returnedExpression(renderFunction);
   return hExpression
     ? {
-        argsParam: argsParameterName(renderFunction.node),
+        argsParam: argsParameterName(renderFunction),
         expression: hExpression,
         kind: 'h',
       }
@@ -489,9 +490,9 @@ function renderStaticStorySnippet(
  *
  * @example `render: (args) => ({ setup: () => () => h(C, { label: args.label }) })` -> the `h(...)` call
  */
-function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expression | undefined {
+function setupReturnedRenderExpression(renderObject: E.ObjectExpression): E.Expression | undefined {
   const supported = renderObject.properties.every((property) => {
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       return false;
     }
     const key = keyOf(property);
@@ -502,28 +503,33 @@ function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expr
   }
 
   const setup = renderObject.properties.find(
-    (property) => !t.isSpreadElement(property) && keyOf(property) === 'setup'
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && keyOf(property) === 'setup'
   );
-  const setupFn = t.isObjectMethod(setup)
-    ? setup
-    : t.isObjectProperty(setup)
-      ? unwrapExpression(setup.value)
-      : undefined;
-  if (!setupFn || !t.isFunction(setupFn)) {
+  const setupFn = setup && unwrapExpression(setup.value);
+  if (!setupFn || !isFunction(setupFn)) {
     return undefined;
   }
 
   const renderClosure = returnedExpression(setupFn);
   const closure = renderClosure && unwrapExpression(renderClosure);
   // A render closure with parameters would receive values the snippet cannot reproduce.
-  if (!closure || !t.isFunction(closure) || closure.params.length > 0) {
+  if (!closure || !isFunction(closure) || closure.params.length > 0) {
     return undefined;
   }
 
   return returnedExpression(closure);
 }
 
-function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {
+function isFunction(node: Node): node is RenderFunction {
+  return (
+    node.type === 'ArrowFunctionExpression' ||
+    node.type === 'FunctionExpression' ||
+    node.type === 'FunctionDeclaration'
+  );
+}
+
+function argsParameterName(renderFunction: RenderFunction): string | undefined {
   const [parameter] = renderFunction.params;
-  return t.isIdentifier(parameter) ? parameter.name : undefined;
+  return parameter?.type === 'Identifier' ? parameter.name : undefined;
 }

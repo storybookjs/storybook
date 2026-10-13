@@ -6,6 +6,7 @@ import {
   extractComponentDescription,
   extractDescription,
   loadCsf,
+  storyShapeError,
 } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
@@ -143,8 +144,9 @@ export async function buildDocgenPayload(
       error: {
         name: error.name,
         message:
-          (csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message) +
-          `\n\n${input.entry.importPath}:\n${storyFile}`,
+          (csf._metaStatement
+            ? storyShapeError(error.message, csf._metaStatement, csf._editor).message
+            : error.message) + `\n\n${input.entry.importPath}:\n${storyFile}`,
       },
     };
   }
@@ -170,7 +172,7 @@ export async function buildDocgenPayload(
     };
   }
 
-  const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
+  const metaJsDoc = extractDescription(csf._metaStatement, csf._editor) || undefined;
   const { description, summary, jsDocTags } = extractComponentDescription(
     metaJsDoc,
     componentMeta.description,

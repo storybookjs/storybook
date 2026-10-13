@@ -919,13 +919,11 @@ export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise
     ) => Promise<Record<string, string>>;
   };
   await sandbox.writeFiles(
-    await planStorybookAgentInstructions(async (file) => {
-      try {
-        return await sandbox.readFile(file);
-      } catch {
-        return undefined;
-      }
-    })
+    await planStorybookAgentInstructions(async (file) =>
+      (await sandbox.runCommand('test', ['-f', file])).exitCode === 0
+        ? sandbox.readFile(file)
+        : undefined
+    )
   );
 }
 

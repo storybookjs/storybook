@@ -208,6 +208,17 @@ function createSandbox(files: Record<string, string>): Sandbox {
     writeFiles: async (written: Record<string, string>) => {
       Object.assign(files, written);
     },
+    runCommand: async (command: string, [flag, filePath]: string[] = []) => ({
+      stdout: '',
+      stderr: '',
+      exitCode:
+        command === 'test' &&
+        flag === '-f' &&
+        filePath !== undefined &&
+        files[filePath] !== undefined
+          ? 0
+          : 1,
+    }),
     readFile: async (filePath: string) => {
       const content = files[filePath];
       if (content === undefined) {

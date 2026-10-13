@@ -59,13 +59,18 @@ export function supportsAiSetup(
   );
 }
 
+// Matches the repository in any form the lock records (`owner/repo`, a URL, or an SSH remote), but
+// not a fork with a longer name such as `storybookjs/skills-fork`.
+const isSkillsRepo = (source: string) =>
+  /(^|[/:])storybookjs\/skills(\.git)?\/?(#.*)?$/i.test(source);
+
 async function getStorybookSkillNames(): Promise<string[]> {
   try {
     const lock: { skills?: Record<string, { source?: string }> } = JSON.parse(
       await readFile(join(getProjectRoot(), 'skills-lock.json'), 'utf8')
     );
     return Object.entries(lock.skills ?? {})
-      .filter(([, skill]) => skill.source?.toLowerCase().includes(SKILLS_REPO))
+      .filter(([, skill]) => skill.source !== undefined && isSkillsRepo(skill.source))
       .map(([name]) => name);
   } catch {
     return [];

@@ -59,8 +59,11 @@ export async function addStorybookAgentInstructions(root: string): Promise<strin
   const files = await planStorybookAgentInstructions(async (file) => {
     try {
       return await readFile(join(root, file), 'utf8');
-    } catch {
-      return undefined;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return undefined;
+      }
+      throw error;
     }
   });
   for (const [file, content] of Object.entries(files)) {

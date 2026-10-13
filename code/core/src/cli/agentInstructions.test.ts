@@ -26,6 +26,16 @@ beforeEach(async () => {
 });
 
 describe('addStorybookAgentInstructions', () => {
+  it('writes nothing when an existing file cannot be read', async () => {
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), '# Rules\n');
+    vi.mocked(readFile).mockRejectedValueOnce(
+      Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' })
+    );
+
+    await expect(addStorybookAgentInstructions(ROOT)).rejects.toThrow('EACCES');
+    expect(read('AGENTS.md')).toBe('# Rules\n');
+  });
+
   it('creates AGENTS.md when the project has none', async () => {
     expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md']);
     expect(read('AGENTS.md')).toBe(STORYBOOK_AGENT_INSTRUCTIONS);

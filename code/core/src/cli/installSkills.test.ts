@@ -106,7 +106,10 @@ describe('hasStorybookSkills', () => {
   });
 
   it('is false when the lock file only has skills from other repositories', async () => {
-    lock({ 'find-skills': { source: 'vercel-labs/skills' } });
+    lock({
+      'find-skills': { source: 'vercel-labs/skills' },
+      stories: { source: 'storybookjs/skills-fork' },
+    });
 
     expect(await hasStorybookSkills()).toBe(false);
   });

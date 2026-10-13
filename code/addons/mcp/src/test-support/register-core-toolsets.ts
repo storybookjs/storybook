@@ -23,10 +23,7 @@ import {
 
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 
-export function registerCoreToolsetsForTest({
-  index = EMPTY_INDEX,
-  reviewEnabled = true,
-}: { index?: StoryIndex; reviewEnabled?: boolean } = {}) {
+export function registerCoreToolsetsForTest({ index = EMPTY_INDEX }: { index?: StoryIndex } = {}) {
   clearToolsetRegistry();
 
   const storyIndex = { getIndex: async () => index };
@@ -39,7 +36,6 @@ export function registerCoreToolsetsForTest({
         getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
       },
       changeStatuses: { getAll: () => ({}) },
-      reviewEnabled,
     })
   );
   registerToolset(reviewToolset);

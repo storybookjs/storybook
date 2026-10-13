@@ -27,8 +27,7 @@ export type StorybookWorkspace = Map<string, WorkspacePackage>;
 
 export type EvalAgent = 'claude-code' | 'codex';
 // 'none' = bare sandbox: no Storybook tooling flavor recorded in the agent
-// context, review off unless forced by EVAL_REVIEW. Used by control cases that
-// must provide zero agent support.
+// context. Used by control cases that must provide zero agent support.
 export type EvalIntegration = 'mcp' | 'plugin' | 'none';
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
@@ -71,12 +70,6 @@ const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
   'codex-browser-skill.md'
 );
 const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
-const CODEX_AGENTS_MD_REVIEW_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-agents-review.md'
-);
 const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   '.agents',
   'skills',
@@ -126,22 +119,10 @@ const CHECKOUT_PACKAGES_DIR = 'local-packages';
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
 const execFileAsync = promisify(execFile);
-// EVAL_REVIEW=1 enables the `experimentalReview` feature flag in every
-// sandbox Storybook, turning review on for the MCP integration too. Plugin
-// runs don't need it: review is on by default for the `storybook tools` CLI
-// channel, so plugin sandboxes always run review-on, matching released
-// users of either integration. EVAL.ts assertions read the effective
-// per-run signal from the agent context (see isReviewEnabled in test-utils).
-const REVIEW_ENABLED = process.env.EVAL_REVIEW === '1';
-
-// The review mode a sandbox actually runs in: the plugin integration gets
-// review by default from the addon; the MCP integration only with the
-// EVAL_REVIEW=1 feature-flag override.
-export function isReviewEnabledFor(integration: EvalIntegration): boolean {
-  return REVIEW_ENABLED || integration === 'plugin';
-}
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
-const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
+const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
+// Captures the entries of the `addons` list, without the trailing comma.
+const STORYBOOK_ADDONS_PATTERN = /addons: \[([^\]]*?),?\s*\]/;
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
@@ -160,7 +141,7 @@ const CODEX_PLUGIN_SKILLS_DIR = path.join(
 
 export async function setupSandbox(
   sandbox: Sandbox,
-  options: { agent: EvalAgent; integration: EvalIntegration }
+  options: { agent: EvalAgent; integration: EvalIntegration; model?: string }
 ): Promise<void> {
   await writeEvalSupportFiles(sandbox, options);
 
@@ -192,8 +173,8 @@ export async function setupSandbox(
 
   files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
-  if (REVIEW_ENABLED) {
-    enableExperimentalReview(files);
+  if (options.integration === 'mcp') {
+    addMcpAddon(files);
   }
 
   const workspace = await readStorybookWorkspace();
@@ -233,18 +214,14 @@ export async function setupSandbox(
 
 async function writeEvalSupportFiles(
   sandbox: Sandbox,
-  options: { agent: EvalAgent; integration: EvalIntegration }
+  options: { agent: EvalAgent; integration: EvalIntegration; model?: string }
 ): Promise<void> {
   await sandbox.writeFiles({
     [TRANSCRIPT_HELPER_SANDBOX_PATH]: await fs.readFile(TRANSCRIPT_HELPER_SOURCE_PATH, 'utf8'),
     [SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
     [TYPE_UTIL_SANDBOX_PATH]: await fs.readFile(TYPE_UTIL_SOURCE_PATH, 'utf8'),
     [AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
-      {
-        agent: options.agent,
-        integration: options.integration,
-        review: isReviewEnabledFor(options.integration),
-      },
+      { agent: options.agent, model: options.model, integration: options.integration },
       null,
       2
     ).concat('\n'),
@@ -344,28 +321,32 @@ function mergeTemplateAndFixtureFiles(
   return files;
 }
 
-// Enables `features.experimentalReview` in every sandbox Storybook config.
-// Review builds on change detection (on by default), so this one flag is the
-// only opt-in needed. The insertion is anchored on the uniform config-object
-// opener every template and fixture main.ts uses; a main.ts that drifts from
-// it fails loudly instead of silently running with review off. Exported for
-// the drift-guard test only.
-export function enableExperimentalReview(files: Record<string, string>): void {
+// Only the MCP experiments get the addon: the plugin skills have to work in a project without it.
+export function addMcpAddon(files: Record<string, string>): void {
   for (const [filePath, content] of Object.entries(files)) {
     if (!STORYBOOK_MAIN_PATTERN.test(filePath)) {
       continue;
     }
 
-    if (!content.includes(STORYBOOK_CONFIG_OBJECT_OPENER)) {
-      throw new Error(
-        `Cannot enable experimentalReview: ${filePath} does not contain "${STORYBOOK_CONFIG_OBJECT_OPENER}"`
-      );
+    if (!STORYBOOK_ADDONS_PATTERN.test(content)) {
+      throw new Error(`Cannot add ${STORYBOOK_MCP_ADDON}: ${filePath} has no "addons: [...]" list`);
     }
-
     files[filePath] = content.replace(
-      STORYBOOK_CONFIG_OBJECT_OPENER,
-      `${STORYBOOK_CONFIG_OBJECT_OPENER}\n\tfeatures: {\n\t\t// @ts-expect-error -- not yet in core's features type; review is opt-in via this flag\n\t\texperimentalReview: true,\n\t},`
+      STORYBOOK_ADDONS_PATTERN,
+      (_, addons: string) =>
+        `addons: [${[addons.trim(), `'${STORYBOOK_MCP_ADDON}'`].filter(Boolean).join(', ')}]`
     );
+
+    const manifestPath = path.posix.join(path.posix.dirname(filePath), '..', 'package.json');
+    const packageJson = parseJsonFile(manifestPath, files[manifestPath] ?? '', 'fixture');
+    if (!isRecord(packageJson)) {
+      throw new Error(`Expected ${manifestPath} to contain a JSON object`);
+    }
+    packageJson.devDependencies = {
+      ...(isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {}),
+      [STORYBOOK_MCP_ADDON]: WORKSPACE_SPEC,
+    };
+    files[manifestPath] = JSON.stringify(packageJson, null, 2).concat('\n');
   }
 }
 
@@ -672,6 +653,11 @@ function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string
 export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]> {
   const workspace = await readStorybookWorkspace();
   const packages = new Map<string, WorkspacePackage>();
+  // No manifest lists the addon: setup adds it for the MCP experiments.
+  const mcpAddon = workspace.get(STORYBOOK_MCP_ADDON);
+  if (mcpAddon) {
+    packages.set(mcpAddon.name, mcpAddon);
+  }
   for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
     for await (const manifestPath of fs.glob('**/package.json', {
       cwd: sourceDir,
@@ -854,10 +840,7 @@ export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
     return;
   }
-  const instructions = await fs.readFile(
-    isReviewEnabledFor('mcp') ? CODEX_AGENTS_MD_REVIEW_SOURCE_PATH : CODEX_AGENTS_MD_SOURCE_PATH,
-    'utf8'
-  );
+  const instructions = await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8');
   await sandbox.writeFiles({
     'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
   });

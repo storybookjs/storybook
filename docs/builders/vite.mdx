@@ -67,6 +67,24 @@ If you need, you can also configure Storybook's Vite builder using TypeScript. R
 
 <CodeSnippets path="storybook-vite-builder-ts-configure.md" />
 
+### Full bundle mode
+
+Storybook does not support Vite's experimental [full bundle mode](https://github.com/vitejs/vite/discussions/22746) (`experimental.bundledDev`) yet. If your Vite configuration enables it, turn it off for Storybook in `viteFinal`:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  // ...
+  viteFinal: (config) => ({
+    ...config,
+    experimental: { ...config.experimental, bundledDev: false },
+  }),
+};
+
+export default config;
+```
+
 ---
 
 ## Troubleshooting
@@ -114,7 +132,7 @@ If you need to override it, you can use the `viteFinal` function and adjust it.
 
 ### ArgTypes are not generated automatically
 
-Currently, [automatic argType inference](../api/arg-types.mdx#automatic-argtype-inference) is only available for React, Vue 3, and Svelte (JSDocs only). With React, the Vite builder defaults to `react-docgen`, a faster alternative to `react-docgen-typescript` for parsing React components. If you run into any issues, you can revert to `react-docgen-typescript` by updating your Storybook configuration file as follows:
+Currently, [automatic argType inference](../api/arg-types.mdx#automatic-argtype-inference) is only available for React, Vue 3, Angular, Web Components, and Svelte (JSDocs only). React, Vue 3, Angular, and Web Components use server-side docgen by default. If you need the legacy `react-docgen-typescript` Vite plugin for React, turn off [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) and update your Storybook configuration as follows:
 
 <CodeSnippets path="storybook-vite-builder-react-docgen.md" />
 

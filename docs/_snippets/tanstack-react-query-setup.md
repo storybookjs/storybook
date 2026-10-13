@@ -1,5 +1,5 @@
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 3"
-import { type QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Preview } from '@storybook/tanstack-react';
 
 // 👇 Create a new QueryClient
@@ -40,7 +40,7 @@ export default preview;
 
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/tanstack-react';
-import { type QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // 👇 Create a new QueryClient
 const queryClient = new QueryClient({

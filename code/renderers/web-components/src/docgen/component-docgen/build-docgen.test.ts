@@ -89,6 +89,14 @@ describe('buildDocgenPayload', () => {
       )
     ).toMatchInlineSnapshot(`
       {
+        "apiDescription": "## Attributes
+
+      \`\`\`
+      export type XCardAttributes = {
+        /** Label. */
+        label?: string;
+      }
+      \`\`\`",
         "argTypes": {
           "label": {
             "description": "Label.",

@@ -27,7 +27,7 @@ import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-an
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
+  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddonEntry[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta<TArgs = Args, TMetaArgKeys extends PropertyKey = never>(
@@ -40,11 +40,20 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   type<T>(): Preview<TRenderer & T>;
 }
 
-export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
+/**
+ * A typed addon created with `definePreviewAddon`, or a legacy preview annotations module namespace
+ * (`import * as addon from 'some-addon/preview'`). Legacy namespaces add no types to the preview.
+ */
+export type PreviewAddonEntry = PreviewAddon<never> | Record<string, unknown>;
+
+export type InferTypes<T extends PreviewAddonEntry[]> = Extract<
+  T[number],
+  PreviewAddon<never>
+>[] extends PreviewAddon<infer C>[]
   ? C & { csf4: true }
   : never;
 
-export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   type TPreviewRenderer = TRenderer & InferTypes<Addons>;
@@ -153,6 +162,15 @@ export type StoryArgs<TArgs, TKeys extends PropertyKey> = SetOptional<
 >;
 
 /**
+ * The meta's arg keys after `meta.type<T>()`. An arg that `T` redeclares is required again, because
+ * the meta's value was not checked against its new type.
+ */
+export type TypedMetaArgKeys<TKeys extends PropertyKey, T> = Exclude<
+  TKeys,
+  T extends { args: infer TArgs } ? keyof TArgs : never
+>;
+
+/**
  * Adds the args of a typed `render` to those of the meta's `component`. A `render` typed as `any` or
  * `Args` adds none, and it can't change the types of the component's args.
  */
@@ -182,6 +200,8 @@ export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyK
   >(
     input?: TInput
   ): Story<TRenderer, TInput>;
+
+  type<T>(): Meta<TRenderer & T, TypedMetaArgKeys<TMetaArgKeys, T>>;
 }
 
 export function isMeta(input: unknown): input is Meta<Renderer> {
@@ -199,6 +219,9 @@ function defineMeta<TRenderer extends Renderer>(
       parameters: { ...input.parameters, csfFactory: true },
     } as Meta<TRenderer>['input'],
     preview,
+    type<T>() {
+      return this as unknown as Meta<TRenderer & T>;
+    },
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {

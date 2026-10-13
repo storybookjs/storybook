@@ -297,9 +297,7 @@ describe('StorybookModule', () => {
 
     describe('with component without selector', () => {
       @Component({
-        template: `
-          The content
-        `,
+        template: ` The content `,
       })
       class WithoutSelectorComponent {}
 
@@ -336,9 +334,7 @@ describe('StorybookModule', () => {
     it('should keep template with an empty value', async () => {
       @Component({
         selector: 'foo',
-        template: `
-          Should not be displayed
-        `,
+        template: ` Should not be displayed `,
       })
       class FooComponent {}
 

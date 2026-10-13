@@ -34,11 +34,9 @@ const EMPTY_DOCS_ACCESS: DocsAccess = {
 
 export function registerCoreToolsetsForTest({
   index = EMPTY_INDEX,
-  reviewEnabled = true,
   docsAccess = EMPTY_DOCS_ACCESS,
 }: {
   index?: StoryIndex;
-  reviewEnabled?: boolean;
   docsAccess?: DocsAccess;
 } = {}) {
   clearToolsetRegistry();
@@ -53,7 +51,6 @@ export function registerCoreToolsetsForTest({
         getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
       },
       changeStatuses: { getAll: () => ({}) },
-      reviewEnabled,
     })
   );
   registerToolset(reviewToolset);

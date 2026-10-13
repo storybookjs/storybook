@@ -33,8 +33,7 @@ export type ParsedToolsTokens =
  *   `JSON.parse`, falling back to the raw string.
  * - A bare `--key` (no value) becomes `true`.
  * - `--input '<object>'` is an escape hatch providing the raw argument object; explicit `--key`
- *   flags override its entries. (The `storybook ai` CLI spells this `--json`; here `--json` is the
- *   output-format flag.)
+ *   flags override its entries.
  * - `--json` switches the output to the outcome's structured data as JSON.
  * - `-o <path>` / `--output <path>` writes the output to a file.
  * - `--help`/`-h` is consumed by the CLI itself and never forwarded to the tool.
@@ -234,6 +233,6 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   { flags: '-o, --output <path>', description: 'Write the result to a file instead of stdout' },
   {
     flags: '-h, --help',
-    description: 'Show every tool of the target Storybook, or one tool with its arguments',
+    description: 'List the tools of the target Storybook, or show one tool with its arguments',
   },
 ];

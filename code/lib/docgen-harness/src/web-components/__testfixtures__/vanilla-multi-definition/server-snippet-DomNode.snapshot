@@ -1,0 +1,4 @@
+<multi-beta></multi-beta>
+
+warning: Incomplete snippet: `args => { const el = document.createElement('multi-beta'); el.setAttribute('beta-label', String(args.betaLabel)); return el; }` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `betaLabel`.

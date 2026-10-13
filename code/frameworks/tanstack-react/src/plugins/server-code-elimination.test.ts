@@ -97,6 +97,21 @@ describe('serverCodeEliminationPlugin', () => {
       expect(result!.code).not.toContain('const handler');
     });
 
+    it.each([
+      'export function handler() { return 1; }',
+      'export default function handler() { return 1; }',
+      'export class handler {}',
+    ])('keeps an exported handler declaration intact: %s', async (declaration) => {
+      const code = [
+        `import { createServerFn } from '@tanstack/react-start';`,
+        declaration,
+        `export const f = createServerFn().handler(handler);`,
+      ].join('\n');
+      const result = await transform(code);
+      expect(result!.code).toContain(declaration);
+      expect(result!.code).toContain('__sb_fn()');
+    });
+
     it('handles chained .middleware().handler()', async () => {
       const code = [
         `import { createServerFn } from '@tanstack/react-start';`,

@@ -13,6 +13,7 @@ import {
   type StorybookWorkspace,
   type WorkspacePackage,
   writeClaudeInAppBrowserMock,
+  writeStorybookAgentInstructions,
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
@@ -202,22 +203,22 @@ describe('pointStorybookAtCheckout', () => {
   });
 });
 
-describe('writeClaudeInAppBrowserMock', () => {
-  function createSandbox(files: Record<string, string>): Sandbox {
-    return {
-      writeFiles: async (written: Record<string, string>) => {
-        Object.assign(files, written);
-      },
-      readFile: async (filePath: string) => {
-        const content = files[filePath];
-        if (content === undefined) {
-          throw new Error(`ENOENT: ${filePath}`);
-        }
-        return content;
-      },
-    } as unknown as Sandbox;
-  }
+function createSandbox(files: Record<string, string>): Sandbox {
+  return {
+    writeFiles: async (written: Record<string, string>) => {
+      Object.assign(files, written);
+    },
+    readFile: async (filePath: string) => {
+      const content = files[filePath];
+      if (content === undefined) {
+        throw new Error(`ENOENT: ${filePath}`);
+      }
+      return content;
+    },
+  } as unknown as Sandbox;
+}
 
+describe('writeClaudeInAppBrowserMock', () => {
   it('registers the Browser server next to existing servers and writes the prompt block', async () => {
     const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
     const files: Record<string, string> = {
@@ -242,6 +243,19 @@ describe('writeClaudeInAppBrowserMock', () => {
     await writeClaudeInAppBrowserMock(createSandbox(files));
 
     expect(files['CLAUDE.md']).toMatch(/^# Project rules\n\n[\s\S]*<built_in_browser>/);
+  });
+});
+
+describe('writeStorybookAgentInstructions', () => {
+  it('writes the section of create storybook to AGENTS.md and to the sandbox CLAUDE.md', async () => {
+    const files: Record<string, string> = {};
+    await writeClaudeInAppBrowserMock(createSandbox(files));
+
+    await writeStorybookAgentInstructions(createSandbox(files));
+
+    expect(files['AGENTS.md']).toMatch(/^## Storybook\n[\s\S]*`ui-workflow` skill/);
+    // Claude Code reads CLAUDE.md instead of AGENTS.md, so the section must be there too.
+    expect(files['CLAUDE.md']).toMatch(/<built_in_browser>[\s\S]*`component-docs` skill/);
   });
 });
 

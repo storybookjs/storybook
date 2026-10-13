@@ -52,6 +52,7 @@
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
+  - [`stories` skill split into `ui-workflow` and `component-docs`](#stories-skill-split-into-ui-workflow-and-component-docs)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
@@ -1417,6 +1418,23 @@ When `skills setup` cannot produce the instructions (for example because it find
 `skills setup` always prints to stdout, so replace `--output <path>` with a shell redirect, for example `npx storybook skills setup > storybook-setup.md`. It detects the package manager itself and has no `--package-manager` option.
 
 The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI_CLI` environment variable are removed as well. Use `npx storybook tools` instead, and run `npx storybook tools --help` to list the available tools.
+
+### `stories` skill split into `ui-workflow` and `component-docs`
+
+The `stories` skill is replaced by two skills: `ui-workflow` writes stories, runs the story tests and publishes a review, and `component-docs` looks up the components to reuse. Run `npx storybook skills ui-workflow` and `npx storybook skills component-docs` instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship the two new skills instead of `stories`.
+
+The skills no longer run for every UI change on their own. A section in `AGENTS.md` tells agents when to use them; edit it to change when, or remove it to opt out. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md` that does not import `AGENTS.md`, because Claude Code reads `CLAUDE.md` instead. When `storybook upgrade` updates skills that still include `stories`, it removes that skill and adds the section. If you install the skills yourself, add the section yourself:
+
+```md
+## Storybook
+
+Whenever you make updates that could affect the UI:
+
+- Reuse existing components: look them up with the `component-docs` skill.
+- Update your stories, run the tests, and publish a review of the results with the `ui-workflow` skill.
+```
+
+See [Skills and plugins](docs/ai/skills.mdx) for more details.
 
 ### `--preview-url` and `--force-build-preview` removed
 

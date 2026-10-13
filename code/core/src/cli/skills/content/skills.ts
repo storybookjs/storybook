@@ -4,14 +4,17 @@
  * ids are public CLI vocabulary — plugin stubs (M7) will reference them — so treat renames as
  * breaking.
  */
-export const SKILL_IDS = ['stories', 'write-story', 'setup'] as const;
+export const SKILL_IDS = ['ui-workflow', 'component-docs', 'write-story', 'setup'] as const;
 
 export type SkillId = (typeof SKILL_IDS)[number];
 
 export const SKILLS: Record<SkillId, { blurb: string }> = {
-  stories: {
+  'ui-workflow': {
     blurb:
-      'The workflow for UI changes, with every command it needs: look up components, write stories, test, and publish a review.',
+      'The workflow for UI changes, with every command it needs: write stories, test, and publish a review.',
+  },
+  'component-docs': {
+    blurb: 'Look up the components to reuse, and their props and usage, before changing the UI.',
   },
   'write-story': {
     blurb:

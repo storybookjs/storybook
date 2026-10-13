@@ -15,6 +15,7 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 import { vol } from 'memfs';
 
+import { addStorybookAgentInstructions } from './agentInstructions.ts';
 import {
   hasStorybookSkills,
   installSkills,
@@ -23,6 +24,7 @@ import {
 } from './installSkills.ts';
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('./agentInstructions.ts', () => ({ addStorybookAgentInstructions: vi.fn() }));
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock(import('storybook/internal/common'), async (importOriginal) => {
@@ -44,6 +46,7 @@ beforeEach(async () => {
   vol.reset();
   vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
   vi.mocked(isCI).mockReturnValue(false);
+  vi.mocked(addStorybookAgentInstructions).mockResolvedValue(['AGENTS.md']);
 });
 
 describe('supportsSkills', () => {
@@ -186,6 +189,60 @@ describe('installSkills', () => {
     );
   });
 
+  it('adds the section that tells agents when to use the skills', async () => {
+    await installSkills({ packageManager, source: 'ai-feature' });
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(logger.log).toHaveBeenCalledWith(
+      expect.stringContaining('Added a Storybook section to AGENTS.md')
+    );
+  });
+
+  it('leaves AGENTS.md alone on a refresh, so a removed section stays removed', async () => {
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+  });
+
+  it('replaces the stories skill of an 11.0 prerelease on a refresh', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: {
+          stories: { source: 'storybookjs/skills' },
+          'storybook-init': { source: 'storybookjs/skills' },
+        },
+      }),
+    });
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
+      args: ['skills@latest', 'remove', 'stories', '--yes'],
+      cwd: PROJECT_ROOT,
+    });
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+  });
+
+  it('does not remove a stories skill from another repository', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({ version: 1, skills: { stories: { source: 'acme/skills' } } }),
+    });
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('still installs when AGENTS.md cannot be written', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockRejectedValue(new Error('EACCES'));
+
+    const result = await installSkills({ packageManager, source: 'ai-feature' });
+
+    expect(result).toEqual({ result: 'installed', source: 'ai-feature' });
+    expect(logger.warn).toHaveBeenCalledWith('Could not add the Storybook section to AGENTS.md.');
+  });
+
   it('spawns nothing under CI', async () => {
     vi.mocked(isCI).mockReturnValue(true);
 
@@ -206,6 +263,7 @@ describe('installSkills', () => {
     const result = await installSkills({ packageManager, source: 'automigration' });
 
     expect(result).toEqual({ result: 'failed', source: 'automigration', exitCode: 1 });
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
       'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills#v10.6.0'
     );

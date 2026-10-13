@@ -907,6 +907,32 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
   });
 }
 
+/**
+ * Add the section that `create storybook` and `storybook upgrade` write next to the skills: it is
+ * what makes agents use the `component-docs` and `ui-workflow` skills. Call it last, after every
+ * other step that writes `AGENTS.md` or `CLAUDE.md`, as a user's own files exist before Storybook
+ * adds the section.
+ */
+export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise<void> {
+  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
+  const { planStorybookAgentInstructions } = (await import(
+    path.join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
+  )) as {
+    planStorybookAgentInstructions: (
+      read: (file: string) => Promise<string | undefined>
+    ) => Promise<Record<string, string>>;
+  };
+  await sandbox.writeFiles(
+    await planStorybookAgentInstructions(async (file) => {
+      try {
+        return await sandbox.readFile(file);
+      } catch {
+        return undefined;
+      }
+    })
+  );
+}
+
 export async function writeClaudePluginSkills(sandbox: Sandbox): Promise<void> {
   await writePluginSkills(sandbox, CLAUDE_PLUGIN_SKILLS_DIR, path.posix.join('.claude', 'skills'));
 }

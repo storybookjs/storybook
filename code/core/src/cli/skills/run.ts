@@ -5,8 +5,9 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { renderCommandReference } from './command-reference.ts';
-import { buildStoriesSkill } from './content/build-stories-skill.ts';
+import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
+import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
@@ -215,7 +216,8 @@ function withCommandReference(
   toolsets: ToolsetCatalogEntry[]
 ): string {
   const text = assemble(id, inputs);
-  if (id === 'stories') {
+  // These two teach each command inline, so a command reference would only repeat them.
+  if (id === 'ui-workflow' || id === 'component-docs') {
     return text;
   }
   const reference = renderCommandReference(text, toolsets);
@@ -223,8 +225,11 @@ function withCommandReference(
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
-  if (id === 'stories') {
-    return buildStoriesSkill({
+  if (id === 'component-docs') {
+    return buildComponentDocsSkill({ docsEnabled: inputs.docsEnabledForCli });
+  }
+  if (id === 'ui-workflow') {
+    return buildUiWorkflowSkill({
       framework: inputs.framework,
       csfFactories: inputs.csfFactories,
       previewFile: inputs.previewFile,

@@ -54,7 +54,18 @@ To remove a plugin:
 
 ## Usage
 
-The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions.
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. You decide when the agent uses them. When you set up or upgrade to Storybook 11 with AI features, Storybook adds this section to the `AGENTS.md` of your project (and to your `CLAUDE.md`, if it does not import `AGENTS.md`):
+
+```md
+## Storybook
+
+Whenever you make updates that could affect the UI:
+
+- Reuse existing components: look them up with the `component-docs` skill.
+- Update your stories, run the tests, and publish a review of the results with the `ui-workflow` skill.
+```
+
+Edit that section to change when the agent uses the skills, for example to leave out the review, or remove it to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
 The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
@@ -70,13 +81,17 @@ Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`]
 
 Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
 
-### `stories`
+### `component-docs`
 
-Instructs the agent to use stories for all UI work.
+Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. The agent also uses it to answer questions about a component's props, API, or usage.
 
 ### `upgrade`
 
 Upgrades your Storybook to the latest version. This is the same as running [`npx storybook upgrade`](https://storybook.js.org/docs/releases/upgrading) in your project.
+
+### `ui-workflow`
+
+The workflow for UI changes: the agent writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of the result.
 
 ## Tools
 

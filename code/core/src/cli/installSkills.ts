@@ -7,7 +7,16 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
+import { addStorybookAgentInstructions } from './agentInstructions.ts';
+
 const SKILLS_REPO = 'storybookjs/skills';
+
+/**
+ * Skills that the skills repository no longer has. `stories` became `ui-workflow` and
+ * `component-docs` in 11.0, so projects that installed the skills from an 11.0 prerelease still
+ * have it.
+ */
+const REMOVED_SKILLS = ['stories'];
 
 export type SkillsSource = 'ai-feature' | 'refresh' | 'automigration';
 
@@ -54,22 +63,31 @@ export function supportsAiSetup(
   );
 }
 
-/** Whether the project has skills from the official Storybook skills repository installed. */
-export async function hasStorybookSkills(): Promise<boolean> {
+/** The names of the installed skills that come from the official Storybook skills repository. */
+async function getStorybookSkillNames(): Promise<string[]> {
   try {
     const lock: { skills?: Record<string, { source?: string }> } = JSON.parse(
       await readFile(join(getProjectRoot(), 'skills-lock.json'), 'utf8')
     );
-    return Object.values(lock.skills ?? {}).some((skill) =>
-      skill.source?.toLowerCase().includes(SKILLS_REPO)
-    );
+    return Object.entries(lock.skills ?? {})
+      .filter(([, skill]) => skill.source?.toLowerCase().includes(SKILLS_REPO))
+      .map(([name]) => name);
   } catch {
-    return false;
+    return [];
   }
 }
 
+/** Whether the project has skills from the official Storybook skills repository installed. */
+export async function hasStorybookSkills(): Promise<boolean> {
+  return (await getStorybookSkillNames()).length > 0;
+}
+
 /**
- * Install the official Storybook skills into the project root through Vercel's `skills` CLI.
+ * Install the official Storybook skills into the project root through Vercel's `skills` CLI, and
+ * add the section that tells agents when to use them to `AGENTS.md`.
+ *
+ * A refresh leaves `AGENTS.md` alone, so a user who removed the section keeps it removed, unless it
+ * replaces skills that the skills repository no longer has.
  *
  * Never runs in CI, and a failed install is reported in the result instead of thrown.
  */
@@ -87,6 +105,9 @@ export async function installSkills({
     return { result: 'skipped', source: 'ci' };
   }
 
+  const removedSkills = (await getStorybookSkillNames()).filter((name) =>
+    REMOVED_SKILLS.includes(name)
+  );
   const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
   const args = [
     'skills@latest',
@@ -123,8 +144,52 @@ export async function installSkills({
     };
   }
 
+  if (removedSkills.length > 0) {
+    await removeSkills(packageManager, removedSkills, stdio);
+  }
+  if (source !== 'refresh' || removedSkills.length > 0) {
+    await addAgentInstructions();
+  }
+
   logger.log(
     `Remove the Storybook skills with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
   );
   return { result: 'installed', source };
+}
+
+async function removeSkills(
+  packageManager: JsPackageManager,
+  names: string[],
+  stdio: 'inherit' | 'pipe'
+): Promise<void> {
+  const args = ['skills@latest', 'remove', ...names, '--yes'];
+  try {
+    await packageManager.runPackageCommand({
+      args,
+      useRemotePkg: true,
+      cwd: getProjectRoot(),
+      stdio,
+      env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
+      timeout: 120_000,
+    });
+  } catch (error) {
+    logger.warn(
+      `Could not remove the replaced Storybook skills ${names.join(', ')}. Remove them with: ${packageManager.getRemoteRunCommand(args)}`
+    );
+    logger.debug(error);
+  }
+}
+
+async function addAgentInstructions(): Promise<void> {
+  try {
+    const files = await addStorybookAgentInstructions(getProjectRoot());
+    if (files.length > 0) {
+      logger.log(
+        `Added a Storybook section to ${files.join(' and ')} that tells agents when to use the skills. Edit it to change when, or remove it to opt out.`
+      );
+    }
+  } catch (error) {
+    logger.warn('Could not add the Storybook section to AGENTS.md.');
+    logger.debug(error);
+  }
 }

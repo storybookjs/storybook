@@ -1,0 +1,261 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "NamedTypePropsComponent",
+      "id": "component-NamedTypePropsComponent-5f4d7b2c9a1e6c3b8d0f2a4c6e8b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f",
+      "file": "named-type-props.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-named-type-props",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span>{{ user.name }} {{ status }} {{ tree.label }} {{ id }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "user",
+          "defaultValue": "{ name: 'Ada Lovelace', age: 36 }",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 10,
+          "type": "User",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "status",
+          "defaultValue": "Color.Green",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 12,
+          "type": "Color",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "tree",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 14,
+          "type": "TreeNode",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "id",
+          "defaultValue": "'sb-1'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 16,
+          "type": "ScalarId",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "config",
+          "defaultValue": "{ collapsed: false }",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 18,
+          "type": "PanelConfig",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, Input } from '@angular/core';\n\nimport { Color, type PanelConfig, type ScalarId, type TreeNode, type User } from './types.ts';\n\n@Component({\n  selector: 'sb-named-type-props',\n  template: '<span>{{ user.name }} {{ status }} {{ tree.label }} {{ id }}</span>',\n})\nexport class NamedTypePropsComponent {\n  @Input() user: User = { name: 'Ada Lovelace', age: 36 };\n\n  @Input() status: Color = Color.Green;\n\n  @Input() tree!: TreeNode;\n\n  @Input() id: ScalarId = 'sb-1';\n\n  @Input() config: PanelConfig = { collapsed: false };\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": {
+    "variables": [],
+    "functions": [],
+    "typealiases": [
+      {
+        "name": "ScalarId",
+        "ctype": "miscellaneous",
+        "subtype": "typealias",
+        "coverageIgnore": false,
+        "rawtype": "string",
+        "file": "types.ts",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "rawdescription": "",
+        "description": "",
+        "kind": 193
+      },
+      {
+        "name": "PanelConfig",
+        "ctype": "miscellaneous",
+        "subtype": "typealias",
+        "coverageIgnore": false,
+        "rawtype": "{ collapsed: boolean; }",
+        "file": "types.ts",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "rawdescription": "",
+        "description": "",
+        "kind": 193
+      }
+    ],
+    "enumerations": [
+      {
+        "name": "Color",
+        "childs": [
+          {
+            "name": "Red",
+            "deprecated": false,
+            "deprecationMessage": "",
+            "value": "red"
+          },
+          {
+            "name": "Green",
+            "deprecated": false,
+            "deprecationMessage": "",
+            "value": "green"
+          }
+        ],
+        "ctype": "miscellaneous",
+        "subtype": "enum",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "rawdescription": "",
+        "description": "",
+        "file": "types.ts"
+      }
+    ],
+    "groupedVariables": {},
+    "groupedFunctions": {},
+    "groupedEnumerations": {
+      "types.ts": [
+        {
+          "name": "Color",
+          "childs": [
+            {
+              "name": "Red",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "value": "red"
+            },
+            {
+              "name": "Green",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "value": "green"
+            }
+          ],
+          "ctype": "miscellaneous",
+          "subtype": "enum",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "file": "types.ts"
+        }
+      ]
+    },
+    "groupedTypeAliases": {
+      "types.ts": [
+        {
+          "name": "ScalarId",
+          "ctype": "miscellaneous",
+          "subtype": "typealias",
+          "coverageIgnore": false,
+          "rawtype": "string",
+          "file": "types.ts",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "kind": 193
+        },
+        {
+          "name": "PanelConfig",
+          "ctype": "miscellaneous",
+          "subtype": "typealias",
+          "coverageIgnore": false,
+          "rawtype": "{ collapsed: boolean; }",
+          "file": "types.ts",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "kind": 193
+        }
+      ]
+    }
+  },
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "named-type-props.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "NamedTypePropsComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/5",
+        "status": "low"
+      },
+      {
+        "filePath": "types.ts",
+        "type": "type alias",
+        "linktype": "miscellaneous",
+        "linksubtype": "typealias",
+        "name": "ScalarId",
+        "coveragePercent": 0,
+        "coverageCount": "0/1",
+        "status": "low"
+      }
+    ]
+  }
+}

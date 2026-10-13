@@ -45,9 +45,6 @@ export { ActionList } from './components/ActionList/ActionList.tsx';
 export { Collapsible } from './components/Collapsible/Collapsible.tsx';
 export { Card } from './components/Card/Card.tsx';
 export { Modal, ModalDecorator } from './components/Modal/Modal.tsx';
-// Manager code must use this copy of @react-aria/focus: a FocusScope from another module instance
-// cannot nest inside the Modal's scope, so both scopes would handle each Tab press.
-export { FocusScope } from '@react-aria/focus';
 export { Spaced } from './components/spaced/Spaced.tsx';
 export { Placeholder } from './components/placeholder/placeholder.tsx';
 export { ScrollArea } from './components/ScrollArea/ScrollArea.tsx';

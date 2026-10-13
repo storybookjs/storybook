@@ -52,6 +52,29 @@ describe('dependenciesVersions blocker', () => {
     vi.mocked(getVitePlusVersions).mockImplementation(async () => null);
   });
 
+  test.each(['10.0.0', '10.7.1', '10.7.3'])(
+    'blocks Preact %s before upgrading',
+    async (version) => {
+      const result = await blocker.check(
+        createCheckOptions(createPackageManager({ preact: version }))
+      );
+
+      expect(result).toEqual({
+        packageName: 'preact',
+        installedVersion: version,
+        minimumVersion: '10.8.0',
+      });
+    }
+  );
+
+  test.each(['10.8.0', '10.29.8', '11.0.0-rc.2'])('accepts Preact %s', async (version) => {
+    const result = await blocker.check(
+      createCheckOptions(createPackageManager({ preact: version }))
+    );
+
+    expect(result).toBe(false);
+  });
+
   test('blocks on Next.js 14 with a message linking the migration guide', async () => {
     const packageManager = createPackageManager({ next: '14.1.0' });
 
@@ -110,6 +133,41 @@ describe('dependenciesVersions blocker', () => {
 
   test.each(['21.0.0', '22.1.0'])('@angular/core %s is not blocked', async (version) => {
     const packageManager = createPackageManager({ '@angular/core': version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test.each(['2.70.3', '3.0.0-next.30'])(
+    '@sveltejs/kit %s is blocked with message and migration anchor',
+    async (version) => {
+      const packageManager = createPackageManager({ '@sveltejs/kit': version });
+
+      const result = await blocker.check(createCheckOptions(packageManager));
+
+      expect(result).toEqual({
+        packageName: '@sveltejs/kit',
+        installedVersion: version,
+        minimumVersion: '3.0.0',
+      });
+
+      if (!result) {
+        throw new Error(`Expected @sveltejs/kit ${version} to be blocked`);
+      }
+
+      const logged = blocker.log(result);
+
+      expect(logged.title).toBe('Require SvelteKit v3 and up');
+      expect(logged.message).toContain('npx sv migrate sveltekit-3');
+      expect(logged.link).toBe(
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up'
+      );
+    }
+  );
+
+  test.each(['3.0.0', '3.1.2'])('@sveltejs/kit %s is not blocked', async (version) => {
+    const packageManager = createPackageManager({ '@sveltejs/kit': version });
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -232,5 +290,68 @@ describe('dependenciesVersions blocker', () => {
     });
 
     expect(logged.title).toBe('react-scripts version < 5.0.0 support removed');
+  });
+
+  test('blocks on react 17 with a message linking the migration guide', async () => {
+    const packageManager = createPackageManager({ react: '17.0.0', 'react-dom': '17.0.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'react',
+      installedVersion: '17.0.0',
+      minimumVersion: '18.0.0',
+    });
+
+    if (!result) {
+      throw new Error('Expected the blocker to block on react 17');
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('React 18 or newer required');
+    expect(logged.message).toContain('Support for React < 18 has been removed');
+    expect(logged.link).toBe(
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up'
+    );
+  });
+
+  test('blocks on react-dom 17 when react itself is current', async () => {
+    const packageManager = createPackageManager({ react: '18.2.0', 'react-dom': '17.0.2' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'react-dom',
+      installedVersion: '17.0.2',
+      minimumVersion: '18.0.0',
+    });
+  });
+
+  test('passes on react 18', async () => {
+    const packageManager = createPackageManager({ react: '18.2.0', 'react-dom': '18.2.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('passes on react 19', async () => {
+    const packageManager = createPackageManager({ react: '19.0.0', 'react-dom': '19.0.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('passes on react 0.0.0 experimental builds, matching the shim treatment', async () => {
+    const packageManager = createPackageManager({
+      react: '0.0.0-experimental-4cb07d14-20250411',
+      'react-dom': '0.0.0-experimental-4cb07d14-20250411',
+    });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
   });
 });

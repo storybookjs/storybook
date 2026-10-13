@@ -94,10 +94,10 @@ const meta = {
   args: {
     active: true,
   },
-} as Meta<typeof ActionLogger>;
+} satisfies Meta<typeof ActionLogger>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<typeof ActionLogger>>;
 
 export const Empty: Story = {};
 

@@ -1,6 +1,5 @@
 import { StorybookError } from '../../storybook-error.ts';
 import {
-  AutomigrateAddonA11yTestError,
   ExecaCommandFailedError,
   NuxtModuleAddFailedError,
   PackageInstallDependencyConflictError,
@@ -64,11 +63,6 @@ export function extractPackageManagerErrorCode(logs: string): string | undefined
   }
 
   return undefined;
-}
-
-function isAutomigrateAddonA11yTest(args: string[]) {
-  const joined = args.join(' ');
-  return joined.includes('automigrate') && joined.includes('addon-a11y-addon-test');
 }
 
 function isNuxtModuleAdd(args: string[]) {
@@ -139,10 +133,6 @@ export function categorizeExecaError(error: unknown, context: ExecaErrorContext)
 
   const data = extractExecaCommandErrorData(error, context);
   const { command, args } = data;
-
-  if (isAutomigrateAddonA11yTest(args)) {
-    return new AutomigrateAddonA11yTestError({ ...data, cause: error });
-  }
 
   if (isNuxtModuleAdd(args)) {
     return new NuxtModuleAddFailedError({ ...data, cause: error });

@@ -1,10 +1,11 @@
 import type { FC } from 'react';
 import React, { useEffect, useRef } from 'react';
 
-import { ActionList, Button, FocusScope, Link, ScrollArea } from 'storybook/internal/components';
+import { ActionList, Button, Link, ScrollArea } from 'storybook/internal/components';
 
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
 
+import { FocusScope } from 'react-aria/FocusScope';
 import { useTransitionState } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
@@ -64,7 +65,7 @@ export const MobileAbout: FC = () => {
                     <GithubIcon />
                   </ActionList.Icon>
                   <ActionList.Text>
-                    <span>Github</span>
+                    <span>GitHub</span>
                   </ActionList.Text>
                   <ActionList.Icon>
                     <ShareAltIcon />
@@ -99,6 +100,7 @@ export const MobileAbout: FC = () => {
               and the{' '}
               <Link
                 href="https://github.com/storybookjs/storybook/graphs/contributors"
+                target="_blank"
                 rel="noopener noreferrer"
               >
                 Storybook Community

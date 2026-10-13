@@ -11,7 +11,6 @@ import {
   type StoryArgsResolver,
 } from 'storybook/internal/csf-tools';
 
-import { isJsxAttributeName } from '../docs/template-format.ts';
 import { type StoryFunction, buildStoryTemplate } from './storyTemplate.ts';
 import { invariant } from './utils.ts';
 
@@ -29,8 +28,8 @@ export interface CodeSnippet {
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
-  /** The story with its arg references kept, for the preview to fill; see `StoryDoc.template`. */
-  template?: t.VariableDeclaration | t.FunctionDeclaration;
+  /** The story with a hole wherever it reads an arg, for the preview to fill; see `StoryDoc.template`. */
+  template?: string;
 }
 
 export function getCodeSnippet(
@@ -41,7 +40,12 @@ export function getCodeSnippet(
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
   const fnPath = findStoryFunction(csf, storyName, resolver.ctx);
-  const template = buildStoryTemplate(storyName, fnPath, componentName);
+  // A render function from another file has no source in this one to keep as written.
+  const inOtherFile =
+    fnPath && fnPath.findParent((path) => path.isProgram())?.node !== csf._ast.program;
+  const template = inOtherFile
+    ? undefined
+    : buildStoryTemplate(storyName, fnPath, componentName, csf._file.code);
   return {
     node: buildSnippetNode(storyName, fnPath?.node, componentName, args),
     imports,
@@ -97,8 +101,8 @@ function buildSnippetNode(
 ): t.VariableDeclaration | t.FunctionDeclaration {
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
-  const validEntries = entries.filter(([k, v]) => isJsxAttributeName(k) && v != null);
-  const invalidEntries = entries.filter(([k, v]) => !isJsxAttributeName(k) && v != null);
+  const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
+  const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
   const injectedAttrs = validEntries.map(([k, v]) => toAttr(k, v)).filter((a) => a != null);
 
   // If we have a function, transform returned JSX
@@ -231,6 +235,8 @@ function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpre
   );
   return t.jsxSpreadAttribute(t.objectExpression(objectProps));
 }
+
+const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
 
 const toAttr = (key: string, value: t.Node) => {
   if (t.isBooleanLiteral(value)) {
@@ -380,8 +386,8 @@ function transformArgsSpreadsInJsx(
     existing: ReadonlySet<string>
   ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
     const entries = Object.entries(merged).filter(([k, v]) => v != null && k !== 'children');
-    const validEntries = entries.filter(([k]) => isJsxAttributeName(k));
-    const invalidEntries = entries.filter(([k]) => !isJsxAttributeName(k));
+    const validEntries = entries.filter(([k]) => isValidJsxAttrName(k));
+    const invalidEntries = entries.filter(([k]) => !isValidJsxAttrName(k));
 
     const injectedAttrs = validEntries
       .map(([k, v]) => toAttr(k, v))

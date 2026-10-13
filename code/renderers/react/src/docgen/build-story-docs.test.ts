@@ -113,7 +113,7 @@ describe('buildStoryDocsPayload', () => {
     );
     expect(primary).toMatchObject({
       snippet: 'const Primary = () => <Button label="Save" primary />;',
-      template: 'const Primary = () => <Button {...args}>{args.children}</Button>;',
+      template: 'const Primary = () => ⟦element Button⟧;',
     });
     expect(fixed!.template).toBeUndefined();
   });

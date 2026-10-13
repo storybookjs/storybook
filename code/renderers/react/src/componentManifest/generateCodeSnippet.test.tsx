@@ -905,190 +905,72 @@ test('an arg value keeps a shorthand property shorthand', () => {
   `);
 });
 
-function generateTemplates(code: string) {
+function template(code: string, story: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
-
-  return Object.keys(csf._storyExports)
-    .map((name) => {
-      const { template } = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
-      return template ? recast.print(template).code : `// ${name}: no template`;
-    })
-    .join('\n');
+  return getCodeSnippet(csf, story, csf._meta?.component ?? 'ComponentTitle').template;
 }
 
-function liveSnippet(code: string, story: string, args: Record<string, unknown>) {
-  const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
-  const { template } = getCodeSnippet(csf, story, csf._meta?.component ?? 'ComponentTitle');
-  return fillTemplate(recast.print(template!).code, args);
-}
+const filled = (code: string, story: string, args: Record<string, unknown>) =>
+  fillTemplate(template(code, story)!, args);
 
-test('template spreads the args into a story without a render function', () => {
+test('template: a story without a render function is the component with every arg', () => {
   const input = withCSF3(`export const Default: Story = {};`);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(
-    `"const Default = () => <Button {...args}>{args.children}</Button>;"`
-  );
-  expect(liveSnippet(input, 'Default', { children: 'Save', primary: true })).toBe(
+  expect(template(input, 'Default')).toBe('const Default = () => ⟦element Button⟧;');
+  expect(filled(input, 'Default', { children: 'Save', primary: true })).toBe(
     'const Default = () => <Button primary>Save</Button>;'
   );
-  expect(liveSnippet(input, 'Default', { primary: true })).toBe(
-    'const Default = () => <Button primary />;'
-  );
 });
 
-test('template keeps a render function as written, without its args parameter', () => {
+test('template: a render function stays as written, with a hole for each arg it reads', () => {
   const input = withCSF3(dedent`
     export const Loading: Story = {
-      render: (args) => (args.loading ? <Spinner /> : <Button {...args} label={args.label} />),
-    };
-  `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(
-    `"const Loading = () => (args.loading ? <Spinner /> : <Button {...args/* omit: label */} label={args.label}>{args.children}</Button>);"`
-  );
-  expect(liveSnippet(input, 'Loading', { loading: true, label: 'Go' })).toBe(
-    'const Loading = () => (true ? <Spinner /> : <Button loading label="Go" />);'
-  );
-});
-
-test('filled with the args it is written with, a story reads like its snippet', () => {
-  const stories = {
-    Default: {},
-    Primary: { primary: true, label: 'Save' },
-    Sized: { size: 'large', count: 2, disabled: false },
-  };
-  const input = withCSF3(
-    Object.entries(stories)
-      .map(([name, args]) => `export const ${name}: Story = { args: ${JSON.stringify(args)} };`)
-      .join('\n')
-  );
-  for (const [name, args] of Object.entries(stories)) {
-    const snippet = generateResolved(input).find(({ snippet }) => snippet.includes(` ${name} =`));
-    expect(liveSnippet(input, name, { children: 'Click me', ...args })).toBe(snippet!.snippet);
-  }
-});
-
-test('template keeps a prop written before the spread, which the spread overrides', () => {
-  const input = withCSF3(dedent`
-    export const Ghost: Story = {
-      render: (args) => <Button variant="solid" {...args} />,
-    };
-  `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(
-    `"const Ghost = () => <Button variant="solid" {...args}>{args.children}</Button>;"`
-  );
-});
-
-test('template writes destructured args as args members', () => {
-  const input = withCSF3(dedent`
-    export const Destructured: Story = {
-      render: ({ label, 'data-id': id, items }) => (
-        <List id={id} title={label} {...{ items }}>
-          {items.map((item) => <li key={item}>{item}</li>)}
-        </List>
+      render: (args) => (
+        <Card title={args.title}>
+          {args.loading ? <Spinner /> : <Button {...args}>{args.label}</Button>}
+        </Card>
       ),
     };
   `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(`
-    "const Destructured = () => (<List
-      id={args["data-id"]}
-      title={args.label}
-      {...{
-        items: args.items
-      }}>
-      {args.items.map((item) => <li key={item}>{item}</li>)}
-    </List>);"
+  expect(template(input, 'Loading')).toMatchInlineSnapshot(`
+    "const Loading = () => (
+      <Card⟦attr title title⟧>
+        {⟦value loading⟧ ? <Spinner /> : <Button⟦props -children⟧>⟦text label⟧</Button>}
+      </Card>
+    );"
   `);
-  expect(liveSnippet(input, 'Destructured', { label: 'Fruit', 'data-id': 7, items: ['apple'] }))
+  expect(filled(input, 'Loading', { title: 'Hi', loading: false, label: 'Go', size: 'sm' }))
     .toMatchInlineSnapshot(`
-    "const Destructured = () => (<List
-      id={7}
-      title="Fruit"
-      {...{
-        items: ["apple"]
-      }}>
-      {["apple"].map((item) => <li key={item}>{item}</li>)}
-    </List>);"
-  `);
+      "const Loading = () => (
+        <Card title="Hi">
+          {false ? <Spinner /> : <Button title="Hi" loading={false} label="Go" size="sm">Go</Button>}
+        </Card>
+      );"
+    `);
 });
 
-test('template reads args destructured in the body of the render function', () => {
+test('template: destructured args are holes too', () => {
   const input = withCSF3(dedent`
-    export const Counter: Story = {
-      render: function Render(props) {
-        const { label } = props;
-        const [count, setCount] = useState(0);
-        return <Button {...props} onClick={() => setCount(count + 1)}>{label}: {count}</Button>;
-      },
+    export const Destructured: Story = {
+      render: ({ label, items }) => <List label={label} items={items.map((item) => item)} />,
     };
   `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(`
-    "const Counter = () => {
-      const [count, setCount] = useState(0);
-      return <Button {...args/* omit: onClick */} onClick={() => setCount(count + 1)}>{args.label}: {count}</Button>;
-    };"
-  `);
-});
-
-test('template keeps a function declaration story a function declaration', () => {
-  const input = withCSF3(dedent`
-    export function Plain(args) {
-      return <Button {...args} />;
-    }
-  `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(`
-    "function Plain() {
-      return <Button {...args}>{args.children}</Button>;
-    }"
-  `);
-});
-
-test('template falls back to the meta render function', () => {
-  const input = dedent`
-    import { Button } from './Button';
-    export default { component: Button, render: (args) => <div><Button {...args} /></div> };
-    export const Primary = {};
-  `;
-  expect(generateTemplates(input)).toMatchInlineSnapshot(
-    `"const Primary = () => <div><Button {...args}>{args.children}</Button></div>;"`
+  expect(template(input, 'Destructured')).toBe(
+    'const Destructured = () => <List⟦attr label label⟧ items={⟦value items⟧.map((item) => item)} />;'
+  );
+  expect(filled(input, 'Destructured', { label: 'L', items: ['a'] })).toBe(
+    'const Destructured = () => <List label="L" items={["a"].map((item) => item)} />;'
   );
 });
 
-test('no template when the story reads no args', () => {
-  const input = withCSF3(`export const Static: Story = { render: () => <Button>Hi</Button> };`);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(`"// Static: no template"`);
-});
-
-test('no template when the args are read in a way the preview cannot fill', () => {
+test('template: none for args no hole stands for', () => {
   const input = withCSF3(dedent`
-    export const PassedOn: Story = { render: (args) => <Wrapper args={args} /> };
-    export const Defaulted: Story = { render: ({ label = 'Hi' }) => <Button label={label} /> };
-    export const Rest: Story = { render: ({ label, ...rest }) => <Button {...rest}>{label}</Button> };
-    export const Reassigned: Story = { render: (args) => { args = {}; return <Button {...args} />; } };
-    export const Computed: Story = { render: (args) => <Button label={args[key]} /> };
-    export const Shadowed: Story = {
-      render: ({ label }) => <List render={(args) => <Button {...args} label={label} />} />,
-    };
-    export const Global: Story = { render: ({ label }) => <Button label={label} {...args} /> };
+    export const PassedAlong: Story = { render: (args) => <Button {...wrap(args)} /> };
+    export const Rest: Story = { render: ({ label, ...rest }) => <Button {...rest} /> };
+    export const BesideSpread: Story = { render: (args) => <Button size="sm" {...args} /> };
+    export const ObjectSpread: Story = { render: (args) => <Button {...{ ...args }} /> };
+    export const NoArgs: Story = { render: () => <Button /> };
   `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(`
-    "// PassedOn: no template
-    // Defaulted: no template
-    // Rest: no template
-    // Reassigned: no template
-    // Computed: no template
-    // Shadowed: no template
-    // Global: no template"
-  `);
-});
-
-test('no template when a string or text in the story reads like an arg path', () => {
-  const input = withCSF3(dedent`
-    export const Attribute: Story = { render: (args) => <Button {...args} title="see args.label" /> };
-    export const Text: Story = { render: ({ label }) => <p>Set args.label: {label}</p> };
-    export const Quasi: Story = { render: ({ label }) => <p>{\`args.label is \${label}\`}</p> };
-  `);
-  expect(generateTemplates(input)).toMatchInlineSnapshot(`
-    "// Attribute: no template
-    // Text: no template
-    // Quasi: no template"
-  `);
+  for (const story of ['PassedAlong', 'Rest', 'BesideSpread', 'ObjectSpread', 'NoArgs']) {
+    expect(template(input, story)).toBeUndefined();
+  }
 });

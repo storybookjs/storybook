@@ -219,18 +219,13 @@ describe('createStoryRouter leaf selection by path', () => {
 });
 
 describe('createStoryRouter error handling', () => {
-  it('rethrows route errors instead of rendering a fallback', () => {
+  it('leaves route errors uncaught so they reach Storybook', () => {
     const router = createStoryRouter({
       Story: () => null,
       context: fakeContext(createRootRoute()),
     });
-    const error = new Error('boom');
-    const ErrorComponent = router.options.defaultErrorComponent as (props: {
-      error: Error;
-      reset: () => void;
-    }) => unknown;
 
     expect(router.options.disableGlobalCatchBoundary).toBe(true);
-    expect(() => ErrorComponent({ error, reset: () => {} })).toThrow(error);
+    expect(router.options.defaultErrorComponent).toBeUndefined();
   });
 });

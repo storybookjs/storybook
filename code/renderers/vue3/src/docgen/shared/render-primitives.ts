@@ -125,15 +125,21 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return hoistedProp(input, ctx, printValue(value));
   }
 
+  // Vue reads a bare `is` and an `is="vue:…"` attribute as the element's component, so those bind.
+  const namesComponent =
+    input.attributeName === 'is' &&
+    (t.isBooleanLiteral(value, { value: true }) ||
+      (t.isStringLiteral(value) && value.value.startsWith('vue:')));
+
   if (value.type === 'BooleanLiteral') {
-    return value.value
+    return value.value && !namesComponent
       ? { attrName: input.attributeName }
-      : { attrName: `:${input.attributeName}`, value: 'false' };
+      : { attrName: `:${input.attributeName}`, value: String(value.value) };
   }
 
   if (value.type === 'StringLiteral') {
     const quoted = quoteAttributeValue(value.value);
-    return quoted === undefined
+    return quoted === undefined || namesComponent
       ? hoistedProp(input, ctx, printValue(value))
       : { attrName: input.attributeName, value: value.value };
   }
@@ -159,7 +165,7 @@ function hoistedProp(
 }
 
 function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
-  const bindingName = hoistModelRef(arg.name, arg.value, ctx);
+  const bindingName = hoistModelRef(arg.name, printValue(unwrapExpression(arg.value)), ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
 }
@@ -374,11 +380,15 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
   return bindingName;
 }
 
-/** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
-export function hoistModelRef(name: string, value: t.Node | undefined, ctx: RenderContext): string {
+/** Hoist a `ref` for a `v-model` binding that starts as `initial`, the code of the arg's value. */
+export function hoistModelRef(
+  name: string,
+  initial: string | undefined,
+  ctx: RenderContext
+): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
+  ctx.variables.set(bindingName, `ref(${initial ?? ''})`);
   return bindingName;
 }
 

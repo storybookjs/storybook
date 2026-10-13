@@ -59,6 +59,21 @@ describe('fillTemplate', () => {
     );
   });
 
+  it('prints a hole in the script as code, where no entity is decoded', () => {
+    expect(fillTemplate('const a = ref(⟦value a script⟧);', { a: 'x & "y" </script>' })).toBe(
+      `const a = ref('x & "y" <\\/script>');`
+    );
+    expect(fillTemplate('const n = ⟦operand n script⟧.toFixed();', { n: 5 })).toBe(
+      'const n = (5).toFixed();'
+    );
+  });
+
+  it('binds an `is` Vue would read as the component of the element', () => {
+    expect(fillTemplate('<Cell ⟦props⟧ />', { is: true })).toBe('<Cell :is="true" />');
+    expect(fillTemplate('<Cell ⟦attr is is⟧ />', { is: 'vue:x' })).toBe(`<Cell :is="'vue:x'" />`);
+    expect(fillTemplate('<Cell ⟦props⟧ />', { is: 'button' })).toBe('<Cell is="button" />');
+  });
+
   it('throws for an arg it cannot print or name as an attribute', () => {
     expect(() => fillTemplate('⟦value onClick⟧', { onClick: () => {} })).toThrow(
       UnprintableArgError

@@ -17,7 +17,12 @@ import {
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
-import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
+import {
+  readForwardableSetup,
+  type ArgsRead,
+  type ForwardableSetup,
+  type ForwardableStatement,
+} from './forward-setup.ts';
 import {
   createRenderContext,
   escapeTextContent,
@@ -216,7 +221,7 @@ export function transformTemplate(
     template: input.template,
   };
 
-  if (input.setup && !seedForwardedSetup(input.setup, state)) {
+  if (input.setup && !seedForwardedSetup(input.setup, state.ctx)) {
     return undefined;
   }
 
@@ -241,28 +246,28 @@ export function transformTemplate(
 }
 
 /** Reserve setup names and route forwarded imports before any hoist can collide with them. */
-function seedForwardedSetup(setup: ForwardableSetup, state: TransformState): boolean {
+export function seedForwardedSetup(setup: ForwardableSetup, ctx: RenderContext): boolean {
   for (const name of setup.bindings) {
-    state.ctx.bindings.add(name);
+    ctx.bindings.add(name);
   }
   for (const { localName, binding } of setup.imports) {
     if (binding.importName === localName) {
-      (state.ctx.imports[binding.importId] ??= new Set()).add(localName);
+      (ctx.imports[binding.importId] ??= new Set()).add(localName);
     } else {
       const statement = importStatementForBinding(localName, binding);
       if (!statement) {
         return false;
       }
-      state.ctx.componentImports.add(statement);
+      ctx.componentImports.add(statement);
     }
   }
   return true;
 }
 
 function appendSetupStatements(setup: ForwardableSetup, state: TransformState): boolean {
+  let printable = true;
   for (const statement of setup.statements) {
-    let text = statement.source;
-    for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
+    const code = setupStatementCode(statement, (read, following) => {
       const arg = state.argsByName.get(read.name);
       const rendered = arg
         ? arg.role === 'prop'
@@ -273,16 +278,24 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
         : state.unsetArgs.has(read.name)
           ? 'undefined'
           : undefined;
-      if (rendered === undefined) {
-        return false;
-      }
-      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
-      text = text.slice(0, read.start) + wrapped + text.slice(read.end);
-    }
-    text = text.replace(/\r\n?/g, '\n');
-    state.ctx.statements.push(dedentBy(text, statement.column));
+      printable &&= rendered !== undefined;
+      return wrapSubstitution(rendered ?? '', following);
+    });
+    state.ctx.statements.push(code);
   }
-  return true;
+  return printable;
+}
+
+/** A forwarded setup statement as `<script setup>` code, each args read as `print` writes it. */
+export function setupStatementCode(
+  statement: ForwardableStatement,
+  print: (read: ArgsRead, following: string) => string
+): string {
+  let text = statement.source;
+  for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
+    text = text.slice(0, read.start) + print(read, text.slice(read.end)) + text.slice(read.end);
+  }
+  return dedentBy(text.replace(/\r\n?/g, '\n'), statement.column);
 }
 
 /**
@@ -605,7 +618,7 @@ function transformDirective(
     state.edits.push({
       start: expressionNode.loc.start.offset,
       end: expressionNode.loc.end.offset,
-      text: hoistModelRef(argName, arg?.value, state.ctx),
+      text: hoistModelRef(argName, arg && printValue(unwrapExpression(arg.value)), state.ctx),
     });
     return true;
   }
@@ -677,7 +690,11 @@ function substituteArgsExpression(
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
 }
 
-function collectTemplateScopeBindings(nodes: TemplateChildNode[], ctx: RenderContext): boolean {
+/** Reserves the names `v-for` and slot scopes declare; `false` for one that cannot be read. */
+export function collectTemplateScopeBindings(
+  nodes: TemplateChildNode[],
+  ctx: RenderContext
+): boolean {
   for (const node of nodes) {
     if (node.type !== NodeTypes.ELEMENT) {
       continue;

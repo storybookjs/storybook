@@ -198,13 +198,15 @@ function fallbackTitle(title: string): string {
  * Name of the identifier assigned to the meta `component` property, used as payload name,
  * import-binding lookup key, and snippet tag so all three stay coherent.
  *
- * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
+ * @example `component: MyButton as Meta['component']` → `'MyButton'`; `component: UI.Button` →
+ * `undefined`
  */
 function resolveMetaComponentIdentifier(
   metaPath: NodePath<t.ObjectExpression> | undefined
 ): string | undefined {
   const value = propertyValue(metaPath?.node, 'component');
-  return t.isIdentifier(value) ? value.name : undefined;
+  const component = value && unwrapExpression(value);
+  return t.isIdentifier(component) ? component.name : undefined;
 }
 
 /**
@@ -374,7 +376,7 @@ function enrichStoryDoc(
 }
 
 // The story as written with a hole for each arg it reads, for a story without a render function or
-// one returning a template whose `setup` only returns the args.
+// one returning a template.
 function storyTemplate(
   renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
   { componentName, componentImportStatement, docgenArgInfo }: StorySnippetContext
@@ -385,14 +387,10 @@ function storyTemplate(
       componentImportStatement && componentTemplate(componentName, componentImportStatement, slots)
     );
   }
-  if (
-    renderer.kind !== 'template' ||
-    renderer.setup?.statements.length ||
-    renderer.setup?.bindings.length
-  ) {
+  if (renderer.kind !== 'template') {
     return undefined;
   }
-  return renderTemplate(renderer.template, renderer.componentImports, slots);
+  return renderTemplate(renderer.template, renderer.componentImports, slots, renderer.setup);
 }
 
 function staticRendererForRenderFunction(

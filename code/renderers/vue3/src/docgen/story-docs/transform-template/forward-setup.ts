@@ -1,5 +1,10 @@
 import { types as t } from 'storybook/internal/babel';
-import { keyOf, unwrapExpression, type ImportBinding } from 'storybook/internal/csf-tools';
+import {
+  isOperand,
+  keyOf,
+  unwrapExpression,
+  type ImportBinding,
+} from 'storybook/internal/csf-tools';
 
 import {
   collectPatternNames,
@@ -35,6 +40,8 @@ export interface ArgsRead {
   start: number;
   end: number;
   name: string;
+  /** Whether a literal in its place needs parentheses; see `isOperand`. */
+  operand: boolean;
 }
 
 export type ForwardableSetupResolution =
@@ -70,7 +77,7 @@ type SetupBody = { statements: t.Statement[]; returned?: t.Node };
 
 type SourcePosition = NonNullable<t.Node['loc']>['start'];
 type SourceRange = { start: SourcePosition; end: SourcePosition };
-type ArgsReadLocation = SourceRange & { name: string };
+type ArgsReadLocation = SourceRange & Pick<ArgsRead, 'name' | 'operand'>;
 
 type ArgsReadsResult = { ok: true; reads: ArgsReadLocation[] } | { ok: false; reference: string };
 
@@ -223,6 +230,7 @@ export function readForwardableSetup(
         start: readStart - start,
         end: readEnd - start,
         name: read.name,
+        operand: read.operand,
       });
     }
     statements.push({
@@ -298,7 +306,7 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
   const reads: ArgsReadLocation[] = [];
   let blocked: string | undefined;
 
-  const visit = (node: t.Node, parent?: t.Node): void => {
+  const visit = (node: t.Node, ancestors: t.Node[] = []): void => {
     if (blocked) {
       return;
     }
@@ -315,6 +323,7 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
     }
 
     if (t.isIdentifier(node, { name: argsParam })) {
+      const [parent, ...around] = ancestors;
       const member =
         parent &&
         (t.isMemberExpression(parent) || t.isOptionalMemberExpression(parent)) &&
@@ -326,7 +335,12 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
         blocked = argsParam;
         return;
       }
-      reads.push({ start: member.loc.start, end: member.loc.end, name: member.property.name });
+      reads.push({
+        start: member.loc.start,
+        end: member.loc.end,
+        name: member.property.name,
+        operand: isOperand(member, around),
+      });
       return;
     }
 
@@ -338,11 +352,11 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
       if (Array.isArray(child)) {
         child.forEach((entry) => {
           if (t.isNode(entry)) {
-            visit(entry, node);
+            visit(entry, [node, ...ancestors]);
           }
         });
       } else if (t.isNode(child)) {
-        visit(child, node);
+        visit(child, [node, ...ancestors]);
       }
     }
   };

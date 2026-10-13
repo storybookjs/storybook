@@ -10,8 +10,18 @@ import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole } from 'storybook/internal/docs-tools';
 
-import { createRenderContext, renderPreparedSfcSnippet } from '../shared/render-primitives.ts';
-import { componentImportForTag } from './transform-template/transform-template.ts';
+import {
+  createRenderContext,
+  hoistModelRef,
+  renderPreparedSfcSnippet,
+} from '../shared/render-primitives.ts';
+import type { ForwardableSetup } from './transform-template/forward-setup.ts';
+import {
+  collectTemplateScopeBindings,
+  componentImportForTag,
+  seedForwardedSetup,
+  setupStatementCode,
+} from './transform-template/transform-template.ts';
 
 type Edit = { start: number; end: number; text: string };
 
@@ -23,19 +33,29 @@ export function componentTemplate(name: string, importStatement: string, slots: 
 }
 
 /**
- * The render function's template as written, with a hole wherever it reads an arg, for
- * `fillTemplate`. It is `undefined` when the template reads its args in a way no hole stands for,
- * such as in an event handler or a `v-model`, and the static snippet is shown instead.
+ * The render function's template and the statements of its `setup` as written, with a hole
+ * wherever they read an arg, for `fillTemplate`. It is `undefined` when they read the args in a way
+ * no hole stands for, such as in an event handler, and the static snippet is shown instead.
  */
 export function renderTemplate(
   template: string,
   componentImports: Map<string, string>,
-  slots: string[]
+  slots: string[],
+  setup?: ForwardableSetup
 ): string | undefined {
-  let invalid = hasHoleBracket(template);
+  const statements = setup?.statements ?? [];
+  let invalid = [template, ...statements.map(({ source }) => source)].some(hasHoleBracket);
   const root = parse(template, { onError: () => (invalid = true) });
   const ctx = createRenderContext();
   const edits: Edit[] = [];
+  // A `setup` binding or a `v-for` variable named `args` is not the story's args.
+  if (
+    (setup && !seedForwardedSetup(setup, ctx)) ||
+    !collectTemplateScopeBindings(root.children, ctx) ||
+    ctx.bindings.has('args')
+  ) {
+    return undefined;
+  }
 
   const visit = (node: TemplateChildNode): boolean => {
     if (node.type === NodeTypes.INTERPOLATION) {
@@ -76,6 +96,13 @@ export function renderTemplate(
         edits.push({ start: start.offset, end: end.offset, text: hole('props', ...words) });
         continue;
       }
+      // `v-model="args.open"` binds a ref that starts as the arg, as the static snippet writes it.
+      const model = prop.name === 'model' && /^args\.([A-Za-z_$][\w$]*)$/.exec(exp.content.trim());
+      if (model) {
+        const text = hoistModelRef(model[1]!, hole('value', model[1]!, 'script'), ctx);
+        edits.push({ start: exp.loc.start.offset, end: exp.loc.end.offset, text });
+        continue;
+      }
       // `:label="args.label"` is one attribute, unless a modifier changes how it binds or the
       // element writes `label` itself too, as `class` next to `:class`.
       const name =
@@ -99,14 +126,21 @@ export function renderTemplate(
     return node.children.every(visit);
   };
 
-  if (!root.children.every(visit) || invalid || edits.length === 0) {
+  if (!root.children.every(visit) || invalid) {
     return undefined;
   }
   let templateCode = template;
   for (const { start, end, text } of edits.sort((a, b) => b.start - a.start)) {
     templateCode = templateCode.slice(0, start) + text + templateCode.slice(end);
   }
-  return renderPreparedSfcSnippet({ templateCode, ctx });
+  // A statement reads its args as code in the `<script>`, which the `script` word says.
+  ctx.statements = statements.map((statement) =>
+    setupStatementCode(statement, ({ name, operand }) =>
+      hole(operand ? 'operand' : 'value', name, 'script')
+    )
+  );
+  const code = renderPreparedSfcSnippet({ templateCode, ctx });
+  return hasHoleBracket(code) ? code : undefined;
 }
 
 // A value hole for each `args.label` an expression reads, or the `whole` edit when it is nothing

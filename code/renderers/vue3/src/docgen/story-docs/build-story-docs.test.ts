@@ -302,29 +302,97 @@ export const Primary = {
     );
   });
 
-  it('is none for a setup that declares its own bindings', async () => {
+  it('keeps the statements of a setup as written, with a hole for each arg they read', async () => {
     const story = await primaryStory(`
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
+export const Primary = {
+  args: { label: 'Hi', count: 2, size: 'sm' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const open = ref(false);
+      const title = computed(() => \`\${args.label} \${args.count.toFixed(1)}\`);
+      return { args, open, title };
+    },
+    template: '<MyButton :label="title" :size="args.size" @click="open = !open" />',
+  }),
+};
+`);
+    expect(story?.template).toBe(
+      [
+        '<script lang="ts" setup>',
+        'import { computed, ref } from "vue";',
+        "import MyButton from './MyButton.vue';",
+        '',
+        'const open = ref(false);',
+        'const title = computed(() => `${⟦value label script⟧} ${⟦operand count script⟧.toFixed(1)}`);',
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton :label="title" ⟦attr size size⟧ @click="open = !open" />',
+        '</template>',
+      ].join('\n')
+    );
+    const filled = fillTemplate(story!.template!, { label: '</script> & "it\'s"', count: 5 });
+    expect(filled).toContain(
+      `const title = computed(() => \`\${'<\\/script> & "it\\'s"'} \${(5).toFixed(1)}\`);`
+    );
+    expect(filled).toContain('<MyButton :label="title" @click="open = !open" />');
+  });
+
+  it('binds a v-model on an arg to a ref that starts as the arg', async () => {
+    const story = await primaryStory(`
 export const Primary = {
   args: { label: 'Hi' },
   render: (args) => ({
     components: { MyButton },
-    setup() {
-      const upper = computed(() => args.label.toUpperCase());
-      return { args, upper };
-    },
-    template: '<MyButton :label="upper" />',
+    setup: () => ({ args }),
+    template: '<MyButton v-model:label.trim="args.label" />',
   }),
 };
 `);
-    expect(story?.snippet).toBeDefined();
-    expect(story?.template).toBeUndefined();
+    expect(story?.snippet).toContain("const label = ref('Hi');");
+    expect(story?.template).toBe(
+      [
+        '<script lang="ts" setup>',
+        'import { ref } from "vue";',
+        "import MyButton from './MyButton.vue';",
+        '',
+        'const label = ref(⟦value label script⟧);',
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton v-model:label.trim="label" />',
+        '</template>',
+      ].join('\n')
+    );
+    expect(fillTemplate(story!.template!, { label: 'a & "b"' })).toContain(
+      `const label = ref('a & "b"');`
+    );
+    expect(fillTemplate(story!.template!, {})).toContain('const label = ref(undefined);');
+  });
+
+  it('names the ref of a v-model past a setup binding and a v-for variable', () => {
+    const setup = { bindings: ['open'], imports: [], statements: [] };
+    const template = '<MyButton v-for="size in 3" v-model:open="args.open" v-model="args.size" />';
+    expect(renderTemplate(template, new Map(), [], setup)).toContain(
+      '<MyButton v-for="size in 3" v-model:open="open2" v-model="size2" />'
+    );
+  });
+
+  it('is none for a setup binding or a v-for variable named args', () => {
+    const setup = { bindings: ['args'], imports: [], statements: [] };
+    expect(renderTemplate('<MyButton :label="args.label" />', new Map(), [], setup)).toBe(
+      undefined
+    );
+    const template = '<MyButton v-for="args in items" :label="args.label" />';
+    expect(renderTemplate(template, new Map(), [])).toBeUndefined();
   });
 
   it.each([
     ['an event handler reading an arg', '<MyButton @click="args.onClick" />'],
-    ['a v-model on an arg', '<MyButton v-model="args.label" />'],
+    ['a v-model on part of an arg', '<MyButton v-model="args.item.label" />'],
     ['the args passed whole', '<MyButton :item="args" />'],
   ])('is none for %s', (_, template) => {
     expect(renderTemplate(template, new Map(), [])).toBeUndefined();

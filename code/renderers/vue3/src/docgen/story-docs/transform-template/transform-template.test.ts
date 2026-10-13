@@ -133,6 +133,28 @@ export const Primary = {
     `);
   });
 
+  it('reads the meta component through a type cast', async () => {
+    expect(
+      await primarySnippet(
+        `export const Primary = { args: { label: 'Hi' } };`,
+        undefined,
+        "MyButton as Meta['component']"
+      )
+    ).toContain('<MyButton label="Hi" />');
+  });
+
+  it('binds an `is` Vue would read as the component of the element', async () => {
+    expect(await primarySnippet(`export const Primary = { args: { is: true } };`)).toContain(
+      '<MyButton :is="true" />'
+    );
+    const hoisted = await primarySnippet(`export const Primary = { args: { is: 'vue:x' } };`);
+    expect(hoisted).toContain("const is = 'vue:x';");
+    expect(hoisted).toContain('<MyButton :is="is" />');
+    expect(await primarySnippet(`export const Primary = { args: { is: 'button' } };`)).toContain(
+      '<MyButton is="button" />'
+    );
+  });
+
   it('expands a v-bind model arg into a v-model binding with a hoisted ref', async () => {
     expect(
       await primarySnippet(`

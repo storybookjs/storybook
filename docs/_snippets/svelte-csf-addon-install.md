@@ -3,7 +3,7 @@ npx storybook@latest add @storybook/addon-svelte-csf
 ```
 
 ```shell renderer="svelte" packageManager="pnpm"
-pnpm dlx storybook@latest add @storybook/addon-svelte-csf
+pnpm --allow-build=esbuild dlx storybook@latest add @storybook/addon-svelte-csf
 ```
 
 ```shell renderer="svelte" packageManager="yarn"

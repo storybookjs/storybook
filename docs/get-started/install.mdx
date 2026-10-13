@@ -13,7 +13,7 @@ Use the Storybook CLI to install it in a single command. Run this inside your pr
   variant="prompt"
   action={{
     label: 'Copy prompt',
-    copy: 'Set up Storybook for me with npm create storybook@latest and follow its instructions precisely',
+    copy: 'Set up Storybook for me with npm create storybook@latest (or pnpm --allow-build=esbuild create storybook@latest if this project uses pnpm, or yarn create storybook@latest if it uses yarn) and follow its instructions precisely',
     event: 'PromptInstallCopy',
   }}
 >
@@ -166,6 +166,12 @@ There are some noteworthy items here:
 The Storybook CLI includes support for the industry's popular package managers (e.g., [Yarn](https://yarnpkg.com/), [npm](https://www.npmjs.com/), and [pnpm](https://pnpm.io/)) automatically detecting the one you are using when you initialize Storybook. However, if you want to use a specific package manager as the default, add the `--package-manager` flag to the installation command. For example:
 
 <CodeSnippets path="create-command-custom-package-manager.md" />
+
+#### pnpm asks me to approve builds, or reports "Ignored build scripts: esbuild"
+
+pnpm 10 and later block dependency postinstall scripts until you approve them, and Storybook depends on [esbuild](https://esbuild.github.io/), which uses a postinstall script. You can pass `--allow-build=esbuild` to `pnpm create` or `pnpm dlx` to run the Storybook CLI with esbuild pre-approved (available since pnpm 10.2).
+
+The Storybook CLI approves esbuild for your project by recording it under `allowBuilds` in `pnpm-workspace.yaml` (available since pnpm 10.26), so that future installs and updates run without problems. On older pnpm 10 releases, you may need to run `pnpm approve-builds` manually before installing Storybook.
 
 #### The CLI doesn't detect my framework
 

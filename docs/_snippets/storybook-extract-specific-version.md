@@ -3,7 +3,7 @@ npx storybook@7.5.3 extract
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@7.5.3 extract
+pnpm --allow-build=esbuild dlx storybook@7.5.3 extract
 ```
 
 ```shell renderer="common" packageManager="yarn"

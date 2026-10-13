@@ -4,8 +4,8 @@ npx storybook automigrate csf-factories -c apps/website/.storybook
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook automigrate csf-factories -c apps/admin/.storybook
-pnpm dlx storybook automigrate csf-factories -c apps/website/.storybook
+pnpm --allow-build=esbuild dlx storybook automigrate csf-factories -c apps/admin/.storybook
+pnpm --allow-build=esbuild dlx storybook automigrate csf-factories -c apps/website/.storybook
 ```
 
 ```shell renderer="common" packageManager="yarn"

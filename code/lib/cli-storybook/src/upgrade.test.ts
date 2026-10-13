@@ -319,10 +319,10 @@ describe('toUpgradedDependencies', () => {
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
     });
 
-    it('should include satellite dependencies with @next for prerelease version', async () => {
+    it('should add carets to core and satellite dependencies for the latest prerelease', async () => {
       const deps = {
-        '@storybook/react': '^8.0.0',
-        '@storybook/addon-designs': '^8.0.0',
+        '@storybook/react': '8.0.0',
+        '@storybook/addon-designs': '8.0.0',
       };
 
       const result = await generateUpgradeSpecs(deps, {
@@ -334,8 +334,8 @@ describe('toUpgradedDependencies', () => {
         isCLIPrerelease: true,
       });
 
-      expect(result).toContainEqual('@storybook/react@9.0.0');
-      expect(result).toContainEqual('@storybook/addon-designs@9.0.0-beta.1');
+      expect(result).toContainEqual('@storybook/react@^9.0.0');
+      expect(result).toContainEqual('@storybook/addon-designs@^9.0.0-beta.1');
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'
       );

@@ -468,8 +468,13 @@ export const generateUpgradeSpecs = async (
 
     const { modifier } = getVersionModifier(versionSpec);
 
-    const shouldUseFixed = isCLIOutdated || isCanary || isCLIPrerelease;
-    const finalModifier = shouldUseFixed ? '' : modifier;
+    const shouldUseFixed = isCLIOutdated || isCanary || (isCLIPrerelease && !isCLIExactPrerelease);
+    const finalModifier =
+      isCLIPrerelease && isCLIExactPrerelease && !isCanary
+        ? '^'
+        : shouldUseFixed
+          ? ''
+          : modifier;
 
     return `${dependency}@${finalModifier}${versions[dependency]}`;
   });
@@ -492,7 +497,12 @@ export const generateUpgradeSpecs = async (
               return null;
             }
             const { modifier } = getVersionModifier(dependencies[dependency] ?? '');
-            const finalModifier = isCLIPrerelease && prerelease(mostRecentVersion) ? '' : modifier;
+            const finalModifier =
+              isCLIPrerelease && prerelease(mostRecentVersion)
+                ? isCanary
+                  ? ''
+                  : '^'
+                : modifier;
             return `${dependency}@${finalModifier}${mostRecentVersion}`;
           } catch {
             return null;

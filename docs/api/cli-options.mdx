@@ -67,7 +67,7 @@ Options include:
 <Callout variant="warning" id="static-dir-deprecation">
 
 With the release of Storybook 8, the `-s` CLI flag was removed. We recommend using the [static
-directory](../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook)
+directory](../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration)
 instead if you need to serve static files.
 
 </Callout>
@@ -248,19 +248,18 @@ For example, `storybook@latest automigrate --dry-run` scans your project for pot
 
 Options include:
 
-| Option                          | Description                                                                                                                                                                                                               |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `-h`, `--help`                  | Output usage information.<br />`storybook automigrate --help`                                                                                                                                                             |
-| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook automigrate --config-dir .storybook`                                                                                                                                   |
-| `-n`, `--dry-run`               | Checks for available migrations without applying them.<br />`storybook automigrate --dry-run`                                                                                                                             |
-| `-s`, `--skip-install`          | Skip installing dependencies whenever applicable.<br />`storybook automigrate --skip-install`                                                                                                                             |
-| `-y`, `--yes`                   | Applies available migrations automatically without prompting for confirmation.<br />`storybook automigrate --yes`                                                                                                         |
-| `-l`, `--list`                  | Shows a list of available automigrations.<br />`storybook automigrate --list`                                                                                                                                             |
-| `--package-manager`             | Sets the package manager to use when running the auto migration.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook automigrate --package-manager pnpm`                                   |
-| `--renderer`                    | Specifies Storybook's renderer to use when running the automigration.<br />Useful for monorepo environments where multiple Storybook instances can exist in the same project.<br />`storybook automigrate --renderer vue` |
-| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook automigrate --debug`                                                                                                                                    |
-| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook automigrate --disable-telemetry`                                                                   |
-| `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook automigrate --enable-crash-reports`                     |
+| Option                          | Description                                                                                                                                                                                           |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`                  | Output usage information.<br />`storybook automigrate --help`                                                                                                                                         |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook automigrate --config-dir .storybook`                                                                                                               |
+| `-n`, `--dry-run`               | Checks for available migrations without applying them.<br />`storybook automigrate --dry-run`                                                                                                         |
+| `-s`, `--skip-install`          | Skip installing dependencies whenever applicable.<br />`storybook automigrate --skip-install`                                                                                                         |
+| `-y`, `--yes`                   | Applies available migrations automatically without prompting for confirmation.<br />`storybook automigrate --yes`                                                                                     |
+| `-l`, `--list`                  | Shows a list of available automigrations.<br />`storybook automigrate --list`                                                                                                                         |
+| `--package-manager`             | Sets the package manager to use when running the auto migration.<br />Available package managers include `npm`, `yarn`, and `pnpm`.<br />`storybook automigrate --package-manager pnpm`               |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook automigrate --debug`                                                                                                                |
+| `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook automigrate --disable-telemetry`                                               |
+| `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook automigrate --enable-crash-reports` |
 
 ### `doctor`
 

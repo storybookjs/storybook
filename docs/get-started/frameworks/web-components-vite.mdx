@@ -177,10 +177,6 @@ The generator follows imports from your story file and preview file. An element 
 
 Template-function components, like the `Button`, `Header` and `Page` the starter generates, have no custom element and therefore no docgen. Their Code panel shows the story source.
 
-### The built-in generator reads Lit and plain elements
-
-Elements built with FAST, Stencil or Catalyst are not read from sources. Provide a manifest from the analyzer with the matching plugin, see [Choosing a manifest generator](#choosing-a-manifest-generator).
-
 ### Properties without an attribute cannot be shown in HTML
 
 Properties with no paired attribute are listed in the snippet warning. Bind them through an attribute, or write the snippet yourself with `parameters.docs.source.code`.
@@ -214,20 +210,6 @@ Type: `string | string[]`
 Default: the `customElements` field of your `package.json`, else none; elements are generated from sources
 
 Path or paths to Custom Elements Manifest files, relative to the Storybook config directory. Use it to bring a manifest from the generator of your choice; elements it does not declare are still read from your sources. This option is ignored when `docgenServer` is off.
-
-#### `docgen`
-
-Type: `{ typeProperty?: string }`
-
-Configure how Storybook reads Custom Elements Manifest metadata.
-
-##### `docgen.typeProperty`
-
-Type: `string`
-
-Default: `'parsedType'`
-
-The manifest key holding analyzer-resolved type text. Use this when an analyzer plugin writes resolved type text under another key.
 
 #### `builder`
 

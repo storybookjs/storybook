@@ -17,14 +17,15 @@ knows what each arg reference is, so it marks it. A story that renders
 `args.loading ? <Spinner /> : <Button {...args} />` has this template:
 
 ```tsx
-⟦value loading⟧ ? <Spinner /> : <Button⟦props⟧ />
+⟦value loading⟧ ? <Spinner /> : <Button ⟦props⟧ />
 ```
 
 The renderer fills the holes in the browser with the current args through
 `parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`,
 where `snippetTemplate.ts` lists the hole kinds. Everything between the holes stays as written,
-so with `{ loading: false, label: "Go" }` it fills to
-`false ? <Spinner /> : <Button loading={false} label="Go" />`.
+including its layout, so with `{ loading: false, label: "Go" }` it fills to
+`false ? <Spinner /> : <Button loading={false} label="Go" />`. A hole that prints nothing, such as
+an unset attribute, takes the whitespace before it along.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static

@@ -43,6 +43,20 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
       : t.objectExpression([]);
 
   if (argsIndex < lastSpreadIndex) {
+    if (
+      properties.some((property) => {
+        if (!t.isSpreadElement(property)) {
+          return false;
+        }
+        const argument = unwrapExpression(property.argument);
+        return t.isCallExpression(argument) || t.isOptionalCallExpression(argument);
+      })
+    ) {
+      throw new SaveStoryError(
+        'Saving args for stories with function-call spreads is not supported'
+      );
+    }
+
     const existingArgs = argsObject.properties.filter(
       (property) =>
         !(t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name in args)

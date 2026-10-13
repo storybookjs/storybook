@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { generate, parser } from 'storybook/internal/babel';
 import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
@@ -450,6 +450,34 @@ describe.each([
   ['CSF3 satisfies', (object: string) => `${object} satisfies Story`],
   ['CSF4', (object: string) => `meta.story(${object})`],
 ] as const)('%s spread args', (format, story) => {
+  test.each([
+    '...makeBase()',
+    'args: { label: "old" }, ...makeBase()',
+    '...(makeBase() as Story)',
+    '...makeBase?.()',
+  ])('rejects saving through a function-call spread: %s', async (properties) => {
+    const node = parser.parseExpression(story(`{ ${properties} }`), { plugins: ['typescript'] });
+    const before = generate(node).code;
+
+    await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(SaveStoryError);
+
+    expect(generate(node).code).toBe(before);
+  });
+
+  test('updates args after a function-call spread without repeating the call', async () => {
+    const node = parser.parseExpression(story('{ ...makeBase(), args: { label: "old" } }'), {
+      plugins: ['typescript'],
+    });
+    const makeBase = vi.fn(() => ({ args: { label: 'base' } }));
+
+    await updateArgsInCsfFile(node, { label: 'saved' });
+
+    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    const result = runInNewContext(code, { makeBase, meta: { story: (input: unknown) => input } });
+    expect(result.args).toEqual({ label: 'saved' });
+    expect(makeBase).toHaveBeenCalledOnce();
+  });
+
   const onClick = () => {};
   const inheritedArgs = { size: 'small', baseOnly: true, onClick };
 

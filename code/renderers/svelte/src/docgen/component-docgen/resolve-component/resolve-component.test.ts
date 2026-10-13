@@ -78,6 +78,25 @@ it('reports an unresolved component import', async () => {
 });
 
 it.each([
+  ["import UI from './lib';", 'UI.Button'],
+  [
+    "import { global as globalThis } from '@storybook/global';",
+    'globalThis.__TEMPLATE_COMPONENTS__.Button',
+  ],
+])('reports unsupported member access: %s %s', async (binding, component) => {
+  vol.fromJSON(
+    {
+      'Button.stories.ts': `${binding} export default { component: ${component} }; export const Primary = {};`,
+    },
+    resolve('/project')
+  );
+
+  await expect(resolveStoryComponent(entry)).rejects.toThrow(
+    `Cannot resolve member access \`${component}\` from ${entry.importPath}`
+  );
+});
+
+it.each([
   "export { default as Button } from './Button.svelte';",
   "export { Button } from './nested';",
   "export * from './nested';",

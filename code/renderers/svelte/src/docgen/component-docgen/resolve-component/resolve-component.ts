@@ -167,6 +167,9 @@ export async function resolveStoryComponent(entry: IndexEntry) {
     return undefined;
   }
   const ref = resolveComponentImport(csf._meta.component, collectImportBindings(csf._file.path));
+  if (ref.member && !ref.namespace) {
+    throw new Error(`Cannot resolve member access \`${csf._meta.component}\` from ${storyPath}`);
+  }
   if (!ref.importId) {
     return undefined;
   }

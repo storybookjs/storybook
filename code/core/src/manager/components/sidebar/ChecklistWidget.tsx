@@ -213,7 +213,7 @@ export const ChecklistWidget = () => {
   useEffect(() => {
     if (ready) {
       // Don't animate anything until the checklist items have settled down.
-      const timeout = setTimeout(setAnimated, 1000, true);
+      const timeout = setTimeout(setAnimated, 500, true);
       return () => clearTimeout(timeout);
     }
   }, [ready]);
@@ -258,7 +258,8 @@ export const ChecklistWidget = () => {
     <CollapsibleWithMargin collapsed={!isShown}>
       <HoverCard
         id="storybook-checklist-widget"
-        outlineAnimation={animated && isShown ? 'rainbow' : 'none'}
+        outlineAnimation="rainbow"
+        outlineAnimationPaused={!animated || !isShown}
       >
         <Collapsible
           storageKey="checklist-widget"

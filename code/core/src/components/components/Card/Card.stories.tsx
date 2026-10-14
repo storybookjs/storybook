@@ -32,6 +32,22 @@ export const Rainbow = meta.story({
   },
 });
 
+/** Shows the outline's resting gradient without animating it. */
+export const RainbowPaused = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow" outlineAnimationPaused>
+      <Contents>Rainbow, paused</Contents>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const animations = canvasElement.getAnimations({ subtree: true });
+    await expect(animations).not.toHaveLength(0);
+    for (const animation of animations) {
+      await expect(animation.playState).toBe('paused');
+    }
+  },
+});
+
 /** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
 export const RainbowReducedMotion = meta.story({
   render: () => (

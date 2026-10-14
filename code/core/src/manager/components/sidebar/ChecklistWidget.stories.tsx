@@ -60,6 +60,8 @@ const play: PlayFunction = async ({ canvasElement, step }) => {
     await expect(cardOutline).not.toBeNull();
 
     const styles = window.getComputedStyle(cardOutline!, '::before');
+    await expect(styles.animationPlayState).toBe('running');
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {

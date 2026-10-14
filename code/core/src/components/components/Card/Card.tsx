@@ -80,10 +80,13 @@ const CardContent = styled.div<{ color?: ThemeColor }>(({ color, theme }) => ({
 
 const CardOutline = styled.div<{
   animation?: 'none' | 'rainbow' | 'spin';
+  animationPaused?: boolean;
   color?: ThemeColor;
   outlineColor?: ThemeColor;
-}>(({ animation = 'none', color, outlineColor = color, theme }) => {
+}>(({ animation = 'none', animationPaused = false, color, outlineColor = color, theme }) => {
   const [spinStart, spinEnd] = getSpinColors(theme, outlineColor);
+  // Part of each `animation` shorthand, which would otherwise reset it to running.
+  const playState = animationPaused ? 'paused' : 'running';
 
   return {
     position: 'relative',
@@ -119,9 +122,9 @@ const CardOutline = styled.div<{
       // WCAG 2.2.2 (Pause, Stop, Hide).
       ...(animation === 'rainbow' && {
         backgroundImage: 'linear-gradient(to top right, rgb(255, 157, 0), rgb(0, 172, 0))',
-        animation: `${hueCycle} 5s ease-in-out`,
+        animation: `${hueCycle} 5s ease-in-out ${playState}`,
         '@media (prefers-reduced-motion: reduce)': {
-          animation: `${pulse} 2.5s ease-in-out 2`,
+          animation: `${pulse} 2.5s ease-in-out 2 ${playState}`,
         },
       }),
 
@@ -132,7 +135,7 @@ const CardOutline = styled.div<{
         marginTop: 'calc(max(100vw, 100vh) * -0.5)',
         height: 'max(100vw, 100vh)',
         width: 'max(100vw, 100vh)',
-        animation: `${spin} 5s linear infinite`,
+        animation: `${spin} 5s linear infinite ${playState}`,
         backgroundImage: `conic-gradient(transparent 90deg, ${spinStart} 150deg, ${spinEnd} 210deg, transparent 270deg)`,
         '@media (prefers-reduced-motion: reduce)': {
           left: 0,
@@ -141,7 +144,7 @@ const CardOutline = styled.div<{
           marginTop: 0,
           height: '100%',
           width: '100%',
-          animation: `${pulse} 2.5s ease-in-out infinite`,
+          animation: `${pulse} 2.5s ease-in-out infinite ${playState}`,
           backgroundImage: `linear-gradient(to top right, ${spinStart}, ${spinEnd})`,
         },
       }),
@@ -151,6 +154,8 @@ const CardOutline = styled.div<{
 
 interface CardProps extends ComponentProps<typeof CardContent> {
   outlineAnimation?: 'none' | 'rainbow' | 'spin';
+  /** Holds the outline on its first animation frame until set to `false`. */
+  outlineAnimationPaused?: boolean;
   color?: ThemeColor;
   outlineColor?: ThemeColor;
   outlineAttrs?: DOMAttributes<HTMLDivElement>;
@@ -158,12 +163,20 @@ interface CardProps extends ComponentProps<typeof CardContent> {
 
 export const Card = Object.assign(
   forwardRef<HTMLDivElement, CardProps>(function Card(
-    { outlineAnimation = 'none', color, outlineColor, outlineAttrs: outlineAttrs = {}, ...props },
+    {
+      outlineAnimation = 'none',
+      outlineAnimationPaused = false,
+      color,
+      outlineColor,
+      outlineAttrs: outlineAttrs = {},
+      ...props
+    },
     ref
   ) {
     return (
       <CardOutline
         animation={outlineAnimation}
+        animationPaused={outlineAnimationPaused}
         color={color}
         outlineColor={outlineColor}
         ref={ref}

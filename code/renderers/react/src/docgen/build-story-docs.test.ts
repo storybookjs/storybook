@@ -135,7 +135,10 @@ describe('buildStoryDocsPayload', () => {
       snippet: 'const Primary = () => <Button label="Save" primary />;',
       template: 'const Primary = () => ⟦element Button⟧;',
     });
-    expect(fixed!.template).toBeUndefined();
+    expect(fixed).toMatchObject({
+      snippet: 'const Fixed = () => <Button label="Fixed" />;',
+      template: 'const Fixed = () => <Button label="Fixed" />;',
+    });
   });
 
   it('reflects edited story args after the story file changes on disk', async () => {

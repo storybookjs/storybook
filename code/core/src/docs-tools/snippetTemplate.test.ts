@@ -88,13 +88,8 @@ describe('defaultWord', () => {
 });
 
 describe('spreadArgs', () => {
-  it('passes every arg but those written after the spread', () => {
+  it('passes every arg but those the element writes', () => {
     expect(spreadArgs({ a: 1, b: 2 }, ['-b'])).toEqual([['a', 1]]);
-  });
-
-  it('throws for a set arg written before the spread', () => {
-    expect(() => spreadArgs({ a: 1 }, ['^a'])).toThrow(new UnprintableArgError('a'));
-    expect(spreadArgs({ b: 2 }, ['^a'])).toEqual([['b', 2]]);
   });
 });
 
@@ -164,26 +159,8 @@ describe('printValue', () => {
     );
   });
 
-  it('prints a literal up to 2000 characters long, and throws for a longer one', () => {
-    expect(printValue('x'.repeat(1998), 'text')).toHaveLength(2000);
-    expect(() => printValue('x'.repeat(1999), 'text')).toThrow(new UnprintableArgError('text'));
-    expect(() => printValue({ a: 'x'.repeat(1992) }, 'data')).toThrow(UnprintableArgError);
-    expect(printValue({ a: 'x'.repeat(1991) }, 'data')).toHaveLength(2000);
-  });
-
-  it('stops printing a large value as soon as it is too long', () => {
-    const items = Array.from({ length: 1_000_000 }, (_, id) => ({ id, name: `item ${id}` }));
-    let visited = 0;
-    const counted = new Proxy(items, {
-      get(target, key, receiver) {
-        if (typeof key === 'string' && /^\d+$/.test(key)) {
-          visited++;
-        }
-        return Reflect.get(target, key, receiver);
-      },
-    });
-    expect(() => printValue(counted, 'items')).toThrow(UnprintableArgError);
-    expect(visited).toBeLessThan(100);
+  it('prints a literal of any length', () => {
+    expect(printValue('x'.repeat(5000), 'text')).toHaveLength(5002);
   });
 
   it('throws for a value with no literal', () => {

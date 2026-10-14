@@ -1,6 +1,5 @@
 import {
   type FillSnippetTemplate,
-  UnprintableArgError,
   asOperand,
   defaultCode,
   fillHoles,
@@ -10,7 +9,7 @@ import {
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
-// Fills a template from `buildStoryTemplate`. Besides the shared holes, `⟦element Button⟧` is the
+// Fills a template from `getCodeSnippet`. Besides the shared holes, `⟦element Button⟧` is the
 // component with every arg and `⟦args⟧` the args as an object, both without their `-name` words,
 // and `⟦close Button⟧` ends a self-closing element whose children a spread passes, with them as
 // content.
@@ -66,17 +65,23 @@ function element(name: string, attributes: string[], content: string) {
   return content ? `<${open}>${content}</${name}>` : `<${open}${long ? '' : ' '}/>`;
 }
 
-const attributesOf = (args: Args) =>
-  Object.entries(args)
-    .map(([name, value]) => attribute(name, value))
-    .filter(Boolean);
+// An arg whose name no attribute can have goes in a spread after the attributes, as the printed
+// snippet has it: `{...{ "my label": "Go" }}`.
+function attributesOf(args: Args) {
+  const entries = Object.entries(args);
+  const unnamed = entries.filter(([name]) => !/^[A-Za-z_][\w:-]*$/.test(name));
+  const spread = object(unnamed);
+  return [
+    ...entries
+      .filter((entry) => !unnamed.includes(entry))
+      .map(([name, value]) => attribute(name, value)),
+    spread === '{}' ? '' : `{...${spread}}`,
+  ].filter(Boolean);
+}
 
 function attribute(name: string, value: unknown): string {
   if (value === undefined || isAction(value)) {
     return '';
-  }
-  if (!/^[A-Za-z_][\w:-]*$/.test(name)) {
-    throw new UnprintableArgError(name);
   }
   if (value === true) {
     return name;

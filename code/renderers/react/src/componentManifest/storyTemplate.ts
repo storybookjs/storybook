@@ -4,7 +4,6 @@ import {
   asOperand,
   dedentStoryCode,
   defaultWord,
-  hasHoleBracket,
   hole,
   holeWord,
   isHoleWord,
@@ -26,25 +25,18 @@ interface Edit {
 
 /**
  * The story as written in `code`, with a hole wherever it reads an arg, for `fillTemplate`. It is
- * `undefined` when the story reads its args in a way no hole stands for, such as passing them along
- * whole, and the static snippet is shown instead. `args` holds the node each arg is written with,
- * which decides where its code needs parentheses; see `isOperand`.
+ * `undefined` when the story reads no arg, or reads one in a way no hole stands for, such as passing
+ * them along whole, and the template is the printed snippet instead. `args` holds the node each
+ * arg is written with, which decides where its code needs parentheses; see `isOperand`.
  */
 export function buildStoryTemplate(
   storyName: string,
-  fnPath: NodePath<StoryFunction> | undefined,
-  componentName: string | undefined,
+  fnPath: NodePath<StoryFunction>,
   code: string,
   args: Record<string, t.Node> = {}
 ): string | undefined {
-  if (!fnPath) {
-    // `component: Button as any` names no element.
-    return componentName && isHoleWord(componentName)
-      ? `const ${storyName} = () => ${hole('element', componentName)};`
-      : undefined;
-  }
   const { params, body } = fnPath.node;
-  if (params.length !== 1 || hasHoleBracket(code) || body.start == null || body.end == null) {
+  if (params.length !== 1 || body.start == null || body.end == null) {
     return undefined;
   }
   const edits = argEdits(fnPath.get('params')[0]!, code, args);
@@ -236,8 +228,7 @@ function fallbackCode(
   return !inlinable ? undefined : atom ? written : `(${written})`;
 }
 
-// `<Button {...args}>` passes every arg but the children and the attributes written after it, which
-// win, and `<Button {...args} />` is the component with every arg, its children as content. An
+// `<Button {...args}>` passes every arg but the children and the attributes the element writes, and `<Button {...args} />` is the component with every arg, its children as content. An
 // element without children of its own shows those the spread passes as content: a self-closing one
 // ends in a `⟦close Button⟧`, and `<Button {...args} size="sm"></Button>` has a `⟦text children⟧`.
 function spreadEdits(
@@ -247,7 +238,6 @@ function spreadEdits(
 ): (Edit | undefined)[] {
   const opening = spread.parentPath.node as t.JSXOpeningElement;
   const element = spread.parentPath.parent as t.JSXElement;
-  const index = opening.attributes.indexOf(spread.node);
   const namesOf = (attributes: t.Node[]) =>
     attributes.flatMap((attribute) =>
       t.isJSXAttribute(attribute) ? [code.slice(attribute.name.start!, attribute.name.end!)] : []
@@ -267,17 +257,14 @@ function spreadEdits(
     ![...omitted, ...namesOf(opening.attributes)].includes('children')
       ? contentEdit(element, tag, code)
       : undefined;
-  // An attribute written both before and after the spread is the one after it, which wins.
-  const words = [
+  // The spread leaves out what the element writes itself, before or after it, which shows as written.
+  const words = new Set([
     ...left,
-    ...namesOf(opening.attributes.slice(index + 1)).map((name) => `-${name}`),
-    ...namesOf(opening.attributes.slice(0, index)).map((name) => `^${name}`),
+    ...namesOf(opening.attributes).map((name) => `-${name}`),
     ...(element.children.length > 0 || content ? ['-children'] : []),
-  ].filter(
-    (word, i, all) => !all.slice(0, i).some((earlier) => earlier.slice(1) === word.slice(1))
-  );
+  ]);
   return [
-    nodeEdit(spread.node, hole('props', ...words.map(holeWord))),
+    nodeEdit(spread.node, hole('props', ...[...words].map(holeWord))),
     ...(content ? [content] : []),
   ];
 }

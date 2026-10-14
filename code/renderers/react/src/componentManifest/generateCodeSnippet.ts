@@ -14,6 +14,7 @@ import {
   type StoryArgsResolver,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
+import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from '../docs/fill-template.ts';
 import { type StoryFunction, buildStoryTemplate } from './storyTemplate.ts';
@@ -48,39 +49,39 @@ export function getCodeSnippet(
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
-  const importedBind = importedBoundStory(csf, storyName, args);
-  if (importedBind) {
-    return {
-      snippet: recast.print(importedBind.node).code,
-      imports: [...imports, importedBind.importRef],
-      unresolved,
-    };
+  const bound = importedBoundStory(csf, storyName);
+  const fnPath = bound ? undefined : findStoryFunction(csf, storyName, resolver.ctx);
+  const needs = { imports: bound ? [...imports, bound.importRef] : imports, unresolved };
+  // The story printed with its args filled in, or with `holes`, a hole wherever it fills one in.
+  const print = (holes: boolean) =>
+    recast.print(
+      bound
+        ? boundStoryNode(storyName, bound.call, args, holes)
+        : buildSnippetNode(storyName, fnPath?.node, componentName, args, holes)
+    ).code;
+  // Holes written in code that already holds a hole bracket could not be found again.
+  if (hasHoleBracket(csf._file.code)) {
+    return { snippet: print(false), ...needs };
   }
-  const { fnPath, runs } = findStoryFunction(csf, storyName, resolver.ctx);
   // A render function from another file has no source in this one to keep as written.
   const inOtherFile =
     fnPath && fnPath.findParent((path) => path.isProgram())?.node !== csf._ast.program;
+  // The story as written where a hole stands for each arg it reads, else as printed.
   const template =
-    runs && !inOtherFile
-      ? buildStoryTemplate(storyName, fnPath, componentName, csf._file.code, args)
-      : undefined;
-  const filled = template
-    ? fillStoryTemplate(template, args, fillTemplate, unresolvedWarning(unresolved))
-    : undefined;
-  return {
-    ...(filled ?? {
-      snippet: recast.print(buildSnippetNode(storyName, fnPath?.node, componentName, args)).code,
-    }),
-    imports,
-    unresolved,
-  };
+    (fnPath && !inOtherFile
+      ? buildStoryTemplate(storyName, fnPath, csf._file.code, args)
+      : undefined) ?? closeHoles(print(true));
+  const filled = fillStoryTemplate(template, args, fillTemplate, unresolvedWarning(unresolved));
+  // Each arg the story writes is a literal or its code as written, which the filler always prints.
+  invariant(filled, `Could not fill the template of ${storyName} with its own args`);
+  return { ...filled, ...needs };
 }
 
+// A story bound from an imported `Template`, as in `Template.bind({})`.
 function importedBoundStory(
   csf: CsfFile,
-  storyName: string,
-  args: Record<string, t.Node>
-): { node: t.VariableDeclaration; importRef: ImportRef } | undefined {
+  storyName: string
+): { call: t.CallExpression; importRef: ImportRef } | undefined {
   const declaration = csf._storyDeclarationPath[storyName];
   if (!declaration?.isVariableDeclarator()) {
     return undefined;
@@ -101,17 +102,8 @@ function importedBoundStory(
   if (!binding) {
     return undefined;
   }
-
-  const values = Object.entries(args).map(([key, value]) => {
-    invariant(t.isExpression(value), `Could not use ${key} as a bound story arg`);
-    return t.objectProperty(t.stringLiteral(key), value);
-  });
-  const boundCall = t.callExpression(init.node, [t.objectExpression(values)]);
-  const node = t.variableDeclaration('const', [
-    t.variableDeclarator(t.identifier(storyName), t.arrowFunctionExpression([], boundCall)),
-  ]);
   return {
-    node,
+    call: init.node,
     importRef: {
       localImportName: object.node.name,
       importId: binding.importId,
@@ -121,15 +113,34 @@ function importedBoundStory(
   };
 }
 
-/**
- * The story function itself, its own `render`, or the meta `render` it falls back to. `runs` is
- * whether that is the function the story renders with, or that it has none, rather than a guess.
- */
+function boundStoryNode(
+  storyName: string,
+  call: t.CallExpression,
+  args: Record<string, t.Node>,
+  holes: boolean
+): t.VariableDeclaration {
+  const values = holes
+    ? t.identifier(hole('args'))
+    : t.objectExpression(
+        Object.entries(args).map(([key, value]) => {
+          invariant(t.isExpression(value), `Could not use ${key} as a bound story arg`);
+          return t.objectProperty(t.stringLiteral(key), value);
+        })
+      );
+  return t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier(storyName),
+      t.arrowFunctionExpression([], t.callExpression(call, [values]))
+    ),
+  ]);
+}
+
+/** The story function itself, its own `render`, or the meta `render` it falls back to. */
 function findStoryFunction(
   csf: CsfFile,
   storyName: string,
   ctx: ReferenceContext
-): { fnPath?: NodePath<StoryFunction>; runs: boolean } {
+): NodePath<StoryFunction> | undefined {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
 
   if (!storyDeclaration) {
@@ -140,7 +151,7 @@ function findStoryFunction(
   const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
 
   if (normalizedStory.type === 'fn') {
-    return { fnPath: normalizedStory.path, runs: true };
+    return normalizedStory.path;
   }
 
   const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
@@ -151,16 +162,23 @@ function findStoryFunction(
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
   // A render shadowed by a later spread is still the best static guess for this manifest,
-  // which degrades to synthesis rather than suppressing snippets, but gets no template.
-  const render = storyRender.kind === 'missing' ? metaRender : storyRender;
-  return { fnPath: renderFunctionOf(render), runs: render.kind !== 'unresolved' };
+  // which degrades to synthesis rather than suppressing snippets.
+  return renderFunctionOf(storyRender.kind === 'missing' ? metaRender : storyRender);
 }
 
+// An element whose children a spread passes ends in `>⟦close⟧</Button>` as printed, for a
+// `⟦close Button⟧` that ends it with them as content, or as self-closing without.
+const closeHoles = (template: string) =>
+  template.replace(/>⟦close⟧<\/([^>]+)>/g, (_, name: string) => hole('close', holeWord(name)));
+
+// The story printed with its args filled in wherever it spreads them, reads one in an attribute or as
+// children, or has no function to print. With `holes`, each of those is a hole.
 function buildSnippetNode(
   storyName: string,
   fn: StoryFunction | undefined,
   componentName: string | undefined,
-  merged: Record<string, t.Node>
+  merged: Record<string, t.Node>,
+  holes: boolean
 ): t.VariableDeclaration | t.FunctionDeclaration {
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
@@ -171,8 +189,8 @@ function buildSnippetNode(
   // If we have a function, transform returned JSX
   if (fn) {
     if (t.isArrowFunctionExpression(fn) && (t.isJSXElement(fn.body) || t.isJSXFragment(fn.body))) {
-      const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
-      const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
+      const spreadRes = transformArgsSpreadsInJsx(fn.body, merged, holes);
+      const inlineRes = inlineArgsInJsx(spreadRes.node, merged, holes);
       if (spreadRes.changed || inlineRes.changed) {
         const newFn = t.arrowFunctionExpression(
           remainingParams(fn, inlineRes.node),
@@ -202,8 +220,8 @@ function buildSnippetNode(
           stmt.argument &&
           (t.isJSXElement(stmt.argument) || t.isJSXFragment(stmt.argument))
         ) {
-          const spreadRes = transformArgsSpreadsInJsx(stmt.argument, merged);
-          const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
+          const spreadRes = transformArgsSpreadsInJsx(stmt.argument, merged, holes);
+          const inlineRes = inlineArgsInJsx(spreadRes.node, merged, holes);
           if (spreadRes.changed || inlineRes.changed) {
             changed = true;
             return t.returnStatement(inlineRes.node);
@@ -238,6 +256,12 @@ function buildSnippetNode(
 
   // No function: synthesize `<Component {...attrs}/>`
   invariant(componentName, 'Could not generate snippet without component name.');
+  if (holes) {
+    const element = t.identifier(hole('element', holeWord(componentName)));
+    return t.variableDeclaration('const', [
+      t.variableDeclarator(t.identifier(storyName), t.arrowFunctionExpression([], element)),
+    ]);
+  }
   const invalidSpread = buildInvalidSpread(invalidEntries);
   const name = t.jsxIdentifier(componentName);
   const openingElAttrs = invalidSpread ? [...injectedAttrs, invalidSpread] : injectedAttrs;
@@ -361,7 +385,8 @@ function getArgsMemberKey(expr: t.Node) {
 /** Inline `args.foo` -> actual literal/expression in attributes/children (recursively). */
 function inlineArgsInJsx(
   node: t.JSXElement | t.JSXFragment,
-  merged: Record<string, t.Node>
+  merged: Record<string, t.Node>,
+  holes: boolean
 ): { node: t.JSXElement | t.JSXFragment; changed: boolean } {
   let changed = false;
 
@@ -384,7 +409,9 @@ function inlineArgsInJsx(
         return [a];
       }
 
-      const repl = toAttr(name, merged[key]);
+      const repl = holes
+        ? t.jsxAttribute(t.jsxIdentifier(hole('attr', holeWord(name), holeWord(key))))
+        : toAttr(name, merged[key]);
       changed = true;
       return repl ? [repl] : [];
     });
@@ -393,7 +420,7 @@ function inlineArgsInJsx(
       t.JSXText | t.JSXExpressionContainer | t.JSXSpreadChild | t.JSXElement | t.JSXFragment
     >((c) => {
       if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-        const res = inlineArgsInJsx(c, merged);
+        const res = inlineArgsInJsx(c, merged, holes);
         changed ||= res.changed;
         return [res.node];
       }
@@ -401,7 +428,7 @@ function inlineArgsInJsx(
         const key = getArgsMemberKey(c.expression);
         if (key === 'children' && merged.children) {
           changed = true;
-          return toJsxChildren(merged.children);
+          return holes ? [t.jsxText(hole('text', 'children'))] : toJsxChildren(merged.children);
         }
       }
       return [c];
@@ -421,7 +448,7 @@ function inlineArgsInJsx(
 
   const fragChildren = node.children.flatMap((c): (typeof c)[] => {
     if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-      const res = inlineArgsInJsx(c, merged);
+      const res = inlineArgsInJsx(c, merged, holes);
       changed ||= res.changed;
       return [res.node];
     }
@@ -429,7 +456,7 @@ function inlineArgsInJsx(
       const key = getArgsMemberKey(c.expression);
       if (key === 'children' && 'children' in merged) {
         changed = true;
-        return toJsxChildren(merged.children);
+        return holes ? [t.jsxText(hole('text', 'children'))] : toJsxChildren(merged.children);
       }
     }
     return [c];
@@ -441,13 +468,18 @@ function inlineArgsInJsx(
 /** Expand `{...args}` into concrete attributes/children (recursively). */
 function transformArgsSpreadsInJsx(
   node: t.JSXElement | t.JSXFragment,
-  merged: Record<string, t.Node>
+  merged: Record<string, t.Node>,
+  holes: boolean
 ): { node: t.JSXElement | t.JSXFragment; changed: boolean } {
   let changed = false;
 
   const makeInjectedPieces = (
     existing: ReadonlySet<string>
   ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
+    if (holes) {
+      const words = [...new Set([...existing, 'children'])].map((name) => holeWord(`-${name}`));
+      return [t.jsxAttribute(t.jsxIdentifier(hole('props', ...words)))];
+    }
     const entries = Object.entries(merged).filter(([k, v]) => v != null && k !== 'children');
     const validEntries = entries.filter(([k]) => isValidJsxAttrName(k));
     const invalidEntries = entries.filter(([k]) => !isValidJsxAttrName(k));
@@ -494,7 +526,7 @@ function transformArgsSpreadsInJsx(
 
     const newChildren = node.children.flatMap((c): (typeof c)[] => {
       if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-        const res = transformArgsSpreadsInJsx(c, merged);
+        const res = transformArgsSpreadsInJsx(c, merged, holes);
         changed ||= res.changed;
         return [res.node];
       }
@@ -502,8 +534,8 @@ function transformArgsSpreadsInJsx(
     });
 
     const children =
-      sawArgsSpread && newChildren.length === 0 && merged.children
-        ? ((changed = true), toJsxChildren(merged.children))
+      sawArgsSpread && newChildren.length === 0 && (holes || merged.children)
+        ? ((changed = true), holes ? [t.jsxText(hole('close'))] : toJsxChildren(merged.children))
         : newChildren;
 
     const selfClosing = children.length === 0;
@@ -520,7 +552,7 @@ function transformArgsSpreadsInJsx(
 
   const fragChildren = node.children.flatMap((c): (typeof c)[] => {
     if (t.isJSXElement(c) || t.isJSXFragment(c)) {
-      const res = transformArgsSpreadsInJsx(c, merged);
+      const res = transformArgsSpreadsInJsx(c, merged, holes);
       changed ||= res.changed;
       return [res.node];
     }

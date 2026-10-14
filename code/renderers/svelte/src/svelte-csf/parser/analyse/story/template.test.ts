@@ -45,9 +45,9 @@ describe(getStoryContentTemplate.name, () => {
       `);
   });
 
-  it('leaves out of a spread the props the element writes after it, and marks those before', () => {
+  it('leaves out of a spread the props the element writes, before or after it', () => {
     expect(getStoryContentTemplate('<Input label="L" {...args} bind:value size="sm" />')).toBe(
-      '<Input label="L" ⟦props ^label -value -size⟧ bind:value size="sm" />'
+      '<Input label="L" ⟦props -label -value -size⟧ bind:value size="sm" />'
     );
   });
 
@@ -99,17 +99,29 @@ describe(getStoryContentTemplate.name, () => {
     );
   });
 
-  it('is undefined for args no hole stands for', () => {
+  it('keeps code that reads no arg, or args whole, as written', () => {
     for (const code of [
       '<Button />',
       '<Button {args} />',
       '<Button data={args} />',
       '<Button label={args[name]} />',
-      '<Input bind:value={args.value} />',
       '<Button onclick={() => args.count++} />',
-      '<p>⟦text label⟧ {args.label}</p>',
-      '<p>{unclosed</p>',
     ]) {
+      expect(getStoryContentTemplate(code), code).toBe(code);
+    }
+  });
+
+  it('has a hole wherever the snippet fills in an arg, as in a binding or a second spread', () => {
+    expect(getStoryContentTemplate('<Input bind:value={args.value} />')).toBe(
+      '<Input bind:value={⟦value value⟧} />'
+    );
+    expect(getStoryContentTemplate('<Button {...args} {...args} />')).toBe(
+      '<Button ⟦props⟧ ⟦props⟧ />'
+    );
+  });
+
+  it('is undefined for code a hole could not be found again in', () => {
+    for (const code of ['<p>⟦text label⟧ {args.label}</p>', '<p>{unclosed</p>']) {
       expect(getStoryContentTemplate(code), code).toBeUndefined();
     }
   });

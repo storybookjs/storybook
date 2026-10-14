@@ -66,16 +66,19 @@ these words.
 
 Each renderer adds holes and words of its own, which the comment on its `fill-template.ts`
 documents, such as React's `⟦element Button⟧` or Vue's `⟦slots Card⟧`. In a React, Vue or Svelte
-`⟦props⟧` hole a `-name` word leaves an arg out, and a `^name` word names an arg the snippet cannot
-show while it is set, such as one an attribute written before the spread would lose to. Angular's
-`⟦props⟧` instead names the inputs it binds, and an `=` word before them binds an arg set to
-`undefined` too.
+`⟦props⟧` hole a `-name` word leaves an arg out: one the element writes itself, before or after the
+spread, which the snippet shows as written. Angular's `⟦props⟧` instead names the inputs it binds,
+and an `=` word before them binds an arg set to `undefined` too.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
 builds alike. The story docs load once per version of a story, and the server keeps them current, so
-an args change makes no request. A provider sets `template` only where the filled snippet is as
-right as the static one. The `warning` belongs to the static snippet: part of it may be about arg
+an args change makes no request. Every story with a static snippet and args has a template: the
+snippet the renderer prints, with a hole at every place where it fills in an arg, and the static
+snippet is that template filled with the story's own args. A provider never writes code into a
+template that its snippet does not print. Where a renderer computes something from an arg rather
+than printing it, the hole goes where the arg itself is. A story without a static snippet has no
+template either. The `warning` belongs to the static snippet: part of it may be about arg
 values the source does not show, which the filled snippet has. So a provider also sets
 `templateWarning` to what the filled snippet still leaves out, such as the `NgModule` a
 `standalone: false` Angular component needs, or a name in the `argCode` of an arg it prints as

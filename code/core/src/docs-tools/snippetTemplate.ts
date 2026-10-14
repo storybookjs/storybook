@@ -7,8 +7,8 @@ import type { Args } from 'storybook/internal/types';
  * story-docs provider writes the holes, as it knows what each arg reference is, and the renderer's
  * filler prints each one with the current args:
  *
- * - `⟦props …⟧`: the args a spread passes, as attributes, but those its `-name` words name. The
- *   snippet cannot show the arg of a `^name` word while it is set; see {@link spreadArgs}.
+ * - `⟦props …⟧`: the args a spread passes, as attributes, but those its `-name` words name; see
+ *   {@link spreadArgs}.
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
@@ -169,15 +169,9 @@ function enclosed(code: string) {
 
 /**
  * The args a `⟦props …⟧` spread passes: every arg but those its `-name` words name, which the
- * element writes after the spread. A `^name` word is written before it, where a set arg would win
- * over what the snippet shows, so the snippet cannot show that arg.
+ * element writes itself.
  */
 export function spreadArgs(args: Args, words: string[]): [string, unknown][] {
-  for (const word of words) {
-    if (word.startsWith('^') && args[word.slice(1)] !== undefined) {
-      throw new UnprintableArgError(word.slice(1));
-    }
-  }
   const written = new Set(words.map((word) => word.slice(1)));
   return Object.entries(args).filter(([name]) => !written.has(name));
 }
@@ -196,8 +190,7 @@ export function dedentStoryCode(text: string, column = Infinity): string {
 /**
  * Prints an arg value as the JavaScript literal it would be written as, and a {@link writtenArg} as
  * its code. A value with no literal, such as a function, a class instance, a cycle or anything
- * `opaque` matches at any depth, throws an {@link UnprintableArgError} for `name`, and so does a
- * literal too long to read in a snippet.
+ * `opaque` matches at any depth, throws an {@link UnprintableArgError} for `name`.
  */
 export function printValue(
   value: unknown,
@@ -209,24 +202,11 @@ export function printValue(
     return code;
   }
   const parents = new Set<unknown>();
-  // What is left of the length a literal may have; printing stops as soon as it runs out.
-  let left = MAX_LITERAL_LENGTH;
-  const spend = (text: string) => {
-    left -= text.length;
-    if (left < 0) {
-      throw new UnprintableArgError(name);
-    }
-    return text;
-  };
   const print = (item: unknown): string => {
     if (opaque?.(item) || parents.has(item)) {
       throw new UnprintableArgError(name);
     }
     if (typeof item === 'string') {
-      // Escaping only lengthens a string, so one already too long is not escaped at all.
-      if (item.length > left) {
-        throw new UnprintableArgError(name);
-      }
       const escaped = item
         .replace(/\\/g, '\\\\')
         .replace(/\n/g, '\\n')
@@ -234,10 +214,10 @@ export function printValue(
         .replace(/\u2028/g, '\\u2028')
         .replace(/\u2029/g, '\\u2029')
         .replaceAll(quote, `\\${quote}`);
-      return spend(`${quote}${escaped}${quote}`);
+      return `${quote}${escaped}${quote}`;
     }
     if (item === null || ['undefined', 'number', 'boolean'].includes(typeof item)) {
-      return spend(String(item));
+      return String(item);
     }
     if (!Array.isArray(item) && !isPlainObject(item)) {
       throw new UnprintableArgError(name);
@@ -247,35 +227,20 @@ export function printValue(
     parents.delete(item);
     return printed;
   };
-  const printArray = (array: unknown[]) => {
-    const elements: string[] = [];
-    spend('[]');
-    for (let index = 0; index < array.length; index++) {
-      if (index > 0) {
-        spend(', ');
-      }
-      elements.push(index in array ? print(array[index]) : '');
-    }
-    return `[${elements.join(', ')}]`;
-  };
+  const printArray = (array: unknown[]) =>
+    `[${Array.from(array, (_, index) => (index in array ? print(array[index]) : '')).join(', ')}]`;
   const printObject = (object: Record<string, unknown>) => {
     const properties: string[] = [];
-    spend('{}');
     for (const key in object) {
-      if (object[key] === undefined) {
-        continue;
+      if (object[key] !== undefined) {
+        const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) ? key : print(key);
+        properties.push(`${printedKey}: ${print(object[key])}`);
       }
-      spend(properties.length === 0 ? '  ' : ', ');
-      const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) ? spend(key) : print(key);
-      properties.push(`${printedKey}${spend(': ')}${print(object[key])}`);
     }
     return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
   };
   return print(value);
 }
-
-// Longer data, such as a GeoJSON file, would bury the rest of the snippet.
-const MAX_LITERAL_LENGTH = 2000;
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null) {

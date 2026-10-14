@@ -152,7 +152,15 @@ describe(transformStory.name, () => {
       	}),
       	$$slots: { default: true },
       	parameters: {
-      		__svelteCsf: { rawCode: "<Example>Label</Example>" }
+      		__svelteCsf: {
+      			rawCode: "<Example>Label</Example>",
+      			template: "<Example>Label</Example>",
+      			argCode: {
+      				"onclick": "fn()",
+      				"onmouseenter": "fn()",
+      				"onmouseleave": "fn()"
+      			}
+      		}
       	}
       })"
     `);

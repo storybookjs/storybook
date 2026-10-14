@@ -13,10 +13,11 @@ interface Edit {
 }
 
 /**
- * The story's raw code, from `getStoryContentRawCode`, with a hole wherever it reads `args`, for
- * `fillTemplate`. It is `undefined` when the code reads its args in a way no hole stands for, such
- * as passing `args` along whole, and the raw code is shown instead. `args` holds the node each arg
- * is written with, which decides where its code needs parentheses; see `isOperand`.
+ * The story's raw code, from `getStoryContentRawCode`, with a hole wherever it reads an arg, for
+ * `fillTemplate`. `args` passed along whole stays as written, as the snippet shows it. It is
+ * `undefined` only for code a hole could not be found again in, and the raw code is shown instead.
+ * `args` holds the node each arg is written with, which decides where its code needs parentheses;
+ * see `isOperand`.
  */
 export function getStoryContentTemplate(
   rawCode: string,
@@ -34,7 +35,7 @@ export function getStoryContentTemplate(
   } catch {
     return undefined;
   }
-  const edits: Array<Edit | undefined> = [];
+  const edits: Edit[] = [];
   walk(fragment as unknown as Node, null, {
     Identifier(node, { path }) {
       if (node.name === 'args') {
@@ -42,10 +43,7 @@ export function getStoryContentTemplate(
       }
     },
   });
-  if (edits.length === 0 || edits.some((edit) => edit === undefined)) {
-    return undefined;
-  }
-  return (edits as Edit[])
+  return edits
     .sort((a, b) => b.start - a.start)
     .reduce(
       (text, { start, end, text: hole }) => text.slice(0, start) + hole + text.slice(end),
@@ -54,15 +52,15 @@ export function getStoryContentTemplate(
     .slice(script.length);
 }
 
-// The edit for an `args` reference: none for a write, or `undefined` when it is not a hole.
-function argEdit(node: Node, path: Node[], args: Record<string, t.Node>): (Edit | undefined)[] {
+// The edit for an `args` reference: none for a write, or for `args` read whole, which stays as written.
+function argEdit(node: Node, path: Node[], args: Record<string, t.Node>): Edit[] {
   const [grandparent, parent] = path.slice(-2);
   if (parent?.type === 'SpreadAttribute') {
     return [spreadEdit(parent, grandparent!)];
   }
   const arg = parent && argName(parent, node);
-  if (arg === undefined || path.some((ancestor) => ancestor.type === 'BindDirective')) {
-    return [undefined];
+  if (arg === undefined) {
+    return [];
   }
   // `args?.label` reads the arg through the chain around the member.
   const chained = grandparent?.type === 'ChainExpression';
@@ -98,26 +96,16 @@ function argName(member: Node, object: Node): string | undefined {
   return typeof name === 'string' ? name : undefined;
 }
 
-// `<Button {...args}>` passes every arg but the props the element writes after it, which win: its
-// attributes and bindings, its snippets and its children.
-function spreadEdit(spread: Node, element: Node): Edit | undefined {
-  const attributes: Node[] = element.attributes;
-  const index = attributes.indexOf(spread);
+// `<Button {...args}>` passes every arg but the props the element writes itself: its attributes and
+// bindings, its snippets and its children.
+function spreadEdit(spread: Node, element: Node): Edit {
   const children: Node[] = element.fragment?.nodes ?? [];
-  const props = (nodes: Node[]) =>
-    nodes.filter((node) => /^(Attribute|BindDirective)$/.test(node.type)).map((node) => node.name);
-  if (attributes.some((node, i) => i !== index && node.type === 'SpreadAttribute')) {
-    return undefined;
-  }
   const words = [
-    ...props(attributes.slice(0, index)).map((name) => `^${name}`),
-    ...[
-      ...props(attributes.slice(index + 1)),
-      ...children
-        .filter((node) => node.type === 'SnippetBlock')
-        .map((node) => node.expression.name),
-      ...(children.length > 0 ? ['children'] : []),
-    ].map((name) => `-${name}`),
-  ];
-  return { start: spread.start, end: spread.end, text: hole('props', ...words.map(holeWord)) };
+    ...element.attributes
+      .filter((node: Node) => /^(Attribute|BindDirective)$/.test(node.type))
+      .map((node: Node) => node.name),
+    ...children.filter((node) => node.type === 'SnippetBlock').map((node) => node.expression.name),
+    ...(children.length > 0 ? ['children'] : []),
+  ].map((name) => holeWord(`-${name}`));
+  return { start: spread.start, end: spread.end, text: hole('props', ...words) };
 }

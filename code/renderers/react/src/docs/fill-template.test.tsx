@@ -139,13 +139,18 @@ describe('fillTemplate', () => {
     expect(fillTemplate('⟦value loading⟧ ? a : b', { loading: true })).toBe('true ? a : b');
   });
 
-  it('throws for an arg it cannot print or name as an attribute', () => {
+  it('throws for an arg it cannot print', () => {
     expect(() => fillTemplate('⟦value onClick⟧', { onClick: () => {} })).toThrow(
       UnprintableArgError
     );
     expect(() => fillTemplate('<p>⟦text icon⟧</p>', { icon: <span /> })).toThrow(
       UnprintableArgError
     );
-    expect(() => fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
+  });
+
+  it('spreads an arg no attribute can be named as', () => {
+    expect(
+      fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1, label: 'Go', 'a b': undefined })
+    ).toBe('<Button label="Go" {...{ "my prop": 1 }} />');
   });
 });

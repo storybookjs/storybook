@@ -479,15 +479,9 @@ test('ObjectInvalidAttr only', async () => {
       args: { '1x': 'a', 'bad key': 'b', '@foo': 'c', '-dash': 'd' }
     };`
   );
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const ObjectInvalidAttr = () => <Button
-        {...{
-            "1x": 'a',
-            "bad key": 'b',
-            "@foo": 'c',
-            "-dash": 'd'
-        }}>Click me</Button>;"
-  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectInvalidAttr = () => <Button {...{ "1x": "a", "bad key": "b", "@foo": "c", "-dash": "d" }}>Click me</Button>;"`
+  );
 });
 
 test('Inline nested args in child element (string)', () => {
@@ -847,12 +841,12 @@ test('an imported bound story keeps its helper and resolved args', () => {
 
   expect(generateResolved(input)).toEqual([
     {
-      snippet:
-        'const FirstHalf = () => Match.bind({})({\n    "home": \'Arsenal\',\n    "away": \'Aston Villa\'\n});',
+      snippet: 'const FirstHalf = () => Match.bind({})({ home: "Arsenal", away: "Aston Villa" });',
       imports: ['renderMatch from ./match-helper'],
       unresolved: [],
     },
   ]);
+  expect(template(input, 'FirstHalf')).toBe('const FirstHalf = () => Match.bind({})(⟦args⟧);');
 });
 
 test('args assembled at runtime are reported rather than dropped', () => {
@@ -1054,12 +1048,12 @@ test('template: keeps the layout, and an unset attribute leaves no gap', () => {
   `);
 });
 
-test('template: shows the static snippet once an arg overrides an attribute before the spread', () => {
+test('template: an attribute written before the spread shows as written', () => {
   const input = withCSF3(
     `export const Before: Story = { render: (args) => <Button size="sm" {...args} /> };`
   );
   expect(template(input, 'Before')).toBe(
-    'const Before = () => <Button size="sm" ⟦props ^size -children⟧⟦close Button⟧;'
+    'const Before = () => <Button size="sm" ⟦props -size -children⟧⟦close Button⟧;'
   );
   expect(filled(input, 'Before', { label: 'Go' })).toBe(
     'const Before = () => <Button size="sm" label="Go" />;'
@@ -1067,7 +1061,9 @@ test('template: shows the static snippet once an arg overrides an attribute befo
   expect(filled(input, 'Before', { label: 'Go', children: 'Save' })).toBe(
     'const Before = () => <Button size="sm" label="Go">Save</Button>;'
   );
-  expect(() => filled(input, 'Before', { size: 'lg' })).toThrow(UnprintableArgError);
+  expect(filled(input, 'Before', { size: 'lg' })).toBe(
+    'const Before = () => <Button size="sm" />;'
+  );
 });
 
 test('template: an attribute written after the spread too wins over the arg', () => {
@@ -1082,13 +1078,13 @@ test('template: an attribute written after the spread too wins over the arg', ()
   );
 });
 
-test('template: none for a component that names no element', () => {
+test('template: a component that names no element is the element as printed', () => {
   const input = dedent`
     import { Button } from './Button';
     export default { component: Button as any };
     export const Cast = { args: { label: 'Go' } };
   `;
-  expect(template(input, 'Cast')).toBeUndefined();
+  expect(template(input, 'Cast')).toBe('const Cast = () => ⟦element %Button%20as%20any⟧;');
 });
 
 test('template: keeps a literal the code reads on apart', () => {
@@ -1150,9 +1146,11 @@ test('template: a rest of the args is every arg but those taken before it', () =
     'const Alone = () => <Field disabled><Button size="sm">Save</Button></Field>;'
   );
   expect(template(input, 'Read')).toBe(
-    'const Read = () => <Button size="sm" ⟦attr title title⟧ ⟦attr label label⟧ ⟦props -label ^size ^title -children⟧⟦close Button⟧;'
+    'const Read = () => <Button size="sm" ⟦attr title title⟧ ⟦attr label label⟧ ⟦props -label -size -title -children⟧⟦close Button⟧;'
   );
-  expect(template(input, 'Taken')).toBeUndefined();
+  expect(template(input, 'Taken')).toMatchInlineSnapshot(
+    `"const Taken = ({ label, ...rest }) => <Button title={rest.label} />;"`
+  );
 });
 
 test('template: a default stands for its arg while that is unset', () => {
@@ -1171,7 +1169,7 @@ test('template: a default stands for its arg while that is unset', () => {
   `);
   expect(template(input, 'Defaults')).toMatchInlineSnapshot(`
     "const Defaults = () => (
-      <Button ⟦attr size size ?'md'⟧ ⟦attr style style ?%7B%20a%3A%201%20%7D⟧ title={⟦operand count ?(2)⟧.toFixed()} ⟦props -size -count -label -style ^title -children⟧>
+      <Button ⟦attr size size ?'md'⟧ ⟦attr style style ?%7B%20a%3A%201%20%7D⟧ title={⟦operand count ?(2)⟧.toFixed()} ⟦props -size -count -label -style -title -children⟧>
         ⟦text label ?'Go'⟧
         {{ size: ⟦value size ?'md'⟧, total: ⟦value count ?2⟧ + 1 }.size}
       </Button>
@@ -1197,8 +1195,12 @@ test('template: a default stands for its arg while that is unset', () => {
   expect(filled(input, 'Outer', { size: null })).toBe(
     'const Outer = () => <Button size={null} />;'
   );
-  expect(template(input, 'Computed')).toBeUndefined();
-  expect(template(input, 'Called')).toBeUndefined();
+  expect(template(input, 'Computed')).toMatchInlineSnapshot(
+    `"const Computed = ({ a = 1, b = a ? 2 : 3 }) => <Button a={a} b={b} />;"`
+  );
+  expect(template(input, 'Called')).toMatchInlineSnapshot(
+    `"const Called = ({ id = uniqueId() }) => <Button id={id} />;"`
+  );
 });
 
 test('template: args destructured in the body are holes, without the statement', () => {
@@ -1272,11 +1274,11 @@ test('template: keeps another spread on the element as written', () => {
     };
   `);
   expect(template(input, 'Dynamic')).toBe(
-    'const Dynamic = () => <Button size="sm" ⟦props -onClick ^size⟧ {...dynamicArgs} onClick={log} />;'
+    'const Dynamic = () => <Button size="sm" ⟦props -size -onClick⟧ {...dynamicArgs} onClick={log} />;'
   );
 });
 
-test('template: none for args no hole stands for', () => {
+test('template: where no hole stands for a read, the printed snippet, with a hole where it fills in an arg', () => {
   const input = withCSF3(dedent`
     export const NoArgs: Story = { render: () => <Button /> };
     export const Twice: Story = { render: (args) => <Button {...args} {...args} /> };
@@ -1285,11 +1287,20 @@ test('template: none for args no hole stands for', () => {
     export const Tag: Story = { render: ({ as: Tag, label }) => <Tag>{label}</Tag> };
     export const Member: Story = { render: (args) => <args.Icon /> };
   `);
-  const stories = ['NoArgs', 'Twice', 'Compared'];
-  const unusual = ['Shadowed', 'Tag', 'Member'];
-  for (const story of [...stories, ...unusual]) {
-    expect(template(input, story)).toBeUndefined();
-  }
+  const stories = ['NoArgs', 'Twice', 'Compared', 'Shadowed', 'Tag', 'Member'];
+  expect(stories.map((story) => template(input, story))).toMatchInlineSnapshot(`
+    [
+      "const NoArgs = () => <Button />;",
+      "const Twice = () => <Button ⟦props -children⟧⟦close Button⟧;",
+      "const Compared = args => {
+        useEffect(log, [args]);
+        return <Button ⟦props -children⟧⟦close Button⟧;
+    };",
+      "const Shadowed = () => <Button ⟦attr label label⟧ />;",
+      "const Tag = ({ as: Tag, label }) => <Tag>{label}</Tag>;",
+      "const Member = (args) => <args.Icon />;",
+    ]
+  `);
 });
 
 test('template: a story that writes to its args has a hole at each read', () => {
@@ -1332,7 +1343,7 @@ test('template: a render behind a spread of a story, but not of a helper call', 
     export const Made: Story = { ...createStory('Go'), args: { primary: true } };
   `);
   expect(template(input, 'Copied')).toBe(`const Copied = () => ⟦element Button⟧;`);
-  expect(template(input, 'Made')).toBeUndefined();
+  expect(template(input, 'Made')).toBe(`const Made = () => ⟦element Button⟧;`);
   expect(
     getCodeSnippet(loadCsf(input, { makeTitle: () => 'T' }).parse(), 'Made', 'Button').unresolved
   ).toEqual(["...createStory('Go')"]);
@@ -1472,18 +1483,29 @@ test('template: the filled snippet keeps the warning of the static one', () => {
   expect(templateWarning).toBe(unresolvedWarning(unresolved));
 });
 
-test('template: none where the filler cannot print an arg the story is written with', () => {
+test('template: an arg no attribute can be named as is spread', () => {
   const input = withCSF3(dedent`
     export const Spaced: Story = { args: { 'my label': 'Go' } };
   `);
   const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
-  const { snippet, template, argCode } = getCodeSnippet(csf, 'Spaced', 'Button');
+  const { snippet, template } = getCodeSnippet(csf, 'Spaced', 'Button');
+  expect(template).toBe('const Spaced = () => ⟦element Button⟧;');
+  expect(snippet).toBe('const Spaced = () => <Button {...{ "my label": "Go" }}>Click me</Button>;');
+});
+
+test('template: a long literal prints in full', () => {
+  const label = `&${'x'.repeat(2000)}`;
+  const input = withCSF3(`export const Long: Story = { args: { label: '${label}' } };`);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  const { snippet, template } = getCodeSnippet(csf, 'Long', 'Button');
+  expect(template).toBe('const Long = () => ⟦element Button⟧;');
+  expect(snippet).toContain(`label={"${label}"}`);
+});
+
+test('template: none for a story file that already holds a hole bracket', () => {
+  const input = withCSF3(`export const Bracket: Story = { args: { label: '⟦x⟧' } };`);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  const { snippet, template } = getCodeSnippet(csf, 'Bracket', 'Button');
   expect(template).toBeUndefined();
-  expect(argCode).toBeUndefined();
-  expect(snippet).toMatchInlineSnapshot(`
-    "const Spaced = () => <Button
-        {...{
-            "my label": 'Go'
-        }}>Click me</Button>;"
-  `);
+  expect(snippet).toBe('const Bracket = () => <Button label="⟦x⟧">Click me</Button>;');
 });

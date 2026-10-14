@@ -164,6 +164,30 @@ describe('AngularComponentMetaManager', () => {
     expect(result?.entry.file).toBe(togglePath);
   });
 
+  it.each(['button.component.d.ts', 'index.d.ts'])(
+    'reads a component compiled into a .d.ts, extracting from %s',
+    (entryFile) => {
+      const result = manager.extractComponentMeta(
+        normalize(join(fixturesDir, 'declarations', entryFile)),
+        { exportName: 'ButtonComponent' }
+      );
+
+      expect(result?.entry).toMatchObject({
+        name: 'ButtonComponent',
+        type: 'component',
+        file: normalize(join(fixturesDir, 'declarations', 'button.component.d.ts')),
+        selector: 'my-button, [my-button]',
+        standalone: false,
+      });
+    }
+  );
+
+  it('still extracts nothing for a plain .d.ts class re-exported by a declaration barrel', () => {
+    const barrelPath = normalize(join(fixturesDir, 'declarations', 'index.d.ts'));
+
+    expect(manager.extractComponentMeta(barrelPath, { exportName: 'ButtonTheme' })).toBeUndefined();
+  });
+
   it('falls back to localName when the export name matches no class', () => {
     const renamed = manager.extractComponentMeta(togglePath, {
       exportName: 'PublicToggle',

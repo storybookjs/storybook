@@ -7,6 +7,7 @@ import type { AngularFileMeta } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
+import { type ComponentMetadata, readComponentDeclaration } from './component-declaration.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
@@ -53,26 +54,22 @@ export function analyzeSourceFile(
       logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
+    const declared = kind === 'class' ? readComponentDeclaration(ctx, statement) : undefined;
+    const recordKind = declared ? 'component' : kind;
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = collectClassMembers(ctx, statement, kind);
+    const members = collectClassMembers(ctx, statement, recordKind);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
       ...getJsDocTagsField(ts, statement),
     };
 
-    if (kind === 'component' || kind === 'directive') {
-      const metadata = decoratorObjectArg(
-        ctx,
-        statement,
-        kind === 'component' ? 'Component' : 'Directive'
-      );
-      const selector = metadata && decoratorSelector(ctx, metadata);
-      const standalone = metadata && decoratorStandalone(ctx, metadata);
+    if (recordKind === 'component' || recordKind === 'directive') {
+      const { selector, standalone } = declared ?? decoratorMetadata(ctx, statement, recordKind);
       const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
-        type: kind,
+        type: recordKind,
         ...(selector === undefined ? {} : { selector }),
         ...(standalone === undefined ? {} : { standalone }),
         inputsClass: members.inputs,
@@ -81,8 +78,8 @@ export function analyzeSourceFile(
         methodsClass: members.methods,
         ...common,
       };
-      (kind === 'component' ? meta.components : meta.directives).push(record);
-    } else if (kind === 'pipe') {
+      (recordKind === 'component' ? meta.components : meta.directives).push(record);
+    } else if (recordKind === 'pipe') {
       const record: Pipe & typeof common = {
         name,
         ngname: pipeName(ctx, statement) ?? name,
@@ -92,7 +89,7 @@ export function analyzeSourceFile(
         ...common,
       };
       meta.pipes.push(record);
-    } else if (kind === 'injectable') {
+    } else if (recordKind === 'injectable') {
       const record: Injectable & typeof common = {
         name,
         type: 'injectable',
@@ -139,6 +136,18 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
     }
   }
   return 'class';
+};
+
+const decoratorMetadata = (
+  ctx: AnalyzerContext,
+  node: tsModule.ClassDeclaration,
+  kind: 'component' | 'directive'
+): ComponentMetadata => {
+  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
+  return {
+    selector: metadata && decoratorSelector(ctx, metadata),
+    standalone: metadata && decoratorStandalone(ctx, metadata),
+  };
 };
 
 const decoratorSelector = (

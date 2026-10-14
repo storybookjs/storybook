@@ -6,6 +6,7 @@
  *     @Component / @Directive  -> components / directives, members split into
  *                                 inputsClass, outputsClass, propertiesClass, methodsClass
  *     @Pipe / @Injectable      -> pipes / injectables, members split into properties, methods
+ *     .d.ts with compiled ɵcmp -> components, as above
  *     no Angular decorator     -> classes
  *     @NgModule or @ignore     -> dropped
  *
@@ -81,6 +82,33 @@ describe('which classes a file yields', () => {
     ]).toEqual(['component', 'directive', 'pipe', 'injectable', 'class']);
     // A pipe is bound in templates by its `name`, not by its class name.
     expect(meta.pipes[0].ngname).toBe('sbFormat');
+  });
+
+  it('files a .d.ts class Angular compiled as a component under `components`', () => {
+    const meta = analyzeFiles('button.component.d.ts', {
+      'button.component.d.ts': `
+        import * as i0 from '@angular/core';
+
+        export declare class ButtonComponent {
+          label: string;
+          static ɵcmp: i0.ɵɵComponentDeclaration<
+            ButtonComponent, 'my-button', never, {}, {}, never, never, false
+          >;
+        }
+
+        export declare class ButtonTheme {
+          accent: string;
+        }
+      `,
+    });
+
+    expect(names(meta.components)).toEqual(['ButtonComponent']);
+    expect(names(meta.classes)).toEqual(['ButtonTheme']);
+    expect(meta.components[0]).toMatchObject({
+      type: 'component',
+      selector: 'my-button',
+      standalone: false,
+    });
   });
 
   it('drops an @NgModule, which declares no bindable surface of its own', () => {

@@ -13,6 +13,7 @@ import * as path from 'node:path';
 import type * as ts from 'typescript';
 
 import { analyzeSourceFile, analyzerContext } from './analyzer/analyze-file.ts';
+import { readComponentDeclaration } from './analyzer/component-declaration.ts';
 import type { AnalyzerContext } from './analyzer/context.ts';
 import type { AngularClassMeta, AngularComponentMetaResult, AngularFileMeta } from './types.ts';
 
@@ -187,7 +188,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
       const declaration = target.declarations?.find((candidate): candidate is ts.ClassDeclaration =>
         isClassDeclaration(candidate)
       );
-      if (!declaration?.name || declaration.getSourceFile().isDeclarationFile) {
+      if (!declaration?.name) {
         continue;
       }
       const declarationFile = declaration.getSourceFile();
@@ -197,6 +198,14 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
         declarationFile === sourceFile
           ? context
           : analyzerContext(this.typescript, declarationFile, checker);
+      // A .d.ts class is only worth documenting as a compiled component, and checking before
+      // analysis spares analyzing every other class a bundled library declares.
+      if (
+        declarationFile.isDeclarationFile &&
+        !readComponentDeclaration(targetContext, declaration)
+      ) {
+        continue;
+      }
       const targetMeta =
         declarationFile === sourceFile
           ? fileMeta

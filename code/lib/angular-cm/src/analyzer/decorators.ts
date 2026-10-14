@@ -15,17 +15,13 @@ export interface DecoratorInfo {
  */
 export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): boolean => {
   const symbol = resolvedSymbol(ctx, node);
-  if (!symbol) {
-    return true;
-  }
-  const declarations = symbol.declarations;
-  if (!declarations?.length) {
-    return true;
-  }
-  return declarations.some((declaration) =>
-    declaration.getSourceFile().fileName.includes('@angular/core')
-  );
+  return !symbol?.declarations?.length || isDeclaredInAngularCore(symbol);
 };
+
+export const isDeclaredInAngularCore = (symbol: ts.Symbol): boolean =>
+  symbol.declarations?.some((declaration) =>
+    declaration.getSourceFile().fileName.includes('@angular/core')
+  ) ?? false;
 
 // Angular matches decorators by imported symbol, including aliases re-exported through barrels.
 const importedName = (

@@ -27,7 +27,8 @@ import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
 import { printHtmlTemplate } from './template-print.ts';
-import { resolveHtmlTemplate } from './template-scope.ts';
+import { argReferenceForExpression, resolveHtmlTemplate } from './template-scope.ts';
+import type { HtmlTemplate } from './template-scope.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
@@ -43,7 +44,7 @@ interface StoryDocDeps {
   tag: string;
 }
 
-type SnippetResult = { snippet?: string; warning?: string };
+type SnippetResult = { snippet?: string; template?: string; warning?: string };
 type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
 type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
 
@@ -151,6 +152,9 @@ const baseStoryDoc = (
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
     ...(result.snippet === undefined ? {} : { snippet: result.snippet }),
+    ...(result.template === undefined
+      ? {}
+      : { template: result.template, templateSyntax: 'lit' as const }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
     ...(summary === undefined ? {} : { summary }),
@@ -234,6 +238,7 @@ const renderedArgsSnippet = (
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
       return {
         ...(hasSnippet ? { snippet: printed.snippet } : {}),
+        ...(template.lit ? { template: litTemplate(template) } : {}),
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
     }
@@ -253,9 +258,34 @@ const renderedArgsSnippet = (
 
   return {
     ...(args.snippet ? { snippet: args.snippet } : {}),
+    template: `<${deps.tag} ${ARGS_SPREAD}></${deps.tag}>`,
     ...joinWarnings(warnings),
   };
 };
+
+/** Marks where the preview spreads all current args as attributes/properties. */
+const ARGS_SPREAD = '${args}';
+
+/**
+ * The render's `html` template as authored, with every arg reference written as `${args.x}` (so
+ * `({ label }) => html`...${label}`` also becomes `${args.label}`) for the preview to fill in.
+ * Other expressions stay as written.
+ */
+const litTemplate = (template: HtmlTemplate): string =>
+  template.quasis
+    .map((quasi, index) => {
+      const expression = template.expressions[index];
+      if (!expression) {
+        return quasi;
+      }
+      const reference = argReferenceForExpression(expression, template.scope);
+      const hole = reference
+        ? ['args', reference.name, ...reference.path].join('.')
+        : sourceOf(expression);
+      return `${quasi}\${${hole}}`;
+    })
+    .join('')
+    .trim();
 
 const unboundTemplateArgs = (
   args: Record<string, t.Node>,

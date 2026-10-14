@@ -43,7 +43,7 @@ import {
 } from './classify-args/classify-args.ts';
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
-import { createRenderContext } from '../shared/render-primitives.ts';
+import { createRenderContext, renderPreparedSfcSnippet } from '../shared/render-primitives.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -108,7 +108,8 @@ type StaticStoryRenderer =
       template: string;
       setup?: ForwardableSetup;
     };
-type StorySnippetResult = { snippet: string };
+/** `template` is the story's template as authored (`v-bind="args"`, `args.x` kept) for the preview to fill. */
+type StorySnippetResult = { snippet: string; template?: string };
 type StaticStoryArgs = {
   classified: ClassifyArgsResult;
   /** Source text of everything reading the args statically could not account for. */
@@ -366,6 +367,9 @@ function enrichStoryDoc(
   return {
     ...storyDoc,
     snippet: rendered.snippet,
+    ...(rendered.template !== undefined
+      ? { template: rendered.template, templateSyntax: 'vue' as const }
+      : {}),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
@@ -434,28 +438,35 @@ function renderStaticStorySnippet(
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
+    const template = `<${componentName} v-bind="args" />`;
     return componentImportStatement
-      ? transformTemplate({
-          args,
-          componentImports: new Map([[componentName, componentImportStatement]]),
-          componentName,
-          importBindings: options.importBindings,
-          template: `<${componentName} v-bind="args" />`,
-          unsetArgs: classified.unset,
-        })
+      ? withAuthoredTemplate(
+          transformTemplate({
+            args,
+            componentImports: new Map([[componentName, componentImportStatement]]),
+            componentName,
+            importBindings: options.importBindings,
+            template,
+            unsetArgs: classified.unset,
+          }),
+          template
+        )
       : undefined;
   }
 
   if (renderer.kind === 'template') {
-    return transformTemplate({
-      args,
-      componentImports: renderer.componentImports,
-      componentName,
-      importBindings: options.importBindings,
-      setup: renderer.setup,
-      template: renderer.template,
-      unsetArgs: classified.unset,
-    });
+    return withAuthoredTemplate(
+      transformTemplate({
+        args,
+        componentImports: renderer.componentImports,
+        componentName,
+        importBindings: options.importBindings,
+        setup: renderer.setup,
+        template: renderer.template,
+        unsetArgs: classified.unset,
+      }),
+      renderer.template
+    );
   }
 
   const ctx = createRenderContext();
@@ -472,15 +483,36 @@ function renderStaticStorySnippet(
     return undefined;
   }
 
-  return transformTemplate({
-    args,
-    componentImports: printed.componentImports,
-    componentName,
-    ctx,
-    importBindings: options.importBindings,
-    template: printed.template,
-    unsetArgs: classified.unset,
-  });
+  return withAuthoredTemplate(
+    transformTemplate({
+      args,
+      componentImports: printed.componentImports,
+      componentName,
+      ctx,
+      importBindings: options.importBindings,
+      template: printed.template,
+      unsetArgs: classified.unset,
+    }),
+    printed.template
+  );
+}
+
+/**
+ * Adds the story's template as authored, wrapped in `<template>` like the static snippet, with its
+ * `args` references left for the preview to fill with the current args.
+ *
+ * POC: the `<script setup>` block (imports, hoisted values) is not part of the template.
+ */
+function withAuthoredTemplate(
+  result: StorySnippetResult | undefined,
+  template: string
+): StorySnippetResult | undefined {
+  return (
+    result && {
+      ...result,
+      template: renderPreparedSfcSnippet({ templateCode: template, ctx: createRenderContext() }),
+    }
+  );
 }
 
 /**

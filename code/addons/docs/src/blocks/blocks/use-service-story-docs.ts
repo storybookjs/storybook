@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 
-import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { Args, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
+  selectLiveSnippetForStory,
   selectSnippetForStory,
   selectStoryDoc,
   selectWarningForStory,
@@ -61,4 +62,26 @@ export function useServiceStorySnippet(storyId: string): QueryState<string | und
 /** Convenience hook returning why one story's snippet is an incomplete example, when it is one. */
 export function useServiceStoryWarning(storyId: string): QueryState<string | undefined> {
   return useServiceStory(storyId, selectWarningForStory);
+}
+
+/**
+ * One story's display snippet with the given args filled in when the provider gave a template, plus
+ * the warning for the static snippet it falls back to otherwise.
+ */
+export function useServiceStoryLiveSnippet(
+  storyId: string,
+  args: Args
+): QueryState<{ snippet?: string; warning?: string }> {
+  const selector = useCallback(
+    (payload: StoryDocsPayload | undefined, id: string) => ({
+      snippet: selectLiveSnippetForStory(payload, id, args),
+      // The warning names arg values a static pass could not read; filled in, they are known.
+      warning:
+        payload?.stories[id]?.template === undefined
+          ? selectWarningForStory(payload, id)
+          : undefined,
+    }),
+    [args]
+  );
+  return useServiceStory(storyId, selector);
 }

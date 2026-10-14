@@ -5,13 +5,14 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
+import { selectLiveSnippetForStory, selectWarningForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
 /**
- * Preview `beforeEach` hook that emits a static story-docs snippet to the manager Code panel via
- * {@link emitTransformCode}. Runs once per story invocation; the snippet itself is static.
+ * Preview `beforeEach` hook that emits a story-docs snippet to the manager Code panel via
+ * {@link emitTransformCode}. It runs again on every args change, so a story whose provider gave a
+ * `template` gets a snippet with the current args filled in.
  */
 export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallback | void {
   if (!globalThis.FEATURES?.docgenServer) {
@@ -45,12 +46,14 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       if (cancelled) {
         return;
       }
-      const snippet = selectSnippetForStory(payload, storyId);
+      const snippet = selectLiveSnippetForStory(payload, storyId, context.args);
       const source = snippet ?? context.parameters?.docs?.source?.originalSource;
       if (source === undefined) {
         return;
       }
-      const warning = selectWarningForStory(payload, storyId);
+      // The warning names arg values a static pass could not read; filled in, they are known.
+      const isLive = payload?.stories[storyId]?.template !== undefined;
+      const warning = isLive ? undefined : selectWarningForStory(payload, storyId);
 
       return emitTransformCode(
         source,

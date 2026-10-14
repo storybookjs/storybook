@@ -18,11 +18,22 @@ export interface StoryDocsError {
   message: string;
 }
 
+/** The template languages the preview can fill with args; see `StoryDoc.template`. */
+export type StoryDocTemplateSyntax = 'jsx' | 'vue' | 'lit' | 'angular' | 'svelte';
+
 /** Snippet + metadata for one story under a component. */
 export interface StoryDoc {
   id: string;
   name: string;
   snippet?: string;
+  /**
+   * The snippet with its `args` references (`{...args}`, `args.label`) left in place, for the
+   * preview to fill with the current args so the snippet follows the controls. `snippet` stays the
+   * static example for agents and for when the preview has no args to fill in.
+   */
+  template?: string;
+  /** How `template` writes args, so the preview knows how to fill it. Defaults to `'jsx'`. */
+  templateSyntax?: StoryDocTemplateSyntax;
   description?: string;
   summary?: string;
   /**

@@ -107,7 +107,17 @@ const writeFixture = (source: string, files: Record<string, string> = {}) => {
   return { dir, storyPath };
 };
 
-const firstStory = async (
+const firstStory = async (...args: Parameters<typeof firstStoryWithTemplate>) => {
+  // the live `template` is covered by its own tests below
+  const {
+    template: _template,
+    templateSyntax: _syntax,
+    ...doc
+  } = await firstStoryWithTemplate(...args);
+  return doc;
+};
+
+const firstStoryWithTemplate = async (
   source: string,
   options: {
     files?: Record<string, string>;
@@ -125,6 +135,31 @@ const firstStory = async (
   expect(result).toBeDefined();
   return Object.values(result!.stories)[0];
 };
+
+describe('buildStoryDocsPayload template', () => {
+  it('keeps the authored html with arg references, normalized to args.x', async () => {
+    const doc = await firstStoryWithTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Hi' },
+        render: ({ label, disabled }) => html\`<test-element label=\${label} ?disabled=\${disabled}>\${label}</test-element>\`,
+      };
+    `);
+    expect(doc.templateSyntax).toBe('lit');
+    expect(doc.template).toBe(
+      '<test-element label=${args.label} ?disabled=${args.disabled}>${args.label}</test-element>'
+    );
+  });
+
+  it('spreads args into the component when there is no render template', async () => {
+    const doc = await firstStoryWithTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Hi' } };
+    `);
+    expect(doc.template).toBe('<test-element ${args}></test-element>');
+  });
+});
 
 describe('buildStoryDocsPayload', () => {
   it.each([

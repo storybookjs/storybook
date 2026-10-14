@@ -27,6 +27,11 @@ export interface CodeSnippet {
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
+  /**
+   * The story as authored, with its `args` references left in place for the preview to fill with
+   * the current args, the way Svelte CSF snippets update as controls change.
+   */
+  template: t.VariableDeclaration | t.FunctionDeclaration;
 }
 
 export function getCodeSnippet(
@@ -40,16 +45,77 @@ export function getCodeSnippet(
     node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
     imports,
     unresolved,
+    template: buildTemplateNode(csf, storyName, componentName, args, resolver.ctx),
   };
 }
 
-function buildSnippetNode(
+/**
+ * The story's render function as written, or `<Component {...args} />` when it has none.
+ *
+ * Nothing is inlined: the preview replaces `{...args}` and `args.x` with the current arg values. A
+ * lone `args` parameter is dropped since the filled-in snippet no longer reads it.
+ */
+function buildTemplateNode(
   csf: CsfFile,
   storyName: string,
   componentName: string | undefined,
   merged: Record<string, t.Node>,
   ctx: ReferenceContext
 ): t.VariableDeclaration | t.FunctionDeclaration {
+  const fn = findStoryFunction(csf, storyName, ctx);
+
+  if (!fn) {
+    invariant(componentName, 'Could not generate snippet without component name.');
+    const name = t.jsxIdentifier(componentName);
+    // Children go between the tags rather than into `{...args}` as a `children` attribute.
+    const children =
+      'children' in merged
+        ? [
+            t.jsxExpressionContainer(
+              t.memberExpression(t.identifier('args'), t.identifier('children'))
+            ),
+          ]
+        : [];
+    const selfClosing = children.length === 0;
+    const element = t.jsxElement(
+      t.jsxOpeningElement(name, [t.jsxSpreadAttribute(t.identifier('args'))], selfClosing),
+      selfClosing ? null : t.jsxClosingElement(name),
+      children,
+      selfClosing
+    );
+    return t.variableDeclaration('const', [
+      t.variableDeclarator(t.identifier(storyName), t.arrowFunctionExpression([], element)),
+    ]);
+  }
+
+  const onlyArgs =
+    fn.params.length === 1 && t.isIdentifier(fn.params[0]) && fn.params[0].name === 'args';
+  const params = onlyArgs ? [] : fn.params;
+
+  return t.isFunctionDeclaration(fn)
+    ? t.functionDeclaration(t.identifier(storyName), params, fn.body, fn.generator, fn.async)
+    : t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(storyName),
+          t.isFunctionExpression(fn)
+            ? t.functionExpression(fn.id, params, fn.body, fn.generator, fn.async)
+            : t.arrowFunctionExpression(params, fn.body, fn.async)
+        ),
+      ]);
+}
+
+type StoryFunction =
+  | t.ArrowFunctionExpression
+  | t.FunctionExpression
+  | t.FunctionDeclaration
+  | t.ObjectMethod;
+
+/** The story function itself, its own `render`, or the meta `render` it falls back to. */
+function findStoryFunction(
+  csf: CsfFile,
+  storyName: string,
+  ctx: ReferenceContext
+): StoryFunction | undefined {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
 
   if (!storyDeclaration) {
@@ -59,12 +125,7 @@ function buildSnippetNode(
 
   const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
 
-  // Find a function (explicit story fn or render())
-  let storyFn:
-    | NodePath<
-        t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
-      >
-    | undefined;
+  let storyFn: NodePath<StoryFunction> | undefined;
 
   if (normalizedStory.type === 'fn') {
     storyFn = normalizedStory.path;
@@ -85,6 +146,18 @@ function buildSnippetNode(
       (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
 
+  return storyFn?.node;
+}
+
+function buildSnippetNode(
+  csf: CsfFile,
+  storyName: string,
+  componentName: string | undefined,
+  merged: Record<string, t.Node>,
+  ctx: ReferenceContext
+): t.VariableDeclaration | t.FunctionDeclaration {
+  const fn = findStoryFunction(csf, storyName, ctx);
+
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
   const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
@@ -92,9 +165,7 @@ function buildSnippetNode(
   const injectedAttrs = validEntries.map(([k, v]) => toAttr(k, v)).filter((a) => a != null);
 
   // If we have a function, transform returned JSX
-  if (storyFn) {
-    const fn = storyFn.node;
-
+  if (fn) {
     if (t.isArrowFunctionExpression(fn) && (t.isJSXElement(fn.body) || t.isJSXFragment(fn.body))) {
       const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
       const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
@@ -181,12 +252,6 @@ function buildSnippetNode(
 
   return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
 }
-
-type StoryFunction =
-  | t.ArrowFunctionExpression
-  | t.FunctionExpression
-  | t.FunctionDeclaration
-  | t.ObjectMethod;
 
 /**
  * Parameters the rewritten story function still needs.

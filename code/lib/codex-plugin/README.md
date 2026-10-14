@@ -62,7 +62,7 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
 
 - `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-docs`: the user asks about a component's props, API, or usage.
+- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
 ```
 
 Edit that section to change when the agent uses the skills, for example to leave out the review, or remove it to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
@@ -83,7 +83,7 @@ Sets up your Storybook for agentic workflows, automatically configures your proj
 
 ### `component-docs`
 
-Answers questions about the components of your Storybook: their props, API, and usage examples.
+Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. Also answers questions about a component's props, API, and usage.
 
 ### `ui-workflow`
 

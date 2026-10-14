@@ -1,6 +1,6 @@
 ---
 name: component-docs
-description: Answer questions about a component's props, API, or usage in a project with Storybook, from its component docs. Use when the project's agent instructions (such as AGENTS.md) or the user ask for it. For a UI change, use ui-workflow, which includes the same component lookup.
+description: Look up the components of a project with Storybook, with their props and usage examples, to reuse them instead of building duplicates or to answer questions about them. Use when the project's agent instructions (such as AGENTS.md) or the user ask for it. For a UI change, use ui-workflow, which includes the same component lookup.
 ---
 
 Prerequisites:

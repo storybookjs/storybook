@@ -60,7 +60,7 @@ The skills do not take over every UI change on their own. A section in your `AGE
 For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
 
 - `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-docs`: the user asks about a component's props, API, or usage.
+- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
 ```
 
 Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. Edit it to fit how you work. For example, to skip the review, change the end of the `ui-workflow` line:
@@ -82,7 +82,7 @@ Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` or `CLAU
 | Skill               | What the agent does with it                                                                                                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `ui-workflow`       | Looks up your components to reuse them instead of building duplicates, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](./agentic-review.mdx) of the result. |
-| `component-docs`    | Answers questions about your components, their props, and usage examples, from your component docs.                                                                                                                            |
+| `component-docs`    | Looks up your components, with their props and usage examples, so the agent reuses them instead of building duplicates. Also answers questions about a component.                                                              |
 | `storybook-init`    | Adds Storybook to your project, then continues with `storybook-setup`.                                                                                                                                                         |
 | `storybook-setup`   | Follows the [agentic setup](./setup.mdx) instructions: configures the preview and writes stories for your components.                                                                                                          |
 | `storybook-upgrade` | Upgrades Storybook with [`storybook upgrade`](../releases/upgrading.mdx).                                                                                                                                                      |

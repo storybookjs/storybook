@@ -48,8 +48,11 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
         if (!t.isSpreadElement(property)) {
           return false;
         }
-        const argument = unwrapExpression(property.argument);
-        return t.isCallExpression(argument) || t.isOptionalCallExpression(argument);
+        return t.traverseFast(property.argument, (node) => {
+          if (t.isCallExpression(node) || t.isOptionalCallExpression(node)) {
+            return t.traverseFast.stop;
+          }
+        });
       })
     ) {
       throw new SaveStoryError(

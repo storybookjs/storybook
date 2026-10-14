@@ -455,6 +455,12 @@ describe.each([
     'args: { label: "old" }, ...makeBase()',
     '...(makeBase() as Story)',
     '...makeBase?.()',
+    '...makeBase().input',
+    'args: { label: "old" }, ...makeBase().input',
+    '...(makeBase().input as Story)',
+    '...makeBase?.().input',
+    '...Base[makeKey()]',
+    '...(useFactory ? makeBase() : Base)',
   ])('rejects saving through a function-call spread: %s', async (properties) => {
     const node = parser.parseExpression(story(`{ ${properties} }`), { plugins: ['typescript'] });
     const before = generate(node).code;

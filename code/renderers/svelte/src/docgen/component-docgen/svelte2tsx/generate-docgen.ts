@@ -1,11 +1,15 @@
 import path from 'node:path';
 
+import { extractJSDocInfo } from 'storybook/internal/csf-tools';
+
 import svelte2tsx, { internalHelpers } from 'svelte2tsx';
-import { VERSION } from 'svelte/compiler';
+import { VERSION, parse } from 'svelte/compiler';
 import ts from 'typescript';
 
 export type Docgen = {
   name?: string;
+  description?: string;
+  jsDocTags?: Record<string, string[]>;
   props: PropInfo[];
 };
 
@@ -15,6 +19,8 @@ export type PropInfo = {
   optional?: boolean;
   defaultValue?: DefaultValue;
   description?: string;
+  jsDocTags?: { name: string; text: string }[];
+  typeText?: string;
 };
 
 type BaseType = object;
@@ -464,6 +470,11 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
             optional,
             description,
             type: convertType(propType, checker),
+            typeText: checker.typeToString(propType, undefined, ts.TypeFormatFlags.NoTruncation),
+            jsDocTags: prop.getJsDocTags(checker).map((tag) => ({
+              name: tag.name,
+              text: ts.displayPartsToString(tag.text),
+            })),
           });
         });
       }
@@ -491,6 +502,13 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
               const name = element.name.getText();
               const prop = propMap.get(name);
               if (prop && element.initializer) {
+                if (
+                  ts.isCallExpression(element.initializer) &&
+                  ts.isIdentifier(element.initializer.expression) &&
+                  element.initializer.expression.text === '$bindable'
+                ) {
+                  prop.jsDocTags = [...(prop.jsDocTags ?? []), { name: 'bindable', text: '' }];
+                }
                 const defaultValue = initializerToDefaultValue(element.initializer, checker);
                 if (defaultValue) {
                   prop.defaultValue = defaultValue;
@@ -520,7 +538,23 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
     }
   });
 
+  const source = ts.sys.readFile(targetFileName.slice(0, -4));
+  const comment =
+    source &&
+    parse(source, { modern: true }).fragment.nodes.find(
+      (node) => node.type === 'Comment' && /@component\b/.test(node.data)
+    );
+  const docs =
+    comment && comment.type === 'Comment'
+      ? extractJSDocInfo(
+          comment.data
+            .replace(/@component\b/, '')
+            .replace(/\s+(@[a-zA-Z]+\b)/g, '\n$1')
+            .trim()
+        )
+      : undefined;
   return {
     props: Array.from(propMap.values()),
+    ...(docs ? { description: docs.description.trim(), jsDocTags: docs.tags } : {}),
   };
 }

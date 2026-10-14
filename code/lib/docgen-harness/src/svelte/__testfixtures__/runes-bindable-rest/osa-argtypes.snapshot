@@ -1,1 +1,52 @@
-{}
+{
+  "checked": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Checked state.",
+    "name": "checked",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "jsDocTags": {
+        "bindable": [
+          "",
+        ],
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "value": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Current value.",
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "jsDocTags": {
+        "bindable": [
+          "",
+        ],
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

@@ -1,0 +1,7 @@
+{
+  "argTypes": {},
+  "id": "example-page",
+  "jsDocTags": {},
+  "name": "Page",
+  "path": "./src/stories/Page.stories.svelte"
+}

@@ -1,1 +1,151 @@
-{}
+{
+  "anchor": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Anchor target id.",
+    "name": "anchor",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Visible group label.",
+    "name": "label",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "labelless": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Hide the visible label.",
+    "name": "labelless",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "onchange": {
+    "control": false,
+    "description": "Value change callback.",
+    "name": "onchange",
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(value: Value) => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "(value: Value) => void",
+    },
+  },
+  "size": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Control size.",
+    "name": "size",
+    "options": [
+      "icon",
+      "wide",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""icon" | "wide"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "icon",
+        "wide",
+      ],
+    },
+  },
+  "value": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Selected value.",
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "unknown",
+    },
+  },
+  "values": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Available values.",
+    "name": "values",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "[Value, string, (string | undefined)?][]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "[Value, string, (string | undefined)?][]",
+    },
+  },
+}

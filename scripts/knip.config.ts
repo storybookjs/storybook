@@ -6,6 +6,10 @@ import fg from 'fast-glob';
 import type { KnipConfig } from 'knip';
 import { match } from 'minimatch';
 
+import sveltekitBuild from '../code/frameworks/sveltekit/build-config.ts';
+import svelteBuild from '../code/renderers/svelte/build-config.ts';
+import type { BuildEntries } from './build/utils/entry-utils.ts';
+
 // Files we want to exclude from analysis should be negated project patterns, not `ignores`
 // docs: https://knip.dev/guides/configuring-project-files
 const project = [
@@ -26,6 +30,9 @@ const mdx = (text: string) =>
   [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)]
     .map(([statement]) => statement)
     .join(';\n');
+
+const buildEntries = (config: BuildEntries) =>
+  Object.values(config.entries).flatMap((entries) => entries.map(({ entryPoint }) => entryPoint));
 
 const baseConfig = {
   // storybook itself configured (only) in root
@@ -60,6 +67,10 @@ const baseConfig = {
     'frameworks/*': {
       project,
     },
+    'frameworks/sveltekit': {
+      entry: buildEntries(sveltekitBuild),
+      project,
+    },
     'lib/create-storybook': {
       entry: ['src/index.ts', 'src/ink/steps/checks/index.tsx'],
       project,
@@ -85,6 +96,13 @@ const baseConfig = {
     },
     'renderers/*': {
       project,
+    },
+    'renderers/svelte': {
+      entry: buildEntries(svelteBuild),
+      project: [...project, '!src/svelte-csf/__tests__/__compiled__/**'],
+      nx: true,
+      // The repository root owns the Nx executor dependency.
+      ignoreDependencies: ['nx'],
     },
   },
   compilers: {

@@ -27,7 +27,7 @@ const status = { state: 'available', version: '1.2.3' };
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression isCollapsed :release="release" :status="status" :updateProgressInfo="null" />
+    <TemplateArgsExpression :updateProgressInfo="null" isCollapsed :release="release" :status="status" />
   </div>
 </template>",
       "summary": undefined,
@@ -75,7 +75,7 @@ const status = { state: 'available', version: '1.2.3' };
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" />
+    <TemplateArgsExpression :updateProgressInfo="null" :isCollapsed="false" :release="release" :status="status" />
   </div>
 </template>",
       "summary": undefined,

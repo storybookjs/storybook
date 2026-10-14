@@ -125,21 +125,15 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return hoistedProp(input, ctx, printValue(value));
   }
 
-  // Vue reads a bare `is` and an `is="vue:…"` attribute as the element's component, so those bind.
-  const namesComponent =
-    input.attributeName === 'is' &&
-    (t.isBooleanLiteral(value, { value: true }) ||
-      (t.isStringLiteral(value) && value.value.startsWith('vue:')));
-
   if (value.type === 'BooleanLiteral') {
-    return value.value && !namesComponent
+    return value.value
       ? { attrName: input.attributeName }
-      : { attrName: `:${input.attributeName}`, value: String(value.value) };
+      : { attrName: `:${input.attributeName}`, value: 'false' };
   }
 
   if (value.type === 'StringLiteral') {
     const quoted = quoteAttributeValue(value.value);
-    return quoted === undefined || namesComponent
+    return quoted === undefined
       ? hoistedProp(input, ctx, printValue(value))
       : { attrName: input.attributeName, value: value.value };
   }

@@ -13,7 +13,7 @@ import RuntimeObjectProps from './RuntimeObjectProps.vue';
 </script>
 
 <template>
-  <RuntimeObjectProps :count="3" label="Total" />
+  <RuntimeObjectProps label="Total" :count="3" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

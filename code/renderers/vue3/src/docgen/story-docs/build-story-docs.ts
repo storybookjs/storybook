@@ -10,11 +10,13 @@ import {
 import { getService } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
+  argCode,
   buildImportStatements,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
+  fillWithStoryArgs,
   jsDocTagsForPath,
   keyOf,
   loadCsf,
@@ -47,7 +49,7 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { componentTemplate, renderTemplate } from './story-template.ts';
-import { printValue } from '../shared/classify-value.ts';
+import { fillTemplate } from '../../docs/fill-template.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
 import {
   readTemplateRenderConfig,
@@ -394,33 +396,33 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(
-    renderer,
-    classified,
-    componentName,
-    docgenArgInfo,
-    renderOptions
-  );
-  if (!rendered) {
+  // The static snippet is the template filled with the args the story is written with, and the
+  // story printed as before where it has no template or the filler cannot print one of them.
+  const template = storyTemplate(renderer, options.snippet, args);
+  const storyArgs = Object.fromEntries(args.map((arg) => [arg.name, arg.value]));
+  const snippet =
+    (template !== undefined && staticFill(template, storyArgs)) ||
+    renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, renderOptions)
+      ?.snippet;
+  if (!snippet) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
 
-  const template = storyTemplate(renderer, options.snippet, args);
   return {
     ...storyDoc,
-    snippet: rendered.snippet,
-    ...(template !== undefined ? { template, argCode: argCodeOf(args) } : {}),
+    snippet,
+    ...(template !== undefined ? { template, argCode: argCode(storyArgs) } : {}),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
 
-// The code the snippet hoists for an arg; an arg it writes inline is a literal its value prints as.
-const argCodeOf = (args: ClassifyArgsResult['args']) =>
-  Object.fromEntries(
-    args
-      .filter((arg) => arg.role !== 'slot' && arg.plan.kind === 'hoist')
-      .map((arg) => [arg.name, printValue(unwrapExpression(arg.value))])
-  );
+function staticFill(template: string, args: Record<string, t.Node>): string | undefined {
+  try {
+    return fillWithStoryArgs(template, args, fillTemplate);
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * The context to read a render function in: the story file's, or for one another story file
@@ -468,10 +470,11 @@ function storyTemplate(
   args: ClassifyArgsResult['args']
 ): string | undefined {
   const slots = [...docgenArgInfo.slots];
+  // A slot the story fills with a function, as `() => h(Icon)`, has no value to show as content.
   if (renderer.kind === 'sfc') {
-    return (
-      componentImportStatement && componentTemplate(componentName, componentImportStatement, slots)
-    );
+    return componentImportStatement && !args.some((arg) => arg.plan.kind === 'function-slot')
+      ? componentTemplate(componentName, componentImportStatement, slots)
+      : undefined;
   }
   if (renderer.kind !== 'template') {
     return undefined;

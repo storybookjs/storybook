@@ -13,7 +13,7 @@ import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
 </script>
 
 <template>
-  <CrossFileUnionAlias size="small" variant="danger" />
+  <CrossFileUnionAlias variant="danger" size="small" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

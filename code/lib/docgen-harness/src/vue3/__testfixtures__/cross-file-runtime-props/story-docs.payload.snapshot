@@ -13,7 +13,7 @@ import CrossFileRuntimeProps from './CrossFileRuntimeProps.vue';
 </script>
 
 <template>
-  <CrossFileRuntimeProps :count="3" label="Imported" />
+  <CrossFileRuntimeProps label="Imported" :count="3" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

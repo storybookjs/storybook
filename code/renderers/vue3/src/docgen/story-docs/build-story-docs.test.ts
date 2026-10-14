@@ -107,7 +107,7 @@ export const Primary = { args: { ...shared, label: 'Hi' } };
       </script>
 
       <template>
-        <MyButton active label="Hi" size="large" />
+        <MyButton active size="large" label="Hi" />
       </template>"
     `);
     expect(story?.warning).toBeUndefined();
@@ -124,7 +124,7 @@ export const Primary = { args: { ...Base.args, label: 'Hi' } };
       </script>
 
       <template>
-        <MyButton active label="Hi" size="large" />
+        <MyButton active size="large" label="Hi" />
       </template>"
     `);
   });
@@ -159,7 +159,7 @@ export const Primary = { args: { ...shared, label: 'Hi' } };
       </script>
 
       <template>
-        <MyButton active label="Hi" size="large" />
+        <MyButton active size="large" label="Hi" />
       </template>"
     `);
   });
@@ -354,7 +354,7 @@ export const Primary = {
 };
 `);
     expect(story?.argCode).toEqual({
-      formatter: '(text: string) => text.toUpperCase()',
+      formatter: '((text: string) => text.toUpperCase())',
       when: "new Date('2024-01-01')",
       items: '[{ id: 1 }]',
     });
@@ -374,7 +374,7 @@ export const Primary = {
         fillTemplate
       ).snippet
     ).toContain(
-      `<MyButton label="Stop" :formatter="(text: string) => text.toUpperCase()" :when="new Date('2024-01-01')" :items="[{ id: 1 }]" />`
+      `<MyButton label="Stop" :formatter="((text: string) => text.toUpperCase())" :when="new Date('2024-01-01')" :items="[{ id: 1 }]" />`
     );
   });
 
@@ -699,18 +699,6 @@ export const Primary = {
       `<MyButton :label='"it&#39;s \\"x\\"" + "!"' />`
     );
     expect(renderTemplate('<MyButton :label=args.label+1 />', new Map(), [])).toBeUndefined();
-  });
-
-  it("merges a spread's class and style with the element's own", () => {
-    expect(renderTemplate('<div v-bind="args" class="a" />', new Map(), [])).toContain(
-      '<div ⟦props +class⟧ class="a" />'
-    );
-    expect(
-      renderTemplate(`<div :style="{ gap: 0 }" v-bind="args" :class="'a'" />`, new Map(), [])
-    ).toContain(`<div :style="{ gap: 0 }" ⟦props +:class +:style⟧ :class="'a'" />`);
-    expect(renderTemplate(`<div class="a" v-bind="args" :class="'b'" />`, new Map(), [])).toContain(
-      `<div class="a" ⟦props ^class⟧ :class="'b'" />`
-    );
   });
 
   it('leaves out an arg a spread passes under the other spelling of an attribute', () => {

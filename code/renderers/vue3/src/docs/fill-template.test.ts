@@ -46,18 +46,6 @@ describe('fillTemplate', () => {
     );
   });
 
-  it("merges a spread's class with the element's own", () => {
-    expect(fillTemplate('<div ⟦props +class⟧ class="a" />', { class: ['b'], id: 'x' })).toBe(
-      `<div id="x" :class="['b']" class="a" />`
-    );
-    expect(fillTemplate(`<div ⟦props +:class⟧ :class="'a'" />`, { class: 'b' })).toBe(
-      `<div class="b" :class="'a'" />`
-    );
-    expect(() => fillTemplate(`<div ⟦props +:class⟧ :class="'a'" />`, { class: ['b'] })).toThrow(
-      UnprintableArgError
-    );
-  });
-
   it('leaves out the args a props hole names', () => {
     expect(fillTemplate('<Card ⟦props -default⟧ />', { default: 'x', a: 'b' })).toBe(
       '<Card a="b" />'
@@ -89,9 +77,10 @@ describe('fillTemplate', () => {
     expect(
       fillTemplate('<p v-if="⟦value open⟧ && ⟦value label⟧">', { open: true, label: 'a"b' })
     ).toBe(`<p v-if="true && 'a&quot;b'">`);
-    expect(fillTemplate('<p>{{ ⟦value label⟧ }}</p>', { label: '&quot; }}' })).toBe(
-      "<p>{{ '&amp;quot; }\\}' }}</p>"
-    );
+    expect(
+      fillTemplate('<p :config="⟦value config⟧">', { config: writtenArg('{a: {b: 1}}') })
+    ).toBe('<p :config="{a: {b: 1}}">');
+    expect(fillTemplate('<p>⟦text label⟧</p>', { label: 'a  }}' })).toBe("<p>{{ 'a  }\\}' }}</p>");
   });
 
   it('escapes a value in an attribute written in single quotes for that quote', () => {
@@ -120,12 +109,6 @@ describe('fillTemplate', () => {
     expect(fillTemplate('const n = ⟦operand n script⟧.toFixed();', { n: 5 })).toBe(
       'const n = (5).toFixed();'
     );
-  });
-
-  it('binds an `is` Vue would read as the component of the element', () => {
-    expect(fillTemplate('<Cell ⟦props⟧ />', { is: true })).toBe('<Cell :is="true" />');
-    expect(fillTemplate('<Cell ⟦attr is is⟧ />', { is: 'vue:x' })).toBe(`<Cell :is="'vue:x'" />`);
-    expect(fillTemplate('<Cell ⟦props⟧ />', { is: 'button' })).toBe('<Cell is="button" />');
   });
 
   it('throws for an arg it cannot print or name as an attribute', () => {

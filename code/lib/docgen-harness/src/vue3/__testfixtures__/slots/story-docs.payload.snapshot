@@ -34,7 +34,6 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </template>",
     },
     "forms-slots--v-node-child": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-slots--v-node-child",
       "name": "V Node Child",
@@ -51,13 +50,6 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
-import SlotsShowcase from './SlotsShowcase.vue';
-</script>
-
-<template>
-  ⟦element SlotsShowcase default header item⟧
-</template>",
     },
   },
 }

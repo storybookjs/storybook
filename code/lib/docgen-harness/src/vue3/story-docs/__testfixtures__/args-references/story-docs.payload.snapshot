@@ -27,8 +27,8 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
     "forms-args-references--spread-object-arg": {
       "argCode": {
         "options": "{
-  size: 'md',
-  tone: 'neutral'
+    size: 'md',
+    tone: 'neutral'
 }",
       },
       "description": undefined,
@@ -36,15 +36,13 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
       "name": "Spread Object Arg",
       "snippet": "<script lang="ts" setup>
 import ArgsReferencesButton from './ArgsReferencesButton.vue';
-
-const options = {
-  size: 'md',
-  tone: 'neutral'
-};
 </script>
 
 <template>
-  <ArgsReferencesButton :options="options" />
+  <ArgsReferencesButton :options="{
+    size: 'md',
+    tone: 'neutral'
+}" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

@@ -13,7 +13,7 @@ import PropSlotCollision from './PropSlotCollision.vue';
 </script>
 
 <template>
-  <PropSlotCollision default="fallback text" icon="pi pi-check" />
+  <PropSlotCollision icon="pi pi-check" default="fallback text" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

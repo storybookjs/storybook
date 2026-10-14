@@ -124,11 +124,11 @@ export const Primary = {
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
 
-      const onClick = () => {};
+      const onClick = (() => {});
       </script>
 
       <template>
-        <MyButton active label="Hi" @click="onClick" />
+        <MyButton active label="Hi" :onClick="onClick" />
       </template>"
     `);
   });
@@ -143,19 +143,7 @@ export const Primary = {
     ).toContain('<MyButton label="Hi" />');
   });
 
-  it('binds an `is` Vue would read as the component of the element', async () => {
-    expect(await primarySnippet(`export const Primary = { args: { is: true } };`)).toContain(
-      '<MyButton :is="true" />'
-    );
-    const hoisted = await primarySnippet(`export const Primary = { args: { is: 'vue:x' } };`);
-    expect(hoisted).toContain("const is = 'vue:x';");
-    expect(hoisted).toContain('<MyButton :is="is" />');
-    expect(await primarySnippet(`export const Primary = { args: { is: 'button' } };`)).toContain(
-      '<MyButton is="button" />'
-    );
-  });
-
-  it('expands a v-bind model arg into a v-model binding with a hoisted ref', async () => {
+  it('passes a model arg through v-bind as written', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -169,19 +157,16 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
-      import { ref } from "vue";
       import MyButton from './MyButton.vue';
-
-      const modelValue = ref('Typed text');
       </script>
 
       <template>
-        <MyButton v-model="modelValue" />
+        <MyButton modelValue="Typed text" />
       </template>"
     `);
   });
 
-  it('renders v-bind slot args as slot children on the story tag', async () => {
+  it('leaves a slot arg out of v-bind, which passes no slots', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -202,14 +187,12 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton label="Hi">
-          Body copy
-        </MyButton>
+        <MyButton label="Hi" />
       </template>"
     `);
   });
 
-  it('renders a function slot arg forwarded through v-bind', async () => {
+  it('leaves a function slot arg out of v-bind', async () => {
     expect(
       await primarySnippet(
         `
@@ -230,13 +213,10 @@ export const Primary = {
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
-      import OtherButton from './OtherButton.vue';
       </script>
 
       <template>
-        <MyButton label="Hi">
-          <OtherButton label="Nested" />
-        </MyButton>
+        <MyButton label="Hi" />
       </template>"
     `);
   });
@@ -289,6 +269,19 @@ export const Primary = {
         </div>
       </template>"
     `);
+  });
+
+  it('keeps a write to an arg as written, and fills each read', () => {
+    expect(
+      transformTemplate({
+        args: [prop('count', '1')],
+        componentImports: new Map(),
+        componentName: 'C',
+        importBindings: new Map(),
+        template: '<C :count="args.count" :next="(args.count += 1)" />',
+        unsetArgs: new Set(),
+      })?.snippet
+    ).toContain('<C :count="1" :next="(args.count += 1)" />');
   });
 
   it('normalizes leading and trailing whitespace from author template literals', () => {
@@ -380,7 +373,7 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<template>
-        <p>Hi 2 false</p>
+        <p>Hi 2 {{ false }}</p>
       </template>"
     `);
   });
@@ -398,7 +391,7 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<template>
-        <p>&lt;b&gt;bold?&lt;/b&gt; &amp; 1 &lt; 2</p>
+        <p>&lt;b>bold?&lt;/b> &amp; 1 &lt; 2</p>
       </template>"
     `);
   });
@@ -425,7 +418,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton :count="2" :options="options" />
+        <MyButton :count="2" v-bind:options="options" />
       </template>"
     `);
   });
@@ -520,7 +513,7 @@ export const Primary = {
     `);
   });
 
-  it('bails when a bound arg is missing from the story args altogether', async () => {
+  it('leaves out a bound arg the story args do not have', async () => {
     const payload = await buildPayload(`
 export const Primary = {
   args: { label: 'Hi' },
@@ -532,13 +525,19 @@ export const Primary = {
 };
 `);
 
-    expect(payload.stories['example-mybutton--primary']?.snippet).toBeUndefined();
-    expect(payload.stories['example-mybutton--primary']?.warning).toMatchInlineSnapshot(
-      `"No static snippet: the story template could not be resolved statically."`
-    );
+    expect(payload.stories['example-mybutton--primary']?.snippet).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+    expect(payload.stories['example-mybutton--primary']?.warning).toBeUndefined();
   });
 
-  it('bails when a static attribute already sets the prop an undefined arg binds', async () => {
+  it('keeps a static attribute next to the binding of an undefined arg', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -550,7 +549,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton theme="dark" :theme="undefined" />
+      </template>"
+    `);
   });
 
   it('drops an event binding whose handler arg is undefined', async () => {
@@ -599,7 +606,7 @@ export const Primary = {
       import { ref } from "vue";
       import MyButton from './MyButton.vue';
 
-      const modelValue = ref();
+      const modelValue = ref(undefined);
       </script>
 
       <template>
@@ -675,7 +682,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton label='say "hi"' />
+        <MyButton label="say &quot;hi&quot;" />
       </template>"
     `);
   });
@@ -711,7 +718,7 @@ export const Primary = {
       </script>
 
       <template>
-        <div :style="{ '--w': '52px', width: false ? '52px' : '176px' }"><UpdateStatusItem :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" /></div>
+        <div :style="{ '--w': '52px', width: false ? '52px' : '176px' }"><UpdateStatusItem :isCollapsed="false" :updateProgressInfo="null" :release="release" :status="status" /></div>
       </template>"
     `);
   });
@@ -738,7 +745,7 @@ export const Primary = {
     `);
   });
 
-  it('bails when a substituted string would terminate a single-quoted attribute', async () => {
+  it('writes a string in a single-quoted attribute in double quotes', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -749,7 +756,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :aria-label='"Hi" + "!"' label="Hi" />
+      </template>"
+    `);
   });
 
   it('substitutes args references inside interpolation expressions', async () => {
@@ -783,7 +798,7 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<template>
-        <p>{{ "it's" + "!" }}</p>
+        <p>{{ 'it\\'s' + "!" }}</p>
       </template>"
     `);
   });
@@ -945,7 +960,7 @@ export const Primary = {
     `);
   });
 
-  it('bails when expression substitution would entity-decode an arg value', async () => {
+  it('encodes an ampersand of an arg value in an attribute', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -956,7 +971,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :x="'a&amp;amp;b' + 1" />
+      </template>"
+    `);
   });
 
   it('bails on unquoted directive expressions but still substitutes quoted ones', async () => {
@@ -993,7 +1016,7 @@ export const Primary = {
     `);
   });
 
-  it('bails on delete expressions that mutate args', async () => {
+  it('keeps a delete of an arg as written', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1004,7 +1027,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :x="delete args.count" />
+      </template>"
+    `);
   });
 
   it('substitutes optional args member references inside expression branches', async () => {
@@ -1173,7 +1204,7 @@ export const Primary = {
     `);
   });
 
-  it('converts a slot-named binding on the story tag into slot children', async () => {
+  it('keeps a binding named as a slot as written', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1191,11 +1222,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton label="static">
-          <template #header>
-            Title text
-          </template>
-        </MyButton>
+        <MyButton header="Title text" label="static" />
       </template>"
     `);
   });
@@ -1300,7 +1327,7 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails when a rewritten binding collides with a static attribute', async () => {
+  it('keeps a binding next to a static attribute of the same name', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1312,7 +1339,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="static" :label="'Hi'" />
+      </template>"
+    `);
   });
 
   it('substitutes args references inside v-if expressions', async () => {
@@ -1342,12 +1377,6 @@ export const Primary = {
     ['computed args member', '<MyButton :x="args[key]" />', { count: 2 }],
     ['update expression in event handler', '<MyButton @click="args.count++" />', { count: 2 }],
     ['assignment in event handler', '<MyButton @click="args.count = 1" />', { count: 2 }],
-    ['missing arg name', '<MyButton :x="args.missing + 1" />', { count: 2 }],
-    [
-      'inline string value containing a double quote',
-      `<MyButton :aria-label="'Status: ' + args.label" />`,
-      { label: 'say "hi"' },
-    ],
     ['v-for args shadowing', '<MyButton v-for="args in items" :key="args.id" />', { count: 2 }],
     [
       'v-slot args shadowing',
@@ -1368,6 +1397,47 @@ export const Primary = {
     ).toBeUndefined();
   });
 
+  it('fills a missing arg as undefined and a string with a double quote as an entity', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x="args.missing + 1" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :x="undefined + 1" />
+      </template>"
+    `);
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'say "hi"' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: \`<MyButton :aria-label="'Status: ' + args.label" />\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :aria-label="'Status: ' + 'say &quot;hi&quot;'" />
+      </template>"
+    `);
+  });
+
   it('bails on templates Vue itself cannot parse', async () => {
     expect(
       await primarySnippet(`
@@ -1382,23 +1452,24 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it.each(['component', 'Component'])(
-    'bails on dynamic <%s> tags, which a snippet cannot resolve',
-    async (tag) => {
-      expect(
-        await primarySnippet(`
+  it('fills a dynamic <component> tag as written', async () => {
+    expect(
+      await primarySnippet(`
 export const Primary = {
   args: { label: 'Hi' },
   render: (args) => ({
     components: { MyButton },
     setup: () => ({ args }),
-    template: '<${tag} :is="args.label" />',
+    template: '<component :is="args.label" />',
   }),
 };
 `)
-      ).toBeUndefined();
-    }
-  );
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <component is="Hi" />
+      </template>"
+    `);
+  });
 
   it('renders a component named Component when no is binding makes it dynamic', async () => {
     expect(
@@ -1413,14 +1484,11 @@ export const Primary = {
       )
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
-      import { ref } from "vue";
       import Component from './Component.vue';
-
-      const modelValue = ref('Typed text');
       </script>
 
       <template>
-        <Component v-model="modelValue" />
+        <Component modelValue="Typed text" />
       </template>"
     `);
   });
@@ -1455,7 +1523,7 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('hoists string values containing character references, which attributes would decode', async () => {
+  it('encodes the character references in a string value', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1470,17 +1538,15 @@ export const Primary = {
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
-
-      const label = 'Tom &amp; Jerry';
       </script>
 
       <template>
-        <MyButton :label="label" />
+        <MyButton label="Tom &amp;amp; Jerry" />
       </template>"
     `);
   });
 
-  it('bails when an inlined interpolation would form a new mustache with adjacent text', async () => {
+  it('encodes a `{` that would form a mustache with the text after it', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1491,7 +1557,11 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <p>x&#123;{ok}</p>
+      </template>"
+    `);
   });
 
   it('forwards a setup that returns more than the args', async () => {

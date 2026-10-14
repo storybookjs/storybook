@@ -5,22 +5,18 @@
   "stories": {
     "forms-event-listener--primary": {
       "argCode": {
-        "formatter": "(value: string) => value.toUpperCase()",
-        "onSubmit": "(payload: { value: string }) => console.log(payload)",
+        "formatter": "((value: string) => value.toUpperCase())",
+        "onSubmit": "((payload: { value: string }) => console.log(payload))",
       },
       "description": undefined,
       "id": "forms-event-listener--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
 import EventListenerForm from './EventListenerForm.vue';
-
-const formatter = (value: string) => value.toUpperCase();
-
-const onSubmit = (payload: { value: string }) => console.log(payload);
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter" label="Send" @submit="onSubmit">
+  <EventListenerForm label="Send" :formatter="((value: string) => value.toUpperCase())" :onSubmit="((payload: { value: string }) => console.log(payload))">
     Submit now
   </EventListenerForm>
 </template>",

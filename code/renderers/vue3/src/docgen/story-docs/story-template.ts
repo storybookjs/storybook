@@ -10,7 +10,6 @@ import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
-import { isFunctionExpression } from '../shared/classify-value.ts';
 import {
   createRenderContext,
   hoistArgCode,
@@ -66,11 +65,8 @@ export function renderTemplate(
   ) {
     return undefined;
   }
-  const hoisted = new Map(
-    args
-      .filter((arg) => arg.role !== 'slot' && arg.role !== 'event')
-      .filter((arg) => arg.plan.kind === 'hoist' && !isFunctionExpression(arg.value))
-      .map((arg) => [arg.name, arg.role])
+  const hoisted = new Set(
+    args.filter((arg) => arg.role !== 'slot' && arg.plan.kind === 'hoist').map((arg) => arg.name)
   );
   const constFor = (name: string) =>
     hoisted.has(name)
@@ -103,31 +99,36 @@ export function renderTemplate(
       ctx.componentImports.add(importStatement);
     }
     for (const [index, prop] of node.props.entries()) {
-      if (prop.type !== NodeTypes.DIRECTIVE || !prop.exp) {
+      if (prop.type !== NodeTypes.DIRECTIVE) {
+        continue;
+      }
+      const arg = prop.arg as SimpleExpressionNode | undefined;
+      // A dynamic argument, as in `:[args.key]`, reads an arg where no hole can stand.
+      if (arg && !arg.isStatic && /\bargs\b/.test(arg.content)) {
+        return false;
+      }
+      if (!prop.exp) {
         continue;
       }
       const exp = prop.exp as SimpleExpressionNode;
-      const arg = prop.arg as SimpleExpressionNode | undefined;
       const { start, end } = prop.loc;
       // `v-bind="args"` passes every arg but the slots and the attributes written after it, which
-      // win; see `spreadArgs`. Vue merges a `class` or `style` arg with the element's own instead.
+      // win; see `spreadArgs`.
       if (prop.name === 'bind' && !arg && exp.content.trim() === 'args') {
         const written = node.props.map(attributeName);
         const names = (props: (string | undefined)[]) =>
-          props.flatMap((name) => (name === undefined || MERGED.has(name) ? [] : spellings(name)));
+          props.flatMap((name) => (name === undefined ? [] : spellings(name)));
         const own = [...slots, ...names(written.slice(index + 1))];
         const words = [
           ...names(written.slice(0, index)).map((name) => `^${name}`),
           ...own.map((name) => `-${name}`),
-          ...[...MERGED].flatMap((name) => mergeWord(node, name)),
         ];
         // An arg the static snippet hoists is its `const`, bound after the spread leaves it out.
         const consts = [...hoisted]
-          .filter(([name, role]) => role === 'prop' && !own.includes(name))
-          .filter(([name]) => /^[A-Za-z_][\w-]*$/.test(name) && !MERGED.has(name))
-          .filter(([name]) => !words.includes(`^${name}`))
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([name]) => [name, constFor(name)!]);
+          .filter((name) => !own.includes(name) && !words.includes(`^${name}`))
+          .filter((name) => /^[A-Za-z_][\w-]*$/.test(name))
+          .sort((a, b) => a.localeCompare(b))
+          .map((name) => [name, constFor(name)!]);
         const constWords = consts.map(([name]) => `-${name}`);
         const constAttributes = consts.map(([name, binding]) => ` :${name}="${binding}"`);
         edits.push({
@@ -230,7 +231,17 @@ function argHoles(
         ? parent.property.name
         : parent.computed && t.isStringLiteral(parent.property) && parent.property.value);
     const around = ancestors.slice(0, -1).map((ancestor) => ancestor.node);
-    const kind = isOperand(parent!, around.reverse()) ? 'operand' : 'value';
+    const [above] = around.reverse();
+    // The target of a write, as in `args.count++`, is no read and stays as written.
+    if (
+      name &&
+      (t.isAssignmentExpression(above, { left: parent }) ||
+        t.isUpdateExpression(above) ||
+        t.isUnaryExpression(above, { operator: 'delete' }))
+    ) {
+      return;
+    }
+    const kind = isOperand(parent!, around) ? 'operand' : 'value';
     if (!name) {
       holes.push(undefined);
       return;
@@ -250,8 +261,6 @@ function argHoles(
   return holes.every((edit) => edit !== undefined) ? holes : undefined;
 }
 
-const MERGED = new Set(['class', 'style']);
-
 // The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
 const spellings = (name: string) => [
   ...new Set([
@@ -260,20 +269,6 @@ const spellings = (name: string) => [
     name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
   ]),
 ];
-
-// How a spread's `class` or `style` arg merges with the element's own: as a bound attribute next to
-// a written one, `+class`, as a written one next to a bound one, `+:class`, and not at all next to
-// both, `^class`.
-function mergeWord(node: ElementNode, name: string): string[] {
-  const written = node.props.some(
-    (prop) => prop.type === NodeTypes.ATTRIBUTE && prop.name === name
-  );
-  const bound = node.props.some(
-    (prop) =>
-      prop.type === NodeTypes.DIRECTIVE && prop.name === 'bind' && attributeName(prop) === name
-  );
-  return written && bound ? [`^${name}`] : written ? [`+${name}`] : bound ? [`+:${name}`] : [];
-}
 
 function attributeName(prop: ElementNode['props'][number]): string | undefined {
   if (prop.type === NodeTypes.ATTRIBUTE) {

@@ -12,12 +12,10 @@
       "name": "Props As Written",
       "snippet": "<script lang="ts" setup>
 import IntersectionProps from './IntersectionProps.vue';
-
-const mixed = { label: 'Intersected', count: 2, extra: true };
 </script>
 
 <template>
-  <IntersectionProps :mixed="mixed" />
+  <IntersectionProps :mixed="{ label: 'Intersected', count: 2, extra: true }" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

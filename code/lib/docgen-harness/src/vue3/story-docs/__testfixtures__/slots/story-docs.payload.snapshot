@@ -15,9 +15,7 @@ import SlotsPanel from './SlotsPanel.vue';
 <template>
   <SlotsPanel :footer="42">
     Body copy
-    <template #header>
-      Header copy
-    </template>
+    <template #header>Header copy</template>
   </SlotsPanel>
 </template>",
       "summary": undefined,

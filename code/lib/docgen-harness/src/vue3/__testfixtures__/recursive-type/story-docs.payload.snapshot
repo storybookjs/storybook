@@ -15,15 +15,13 @@
       "name": "Props As Written",
       "snippet": "<script lang="ts" setup>
 import RecursiveTree from './RecursiveTree.vue';
-
-const node = {
-  value: 'root',
-  children: [{ value: 'leaf', children: [] }],
-};
 </script>
 
 <template>
-  <RecursiveTree :node="node" />
+  <RecursiveTree :node="{
+  value: 'root',
+  children: [{ value: 'leaf', children: [] }],
+}" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

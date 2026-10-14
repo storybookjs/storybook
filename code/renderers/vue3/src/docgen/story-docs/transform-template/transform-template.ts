@@ -827,17 +827,13 @@ function collectArgsReferences(expression: t.Expression): ArgsReference[] | unde
       return;
     }
 
-    if (
-      t.isAssignmentExpression(node) ||
-      t.isUpdateExpression(node) ||
-      (t.isUnaryExpression(node) && node.operator === 'delete')
-    ) {
-      invalid = true;
-      return;
-    }
-
+    // The target of a write, as in `args.count++`, is no read and stays as written.
     const reference = argsReference(node);
-    if (reference) {
+    const written =
+      t.isAssignmentExpression(parent, { left: node }) ||
+      t.isUpdateExpression(parent) ||
+      t.isUnaryExpression(parent, { operator: 'delete' });
+    if (reference && !written) {
       references.push(reference);
     }
 

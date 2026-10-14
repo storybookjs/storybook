@@ -15,9 +15,7 @@ import SlotsWithEvents from './SlotsWithEvents.vue';
 <template>
   <SlotsWithEvents title="Notice">
     Body text
-    <template #leading>
-      !
-    </template>
+    <template #leading>!</template>
   </SlotsWithEvents>
 </template>",
       "summary": undefined,

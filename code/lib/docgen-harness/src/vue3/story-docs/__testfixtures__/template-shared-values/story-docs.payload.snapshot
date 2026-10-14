@@ -107,7 +107,7 @@ import TemplateSharedValues from './TemplateSharedValues.vue';
 </script>
 
 <template>
-  <TemplateSharedValues ⟦props +class +style⟧ class="own" style="color: red" />
+  <TemplateSharedValues ⟦props -class -style⟧ class="own" style="color: red" />
 </template>",
     },
   },

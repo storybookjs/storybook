@@ -13,16 +13,10 @@
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
 import ArgsFormattingButton from './ArgsFormattingButton.vue';
-
-const items = ['one', 'two'];
-
-const options = { tone: 'neutral', compact: true };
-
-const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>
-  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" :quotationLabel="quotationLabel" />
+  <ArgsFormattingButton label="Formatted" quotationLabel="She said &quot;hi&quot; and it's fine" enabled :disabled="false" :count="3" :options="{ tone: 'neutral', compact: true }" :items="['one', 'two']" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

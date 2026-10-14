@@ -13,7 +13,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes :count="2" enabled label="Hello" />
+  <PropsBasicTypes label="Hello" :count="2" enabled />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -28,7 +28,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
       "argCode": {
         "big": "BigInt('9007199254740993')",
         "config": "{ theme: 'dark', dense: true }",
-        "formatter": "(value: number) => `#${value}`",
+        "formatter": "((value: number) => `#${value}`)",
         "tags": "['alpha', 'beta']",
         "token": "Symbol('fixture')",
       },
@@ -37,20 +37,10 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
       "name": "Unrepresentable Args",
       "snippet": "<script lang="ts" setup>
 import PropsBasicTypes from './PropsBasicTypes.vue';
-
-const big = BigInt('9007199254740993');
-
-const config = { theme: 'dark', dense: true };
-
-const formatter = (value: number) => `#${value}`;
-
-const tags = ['alpha', 'beta'];
-
-const token = Symbol('fixture');
 </script>
 
 <template>
-  <PropsBasicTypes :big="big" :config="config" :formatter="formatter" label="Formatted" :tags="tags" :token="token" />
+  <PropsBasicTypes label="Formatted" :tags="['alpha', 'beta']" :config="{ theme: 'dark', dense: true }" :formatter="((value: number) => `#${value}`)" :token="Symbol('fixture')" :big="BigInt('9007199254740993')" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

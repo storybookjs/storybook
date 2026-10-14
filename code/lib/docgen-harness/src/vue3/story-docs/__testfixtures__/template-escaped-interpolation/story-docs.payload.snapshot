@@ -13,7 +13,7 @@ import TemplateEscapedInterpolation from './TemplateEscapedInterpolation.vue';
 </script>
 
 <template>
-  <TemplateEscapedInterpolation>&lt;em&gt;1 &amp; 2&lt;/em&gt;</TemplateEscapedInterpolation>
+  <TemplateEscapedInterpolation>&lt;em>1 &amp; 2&lt;/em></TemplateEscapedInterpolation>
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

@@ -26,13 +26,19 @@ Keep it to these rules:
   never rewrites the code around it, inlines a helper or imitates what a helper or directive does.
   `render: (args) => Button(args)` fills to `Button({ label: "Go" })`. A write to an arg, such as
   `args.count++`, is no read and stays as written.
-- The static snippet is the same template filled with the args the story is written with, so the
-  snippet keeps its form when a control changes.
+- Core never runs or imitates a helper either: args a story spreads from a call, as in
+  `{ ...makeArgs('Hi') }`, cannot be read, and the snippet warns about them.
 - An arg that still holds the value the story is written with prints the code the story writes it
-  with, exactly as the static snippet prints it. An arg a control changed prints its value, which
-  is plain data. So next to `template` the provider emits `argCode`, the code the static snippet
-  prints for each arg, such as `shout`, `fn((o) => o.name)` or `new FormControl('x')`; an arg
-  written as a literal its value prints as, such as `'Go'`, may be left out.
+  with. An arg a control changed prints its value, which is plain data. So next to `template` the
+  provider emits `argCode`, which `argCode` from `storybook/internal/csf-tools` builds from the
+  story's args: the code of every arg but a plain string, number, boolean, `null` or `undefined`,
+  such as `shout`, `fn((o) => o.name)` or `new FormControl('x')`. Code that is not a simple value
+  comes in parentheses, so `max: MB * 5` read as `args.max.toFixed(0)` fills to
+  `(MB * 5).toFixed(0)`.
+- The static snippet is the same template filled with the args the story is written with, so the
+  snippet keeps its form when a control changes. `fillWithStoryArgs` from
+  `storybook/internal/csf-tools` builds it on the server with the renderer's own filler, exactly as
+  the browser fills the template while no control has changed.
 - The browser only replaces each hole with a value. All decisions are the provider's.
 
 The renderer fills the holes in the browser with the current args through
@@ -63,9 +69,11 @@ Each renderer adds holes and words of its own, which its filler documents:
 - Vue: `⟦element Card header⟧` is the component with the slots its words name as content, and a
   `script` word marks a `⟦value⟧` or `⟦operand⟧` in the `<script>`.
 - Web Components: `⟦bool⟧` and `⟦prop⟧` are lit's `?name` and `.name` bindings, and a `⟦props⟧`
-  word such as `.items=items` names what each arg sets, with `^arg` for one the element writes
-  itself.
+  word such as `.items=items` names what each arg sets.
 - Angular: `⟦value label⟧` is the value of a host component field.
+
+In any `⟦props⟧` hole a `-name` word leaves an arg out, and a `^name` word names an arg the snippet
+cannot show while it is set, such as one an attribute written before the spread would lose to.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static

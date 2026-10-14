@@ -399,303 +399,74 @@ describe('write order', () => {
   });
 });
 
-const selfContained = (node: t.Node) => (isSelfContained(node) ? node : undefined);
-
-const storyMembers = (ctx: ReferenceContext, storyName: string) => {
-  const story = resolveBindingMembers(ctx, storyName);
-  return (
-    story && {
-      properties: Object.fromEntries(
-        Object.entries(story.properties).map(([key, node]) => [key, sourceOf(node)])
-      ),
-      unresolved: story.unresolved,
-    }
-  );
-};
-
 describe('spreads of a call', () => {
-  it('reads the object a local function returns, with its parameters bound to the arguments', () => {
+  it('reports a spread of what a helper returns, as the helper is not run', () => {
     const code = dedent`
-      const createStory = (variant, size = 'md') => ({
-        args: { variant, size, label: 'Go' },
-        render: (args) => args.label,
-      });
-      export const Primary = { ...createStory('primary'), parameters: { a: 1 } };
+      const createStory = (variant) => ({ args: { variant, label: 'Go' } });
+      export const Primary = { ...createStory('primary'), args: { size: 'md' } };
+      export const Declared = createStory('primary');
     `;
-    expect(storyMembers(contextOf({ 'entry.ts': code }), 'Primary')).toEqual({
-      properties: {
-        args: "{ variant: 'primary', size: 'md', label: 'Go' }",
-        render: 'args => args.label',
-        parameters: '{ a: 1 }',
-      },
-      unresolved: [],
+    expect(argsOf(code, 'Primary')).toEqual({
+      args: { size: "'md'" },
+      unresolved: ["...createStory('primary')"],
     });
+    expect(argsOf(code, 'Declared').unresolved).toEqual(["createStory('primary')"]);
   });
+});
 
-  it('reads a function declaration, and a story declared from a call', () => {
-    const code = dedent`
-      export const Primary = createStory('primary');
-      function createStory(variant) { return { args: { variant } }; }
-    `;
-    expect(argsOf(code, 'Primary')).toEqual({ args: { variant: "'primary'" }, unresolved: [] });
-  });
-
-  it('follows the constants of the body and the choices the arguments decide', () => {
-    const code = dedent`
-      const hideAllControls = (onlyControls?: boolean) => {
-        const controls = { controls: { disable: true } };
-        return onlyControls ? controls : { parameters: { ...controls } };
-      };
-      export const Hidden = { ...hideAllControls(), args: { label: 'x' } };
-      export const Only = { ...hideAllControls(true) };
-    `;
-    const ctx = contextOf({ 'entry.ts': code });
-    expect(storyMembers(ctx, 'Hidden')).toEqual({
-      properties: {
-        parameters: '{ ...{ controls: { disable: true } } }',
-        args: "{ label: 'x' }",
-      },
-      unresolved: [],
-    });
-    expect(storyMembers(ctx, 'Only')?.properties).toEqual({ controls: '{ disable: true }' });
-  });
-
-  it('reads a function another module exports, keeping an argument the call writes', () => {
-    const ctx = contextOf(
-      {
-        'utils.ts': dedent`
-        const describeStory = (description, only?: boolean) => {
-          const docs = { docs: { description: { story: description } } };
-          return only ? docs : { parameters: { ...docs } };
-        };
-        export { describeStory };
-      `,
-        'entry.ts': dedent`
-        import { describeStory } from './utils';
-        export const Described = { args: { label: 'x' }, ...describeStory(html\`<p>Hi</p>\`) };
-      `,
-      },
-      'entry.ts',
-      selfContained
-    );
-    expect(storyMembers(ctx, 'Described')).toEqual({
-      properties: {
-        args: "{ label: 'x' }",
-        parameters: '{ ...{ docs: { description: { story: html`<p>Hi</p>` } } } }',
-      },
-      unresolved: [],
-    });
-  });
-
-  it("rejects a function another module exports whose object reads that module's names", () => {
-    const ctx = contextOf(
-      {
-        'utils.ts': dedent`
-        import { Button } from './button';
-        export const withButton = () => ({ args: { icon: Button } });
-      `,
-        'entry.ts': dedent`
-        import { withButton } from './utils';
-        export const Story = { ...withButton() };
-      `,
-      },
-      'entry.ts',
-      selfContained
-    );
-    expect(storyMembers(ctx, 'Story')?.unresolved).toEqual(['...withButton()']);
-  });
-
-  it('reads what a function another module exports spreads from the call in the calling file', () => {
-    const ctx = contextOf(
-      {
-        'helpers.ts': dedent`
-        const Primary = { args: { label: 'helpers' } };
-        const make = () => ({ args: { label: 'helpers' } });
-        export const withLayout = (story) => ({ ...story, parameters: { layout: 'centered' } });
-        export const wrap = (fn) => ({ ...fn() });
-      `,
-        'entry.ts': dedent`
-        import { withLayout, wrap } from './helpers';
-        const Primary = { args: { label: 'entry' } };
-        const make = () => ({ args: { label: 'entry' } });
-        export const Spread = { ...withLayout(Primary) };
-        export const Called = { ...wrap(make) };
-      `,
-      },
-      'entry.ts',
-      selfContained
-    );
-    expect(argsOf('', 'Spread', ctx)).toEqual({ args: { label: "'entry'" }, unresolved: [] });
-    expect(argsOf('', 'Called', ctx)).toEqual({ args: { label: "'entry'" }, unresolved: [] });
-  });
-
-  it('reports a spread in a function another module exports that mixes its names with the call', () => {
-    const ctx = contextOf(
-      {
-        'helpers.ts': dedent`
-        const withDocs = (story) => ({ ...story });
-        export const withLayout = (story) => ({ ...withDocs(story) });
-      `,
-        'entry.ts': dedent`
-        import { withLayout } from './helpers';
-        const Primary = { args: { label: 'entry' } };
-        export const S = { ...withLayout(Primary) };
-      `,
-      },
-      'entry.ts',
-      selfContained
-    );
-    expect(storyMembers(ctx, 'S')?.unresolved).toEqual(['...withLayout(Primary)']);
-  });
-
-  it('reads what a local function spreads as of the call', () => {
-    const code = dedent`
-      const withLayout = (story) => ({ ...story, parameters: {} });
-      const Base = { args: { label: 'declared' } };
-      Base.args = { label: 'assigned' };
-      export const S = { ...withLayout(Base) };
-    `;
-    expect(argsOf(code, 'S')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
-  });
-
-  it('binds the arguments after a TypeScript this parameter', () => {
-    const code = dedent`
-      function make(this: void, label: string, size = 'md') { return { args: { label, size } }; }
-      export const S = { ...make('Go', 'lg') };
-    `;
-    expect(argsOf(code, 'S')).toEqual({ args: { label: "'Go'", size: "'lg'" }, unresolved: [] });
-  });
-
-  it.each([
-    ['constants that read each other', 'const a = b; const b = a; return a;'],
-    ['a constant that reads itself', 'const a = a; return a;'],
-    ['a choice on such constants', 'const a = b; const b = a; return a ? { args: {} } : {};'],
-  ])('reports a spread of a function with %s', (_, body) => {
-    const code = `const make = () => { ${body} }; export const S = { ...make() };`;
-    expect(storyMembers(contextOf({ 'entry.ts': code }), 'S')?.unresolved).toEqual(['...make()']);
-  });
-
-  it.each([
-    ['re-exports', `export { make } from './b';`, `export { make } from './a';`],
-    [
-      'imports it re-exports',
-      `import { make } from './b'; export { make };`,
-      `import { make } from './a'; export { make };`,
-    ],
-    [
-      'default exports',
-      `import make from './b'; export default make;`,
-      `import make from './a'; export default make;`,
-    ],
-  ])('reports a spread of a function whose %s lead back to themselves', (_, a, b) => {
-    const ctx = contextOf({
-      'a.ts': a,
-      'b.ts': b,
-      'entry.ts': `import make, { make as named } from './a'; export const S = { ...make(), ...named() };`,
-    });
-    expect(storyMembers(ctx, 'S')?.unresolved).toEqual(['...make()', '...named()']);
-  });
-
-  describe('an import from a module with export *', () => {
-    const helpers = (label: string) =>
-      `export const make = () => ({ args: { label: '${label}' } });`;
-    const labelOf = (files: Record<string, string>) =>
-      argsOf(
-        '',
-        'S',
-        contextOf({
-          ...files,
-          'entry.ts': `import { make } from './a'; export const S = { ...make() };`,
-        })
-      );
-
-    it('reads the module it re-exports from, past a local the module does not export', () => {
-      expect(
-        labelOf({
-          'a.ts': `const make = () => ({ args: { label: 'local' } }); export * from './b';`,
-          'b.ts': helpers('star'),
-        })
-      ).toEqual({ args: { label: "'star'" }, unresolved: [] });
-    });
-
-    it('reads an export of the module itself over one it re-exports', () => {
-      expect(
-        labelOf({
-          'a.ts': `export * from './b'; export const make = () => ({ args: { label: 'own' } });`,
-          'b.ts': helpers('star'),
-        })
-      ).toEqual({ args: { label: "'own'" }, unresolved: [] });
-    });
-
-    it('reports a name two modules it re-exports both export', () => {
-      expect(
-        labelOf({
-          'a.ts': `export * from './b'; export * from './c';`,
-          'b.ts': helpers('b'),
-          'c.ts': helpers('c'),
-        })
-      ).toEqual({ args: {}, unresolved: ['...make()'] });
-    });
-
-    it('reads a value through it the same way', () => {
-      const ctx = contextOf({
-        'a.ts': `const base = { args: { label: 'local' } }; export * from './b';`,
-        'b.ts': `export const base = { args: { label: 'star' } };`,
+describe('an import from a module with export *', () => {
+  const labelOf = (files: Record<string, string>) =>
+    argsOf(
+      '',
+      'S',
+      contextOf({
+        ...files,
         'entry.ts': `import { base } from './a'; export const S = { ...base };`,
-      });
-      expect(argsOf('', 'S', ctx)).toEqual({ args: { label: "'star'" }, unresolved: [] });
-    });
+      })
+    );
+  const exported = (label: string) => `export const base = { args: { label: '${label}' } };`;
+
+  it('reads the module it re-exports from, past a local the module does not export', () => {
+    expect(
+      labelOf({
+        'a.ts': `const base = { args: { label: 'local' } }; export * from './b';`,
+        'b.ts': exported('star'),
+      })
+    ).toEqual({ args: { label: "'star'" }, unresolved: [] });
   });
 
-  it('reports a spread of a value whose re-exports lead back to themselves', () => {
-    const ctx = contextOf({
-      'a.ts': `export { base } from './b';`,
-      'b.ts': `export { base } from './a';`,
-      'entry.ts': `import { base } from './a'; export const S = { ...base };`,
-    });
-    expect(storyMembers(ctx, 'S')?.unresolved).toEqual(['...base']);
+  it('reads an export of the module itself over one it re-exports', () => {
+    expect(
+      labelOf({ 'a.ts': `export * from './b'; ${exported('own')}`, 'b.ts': exported('star') })
+    ).toEqual({ args: { label: "'own'" }, unresolved: [] });
   });
 
-  it.each([
-    ['a function no module declares', 'export const S = { ...unknown() };'],
-    [
-      'a function with a statement besides constants and the return',
-      dedent`
-        const make = () => { log(); return { args: {} }; };
-        export const S = { ...make() };
-      `,
-    ],
-    [
-      'a choice an argument that is not a literal decides',
-      dedent`
-        const make = (on) => (on ? { args: {} } : { render: () => 1 });
-        export const S = { ...make(flag) };
-      `,
-    ],
-    [
-      'a spread argument',
-      dedent`
-        const make = (a) => ({ args: { a } });
-        export const S = { ...make(...list) };
-      `,
-    ],
-    [
-      'a function declared after the spread runs',
-      dedent`
-        export const S = { ...make() };
-        const make = () => ({ args: {} });
-      `,
-    ],
-    [
-      'a function returning something other than an object literal',
-      dedent`
-        const make = () => base;
-        export const S = { ...make() };
-      `,
-    ],
-  ])('reports a spread of %s', (_, code) => {
-    expect(storyMembers(contextOf({ 'entry.ts': code }), 'S')?.unresolved).toHaveLength(1);
+  it('reports a name two modules it re-exports both export', () => {
+    expect(
+      labelOf({
+        'a.ts': `export * from './b'; export * from './c';`,
+        'b.ts': exported('b'),
+        'c.ts': exported('c'),
+      })
+    ).toEqual({ args: {}, unresolved: ['...base'] });
   });
+});
+
+it.each([
+  ['re-exports', `export { base } from './b';`, `export { base } from './a';`],
+  [
+    'imports it re-exports',
+    `import { base } from './b'; export { base };`,
+    `import { base } from './a'; export { base };`,
+  ],
+  ['star exports', `export * from './b';`, `export * from './a';`],
+])('reports a spread of a value whose %s lead back to themselves', (_, a, b) => {
+  const ctx = contextOf({
+    'a.ts': a,
+    'b.ts': b,
+    'entry.ts': `import { base } from './a'; export const S = { ...base };`,
+  });
+  expect(resolveBindingMembers(ctx, 'S')?.unresolved).toEqual(['...base']);
 });
 
 describe('story initializers', () => {

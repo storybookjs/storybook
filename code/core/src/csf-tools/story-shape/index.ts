@@ -4,6 +4,7 @@ export {
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';
+export { argCode, fillWithStoryArgs } from './arg-code.ts';
 export { authoredSource, type AuthoredSource } from './authored-source.ts';
 export {
   collectImportBindings,

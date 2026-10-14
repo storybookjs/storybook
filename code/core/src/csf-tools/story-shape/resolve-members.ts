@@ -3,8 +3,6 @@
 import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 
 import { importedName, isTypeSpecifier } from './imports.ts';
-import { isSelfContained } from './resolve-arg-value.ts';
-import { returnedObject } from './returned-object.ts';
 import {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
@@ -182,16 +180,10 @@ export const resolveReferencedValue = (
   return undefined;
 };
 
-/** Where a spread is read: the module its names resolve in, and as of which position there. */
-type SpreadScope = (
-  spread: t.SpreadElement
-) => { ctx: ReferenceContext; position: number | undefined } | undefined;
-
 const membersOf = (
   object: t.ObjectExpression,
   ctx: ReferenceContext,
-  visited: Set<string>,
-  scopeOf: SpreadScope = (spread) => ({ ctx, position: spread.start ?? undefined })
+  visited: Set<string>
 ): ResolvedMembers => {
   const properties: Record<string, t.Node> = {};
   const unresolved: string[] = [];
@@ -208,8 +200,7 @@ const membersOf = (
 
   for (const property of object.properties) {
     if (t.isSpreadElement(property)) {
-      const scope = scopeOf(property);
-      const spread = scope && spreadMembers(scope.ctx, property, scope.position, visited);
+      const spread = spreadMembers(ctx, property, visited);
       if (spread === undefined || spread.unresolved.length > 0) {
         shadowKnownMembers(sourceOf(property));
         continue;
@@ -244,199 +235,16 @@ const membersOf = (
   return { properties, shadowed: [...shadowed], unresolved };
 };
 
-/** The object a spread copies from, whether it is written out, named or returned by a call. */
+/** The object a spread copies from, whether it is written out or named. */
 const spreadMembers = (
   ctx: ReferenceContext,
   spread: t.SpreadElement,
-  position: number | undefined,
   visited: Set<string>
 ): ResolvedMembers | undefined => {
   const argument = unwrapExpression(spread.argument);
-  if (t.isObjectExpression(argument)) {
-    return membersOf(argument, ctx, visited);
-  }
-  return t.isCallExpression(argument)
-    ? callMembers(ctx, argument, position, visited)
-    : resolveReference(ctx, argument, position, visited);
-};
-
-/**
- * Members of the object a call to a function returns, for a function {@link returnedObject} can
- * read; `undefined` for any other call.
- */
-const callMembers = (
-  ctx: ReferenceContext,
-  call: t.CallExpression,
-  position: number | undefined,
-  visited: Set<string>
-): ResolvedMembers | undefined => {
-  if (!t.isIdentifier(call.callee)) {
-    return undefined;
-  }
-  const key = `call:${ctx.filePath}#${call.callee.name}`;
-  if (visited.has(key)) {
-    return undefined;
-  }
-  visited.add(key);
-  try {
-    const fn = functionBinding(ctx, call.callee.name, position, new Set());
-    const returned = fn && returnedObject(fn.path, call.arguments);
-    if (!fn || !returned) {
-      return undefined;
-    }
-    // The function runs when it is called, so what it spreads is read as of the call.
-    if (!fn.external) {
-      return membersOf(returned.object, ctx, visited, () => ({ ctx, position }));
-    }
-    // What the function spreads is read in its own module, but what the call passes it is read
-    // where the call is written; a spread that mixes the two has no one scope to be read in.
-    const passed = new Set<t.Node>(call.arguments);
-    const standIns = new Map(
-      returned.object.properties.map((property, index) => [
-        property,
-        returned.standIn.properties[index] as t.SpreadElement,
-      ])
-    );
-    const inModule = () => ({ ctx: fn.ctx, position: undefined });
-    const members = membersOf(returned.object, fn.ctx, visited, (spread) => {
-      if (isSelfContained(standIns.get(spread)!.argument)) {
-        return { ctx, position };
-      }
-      return holdsAny(spread.argument, passed) ? undefined : inModule();
-    });
-    return returned.leftOut
-      ? externalizedCall(members, membersOf(returned.standIn, fn.ctx, visited, inModule), fn.ctx)
-      : externalized(members, fn.ctx);
-  } finally {
-    visited.delete(key);
-  }
-};
-
-const holdsAny = (node: t.Node, nodes: Set<t.Node>): boolean =>
-  nodes.has(node) ||
-  (t.VISITOR_KEYS[node.type] ?? []).some((key) => {
-    const child = (node as unknown as Record<string, unknown>)[key];
-    return (Array.isArray(child) ? child : [child]).some(
-      (item) => t.isNode(item) && holdsAny(item, nodes)
-    );
-  });
-
-/**
- * {@link externalized} for what a call to another module returns. That module's code has to stand
- * on its own, but the arguments the call passes are written where the call is, so a value holding
- * one is checked as `standIn` holds it, without them, and kept as the call writes it.
- */
-const externalizedCall = (
-  members: ResolvedMembers,
-  standIn: ResolvedMembers,
-  ctx: ReferenceContext
-): ResolvedMembers | undefined => {
-  const checked = externalized(standIn, ctx);
-  if (!checked) {
-    return undefined;
-  }
-  // A value the check rewrote cannot also keep the arguments the stand-in left out.
-  const rewritten = Object.keys(checked.properties).some(
-    (key) => checked.properties[key] !== standIn.properties[key]
-  );
-  return rewritten ? undefined : members;
-};
-
-/**
- * The function a module-level name is bound to, following an import to the module declaring it.
- * `followed` holds the exports already followed, so imports that lead back to one read nothing.
- */
-const functionBinding = (
-  ctx: ReferenceContext,
-  name: string,
-  position: number | undefined,
-  followed: Set<string>
-): { path: NodePath<t.Function>; ctx: ReferenceContext; external: boolean } | undefined => {
-  const binding = ctx.program.scope.getBinding(name);
-  if (!binding) {
-    return undefined;
-  }
-  if (binding.kind === 'module') {
-    const specifier = binding.path.node;
-    const declaration = binding.path.parent;
-    if (
-      !t.isImportDeclaration(declaration) ||
-      declaration.importKind === 'type' ||
-      !(t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) ||
-      isTypeSpecifier(specifier)
-    ) {
-      return undefined;
-    }
-    const target = resolveTargetModule(ctx, declaration.source.value);
-    const exportName = t.isImportDefaultSpecifier(specifier)
-      ? 'default'
-      : importedName(specifier.imported);
-    const exported = target && exportedFunction(target, exportName, followed);
-    return exported && { ...exported, external: true };
-  }
-  if (!binding.constant) {
-    return undefined;
-  }
-  if (binding.path.isFunctionDeclaration()) {
-    return { path: binding.path, ctx, external: false };
-  }
-  if (
-    !binding.path.isVariableDeclarator() ||
-    (position !== undefined && (binding.path.node.start ?? Number.POSITIVE_INFINITY) > position)
-  ) {
-    return undefined;
-  }
-  const init = binding.path.get('init');
-  return init.isArrowFunctionExpression() || init.isFunctionExpression()
-    ? { path: init, ctx, external: false }
-    : undefined;
-};
-
-/** The function a module's export name reaches, following a re-export to the module that owns it. */
-const exportedFunction = (
-  ctx: ReferenceContext,
-  exportName: string,
-  followed: Set<string>
-): { path: NodePath<t.Function>; ctx: ReferenceContext } | undefined => {
-  const key = `${ctx.filePath}#${exportName}`;
-  if (followed.has(key)) {
-    return undefined;
-  }
-  followed.add(key);
-  for (const statement of ctx.program.get('body')) {
-    if (statement.isExportDefaultDeclaration() && exportName === 'default') {
-      const declaration = statement.get('declaration');
-      if (declaration.isFunctionDeclaration() || declaration.isArrowFunctionExpression()) {
-        return { path: declaration, ctx };
-      }
-      return declaration.isIdentifier()
-        ? functionBinding(ctx, declaration.node.name, undefined, followed)
-        : undefined;
-    }
-    if (!statement.isExportNamedDeclaration() || statement.node.exportKind === 'type') {
-      continue;
-    }
-    const specifier = statement.node.specifiers.find(
-      (candidate): candidate is t.ExportSpecifier =>
-        t.isExportSpecifier(candidate) && importedName(candidate.exported) === exportName
-    );
-    if (!specifier) {
-      continue;
-    }
-    if (!statement.node.source) {
-      return functionBinding(ctx, specifier.local.name, undefined, followed);
-    }
-    const target = resolveTargetModule(ctx, statement.node.source.value);
-    return target ? exportedFunction(target, specifier.local.name, followed) : undefined;
-  }
-  if (exportName === 'default') {
-    return undefined;
-  }
-  if (declaresExport(ctx, exportName)) {
-    return functionBinding(ctx, exportName, undefined, followed);
-  }
-  const star = starExport(ctx, exportName);
-  return star && exportedFunction(star, exportName, followed);
+  return t.isObjectExpression(argument)
+    ? membersOf(argument, ctx, visited)
+    : resolveReference(ctx, argument, spread.start ?? undefined, visited);
 };
 
 /** Whether a module exports a declaration of its own under `name`, as `export const name = …`. */
@@ -780,11 +588,8 @@ const declaredMembers = (
     }
   }
   if (factory === undefined) {
-    const called = t.isCallExpression(unwrapped)
-      ? callMembers(ctx, unwrapped, position, visited)
-      : undefined;
     return {
-      members: called ?? { properties: {}, shadowed: [], unresolved: [sourceOf(unwrapped)] },
+      members: { properties: {}, shadowed: [], unresolved: [sourceOf(unwrapped)] },
     };
   }
 

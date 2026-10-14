@@ -1294,20 +1294,18 @@ test('template: a story that writes to its args has a hole at each read', () => 
   `);
 });
 
-test('template: a render behind a spread of a story or a helper call', () => {
+test('template: a render behind a spread of a story, but not of a helper call', () => {
   const input = withCSF3(dedent`
     const createStory = (label) => ({ args: { label }, render: (args) => <Button {...args} /> });
-    const hideAllControls = () => ({ parameters: { controls: { disable: true } } });
+    export const Base: Story = { render: (args) => <Button {...args} /> };
+    export const Copied: Story = { ...Base, args: { label: 'Copy' } };
     export const Made: Story = { ...createStory('Go'), args: { primary: true } };
-    export const Copied: Story = { ...Made, args: { label: 'Copy' } };
-    export const Hidden: Story = { render: (args) => <Button {...args} />, ...hideAllControls() };
   `);
-  for (const story of ['Made', 'Copied', 'Hidden']) {
-    expect(template(input, story)).toBe(`const ${story} = () => ⟦element Button⟧;`);
-  }
+  expect(template(input, 'Copied')).toBe(`const Copied = () => ⟦element Button⟧;`);
+  expect(template(input, 'Made')).toBeUndefined();
   expect(
     getCodeSnippet(loadCsf(input, { makeTitle: () => 'T' }).parse(), 'Made', 'Button').unresolved
-  ).toEqual([]);
+  ).toEqual(["...createStory('Go')"]);
 });
 
 test('template: an arg named with a space is one word', () => {

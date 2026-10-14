@@ -25,17 +25,17 @@ export interface StoryDoc {
   snippet?: string;
   /**
    * The story's code with a hole, `⟦kind word…⟧`, wherever it reads an arg, such as
-   * `<Button⟦props⟧ />`; see `FillSnippetTemplate`. Once the args differ from the story's initial
+   * `<Button ⟦attr label label⟧ />`; see `FillSnippetTemplate`. Once the args differ from the story's initial
    * args, the preview fills it through the renderer's `parameters.docs.source.fillTemplate`, so the
    * snippet follows the controls. Set only when every arg read is a hole.
    */
   template?: string;
   /**
-   * The code the static snippet prints for each arg it writes as code, such as `shout`,
-   * `fn((o) => o.name)` or `new Date('2024-01-01')`. The preview fills an arg that still holds the
-   * value the story is written with as this code, so the filled snippet keeps it as written; an arg
-   * a control changed prints its value. An arg written as a literal its value prints as, such as
-   * `'Go'`, may be left out.
+   * The code the story writes each arg with, such as `shout`, `fn((o) => o.name)` or `(MB * 5)`,
+   * from `argCode` in `storybook/internal/csf-tools`: every arg but a plain string, number,
+   * boolean, `null` or `undefined`. The preview fills an arg that still holds the value the story is
+   * written with as this code, so the filled snippet keeps it as written; an arg a control changed
+   * prints its value.
    */
   argCode?: Record<string, string>;
   /**

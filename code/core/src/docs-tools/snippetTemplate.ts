@@ -7,7 +7,8 @@ import type { Args } from 'storybook/internal/types';
  * story-docs provider writes the holes, as it knows what each arg reference is, and the renderer's
  * filler prints each one with the current args:
  *
- * - `⟦props …⟧`: the args a spread passes, as attributes; see {@link spreadArgs}.
+ * - `⟦props …⟧`: the args a spread passes, as attributes, but those its `-name` words name. The
+ *   snippet cannot show the arg of a `^name` word while it is set; see {@link spreadArgs}.
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
@@ -27,11 +28,10 @@ import type { Args } from 'storybook/internal/types';
  *   `⟦value⟧` or `⟦operand⟧` marks a hole in the `<script>`.
  * - Web Components: `⟦bool name arg⟧` and `⟦prop name arg⟧` are lit's `?name` and `.name`
  *   bindings, `⟦quoted arg⟧` is the arg inside a quoted attribute value, `⟦raw arg⟧` the text of a
- *   `<style>` or `<script>`, and `⟦style tag …⟧` the `<style>` of part, state and CSS property
- *   args. `⟦props⟧` words name the attribute, property or CSS property each arg sets, with `~name`
- *   for a field's attribute and `^arg` for one the element writes itself; a `!spread`,
- *   `!spreadProps` or `!toolkit` word prints them as that helper sets them, `*` passes every other
- *   arg and `-arg` leaves one out. `⟦args -name…⟧` is the args as an object, as React has it.
+ *   `<style>` or `<script>`, and `⟦style tag …⟧` the `<style>` of part and state args. `⟦props⟧`
+ *   words name the attribute, property or CSS property each arg sets, with `~name` for a field's
+ *   attribute; `*` sets every other arg as a property. `⟦args -name…⟧` is the args as an object,
+ *   as React has it.
  * - Angular: `⟦value arg⟧` is the value of a host component field.
  *
  * The template keeps the code around a hole as written, including the whitespace before it. An
@@ -77,8 +77,8 @@ const writtenCode = (value: unknown): string | undefined =>
 
 /**
  * Whether an arg is a spy from `fn()` or a handler from `action()`, which a filled snippet leaves
- * out, as no control changes it. Any other function has no literal, so a filler throws
- * {@link UnprintableArgError} for it.
+ * out. One the story writes comes as a {@link writtenArg} instead, so this is one Storybook adds, as
+ * `argTypesRegex` does.
  */
 export const isAction = (value: unknown) =>
   typeof value === 'function' && ('getMockName' in value || 'isAction' in value);
@@ -128,10 +128,12 @@ export const fillHoles = (template: string, fill: (kind: string, words: string[]
 const ATTRIBUTE_HOLES = new Set(['props', 'attr', 'bool', 'prop']);
 
 /**
- * A printed literal in parentheses where code reading on would read it differently, as `5.x`,
- * `--1`, `{ a: 1 }` as an arrow body or `() => {}()`.
+ * A printed value in parentheses where code reading on would read it differently, as `5.x`,
+ * `--1`, `{ a: 1 }` as an arrow body or `() => {}()`. Code from `argCode` that needs them already
+ * has them, so `(MB * 5)` is left as it is.
  */
-export const asOperand = (printed: string) => (/^[-\d{(]/.test(printed) ? `(${printed})` : printed);
+export const asOperand = (printed: string) =>
+  /^(?:[-\d{]|\(\))/.test(printed) ? `(${printed})` : printed;
 
 /**
  * The args a `⟦props …⟧` spread passes: every arg but those its `-name` words name, which the

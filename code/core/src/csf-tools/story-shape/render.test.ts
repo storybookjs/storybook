@@ -166,49 +166,12 @@ describe('resolveRenderFunction through a spread', () => {
     ).toBe(`() => 'base'`);
   });
 
-  it('reads the render of the object a helper returns', () => {
-    expect(
-      printedBody(
-        resolveStoryRenderThroughSpreads(`
-          const createStory = (variant) => ({ args: { variant }, render: () => 'made' });
-          export const A = { ...createStory('primary'), args: { label: 'a' } };
-        `)
-      )
-    ).toBe(`() => 'made'`);
-  });
-
-  it('keeps a render written before a helper that returns none', () => {
-    expect(
-      printedBody(
-        resolveStoryRenderThroughSpreads(`
-          const hideAllControls = () => ({ parameters: { controls: { disable: true } } });
-          export const A = { render: () => 'own', ...hideAllControls() };
-        `)
-      )
-    ).toBe(`() => 'own'`);
-  });
-
-  it('reports no render when a helper returns none, so the meta render applies', () => {
+  it('reports a spread of what a helper returns as unresolved, as the helper is not run', () => {
     expect(
       resolveStoryRenderThroughSpreads(`
-        const hideAllControls = () => ({ parameters: { controls: { disable: true } } });
-        export const A = { ...hideAllControls(), args: {} };
+        const createStory = (variant) => ({ args: { variant }, render: () => 'made' });
+        export const A = { ...createStory('primary'), args: { label: 'a' } };
       `)
-    ).toEqual({ kind: 'missing' });
-  });
-
-  it('reports a render that reads the parameters of its helper as unresolved', () => {
-    expect(
-      resolveStoryRenderThroughSpreads(`
-        const createStory = (variant) => ({ render: () => variant });
-        export const A = { ...createStory('primary') };
-      `)
-    ).toEqual({ kind: 'unresolved' });
-  });
-
-  it('reports a spread of a call it cannot read as unresolved', () => {
-    expect(
-      resolveStoryRenderThroughSpreads(`export const A = { ...createStory('primary') };`)
     ).toEqual({ kind: 'unresolved' });
   });
 });

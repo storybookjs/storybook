@@ -262,7 +262,7 @@ function allocateBindingName(name: string, ctx: RenderContext): string {
 }
 
 /** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
-function quoteAttributeValue(value: string): string | undefined {
+export function quoteAttributeValue(value: string): string | undefined {
   // Attribute values are entity-decoded on re-parse, so an `&` would come back as a different
   // string than the story set. Text content escapes instead; an attribute has to hoist.
   if (value.includes('&')) {

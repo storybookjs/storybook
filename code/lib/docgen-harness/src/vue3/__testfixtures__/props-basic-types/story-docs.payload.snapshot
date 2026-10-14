@@ -13,7 +13,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes label="Hello" :count="2" enabled />
+  <PropsBasicTypes :count="2" enabled label="Hello" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -21,7 +21,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  ⟦element PropsBasicTypes⟧
+  <PropsBasicTypes ⟦props⟧⟦slots PropsBasicTypes⟧
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
@@ -37,18 +37,38 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
       "name": "Unrepresentable Args",
       "snippet": "<script lang="ts" setup>
 import PropsBasicTypes from './PropsBasicTypes.vue';
+
+const big = BigInt('9007199254740993');
+
+const config = { theme: 'dark', dense: true };
+
+const formatter = ((value: number) => `#${value}`);
+
+const tags = ['alpha', 'beta'];
+
+const token = Symbol('fixture');
 </script>
 
 <template>
-  <PropsBasicTypes label="Formatted" :tags="['alpha', 'beta']" :config="{ theme: 'dark', dense: true }" :formatter="((value: number) => `#${value}`)" :token="Symbol('fixture')" :big="BigInt('9007199254740993')" />
+  <PropsBasicTypes label="Formatted" :big="big" :config="config" :formatter="formatter" :tags="tags" :token="token" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import PropsBasicTypes from './PropsBasicTypes.vue';
+
+const big = ⟦value big script⟧;
+
+const config = ⟦value config script⟧;
+
+const formatter = ⟦value formatter script⟧;
+
+const tags = ⟦value tags script⟧;
+
+const token = ⟦value token script⟧;
 </script>
 
 <template>
-  ⟦element PropsBasicTypes⟧
+  <PropsBasicTypes ⟦props -big -config -formatter -tags -token⟧ :big="big" :config="config" :formatter="formatter" :tags="tags" :token="token"⟦slots PropsBasicTypes⟧
 </template>",
     },
   },

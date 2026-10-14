@@ -21,7 +21,7 @@ import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';
 </script>
 
 <template>
-  ⟦element RuntimeMultiConstructor⟧
+  <RuntimeMultiConstructor ⟦props⟧⟦slots RuntimeMultiConstructor⟧
 </template>",
     },
   },

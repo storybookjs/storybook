@@ -22,7 +22,9 @@ import OptionsApiSlots from './OptionsApiSlots.vue';
 <template>
   <OptionsApiSlots heading="Entries">
     Plain text content
-    <template #header>Header text</template>
+    <template #header>
+      Header text
+    </template>
   </OptionsApiSlots>
 </template>",
       "summary": undefined,
@@ -31,7 +33,7 @@ import OptionsApiSlots from './OptionsApiSlots.vue';
 </script>
 
 <template>
-  ⟦element OptionsApiSlots default header item⟧
+  <OptionsApiSlots ⟦props -default -header -item⟧⟦slots OptionsApiSlots default header item⟧
 </template>",
     },
   },

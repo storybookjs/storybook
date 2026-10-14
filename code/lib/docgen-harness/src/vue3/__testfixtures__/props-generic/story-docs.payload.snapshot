@@ -12,18 +12,22 @@
       "name": "Props As Written",
       "snippet": "<script lang="ts" setup>
 import PropsGeneric from './PropsGeneric.vue';
+
+const items = ['alpha', 'beta'];
 </script>
 
 <template>
-  <PropsGeneric :items="['alpha', 'beta']" selected="alpha" />
+  <PropsGeneric selected="alpha" :items="items" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import PropsGeneric from './PropsGeneric.vue';
+
+const items = ⟦value items script⟧;
 </script>
 
 <template>
-  ⟦element PropsGeneric⟧
+  <PropsGeneric ⟦props -items⟧ :items="items"⟦slots PropsGeneric⟧
 </template>",
     },
   },

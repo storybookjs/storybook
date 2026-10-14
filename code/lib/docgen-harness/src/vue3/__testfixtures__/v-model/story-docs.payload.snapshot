@@ -9,19 +9,29 @@
       "id": "forms-v-model--v-model-binding",
       "name": "V Model Binding",
       "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
 import VModelInput from './VModelInput.vue';
+
+const checked = ref(true);
+
+const modelValue = ref('typed text');
 </script>
 
 <template>
-  <VModelInput modelValue="typed text" checked />
+  <VModelInput v-model:checked="checked" v-model="modelValue" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
+import { ref } from "vue";
 import VModelInput from './VModelInput.vue';
+
+const checked = ref(⟦value checked script⟧);
+
+const modelValue = ref(⟦value modelValue script⟧);
 </script>
 
 <template>
-  ⟦element VModelInput⟧
+  <VModelInput ⟦props -checked -modelValue⟧ v-model:checked="checked" v-model="modelValue"⟦slots VModelInput⟧
 </template>",
     },
   },

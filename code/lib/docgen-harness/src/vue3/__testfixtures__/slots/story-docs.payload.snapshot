@@ -30,7 +30,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  ⟦element SlotsShowcase default header item⟧
+  <SlotsShowcase ⟦props -default -header -item⟧⟦slots SlotsShowcase default header item⟧
 </template>",
     },
     "forms-slots--v-node-child": {

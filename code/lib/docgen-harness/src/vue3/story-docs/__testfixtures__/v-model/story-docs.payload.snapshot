@@ -9,19 +9,29 @@
       "id": "forms-v-model--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
 import ModelToggle from './ModelToggle.vue';
+
+const checked = ref(true);
+
+const modelValue = ref('Accepted');
 </script>
 
 <template>
-  <ModelToggle modelValue="Accepted" checked />
+  <ModelToggle v-model:checked="checked" v-model="modelValue" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
+import { ref } from "vue";
 import ModelToggle from './ModelToggle.vue';
+
+const checked = ref(⟦value checked script⟧);
+
+const modelValue = ref(⟦value modelValue script⟧);
 </script>
 
 <template>
-  ⟦element ModelToggle⟧
+  <ModelToggle ⟦props -checked -modelValue⟧ v-model:checked="checked" v-model="modelValue"⟦slots ModelToggle⟧
 </template>",
     },
   },

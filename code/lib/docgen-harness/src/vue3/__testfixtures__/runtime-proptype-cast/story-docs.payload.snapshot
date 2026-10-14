@@ -21,7 +21,7 @@ import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
 </script>
 
 <template>
-  ⟦element RuntimePropTypeCast⟧
+  <RuntimePropTypeCast ⟦props⟧⟦slots RuntimePropTypeCast⟧
 </template>",
     },
   },

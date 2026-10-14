@@ -13,18 +13,26 @@
       "name": "With Handlers",
       "snippet": "<script lang="ts" setup>
 import EventsJsdoc from './EventsJsdoc.vue';
+
+const onCancel = (() => {});
+
+const onSave = (() => {});
 </script>
 
 <template>
-  <EventsJsdoc label="Save" :onSave="(() => {})" :onCancel="(() => {})" />
+  <EventsJsdoc label="Save" @cancel="onCancel" @save="onSave" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import EventsJsdoc from './EventsJsdoc.vue';
+
+const onCancel = ⟦value onCancel script⟧;
+
+const onSave = ⟦value onSave script⟧;
 </script>
 
 <template>
-  ⟦element EventsJsdoc⟧
+  <EventsJsdoc ⟦props -onCancel -onSave⟧ @cancel="onCancel" @save="onSave"⟦slots EventsJsdoc⟧
 </template>",
     },
   },

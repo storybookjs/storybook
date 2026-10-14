@@ -107,7 +107,7 @@ export const Primary = { args: { ...shared, label: 'Hi' } };
       </script>
 
       <template>
-        <MyButton active size="large" label="Hi" />
+        <MyButton active label="Hi" size="large" />
       </template>"
     `);
     expect(story?.warning).toBeUndefined();
@@ -124,7 +124,7 @@ export const Primary = { args: { ...Base.args, label: 'Hi' } };
       </script>
 
       <template>
-        <MyButton active size="large" label="Hi" />
+        <MyButton active label="Hi" size="large" />
       </template>"
     `);
   });
@@ -159,7 +159,7 @@ export const Primary = { args: { ...shared, label: 'Hi' } };
       </script>
 
       <template>
-        <MyButton active size="large" label="Hi" />
+        <MyButton active label="Hi" size="large" />
       </template>"
     `);
   });
@@ -373,12 +373,10 @@ export const Primary = {
         { args, unmappedArgs: args, initialArgs },
         fillTemplate
       ).snippet
-    ).toContain(
-      `<MyButton label="Stop" :formatter="((text: string) => text.toUpperCase())" :when="new Date('2024-01-01')" :items="[{ id: 1 }]" />`
-    );
+    ).toContain(`<MyButton label="Stop" :formatter="formatter" :items="items" :when="when" />`);
   });
 
-  it('is the component with every arg and its slots for a story without a render function', async () => {
+  it("is Storybook's render of the component, its slots as content, for a story without a render function", async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
     expect(story?.template).toBe(
       [
@@ -387,12 +385,12 @@ export const Primary = {
         '</script>',
         '',
         '<template>',
-        '  ⟦element MyButton default header⟧',
+        '  <MyButton ⟦props -default -header⟧⟦slots MyButton default header⟧',
         '</template>',
       ].join('\n')
     );
     expect(fillTemplate(story!.template!, { label: 'Go', header: 'Title' })).toContain(
-      '  <MyButton label="Go">\n    <template #header>Title</template>\n  </MyButton>'
+      '  <MyButton label="Go">\n    <template #header>\n      Title\n    </template>\n  </MyButton>'
     );
   });
 
@@ -433,7 +431,7 @@ export const Primary = {
       [
         '  <div v-if="false" :title="\'Go\' + \'!\'">',
         '    <Icon name="lg" />',
-        '    <MyButton label="Go" :active="false" size="lg">Go</MyButton>',
+        '    <MyButton :active="false" label="Go" size="lg">Go</MyButton>',
       ].join('\n')
     );
   });

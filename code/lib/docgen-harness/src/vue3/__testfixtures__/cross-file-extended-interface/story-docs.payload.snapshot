@@ -13,7 +13,7 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
 </script>
 
 <template>
-  <ExtendedInterfaceProps :id="7" name="Chained" extra />
+  <ExtendedInterfaceProps extra :id="7" name="Chained" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -21,7 +21,7 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
 </script>
 
 <template>
-  ⟦element ExtendedInterfaceProps⟧
+  <ExtendedInterfaceProps ⟦props⟧⟦slots ExtendedInterfaceProps⟧
 </template>",
     },
   },

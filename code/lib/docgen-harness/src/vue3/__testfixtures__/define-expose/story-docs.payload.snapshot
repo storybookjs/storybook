@@ -21,7 +21,7 @@ import DefineExpose from './DefineExpose.vue';
 </script>
 
 <template>
-  ⟦element DefineExpose⟧
+  <DefineExpose ⟦props⟧⟦slots DefineExpose⟧
 </template>",
     },
   },

@@ -22,18 +22,62 @@
       "name": "Props As Written",
       "snippet": "<script lang="ts" setup>
 import NamedTypeDetails from './NamedTypeDetails.vue';
+
+const big = {};
+
+const builtin = new Date(0);
+
+const cyclic = { peer: { peer: null } };
+
+const dict = { a: 1 };
+
+const inlined = { foo: 'foo', bar: 1 };
+
+const localDate = new Date(0);
+
+const namespaced = { key: 'k', count: 2 };
+
+const partialed = { age: 36 };
+
+const picked = { name: 'Ada' };
+
+const prefs = { locale: 'en-US' };
+
+const user = { name: 'Ada', age: 36 };
 </script>
 
 <template>
-  <NamedTypeDetails :user="{ name: 'Ada', age: 36 }" scalarAlias="abc-123" shapes="circle" :cyclic="{ peer: { peer: null } }" :big="{}" :builtin="new Date(0)" :inlined="{ foo: 'foo', bar: 1 }" :namespaced="{ key: 'k', count: 2 }" :dict="{ a: 1 }" :prefs="{ locale: 'en-US' }" :localDate="new Date(0)" :picked="{ name: 'Ada' }" :partialed="{ age: 36 }" />
+  <NamedTypeDetails scalarAlias="abc-123" shapes="circle" :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import NamedTypeDetails from './NamedTypeDetails.vue';
+
+const big = ⟦value big script⟧;
+
+const builtin = ⟦value builtin script⟧;
+
+const cyclic = ⟦value cyclic script⟧;
+
+const dict = ⟦value dict script⟧;
+
+const inlined = ⟦value inlined script⟧;
+
+const localDate = ⟦value localDate script⟧;
+
+const namespaced = ⟦value namespaced script⟧;
+
+const partialed = ⟦value partialed script⟧;
+
+const picked = ⟦value picked script⟧;
+
+const prefs = ⟦value prefs script⟧;
+
+const user = ⟦value user script⟧;
 </script>
 
 <template>
-  ⟦element NamedTypeDetails⟧
+  <NamedTypeDetails ⟦props -big -builtin -cyclic -dict -inlined -localDate -namespaced -partialed -picked -prefs -user⟧ :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user"⟦slots NamedTypeDetails⟧
 </template>",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
     },

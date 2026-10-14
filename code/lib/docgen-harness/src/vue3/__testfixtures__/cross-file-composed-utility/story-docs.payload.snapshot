@@ -21,7 +21,7 @@ import UtilityComposedProps from './UtilityComposedProps.vue';
 </script>
 
 <template>
-  ⟦element UtilityComposedProps⟧
+  <UtilityComposedProps ⟦props⟧⟦slots UtilityComposedProps⟧
 </template>",
     },
   },

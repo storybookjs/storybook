@@ -22,7 +22,9 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
 <template>
   <TemplateOnlySlots>
     Plain text content
-    <template #header>Header text</template>
+    <template #header>
+      Header text
+    </template>
   </TemplateOnlySlots>
 </template>",
       "summary": undefined,
@@ -31,7 +33,7 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 
 <template>
-  ⟦element TemplateOnlySlots default header item⟧
+  <TemplateOnlySlots ⟦props -default -header -item⟧⟦slots TemplateOnlySlots default header item⟧
 </template>",
     },
   },

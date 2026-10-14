@@ -21,7 +21,7 @@ import BasicButton from './BasicButton.vue';
 </script>
 
 <template>
-  ⟦element BasicButton⟧
+  <BasicButton ⟦props⟧⟦slots BasicButton⟧
 </template>",
     },
   },

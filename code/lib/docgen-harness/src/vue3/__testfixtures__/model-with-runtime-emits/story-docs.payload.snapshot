@@ -9,19 +9,25 @@
       "id": "forms-model-with-runtime-emits--bound",
       "name": "Bound",
       "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
 import ModelWithRuntimeEmits from './ModelWithRuntimeEmits.vue';
+
+const modelValue = ref('draft');
 </script>
 
 <template>
-  <ModelWithRuntimeEmits modelValue="draft" />
+  <ModelWithRuntimeEmits v-model="modelValue" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
+import { ref } from "vue";
 import ModelWithRuntimeEmits from './ModelWithRuntimeEmits.vue';
+
+const modelValue = ref(⟦value modelValue script⟧);
 </script>
 
 <template>
-  ⟦element ModelWithRuntimeEmits⟧
+  <ModelWithRuntimeEmits ⟦props -modelValue⟧ v-model="modelValue"⟦slots ModelWithRuntimeEmits⟧
 </template>",
     },
   },

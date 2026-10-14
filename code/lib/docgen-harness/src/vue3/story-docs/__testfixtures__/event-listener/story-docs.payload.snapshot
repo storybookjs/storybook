@@ -13,20 +13,28 @@
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
 import EventListenerForm from './EventListenerForm.vue';
+
+const formatter = ((value: string) => value.toUpperCase());
+
+const onSubmit = ((payload: { value: string }) => console.log(payload));
 </script>
 
 <template>
-  <EventListenerForm label="Send" :formatter="((value: string) => value.toUpperCase())" :onSubmit="((payload: { value: string }) => console.log(payload))">
+  <EventListenerForm label="Send" :formatter="formatter" @submit="onSubmit">
     Submit now
   </EventListenerForm>
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import EventListenerForm from './EventListenerForm.vue';
+
+const formatter = ⟦value formatter script⟧;
+
+const onSubmit = ⟦value onSubmit script⟧;
 </script>
 
 <template>
-  ⟦element EventListenerForm default⟧
+  <EventListenerForm ⟦props -default -formatter -onSubmit⟧ :formatter="formatter" @submit="onSubmit"⟦slots EventListenerForm default⟧
 </template>",
     },
   },

@@ -11,8 +11,8 @@ import type { Args } from 'storybook/internal/types';
 
 import { isVNode } from 'vue';
 
-// Fills a Vue story template. Besides the shared holes, `⟦element Card default header⟧` is the
-// component with every arg and the slots its words name as content. A `script` word marks a
+// Fills a Vue story template. Besides the shared holes, `⟦slots Card default header⟧` ends the open
+// tag of `Card` with the slots its words name as content, or closes it without any. A `script` word marks a
 // `⟦value⟧` or `⟦operand⟧` hole in the `<script>`, where no entity is decoded, a `;` word one that
 // starts a statement after one without a `;`, and a `'` word one in an attribute value written in
 // single quotes.
@@ -20,8 +20,8 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', ...rest] = words;
     switch (kind) {
-      case 'element':
-        return element(first, rest, args);
+      case 'slots':
+        return slots(first, rest, args);
       case 'props':
         return spread(args, words);
       case 'attr':
@@ -39,21 +39,20 @@ const startingStatement = (printed: string, words: string[]) =>
   words.includes(';') && /^[[(`+\-/]/.test(printed) ? `;${printed}` : printed;
 
 // The element is the whole of the snippet's `<template>`, so its slots are indented one further.
-function element(name: string, slots: string[], args: Args): string {
-  const content = slots
+function slots(name: string, slotNames: string[], args: Args): string {
+  const content = slotNames
     .map((slot) => [slot, text(slot, args[slot])])
     .filter(([, printed]) => printed)
     .map(([slot, printed]) =>
-      slot === 'default' ? printed : `<template #${slot}>${printed}</template>`
+      slot === 'default' ? printed : `<template #${slot}>\n      ${printed}\n    </template>`
     );
-  const props = Object.entries(args).filter(([prop]) => !slots.includes(prop));
-  const open = `<${[name, attributesOf(props)].filter(Boolean).join(' ')}`;
   return content.length === 0
-    ? `${open} />`
-    : `${open}>\n${content.map((line) => `    ${line}\n`).join('')}  </${name}>`;
+    ? ' />'
+    : `>\n${content.map((line) => `    ${line}\n`).join('')}  </${name}>`;
 }
 
-const spread = (args: Args, words: string[]) => attributesOf(spreadArgs(args, words));
+const spread = (args: Args, words: string[]) =>
+  attributesOf(spreadArgs(args, words).sort(([a], [b]) => a.localeCompare(b)));
 
 const attributesOf = (props: [string, unknown][]) =>
   props
@@ -93,6 +92,7 @@ function text(name: string, arg: unknown): string {
     ? String(arg)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
         .replaceAll('{{', '{&#123;')
         .replace(/\{$/, '&#123;')
     : `{{ ${value(name, arg).replaceAll('}}', '}\\}')} }}`;

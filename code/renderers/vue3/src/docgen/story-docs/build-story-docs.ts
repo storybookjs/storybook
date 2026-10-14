@@ -473,7 +473,7 @@ function storyTemplate(
   // A slot the story fills with a function, as `() => h(Icon)`, has no value to show as content.
   if (renderer.kind === 'sfc') {
     return componentImportStatement && !args.some((arg) => arg.plan.kind === 'function-slot')
-      ? componentTemplate(componentName, componentImportStatement, slots)
+      ? componentTemplate(componentName, componentImportStatement, slots, args)
       : undefined;
   }
   if (renderer.kind !== 'template') {

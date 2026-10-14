@@ -21,7 +21,7 @@ import JsdocTags from './JsdocTags.vue';
 </script>
 
 <template>
-  ⟦element JsdocTags⟧
+  <JsdocTags ⟦props⟧⟦slots JsdocTags⟧
 </template>",
     },
   },

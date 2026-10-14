@@ -21,7 +21,7 @@ import PropsUnionEnum from './PropsUnionEnum.vue';
 </script>
 
 <template>
-  ⟦element PropsUnionEnum⟧
+  <PropsUnionEnum ⟦props⟧⟦slots PropsUnionEnum⟧
 </template>",
     },
   },

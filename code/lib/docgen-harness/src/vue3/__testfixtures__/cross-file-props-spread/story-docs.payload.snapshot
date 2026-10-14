@@ -13,7 +13,7 @@ import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
 </script>
 
 <template>
-  <CrossFilePropsSpread value="hello" label="Text label" :optional="false" />
+  <CrossFilePropsSpread label="Text label" :optional="false" value="hello" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -21,7 +21,7 @@ import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
 </script>
 
 <template>
-  ⟦element CrossFilePropsSpread⟧
+  <CrossFilePropsSpread ⟦props⟧⟦slots CrossFilePropsSpread⟧
 </template>",
     },
   },

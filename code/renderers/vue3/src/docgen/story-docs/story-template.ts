@@ -7,16 +7,18 @@ import {
 } from '@vue/compiler-dom';
 
 import { babelParseExpression, types as t } from 'storybook/internal/babel';
-import { isOperand } from 'storybook/internal/csf-tools';
+import { isOperand, unwrapExpression } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
 import {
   createRenderContext,
   hoistArgCode,
   hoistModelRef,
+  quoteAttributeValue,
   renderPreparedSfcSnippet,
+  type RenderContext,
 } from '../shared/render-primitives.ts';
-import type { ClassifiedArg } from './classify-args/classify-args.ts';
+import type { ClassifiedArg, ClassifiedPropLikeArg } from './classify-args/classify-args.ts';
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import {
   collectTemplateScopeBindings,
@@ -27,14 +29,57 @@ import {
 
 type Edit = { start: number; end: number; text: string };
 
-// A story without a render function is the component with every arg, its slots as content.
-export function componentTemplate(name: string, importStatement: string, slots: string[]) {
+// A story without a render function is Storybook's render of the component: `v-bind="args"` as
+// `spreadAttributes` writes it, and the slots as content.
+export function componentTemplate(
+  name: string,
+  importStatement: string,
+  slots: string[],
+  args: ClassifiedArg[]
+) {
   const ctx = createRenderContext();
   ctx.componentImports.add(importStatement);
+  const attributes = spreadAttributes(
+    args,
+    slots.map((slot) => `-${slot}`),
+    ctx
+  );
   return renderPreparedSfcSnippet({
-    templateCode: hole('element', name, ...slots.map(holeWord)),
+    templateCode: `<${name} ${attributes}${hole('slots', name, ...slots.map(holeWord))}`,
     ctx,
   });
+}
+
+/**
+ * `v-bind="args"` as the static snippet writes it, for the args a `⟦props⟧` hole with `words` would
+ * pass: an arg it hoists to a `const`, a model arg as the `v-model` of a `ref` and an event as a
+ * listener, each with a hole for its value, and the `⟦props⟧` hole for every other arg.
+ */
+function spreadAttributes(args: ClassifiedArg[], words: string[], ctx: RenderContext): string {
+  const hoists = (arg: ClassifiedPropLikeArg) => {
+    const value = unwrapExpression(arg.value);
+    return (
+      arg.role !== 'prop' ||
+      arg.plan.kind === 'hoist' ||
+      (t.isStringLiteral(value) && quoteAttributeValue(value.value) === undefined)
+    );
+  };
+  const written = args
+    .filter((arg): arg is ClassifiedPropLikeArg => arg.role !== 'slot' && hoists(arg))
+    .filter(({ name }) => /^[A-Za-z_][\w-]*$/.test(name))
+    .filter(({ name }) => !words.some((word) => word.slice(1) === name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const attributes = written.map((arg) => {
+    const value = hole('value', holeWord(arg.name), 'script');
+    if (arg.role === 'model') {
+      const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
+      return `${directive}="${hoistModelRef(arg.name, value, ctx)}"`;
+    }
+    const binding = hoistArgCode(arg.name, value, ctx);
+    return arg.role === 'event' ? `@${arg.eventName}="${binding}"` : `:${arg.name}="${binding}"`;
+  });
+  const omitted = [...words, ...written.map(({ name }) => `-${name}`)];
+  return [hole('props', ...omitted.map(holeWord)), ...attributes].join(' ');
 }
 
 /**
@@ -123,19 +168,10 @@ export function renderTemplate(
           ...names(written.slice(0, index)).map((name) => `^${name}`),
           ...own.map((name) => `-${name}`),
         ];
-        // An arg the static snippet hoists is its `const`, bound after the spread leaves it out.
-        const consts = [...hoisted]
-          .filter((name) => !own.includes(name) && !words.includes(`^${name}`))
-          .filter((name) => /^[A-Za-z_][\w-]*$/.test(name))
-          .sort((a, b) => a.localeCompare(b))
-          .map((name) => [name, constFor(name)!]);
-        const constWords = consts.map(([name]) => `-${name}`);
-        const constAttributes = consts.map(([name, binding]) => ` :${name}="${binding}"`);
         edits.push({
           start: start.offset,
           end: end.offset,
-          text:
-            hole('props', ...[...words, ...constWords].map(holeWord)) + constAttributes.join(''),
+          text: spreadAttributes(args, words, ctx),
         });
         continue;
       }

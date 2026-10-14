@@ -9,19 +9,25 @@
       "id": "forms-template-v-model-expansion--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
 import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
+
+const modelValue = ref('Draft text');
 </script>
 
 <template>
-  <TemplateVModelExpansion modelValue="Draft text" label="Message" />
+  <TemplateVModelExpansion label="Message" v-model="modelValue" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
+import { ref } from "vue";
 import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
+
+const modelValue = ref(⟦value modelValue script⟧);
 </script>
 
 <template>
-  <TemplateVModelExpansion ⟦props⟧ />
+  <TemplateVModelExpansion ⟦props -modelValue⟧ v-model="modelValue" />
 </template>",
     },
   },

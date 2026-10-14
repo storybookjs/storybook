@@ -13,18 +13,30 @@
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
 import ArgsFormattingButton from './ArgsFormattingButton.vue';
+
+const items = ['one', 'two'];
+
+const options = { tone: 'neutral', compact: true };
+
+const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>
-  <ArgsFormattingButton label="Formatted" quotationLabel="She said &quot;hi&quot; and it's fine" enabled :disabled="false" :count="3" :options="{ tone: 'neutral', compact: true }" :items="['one', 'two']" />
+  <ArgsFormattingButton :count="3" :disabled="false" enabled label="Formatted" :items="items" :options="options" :quotationLabel="quotationLabel" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import ArgsFormattingButton from './ArgsFormattingButton.vue';
+
+const items = ⟦value items script⟧;
+
+const options = ⟦value options script⟧;
+
+const quotationLabel = ⟦value quotationLabel script⟧;
 </script>
 
 <template>
-  ⟦element ArgsFormattingButton⟧
+  <ArgsFormattingButton ⟦props -items -options -quotationLabel⟧ :items="items" :options="options" :quotationLabel="quotationLabel"⟦slots ArgsFormattingButton⟧
 </template>",
     },
     "forms-args-formatting--unset-arg": {
@@ -45,7 +57,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  ⟦element ArgsFormattingButton⟧
+  <ArgsFormattingButton ⟦props⟧⟦slots ArgsFormattingButton⟧
 </template>",
     },
   },

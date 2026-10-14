@@ -7,13 +7,23 @@ import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 import { fillTemplate } from './fill-template.ts';
 
 describe('fillTemplate', () => {
-  it('prints the component with every arg, its slots as content', () => {
-    expect(fillTemplate('⟦element Button default⟧', { label: 'Go', primary: true, size: 2 })).toBe(
-      '<Button label="Go" primary :size="2" />'
-    );
+  it('closes the element with the slots as content, and the props in the order of their names', () => {
     expect(
-      fillTemplate('⟦element Card default header⟧', { disabled: false, default: 'Body', header: 1 })
-    ).toBe('<Card :disabled="false">\n    Body\n    <template #header>1</template>\n  </Card>');
+      fillTemplate('<Button ⟦props -default⟧⟦slots Button default⟧', {
+        size: 2,
+        label: 'Go',
+        primary: true,
+      })
+    ).toBe('<Button label="Go" primary :size="2" />');
+    expect(
+      fillTemplate('<Card ⟦props -default -header⟧ :items="items"⟦slots Card default header⟧', {
+        disabled: false,
+        default: 'Body',
+        header: 1,
+      })
+    ).toBe(
+      '<Card :disabled="false" :items="items">\n    Body\n    <template #header>\n      1\n    </template>\n  </Card>'
+    );
   });
 
   it('leaves out an unset arg, a spy and an action, and binds a null arg', () => {
@@ -33,12 +43,12 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate('<Button ⟦attr format formatter⟧ />', { formatter })).toThrow(
       UnprintableArgError
     );
-    expect(() => fillTemplate('⟦element Button⟧', { formatter })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate('<Button ⟦props⟧ />', { formatter })).toThrow(UnprintableArgError);
   });
 
   it('prints a written arg as its code, escaped for the attribute it lands in', () => {
     const formatter = writtenArg('(v) => v && "x"');
-    expect(fillTemplate('⟦element Chart⟧', { formatter })).toBe(
+    expect(fillTemplate('<Chart ⟦props⟧ />', { formatter })).toBe(
       '<Chart :formatter="(v) => v &amp;&amp; &quot;x&quot;" />'
     );
     expect(fillTemplate('const f = ⟦value formatter script⟧;', { formatter })).toBe(

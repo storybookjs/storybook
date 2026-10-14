@@ -128,7 +128,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton active label="Hi" :onClick="onClick" />
+        <MyButton active label="Hi" @click="onClick" />
       </template>"
     `);
   });
@@ -143,7 +143,7 @@ export const Primary = {
     ).toContain('<MyButton label="Hi" />');
   });
 
-  it('passes a model arg through v-bind as written', async () => {
+  it('expands a v-bind model arg into a v-model binding with a hoisted ref', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -157,11 +157,14 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import { ref } from "vue";
       import MyButton from './MyButton.vue';
+
+      const modelValue = ref('Typed text');
       </script>
 
       <template>
-        <MyButton modelValue="Typed text" />
+        <MyButton v-model="modelValue" />
       </template>"
     `);
   });
@@ -391,7 +394,7 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<template>
-        <p>&lt;b>bold?&lt;/b> &amp; 1 &lt; 2</p>
+        <p>&lt;b&gt;bold?&lt;/b&gt; &amp; 1 &lt; 2</p>
       </template>"
     `);
   });
@@ -1471,6 +1474,21 @@ export const Primary = {
     `);
   });
 
+  it('binds the model of a defineModel() component with v-model, filling only its value', async () => {
+    const payload = await buildPayload(
+      `export const Primary = { args: { modelValue: 'Test value' } };`,
+      "import Component from './Component.vue';",
+      'Component'
+    );
+    const story = payload.stories['example-mybutton--primary']!;
+    expect(story.snippet).toContain('<Component v-model="modelValue" />');
+    expect(story.snippet).toContain("const modelValue = ref('Test value');");
+    expect(story.template).toContain('const modelValue = ref(⟦value modelValue script⟧);');
+    expect(story.template).toContain(
+      '<Component ⟦props -default -header -modelValue⟧ v-model="modelValue"'
+    );
+  });
+
   it('renders a component named Component when no is binding makes it dynamic', async () => {
     expect(
       await primarySnippet(
@@ -1484,11 +1502,14 @@ export const Primary = {
       )
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import { ref } from "vue";
       import Component from './Component.vue';
+
+      const modelValue = ref('Typed text');
       </script>
 
       <template>
-        <Component modelValue="Typed text" />
+        <Component v-model="modelValue" />
       </template>"
     `);
   });
@@ -1523,7 +1544,7 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('encodes the character references in a string value', async () => {
+  it('hoists string values containing character references, which attributes would decode', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1538,10 +1559,12 @@ export const Primary = {
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
+
+      const label = 'Tom &amp; Jerry';
       </script>
 
       <template>
-        <MyButton label="Tom &amp;amp; Jerry" />
+        <MyButton :label="label" />
       </template>"
     `);
   });

@@ -21,7 +21,7 @@ import RuntimeArrayProps from './RuntimeArrayProps.vue';
 </script>
 
 <template>
-  ⟦element RuntimeArrayProps⟧
+  <RuntimeArrayProps ⟦props⟧⟦slots RuntimeArrayProps⟧
 </template>",
     },
   },

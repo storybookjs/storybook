@@ -21,7 +21,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  ⟦element CsfOneButton⟧
+  <CsfOneButton ⟦props⟧⟦slots CsfOneButton⟧
 </template>",
     },
     "forms-csf1-legacy--assigned-args-override-inline": {
@@ -42,7 +42,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  ⟦element CsfOneButton⟧
+  <CsfOneButton ⟦props⟧⟦slots CsfOneButton⟧
 </template>",
     },
     "forms-csf1-legacy--primary": {

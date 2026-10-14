@@ -13,7 +13,7 @@ import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
 </script>
 
 <template>
-  <ImportedInterfaceProps label="Imported" :count="2" />
+  <ImportedInterfaceProps :count="2" label="Imported" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -21,7 +21,7 @@ import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
 </script>
 
 <template>
-  ⟦element ImportedInterfaceProps⟧
+  <ImportedInterfaceProps ⟦props⟧⟦slots ImportedInterfaceProps⟧
 </template>",
     },
   },

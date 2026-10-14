@@ -12,18 +12,22 @@
       "name": "Props As Written",
       "snippet": "<script lang="ts" setup>
 import IntersectionProps from './IntersectionProps.vue';
+
+const mixed = { label: 'Intersected', count: 2, extra: true };
 </script>
 
 <template>
-  <IntersectionProps :mixed="{ label: 'Intersected', count: 2, extra: true }" />
+  <IntersectionProps :mixed="mixed" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import IntersectionProps from './IntersectionProps.vue';
+
+const mixed = ⟦value mixed script⟧;
 </script>
 
 <template>
-  ⟦element IntersectionProps⟧
+  <IntersectionProps ⟦props -mixed⟧ :mixed="mixed"⟦slots IntersectionProps⟧
 </template>",
     },
   },

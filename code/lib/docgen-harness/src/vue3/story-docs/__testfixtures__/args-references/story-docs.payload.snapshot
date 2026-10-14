@@ -21,7 +21,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  ⟦element ArgsReferencesButton⟧
+  <ArgsReferencesButton ⟦props⟧⟦slots ArgsReferencesButton⟧
 </template>",
     },
     "forms-args-references--spread-object-arg": {
@@ -36,21 +36,25 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
       "name": "Spread Object Arg",
       "snippet": "<script lang="ts" setup>
 import ArgsReferencesButton from './ArgsReferencesButton.vue';
+
+const options = {
+    size: 'md',
+    tone: 'neutral'
+};
 </script>
 
 <template>
-  <ArgsReferencesButton :options="{
-    size: 'md',
-    tone: 'neutral'
-}" />
+  <ArgsReferencesButton :options="options" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import ArgsReferencesButton from './ArgsReferencesButton.vue';
+
+const options = ⟦value options script⟧;
 </script>
 
 <template>
-  ⟦element ArgsReferencesButton⟧
+  <ArgsReferencesButton ⟦props -options⟧ :options="options"⟦slots ArgsReferencesButton⟧
 </template>",
     },
     "forms-args-references--unreadable-spread-arg": {

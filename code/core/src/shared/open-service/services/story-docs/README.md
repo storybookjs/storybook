@@ -66,8 +66,8 @@ Each renderer adds holes and words of its own, which its filler documents:
 - React: `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object,
   both without the args their `-name` words name. `⟦close Button⟧` ends a self-closing element
   with a spread of the args, as ` />`, or with the `children` arg as content.
-- Vue: `⟦element Card header⟧` is the component with the slots its words name as content, and a
-  `script` word marks a `⟦value⟧` or `⟦operand⟧` in the `<script>`.
+- Vue: `⟦slots Card header⟧` closes the component's tag with the slots its words name as content,
+  or ` />` without any, and a `script` word marks a `⟦value⟧` or `⟦operand⟧` in the `<script>`.
 - Web Components: `⟦bool⟧` and `⟦prop⟧` are lit's `?name` and `.name` bindings, and a `⟦props⟧`
   word such as `.items=items` names what each arg sets.
 - Angular: `⟦value label⟧` is the value of a host component field.

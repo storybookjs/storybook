@@ -57,7 +57,7 @@ export type ProviderDocsAccessOptions = {
   source?: Source;
   /**
    * Resolves a single entry in-process, bypassing the manifest index. The dev server passes this
-   * for its local source when `experimentalDocgenServer` is on, so one lookup never triggers
+   * for its local source when `docgenServer` is on, so one lookup never triggers
    * docgen extraction for every component.
    */
   resolveEntry?: (id: string, source?: Source) => Promise<ResolvedDocsEntry | undefined>;
@@ -77,8 +77,31 @@ async function defaultManifestProvider(
     );
   }
   const manifestUrl = getManifestUrlFromRequest(request, path);
-  const response = await fetch(manifestUrl);
+  return readManifestText(await fetch(manifestUrl), manifestUrl);
+}
 
+// For a composition assembled at boot rather than per request (the docs toolset core registers
+// for the tools CLI): no request, no credentials, so a private source points at its own MCP.
+export const sourceUrlManifestProvider: ManifestProvider = async (_request, path, source) => {
+  if (!source?.url) {
+    throw new ManifestGetError('The local source has no URL to fetch manifests from.');
+  }
+  // Concatenated rather than resolved with `new URL`, which would let a `$ref` such as
+  // `../http:evil.example/x.json` from the remote manifest leave the source's origin.
+  const manifestUrl = `${source.url.replace(/\/$/, '')}${path.replace(/^\.\//, '/')}`;
+  const response = await fetch(manifestUrl, {
+    signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS),
+  });
+  if (response.status === 401) {
+    throw new RequiresOwnMcpError({ ...source, url: source.url });
+  }
+  return readManifestText(response, manifestUrl);
+};
+
+// The same budget addon-mcp gives its startup probe of a ref's manifest.
+const REF_MANIFEST_FETCH_TIMEOUT_MS = 3_000;
+
+async function readManifestText(response: Response, manifestUrl: string): Promise<string> {
   if (!response.ok) {
     throw new ManifestGetError(
       `Failed to fetch manifest: ${response.status} ${response.statusText}`,

@@ -9,7 +9,6 @@ export default {
   parameters: {
     layout: 'fullscreen',
     viewport: {
-      defaultViewport: 'sized',
       viewports: {
         sized: {
           name: 'Sized',
@@ -22,7 +21,7 @@ export default {
     },
     chromatic: { viewports: [700] },
   },
-  globals: { sb_theme: 'light' },
+  globals: { sb_theme: 'light', viewport: { value: 'sized' } },
 };
 
 const style: CSSProperties = {

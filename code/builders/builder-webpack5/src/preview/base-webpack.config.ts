@@ -29,6 +29,11 @@ export async function createDefaultWebpackConfig(
           loader: fileURLToPath(import.meta.resolve('css-loader')),
           options: {
             importLoaders: 1,
+            modules: {
+              auto: true,
+              namedExport: false,
+              exportLocalsConvention: 'as-is',
+            },
           },
         },
       ],

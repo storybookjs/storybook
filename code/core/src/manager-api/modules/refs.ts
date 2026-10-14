@@ -185,6 +185,22 @@ const parseUrl = (url: string): UrlParseResult => {
   };
 };
 
+// In dev mode, the manager addresses messages to a ref's iframe by the origin of the ref's URL, so a
+// ref whose index is served from another origin after a redirect is composed from that origin.
+const getRedirectedRefUrl = (refUrl: string, indexResponseUrl: string | undefined): string => {
+  if (!indexResponseUrl) {
+    return refUrl;
+  }
+  const served = new URL(indexResponseUrl);
+  if (
+    served.origin === new URL(refUrl, location.href).origin ||
+    !served.pathname.endsWith('/index.json')
+  ) {
+    return refUrl;
+  }
+  return served.origin + served.pathname.slice(0, -'/index.json'.length);
+};
+
 const map = (
   input: SetStoriesStoryData,
   ref: API_ComposedRef,
@@ -264,16 +280,20 @@ export const init: ModuleFn<SubAPI, SubState> = (
         });
       }
 
-      const [indexResult, storiesResult] = await Promise.all(
-        ['index.json', 'stories.json'].map(async (file) =>
-          handleRequest(
-            fetch(`${urlParseResult.url}/${file}${query}`, {
-              headers,
-              credentials,
-            })
-          )
-        )
+      const [indexRequest, storiesRequest] = ['index.json', 'stories.json'].map((file) =>
+        fetch(`${urlParseResult.url}/${file}${query}`, {
+          headers,
+          credentials,
+        })
       );
+      const [indexResult, storiesResult] = await Promise.all([
+        handleRequest(indexRequest),
+        handleRequest(storiesRequest),
+      ]);
+      const refUrl =
+        global.CONFIG_TYPE === 'DEVELOPMENT' && indexResult.storyIndex
+          ? getRedirectedRefUrl(urlParseResult.url, (await indexRequest).url)
+          : urlParseResult.url;
 
       if (!indexResult.indexError || !storiesResult.indexError) {
         const metadata = await handleRequest(
@@ -312,7 +332,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
 
       await api.setRef(id!, {
         id,
-        url: urlParseResult.url,
+        url: refUrl,
         ...loadedData,
         ...(versions ? { versions } : {}),
         type: !loadedData.storyIndex ? 'auto-inject' : 'lazy',

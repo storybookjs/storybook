@@ -1,6 +1,5 @@
 {
   "checked": {
-    "defaultValue": undefined,
     "description": "Whether the box is checked, controlled via the named v-model.",
     "name": "checked",
     "table": {
@@ -16,7 +15,6 @@
     },
   },
   "modelValue": {
-    "defaultValue": undefined,
     "description": "The text value controlled via the default v-model.",
     "name": "modelValue",
     "table": {

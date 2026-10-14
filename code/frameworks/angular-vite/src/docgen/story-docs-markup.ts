@@ -7,6 +7,8 @@ import {
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
   sourceOf,
+  templateParts,
+  type TemplateParts,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
@@ -231,35 +233,6 @@ const literalTemplate = (
   representedArgs: [...representedArgs],
   expansions,
 });
-
-interface TemplateParts {
-  quasis: string[];
-  expressions: t.Node[];
-}
-
-// `String.raw` is the identity tag: it hands back the text between the backticks, so a template
-// wearing it is as readable as a plain one. No other tag transforms its input predictably.
-export const templateParts = (node: t.Node): TemplateParts | undefined => {
-  if (t.isTemplateLiteral(node)) {
-    return {
-      quasis: node.quasis.map((quasi) => quasi.value.cooked ?? ''),
-      expressions: node.expressions,
-    };
-  }
-  if (!t.isTaggedTemplateExpression(node) || !isStringRawTag(node.tag)) {
-    return undefined;
-  }
-  return {
-    quasis: node.quasi.quasis.map((quasi) => quasi.value.raw),
-    expressions: node.quasi.expressions,
-  };
-};
-
-const isStringRawTag = (tag: t.Expression): boolean =>
-  t.isMemberExpression(tag) &&
-  !tag.computed &&
-  t.isIdentifier(tag.object, { name: 'String' }) &&
-  t.isIdentifier(tag.property, { name: 'raw' });
 
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
 const interpolate = (

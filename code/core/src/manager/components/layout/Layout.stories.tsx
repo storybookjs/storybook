@@ -120,7 +120,6 @@ const meta = {
     slotPanel: <MockPanel />,
     slotPages: <MockPage />,
     setManagerLayoutState: fn(),
-    hasTab: false,
   },
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },
@@ -498,16 +497,14 @@ export const KeyboardRightPanelMinSize: Story = {
 };
 
 export const Mobile = {
+  globals: { viewport: { value: 'mobile1' } },
   parameters: {
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
     chromatic: { viewports: [320] },
   },
 };
 export const MobileDark = {
   ...Mobile,
-  globals: { sb_theme: 'dark' },
+  globals: { ...Mobile.globals, sb_theme: 'dark' },
 };
 
 export const MobileDocs = {

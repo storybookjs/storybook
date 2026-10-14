@@ -5,15 +5,18 @@ import { pluginWebpackStats } from './webpack-stats-plugin.ts';
 
 const workingDir = '/project';
 
-type RawGraph = Record<string, string[]>;
 type ParsedModule = Pick<ModuleInfo, 'id' | 'importedIds' | 'dynamicallyImportedIds'>;
+type RawGraph = Record<string, string[] | Omit<ParsedModule, 'id'>>;
 
 function getStats(graph: RawGraph) {
   const plugin = pluginWebpackStats({ workingDir });
   const moduleParsed = plugin.moduleParsed as unknown as (mod: ParsedModule) => void;
 
-  for (const [id, importedIds] of Object.entries(graph)) {
-    moduleParsed({ id, importedIds, dynamicallyImportedIds: [] });
+  for (const [id, imports] of Object.entries(graph)) {
+    const mod = Array.isArray(imports)
+      ? { importedIds: imports, dynamicallyImportedIds: [] }
+      : imports;
+    moduleParsed({ id, ...mod });
   }
 
   return plugin.storybookGetStats().toJson();
@@ -80,6 +83,20 @@ describe('pluginWebpackStats', () => {
     const stats = getStats({ '/project/iframe.html': [] });
 
     expect(stats.modules).toEqual([{ id: './iframe.html', name: './iframe.html', reasons: [] }]);
+  });
+
+  it('records a dynamic import as an edge', () => {
+    const importers = getImporters(
+      {
+        '\0virtual:/@storybook/builder-vite/storybook-stories.js': {
+          importedIds: [],
+          dynamicallyImportedIds: ['/project/src/Button.stories.tsx'],
+        },
+      },
+      './src/Button.stories.tsx'
+    );
+
+    expect(importers).toEqual(['/virtual:/@storybook/builder-vite/storybook-stories.js']);
   });
 
   it('lists an importer once when two ids normalize to the same name', () => {

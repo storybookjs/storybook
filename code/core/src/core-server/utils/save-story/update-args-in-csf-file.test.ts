@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 
-import { describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { generate, parser } from 'storybook/internal/babel';
 import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
@@ -450,6 +450,12 @@ describe.each([
   ['CSF3 satisfies', (object: string) => `${object} satisfies Story`],
   ['CSF4', (object: string) => `meta.story(${object})`],
 ] as const)('%s spread args', (format, story) => {
+  const makeBase = vi.fn();
+
+  beforeEach(() => {
+    makeBase.mockReturnValue({ args: { label: 'base' } });
+  });
+
   test.each([
     '...makeBase()',
     'args: { label: "old" }, ...makeBase()',
@@ -474,8 +480,6 @@ describe.each([
     const node = parser.parseExpression(story('{ ...makeBase(), args: { label: "old" } }'), {
       plugins: ['typescript'],
     });
-    const makeBase = vi.fn(() => ({ args: { label: 'base' } }));
-
     await updateArgsInCsfFile(node, { label: 'saved' });
 
     const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });

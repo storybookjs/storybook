@@ -96,7 +96,7 @@ describe('classifyArg', () => {
   it('reads past a manifest event without a name', () => {
     const nameless = {
       ...declaration,
-      events: [{} as { name: string }, ...declaration.events],
+      events: [{} as (typeof declaration.events)[number], ...declaration.events],
     };
     expect(classifyArg('onShapeChange', true, argTypes, nameless)).toEqual({
       event: 'shape-change',

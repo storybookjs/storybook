@@ -66,6 +66,14 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('CLAUDE.md')).toBe(`Be brief.\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
   });
 
+  it('adds nothing on a second run, also not to CLAUDE.md', async () => {
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
+    await addStorybookAgentInstructions(ROOT);
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual([]);
+    expect(read('CLAUDE.md')).toBe(`Be brief.\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
+  });
+
   it('adds one copy for Claude Code when the project has both CLAUDE.md files', async () => {
     vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
     vol.writeFileSync(join(ROOT, '.claude/CLAUDE.md'), 'Be kind.\n');

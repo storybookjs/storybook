@@ -245,8 +245,6 @@ function emitPackageDeclarationsNative(
   if (result.error) {
     throw result.error;
   }
-  // Type checking is the check task's job (`noCheck`); what remains here is what the declaration
-  // emitter could not write faithfully, so it fails the build.
   if (result.status !== 0) {
     console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
     throw new Error(

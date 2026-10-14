@@ -1,0 +1,26 @@
+{
+  "id": "webcomponentsfixtures-demo-wc-card",
+  "name": "demo-wc-card",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-demo-wc-card--back": {
+      "id": "webcomponentsfixtures-demo-wc-card--back",
+      "name": "Back",
+      "snippet": "<demo-wc-card back-side rows="[]">
+  <span slot="prefix"></span>A simple card
+</demo-wc-card>",
+    },
+    "webcomponentsfixtures-demo-wc-card--front": {
+      "id": "webcomponentsfixtures-demo-wc-card--front",
+      "name": "Front",
+      "snippet": "<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>",
+    },
+    "webcomponentsfixtures-demo-wc-card--prefix": {
+      "id": "webcomponentsfixtures-demo-wc-card--prefix",
+      "name": "Prefix",
+      "snippet": "<demo-wc-card header="my header" rows="[]">
+  <span slot="prefix">prefix:</span>A simple card
+</demo-wc-card>",
+    },
+  },
+}

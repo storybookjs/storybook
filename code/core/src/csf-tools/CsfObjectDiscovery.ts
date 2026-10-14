@@ -28,7 +28,7 @@ type StoryBinding = {
 
 type AnnotationCandidate = {
   target: Extract<CsfObjectTarget, { kind: 'story-annotation' }>;
-  annotation: 'parameters';
+  annotation: 'parameters' | 'argTypes';
   root?: NodePath<t.ObjectExpression>;
   node: t.Node;
   message?: string;
@@ -379,7 +379,8 @@ const annotationCandidates = (
   if (!propertyName) {
     return [];
   }
-  const annotation = propertyName === 'parameters' ? 'parameters' : undefined;
+  const annotation =
+    propertyName === 'parameters' || propertyName === 'argTypes' ? propertyName : undefined;
   if (!annotation || !binding) {
     return [];
   }

@@ -1,3 +1,19 @@
+## 11.0.0-alpha.6
+
+- Addon Docs: Map CSF plugin sourcemaps to the transform input - [#36463](https://github.com/storybookjs/storybook/pull/36463), thanks @mnkprs!
+- Addon Vitest: Apply framework options such as strictMode - [#36716](https://github.com/storybookjs/storybook/pull/36716), thanks @Metehan-Bicer!
+- CLI: Restore pnpm minimumReleaseAge prechecks - [#36352](https://github.com/storybookjs/storybook/pull/36352), thanks @ia319!
+- CLI: Upgrade pnpm catalog entries instead of pinning catalog dependencies - [#36552](https://github.com/storybookjs/storybook/pull/36552), thanks @valentinpalkovic!
+- Core: Clean Up Paused Animations After AfterEach Failure - [#36107](https://github.com/storybookjs/storybook/pull/36107), thanks @Raj4478!
+- Core: Limit onboarding checklist rainbow animation - [#36264](https://github.com/storybookjs/storybook/pull/36264), thanks @Thodorr!
+- Core: SB-2021 remove open-service getStatus and getGraphRevision aliases - [#36705](https://github.com/storybookjs/storybook/pull/36705), thanks @obvious-autobuild!
+- Docgen: Avoid loading test libraries in the Vue and Angular presets - [#36474](https://github.com/storybookjs/storybook/pull/36474), thanks @Cherry!
+- Security: Patch GHSA-f2ph-cmg5-wxc8 and GHSA-px85-f4q5-jh77 - [#36726](https://github.com/storybookjs/storybook/pull/36726), thanks @Sidnioulz!
+- TanStack: Type story query params from the route's search schema - [#36502](https://github.com/storybookjs/storybook/pull/36502), thanks @dasjideepak!
+- UI: Allow collapsing the testing widget after a crash - [#36575](https://github.com/storybookjs/storybook/pull/36575), thanks @eskres!
+- UI: Fix JSX runtime resolution in manager addons - [#36465](https://github.com/storybookjs/storybook/pull/36465), thanks @AkashNemade16!
+- WC: Automigration from runtime to docgen - [#36648](https://github.com/storybookjs/storybook/pull/36648), thanks @huang-julien!
+
 ## 11.0.0-alpha.5
 
 - Addon Vitest: Support Vitest 5 - [#36671](https://github.com/storybookjs/storybook/pull/36671), thanks @PaulMest!

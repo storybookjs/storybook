@@ -20,6 +20,14 @@ vi.mock('vite', async (importOriginal) => ({
 }));
 const loadConfigFromFileMock = vi.mocked(loadConfigFromFile);
 
+const { loggerWarnMock } = vi.hoisted(() => ({ loggerWarnMock: vi.fn() }));
+vi.mock('storybook/internal/node-logger', () => ({
+  // `once` passes straight through to the warn mock: deduping is node-logger's own tested
+  // behavior, these tests only assert that the builder reports (or stays quiet).
+  once: () => (message: string) => loggerWarnMock(message),
+  logger: { warn: loggerWarnMock, error: vi.fn(), log: vi.fn(), debug: vi.fn() },
+}));
+
 const dummyOptions: Options = {
   configType: 'DEVELOPMENT',
   configDir: '',
@@ -40,6 +48,24 @@ const dummyOptions: Options = {
   } as Presets,
   presetsList: [],
 };
+
+const mockExistsSync = async (pathToMock: string, exists: boolean) => {
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
+
+  vi.mocked(existsSync).mockImplementation((path) => {
+    if (path === resolve(pathToMock)) {
+      return exists;
+    }
+
+    return actual.existsSync(path);
+  });
+};
+
+afterEach(() => {
+  vi.mocked(existsSync).mockReset();
+  loadConfigFromFileMock.mockReset();
+  loggerWarnMock.mockClear();
+});
 
 describe('commonConfig', () => {
   it('should set configFile to false and include plugins', async () => {
@@ -143,22 +169,6 @@ describe('resolveVitePublicDir', () => {
   const mockUserConfig = (config: Record<string, unknown>) =>
     loadConfigFromFileMock.mockResolvedValueOnce({ config, path: '', dependencies: [] });
 
-  const mockExistsSync = async (pathToMock: string, exists: boolean) => {
-    const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
-
-    vi.mocked(existsSync).mockImplementation((path) => {
-      if (path === resolve(pathToMock)) {
-        return exists;
-      }
-
-      return actual.existsSync(path);
-    });
-  };
-
-  afterEach(() => {
-    vi.mocked(existsSync).mockReset();
-  });
-
   it('defaults to the public directory next to the Storybook config dir', async () => {
     await mockExistsSync('/project/public', true);
     mockUserConfig({});
@@ -185,5 +195,72 @@ describe('resolveVitePublicDir', () => {
     mockUserConfig({});
 
     expect(await resolveVitePublicDir(options, 'build')).toBeUndefined();
+  });
+});
+
+describe('discovery miss reporting', () => {
+  it('warns when a Vite config exists outside of the discovery root', async () => {
+    // Custom config-dir layout: the parent of the config dir is `configuration/`, not the
+    // project root, so discovery cannot see the config at the project root.
+    await mockExistsSync('/project/vite.config.mjs', true);
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      { ...dummyOptions, configDir: '/project/configuration/storybook' },
+      'development'
+    );
+
+    expect(loggerWarnMock).toHaveBeenCalledTimes(1);
+    expect(loggerWarnMock.mock.calls[0][0]).toContain('/project/vite.config.mjs');
+    expect(loggerWarnMock.mock.calls[0][0]).toContain(
+      "core: { builder: { options: { viteConfigPath: '/project/vite.config.mjs' } } }"
+    );
+  });
+
+  it('stays quiet when no Vite config exists in the project at all', async () => {
+    await mockExistsSync('/project/vite.config.ts', false);
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when discovery loads a config in the standard layout', async () => {
+    loadConfigFromFileMock.mockResolvedValueOnce({ config: {}, path: '', dependencies: [] });
+
+    await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
+
+    expect(loggerWarnMock).not.toHaveBeenCalled();
+  });
+
+  it('stays quiet when an explicit viteConfigPath resolves to nothing', async () => {
+    // An explicit `viteConfigPath` hands config resolution to the user; Vite errors on missing
+    // explicit paths itself, so a null result must not produce a discovery warning.
+    loadConfigFromFileMock.mockResolvedValueOnce(null);
+
+    await commonConfig(
+      {
+        ...dummyOptions,
+        configDir: '/project/.storybook',
+        presets: {
+          apply: async (key: string) =>
+            ({
+              framework: { name: '' },
+              addons: [],
+              core: {
+                builder: {
+                  name: '@storybook/builder-vite',
+                  options: { viteConfigPath: '/custom/vite.config.ts' },
+                },
+              },
+              options: {},
+            })[key],
+        } as Presets,
+      },
+      'development'
+    );
+
+    expect(loggerWarnMock).not.toHaveBeenCalled();
   });
 });

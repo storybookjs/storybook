@@ -2,8 +2,10 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { getBuilderOptions, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
+import { dedent } from 'ts-dedent';
 import type {
   ConfigEnv,
   InlineConfig,
@@ -34,6 +36,62 @@ const configEnvBuild: ConfigEnv = {
   isSsrBuild: false,
 };
 
+// Mirrors Vite's own config-file search list (see Vite's `DEFAULT_CONFIG_FILES`).
+const DEFAULT_VITE_CONFIG_FILES = [
+  'vite.config.js',
+  'vite.config.mjs',
+  'vite.config.ts',
+  'vite.config.cjs',
+  'vite.config.mts',
+  'vite.config.cts',
+];
+
+const warnOnce = once('warn');
+
+/**
+ * Vite's `loadConfigFromFile` resolves `null` — silently, without logging anything — when it
+ * cannot find a Vite config file. Discovery only searches the parent directory of the Storybook
+ * config dir, so a config that lives elsewhere in the project (e.g. the repository root above a
+ * nested config dir) is silently ignored and Storybook boots with the user's Vite settings
+ * unapplied. Make that case loud, while a project with no Vite config at all stays quiet.
+ */
+function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): void {
+  // Walk upwards within the project (bounded by the repository root) for a Vite config that
+  // discovery could not see. Nothing found means the project has no Vite config at all, which
+  // is common and stays quiet.
+  let dir = projectRoot;
+  let unloadedConfig: string | undefined;
+
+  while (dir) {
+    unloadedConfig = DEFAULT_VITE_CONFIG_FILES.map((filename) => resolve(dir, filename)).find(
+      (candidate) => existsSync(candidate)
+    );
+
+    if (unloadedConfig || existsSync(resolve(dir, '.git'))) {
+      break;
+    }
+
+    const parent = resolve(dir, '..');
+    if (parent === dir) {
+      break; // Reached the filesystem root
+    }
+    dir = parent;
+  }
+
+  if (!unloadedConfig) {
+    return;
+  }
+
+  warnOnce(
+    dedent`
+      No user Vite config was loaded: Storybook auto-discovers a Vite config file in "${projectRoot}" (the directory above your Storybook config dir "${configDir}"), and none was found there.
+      A Vite config was found at "${unloadedConfig}", but it is outside of that directory and was not loaded.
+      To load it, point the "viteConfigPath" builder option at it, e.g. core: { builder: { options: { viteConfigPath: '${unloadedConfig}' } } }.
+      See: https://storybook.js.org/docs/builders/vite#override-the-default-configuration
+    `
+  );
+}
+
 async function loadUserViteConfig(options: Options, type: PluginConfigType): Promise<ViteConfig> {
   const configEnv = type === 'development' ? configEnvServe : configEnvBuild;
   const { loadConfigFromFile } = await import('vite');
@@ -48,6 +106,12 @@ async function loadUserViteConfig(options: Options, type: PluginConfigType): Pro
     undefined,
     configLoader
   );
+
+  // An explicit `viteConfigPath` means the user owns config resolution: Vite either loads it or
+  // errors on it. Only the automatic discovery path can miss silently.
+  if (!loaded && !viteConfigPath) {
+    reportUnloadedUserViteConfig(options.configDir, projectRoot);
+  }
 
   return loaded?.config ?? {};
 }

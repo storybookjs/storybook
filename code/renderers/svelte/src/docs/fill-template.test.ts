@@ -23,6 +23,12 @@ describe('fillTemplate', () => {
     );
   });
 
+  it('prints a null arg read on its own', () => {
+    expect(fillTemplate('<Button icon={⟦value icon⟧}>⟦text icon⟧</Button>', { icon: null })).toBe(
+      '<Button icon={null}></Button>'
+    );
+  });
+
   it('writes a string an attribute cannot hold as an expression', () => {
     expect(fillTemplate('<Button ⟦attr label text⟧ />', { text: 'say "hi" {x} & go' })).toBe(
       '<Button label={"say \\"hi\\" {x} & go"} />'

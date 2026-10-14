@@ -4,7 +4,6 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import { DEFAULT_TYPE_PROPERTY } from '../component-docgen/arg-types/alt-type.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 
@@ -34,7 +33,7 @@ const declaration = {
   cssStates: [{ name: 'active' }],
   cssProperties: [{ name: '--accent' }],
 } satisfies ManifestDeclaration;
-const argTypes = mapArgTypes(declaration, DEFAULT_TYPE_PROPERTY);
+const argTypes = mapArgTypes(declaration);
 
 describe('classifyArg', () => {
   it.each<{ key: string; isFunction: boolean; expected: ArgBinding }>([

@@ -80,10 +80,25 @@ describe('addStorybookAgentInstructions', () => {
     expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', '.claude/CLAUDE.md']);
   });
 
+  it('adds the section to CLAUDE.local.md when it is the only file Claude Code reads', async () => {
+    vol.writeFileSync(join(ROOT, 'CLAUDE.local.md'), 'Use my fork.\n');
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', 'CLAUDE.local.md']);
+  });
+
+  it('prefers the shared CLAUDE.md over the personal CLAUDE.local.md', async () => {
+    vol.writeFileSync(join(ROOT, 'CLAUDE.local.md'), 'Use my fork.\n');
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual(['AGENTS.md', 'CLAUDE.md']);
+    expect(read('CLAUDE.local.md')).toBe('Use my fork.\n');
+  });
+
   it.each([
     ['CLAUDE.md', '@AGENTS.md\n'],
     ['CLAUDE.md', 'Read these first: @./AGENTS.md\n'],
     ['.claude/CLAUDE.md', '@../AGENTS.md\n'],
+    ['CLAUDE.local.md', '@AGENTS.md\n'],
   ])('writes no CLAUDE.md when %s imports AGENTS.md (%j)', async (file, content) => {
     vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
     vol.writeFileSync(join(ROOT, file), content);

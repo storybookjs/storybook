@@ -10,11 +10,12 @@ Use these Storybook skills:
 - \`component-docs\`: when the user asks about a component's props, API, or usage.
 `;
 
-// Claude Code reads AGENTS.md only when the project has no CLAUDE.md, and resolves an import
-// relative to the file that has it.
+// Claude Code reads AGENTS.md only when the project has none of these files, and resolves an
+// import relative to the file that has it. CLAUDE.local.md is personal, so it comes last.
 const CLAUDE_FILES = [
   { file: 'CLAUDE.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
   { file: '.claude/CLAUDE.md', importsAgentsMd: /(^|\s)@\.\.\/AGENTS\.md\b/m },
+  { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
 // Also matches a section the user customized, so it is not added a second time.

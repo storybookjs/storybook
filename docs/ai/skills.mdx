@@ -15,7 +15,7 @@ The API may change in future releases. We welcome feedback and contributions to 
 
 Storybook's skills teach coding agents such as Claude Code, Codex, and Cursor how to work with your Storybook. With them, an agent reuses your existing components, writes stories for every component it changes, runs the story tests, and shows you the result in an [agentic review](./agentic-review.mdx).
 
-A skill is a folder with a `SKILL.md` file: instructions that an agent loads when a task calls for them. Storybook's skills are short. Each one runs [`storybook skills`](../api/cli-options.mdx#skills) to get the instructions for the Storybook version and configuration of your project, and then works through `storybook tools` commands, which read your component docs, find stories, run tests, and publish reviews.
+A skill is a folder with a `SKILL.md` file: instructions that an agent loads when a task calls for them. Storybook's skills are short. Most of them run [`storybook skills`](../api/cli-options.mdx#skills) to get the instructions for the Storybook version and configuration of your project, and then works through `storybook tools` commands, which read your component docs, find stories, run tests, and publish reviews.
 
 ## Requirements
 
@@ -73,7 +73,7 @@ To stop agents from using the skills on their own, remove the section. You can s
 
 <Callout variant="info" icon="💡">
 
-Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` or `CLAUDE.local.md`, and only from version 2.1.277. When your project has a `CLAUDE.md` that does not import `AGENTS.md`, Storybook adds the section to that `CLAUDE.md` as well, so edit both copies. To keep one copy, import `AGENTS.md` from your `CLAUDE.md` with a line that says `@AGENTS.md`, and remove the section from `CLAUDE.md`.
+Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` or `CLAUDE.local.md`, and only from version 2.1.277. When your project has a `CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, Storybook adds the section to one of them as well, so edit both copies. To keep one copy, import `AGENTS.md` from your `CLAUDE.md` with a line that says `@AGENTS.md`, and remove the section from `CLAUDE.md`.
 
 </Callout>
 

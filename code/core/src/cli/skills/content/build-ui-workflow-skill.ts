@@ -129,7 +129,7 @@ export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
   return [
     `# Storybook UI workflow
 
-Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) leave out some of these steps, for example the review, skip them, but always look up the components first. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
+Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps, for example without the review, skip those steps, but always look up the components first. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
     inputs.docsEnabled && docsSection(),
     writeSection(inputs),
     inputs.testSupported && testSection(inputs.a11yEnabled),

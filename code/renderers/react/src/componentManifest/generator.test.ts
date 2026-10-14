@@ -255,10 +255,11 @@ test('manifests generates correct id, name, description and examples ', async ()
               "id": "example-header--logged-in",
               "name": "Logged In",
               "snippet": "const LoggedIn = () => <Header
-        onLogin={fn()}
-        onLogout={fn()}
-        onCreateAccount={fn()}
-        user={{ name: 'Jane Doe' }} />;",
+      onLogin={fn()}
+      onLogout={fn()}
+      onCreateAccount={fn()}
+      user={{ name: 'Jane Doe' }}
+    />;",
               "summary": undefined,
             },
             {

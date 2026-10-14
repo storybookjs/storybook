@@ -33,7 +33,7 @@ export function getStoryContentTemplate(rawCode: string): string | undefined {
   walk(fragment as unknown as Node, null, {
     Identifier(node, { path }) {
       if (node.name === 'args') {
-        edits.push(argEdit(node, path as Node[]));
+        edits.push(...argEdit(node, path as Node[]));
       }
     },
   });
@@ -49,36 +49,36 @@ export function getStoryContentTemplate(rawCode: string): string | undefined {
     .slice(script.length);
 }
 
-// An edit for an `args` reference, or `undefined` when it is not a hole.
-function argEdit(node: Node, path: Node[]): Edit | undefined {
+// The edit for an `args` reference: none for a write, or `undefined` when it is not a hole.
+function argEdit(node: Node, path: Node[]): (Edit | undefined)[] {
   const [grandparent, parent] = path.slice(-2);
   if (parent?.type === 'SpreadAttribute') {
-    return spreadEdit(parent, grandparent!);
+    return [spreadEdit(parent, grandparent!)];
   }
   const arg = parent && argName(parent, node);
   if (arg === undefined || path.some((ancestor) => ancestor.type === 'BindDirective')) {
-    return undefined;
+    return [undefined];
   }
   // `args?.label` reads the arg through the chain around the member.
   const chained = grandparent?.type === 'ChainExpression';
   const read = chained ? grandparent : parent!;
   const ancestors = path.slice(0, chained ? -2 : -1).reverse();
   const [tag, owner] = ancestors;
-  // `args.count++` or `args.label = …` changes the arg rather than reading it.
+  // `args.count++` or `args.label = …` is a write, no read, and stays as written.
   if (
     tag?.type === 'UpdateExpression' ||
     (tag?.type === 'AssignmentExpression' && tag.left === read)
   ) {
-    return undefined;
+    return [];
   }
   if (tag?.type === 'ExpressionTag' && owner?.type === 'Attribute' && owner.value === tag) {
-    return { start: owner.start, end: owner.end, text: hole('attr', owner.name, holeWord(arg)) };
+    return [{ start: owner.start, end: owner.end, text: hole('attr', owner.name, holeWord(arg)) }];
   }
   if (tag?.type === 'ExpressionTag' && owner?.type === 'Fragment') {
-    return { start: tag.start, end: tag.end, text: hole('text', holeWord(arg)) };
+    return [{ start: tag.start, end: tag.end, text: hole('text', holeWord(arg)) }];
   }
   const kind = isOperand(read as never, ancestors as never) ? 'operand' : 'value';
-  return { start: read.start, end: read.end, text: hole(kind, holeWord(arg)) };
+  return [{ start: read.start, end: read.end, text: hole(kind, holeWord(arg)) }];
 }
 
 // The arg `args.label` or `args['label']` reads.

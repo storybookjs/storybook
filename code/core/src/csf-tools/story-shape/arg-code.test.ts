@@ -69,6 +69,15 @@ describe('argCode', () => {
       e: '(!on)',
     });
   });
+
+  it('keeps the parentheses the story wrote, and an element as it is', () => {
+    expect(argCode(argsOf(`{ a: (MB * 5), b: <Icon />, c: (<>Hi</>), d: <>Hi</> }`))).toEqual({
+      a: '(MB * 5)',
+      b: '<Icon />',
+      c: '(<>Hi</>)',
+      d: '<>Hi</>',
+    });
+  });
 });
 
 describe('fillWithStoryArgs', () => {

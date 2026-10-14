@@ -7,7 +7,8 @@ import { unwrapExpression } from './utils.ts';
 /**
  * The code a story writes each arg with, as `StoryDoc.argCode` holds it: every arg but a plain
  * string, number, boolean, `null` or `undefined`, which prints as its value. Code that is not a
- * simple value is wrapped in parentheses, so it reads the same in any hole, as in `(MB * 5)`.
+ * simple value, such as `MB * 5` or an arrow function, is wrapped in parentheses unless the story
+ * wrote them, so it reads the same in any hole, as in `(MB * 5).toFixed(0)`.
  */
 export function argCode(args: Record<string, t.Node>): Record<string, string> {
   const code: Record<string, string> = {};
@@ -53,12 +54,15 @@ const literalOf = (node: t.Node): { value: unknown } | undefined => {
 
 const printArg = (node: t.Node): string => {
   const code = recast.print(node).code;
-  return isSimpleValue(node, code) ? code : `(${code})`;
+  return isSimpleValue(node, code) || node.extra?.parenthesized ? code : `(${code})`;
 };
 
 // A value no code around it reads differently; `new Foo` without arguments would take a member.
+// Code the story wrote in parentheses prints with them already.
 const isSimpleValue = (node: t.Node, code: string) =>
   t.isIdentifier(node) ||
+  t.isJSXElement(node) ||
+  t.isJSXFragment(node) ||
   t.isThisExpression(node) ||
   t.isLiteral(node) ||
   t.isArrayExpression(node) ||

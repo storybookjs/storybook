@@ -67,6 +67,12 @@ describe(getStoryContentTemplate.name, () => {
     expect(fillTemplate(template!, { 'Button title': 'Go on' })).toBe('<Button title="Go on" />');
   });
 
+  it('keeps a write to an arg as written, with a hole at each read', () => {
+    expect(
+      getStoryContentTemplate('<Button onclick={() => (args.label = "x")}>{args.label}</Button>')
+    ).toBe('<Button onclick={() => (args.label = "x")}>⟦text label⟧</Button>');
+  });
+
   it('is undefined for args no hole stands for', () => {
     for (const code of [
       '<Button />',
@@ -75,7 +81,6 @@ describe(getStoryContentTemplate.name, () => {
       '<Button label={args[name]} />',
       '<Input bind:value={args.value} />',
       '<Button onclick={() => args.count++} />',
-      '<Button onclick={() => (args.label = "x")} />',
       '<p>⟦text label⟧ {args.label}</p>',
       '<p>{unclosed</p>',
     ]) {

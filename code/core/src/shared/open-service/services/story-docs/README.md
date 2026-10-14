@@ -31,10 +31,9 @@ Keep it to these rules:
 - An arg that still holds the value the story is written with prints the code the story writes it
   with. An arg a control changed prints its value, which is plain data. So next to `template` the
   provider emits `argCode`, which `argCode` from `storybook/internal/csf-tools` builds from the
-  story's args: the code of every arg but a plain string, number, boolean, `null` or `undefined`,
-  such as `shout`, `fn((o) => o.name)` or `new FormControl('x')`. Code that is not a simple value
-  comes in parentheses, so `max: MB * 5` read as `args.max.toFixed(0)` fills to
-  `(MB * 5).toFixed(0)`.
+  story's args: the code of every arg but a plain string, number, boolean, `null` or `undefined`, such as `shout`, `fn((o) => o.name)` or
+  `new FormControl('x')`. Code that is not a simple value comes in parentheses, unless the story
+  wrote them, so `max: MB * 5` read as `args.max.toFixed(0)` fills to `(MB * 5).toFixed(0)`.
 - The static snippet is the same template filled with the args the story is written with, so the
   snippet keeps its form when a control changes. `fillWithStoryArgs` from
   `storybook/internal/csf-tools` builds it on the server with the renderer's own filler, exactly as
@@ -65,7 +64,8 @@ these words.
 Each renderer adds holes and words of its own, which its filler documents:
 
 - React: `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object,
-  both without the args their `-name` words name.
+  both without the args their `-name` words name. `⟦close Button⟧` ends a self-closing element
+  with a spread of the args, as ` />`, or with the `children` arg as content.
 - Vue: `⟦element Card header⟧` is the component with the slots its words name as content, and a
   `script` word marks a `⟦value⟧` or `⟦operand⟧` in the `<script>`.
 - Web Components: `⟦bool⟧` and `⟦prop⟧` are lit's `?name` and `.name` bindings, and a `⟦props⟧`

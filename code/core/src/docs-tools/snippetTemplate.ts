@@ -23,7 +23,8 @@ import type { Args } from 'storybook/internal/types';
  * A renderer may add holes and words of its own, which its filler documents:
  *
  * - React: `⟦element Button -name…⟧` is the component with every arg, and `⟦args -name…⟧` the args
- *   as an object, both without the args their `-name` words name.
+ *   as an object, both without the args their `-name` words name. `⟦close Button⟧` ends a
+ *   self-closing element with a spread of the args, as ` />`, or with the `children` arg as content.
  * - Vue: `⟦element Card slot…⟧` is the component with its slots as content, and a `script` word on
  *   `⟦value⟧` or `⟦operand⟧` marks a hole in the `<script>`.
  * - Web Components: `⟦bool name arg⟧` and `⟦prop name arg⟧` are lit's `?name` and `.name`

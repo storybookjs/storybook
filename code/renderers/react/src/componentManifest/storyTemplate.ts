@@ -74,7 +74,7 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
         // A second spread of the args on one element would write each attribute twice.
         const first = !spreadInto.has(parent.parent);
         spreadInto.add(parent.parent);
-        return [first ? spreadEdit(parent, omitted, code) : undefined];
+        return first ? spreadEdits(parent, omitted, code) : [undefined];
       }
       const arg = memberName(parent, reference.node);
       if (arg !== undefined) {
@@ -227,12 +227,14 @@ function fallbackCode(
 }
 
 // `<Button {...args}>` passes every arg but the children and the attributes written after it, which
-// win, and `<Button {...args} />` is the component with every arg, its children as content.
-function spreadEdit(
+// win, and `<Button {...args} />` is the component with every arg, its children as content. An
+// element without children of its own shows those the spread passes as content: a self-closing one
+// ends in a `⟦close Button⟧`, and `<Button {...args} size="sm"></Button>` has a `⟦text children⟧`.
+function spreadEdits(
   spread: NodePath<t.JSXSpreadAttribute>,
   omitted: string[],
   code: string
-): Edit | undefined {
+): (Edit | undefined)[] {
   const opening = spread.parentPath.node as t.JSXOpeningElement;
   const element = spread.parentPath.parent as t.JSXElement;
   const index = opening.attributes.indexOf(spread.node);
@@ -243,19 +245,46 @@ function spreadEdit(
   const left = omitted.map((name) => `-${name}`);
   const tag = code.slice(opening.name.start!, opening.name.end!);
   if (element.children.length === 0 && opening.attributes.length === 1) {
-    return isHoleWord(tag)
-      ? nodeEdit(element, hole('element', tag, ...left.map(holeWord)))
-      : undefined;
+    return [
+      isHoleWord(tag) ? nodeEdit(element, hole('element', tag, ...left.map(holeWord))) : undefined,
+    ];
   }
+  const content =
+    element.children.length === 0 &&
+    opening.attributes.every(
+      (attribute) => attribute === spread.node || t.isJSXAttribute(attribute)
+    ) &&
+    ![...omitted, ...namesOf(opening.attributes)].includes('children')
+      ? contentEdit(element, tag, code)
+      : undefined;
   const words = [
     ...left,
     ...namesOf(opening.attributes.slice(0, index)).map((name) => `^${name}`),
     ...namesOf(opening.attributes.slice(index + 1)).map((name) => `-${name}`),
-    ...(element.children.length > 0 ? ['-children'] : []),
+    ...(element.children.length > 0 || content ? ['-children'] : []),
   ].filter(
     (word, i, all) => !all.slice(0, i).some((earlier) => earlier.slice(1) === word.slice(1))
   );
-  return nodeEdit(spread.node, hole('props', ...words.map(holeWord)));
+  return [
+    nodeEdit(spread.node, hole('props', ...words.map(holeWord))),
+    ...(content ? [content] : []),
+  ];
+}
+
+// Where the children a spread passes go in an element without children of its own. A `/>` on a
+// line of its own stays there.
+function contentEdit(element: t.JSXElement, tag: string, code: string): Edit {
+  const { openingElement: opening, closingElement: closing } = element;
+  if (closing) {
+    return { start: closing.start!, end: closing.start!, text: hole('text', 'children') };
+  }
+  const slash = code.lastIndexOf('/', opening.end!);
+  const ownLine = code.slice(opening.attributes.at(-1)!.end!, slash).includes('\n');
+  return {
+    start: ownLine ? slash : opening.attributes.at(-1)!.end!,
+    end: opening.end!,
+    text: hole('close', holeWord(tag)),
+  };
 }
 
 // `label={args.label}`, `{args.label}` as a child, or `args.label` in code.

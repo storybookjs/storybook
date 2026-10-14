@@ -1,8 +1,10 @@
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import {
+  argCode,
   collectImportBindings,
   createStoryArgsResolver,
   type CsfFile,
+  fillWithStoryArgs,
   type ImportRef,
   isCanonicalCsf2BindCall,
   metaObjectPath,
@@ -13,6 +15,7 @@ import {
   type StoryArgsResolver,
 } from 'storybook/internal/csf-tools';
 
+import { fillTemplate } from '../docs/fill-template.ts';
 import { type StoryFunction, buildStoryTemplate } from './storyTemplate.ts';
 import { invariant } from './utils.ts';
 
@@ -25,14 +28,14 @@ function renderFunctionOf(resolution: RenderResolution) {
 
 /** A story's snippet, and what showing it as a complete example still depends on. */
 export interface CodeSnippet {
-  node: t.VariableDeclaration | t.FunctionDeclaration;
+  snippet: string;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
   /** The story with a hole wherever it reads an arg, for the preview to fill; see `StoryDoc.template`. */
   template?: string;
-  /** The code the snippet prints for each arg it writes as code; see `StoryDoc.argCode`. */
+  /** The code the story writes each arg with; see `StoryDoc.argCode`. */
   argCode?: Record<string, string>;
 }
 
@@ -46,7 +49,7 @@ export function getCodeSnippet(
   const importedBind = importedBoundStory(csf, storyName, args);
   if (importedBind) {
     return {
-      node: importedBind.node,
+      snippet: recast.print(importedBind.node).code,
       imports: [...imports, importedBind.importRef],
       unresolved,
     };
@@ -59,22 +62,25 @@ export function getCodeSnippet(
     runs && !inOtherFile
       ? buildStoryTemplate(storyName, fnPath, componentName, csf._file.code)
       : undefined;
+  const filled = template === undefined ? undefined : staticFill(template, args);
   return {
-    node: buildSnippetNode(storyName, fnPath?.node, componentName, args),
+    snippet:
+      filled ?? recast.print(buildSnippetNode(storyName, fnPath?.node, componentName, args)).code,
     imports,
     unresolved,
-    ...(template ? { template, argCode: argCodeOf(args) } : {}),
+    ...(template ? { template, argCode: argCode(args) } : {}),
   };
 }
 
-// A string or boolean the snippet prints from its value, as an attribute or text, so the filled
-// snippet prints it from the value too.
-const argCodeOf = (args: Record<string, t.Node>) =>
-  Object.fromEntries(
-    Object.entries(args)
-      .filter(([, node]) => !t.isStringLiteral(node) && !t.isBooleanLiteral(node))
-      .map(([name, node]) => [name, recast.print(node).code])
-  );
+// The template filled with the args the story is written with, or `undefined` where the filler
+// cannot print one of them.
+function staticFill(template: string, args: Record<string, t.Node>) {
+  try {
+    return fillWithStoryArgs(template, args, fillTemplate);
+  } catch {
+    return undefined;
+  }
+}
 
 function importedBoundStory(
   csf: CsfFile,

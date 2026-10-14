@@ -1,8 +1,13 @@
+import { createRequire } from 'node:module';
 import path from 'node:path';
 
-import svelte2tsx, { internalHelpers } from 'svelte2tsx';
 import { VERSION } from 'svelte/compiler';
 import ts from 'typescript';
+
+import { docgenTypeScript } from './docgen-typescript.ts';
+
+const require = createRequire(import.meta.url);
+const compiler = docgenTypeScript ?? ts;
 
 export type Docgen = {
   name?: string;
@@ -65,35 +70,35 @@ function convertType(type: ts.Type, checker: ts.TypeChecker): Type | undefined {
   // TypeScript compiler uses bit flags to represent type information.
   // Note the use of the bitwise AND (&) operator here.
   // See examples at: https://github.com/search?q=repo%3Amicrosoft%2FTypeScript+TypeFlags.&type=code
-  if (type.flags & ts.TypeFlags.Any) {
+  if (type.flags & compiler.TypeFlags.Any) {
     return { type: 'any' };
   }
-  if (type.flags & ts.TypeFlags.Number) {
+  if (type.flags & compiler.TypeFlags.Number) {
     return { type: 'number' };
   }
-  if (type.flags & ts.TypeFlags.String) {
+  if (type.flags & compiler.TypeFlags.String) {
     return { type: 'string' };
   }
-  if (type.flags & ts.TypeFlags.Boolean) {
+  if (type.flags & compiler.TypeFlags.Boolean) {
     return { type: 'boolean' };
   }
-  if (type.flags & ts.TypeFlags.ESSymbol) {
+  if (type.flags & compiler.TypeFlags.ESSymbol) {
     return { type: 'symbol' };
   }
-  if (type.flags & ts.TypeFlags.Null) {
+  if (type.flags & compiler.TypeFlags.Null) {
     return { type: 'null' };
   }
-  if (type.flags & ts.TypeFlags.Undefined) {
+  if (type.flags & compiler.TypeFlags.Undefined) {
     return { type: 'undefined' };
   }
-  if (type.flags & ts.TypeFlags.Void) {
+  if (type.flags & compiler.TypeFlags.Void) {
     return { type: 'void' };
   }
   if (type.getCallSignatures().length > 0) {
     return { type: 'function', text: checker.typeToString(type) };
   }
-  if (type.flags & ts.TypeFlags.Object) {
-    const indexType = checker.getIndexTypeOfType(type, ts.IndexKind.Number);
+  if (type.flags & compiler.TypeFlags.Object) {
+    const indexType = checker.getIndexTypeOfType(type, compiler.IndexKind.Number);
     if (indexType) {
       return { type: 'array', text: checker.typeToString(type) };
     }
@@ -104,12 +109,12 @@ function convertType(type: ts.Type, checker: ts.TypeChecker): Type | undefined {
       type: 'literal',
       value: type.value,
       text:
-        type.flags & ts.TypeFlags.EnumLiteral
+        type.flags & compiler.TypeFlags.EnumLiteral
           ? checker.typeToString(type)
           : JSON.stringify(type.value),
     };
   }
-  if (type.flags & ts.TypeFlags.BooleanLiteral) {
+  if (type.flags & compiler.TypeFlags.BooleanLiteral) {
     const text = checker.typeToString(type);
     return { type: 'literal', value: text === 'true', text: text };
   }
@@ -147,43 +152,43 @@ function initializerToDefaultValue(
   expr: ts.Expression,
   checker: ts.TypeChecker
 ): DefaultValue | undefined {
-  if (ts.isNumericLiteral(expr)) {
+  if (compiler.isNumericLiteral(expr)) {
     return { text: expr.text };
-  } else if (ts.isStringLiteral(expr)) {
+  } else if (compiler.isStringLiteral(expr)) {
     return { text: JSON.stringify(expr.text) };
-  } else if (ts.isIdentifier(expr) || ts.isPropertyAccessExpression(expr)) {
+  } else if (compiler.isIdentifier(expr) || compiler.isPropertyAccessExpression(expr)) {
     const symbol = checker.getSymbolAtLocation(expr);
     if (symbol && checker.isUndefinedSymbol(symbol)) {
       return undefined;
     }
     const type = checker.getTypeAtLocation(expr);
-    if (type.flags & ts.TypeFlags.EnumLiteral) {
+    if (type.flags & compiler.TypeFlags.EnumLiteral) {
       return { text: checker.typeToString(type) };
     } else if (type.isLiteral()) {
       // string or number
       return { text: JSON.stringify(type.value) };
-    } else if (type.flags & ts.TypeFlags.Null) {
+    } else if (type.flags & compiler.TypeFlags.Null) {
       return { text: 'null' };
-    } else if (type.flags & ts.TypeFlags.BooleanLiteral) {
+    } else if (type.flags & compiler.TypeFlags.BooleanLiteral) {
       return { text: checker.typeToString(type) };
     } else if (type.getCallSignatures().length > 0) {
       return { text: 'function' };
     }
   } else if (
-    ts.isArrayLiteralExpression(expr) ||
-    ts.isObjectLiteralExpression(expr) ||
-    ts.isNewExpression(expr)
+    compiler.isArrayLiteralExpression(expr) ||
+    compiler.isObjectLiteralExpression(expr) ||
+    compiler.isNewExpression(expr)
   ) {
     return { text: expr.getText() };
-  } else if (ts.isArrowFunction(expr)) {
+  } else if (compiler.isArrowFunction(expr)) {
     return { text: 'function' };
   }
   switch (expr.kind) {
-    case ts.SyntaxKind.TrueKeyword:
+    case compiler.SyntaxKind.TrueKeyword:
       return { text: 'true' };
-    case ts.SyntaxKind.FalseKeyword:
+    case compiler.SyntaxKind.FalseKeyword:
       return { text: 'false' };
-    case ts.SyntaxKind.NullKeyword:
+    case compiler.SyntaxKind.NullKeyword:
       return { text: 'null' };
   }
   return { text: '...' };
@@ -191,8 +196,8 @@ function initializerToDefaultValue(
 
 function loadConfig(basepath: string): [ts.CompilerOptions, Set<string>] {
   const configPath =
-    ts.findConfigFile(basepath, ts.sys.fileExists) ||
-    ts.findConfigFile(basepath, ts.sys.fileExists, 'jsconfig.json');
+    compiler.findConfigFile(basepath, compiler.sys.fileExists) ||
+    compiler.findConfigFile(basepath, compiler.sys.fileExists, 'jsconfig.json');
 
   const forcedOptions = {
     sourceMap: false,
@@ -207,10 +212,10 @@ function loadConfig(basepath: string): [ts.CompilerOptions, Set<string>] {
     return [forcedOptions, new Set()];
   }
 
-  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-  const config = ts.parseJsonConfigFileContent(
+  const configFile = compiler.readConfigFile(configPath, compiler.sys.readFile);
+  const config = compiler.parseJsonConfigFileContent(
     configFile.config,
-    ts.sys,
+    compiler.sys,
     path.dirname(configPath),
     undefined,
     configPath,
@@ -219,7 +224,7 @@ function loadConfig(basepath: string): [ts.CompilerOptions, Set<string>] {
       {
         extension: 'svelte',
         isMixedContent: true,
-        scriptKind: ts.ScriptKind.Deferred,
+        scriptKind: compiler.ScriptKind.Deferred,
       },
     ]
   );
@@ -257,6 +262,12 @@ export function createDocgenCache(): DocgenCache {
 }
 
 export function generateDocgen(targetFileName: string, cache: DocgenCache): Docgen {
+  if (!docgenTypeScript) {
+    return { props: [] };
+  }
+
+  const svelte2tsx = require('svelte2tsx') as typeof import('svelte2tsx');
+
   if (targetFileName.endsWith('.svelte')) {
     targetFileName = targetFileName + '.tsx';
   }
@@ -270,7 +281,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
   }
 
   // Create a custom host
-  const originalHost = ts.createCompilerHost(cache.options);
+  const originalHost = compiler.createCompilerHost(cache.options);
   const host: ts.CompilerHost = {
     ...originalHost,
     readFile(fileName) {
@@ -311,8 +322,8 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
 
         const realFileName = fileName.slice(0, -4); // remove .tsx or .jsx
 
-        const modifiedTime: Date | undefined = ts.sys.getModifiedTime
-          ? ts.sys.getModifiedTime(realFileName)
+        const modifiedTime: Date | undefined = compiler.sys.getModifiedTime
+          ? compiler.sys.getModifiedTime(realFileName)
           : undefined;
         if (modifiedTime) {
           const cachedModifiedTime = cache.filenameToModifiedTime[fileName];
@@ -334,12 +345,12 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
           mode: 'dts',
         });
 
-        const sourceFile = ts.createSourceFile(
+        const sourceFile = compiler.createSourceFile(
           fileName,
           tsx.code,
           languageVersion,
           true,
-          isTsFile ? ts.ScriptKind.TS : ts.ScriptKind.JS // Set to 'JS' to enable TypeScript to parse JSDoc.
+          isTsFile ? compiler.ScriptKind.TS : compiler.ScriptKind.JS // Set to 'JS' to enable TypeScript to parse JSDoc.
         );
 
         // update cache
@@ -360,8 +371,8 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
         if (cachedSourceFile && staticCaching) {
           return cachedSourceFile;
         }
-        const modifiedTime: Date | undefined = ts.sys.getModifiedTime
-          ? ts.sys.getModifiedTime(fileName)
+        const modifiedTime: Date | undefined = compiler.sys.getModifiedTime
+          ? compiler.sys.getModifiedTime(fileName)
           : undefined;
         if (modifiedTime) {
           const cachedModifiedTime = cache.filenameToModifiedTime[fileName];
@@ -375,7 +386,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
           return;
         }
 
-        const sourceFile = ts.createSourceFile(fileName, content, languageVersion, true);
+        const sourceFile = compiler.createSourceFile(fileName, content, languageVersion, true);
 
         // update cache
         cache.filenameToSourceFile[fileName] = sourceFile;
@@ -389,7 +400,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
     },
   };
 
-  const program = ts.createProgram({
+  const program = compiler.createProgram({
     rootNames: Array.from(cache.rootNames),
     options: cache.options,
     host,
@@ -410,7 +421,8 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
   // Get render function generated by svelte2tsx
   const renderFunction = sourceFile.statements.find((statement) => {
     return (
-      ts.isFunctionDeclaration(statement) && statement.name?.text === internalHelpers.renderName
+      compiler.isFunctionDeclaration(statement) &&
+      statement.name?.text === svelte2tsx.internalHelpers.renderName
     );
   }) as ts.FunctionDeclaration | undefined;
   if (renderFunction === undefined) {
@@ -434,14 +446,14 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
         propsType.getProperties().forEach((prop) => {
           const name = prop.getName();
           let description =
-            ts.displayPartsToString(prop.getDocumentationComment(checker)) || undefined;
+            compiler.displayPartsToString(prop.getDocumentationComment(checker)) || undefined;
 
           // Infer prop type
           const propType = checker.getTypeOfSymbolAtLocation(prop, decl);
 
           if (prop.valueDeclaration) {
             // Comment from JSDoc '@type {type} comment'
-            const typeTag = ts.getJSDocTypeTag(prop.valueDeclaration);
+            const typeTag = compiler.getJSDocTypeTag(prop.valueDeclaration);
             if (typeTag?.comment) {
               description = ((description || '') + '\n' + typeTag.comment).trim();
             }
@@ -458,7 +470,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
           }
 
           // Check if this prop is optional
-          const optional = (prop.flags & ts.SymbolFlags.Optional) !== 0;
+          const optional = (prop.flags & compiler.SymbolFlags.Optional) !== 0;
           propMap.set(name, {
             name,
             optional,
@@ -471,16 +483,16 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
   }
 
   renderFunction.body?.forEachChild((node) => {
-    if (ts.isVariableStatement(node)) {
+    if (compiler.isVariableStatement(node)) {
       node.declarationList.declarations.forEach((declaration) => {
         // Extract default values from:
         //     let { <name> = <defaultValue>, ... }: <propsType> = $props();
 
-        if (ts.isObjectBindingPattern(declaration.name)) {
+        if (compiler.isObjectBindingPattern(declaration.name)) {
           const isPropsRune =
             declaration.initializer &&
-            ts.isCallExpression(declaration.initializer) &&
-            ts.isIdentifier(declaration.initializer.expression) &&
+            compiler.isCallExpression(declaration.initializer) &&
+            compiler.isIdentifier(declaration.initializer.expression) &&
             declaration.initializer.expression.text === '$props';
 
           const isPropsType =
@@ -503,8 +515,8 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
         // Extract default values from:
         //    export let <name> = <defaultValue>
         if (
-          ts.isVariableDeclaration(declaration) &&
-          ts.isIdentifier(declaration.name) &&
+          compiler.isVariableDeclaration(declaration) &&
+          compiler.isIdentifier(declaration.name) &&
           propMap.has(declaration.name.text)
         ) {
           const prop = propMap.get(declaration.name.text);

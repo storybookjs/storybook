@@ -983,7 +983,7 @@ Storybook 11 requires TypeScript 5.9 or higher. Upgrade your project's TypeScrip
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
 
-TypeScript 7 does not include the compiler API that Storybook uses to extract component metadata for Controls, the Docs args table and the component manifest. `storybook init` and `storybook upgrade` install `@typescript/typescript6` when the project uses TypeScript 7. You can also install it yourself:
+TypeScript 7 does not include the compiler API that Storybook uses to extract component metadata for Controls, the Docs args table and the component manifest. `storybook init` and `storybook upgrade` install `@typescript/typescript6` when the project uses TypeScript 7. Svelte docgen also uses it, because `svelte2tsx` loads TypeScript itself. You can also install it yourself:
 
 ```sh
 npm install --save-dev @typescript/typescript6

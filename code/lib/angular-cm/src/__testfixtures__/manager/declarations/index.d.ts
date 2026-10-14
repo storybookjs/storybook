@@ -1,2 +1,2 @@
-export { ButtonComponent } from './button.component';
-export { ButtonTheme } from './button-theme';
+export { ButtonComponent } from './button.component.js';
+export { ButtonTheme } from './button-theme.js';

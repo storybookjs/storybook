@@ -20,7 +20,7 @@ export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): 
 
 export const isDeclaredInAngularCore = (symbol: ts.Symbol): boolean =>
   symbol.declarations?.some((declaration) =>
-    declaration.getSourceFile().fileName.includes('@angular/core')
+    declaration.getSourceFile().fileName.includes('/@angular/core/')
   ) ?? false;
 
 // Angular matches decorators by imported symbol, including aliases re-exported through barrels.

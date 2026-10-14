@@ -201,6 +201,22 @@ describe('a .d.ts class whose `ɵcmp` is not an Angular component declaration', 
     );
   });
 
+  it('does not mistake a package whose name merely starts with `@angular/core` for Angular', () => {
+    expectPlainClass(
+      analyzeDeclaration(
+        declaring(MODERN_ARGUMENTS).replace(
+          `'@angular/core'`,
+          `'./node_modules/@angular/core-extra/index'`
+        ),
+        {
+          'node_modules/@angular/core-extra/index.d.ts': `
+            export type ɵɵComponentDeclaration<T, S, E, I, O, Q, N, IsStandalone> = unknown;
+          `,
+        }
+      )
+    );
+  });
+
   it('does not read a declaration type whose module does not resolve', () => {
     expectPlainClass(
       analyzeDeclaration(

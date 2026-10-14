@@ -85,6 +85,7 @@
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
     "@types/node": "^22.19.1",
+    "@typescript/typescript6": "^6.0.2",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",
     "rimraf": "^6.0.1",
@@ -102,6 +103,7 @@
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0",
     "@angular/core": ">=21.0.0 < 23.0.0",
     "@angular/platform-browser": ">=21.0.0 < 23.0.0",
+    "@typescript/typescript6": "^6.0.0",
     "less": "^4.0.0",
     "rxjs": "^7.4.0",
     "sass": "^1.0.0",
@@ -113,6 +115,9 @@
   },
   "peerDependenciesMeta": {
     "@angular/cli": {
+      "optional": true
+    },
+    "@typescript/typescript6": {
       "optional": true
     },
     "less": {

@@ -9,8 +9,11 @@
  * The renderer preset contributes the descriptor that points here.
  */
 import { createLazyDocgenMiddleware } from 'storybook/internal/common';
+import { loadTypeScriptCompilerApi } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
+
+import type ts from 'typescript';
 
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
 import { VueComponentMetaManager } from './component-docgen/component-meta/vue-project-manager.ts';
@@ -26,8 +29,19 @@ export const createDocgenProvider = (): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
       try {
-        const typescript = await import('typescript');
-        const manager = new VueComponentMetaManager(typescript.default ?? typescript);
+        const typescript = await loadTypeScriptCompilerApi<typeof ts>({
+          typescript: () => import('typescript'),
+          typescript6: () => import('@typescript/typescript6'),
+        });
+        if (!typescript) {
+          return undefined;
+        }
+        // Not part of the package's public API, so a missing export falls back to `createChecker`.
+        const createCheckerBase = await import('vue-component-meta/lib/checker.js').then(
+          (checker) => checker.createCheckerBase,
+          () => undefined
+        );
+        const manager = new VueComponentMetaManager(typescript, createCheckerBase);
         manager.startWatching();
         return manager;
       } catch (error) {

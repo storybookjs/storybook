@@ -65,17 +65,22 @@
   },
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",
+    "@typescript/typescript6": "^6.0.2",
     "@vitejs/plugin-vue": "^4.6.2",
     "typescript": "^6.0.3",
     "vue": "^3.2.47",
     "vue-tsc": "latest"
   },
   "peerDependencies": {
+    "@typescript/typescript6": "^6.0.0",
     "storybook": "workspace:^",
-    "typescript": "^5.9.0 || ^6.0.0",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "@typescript/typescript6": {
+      "optional": true
+    },
     "typescript": {
       "optional": true
     }

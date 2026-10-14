@@ -18,6 +18,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
+import { loadTypeScript } from '../componentManifest/componentMeta/loadTypeScript.ts';
 import { buildDocgenPayload } from './buildDocgen.ts';
 
 /**
@@ -30,8 +31,8 @@ export const createDocgenProvider = (): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
       try {
-        const ts = await import('typescript');
-        return new ComponentMetaManager(ts.default ?? ts);
+        const ts = await loadTypeScript();
+        return ts ? new ComponentMetaManager(ts) : undefined;
       } catch (err) {
         logger.debug(`[reactComponentMeta] Docgen provider disabled: ${err}`);
         return undefined;

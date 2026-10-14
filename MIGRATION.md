@@ -17,7 +17,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
-  - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [TypeScript 5.9 or higher](#typescript-59-or-higher)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
   - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
   - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
@@ -977,11 +977,19 @@ Storybook accepts prerelease Node.js builds when their version meets this minimu
 
 During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
 
-### TypeScript 5.9 or 6.x
+### TypeScript 5.9 or higher
 
-Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
+Storybook 11 requires TypeScript 5.9 or higher. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
+TypeScript 7 does not include the compiler API that Storybook uses to extract component metadata for Controls, the Docs args table and the component manifest. If your React or Vue 3 project uses TypeScript 7, install `@typescript/typescript6` next to it:
+
+```sh
+npm install --save-dev @typescript/typescript6
+```
+
+Storybook only uses it to read your component types. Your project keeps compiling with TypeScript 7. Without it, Storybook shows a warning and does not generate Controls from your component types.
 
 ### CSF Next: meta args no longer need `as const`
 

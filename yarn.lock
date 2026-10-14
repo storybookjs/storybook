@@ -10158,6 +10158,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.19.1"
+    "@typescript/typescript6": "npm:^6.0.2"
     empathic: "npm:^2.0.0"
     memfs: "npm:^4.11.1"
     rimraf: "npm:^6.0.1"
@@ -10177,6 +10178,7 @@ __metadata:
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0"
     "@angular/core": ">=21.0.0 < 23.0.0"
     "@angular/platform-browser": ">=21.0.0 < 23.0.0"
+    "@typescript/typescript6": ^6.0.0
     less: ^4.0.0
     rxjs: ^7.4.0
     sass: ^1.0.0
@@ -10187,6 +10189,8 @@ __metadata:
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/cli":
+      optional: true
+    "@typescript/typescript6":
       optional: true
     less:
       optional: true
@@ -10855,7 +10859,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10875,7 +10879,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -10891,6 +10895,7 @@ __metadata:
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^1.0.6"
     "@types/node": "npm:^22.19.1"
+    "@typescript/typescript6": "npm:^6.0.2"
     "@volar/language-core": "npm:~2.4.28"
     "@volar/typescript": "npm:~2.4.28"
     acorn: "npm:^7.4.1"
@@ -10914,14 +10919,17 @@ __metadata:
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
+    "@typescript/typescript6": ^6.0.0
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    "@typescript/typescript6":
       optional: true
     typescript:
       optional: true
@@ -11221,7 +11229,7 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -11236,6 +11244,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
     "@types/pug": "npm:2.0.10"
+    "@typescript/typescript6": "npm:^6.0.2"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/compiler-dom": "npm:^3.2.47"
     "@vue/language-core": "npm:^3.2.7"
@@ -11247,10 +11256,13 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
   peerDependencies:
+    "@typescript/typescript6": ^6.0.0
     storybook: "workspace:^"
-    typescript: ^5.9.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vue: ^3.0.0
   peerDependenciesMeta:
+    "@typescript/typescript6":
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -13298,6 +13310,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@typescript/old@npm:typescript@^6, typescript@npm:^6.0.3":
+  version: 6.0.3
+  resolution: "typescript@npm:6.0.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/4a25ff5045b984370f48f196b3a0120779b1b343d40b9a68d114ea5e5fff099809b2bb777576991a63a5cd59cf7bffd96ff6fe10afcefbcb8bd6fb96ad4b6606
+  languageName: node
+  linkType: hard
+
 "@typescript/typescript-aix-ppc64@npm:7.0.2":
   version: 7.0.2
   resolution: "@typescript/typescript-aix-ppc64@npm:7.0.2"
@@ -13435,6 +13457,17 @@ __metadata:
   version: 7.0.2
   resolution: "@typescript/typescript-win32-x64@npm:7.0.2"
   conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@typescript/typescript6@npm:^6.0.2":
+  version: 6.0.2
+  resolution: "@typescript/typescript6@npm:6.0.2"
+  dependencies:
+    "@typescript/old": "npm:typescript@^6"
+  bin:
+    tsc6: bin/tsc6
+  checksum: 10c0/0c6e5c1c3a61b79f2bc61506feb82f8ce54275b2af1aebc3dd9310d7f57b1de2aca40256d018cf736c524152ae4a731f5810ff7cd028d565158d53368e681af2
   languageName: node
   linkType: hard
 
@@ -35457,16 +35490,6 @@ __metadata:
   bin:
     tsc: bin/tsc
   checksum: 10c0/3dcee51ec8c332492325bcdbf7df48b66668751f127e622ae7d41b6c716eb19184424a45e14f7750f50f340232388b69e6287859155f06a5ce2df76f12cb31cf
-  languageName: node
-  linkType: hard
-
-"typescript@npm:^6.0.3":
-  version: 6.0.3
-  resolution: "typescript@npm:6.0.3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/4a25ff5045b984370f48f196b3a0120779b1b343d40b9a68d114ea5e5fff099809b2bb777576991a63a5cd59cf7bffd96ff6fe10afcefbcb8bd6fb96ad4b6606
   languageName: node
   linkType: hard
 

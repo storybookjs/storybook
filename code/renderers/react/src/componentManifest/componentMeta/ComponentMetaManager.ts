@@ -111,7 +111,8 @@ function assertTypeScriptCompilerApi(typescript: typeof ts): void {
   if (typeof typescript?.sys?.fileExists !== 'function') {
     throw new Error(
       'The resolved `typescript` package does not expose the compiler API (`ts.sys` is undefined), ' +
-        'which is the case for TypeScript 7. Component metadata extraction requires TypeScript 5.9 or 6.'
+        'which is the case for TypeScript 7. Component metadata extraction requires TypeScript 5.9 ' +
+        'or 6, or `@typescript/typescript6` next to TypeScript 7.'
     );
   }
 }

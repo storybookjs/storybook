@@ -57,6 +57,7 @@
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
     "@types/node": "^22.19.1",
+    "@typescript/typescript6": "^6.0.2",
     "@volar/language-core": "~2.4.28",
     "@volar/typescript": "~2.4.28",
     "acorn": "^7.4.1",
@@ -79,16 +80,20 @@
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",
     "@types/react-dom": "^18.0.0 || ^19.0.0",
+    "@typescript/typescript6": "^6.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
-    "typescript": "^5.9.0 || ^6.0.0"
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
     "@types/react": {
       "optional": true
     },
     "@types/react-dom": {
+      "optional": true
+    },
+    "@typescript/typescript6": {
       "optional": true
     },
     "typescript": {

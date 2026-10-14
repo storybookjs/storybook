@@ -6,7 +6,9 @@ sidebar:
 
 Storybook provides an integrated [TypeScript](https://www.typescriptlang.org/) experience, including zero-configuration setup and built-in types for APIs, addons, and stories.
 
-Storybook requires TypeScript 5.9 or 6.x.
+Storybook requires TypeScript 5.9 or higher.
+
+TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table. If your React or Vue 3 project uses TypeScript 7, install `@typescript/typescript6` as a dev dependency. Storybook only uses it to read your component types, and your project keeps compiling with TypeScript 7.
 
 ## Configure Storybook with TypeScript
 

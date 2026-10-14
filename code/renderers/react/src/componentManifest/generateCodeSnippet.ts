@@ -1,8 +1,10 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import {
+  collectImportBindings,
   createStoryArgsResolver,
   type CsfFile,
   type ImportRef,
+  isCanonicalCsf2BindCall,
   metaObjectPath,
   normalizeStoryDeclaration,
   type ReferenceContext,
@@ -36,10 +38,63 @@ export function getCodeSnippet(
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
+  const importedBind = importedBoundStory(csf, storyName, args);
+  if (importedBind) {
+    return {
+      node: importedBind.node,
+      imports: [...imports, importedBind.importRef],
+      unresolved,
+    };
+  }
   return {
     node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
     imports,
     unresolved,
+  };
+}
+
+function importedBoundStory(
+  csf: CsfFile,
+  storyName: string,
+  args: Record<string, t.Node>
+): { node: t.VariableDeclaration; importRef: ImportRef } | undefined {
+  const declaration = csf._storyDeclarationPath[storyName];
+  if (!declaration?.isVariableDeclarator()) {
+    return undefined;
+  }
+  const init = declaration.get('init');
+  if (!init.isCallExpression() || !isCanonicalCsf2BindCall(init.node)) {
+    return undefined;
+  }
+  const callee = init.get('callee');
+  if (!callee.isMemberExpression()) {
+    return undefined;
+  }
+  const object = callee.get('object');
+  if (!object.isIdentifier()) {
+    return undefined;
+  }
+  const binding = collectImportBindings(csf._file.path).get(object.node.name);
+  if (!binding) {
+    return undefined;
+  }
+
+  const values = Object.entries(args).map(([key, value]) => {
+    invariant(t.isExpression(value), `Could not use ${key} as a bound story arg`);
+    return t.objectProperty(t.stringLiteral(key), value);
+  });
+  const boundCall = t.callExpression(init.node, [t.objectExpression(values)]);
+  const node = t.variableDeclaration('const', [
+    t.variableDeclarator(t.identifier(storyName), t.arrowFunctionExpression([], boundCall)),
+  ]);
+  return {
+    node,
+    importRef: {
+      localImportName: object.node.name,
+      importId: binding.importId,
+      importName: binding.importName,
+      ...(binding.importName === '*' ? { namespace: object.node.name } : {}),
+    },
   };
 }
 

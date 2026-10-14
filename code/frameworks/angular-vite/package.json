@@ -70,7 +70,7 @@
     "vite": ">=8.0.0"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^2.5.2",
+    "@analogjs/vite-plugin-angular": "^2.7.3",
     "@angular-devkit/architect": "^0.2102.12",
     "@angular-devkit/build-angular": "^21.2.12",
     "@angular-devkit/core": "^21.2.12",

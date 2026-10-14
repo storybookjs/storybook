@@ -1,6 +1,5 @@
 {
   "label": {
-    "defaultValue": undefined,
     "description": "Visible label.",
     "name": "label",
     "table": {
@@ -16,9 +15,6 @@
     },
   },
   "size": {
-    "defaultValue": {
-      "summary": ""medium"",
-    },
     "description": "The visual size of the control.",
     "name": "size",
     "table": {

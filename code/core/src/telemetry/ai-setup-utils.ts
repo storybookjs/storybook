@@ -1,7 +1,7 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
 /**
- * Determines whether a story index entry was authored by the `sb ai setup` flow.
+ * Determines whether a story index entry was authored by the `storybook skills setup` flow.
  * Currently checks title prefix. When we migrate to a tag-based approach,
  * swap this to check for the tag instead — this is the single swap point.
  */

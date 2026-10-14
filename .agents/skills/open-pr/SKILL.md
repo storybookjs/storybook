@@ -2,6 +2,8 @@
 name: open-pr
 description: Opens a pull request from the current branch using the PR template. Use when the user asks to open a PR, create a pull request, or invokes /open-pr.
 allowed-tools: Bash, Read, AskQuestion
+metadata:
+  internal: true
 ---
 
 # Open Pull Request

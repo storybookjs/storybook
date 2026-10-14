@@ -310,10 +310,7 @@ const codemods: Record<string, Codemod> = {
       );
     },
     transform: (snippetInfo: SnippetInfo) => {
-      return storyToCsfFactory(snippetInfo, {
-        previewConfigPath: undefined,
-        useSubPathImports: true,
-      });
+      return storyToCsfFactory(snippetInfo, { useSubPathImports: true });
     },
   },
   'csf-factory-config': {

@@ -1,4 +1,4 @@
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -62,6 +62,11 @@ export const getVirtualModules = async (options: Options) => {
     !!webpackVersion &&
     semver.lt(webpackVersion, '5.101.3');
   virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
+  // Resolve the csf module from this builder's own core copy rather than by bare specifier, which
+  // webpack would walk up to the user's project root for — a different Storybook version than the
+  // builder in multi-version workspaces (SB-1981). Same convention as the corePath in index.ts.
+  const corePath = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
+  const csfImportPath = join(corePath, 'dist', 'csf', 'index.js');
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (
     await readTemplate(
@@ -85,6 +90,7 @@ export const getVirtualModules = async (options: Options) => {
         .map((entry) => `require('${entry}')`)
         .join(',')
     )
+    .replaceAll(`'{{csfImportPath}}'`, `'${csfImportPath}'`)
     // We need to double escape `\` for webpack. We may have some in windows paths
     .replace(/\\/g, '\\\\');
   entries.push(configEntryPath);

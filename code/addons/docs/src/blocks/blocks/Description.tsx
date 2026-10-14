@@ -135,7 +135,7 @@ const DescriptionImpl: FC<DescriptionProps> = (props) => {
   // (story-docs by story id, docgen by component id), so each lives in its own child component to
   // keep the hook call unconditional. When the feature is off — or a bare `of={Component}` has no
   // resolvable component id — render without a service fallback.
-  if (globalThis.FEATURES?.experimentalDocgenServer) {
+  if (globalThis.FEATURES?.docgenServer) {
     if (resolvedOf.type === 'story') {
       return <DescriptionStoryWithServices resolvedOf={resolvedOf} />;
     }

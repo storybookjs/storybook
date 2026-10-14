@@ -13,11 +13,11 @@ afterEach(() => {
 
 describe('docs decorators', () => {
   it('drops the runtime source decorator when the docgen server is enabled', async () => {
-    expect(await decoratorsWith({ experimentalDocgenServer: true })).toEqual([]);
+    expect(await decoratorsWith({ docgenServer: true })).toEqual([]);
   });
 
   it.each([
-    ['the feature is off', { experimentalDocgenServer: false }],
+    ['the feature is off', { docgenServer: false }],
     ['no features are set', undefined],
   ])('keeps the runtime source decorator when %s', async (_name, features) => {
     expect(await decoratorsWith(features)).toHaveLength(1);

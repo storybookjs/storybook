@@ -136,8 +136,8 @@ consumer amortizes config load across many calls on the live synced runtime.
    respawn → `EnvironmentMismatchError`.
 3. **Connect.** Node WebSocket to `record.url` + `/storybook-server-channel?token=…`, no
    Origin. `UniversalStore.__prepare(channel, follower)`.
-4. **Register.** Load config from `record.configDir`. Set delegated mode. `services:sync-start`
-   pulls snapshots and patches from the server.
+4. **Register.** Load config from `record.configDir`. Set delegated mode. `services:sync-request`
+   pulls a snapshot from the server; later writes arrive as `services:entry` patches.
 5. **Execute.** Toolset handler runs caller-side (`ctx.transport = 'cli'`). Queries read synced
    state. `.loaded()` warms via delegated commands. Every command goes over the channel.
 6. **Render + close.** `ToolsetOutcome` through markdown / `--json`; `ok` drives the exit code.

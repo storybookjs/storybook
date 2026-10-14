@@ -21,7 +21,6 @@
     "lib": ["ESNext"],
     "types": ["node"],
     "strict": true,
-    "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

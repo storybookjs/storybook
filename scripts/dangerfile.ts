@@ -31,7 +31,13 @@ const { labels } = danger.github.issue;
 
 const prLogConfig = pkg['pr-log'];
 
-const branchVersion = Versions.MINOR;
+const isPrerelease = pkg.version.includes('-');
+const isFirstOfMajor = /^\d+\.0\.0(-|$)/.test(pkg.version);
+const branchVersion = !isPrerelease
+  ? Versions.PATCH
+  : isFirstOfMajor
+    ? Versions.MAJOR
+    : Versions.MINOR;
 const targetBranch = danger.github.pr.base.ref;
 const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
 const author = danger.github.pr.user;

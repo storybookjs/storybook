@@ -150,12 +150,8 @@ describe('runSkillsCommand', () => {
     expect(writeStory.output).toContain('npx storybook tools docs list');
   });
 
-  it('says the docs are unavailable when the CLI docs gate is off', async () => {
+  it('leaves the component lookup out of ui-workflow when the CLI docs gate is off', async () => {
     const d = deps();
-    const componentDocs = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
-    expect(componentDocs.exitCode).toBe(0);
-    expect(componentDocs.output).toContain('`storybook tools docs` is unavailable');
-
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
     expect(uiWorkflow.output).not.toContain('component-docs');
     expect(uiWorkflow.output).not.toContain('npx storybook tools docs');

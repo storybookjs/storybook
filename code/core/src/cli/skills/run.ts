@@ -233,7 +233,7 @@ function withCommandReference(
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   if (id === 'component-docs') {
-    return buildComponentDocsSkill({ docsEnabled: inputs.docsEnabledForCli });
+    return buildComponentDocsSkill();
   }
   if (id === 'ui-workflow') {
     return buildUiWorkflowSkill({

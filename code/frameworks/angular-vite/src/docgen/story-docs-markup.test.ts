@@ -309,7 +309,7 @@ describe('renderedProps', () => {
         `render: ({ label, size: scale, on = true }) => ({ props: { label, scale, on, id: 1 } })`,
         ['label', 'scale', 'size', 'on', 'id']
       )
-    ).toEqual({ label: 'label', scale: 'size', size: undefined, on: 'code', id: 'code' });
+    ).toEqual({ label: 'label', scale: 'size', size: undefined, on: 'on or code', id: 'code' });
   });
 
   it('reads an arg off the args object or a rest of it', () => {
@@ -334,6 +334,71 @@ describe('renderedProps', () => {
   it('holds nothing for a render without props', () => {
     expect(propsOf(`render: (args) => ({ template: '<sb-button />' })`, ['label'])).toEqual({
       label: undefined,
+    });
+  });
+
+  describe('code that reads args', () => {
+    const computedOf = (source: string, name: string) => {
+      const props = renderedProps(shapeOf(source, 'Default'));
+      const computed = props?.(name)?.computed;
+      return computed && { code: computed.print((arg) => `«${arg}»`), imports: computed.imports };
+    };
+    const story = (render: string, header = '') => dedent`
+      ${header}
+      export default { title: 'Example/Button' };
+      export const Default = { render: ${render} };
+    `;
+
+    it.each([
+      [`(args) => ({ props: { x: args.label + '!' } })`, "«label» + '!'"],
+      [
+        `({ count }) => ({ props: { x: count > 3 ? 'many' : 'few' } })`,
+        "«count» > 3 ? 'many' : 'few'",
+      ],
+      [
+        `(args) => ({ props: { x: { title: 'Hi', label: args.label } } })`,
+        "{\n  title: 'Hi',\n  label: «label»,\n}",
+      ],
+      [`({ label }) => ({ props: { x: { label } } })`, '{\n  label: «label»,\n}'],
+      [`(args) => ({ props: { x: args.count.toFixed(1) } })`, '(«count»).toFixed(1)'],
+      [`(args) => ({ props: { x: -args.count } })`, '-(«count»)'],
+      [`(args) => ({ props: { x: (v) => v + args.label } })`, '(v) => v + «label»'],
+    ])('writes each arg read in place in %s', (render, code) => {
+      expect(computedOf(story(render), 'x')).toEqual({ code, imports: [] });
+    });
+
+    it('follows the consts of the render body the props name', () => {
+      const render = dedent`(args) => {
+        const control = new FormControl(args.value, Validators.required);
+        control.valueChanges.subscribe(() => {});
+        const form = new FormGroup({ control });
+        return { props: { form } };
+      }`;
+      const header = `import { FormControl, FormGroup, Validators } from '@angular/forms';`;
+      expect(computedOf(story(render, header), 'form')).toEqual({
+        code: 'new FormGroup({\n  control: new FormControl(«value», Validators.required),\n})',
+        imports: ['FormGroup', 'FormControl', 'Validators'],
+      });
+    });
+
+    it.each([
+      ['a name of the story file', `(args) => ({ props: { x: args.label + suffix } })`],
+      ['a storybook import', `(args) => ({ props: { x: action(args.label) } })`],
+      ['an arg it calls', `(args) => ({ props: { x: args.format(1) } })`],
+      ['the args whole', `(args) => ({ props: { x: build(args) } })`],
+      ['an arg with a default', `({ label = 'Go' }) => ({ props: { x: label + '!' } })`],
+      [
+        'a const another prop reads too',
+        `(args) => { const c = [args.label]; return { props: { x: { c }, c } }; }`,
+      ],
+      ['no arg', `(args) => ({ props: { x: [1, 2] } })`],
+    ])('is left out for code reading %s', (_, render) => {
+      const header = dedent`
+        import { action } from 'storybook/actions';
+        import { build } from './build';
+        const suffix = '!';
+      `;
+      expect(computedOf(story(render, header), 'x')).toBeUndefined();
     });
   });
 

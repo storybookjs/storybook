@@ -26,6 +26,8 @@ export interface HostComponentSnippetInput {
   outputs: string[];
   /** Args the template refers to by name, which the story supplied through `props: args`. */
   fields?: { name: string; value: string }[];
+  /** Import statements the fields need, as the story file imports what they name. */
+  imports?: string[];
 }
 
 export interface HostComponentSnippet {
@@ -111,6 +113,7 @@ export const buildHostComponentSnippet = ({
   ngModules,
   outputs,
   fields = [],
+  imports: fieldImports = [],
 }: HostComponentSnippetInput): HostComponentSnippet => {
   // A `standalone: false` component is only reachable through its declaring NgModule, which static
   // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
@@ -124,6 +127,7 @@ export const buildHostComponentSnippet = ({
     ...(componentImport && importable ? [componentImport] : []),
     ...(moduleNames.length > 0 ? (ngModules?.importStatements ?? []) : []),
   ];
+  imports.push(...fieldImports.filter((statement) => !imports.includes(statement)));
 
   // Under `*ngComponentOutlet` the component is referenced as a value, not matched as an element,
   // so the directive is what the host declares and the class has to be reachable from the template.

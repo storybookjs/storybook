@@ -4,11 +4,13 @@ import { escapeTemplateLiteral } from '../../template-grammar.ts';
 
 // Fills a template from the story-docs build. `⟦props label size⟧` is the inputs the story's args
 // may bind, which lands in the host component's `template` literal. `⟦value label⟧` is the value
-// of a host field, for an arg the markup reads by name.
+// of a host field, for an arg the markup reads by name; a `=code` tail is printed while it is unset.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) =>
     kind === 'value'
-      ? fieldValue(args[words[0]!], words[0]!)
+      ? args[words[0]!] === undefined && words[1]?.startsWith('=')
+        ? words.slice(1).join(' ').slice(1)
+        : fieldValue(args[words[0]!], words[0]!)
       : words
           .map((name) => escapeTemplateLiteral(binding(name, args[name])))
           .filter(Boolean)

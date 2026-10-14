@@ -12,6 +12,9 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
+import { evaluateArgLiteral } from './story-docs-args.ts';
+import type { PropCode } from './story-docs-prop-code.ts';
+import { functionPath, propCode } from './story-docs-prop-code.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
 
 /** One story, as much of it as reading the markup it supplies needs. */
@@ -113,12 +116,12 @@ interface FunctionScope {
    * whole args parameter excludes nothing, a rest binding excludes what was destructured off it.
    */
   argsExpansions: ReadonlyMap<string, readonly string[]>;
-  /** Names among `argBindings` with a default, which hold another value while the arg is unset. */
-  defaulted: ReadonlySet<string>;
+  /** Names among `argBindings` with a default, which they hold while the arg is unset. */
+  defaulted: ReadonlyMap<string, t.Node>;
 }
 
 const NO_SCOPE: FunctionScope = {
-  defaulted: new Set(),
+  defaulted: new Map(),
   argBindings: new Map(),
   parameterNames: new Set(),
   bodyDeclared: new Set(),
@@ -556,6 +559,8 @@ const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined 
 export interface RenderedProp {
   arg?: string;
   code?: t.Node;
+  /** The code where it reads args and the snippet can carry it; see {@link propCode}. */
+  computed?: PropCode;
 }
 
 export type RenderedProps = (name: string) => RenderedProp | undefined;
@@ -591,6 +596,7 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
 
   // The args a spread passes on under their own name: all but those destructured off before it.
   let spreadExcept: readonly string[] | undefined;
+  let fnPath: ReturnType<typeof functionPath>;
   const named = new Map<string, RenderedProp>();
   for (const property of properties) {
     if (t.isSpreadElement(property)) {
@@ -618,7 +624,24 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
       return undefined;
     }
     const arg = t.isObjectProperty(property) ? argRead(property.value, scope) : undefined;
-    named.set(name, arg === undefined ? { code: propertyValue(property) } : { arg });
+    if (arg !== undefined) {
+      named.set(name, { arg });
+      continue;
+    }
+    const defaulted = t.isObjectProperty(property)
+      ? defaultedRead(property.value, scope)
+      : undefined;
+    if (defaulted) {
+      named.set(name, defaulted);
+      continue;
+    }
+    const code = propertyValue(property);
+    fnPath ??= functionPath(shape.csf._file.path, fn);
+    const computed =
+      fnPath && t.isObjectProperty(property)
+        ? propCode(fnPath, unwrapExpression(property.value as t.Expression), scope)
+        : undefined;
+    named.set(name, computed ? { code, computed } : { code });
   }
 
   return (name) =>
@@ -645,6 +668,15 @@ const argRead = (node: t.Node, scope: FunctionScope): string | undefined => {
         ? unwrapped.property.value
         : undefined;
   return name !== undefined && except && !except.includes(name) ? name : undefined;
+};
+
+// An arg destructured with a literal default, which the prop holds while the arg is unset.
+const defaultedRead = (node: t.Node, scope: FunctionScope): RenderedProp | undefined => {
+  const unwrapped = unwrapExpression(node as t.Expression);
+  const code = t.isIdentifier(unwrapped) ? scope.defaulted.get(unwrapped.name) : undefined;
+  return code && evaluateArgLiteral(code, []) !== undefined
+    ? { arg: scope.argBindings.get((unwrapped as t.Identifier).name), code }
+    : undefined;
 };
 
 // A body that assigns may change what a parameter holds before the props read it.
@@ -694,7 +726,7 @@ const functionScope = (fn: t.Node | undefined): FunctionScope => {
   const parameterNames = new Set<string>();
   fn.params.forEach((param) => collectPatternNames(param, parameterNames));
   const argBindings = new Map<string, string>();
-  const defaulted = new Set<string>();
+  const defaulted = new Map<string, t.Node>();
   const bindArgs = (pattern: t.ObjectPattern) => {
     for (const property of pattern.properties) {
       if (!t.isObjectProperty(property) || property.computed) {
@@ -705,7 +737,7 @@ const functionScope = (fn: t.Node | undefined): FunctionScope => {
       if (argName !== undefined && t.isIdentifier(local)) {
         argBindings.set(local.name, argName);
         if (t.isAssignmentPattern(property.value)) {
-          defaulted.add(local.name);
+          defaulted.set(local.name, property.value.right);
         }
       }
     }

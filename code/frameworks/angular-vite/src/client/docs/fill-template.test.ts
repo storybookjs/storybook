@@ -46,6 +46,12 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate('  on = ⟦value on⟧;', { on: () => {} })).toThrow(UnprintableArgError);
   });
 
+  it("prints a value hole's `=code` tail while its arg is unset", () => {
+    expect(fillTemplate("  value = ⟦value value =''⟧;", {})).toBe("  value = '';");
+    expect(fillTemplate("  tags = ⟦value tags =['A', 'B']⟧;", {})).toBe("  tags = ['A', 'B'];");
+    expect(fillTemplate("  value = ⟦value value =''⟧;", { value: 'Go' })).toBe("  value = 'Go';");
+  });
+
   it('throws for a value it cannot print', () => {
     expect(() => fillTemplate(' ⟦props date⟧', { date: new Date() })).toThrow(UnprintableArgError);
     expect(() => fillTemplate(' ⟦props max⟧', { max: [Infinity] })).toThrow(UnprintableArgError);

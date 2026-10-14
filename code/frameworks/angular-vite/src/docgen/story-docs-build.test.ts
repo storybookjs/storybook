@@ -2410,6 +2410,87 @@ describe('buildStoryDocsPayload', () => {
       expect(filled).toContain("  label = 'Stop';");
     });
 
+    it('declares a prop the render computes from args as written, with a hole for each read', async () => {
+      const stories = await storiesOf(dedent`
+        import { FormControl, Validators } from '@angular/forms';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const S = {
+          args: { value: 'Go', required: true },
+          render: ({ value, required, disabled }) => {
+            const control = new FormControl({ value, disabled }, required ? Validators.required : null);
+            control.valueChanges.subscribe(() => {});
+            return { props: { control }, template: '<sb-button [label]="control.value" />' };
+          },
+        };
+      `);
+      const { snippet, template, warning } = stories.get('S')!;
+      expect(template).toBe(
+        [
+          `import { Component } from '@angular/core';`,
+          `import { ButtonComponent } from './button.component';`,
+          `import { FormControl, Validators } from '@angular/forms';`,
+          '',
+          '@Component({',
+          `  selector: 'app-demo',`,
+          '  imports: [ButtonComponent],',
+          '  template: `<sb-button [label]="control.value" />`,',
+          '})',
+          'export class DemoComponent {',
+          '  control = new FormControl({',
+          '    value: ⟦value value⟧,',
+          '    disabled: ⟦value disabled⟧,',
+          '  }, ⟦value required⟧ ? Validators.required : null);',
+          '}',
+        ].join('\n')
+      );
+      expect(snippet).toBe(fillTemplate(template!, { value: 'Go', required: true }));
+      expect(fillTemplate(template!, { value: "It's", disabled: true })).toContain(
+        "    value: 'It\\'s',\n    disabled: true,\n  }, undefined ? Validators.required : null);"
+      );
+      expect(warning).toBeUndefined();
+    });
+
+    it('binds an input the render computes from args to a host field', async () => {
+      const stories = await storiesOf(dedent`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const S = {
+          args: { label: 'Go', count: 2 },
+          render: (args) => ({ props: { label: \`\${args.label}!\`, count: args.count.toFixed() } }),
+        };
+      `);
+      const { snippet, template } = stories.get('S')!;
+      expect(snippet).toContain("  label = \`\${'Go'}!\`;\n  count = (2).toFixed();");
+      expect(extractHostComponentTemplate(template!)).toBe(
+        '<sb-button ⟦props⟧ [label]="label" [count]="count" (clicked)="clicked($event)" />'
+      );
+      expect(fillTemplate(template!, { label: 'Stop', count: -1 })).toContain(
+        "  label = \`\${'Stop'}!\`;\n  count = (-1).toFixed();"
+      );
+    });
+
+    it.each([
+      [
+        'a prop the args replace while they set it',
+        `(args) => ({ props: { label: '', ...args }, template })`,
+      ],
+      [
+        'an arg destructured with a default',
+        `({ label = '' }) => ({ props: { label }, template })`,
+      ],
+    ])('prints the code of %s while the arg is unset', async (_, render) => {
+      const template = await templateOf(
+        `export const S = { render: ${render} };`.replace(
+          'template }',
+          `template: '<sb-button [label]="label" />' }`
+        )
+      );
+      expect(template).toContain("  label = ⟦value label =''⟧;");
+      expect(fillTemplate(template!, {})).toContain("  label = '';");
+      expect(fillTemplate(template!, { label: 'Go' })).toContain("  label = 'Go';");
+    });
+
     it.each([
       ['markup without arg reads', `export const S = { template: '<sb-button></sb-button>' };`],
       [
@@ -2422,16 +2503,16 @@ describe('buildStoryDocsPayload', () => {
       ],
       ['an input bound to code', `export const S = { args: { label: [1, 2].join('-') } };`],
       [
-        'an input a render computes from its args',
-        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: { label: args.label + '!' } }) };`,
-      ],
-      [
         'an input a render passes on under another name',
         `export const S = { args: { text: 'Go' }, render: ({ text }) => ({ props: { label: text } }) };`,
       ],
       [
-        'markup reading a prop an arg replaces while it is set',
-        `export const S = { render: (args) => ({ props: { label: 'Go', ...args }, template: '<sb-button [label]="label" />' }) };`,
+        'markup reading code an arg replaces while it is set',
+        `export const S = { render: (args) => ({ props: { label: 'Go'.trim(), ...args }, template: '<sb-button [label]="label" />' }) };`,
+      ],
+      [
+        'markup reading code that names a story-file local',
+        `const suffix = '!'; export const S = { args: { label: 'Go' }, render: (args) => ({ props: { text: args.label + suffix }, template: '<sb-button [label]="text" />' }) };`,
       ],
       [
         'argsToTemplate in a render that passes no props',

@@ -44,7 +44,7 @@ export type ModuleGraphServiceState = {
   latestChangedStoryFiles: string[];
   /**
    * Change-detection scan readiness. Distinct from {@link status}: the graph can be ready while
-   * scanning is disabled or has failed. `pending` is the value before the first scan settles.
+   * git is unusable or scanning has failed. `pending` is the value before the first scan settles.
    */
   changeDetectionReadiness: ChangeDetectionReadinessState;
 };

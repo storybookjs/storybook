@@ -22,7 +22,7 @@ export function discoveryStepStrict(
   return {
     title: 'Discover the runtime (≤12 reads)',
     body: dedent`
-      Identify, in this order, using Glob/Grep first then targeted Reads:
+      Identify, in this order:
 
     - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
     - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports` : 'application entry file — framework initialization, shared services or providers, root CSS imports'}
@@ -48,7 +48,7 @@ export function discoveryStepRelaxed(
   return {
     title: 'Discover the runtime (≤40 reads)',
     body: dedent`
-      Identify, in this order, using Glob/Grep first then targeted Reads:
+      Identify, in this order:
 
     - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
     - ${isReact ? `entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports` : 'application entry file — framework initialization, shared services or providers, root CSS imports'}
@@ -65,6 +65,22 @@ export function discoveryStepRelaxed(
   };
 }
 
+function missingVitestAddonNote(
+  { addons }: ProjectInfo,
+  packageManager: InstructionsContext['packageManager']
+): string {
+  if (addons.includes('@storybook/addon-vitest')) {
+    return '';
+  }
+  const add = packageManager.getPackageCommand([
+    'storybook',
+    'add',
+    '@storybook/addon-vitest',
+    '--yes',
+  ]);
+  return `This project doesn't have \`@storybook/addon-vitest\` yet, which runs stories as tests. Add it first with \`${add}\`; the steps below need it.\n\n`;
+}
+
 export function verifyStep(
   projectInfo: ProjectInfo,
   { packageManager, tsx }: InstructionsContext
@@ -74,7 +90,9 @@ export function verifyStep(
 
   return {
     title: `Verify in one batch, then iterate only on failures`,
-    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
+    body:
+      missingVitestAddonNote(projectInfo, packageManager) +
+      dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
 
     \`\`\`bash
     ${vitestRunAll}
@@ -103,7 +121,9 @@ export function verifyWithAllowedFailureStep(
 
   return {
     title: `Verify in one batch, then iterate only on failures`,
-    body: dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
+    body:
+      missingVitestAddonNote(projectInfo, packageManager) +
+      dedent`**Read this rule once before running anything:** the first vitest invocation must run **all** the new stories together. No single-file runs before the batch.
 
     \`\`\`bash
     ${vitestRunAll}
@@ -129,7 +149,7 @@ export function cleanupStep(
 ): { title: string; body: string } {
   const onboardingInstructions = needsUserOnboarding
     ? 'You must preserve the components, CSS, stories and MDX docs initially created by Storybook, as they are required for user onboarding in the UI.'
-    : 'Delete the components, CSS, stories and MDX docs initially created by Storybook only if you managed to write successful stories.';
+    : "If you managed to write successful stories, delete the examples that `storybook init` generated (a `stories/` folder with `Configure.mdx` next to `Button`, `Header`, and `Page`). Don't delete any other stories.";
 
   return {
     title: `Clean up`,
@@ -260,7 +280,7 @@ export function writeStoriesStep(
 
     **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
 
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests.
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests. If a component already has a story file, add your stories to that file instead of writing a second one.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes. This way, anything not yet verified — including stories you ran out of time to fix — stays correctly marked.
 
@@ -311,7 +331,7 @@ export function writeStoriesWithAllowedFailuresStep(
 
     **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
 
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests.
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy ${isReact ? 'JSX' : 'component usage'} patterns from real pages/routes/tests. If a component already has a story file, add your stories to that file instead of writing a second one.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes, and you will leave the tag if the file is not fully functional at the end of your self-healing loop.
 

@@ -196,9 +196,12 @@ export async function collectComponentMetaSources(
         displayName: name === 'default' ? getFilenameWithoutExtension(id) : name,
         typeParams,
         ...meta,
+        props: meta.props.filter(isDocumented),
+        events: meta.events.filter(isDocumented),
+        slots: meta.slots.filter(isDocumented),
         description: jsDocInfo?.description,
         jsDocTags: jsDocInfo?.jsDocTags,
-        exposed,
+        exposed: exposed.filter(isDocumented),
         sourceFiles: id,
       })
     );
@@ -206,6 +209,10 @@ export async function collectComponentMetaSources(
 
   return metaSources;
 }
+
+/** Members tagged `@ignore` stay out of every docs surface, as they did with builder docgen. */
+const isDocumented = (member: { tags?: { name: string }[] }) =>
+  !member.tags?.some((tag) => tag.name === 'ignore');
 
 async function extractVueSfcTypeParams(id: string): Promise<string | undefined> {
   if (!id.endsWith('.vue')) {
@@ -352,9 +359,16 @@ function mergeEventDescriptions(meta: ComponentMeta, events: ComponentDoc['event
   }
 
   for (const event of meta.events) {
-    const description = events.find((i) => i.name === event.name)?.description;
-    if (description) {
-      (event as typeof event & { description: string }).description = description;
+    const parsed = events.find((i) => i.name === event.name);
+    if (parsed?.description) {
+      (event as typeof event & { description: string }).description = parsed.description;
+    }
+    // Volar drops event JSDoc tags along with the description, which hides `@ignore`.
+    if (!event.tags.length && parsed?.tags?.length) {
+      event.tags = parsed.tags.map((tag) => ({
+        name: tag.title,
+        text: 'content' in tag && typeof tag.content === 'string' ? tag.content : undefined,
+      }));
     }
   }
 }

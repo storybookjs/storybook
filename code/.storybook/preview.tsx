@@ -63,12 +63,16 @@ const { document } = global;
 // The one exception is the open-service static-load E2E, which serves a plain production build to
 // exercise the real static-loading path — there CONFIG_TYPE is PRODUCTION and Chromatic is not driving
 // the browser, so we leave the injected value untouched.
+// This runs as the project's `beforeAll`, after the addons' `beforeAll` hooks, so open services such
+// as `core/docgen` register while CONFIG_TYPE still reflects the build and load their static snapshots.
 // TODO(open-service): #29743 added an unconditional `CONFIG_TYPE = 'DEVELOPMENT'` here with no rationale.
 // Ask Norbert why the internal Storybook needs to force development mode rather than the stories opting
 // in per-story; if it can be removed, this gate should go with it.
-if (isChromatic() || globalThis.CONFIG_TYPE !== 'PRODUCTION') {
-  globalThis.CONFIG_TYPE = 'DEVELOPMENT';
-}
+const renderAsDevelopment = () => {
+  if (isChromatic() || globalThis.CONFIG_TYPE !== 'PRODUCTION') {
+    globalThis.CONFIG_TYPE = 'DEVELOPMENT';
+  }
+};
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {
@@ -435,6 +439,7 @@ export default definePreview({
     templatePreview,
     ...((import.meta as { env?: { VITEST?: unknown } }).env?.VITEST ? [vitestPreview] : []),
   ],
+  beforeAll: renderAsDevelopment,
   decorators,
   loaders,
   tags: ['test', 'vitest'],

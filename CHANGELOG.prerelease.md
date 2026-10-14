@@ -1,3 +1,59 @@
+## 11.0.0-alpha.6
+
+- Addon Docs: Map CSF plugin sourcemaps to the transform input - [#36463](https://github.com/storybookjs/storybook/pull/36463), thanks @mnkprs!
+- Addon Vitest: Apply framework options such as strictMode - [#36716](https://github.com/storybookjs/storybook/pull/36716), thanks @Metehan-Bicer!
+- CLI: Restore pnpm minimumReleaseAge prechecks - [#36352](https://github.com/storybookjs/storybook/pull/36352), thanks @ia319!
+- CLI: Upgrade pnpm catalog entries instead of pinning catalog dependencies - [#36552](https://github.com/storybookjs/storybook/pull/36552), thanks @valentinpalkovic!
+- Core: Clean Up Paused Animations After AfterEach Failure - [#36107](https://github.com/storybookjs/storybook/pull/36107), thanks @Raj4478!
+- Core: Limit onboarding checklist rainbow animation - [#36264](https://github.com/storybookjs/storybook/pull/36264), thanks @Thodorr!
+- Core: SB-2021 remove open-service getStatus and getGraphRevision aliases - [#36705](https://github.com/storybookjs/storybook/pull/36705), thanks @obvious-autobuild!
+- Docgen: Avoid loading test libraries in the Vue and Angular presets - [#36474](https://github.com/storybookjs/storybook/pull/36474), thanks @Cherry!
+- Security: Patch GHSA-f2ph-cmg5-wxc8 and GHSA-px85-f4q5-jh77 - [#36726](https://github.com/storybookjs/storybook/pull/36726), thanks @Sidnioulz!
+- TanStack: Type story query params from the route's search schema - [#36502](https://github.com/storybookjs/storybook/pull/36502), thanks @dasjideepak!
+- UI: Allow collapsing the testing widget after a crash - [#36575](https://github.com/storybookjs/storybook/pull/36575), thanks @eskres!
+- UI: Fix JSX runtime resolution in manager addons - [#36465](https://github.com/storybookjs/storybook/pull/36465), thanks @AkashNemade16!
+- WC: Automigration from runtime to docgen - [#36648](https://github.com/storybookjs/storybook/pull/36648), thanks @huang-julien!
+
+## 11.0.0-alpha.5
+
+- Addon Vitest: Support Vitest 5 - [#36671](https://github.com/storybookjs/storybook/pull/36671), thanks @PaulMest!
+- Builder-Webpack5: Bump webpack-dev-middleware to 8.3.0 (GHSA-g84c-rxfj-3j2c) - [#36521](https://github.com/storybookjs/storybook/pull/36521), thanks @afilichev-SW!
+- CLI: Fail upgrade --yes with a hint instead of prompting for a config dir - [#36545](https://github.com/storybookjs/storybook/pull/36545), thanks @valentinpalkovic!
+- CLI: Install every pnpm workspace project after an upgrade - [#36543](https://github.com/storybookjs/storybook/pull/36543), thanks @valentinpalkovic!
+- CLI: Keep a license header first when editing config and setup files - [#36547](https://github.com/storybookjs/storybook/pull/36547), thanks @valentinpalkovic!
+- CLI: Keep scoped package families on one major when upgrading related dependencies - [#36551](https://github.com/storybookjs/storybook/pull/36551), thanks @valentinpalkovic!
+- CLI: Never downgrade a satellite addon to its next tag - [#36550](https://github.com/storybookjs/storybook/pull/36550), thanks @valentinpalkovic!
+- CLI: Remove the storybook ai command - [#36617](https://github.com/storybookjs/storybook/pull/36617), thanks @kasperpeulen!
+- CLI: Rename the dirname import when main config declares its own - [#36540](https://github.com/storybookjs/storybook/pull/36540), thanks @valentinpalkovic!
+- CLI: Shorten the stories skill to one inline workflow - [#36629](https://github.com/storybookjs/storybook/pull/36629), thanks @kasperpeulen!
+- CLI: Show the Svelte CSF automigration's details in upgrade, and find more legacy syntax - [#36620](https://github.com/storybookjs/storybook/pull/36620), thanks @JReinhold!
+- Core: Accept legacy addon namespaces in CSF factories - [#35658](https://github.com/storybookjs/storybook/pull/35658), thanks @wanxiankai!
+- Core: Remove changeDetection feature flag - [#36628](https://github.com/storybookjs/storybook/pull/36628), thanks @kasperpeulen!
+- Core: Remove legacy highlight object format (SB-2018) - [#36662](https://github.com/storybookjs/storybook/pull/36662), thanks @obvious-autobuild!
+- Core: Remove the create-new-story button from the sidebar - [#36674](https://github.com/storybookjs/storybook/pull/36674), thanks @Sidnioulz!
+- Core: Remove viewport.defaultViewport parameter and responsiveViewport export - [#36663](https://github.com/storybookjs/storybook/pull/36663), thanks @obvious-autobuild!
+- Core: Stop warning on process ancestry cycles - [#36643](https://github.com/storybookjs/storybook/pull/36643), thanks @ghengeveld!
+- Core: Wait for the status store to sync in attached `stories changed` - [#36627](https://github.com/storybookjs/storybook/pull/36627), thanks @kasperpeulen!
+- Docgen: Stabilize docgenServer and enable it wherever a provider exists - [#36401](https://github.com/storybookjs/storybook/pull/36401), thanks @valentinpalkovic!
+- Docs: Stop double-quoting string defaults from server docgen - [#36535](https://github.com/storybookjs/storybook/pull/36535), thanks @valentinpalkovic!
+- Manager: Rework keyboard shortcut handling and Escape layering - [#36217](https://github.com/storybookjs/storybook/pull/36217), thanks @Sidnioulz!
+- Node logger: Keep task logs short and from erasing the output above them - [#36548](https://github.com/storybookjs/storybook/pull/36548), thanks @valentinpalkovic!
+- Preact: Support Preact 11 - [#36526](https://github.com/storybookjs/storybook/pull/36526), thanks @ghengeveld!
+- React Native Web: Fix TypeScript 6 peer conflict - [#36445](https://github.com/storybookjs/storybook/pull/36445), thanks @valentinpalkovic!
+- Skills: Remove the legacy instruction templates - [#36616](https://github.com/storybookjs/storybook/pull/36616), thanks @kasperpeulen!
+- SvelteKit: Support SvelteKit 3 and drop SvelteKit 2 - [#36610](https://github.com/storybookjs/storybook/pull/36610), thanks @JReinhold!
+- Themes: Remove deprecated useThemeParameters helper - [#36537](https://github.com/storybookjs/storybook/pull/36537), thanks @valentinpalkovic!
+- WC: Generate story snippet from html templates - [#36650](https://github.com/storybookjs/storybook/pull/36650), thanks @huang-julien!
+- WC: Generate story snippets from args and the manifest - [#36599](https://github.com/storybookjs/storybook/pull/36599), thanks @huang-julien!
+
+## 11.0.0-alpha.4
+
+- Angular: Preserve unknown standalone metadata in story-docs snippets - [#36015](https://github.com/storybookjs/storybook/pull/36015), thanks @dvmhmdsd!
+- CLI: Replace addon-svelte-csf with the framework package in every workspace package - [#36619](https://github.com/storybookjs/storybook/pull/36619), thanks @JReinhold!
+- Core: Include stories from every CSF file sharing a component id in story-docs - [#36618](https://github.com/storybookjs/storybook/pull/36618), thanks @kasperpeulen!
+- Nextjs-Vite: Skip unresolved image imports - [#36296](https://github.com/storybookjs/storybook/pull/36296), thanks @dvd233!
+- Tools: Require strict input schemas in defineToolset - [#36607](https://github.com/storybookjs/storybook/pull/36607), thanks @kasperpeulen!
+
 ## 11.0.0-alpha.3
 
 - Skills: Stop requiring addon-mcp - [#36559](https://github.com/storybookjs/storybook/pull/36559), thanks @kasperpeulen!

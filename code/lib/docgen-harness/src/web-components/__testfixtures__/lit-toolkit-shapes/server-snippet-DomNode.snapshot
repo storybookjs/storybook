@@ -1,14 +1,7 @@
-<lit-toolkit-shapes
-  size="large"
-  level="2"
-  tags="[&quot;b&quot;]"
-  label="Shaped"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>
-
-warning: Incomplete snippet: `args => { const el = document.createElement('lit-toolkit-shapes'); el.setAttribute('size', String(args.size)); el.setAttribute('level', String(args.level)); el.setAttribute('label', String(args.label)); (el as HTMLElement & { tags: string[]; }).tags = args.tags as string[]; el.addEventListener('toolkit-resize', args.onToolkitResize as EventListener); return el; }` could not be resolved statically.
+const el = document.createElement('lit-toolkit-shapes');
+el.setAttribute('size', String("large"));
+el.setAttribute('level', String(2));
+el.setAttribute('label', String("Shaped"));
+(el as HTMLElement & { tags: string[] }).tags = ['b'] as string[];
+el.addEventListener('toolkit-resize', (() => {}) as EventListener);
+return el;

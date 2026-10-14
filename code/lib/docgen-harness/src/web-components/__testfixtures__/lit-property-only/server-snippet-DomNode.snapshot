@@ -3,6 +3,6 @@ const el = document.createElement('lit-property-only') as HTMLElement & {
   items?: unknown;
 };
 el.setAttribute('label', String("Configured"));
-el.items = [{ name: "Alpha" }, { name: "Beta" }];
-el.config = { dense: true, theme: "dark" };
+el.items = [{ name: 'Alpha' }, { name: 'Beta' }];
+el.config = { dense: true, theme: 'dark' };
 return el;

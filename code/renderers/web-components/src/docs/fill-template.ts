@@ -19,8 +19,9 @@ import type { Args } from 'storybook/internal/types';
 // `⟦props …⟧`, `⟦slot name arg⟧` and `⟦style tag selector=arg…⟧` are what Storybook's render sets
 // on the element of a story without a render: a `name=arg` word an attribute, `~name=arg` the
 // attribute of a field, which is a property while `false` or `null`, `.name=arg` a property and
-// `--name=arg` a custom property. `*` sets every other arg as a property, but one a `-arg` word
-// leaves out; the snippet cannot show the arg of a `^arg` word while it is set.
+// `--name=arg` a custom property; an attribute arg that is no text is a property too. `*` sets
+// every other arg as a property, but one a `-arg` word leaves out; the snippet cannot show the arg
+// of a `^arg` word while it is set. This html is no template literal, so it needs no escapes.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     if (kind === 'props' || kind === 'style' || kind === 'args') {
@@ -35,13 +36,20 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
     if (unset !== undefined) {
       return unset;
     }
+    // A value that is no text, such as the code the story writes an arg with, is a binding.
+    const binding = (prefix: string) => `${prefix}\${${literal(arg, value)}}`;
     switch (kind) {
       case 'quoted':
       case 'text':
-      case 'raw':
-        return text(arg, value, kind === 'quoted' && quote === "'" ? /[&<']/g : ESCAPES[kind]);
+      case 'raw': {
+        const escape = kind === 'quoted' && quote === "'" ? /[&<']/g : ESCAPES[kind];
+        return isPrimitive(value) ? inLit(text(arg, value, escape)) : binding('');
+      }
       case 'bool':
-        return value && !isAction(value) ? (typeof value === 'function' ? fail(arg) : name) : '';
+        if (isPrimitive(value)) {
+          return value ? name : '';
+        }
+        return isAction(value) ? '' : binding(`?${name}=`);
       case 'prop':
         return property(name, arg, value);
       case 'slot':
@@ -67,18 +75,23 @@ function props(words: string[], args: Args): string {
       fail(word.slice(1));
     } else if (word === '*') {
       // An arg Storybook's render reads by its suffix is no property.
-      for (const [key, item] of Object.entries(args)) {
+      for (const key of Object.keys(args)) {
         printed.push(
           named.has(key)
             ? ''
             : OTHER.test(key)
-              ? property(key, key, item)
-              : isUnset(item, [undefined])
+              ? property(key, key, args[key])
+              : isUnset(args[key], [undefined])
                 ? ''
                 : fail(key)
         );
       }
-    } else if (prefix === '.' || (prefix === '~' && (value === false || value === null))) {
+    } else if (
+      prefix === '.' ||
+      (prefix === '~' && (value === false || value === null)) ||
+      (word.includes('=') && prefix !== '--' && !isPrimitive(value))
+    ) {
+      // An attribute holds text; Storybook's render sets any other value as its arg's property.
       printed.push(property(prefix === '.' ? binding.slice(1) : arg, arg, value));
     } else if (!word.includes('=') || isUnset(value, prefix === '~' ? [undefined] : undefined)) {
       // A `-arg` word, or an attribute or custom property that is not set.
@@ -87,12 +100,8 @@ function props(words: string[], args: Args): string {
         `${binding}: ${/string|number/.test(typeof value) && !/[;{}<]/.test(String(value)) ? value : fail(arg)};`
       );
     } else {
-      const shown = typeof value === 'object' ? JSON.stringify(value) : value;
-      printed.push(
-        value === true
-          ? binding.slice(prefix.length)
-          : `${binding.slice(prefix.length)}="${text(arg, shown, ESCAPES.quoted)}"`
-      );
+      const name = binding.slice(prefix.length);
+      printed.push(value === true ? name : `${name}="${text(arg, value, ESCAPES.quoted)}"`);
     }
   }
   return [
@@ -138,19 +147,19 @@ const ENTITIES: Record<string, string> = {
   "'": '&#39;',
 };
 
-// A value as lit writes it as text: an attribute value holds `String(value)` of an object too, and
-// `null` and `undefined` are no text. The html sits in a lit template literal, which a backtick
-// would end and `${` would bind in.
+// A value as html text; `null` and `undefined` are no text.
 function text(name: string, value: unknown, escape: RegExp): string {
-  const primitive =
-    value === null || value === undefined || /string|number|boolean/.test(typeof value);
-  const attribute = escape !== ESCAPES.text && escape !== ESCAPES.raw;
-  if (!(primitive || (attribute && /object|bigint/.test(typeof value) && !isLitValue(value)))) {
-    fail(name);
-  }
-  const html = String(value ?? '').replace(escape, (char) => ENTITIES[char] ?? fail(name));
-  return html.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+  return isPrimitive(value)
+    ? String(value ?? '').replace(escape, (char) => ENTITIES[char] ?? fail(name))
+    : fail(name);
 }
+
+// Html text in a lit template literal, which a backtick would end and `${` would bind in.
+const inLit = (html: string) =>
+  html.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
+const isPrimitive = (value: unknown) =>
+  value === null || value === undefined || /string|number|boolean/.test(typeof value);
 
 // An arg Storybook's render sets as a property, which lit can bind by its name.
 const OTHER = /^[A-Za-z_$][\w$-]*$(?<!-(event|method|slot|part|state))/;

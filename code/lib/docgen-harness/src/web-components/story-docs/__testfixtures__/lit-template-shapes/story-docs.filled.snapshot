@@ -21,7 +21,7 @@ return html`<lit-template-shapes label="Aliased" count="7" .heading=${heading}
   label=${ifDefined(undefined)}
   count=${ifDefined(4)}
 ></lit-template-shapes>",
-  "MemberPath": "const user = { name: "Bob", admin: false } as { name: string; admin: boolean };
+  "MemberPath": "const user = { name: 'Bob', admin: false } as { name: string; admin: boolean };
 return html`<lit-template-shapes label=${user.name}
   >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
 >`;",
@@ -30,7 +30,7 @@ return html`<lit-template-shapes label=${user.name}
   >${false ? html`<b>shown</b>` : nothing}</lit-template-shapes
 >",
   "PrefixedClass": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
-  "PropertyOnly": "<lit-template-shapes .items=${[{ name: "Alpha" }]}></lit-template-shapes>",
+  "PropertyOnly": "<lit-template-shapes .items=${[{ name: 'Alpha' }]}></lit-template-shapes>",
   "PropertyPaired": "<lit-template-shapes .heading=${"Heading"} .open=${true}></lit-template-shapes>",
   "PropertyPairedFalse": "<lit-template-shapes .heading=${"Closed"} .open=${false}></lit-template-shapes>",
   "QuotedAndMultiHole": "<lit-template-shapes

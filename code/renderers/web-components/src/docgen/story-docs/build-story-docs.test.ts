@@ -229,7 +229,11 @@ describe('buildStoryDocsPayload template', () => {
           html\`<test-element label=\${label} .count=\${count} .items=\${items}>\${heading}</test-element>\`,
       }`)
     );
-    expect(argCode).toEqual({ items: '[new Date(0)]' });
+    expect(argCode).toEqual({
+      items: '[new Date(0)]',
+      heading: 'shout',
+      onShapeChange: '(() => {})',
+    });
     expect(
       fillTemplate(template!, { label: 'Bye', count: 3, items: writtenArg(argCode!.items!) })
     ).toBe('<test-element label="Bye" .count=${3} .items=${[new Date(0)]}></test-element>');
@@ -324,14 +328,9 @@ describe('buildStoryDocsPayload template', () => {
   it.each([
     ['lit/html.js', `import { html } from 'lit/html.js';`, {}],
     [
-      'a module that exports lit again',
+      'a module that exports all of lit again',
       `import { html } from './base.js';`,
       { 'base.ts': `export * from './directives.js';\nexport * from 'lit';`, 'directives.ts': '' },
-    ],
-    [
-      'a module that exports the html it imports',
-      `import { html } from './base.js';`,
-      { 'base.ts': `import { html as h } from 'lit-html';\nexport { h as html };` },
     ],
   ])('reads the html tag of %s', async (_, imports, files) => {
     const source = `${imports}
@@ -371,7 +370,26 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
     });
   });
 
-  it('keeps the static snippet while an arg the template reads is not known', async () => {
+  it('names what the code of an arg it prints reads, but not that of a listener it leaves out', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      import { fn } from 'storybook/test';
+      const ITEMS = ['a'];
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { items: [ITEMS[0], new Date(0)], onClick: fn() },
+        render: (args) => html\`<test-element .items=\${args.items} @click=\${args.onClick}></test-element>\`,
+      };`
+    );
+    expect(doc).toMatchObject({
+      snippet: '<test-element .items=${[ITEMS[0], new Date(0)]}></test-element>',
+      warning:
+        'Incomplete snippet: listeners not shown: `click`.\n' +
+        'Incomplete snippet: names the snippet does not import or declare: `ITEMS`.',
+    });
+  });
+
+  it('prints the code of an arg it cannot read, and names what the snippet does not declare', async () => {
     const doc = await firstStoryWithTemplate(
       `import { html } from 'lit';
       import { label } from './label.js';
@@ -380,8 +398,10 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
       { files: { 'label.ts': 'export const label = String(Date.now());' } }
     );
     expect(doc.template).toBe('<p>⟦text label⟧</p>');
-    expect(doc.snippet).not.toContain('⟦');
-    expect(doc.warning).toContain('could not be resolved statically');
+    expect(doc.snippet).toBe('<p>${label}</p>');
+    expect(doc.warning).toBe(
+      'Incomplete snippet: names the snippet does not import or declare: `label`.'
+    );
   });
 
   it('keeps the static snippet of next while a spread of args that is not known may set an arg it reads', async () => {
@@ -588,24 +608,6 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       },
     },
     {
-      name: 'unbound args warning for render template',
-      source: `
-        import { html } from 'lit';
-        export default { title: 'Example/TestElement', component: 'test-element' };
-        export const Primary = {
-          args: { label: 'Bound', count: 2 },
-          render: (args) => html\`<test-element label=\${args.label}></test-element>\`,
-        };
-      `,
-      expected: {
-        id: 'example-testelement--primary',
-        name: 'Primary',
-        snippet: '<test-element label="Bound"></test-element>',
-        warning: 'Incomplete snippet: args not bound by the render template: `count`.',
-        templateWarning: 'Incomplete snippet: args not bound by the render template: `count`.',
-      },
-    },
-    {
       name: 'template expression the template fills with the static args',
       source: `
         import { html } from 'lit';
@@ -777,12 +779,14 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     ).resolves.toEqual({
       id: 'example-testelement--primary',
       name: 'Primary',
-      snippet: '<test-element label="Meta"></test-element>',
-      warning: 'Incomplete snippet: properties without an attribute: `items`.',
+      snippet: '<test-element label="Meta" .items=${itemsFixture}></test-element>',
+      warning: 'Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.',
+      templateWarning:
+        'Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.',
     });
   });
 
-  it('warns when an imported attribute identifier is unresolved', async () => {
+  it('sets an imported attribute identifier as written, and names it', async () => {
     await expect(
       firstStory(
         `
@@ -795,7 +799,10 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     ).resolves.toEqual({
       id: 'example-testelement--primary',
       name: 'Primary',
-      warning: 'No static snippet: `importedLabel` could not be resolved statically.',
+      snippet: '<test-element .label=${importedLabel}></test-element>',
+      warning: 'Incomplete snippet: names the snippet does not import or declare: `importedLabel`.',
+      templateWarning:
+        'Incomplete snippet: names the snippet does not import or declare: `importedLabel`.',
     });
   });
 

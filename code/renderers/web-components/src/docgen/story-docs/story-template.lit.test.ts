@@ -119,6 +119,7 @@ const spreadProps = directive(SpreadPropsDirective);
 // and a single-quoted value no `'`.
 const HOSTILE = 'a"b\'c`d${e}&g';
 const HOSTILE_TEXT = `${HOSTILE}<f>`;
+const HTML_HOSTILE = 'a"b\'c&g';
 
 // `unprintable` are args the template has no snippet for.
 const stories: [name: string, source: string, args: Args[], options?: { unprintable?: Args[] }][] =
@@ -221,7 +222,8 @@ const stories: [name: string, source: string, args: Args[], options?: { unprinta
     [
       'a property binding of an arg, set or not',
       `export const Primary = (args) => html\`<x-card .items=\${args.items} .count=\${args.count}>\${args.label}</x-card>\`;`,
-      [{}, { items: [1, 'a'], count: 0 }, { items: null, label: HOSTILE_TEXT }],
+      // An unset property arg prints nothing, so it keeps the element's default.
+      [{ items: [] }, { items: [1, 'a'], count: 0 }, { items: null, label: HOSTILE_TEXT }],
     ],
     [
       'an arg inside a larger attribute value, quoted or not',
@@ -320,11 +322,8 @@ describe('litTemplate', () => {
     const path = resolveEffectiveRender(csf.parse(), 'Primary');
     const template =
       path.kind === 'resolved'
-        ? litTemplate(
-            path.path,
-            templateModule({ program: csf._file.path, filePath: '' }, undefined),
-            { tag: 'x-card', declaration }
-          )?.template
+        ? litTemplate(path.path, templateModule({ program: csf._file.path, filePath: '' }))
+            ?.template
         : undefined;
     expect(template).toBeDefined();
 
@@ -351,11 +350,12 @@ describe('litTemplate', () => {
         : returnsCode
           ? filled
           : `html\`${filled}\``;
-      // The filled template names what the story file declares, so it is run in the same scope.
+      // The filled template names what the story file declares, so it is run in the same scope,
+      // but for the args, which it may not read.
       const run = new Function(
         ...Object.keys(scope),
-        'args',
-        `${source.replace(/^\s*import .*$/gm, '').replace('export ', '')}\nreturn [Primary(args), ${snippet}];`
+        '__args',
+        `${source.replace(/^\s*import .*$/gm, '').replace('export ', '')}\nreturn [Primary(__args), ${snippet}];`
       );
       const [story, written] = run(...Object.values(scope), args);
       expect(rendered(written), filled).toEqual(rendered(story));
@@ -367,7 +367,7 @@ describe('litTemplate', () => {
 });
 
 describe('litTemplate of a story that writes to its args', () => {
-  it('has a hole at each read, and leaves each write as written', () => {
+  it('has a hole at each read, and leaves each write as written, naming the args it writes to', () => {
     const render = `(args) => {
   args.label = 'X';
   args.count++;
@@ -377,14 +377,16 @@ describe('litTemplate of a story that writes to its args', () => {
     const code = `import { html } from 'lit';\nexport default { title: 'T' };\nexport const Primary = ${render};`;
     const csf = loadCsf(code, { makeTitle: () => 'T' });
     const path = resolveEffectiveRender(csf.parse(), 'Primary');
-    const module = templateModule({ program: csf._file.path, filePath: '' }, undefined);
-    const live = path.kind === 'resolved' && litTemplate(path.path, module, { tag: 'x-card' });
+    const live =
+      path.kind === 'resolved' &&
+      litTemplate(path.path, templateModule({ program: csf._file.path, filePath: '' }));
     expect(live && live.template).toMatchInlineSnapshot(`
       "args.label = 'X';
       args.count++;
       ⟦operand items⟧.push('x');
       return html\`<x-card title="⟦quoted label⟧" ⟦prop items items⟧>⟦text count⟧</x-card>\`;"
     `);
+    expect(live && live.free).toEqual(['args']);
     expect(live && fillTemplate(live.template, { label: 'Go', count: 1, items: ['a'] }))
       .toMatchInlineSnapshot(`
         "args.label = 'X';
@@ -413,7 +415,8 @@ describe('argsTemplate', () => {
     { items: [1, 'a'], '--gap': '2px' },
     { 'default-slot': '<b>Body</b>', 'title-slot': 'Title' },
     { 'panel-part': 'color: red;', 'busy-state': 'outline: none;' },
-    { other: 'x', label: HOSTILE, theme: 'dark' },
+    // The snippet is html, which this test renders as a lit template: html has no backtick or `${`.
+    { other: 'x', label: HTML_HOSTILE, theme: 'dark' },
   ])('fills to an element set as the story sets it with %j', (args) => {
     const filled = fillTemplate(template, args);
     const container = document.createElement('div');

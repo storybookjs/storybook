@@ -5,5 +5,5 @@ if (false) {
   el.setAttribute('disabled', '');
 }
 el.setAttribute('max-count', String(5));
-(el as HTMLElement & { items: string[] }).items = ["a"] as string[];
+(el as HTMLElement & { items: string[] }).items = ['a'] as string[];
 return el;

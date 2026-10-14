@@ -4,11 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
+import { createStoryArgsResolver, fillWithStoryArgs, loadCsf } from 'storybook/internal/csf-tools';
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
 import { fillTemplate } from '../../../../renderers/web-components/src/docs/fill-template.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
@@ -53,20 +52,6 @@ const cases = [
   })),
 ];
 
-// The story's args as the preview has them, when the static pass can read them all.
-const staticArgs = (nodes: Record<string, Parameters<typeof evaluateArgValue>[0]>) => {
-  const args: Record<string, unknown> = {};
-  for (const [name, node] of Object.entries(nodes)) {
-    const value = evaluateArgValue(node);
-    if (value.kind === 'unresolved') {
-      return undefined;
-    }
-    args[name] =
-      value.kind === 'function' ? () => {} : value.kind === 'value' ? value.value : undefined;
-  }
-  return args;
-};
-
 type Case = (typeof cases)[number];
 
 const built = new Map<string, ReturnType<typeof build>>();
@@ -97,14 +82,18 @@ async function build({ testDir, title }: Case) {
     { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
   );
   const resolver = createStoryArgsResolver(csf);
-  // Each template filled with the args of its story, or the error that keeps the static snippet.
+  // Each template filled with the args of its story as the preview has them before a control
+  // changes, each written as its code, or the error that keeps the static snippet.
   const filled: Record<string, string> = {};
   for (const [exportName, story] of storyExports) {
     const template = payload?.stories[story.id]?.template;
-    const args = staticArgs(resolver.resolve(exportName).args);
-    if (template !== undefined && args !== undefined) {
+    if (template !== undefined) {
       try {
-        filled[exportName] = fillTemplate(template, args);
+        filled[exportName] = fillWithStoryArgs(
+          template,
+          resolver.resolve(exportName).args,
+          fillTemplate
+        );
       } catch (error) {
         if (!(error instanceof UnprintableArgError)) {
           throw error;

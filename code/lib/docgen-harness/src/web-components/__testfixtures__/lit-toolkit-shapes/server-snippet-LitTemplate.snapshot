@@ -1,7 +1,7 @@
 <lit-toolkit-shapes
   size="large"
   level="2"
-  .tags=${["b"]}
+  .tags=${['b']}
   label="Shaped"
 ></lit-toolkit-shapes>
 

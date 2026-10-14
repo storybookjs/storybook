@@ -9,10 +9,10 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--back",
       "name": "Back",
-      "snippet": "<demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
+      "snippet": "<demo-wc-card .backSide=${true} .rows=${[]}
   ><span slot="prefix"></span>A simple card</demo-wc-card
 >",
-      "template": "<demo-wc-card ⟦prop backSide backSide ?.backSide%3D%24%7Bundefined%7D⟧ ⟦prop header header ?.header%3D%24%7Bundefined%7D⟧ ⟦prop rows rows ?.rows%3D%24%7Bundefined%7D⟧
+      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
   ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
 >",
     },
@@ -22,10 +22,10 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
-      "snippet": "<demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
+      "snippet": "<demo-wc-card .backSide=${false} .rows=${[]}
   ><span slot="prefix"></span>A simple card</demo-wc-card
 >",
-      "template": "<demo-wc-card ⟦prop backSide backSide ?.backSide%3D%24%7Bundefined%7D⟧ ⟦prop header header ?.header%3D%24%7Bundefined%7D⟧ ⟦prop rows rows ?.rows%3D%24%7Bundefined%7D⟧
+      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
   ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
 >",
     },
@@ -38,7 +38,7 @@
       "snippet": "<demo-wc-card .backSide=${false} .header=${"my header"} .rows=${[]}
   ><span slot="prefix">prefix:</span>A simple card</demo-wc-card
 >",
-      "template": "<demo-wc-card ⟦prop backSide backSide ?.backSide%3D%24%7Bundefined%7D⟧ ⟦prop header header ?.header%3D%24%7Bundefined%7D⟧ ⟦prop rows rows ?.rows%3D%24%7Bundefined%7D⟧
+      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
   ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
 >",
     },

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 
 import { html } from 'lit';
 import { fn } from 'storybook/test';
@@ -64,7 +64,7 @@ describe('fillTemplate', () => {
     const template =
       '<x-card label="⟦quoted text⟧" open="⟦quoted open⟧" data="⟦quoted data⟧"></x-card>';
     expect(fillTemplate(template, { open: false, data: [1, 2] })).toBe(
-      '<x-card label="" open="false" data="1,2"></x-card>'
+      '<x-card label="" open="false" data="${[1, 2]}"></x-card>'
     );
     expect(() => fillTemplate(template, { text: () => {} })).toThrow(UnprintableArgError);
   });
@@ -116,9 +116,24 @@ describe('fillTemplate', () => {
     expect(fillTemplate('<p title="⟦quoted t⟧">⟦text t⟧</p>', { t: 'a "b" & <c>' })).toBe(
       '<p title="a &quot;b&quot; &amp; &lt;c>">a "b" &amp; &lt;c&gt;</p>'
     );
-    expect(fillTemplate('<p data="⟦quoted d⟧"></p>', { d: { a: 1 } })).toBe(
-      '<p data="[object Object]"></p>'
+  });
+
+  it('binds a value that is no text, such as the code the story writes an arg with', () => {
+    const template = '<p title="⟦quoted t⟧" ⟦bool hidden h⟧>⟦text t⟧</p>';
+    expect(fillTemplate(template, { t: writtenArg('LABEL'), h: writtenArg('HIDDEN') })).toBe(
+      '<p title="${LABEL}" ?hidden=${HIDDEN}>${LABEL}</p>'
     );
+    // Storybook's render sets an arg that is no text as its property.
+    const props = '<x-card ⟦props label=label ~open=open⟧></x-card>';
+    expect(fillTemplate(props, { label: writtenArg('L'), open: ['a'] })).toBe(
+      '<x-card .label=${L} .open=${["a"]}></x-card>'
+    );
+  });
+
+  it('writes the html of a story without a render as it is, with no template literal escapes', () => {
+    expect(
+      fillTemplate('<x-card ⟦props label=label⟧></x-card>', { label: 'C:\\temp `a` ${b}' })
+    ).toBe('<x-card label="C:\\temp `a` ${b}"></x-card>');
   });
 
   it('prints a boolean attribute only while its arg is truthy', () => {
@@ -145,7 +160,7 @@ describe('fillTemplate', () => {
   it('prints a slot arg as html, and as text in a span for a named slot', () => {
     const template = '<x-card>\n  ⟦slot default body⟧\n  ⟦slot title title⟧\n</x-card>';
     expect(fillTemplate(template, { body: '<b>`${a}`</b>', title: 'Hi' })).toBe(
-      '<x-card>\n  <b>\\`\\${a}\\`</b>\n  <span slot="title">Hi</span>\n</x-card>'
+      '<x-card>\n  <b>`${a}`</b>\n  <span slot="title">Hi</span>\n</x-card>'
     );
     expect(fillTemplate(template, { body: '', title: false })).toBe('<x-card>\n</x-card>');
     expect(() => fillTemplate(template, { title: '<h3 slot="title">Hi</h3>' })).toThrow(

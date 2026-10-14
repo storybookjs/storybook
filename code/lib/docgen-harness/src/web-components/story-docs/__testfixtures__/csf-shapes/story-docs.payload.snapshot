@@ -18,19 +18,27 @@
       },
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
-      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "snippet": "<csf-shapes label="Meta" .items=${itemsFixture}></csf-shapes>",
       "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label .items=items -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
-      "warning": "Incomplete snippet: properties without an attribute: `items`.",
+      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.",
+      "warning": "Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
-      "argCode": {},
+      "argCode": {
+        "label": "importedLabel",
+      },
       "id": "webcomponentsstorydocs-csf-shapes--imported-label",
       "name": "Imported Label",
+      "snippet": "<csf-shapes .label=${importedLabel}></csf-shapes>",
       "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
-      "warning": "No static snippet: `importedLabel` could not be resolved statically.",
+      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `importedLabel`.",
+      "warning": "Incomplete snippet: names the snippet does not import or declare: `importedLabel`.",
     },
     "webcomponentsstorydocs-csf-shapes--listener": {
-      "argCode": {},
+      "argCode": {
+        "onShapeChange": "(() => {})",
+        "shape-change-event": "(() => {})",
+      },
       "id": "webcomponentsstorydocs-csf-shapes--listener",
       "name": "Listener",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>
@@ -40,7 +48,7 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label -shape-change-event -onShapeChange -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

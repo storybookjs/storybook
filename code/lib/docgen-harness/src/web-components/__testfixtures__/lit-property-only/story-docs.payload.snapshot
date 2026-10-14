@@ -10,7 +10,7 @@
       },
       "id": "webcomponentsfixtures-lit-property-only--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<lit-property-only label="Default render" .items=${[{ name: "Alpha" }, { name: "Beta" }]} .config=${{ dense: true, theme: "dark" }}></lit-property-only>",
+      "snippet": "<lit-property-only label="Default render" .items=${[{ name: 'Alpha' }, { name: 'Beta' }]} .config=${{ dense: true, theme: 'dark' }}></lit-property-only>",
       "template": "<lit-property-only ⟦props ~label=label .items=items .config=config *⟧></lit-property-only>",
     },
     "webcomponentsfixtures-lit-property-only--dom-node": {
@@ -25,8 +25,8 @@
   items?: unknown;
 };
 el.setAttribute('label', String("Configured"));
-el.items = [{ name: "Alpha" }, { name: "Beta" }];
-el.config = { dense: true, theme: "dark" };
+el.items = [{ name: 'Alpha' }, { name: 'Beta' }];
+el.config = { dense: true, theme: 'dark' };
 return el;",
       "template": "const el = document.createElement('lit-property-only') as HTMLElement & {
   config?: unknown;
@@ -46,13 +46,13 @@ return el;",
       "name": "Lit Template",
       "snippet": "<lit-property-only
   label="Configured"
-  .items=${[{ name: "Alpha" }, { name: "Beta" }]}
-  .config=${{ dense: true, theme: "dark" }}
+  .items=${[{ name: 'Alpha' }, { name: 'Beta' }]}
+  .config=${{ dense: true, theme: 'dark' }}
 ></lit-property-only>",
       "template": "<lit-property-only
   label="⟦quoted label⟧"
-  ⟦prop items items ?.items%3D%24%7Bundefined%7D⟧
-  ⟦prop config config ?.config%3D%24%7Bundefined%7D⟧
+  ⟦prop items items⟧
+  ⟦prop config config⟧
 ></lit-property-only>",
     },
   },

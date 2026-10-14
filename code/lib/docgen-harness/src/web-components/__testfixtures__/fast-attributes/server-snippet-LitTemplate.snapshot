@@ -2,5 +2,5 @@
   label="Count"
   size="large"
   max-count="5"
-  .items=${["a"]}
+  .items=${['a']}
 ></fast-attributes>

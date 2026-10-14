@@ -1,4 +1,4 @@
-const user = { name: "Bob", admin: false } as { name: string; admin: boolean };
+const user = { name: 'Bob', admin: false } as { name: string; admin: boolean };
 return html`<lit-template-shapes label=${user.name}
   >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
 >`;

@@ -9,7 +9,7 @@
       },
       "id": "webcomponentsfixtures-fast-attributes--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<fast-attributes label="Default count" size="large" .disabled=${false} max-count="2" .items=${["a"]}></fast-attributes>",
+      "snippet": "<fast-attributes label="Default count" size="large" .disabled=${false} max-count="2" .items=${['a']}></fast-attributes>",
       "template": "<fast-attributes ⟦props ~label=label ~size=size ~disabled=disabled ~max-count=maxCount .items=items -fast-count-change-event -increment-method .count=count ^max-count *⟧></fast-attributes>",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {
@@ -25,7 +25,7 @@ if (false) {
   el.setAttribute('disabled', '');
 }
 el.setAttribute('max-count', String(5));
-(el as HTMLElement & { items: string[] }).items = ["a"] as string[];
+(el as HTMLElement & { items: string[] }).items = ['a'] as string[];
 return el;",
       "template": "const el = document.createElement('fast-attributes');
 el.setAttribute('label', String(⟦value label⟧));
@@ -47,14 +47,14 @@ return el;",
   label="Count"
   size="large"
   max-count="5"
-  .items=${["a"]}
+  .items=${['a']}
 ></fast-attributes>",
       "template": "<fast-attributes
   label="⟦quoted label⟧"
   size="⟦quoted size⟧"
   ⟦bool disabled disabled⟧
   max-count="⟦quoted maxCount⟧"
-  ⟦prop items items ?.items%3D%24%7Bundefined%7D⟧
+  ⟦prop items items⟧
 ></fast-attributes>",
     },
   },

@@ -1,5 +1,13 @@
 {
-  "Listener": "UnprintableArgError: The snippet cannot show the value of the `onShapeChange` arg.",
+  "ImportedItems": "<csf-shapes label="Meta" .items=${itemsFixture}></csf-shapes>",
+  "ImportedLabel": "<csf-shapes .label=${importedLabel}></csf-shapes>",
+  "Listener": "<csf-shapes label="Meta"></csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
   "PartsAndCss": "<style>
   csf-shapes::part(panel) { color: red; }
   csf-shapes:state(active) { outline: 1px solid; }

@@ -1,3 +1,3 @@
-<csf-shapes label="Meta"></csf-shapes>
+<csf-shapes label="Meta" .items=${itemsFixture}></csf-shapes>
 
-warning: Incomplete snippet: properties without an attribute: `items`.
+warning: Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.

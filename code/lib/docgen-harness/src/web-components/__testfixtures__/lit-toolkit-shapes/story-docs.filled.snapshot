@@ -1,10 +1,22 @@
 {
-  "ArgsDefaultRender": "UnprintableArgError: The snippet cannot show the value of the `onToolkitResize` arg.",
-  "DomNode": "UnprintableArgError: The snippet cannot show the value of the `onToolkitResize` arg.",
+  "ArgsDefaultRender": "<lit-toolkit-shapes size="small" level="3" .tags=${['b']} label="Default render"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+  "DomNode": "const el = document.createElement('lit-toolkit-shapes');
+el.setAttribute('size', String("large"));
+el.setAttribute('level', String(2));
+el.setAttribute('label', String("Shaped"));
+(el as HTMLElement & { tags: string[] }).tags = ['b'] as string[];
+el.addEventListener('toolkit-resize', (() => {}) as EventListener);
+return el;",
   "LitTemplate": "<lit-toolkit-shapes
   size="large"
   level="2"
-  .tags=${["b"]}
+  .tags=${['b']}
   label="Shaped"
 ></lit-toolkit-shapes>",
 }

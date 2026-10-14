@@ -1,1 +1,1 @@
-<lit-template-shapes .items=${[{ name: "Alpha" }]}></lit-template-shapes>
+<lit-template-shapes .items=${[{ name: 'Alpha' }]}></lit-template-shapes>

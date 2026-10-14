@@ -13,22 +13,15 @@ import type { StrictArgTypes } from 'storybook/internal/types';
 import { parseArgKey } from '../../arg-keys.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { classifyArg } from './classify-args.ts';
-import { type TemplateModule, litBindings } from './template-calls.ts';
-
-/** The component's element and, where known, its manifest declaration. */
-export interface SpreadElement {
-  tag: string;
-  declaration?: ManifestDeclaration;
-}
+import { LIT_SOURCES, type TemplateModule } from './template-calls.ts';
 
 /**
- * A story's template; the listeners it leaves out, and the args they read; and the names its code
- * reads that the snippet neither declares nor imports, but for lit's own.
+ * A story's template; the listeners it leaves out; and the names its code reads that the snippet
+ * neither declares nor imports, but for lit's own, such as `args` in a write `args.count++`.
  */
 export interface LiveTemplate {
   template: string;
   listeners: string[];
-  heard: string[];
   free: string[];
 }
 
@@ -46,7 +39,6 @@ interface Slot {
   kind: 'attr' | 'bool' | 'prop' | 'listener' | 'quoted' | 'text' | 'raw';
   name: string;
   quote: string;
-  tag: string;
   start: number;
   end: number;
 }
@@ -57,13 +49,14 @@ interface Slot {
  * or state style in a `<style>` before it. Any other arg the story gets at runtime, such as one
  * only its argTypes name, is set as a property, by the `*` word. An arg whose name the snippet
  * cannot write, or that sets what another arg sets already, gets a `^arg` word: the snippet cannot
- * show it while it is set.
+ * show it while it is set. A `functions` arg is a listener, which the snippet leaves out.
  */
 export function argsTemplate(
   tag: string,
   storyArgs: string[],
   argTypes: StrictArgTypes,
-  declaration: ManifestDeclaration
+  declaration: ManifestDeclaration,
+  functions: string[] = []
 ): string {
   const props: string[] = [];
   const styles: string[] = [];
@@ -76,7 +69,7 @@ export function argsTemplate(
     return ok ? text : `^${arg}`;
   };
   for (const arg of new Set([...storyArgs, ...Object.keys(argTypes)])) {
-    const binding = classifyArg(arg, false, argTypes, declaration);
+    const binding = classifyArg(arg, functions.includes(arg), argTypes, declaration);
     const parsed = binding.kind === 'unknown' ? parseArgKey(arg) : undefined;
     const kind = parsed ? CATEGORY_KINDS[parsed.category] : binding.kind;
     const name = parsed?.name ?? ('name' in binding ? binding.name : arg);
@@ -134,22 +127,17 @@ const CATEGORY_KINDS = {
  * lit template, else its code. It is `undefined` when the story reads its args in a way no hole
  * stands for, such as reading the story context.
  */
-export function litTemplate(
-  render: RenderPath,
-  module: TemplateModule,
-  element: SpreadElement
-): LiveTemplate | undefined {
-  const { code } = module;
+export function litTemplate(render: RenderPath, module: TemplateModule): LiveTemplate | undefined {
+  const { code, bindings } = module;
   const [param, context] = render.get('params');
   if (!param || hasHoleBracket(code) || (context && readsAny(context))) {
     return undefined;
   }
-  const lit = litBindings(module);
   const isLit = (tag: t.Node, scope: Scope) =>
     t.isIdentifier(tag) &&
     scope.getBinding(tag.name)?.kind === 'module' &&
-    lit.get(tag.name)?.importId === 'lit' &&
-    lit.get(tag.name)?.importName === 'html';
+    LIT_SOURCES.includes(bindings.get(tag.name)?.importId ?? '') &&
+    bindings.get(tag.name)?.importName === 'html';
   // Every expression of a lit template in the render, with where it sits in the html.
   const slots = new Map<t.Node, Slot>();
   render.traverse({
@@ -160,7 +148,7 @@ export function litTemplate(
     },
   });
   const target = param.isAssignmentPattern() ? param.get('left') : param;
-  const found = argEdits(target, code, (read) => slots.get(read.node), element);
+  const found = argEdits(target, code, (read) => slots.get(read.node));
   if (!found || found.edits.length === 0) {
     return undefined;
   }
@@ -201,12 +189,14 @@ export function litTemplate(
       const kept = !edits.some(
         (edit) => edit.start <= path.node.start! && path.node.end! <= edit.end
       );
-      const imported = lit.get(path.node.name)?.importId;
+      const imported = bindings.get(path.node.name)?.importId;
       if (
         kept &&
         path.node.start! >= start &&
         path.node.end! <= end &&
-        binding?.scope.path.isProgram() &&
+        // A name of the module, or a parameter of the render that a hole does not stand for.
+        (binding?.scope.path.isProgram() ||
+          (binding?.kind === 'param' && binding.scope === render.scope)) &&
         !(imported && /^(lit|lit-html|lit-element|@lit\/[^/]+)(\/|$)/.test(imported))
       ) {
         free.add(path.node.name);
@@ -216,7 +206,6 @@ export function litTemplate(
   return {
     template: dedentStoryCode(text.trim(), column),
     listeners: found.listeners,
-    heard: [...found.heard],
     free: [...free],
   };
 }
@@ -234,7 +223,6 @@ function htmlSlots(quasi: t.TemplateLiteral, slots: Map<t.Node, Slot>): void {
     const binding = inTag ? /(?<=\s)([?@.]?)([^\s"'<>/=.?@][^\s"'<>/=]*)=("?)$/.exec(before) : null;
     const quote = binding?.[3] ?? '';
     const whole = binding && (quote ? after.startsWith(quote) : /^(\s|\/?>)/.test(after));
-    const tag = /^<([^\s/>]+)/.exec(state.tag)?.[1] ?? '';
     if (binding && whole && NAME.test(binding[2]!)) {
       const prefix = binding[1]!;
       const kind = ({ '?': 'bool', '.': 'prop', '@': 'listener' } as const)[prefix] ?? 'attr';
@@ -244,13 +232,12 @@ function htmlSlots(quasi: t.TemplateLiteral, slots: Map<t.Node, Slot>): void {
         kind,
         name: binding[2]!,
         quote,
-        tag,
         start: from,
         end: end + quote.length,
       });
     } else if (state.in === '"' || state.in === "'" || !inTag) {
       const kind = inTag ? 'quoted' : state.raw ? 'raw' : 'text';
-      slots.set(expression, { kind, name: '', quote: state.in, tag, start: start, end });
+      slots.set(expression, { kind, name: '', quote: state.in, start, end });
     }
     readHtml(state, after);
   }
@@ -265,17 +252,15 @@ interface Found {
   edits: Edit[];
   removed: Set<t.Node>;
   listeners: string[];
-  heard: Set<string>;
 }
 
 // An edit per arg read, or `undefined` when one is not a hole.
 function argEdits(
   param: NodePath,
   code: string,
-  slotFor: (read: NodePath) => Slot | undefined,
-  element: SpreadElement
+  slotFor: (read: NodePath) => Slot | undefined
 ): Found | undefined {
-  const found: Found = { edits: [], removed: new Set(), listeners: [], heard: new Set() };
+  const found: Found = { edits: [], removed: new Set(), listeners: [] };
   let ok = true;
   const add = (edit: Edit | undefined) => {
     ok &&= edit !== undefined;
@@ -284,7 +269,7 @@ function argEdits(
     }
   };
   // A read inside a listener binding leaves the whole binding out, as no control sets a listener.
-  const heard = (read: NodePath, arg: string) => {
+  const heard = (read: NodePath) => {
     let path: NodePath | null = read;
     while (path && !slotFor(path)) {
       path = path.parentPath;
@@ -293,7 +278,6 @@ function argEdits(
     if (slot?.kind !== 'listener') {
       return false;
     }
-    found.heard.add(arg);
     if (!found.edits.some((edit) => edit.start === slot.start)) {
       found.listeners.push(slot.name);
       found.edits.push({ start: slot.start, end: slot.end, text: '' });
@@ -302,8 +286,8 @@ function argEdits(
   };
   const read = (path: NodePath, arg: string, fallback: string) => {
     // The target of a write, as in `args.count++`, is no read and stays as written.
-    if (!isWritten(path) && !heard(path, arg)) {
-      add(readEdit(path, arg, fallback, slotFor(path), element));
+    if (!isWritten(path) && !heard(path)) {
+      add(readEdit(path, arg, fallback, slotFor(path)));
     }
   };
 
@@ -331,7 +315,7 @@ function argEdits(
         patternReads(parent.get('id') as NodePath, omitted);
         found.edits.push(removeEdit(declaration, code));
         found.removed.add(declaration);
-      } else if (!heard(reference, name)) {
+      } else if (!heard(reference)) {
         add(wholeEdit(reference, omitted));
       }
     }
@@ -390,13 +374,7 @@ function argEdits(
 }
 
 // A lit binding or html text for a read that is a whole slot, or `⟦value⟧` or `⟦operand⟧` in code.
-function readEdit(
-  read: NodePath,
-  arg: string,
-  fallback: string,
-  slot: Slot | undefined,
-  element: SpreadElement
-): Edit {
+function readEdit(read: NodePath, arg: string, fallback: string, slot: Slot | undefined): Edit {
   if (!slot) {
     return startsOperand(read)
       ? nodeEdit(read.node, argHole('operand', [arg], fallback && asOperand(fallback)))
@@ -411,27 +389,8 @@ function readEdit(
   }
   const named = kind === 'bool' || kind === 'prop';
   const prefix = kind === 'bool' ? '?' : '.';
-  const unset = fallback
-    ? `${named ? `${prefix}${name}=` : ''}\${${fallback}}`
-    : kind === 'prop'
-      ? unsetProperty(name, slot.tag, element)
-      : '';
+  const unset = fallback ? `${named ? `${prefix}${name}=` : ''}\${${fallback}}` : '';
   return { start, end, text: argHole(kind, [...(named ? [name] : []), arg], unset) };
-}
-
-// lit sets a property to `undefined` while its arg is unset, which only shows on a field the
-// element gives a default.
-function unsetProperty(
-  name: string,
-  tag: string,
-  { tag: own, declaration }: SpreadElement
-): string {
-  const field =
-    tag === own
-      ? declaration?.members?.find((member) => member.kind === 'field' && member.name === name)
-      : undefined;
-  const value = field && 'default' in field ? field.default : undefined;
-  return value === undefined || value === 'undefined' ? '' : `.${name}=\${undefined}`;
 }
 
 // The args passed along whole, as in `${spread(args)}`: the object they are, as a literal.

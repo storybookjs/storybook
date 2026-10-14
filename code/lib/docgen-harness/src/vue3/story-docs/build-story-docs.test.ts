@@ -353,11 +353,11 @@ describe('vue3 filled story templates', () => {
     ({ name }) => name === 'template-shared-values'
   )!;
 
-  it.each([
+  it.each<[Exclude<keyof typeof sharedValuesStories, 'default'>, Record<string, unknown>]>([
     ['ForEachItem', { items: [{ id: 3 }, { id: 4 }, { id: 5 }] }],
     ['SetupMutation', { items: ['x', 'y'] }],
     ['SpreadWithClass', { label: HOSTILE, class: ['extra'], style: { margin: '1px' } }],
-  ] as const)('%s renders as its story', async (name, args) => {
+  ])('%s renders as its story', async (name, args) => {
     const payload = await buildFixturePayload(fixtureCase);
     const [, story] = Object.entries(payload?.stories ?? {}).find(([id]) =>
       id.endsWith(`--${sanitize(storyNameFromExport(name))}`)

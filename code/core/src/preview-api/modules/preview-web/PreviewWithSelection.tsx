@@ -431,6 +431,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       });
     }
 
+    if (this.currentRender !== render) return;
+
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
     if (lastSelection && (storyIdChanged || viewModeChanged)) {
       this.channel.emit(STORY_CHANGED, storyId);
@@ -491,13 +493,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     if (isStoryRender(render)) {
       invariant(!!render.story);
       this.storyRenders.push(render as StoryRender<TRenderer>);
-      (this.currentRender as StoryRender<TRenderer>).renderToElement(
+      render.renderToElement(
         this.view.prepareForStory(render.story, {
           scrollReset: storyIdChanged || viewModeChanged,
         })
       );
     } else {
-      this.currentRender.renderToElement(
+      render.renderToElement(
         this.view.prepareForDocs({ scrollReset: storyIdChanged || viewModeChanged }),
         // This argument is used for docs, which is currently only compatible with HTMLElements
         this.renderStoryToElement.bind(this) as any

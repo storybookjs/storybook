@@ -2,6 +2,7 @@ import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
+  type JsPackageManager,
   JsPackageManagerFactory,
   isCI,
   isCorePackage,
@@ -490,12 +491,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    if (rootPackageManager.type === 'npm') {
-      // see https://github.com/npm/cli/issues/8059 for more details
-      await rootPackageManager.installDependencies({ force: true });
-    } else {
-      await rootPackageManager.installDependencies();
-    }
+    await installUpgradeDependencies(rootPackageManager);
 
     if (
       rootPackageManager.type !== PackageManagerName.YARN1 &&
@@ -638,3 +634,20 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     process.removeListener('SIGTERM', handleInterruption);
   }
 }
+
+export const installUpgradeDependencies = async (packageManager: JsPackageManager) => {
+  if (packageManager.type === 'npm') {
+    try {
+      await packageManager.installDependencies();
+    } catch {
+      // A plain install fails cleanly (ERESOLVE) when peer ranges conflict after the manifest
+      // edits — see https://github.com/npm/cli/issues/8059 for more details. Passing --force
+      // unconditionally instead makes npm's resolution spin CPU-bound with zero file writes on
+      // large trees and never finish, so only pay the --force cost after a real failure.
+      logger.warn('npm install failed; retrying with --force (npm/cli#8059 workaround)');
+      await packageManager.installDependencies({ force: true });
+    }
+  } else {
+    await packageManager.installDependencies();
+  }
+};

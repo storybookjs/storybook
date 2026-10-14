@@ -11,7 +11,11 @@ import { logger } from 'storybook/internal/node-logger';
 import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
-import { checkVersionConsistency, getStorybookVersion } from './upgrade.ts';
+import {
+  checkVersionConsistency,
+  getStorybookVersion,
+  installUpgradeDependencies,
+} from './upgrade.ts';
 import { collectProjects, generateUpgradeSpecs, isSuccessResult } from './util.ts';
 
 const findInstallationsMock =
@@ -572,5 +576,61 @@ describe('Project collection', () => {
     expect(isSuccessResult(results[0]) && results[0].packageManager.type).toBe(
       PackageManagerName.PNPM
     );
+  });
+});
+
+describe('installUpgradeDependencies', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('installs without --force for npm when the first install succeeds', async () => {
+    const installDependencies = vi.fn().mockResolvedValue(undefined);
+    const manager = {
+      type: PackageManagerName.NPM,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await installUpgradeDependencies(manager);
+
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(installDependencies.mock.calls[0]).toEqual([]);
+  });
+
+  it('retries with --force only after the plain npm install fails (npm/cli#8059 workaround)', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = {
+      type: PackageManagerName.NPM,
+      installDependencies,
+    } as unknown as JsPackageManager;
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+    await installUpgradeDependencies(manager);
+
+    expect(installDependencies).toHaveBeenCalledTimes(2);
+    expect(installDependencies.mock.calls[0]).toEqual([]);
+    expect(installDependencies.mock.calls[1]).toEqual([{ force: true }]);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('retrying with --force'));
+  });
+
+  it.each([
+    PackageManagerName.YARN1,
+    PackageManagerName.YARN2,
+    PackageManagerName.PNPM,
+    PackageManagerName.BUN,
+  ])('never forces the install for %s', async (packageManagerType) => {
+    const installDependencies = vi.fn().mockResolvedValue(undefined);
+    const manager = {
+      type: packageManagerType,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await installUpgradeDependencies(manager);
+
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(installDependencies.mock.calls[0]).toEqual([]);
   });
 });

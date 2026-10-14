@@ -40,6 +40,8 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 // threads would only duplicate multi-second program builds and their memory.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
+  // Serialized dispatch means the pending map holds at most one request: the drain loop posts the
+  // next extract only after the previous one settles.
   private readonly pending = new Map<number, Pending>();
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
@@ -108,15 +110,23 @@ class DocgenWorker implements DocgenWorkerClient {
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
       const id = this.nextId++;
       const pending: Pending = { resolve, reject };
+      this.pending.set(id, pending);
       if (this.taskTimeoutMs > 0) {
         pending.timer = setTimeout(() => {
           this.pending.delete(id);
-          this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
+          const timeoutError = new Error(
+            `docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`
+          );
+          // The client posts one request at a time, so a request is always the one the worker is
+          // actively extracting: expiry means this extraction itself made no progress for the
+          // whole window, and everything queued behind it would hang too. Reject the wedged
+          // extraction, kill the worker, and let the queue drain onto a replacement
+          // (`replaceable`).
+          this.fail(timeoutError);
+          pending.reject(timeoutError);
         }, this.taskTimeoutMs);
         pending.timer.unref?.();
       }
-      this.pending.set(id, pending);
       this.keepProcessAliveWhileBusy();
       this.post({ type: 'extract', id, entry });
     });
@@ -201,16 +211,58 @@ export function createDocgenWorkerClient(
     return undefined;
   }
 
+  // Requests are queued client-side and dispatched one at a time. The worker thread serializes the
+  // CPU-bound TypeScript work anyway, so this costs no throughput — but it makes the per-request
+  // timeout measure the active extraction instead of queue wait. A static build fans out one
+  // extract per component onto this single worker; with timers armed at fan-out, any repo whose
+  // total extraction exceeds the window would reject queued-but-healthy requests and fail builds
+  // that had already produced a complete index.
   let worker: DocgenWorker | undefined;
+  let draining = false;
+  const queue: Array<{
+    entry: IndexEntry;
+    resolve: (payload: DocgenPayload | undefined) => void;
+    reject: (error: unknown) => void;
+  }> = [];
+
+  const drain = async (): Promise<void> => {
+    if (draining) {
+      return;
+    }
+    draining = true;
+    try {
+      while (queue.length > 0) {
+        if (worker?.replaceable) {
+          logger.debug('docgen worker died after serving requests; spawning a replacement');
+          worker = undefined;
+        }
+        worker ??= new DocgenWorker(scriptPath, descriptors);
+        const task = queue.shift();
+        if (!task) {
+          break;
+        }
+        try {
+          task.resolve(await worker.extract(task.entry));
+        } catch (error) {
+          task.reject(error);
+        }
+      }
+    } catch (error) {
+      // Worker construction itself failed; every queued extract fails on the same cause.
+      for (const task of queue.splice(0)) {
+        task.reject(error);
+      }
+    } finally {
+      draining = false;
+    }
+  };
 
   return {
-    async extract(entry) {
-      if (worker?.replaceable) {
-        logger.debug('docgen worker died after serving requests; spawning a replacement');
-        worker = undefined;
-      }
-      worker ??= new DocgenWorker(scriptPath, descriptors);
-      return worker.extract(entry);
+    extract(entry) {
+      return new Promise<DocgenPayload | undefined>((resolve, reject) => {
+        queue.push({ entry, resolve, reject });
+        void drain();
+      });
     },
   };
 }

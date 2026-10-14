@@ -264,3 +264,80 @@ describe('DocgenWorkerClient.extract', () => {
     await expect(second).resolves.toMatchObject({ id: 'y' });
   });
 });
+
+describe('extract timeout semantics', () => {
+  const payloadFor = (id: string) => ({ id, name: id, path: `./${id}.stories.ts`, jsDocTags: {} });
+
+  /** Responds to the most recently posted extract; with serialized dispatch there is one. */
+  const respondToLastExtract = (worker: FakeWorker, id = 'responded') => {
+    const extractMsg = worker.posted.filter((m) => m.type === 'extract').at(-1) as {
+      id: number;
+    };
+    worker.emit('message', {
+      type: 'extract',
+      id: extractMsg.id,
+      payload: payloadFor(id),
+    } satisfies DocgenWorkerResponse);
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('does not time out extracts that are queued behind healthy, progressing work', async () => {
+    vi.useFakeTimers();
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    // Fan-out like a static build: every component's extract is issued at once.
+    const promises = ['a', 'b', 'c'].map((id) => client.extract({ id } as any));
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Each response arrives just inside the window measured from its own dispatch, while the
+    // total elapsed time is far past one window. Timers armed at fan-out would reject all of
+    // these; timers that measure the active extraction must not.
+    for (let i = 0; i < promises.length; i += 1) {
+      await vi.advanceTimersByTimeAsync(119_000);
+      respondToLastExtract(worker);
+      await vi.advanceTimersByTimeAsync(0);
+    }
+
+    await expect(Promise.all(promises)).resolves.toHaveLength(3);
+    expect(worker.terminate).not.toHaveBeenCalled();
+  });
+
+  it('terminates a wedged worker on an active-extract timeout and finishes the queue on a replacement', async () => {
+    vi.useFakeTimers();
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const first = client.extract({ id: 'fast' } as any);
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+    respondToLastExtract(worker, 'fast');
+    await expect(first).resolves.toMatchObject({ id: 'fast' });
+
+    // The next extraction wedges: no response within the window while it is the active one.
+    // Attach the rejection handler before advancing the clock: the timeout fires inside the
+    // advance, and a later-attached handler would read as an unhandled rejection.
+    const stuck = client.extract({ id: 'wedge' } as any);
+    const queued = client.extract({ id: 'after' } as any);
+    const stuckAssertion = expect(stuck).rejects.toThrow(
+      'docgen worker extract 1 timed out after 120000ms'
+    );
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    await stuckAssertion;
+    expect(worker.terminate).toHaveBeenCalled();
+
+    // The request queued behind the wedged one still completes, on a fresh worker.
+    expect(fakeWorkers).toHaveLength(2);
+    ackInit(fakeWorkers[1]);
+    await vi.advanceTimersByTimeAsync(0);
+    respondToLastExtract(fakeWorkers[1], 'after');
+    await expect(queued).resolves.toMatchObject({ id: 'after' });
+  });
+});

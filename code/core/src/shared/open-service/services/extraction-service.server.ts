@@ -205,7 +205,21 @@ export function registerExtractionService<
     commands: {
       [extractCommand]: {
         handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
-          const payload = await provider(await resolveInput(input.id));
+          const extractionInput = await resolveInput(input.id);
+          let payload: TState['components'][string] | undefined;
+          try {
+            payload = await provider(extractionInput);
+          } catch (error) {
+            // A provider is not required to be total, so one component's failure must not fail
+            // the loads queued behind it — the static build runs one load per component
+            // concurrently, and a rejected load fails the whole build. Record the error payload,
+            // same as `extractAllCommand` does.
+            payload = buildErrorPayload({
+              id: input.id,
+              entry: extractionInput.entry,
+              error: toExtractionError(error),
+            });
+          }
           ctx.self.setState((state) => writePayload(state, input.id, payload));
           return payload;
         },

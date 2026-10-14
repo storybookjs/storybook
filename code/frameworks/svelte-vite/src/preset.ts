@@ -4,6 +4,7 @@ import { assertSvelteCsfAddonNotInstalled } from '@storybook/svelte/internal/sve
 
 import { svelteCsf } from './plugins/svelte-csf.ts';
 import { svelteDocgen } from './plugins/svelte-docgen.ts';
+import { svelteInternalLegacy } from './plugins/svelte-internal-legacy.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
 import { handleSvelteKit } from './utils.ts';
 
@@ -29,6 +30,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   await handleSvelteKit(plugins, options);
   plugins.push(svelteCsf());
+  plugins.push(svelteInternalLegacy());
 
   return {
     ...config,

@@ -6,6 +6,7 @@ import { types as t } from 'storybook/internal/babel';
 import type { CsfFile } from '../CsfFile.ts';
 import { type ImportRef } from './import-statements.ts';
 import { resolveArgValue } from './resolve-arg-value.ts';
+import { rebaseSpecifier, resolveSpreadMeta } from './spread-meta.ts';
 import {
   type ReferenceContext,
   type ResolvedMembers,
@@ -53,11 +54,34 @@ export function createStoryArgsResolver(
   };
 
   const metaNode = csf._metaNode;
-  const metaMembers =
+  const spreadMeta = resolveSpreadMeta(csf, ctx);
+  const ownMembers =
     metaNode && t.isObjectExpression(metaNode)
-      ? resolveObjectMembers(metaNode, ctx)
+      ? resolveObjectMembers(spreadMeta?.own ?? metaNode, ctx)
       : { properties: {}, shadowed: [], unresolved: [] };
-  const metaArgs = resolveArgsRecord(metaMembers.properties.args, ctx);
+  const baseMembers = spreadMeta && resolveObjectMembers(spreadMeta.path.node, spreadMeta.ctx);
+  const metaMembers: ResolvedMembers = baseMembers
+    ? {
+        properties: { ...baseMembers.properties, ...ownMembers.properties },
+        shadowed: baseMembers.shadowed.filter((key) => !(key in ownMembers.properties)),
+        unresolved: [...baseMembers.unresolved, ...ownMembers.unresolved],
+      }
+    : ownMembers;
+  // Meta args another story file writes resolve in that file, and so do the imports they need.
+  const metaCtx = spreadMeta && !('args' in ownMembers.properties) ? spreadMeta.ctx : ctx;
+  const metaArgs = resolveArgsRecord(metaMembers.properties.args, metaCtx);
+  const readArg = (node: t.Node, inMeta: boolean) => {
+    const value = resolveArgValue(node, inMeta ? metaCtx : ctx);
+    return !inMeta || metaCtx === ctx
+      ? value
+      : {
+          ...value,
+          imports: value.imports.map((ref) => ({
+            ...ref,
+            importId: ref.importId && rebaseSpecifier(ref.importId, metaCtx.filePath, ctx.filePath),
+          })),
+        };
+  };
 
   return {
     ctx,
@@ -84,7 +108,7 @@ export function createStoryArgsResolver(
         ...metaArgs.properties,
         ...storyArgs.properties,
       })) {
-        const value = resolveArgValue(node, ctx);
+        const value = readArg(node, !(key in storyArgs.properties));
         args[key] = value.node;
         imports.push(...value.imports);
         unresolved.push(...value.unresolved);

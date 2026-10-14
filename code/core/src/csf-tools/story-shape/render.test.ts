@@ -21,6 +21,20 @@ const resolveStoryRender = (code: string) => {
   );
 };
 
+/** {@link resolveStoryRender}, reading the spreads in the story file. */
+const resolveStoryRenderThroughSpreads = (code: string) => {
+  const source = `export default { title: 'T' };\n${dedent(code)}`;
+  const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
+  const declaration = csf._storyDeclarationPath['A'];
+  const normalized = normalizeStoryDeclaration(declaration);
+
+  return resolveRenderFunction(
+    normalized.type === 'config' ? normalized.path : undefined,
+    declaration,
+    { program: csf._file.path, filePath: 'entry.ts' }
+  );
+};
+
 const printedBody = (resolution: ReturnType<typeof resolveStoryRender>) =>
   resolution.kind === 'resolved' ? recast.print(resolution.path.node).code : undefined;
 
@@ -137,6 +151,65 @@ describe('resolveRenderFunction', () => {
     expect(() => resolveStoryRender(`export const A = { render: { nested: true } };`)).toThrow(
       /Expected render to be an arrow function or function expression/
     );
+  });
+});
+
+describe('resolveRenderFunction through a spread', () => {
+  it('reads the render of a story the spread copies', () => {
+    expect(
+      printedBody(
+        resolveStoryRenderThroughSpreads(`
+          export const Base = { render: () => 'base' };
+          export const A = { ...Base, args: { label: 'a' } };
+        `)
+      )
+    ).toBe(`() => 'base'`);
+  });
+
+  it('reads the render of the object a helper returns', () => {
+    expect(
+      printedBody(
+        resolveStoryRenderThroughSpreads(`
+          const createStory = (variant) => ({ args: { variant }, render: () => 'made' });
+          export const A = { ...createStory('primary'), args: { label: 'a' } };
+        `)
+      )
+    ).toBe(`() => 'made'`);
+  });
+
+  it('keeps a render written before a helper that returns none', () => {
+    expect(
+      printedBody(
+        resolveStoryRenderThroughSpreads(`
+          const hideAllControls = () => ({ parameters: { controls: { disable: true } } });
+          export const A = { render: () => 'own', ...hideAllControls() };
+        `)
+      )
+    ).toBe(`() => 'own'`);
+  });
+
+  it('reports no render when a helper returns none, so the meta render applies', () => {
+    expect(
+      resolveStoryRenderThroughSpreads(`
+        const hideAllControls = () => ({ parameters: { controls: { disable: true } } });
+        export const A = { ...hideAllControls(), args: {} };
+      `)
+    ).toEqual({ kind: 'missing' });
+  });
+
+  it('reports a render that reads the parameters of its helper as unresolved', () => {
+    expect(
+      resolveStoryRenderThroughSpreads(`
+        const createStory = (variant) => ({ render: () => variant });
+        export const A = { ...createStory('primary') };
+      `)
+    ).toEqual({ kind: 'unresolved' });
+  });
+
+  it('reports a spread of a call it cannot read as unresolved', () => {
+    expect(
+      resolveStoryRenderThroughSpreads(`export const A = { ...createStory('primary') };`)
+    ).toEqual({ kind: 'unresolved' });
   });
 });
 

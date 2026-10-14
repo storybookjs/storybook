@@ -22,13 +22,16 @@ import {
   noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
+  rebaseSpecifier,
   resolveComponentImport,
+  resolveSpreadMeta,
   resolveReturnedObjectExpression,
   returnedExpression,
   returnedExpressionPath,
   unresolvedWarning,
   unwrapExpression,
   type ImportBinding,
+  type ReferenceContext,
   type RenderFunctionPath,
   type StoryArgsResolver,
   type StoryReferenceResolver,
@@ -156,11 +159,16 @@ export async function buildStoryDocsPayload(
   } catch {
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
-  const componentName = resolveMetaComponentIdentifier(metaPath);
   const importBindings = collectImportBindings(csf._file.path);
+  const resolver = createStoryArgsResolver(csf, {
+    filePath: storyPath,
+    ...(context.references ?? openStoryReferences()),
+  });
+  const component = metaComponent(csf, metaPath, importBindings, resolver.ctx);
+  const componentName = component?.name;
   const importStatement = createImportStatement(
     componentName,
-    importBindings,
+    component?.importBindings ?? importBindings,
     metaPath,
     docgenPayload
   );
@@ -174,10 +182,7 @@ export async function buildStoryDocsPayload(
     snippet,
     importBindings,
     metaPath,
-    resolver: createStoryArgsResolver(csf, {
-      filePath: storyPath,
-      ...(context.references ?? openStoryReferences()),
-    }),
+    resolver,
     source: storyFile,
   });
 
@@ -192,6 +197,35 @@ export async function buildStoryDocsPayload(
 /** Last title segment matches the fallback used by the existing docgen payload builder. */
 function fallbackTitle(title: string): string {
   return title.split('/').at(-1)!.replace(/\s+/g, '');
+}
+
+/**
+ * The component the meta names, with the import bindings that name it: the story file's, or for a
+ * meta that spreads another story file's, as `{ ...meta, title }` does, that file's, rewritten to
+ * resolve from the story file.
+ */
+function metaComponent(
+  csf: ParsedCsf,
+  metaPath: NodePath<t.ObjectExpression> | undefined,
+  importBindings: Map<string, ImportBinding>,
+  ctx: ReferenceContext
+): { name: string; importBindings: Map<string, ImportBinding> } | undefined {
+  const name = resolveMetaComponentIdentifier(metaPath);
+  if (name || propertyValue(metaPath?.node, 'component')) {
+    return name ? { name, importBindings } : undefined;
+  }
+  const spreadMeta = resolveSpreadMeta(csf, ctx);
+  const spreadName = spreadMeta && resolveMetaComponentIdentifier(spreadMeta.path);
+  if (!spreadMeta || !spreadName) {
+    return undefined;
+  }
+  const program = spreadMeta.path.findParent((path) => path.isProgram()) as NodePath<t.Program>;
+  const binding = collectImportBindings(program).get(spreadName);
+  const rebased = binding && {
+    ...binding,
+    importId: rebaseSpecifier(binding.importId, spreadMeta.ctx.filePath, ctx.filePath),
+  };
+  return { name: spreadName, importBindings: new Map(rebased ? [[spreadName, rebased]] : []) };
 }
 
 /**
@@ -325,13 +359,16 @@ function enrichStoryDoc(
   }
 
   const effectiveRender = resolveEffectiveRender(csf, storyExport, options.resolver.ctx);
-  const renderer =
-    effectiveRender.kind === 'resolved'
-      ? staticRendererForRenderFunction(effectiveRender.path, options)
+  const renderOptions =
+    effectiveRender.kind === 'resolved' ? inFileOf(effectiveRender.path, csf, options) : options;
+  const renderer = !renderOptions
+    ? undefined
+    : effectiveRender.kind === 'resolved'
+      ? staticRendererForRenderFunction(effectiveRender.path, renderOptions)
       : effectiveRender.kind === 'missing'
         ? { kind: 'sfc' as const }
         : undefined;
-  if (!renderer) {
+  if (!renderer || !renderOptions) {
     return withWarning(RENDER_UNRESOLVED_WARNING);
   }
   if (renderer.kind === 'bail') {
@@ -360,7 +397,7 @@ function enrichStoryDoc(
     classified,
     componentName,
     docgenArgInfo,
-    options
+    renderOptions
   );
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
@@ -373,6 +410,40 @@ function enrichStoryDoc(
     ...(template !== undefined ? { template } : {}),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
+}
+
+/**
+ * The context to read a render function in: the story file's, or for one another story file
+ * declares, as the meta a story file spreads does, that file's code and imports, rewritten to
+ * resolve from the story file. `undefined` when a name both files import means different things.
+ */
+function inFileOf(
+  render: RenderFunctionPath,
+  csf: ParsedCsf,
+  options: StoryDocsContext
+): StoryDocsContext | undefined {
+  const program = render.findParent((path) => path.isProgram()) as NodePath<t.Program>;
+  if (program.node === csf._ast.program) {
+    return options;
+  }
+  const { file } = program.hub as unknown as { file: { code: string; opts: { filename: string } } };
+  const importBindings = new Map(options.importBindings);
+  for (const [name, binding] of collectImportBindings(program)) {
+    const rebased = {
+      ...binding,
+      importId: rebaseSpecifier(
+        binding.importId,
+        file.opts.filename,
+        options.resolver.ctx.filePath
+      ),
+    };
+    const known = importBindings.get(name);
+    if (known && (known.importId !== rebased.importId || known.importName !== rebased.importName)) {
+      return undefined;
+    }
+    importBindings.set(name, rebased);
+  }
+  return { ...options, importBindings, source: file.code };
 }
 
 // The story as written with a hole for each arg it reads, for a story without a render function or

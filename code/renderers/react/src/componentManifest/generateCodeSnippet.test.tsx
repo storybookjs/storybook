@@ -1110,9 +1110,9 @@ test('template: a default stands for its arg while that is unset', () => {
   `);
   expect(template(input, 'Defaults')).toMatchInlineSnapshot(`
     "const Defaults = () => (
-      <Button ⟦attr size size ='md'⟧ ⟦attr style style ={ a: 1 }⟧ title={⟦operand count =(2)⟧.toFixed()} ⟦props -size -count -label -style ^title -children⟧>
-        ⟦text label ='Go'⟧
-        {{ size: ⟦value size ='md'⟧, total: ⟦value count =2⟧ + 1 }.size}
+      <Button ⟦attr size size ?'md'⟧ ⟦attr style style ?%7B%20a%3A%201%20%7D⟧ title={⟦operand count ?(2)⟧.toFixed()} ⟦props -size -count -label -style ^title -children⟧>
+        ⟦text label ?'Go'⟧
+        {{ size: ⟦value size ?'md'⟧, total: ⟦value count ?2⟧ + 1 }.size}
       </Button>
     );"
   `);
@@ -1155,7 +1155,7 @@ test('template: args destructured in the body are holes, without the statement',
   `);
   expect(template(input, 'Body')).toMatchInlineSnapshot(`
     "const Body = () => {
-      return <Button ⟦props -count -onChange -title -children⟧ ⟦attr title title⟧>⟦text count =3⟧</Button>;
+      return <Button ⟦props -count -onChange -title -children⟧ ⟦attr title title⟧>⟦text count ?3⟧</Button>;
     };"
   `);
   expect(filled(input, 'Body', { title: 'Hi', onChange: () => {}, count: 5, size: 'sm' }))
@@ -1225,12 +1225,52 @@ test('template: none for args no hole stands for', () => {
     export const Shadowed: Story = { render: (args) => <Button label={args.label} />, ...Base };
     export const Tag: Story = { render: ({ as: Tag, label }) => <Tag>{label}</Tag> };
     export const Member: Story = { render: (args) => <args.Icon /> };
-    export const Spaced: Story = { render: ({ 'a b': x }) => <Button title={x} /> };
-    export const SpacedRead: Story = { render: (args) => <Button title={args['a b']} /> };
   `);
   const stories = ['NoArgs', 'Twice', 'Changed', 'Compared', 'Written', 'Keyed', 'Reassigned'];
-  const unusual = ['Shadowed', 'Tag', 'Member', 'Spaced', 'SpacedRead'];
+  const unusual = ['Shadowed', 'Tag', 'Member'];
   for (const story of [...stories, ...unusual]) {
     expect(template(input, story)).toBeUndefined();
   }
+});
+
+test('template: a render behind a spread of a story or a helper call', () => {
+  const input = withCSF3(dedent`
+    const createStory = (label) => ({ args: { label }, render: (args) => <Button {...args} /> });
+    const hideAllControls = () => ({ parameters: { controls: { disable: true } } });
+    export const Made: Story = { ...createStory('Go'), args: { primary: true } };
+    export const Copied: Story = { ...Made, args: { label: 'Copy' } };
+    export const Hidden: Story = { render: (args) => <Button {...args} />, ...hideAllControls() };
+  `);
+  for (const story of ['Made', 'Copied', 'Hidden']) {
+    expect(template(input, story)).toBe(`const ${story} = () => ⟦element Button⟧;`);
+  }
+  expect(
+    getCodeSnippet(loadCsf(input, { makeTitle: () => 'T' }).parse(), 'Made', 'Button').unresolved
+  ).toEqual([]);
+});
+
+test('template: an arg named with a space is one word', () => {
+  const input = withCSF3(dedent`
+    export const Spaced: Story = {
+      render: ({ 'Render header?': header = true }) => <Button header={header} />,
+    };
+    export const SpacedRead: Story = {
+      render: (args) => <Button title={args['Button title']}>{args['Button title']}</Button>,
+    };
+  `);
+  expect(template(input, 'Spaced')).toMatchInlineSnapshot(
+    `"const Spaced = () => <Button ⟦attr header %Render%20header%3F ?true⟧ />;"`
+  );
+  expect(filled(input, 'Spaced', {})).toMatchInlineSnapshot(
+    `"const Spaced = () => <Button header={true} />;"`
+  );
+  expect(filled(input, 'Spaced', { 'Render header?': false })).toMatchInlineSnapshot(
+    `"const Spaced = () => <Button header={false} />;"`
+  );
+  expect(template(input, 'SpacedRead')).toMatchInlineSnapshot(
+    `"const SpacedRead = () => <Button ⟦attr title %Button%20title⟧>⟦text %Button%20title⟧</Button>;"`
+  );
+  expect(filled(input, 'SpacedRead', { 'Button title': 'Go on' })).toMatchInlineSnapshot(
+    `"const SpacedRead = () => <Button title="Go on">Go on</Button>;"`
+  );
 });

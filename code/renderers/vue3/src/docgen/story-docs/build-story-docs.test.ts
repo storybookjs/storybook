@@ -241,6 +241,62 @@ export const Primary = {
   });
 });
 
+describe('a meta that spreads the meta of another story file', () => {
+  it('documents the component and renders with the render of that meta', async () => {
+    vol.fromJSON({
+      [STORY_PATH]: `
+import meta from './base/Base.stories';
+export default { ...meta, title: 'Example/MyButton/Interactions' };
+export const Primary = { args: { label: 'Go' } };
+`,
+    });
+    const base = `
+import MyButton from '../MyButton.vue';
+export default {
+  component: MyButton,
+  args: { size: 'large' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label" :size="args.size" />',
+  }),
+};
+`;
+    const payload = await buildStoryDocsPayload(
+      { entry: ENTRY },
+      {
+        readDocgen: async (id) => docgen(id),
+        references: {
+          resolveModule: (_fromFile, specifier) =>
+            specifier === './base/Base.stories'
+              ? {
+                  program: babelParseFile({ code: base, filename: '/stories/base/Base.stories.ts' })
+                    .path,
+                  filePath: '/stories/base/Base.stories.ts',
+                }
+              : undefined,
+        },
+      }
+    );
+    const story = payload?.stories[STORY_ID];
+    expect(payload?.name).toBe('MyButton');
+    expect(story?.snippet).toBe(
+      [
+        '<script lang="ts" setup>',
+        "import MyButton from './MyButton.vue';",
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton label="Go" size="large" />',
+        '</template>',
+      ].join('\n')
+    );
+    expect(fillTemplate(story!.template!, { label: 'Hi', size: 'small' })).toContain(
+      '<MyButton label="Hi" size="small" />'
+    );
+  });
+});
+
 describe('template', () => {
   it('is the component with every arg and its slots for a story without a render function', async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
@@ -409,6 +465,17 @@ export const Primary = {
     const template = '<MyButton max-count="3" v-bind="args" :is-open="args.open" />';
     expect(renderTemplate(template, new Map(), [])).toContain(
       '<MyButton max-count="3" ⟦props ^maxCount -isOpen⟧ ⟦attr is-open open⟧ />'
+    );
+  });
+
+  it('reads an arg named with a space, as one word', () => {
+    const template = `<MyButton :title="args['Button title']">{{ args['Button title'] }}</MyButton>`;
+    const code = renderTemplate(template, new Map(), [])!;
+    expect(code).toContain(
+      '<MyButton ⟦attr title %Button%20title⟧>⟦text %Button%20title⟧</MyButton>'
+    );
+    expect(fillTemplate(code, { 'Button title': 'Go on' })).toContain(
+      '<MyButton title="Go on">Go on</MyButton>'
     );
   });
 

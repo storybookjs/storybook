@@ -1210,7 +1210,7 @@ describe('buildStoryDocsPayload', () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
-        const makeArgs = () => ({ label: 'computed' });
+        const makeArgs = () => Object.fromEntries([['label', 'computed']]);
         export const Default = { args: { label: 'Save', ...makeArgs() } };
       `);
       expect(story.warning).toBe(
@@ -2486,7 +2486,7 @@ describe('buildStoryDocsPayload', () => {
           `template: '<sb-button [label]="label" />' }`
         )
       );
-      expect(template).toContain("  label = ⟦value label =''⟧;");
+      expect(template).toContain("  label = ⟦value label ?''⟧;");
       expect(fillTemplate(template!, {})).toContain("  label = '';");
       expect(fillTemplate(template!, { label: 'Go' })).toContain("  label = 'Go';");
     });

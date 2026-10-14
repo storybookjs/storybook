@@ -340,6 +340,154 @@ describe('write order', () => {
   });
 });
 
+const selfContained = (node: t.Node) => (isSelfContained(node) ? node : undefined);
+
+const storyMembers = (ctx: ReferenceContext, storyName: string) => {
+  const story = resolveBindingMembers(ctx, storyName);
+  return (
+    story && {
+      properties: Object.fromEntries(
+        Object.entries(story.properties).map(([key, node]) => [key, sourceOf(node)])
+      ),
+      unresolved: story.unresolved,
+    }
+  );
+};
+
+describe('spreads of a call', () => {
+  it('reads the object a local function returns, with its parameters bound to the arguments', () => {
+    const code = dedent`
+      const createStory = (variant, size = 'md') => ({
+        args: { variant, size, label: 'Go' },
+        render: (args) => args.label,
+      });
+      export const Primary = { ...createStory('primary'), parameters: { a: 1 } };
+    `;
+    expect(storyMembers(contextOf({ 'entry.ts': code }), 'Primary')).toEqual({
+      properties: {
+        args: "{ variant: 'primary', size: 'md', label: 'Go' }",
+        render: 'args => args.label',
+        parameters: '{ a: 1 }',
+      },
+      unresolved: [],
+    });
+  });
+
+  it('reads a function declaration, and a story declared from a call', () => {
+    const code = dedent`
+      export const Primary = createStory('primary');
+      function createStory(variant) { return { args: { variant } }; }
+    `;
+    expect(argsOf(code, 'Primary')).toEqual({ args: { variant: "'primary'" }, unresolved: [] });
+  });
+
+  it('follows the constants of the body and the choices the arguments decide', () => {
+    const code = dedent`
+      const hideAllControls = (onlyControls?: boolean) => {
+        const controls = { controls: { disable: true } };
+        return onlyControls ? controls : { parameters: { ...controls } };
+      };
+      export const Hidden = { ...hideAllControls(), args: { label: 'x' } };
+      export const Only = { ...hideAllControls(true) };
+    `;
+    const ctx = contextOf({ 'entry.ts': code });
+    expect(storyMembers(ctx, 'Hidden')).toEqual({
+      properties: {
+        parameters: '{ ...{ controls: { disable: true } } }',
+        args: "{ label: 'x' }",
+      },
+      unresolved: [],
+    });
+    expect(storyMembers(ctx, 'Only')?.properties).toEqual({ controls: '{ disable: true }' });
+  });
+
+  it('reads a function another module exports, keeping an argument the call writes', () => {
+    const ctx = contextOf(
+      {
+        'utils.ts': dedent`
+        const describeStory = (description, only?: boolean) => {
+          const docs = { docs: { description: { story: description } } };
+          return only ? docs : { parameters: { ...docs } };
+        };
+        export { describeStory };
+      `,
+        'entry.ts': dedent`
+        import { describeStory } from './utils';
+        export const Described = { args: { label: 'x' }, ...describeStory(html\`<p>Hi</p>\`) };
+      `,
+      },
+      'entry.ts',
+      selfContained
+    );
+    expect(storyMembers(ctx, 'Described')).toEqual({
+      properties: {
+        args: "{ label: 'x' }",
+        parameters: '{ ...{ docs: { description: { story: html`<p>Hi</p>` } } } }',
+      },
+      unresolved: [],
+    });
+  });
+
+  it("rejects a function another module exports whose object reads that module's names", () => {
+    const ctx = contextOf(
+      {
+        'utils.ts': dedent`
+        import { Button } from './button';
+        export const withButton = () => ({ args: { icon: Button } });
+      `,
+        'entry.ts': dedent`
+        import { withButton } from './utils';
+        export const Story = { ...withButton() };
+      `,
+      },
+      'entry.ts',
+      selfContained
+    );
+    expect(storyMembers(ctx, 'Story')?.unresolved).toEqual(['...withButton()']);
+  });
+
+  it.each([
+    ['a function no module declares', 'export const S = { ...unknown() };'],
+    [
+      'a function with a statement besides constants and the return',
+      dedent`
+        const make = () => { log(); return { args: {} }; };
+        export const S = { ...make() };
+      `,
+    ],
+    [
+      'a choice an argument that is not a literal decides',
+      dedent`
+        const make = (on) => (on ? { args: {} } : { render: () => 1 });
+        export const S = { ...make(flag) };
+      `,
+    ],
+    [
+      'a spread argument',
+      dedent`
+        const make = (a) => ({ args: { a } });
+        export const S = { ...make(...list) };
+      `,
+    ],
+    [
+      'a function declared after the spread runs',
+      dedent`
+        export const S = { ...make() };
+        const make = () => ({ args: {} });
+      `,
+    ],
+    [
+      'a function returning something other than an object literal',
+      dedent`
+        const make = () => base;
+        export const S = { ...make() };
+      `,
+    ],
+  ])('reports a spread of %s', (_, code) => {
+    expect(storyMembers(contextOf({ 'entry.ts': code }), 'S')?.unresolved).toHaveLength(1);
+  });
+});
+
 describe('story initializers', () => {
   it('reports opaque calls while retaining members assigned after the call', () => {
     const code = dedent`

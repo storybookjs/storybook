@@ -2,6 +2,7 @@ import {
   type FillSnippetTemplate,
   UnprintableArgError,
   asOperand,
+  defaultCode,
   fillHoles,
   printValue,
   spreadArgs,
@@ -10,13 +11,12 @@ import type { Args } from 'storybook/internal/types';
 
 // Fills a template from `buildStoryTemplate`. Besides the shared holes, `⟦element Button⟧` is the
 // component with every arg and `⟦args⟧` the args as an object, both without their `-name` words.
-// A hole for one arg may end in `=code`, which stands for the arg while it is unset.
+// A hole for one arg may end in a default word, the code that stands for the arg while it is unset.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', second = ''] = words;
     const at = kind === 'attr' ? 2 : 1;
-    const fallback = words[at]?.startsWith('=') ? words.slice(at).join(' ').slice(1) : '';
-    const unset = args[words[at - 1]!] === undefined && fallback;
+    const unset = args[words[at - 1]!] === undefined && defaultCode(words[at]);
     switch (kind) {
       case 'element': {
         const { children, ...props } = Object.fromEntries(spreadArgs(args, words.slice(1)));

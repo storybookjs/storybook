@@ -3,8 +3,10 @@ import { isOperand } from 'storybook/internal/csf-tools';
 import {
   asOperand,
   dedentStoryCode,
+  defaultWord,
   hasHoleBracket,
   hole,
+  holeWord,
   isHoleWord,
 } from 'storybook/internal/docs-tools';
 
@@ -72,7 +74,7 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
       }
       const arg = memberName(parent, reference.node);
       if (arg !== undefined) {
-        return [isHoleWord(arg) && !omitted.includes(arg) ? readEdit(parent, arg) : undefined];
+        return [omitted.includes(arg) ? undefined : readEdit(parent, arg)];
       }
       const declaration = ownDeclaration(parent);
       const taken = declaration && patternEdits(parent.get('id') as NodePath, omitted);
@@ -108,7 +110,6 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
       if (
         computed ||
         arg === undefined ||
-        !isHoleWord(arg) ||
         omitted.includes(arg) ||
         fallback === undefined ||
         !references
@@ -241,7 +242,9 @@ function spreadEdit(
   const left = omitted.map((name) => `-${name}`);
   const tag = code.slice(opening.name.start!, opening.name.end!);
   if (element.children.length === 0 && opening.attributes.length === 1) {
-    return isHoleWord(tag) ? nodeEdit(element, hole('element', tag, ...left)) : undefined;
+    return isHoleWord(tag)
+      ? nodeEdit(element, hole('element', tag, ...left.map(holeWord)))
+      : undefined;
   }
   const words = [
     ...left,
@@ -251,7 +254,7 @@ function spreadEdit(
   ].filter(
     (word, i, all) => !all.slice(0, i).some((earlier) => earlier.slice(1) === word.slice(1))
   );
-  return nodeEdit(spread.node, hole('props', ...words));
+  return nodeEdit(spread.node, hole('props', ...words.map(holeWord)));
 }
 
 // `label={args.label}`, `{args.label}` as a child, or `args.label` in code; `undefined` for a read
@@ -292,7 +295,7 @@ function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   ) {
     return undefined;
   }
-  const literal = hole('args', ...omitted.map((name) => `-${name}`));
+  const literal = hole('args', ...omitted.map((name) => holeWord(`-${name}`)));
   if (parent.isObjectProperty() && parent.node.shorthand) {
     return nodeEdit(parent.node, `${read.node.name}: ${literal}`);
   }
@@ -313,9 +316,9 @@ const startsOperand = (read: NodePath) =>
       .map((path) => path.node)
   );
 
-// A hole for one arg; `=code` is what the story defaults it to while it is unset.
+// A hole for one arg, with the code the story defaults it to while it is unset.
 const argHole = (kind: string, words: string[], fallback: string) =>
-  hole(kind, ...words, ...(fallback ? [`=${fallback}`] : []));
+  hole(kind, ...words.map(holeWord), ...(fallback ? [defaultWord(fallback)] : []));
 
 const nodeEdit = (node: t.Node, text: string): Edit => ({
   start: node.start!,

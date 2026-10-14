@@ -63,9 +63,9 @@ describe('fillTemplate', () => {
     expect(fillTemplate('use(⟦args⟧)', {})).toBe('use({})');
   });
 
-  it('prints the code after `=` for an unset arg', () => {
+  it("prints a default word's code for an unset arg", () => {
     const template =
-      "<a ⟦attr size size ='md'⟧>⟦text label =a = b⟧</a> ⟦value n =1⟧ ⟦operand n =(1)⟧";
+      "<a ⟦attr size size ?'md'⟧>⟦text label ?a%20%3D%20b⟧</a> ⟦value n ?1⟧ ⟦operand n ?(1)⟧";
     expect(fillTemplate(template, {})).toBe("<a size={'md'}>{a = b}</a> 1 (1)");
     expect(fillTemplate(template, { size: 'lg', label: 'Go', n: 2 })).toBe(
       '<a size="lg">Go</a> 2 (2)'

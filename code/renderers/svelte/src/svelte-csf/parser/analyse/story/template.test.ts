@@ -57,6 +57,12 @@ describe(getStoryContentTemplate.name, () => {
     expect(getStoryContentTemplate('<p>{args.label!}</p>')).toBe('<p>{⟦value label⟧!}</p>');
   });
 
+  it('reads an arg named with a space, as one word', () => {
+    const template = getStoryContentTemplate(`<Button title={args['Button title']} />`);
+    expect(template).toBe('<Button ⟦attr title %Button%20title⟧ />');
+    expect(fillTemplate(template!, { 'Button title': 'Go on' })).toBe('<Button title="Go on" />');
+  });
+
   it('is undefined for args no hole stands for', () => {
     for (const code of [
       '<Button />',

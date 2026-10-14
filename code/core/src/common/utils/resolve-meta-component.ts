@@ -4,13 +4,15 @@ import type { CsfFile } from 'storybook/internal/csf-tools';
 import { parseReferenceModule } from '../../csf-tools/story-shape/reference-context.ts';
 import { isSelfContained } from '../../csf-tools/story-shape/resolve-arg-value.ts';
 import {
+  type ReferenceContext,
   type ReferenceModule,
+  resolveBindingMembers,
   resolveReferencedValue,
   sourceOf,
 } from '../../csf-tools/story-shape/resolve-members.ts';
-import { unwrapExpression } from '../../csf-tools/story-shape/utils.ts';
+import { metaObjectPath, unwrapExpression } from '../../csf-tools/story-shape/utils.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
-import { createModuleResolver } from './module-resolver.ts';
+import { createModuleResolver, typeScriptExtensionAlias } from './module-resolver.ts';
 
 /** The component a story file documents, as far as static analysis can determine. */
 export interface ResolvedMetaComponent {
@@ -57,6 +59,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
     extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
     mainFields: ['module', 'main'],
     tsconfig: 'auto',
+    extensionAlias: typeScriptExtensionAlias,
   });
 
   const resolveFile = (fromFile: string, specifier: string): string | undefined => {
@@ -91,15 +94,46 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
     };
   };
 
+  const referenceContext = (module: ReferenceModule): ReferenceContext => ({
+    ...module,
+    resolveModule,
+    externalize: (n: t.Node) => (isSelfContained(n) ? n : undefined),
+  });
+
+  // `{ ...meta, title }` copies the component of a meta another story file exports, whose names it
+  // resolves in. The last spread holding a component wins; one this pass cannot read ends the search.
+  const fromSpread = (csf: CsfFile, storyModule: ReferenceModule): MetaComponentResolution => {
+    const spreads = (metaObjectPath(csf)?.node.properties ?? []).filter((property) =>
+      t.isSpreadElement(property)
+    );
+    const ctx = referenceContext(storyModule);
+    for (const { argument } of spreads.reverse()) {
+      const component = t.memberExpression(argument, t.identifier('component'));
+      const referenced = resolveReferencedValue(ctx, component);
+      if (referenced) {
+        const value = unwrapComponentExpression(referenced.node);
+        return t.isIdentifier(value)
+          ? fromIdentifier(referenced.ctx, value.name)
+          : { reason: 'unreadable-component-expression', expression: sourceOf(component) };
+      }
+      const spread = unwrapExpression(argument);
+      const members = t.isIdentifier(spread) ? resolveBindingMembers(ctx, spread.name) : undefined;
+      if (!members || members.unresolved.length > 0) {
+        break;
+      }
+    }
+    return { reason: 'no-meta-component' };
+  };
+
   return function resolveMetaComponent(csf: CsfFile, storyPath: string): MetaComponentResolution {
+    const storyModule: ReferenceModule = { program: csf._file.path, filePath: storyPath };
     // `_meta.component` is printed source text, so only the parsed node shows whether the value is
     // a name this pass can follow.
     const node = csf._metaAnnotations.component;
     if (!node) {
-      return { reason: 'no-meta-component' };
+      return fromSpread(csf, storyModule);
     }
 
-    const storyModule: ReferenceModule = { program: csf._file.path, filePath: storyPath };
     const expression = unwrapComponentExpression(node);
     if (t.isIdentifier(expression)) {
       return fromIdentifier(storyModule, expression.name);
@@ -129,14 +163,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
 
     // A deeper property access (a shape another module owns, or a shared config object) is
     // followed to the name it lands on, which is then read in the module that binds it.
-    const referenced = resolveReferencedValue(
-      {
-        ...storyModule,
-        resolveModule,
-        externalize: (n: t.Node) => (isSelfContained(n) ? n : undefined),
-      },
-      expression
-    );
+    const referenced = resolveReferencedValue(referenceContext(storyModule), expression);
     if (referenced) {
       const value = unwrapComponentExpression(referenced.node);
       if (t.isIdentifier(value)) {

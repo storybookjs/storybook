@@ -1,5 +1,5 @@
 import { isOperand } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
+import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 import { type AST, parse } from 'svelte/compiler';
 import { walk } from 'zimmerframe';
 
@@ -72,13 +72,13 @@ function argEdit(node: Node, path: Node[]): Edit | undefined {
     return undefined;
   }
   if (tag?.type === 'ExpressionTag' && owner?.type === 'Attribute' && owner.value === tag) {
-    return { start: owner.start, end: owner.end, text: hole('attr', owner.name, arg) };
+    return { start: owner.start, end: owner.end, text: hole('attr', owner.name, holeWord(arg)) };
   }
   if (tag?.type === 'ExpressionTag' && owner?.type === 'Fragment') {
-    return { start: tag.start, end: tag.end, text: hole('text', arg) };
+    return { start: tag.start, end: tag.end, text: hole('text', holeWord(arg)) };
   }
   const kind = isOperand(read as never, ancestors as never) ? 'operand' : 'value';
-  return { start: read.start, end: read.end, text: hole(kind, arg) };
+  return { start: read.start, end: read.end, text: hole(kind, holeWord(arg)) };
 }
 
 // The arg `args.label` or `args['label']` reads.
@@ -88,7 +88,7 @@ function argName(member: Node, object: Node): string | undefined {
   }
   const { property, computed } = member;
   const name = computed ? property.type === 'Literal' && property.value : property.name;
-  return typeof name === 'string' && isHoleWord(name) ? name : undefined;
+  return typeof name === 'string' ? name : undefined;
 }
 
 // `<Button {...args}>` passes every arg but the props the element writes after it, which win: its
@@ -112,5 +112,5 @@ function spreadEdit(spread: Node, element: Node): Edit | undefined {
       ...(children.length > 0 ? ['children'] : []),
     ].map((name) => `-${name}`),
   ];
-  return { start: spread.start, end: spread.end, text: hole('props', ...words) };
+  return { start: spread.start, end: spread.end, text: hole('props', ...words.map(holeWord)) };
 }

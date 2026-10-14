@@ -8,7 +8,7 @@ import {
 
 import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, hole } from 'storybook/internal/docs-tools';
+import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
 import {
   createRenderContext,
@@ -29,7 +29,10 @@ type Edit = { start: number; end: number; text: string };
 export function componentTemplate(name: string, importStatement: string, slots: string[]) {
   const ctx = createRenderContext();
   ctx.componentImports.add(importStatement);
-  return renderPreparedSfcSnippet({ templateCode: hole('element', name, ...slots), ctx });
+  return renderPreparedSfcSnippet({
+    templateCode: hole('element', name, ...slots.map(holeWord)),
+    ctx,
+  });
 }
 
 /**
@@ -64,7 +67,7 @@ export function renderTemplate(
       const holes = argHoles(node.content as SimpleExpressionNode, template, (name) => ({
         start: start.offset,
         end: end.offset,
-        text: hole('text', name),
+        text: hole('text', holeWord(name)),
       }));
       edits.push(...(holes ?? []));
       return holes !== undefined;
@@ -93,7 +96,11 @@ export function renderTemplate(
           ...before.map((name) => `^${name}`),
           ...[...slots, ...after].map((name) => `-${name}`),
         ];
-        edits.push({ start: start.offset, end: end.offset, text: hole('props', ...words) });
+        edits.push({
+          start: start.offset,
+          end: end.offset,
+          text: hole('props', ...words.map(holeWord)),
+        });
         continue;
       }
       // `v-model="args.open"` binds a ref that starts as the arg, as the static snippet writes it.
@@ -114,7 +121,7 @@ export function renderTemplate(
       );
       const holes = argHoles(exp, template, (word) =>
         name !== undefined && owned
-          ? { start: start.offset, end: end.offset, text: hole('attr', name, word) }
+          ? { start: start.offset, end: end.offset, text: hole('attr', name, holeWord(word)) }
           : undefined
       );
       const unusual = prop.name === 'on' || prop.name === 'model' || (arg && !arg.isStatic);
@@ -136,7 +143,7 @@ export function renderTemplate(
   // A statement reads its args as code in the `<script>`, which the `script` word says.
   ctx.statements = statements.map((statement) =>
     setupStatementCode(statement, ({ name, operand }) =>
-      hole(operand ? 'operand' : 'value', name, 'script')
+      hole(operand ? 'operand' : 'value', holeWord(name), 'script')
     )
   );
   const code = renderPreparedSfcSnippet({ templateCode, ctx });
@@ -174,9 +181,10 @@ function argHoles(
       return;
     }
     const name =
-      t.isMemberExpression(parent, { object: node, computed: false }) &&
-      t.isIdentifier(parent.property) &&
-      parent.property.name;
+      t.isMemberExpression(parent, { object: node }) &&
+      (!parent.computed && t.isIdentifier(parent.property)
+        ? parent.property.name
+        : parent.computed && t.isStringLiteral(parent.property) && parent.property.value);
     const around = ancestors.slice(0, -1).map((ancestor) => ancestor.node);
     const kind = isOperand(parent!, around.reverse()) ? 'operand' : 'value';
     holes.push(
@@ -185,7 +193,7 @@ function argHoles(
         : (parent === ast && whole(name)) || {
             start: offset + parent.start!,
             end: offset + parent.end!,
-            text: hole(kind, name),
+            text: hole(kind, holeWord(name)),
           }
     );
   });

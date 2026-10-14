@@ -7,15 +7,29 @@ import type { Args } from 'storybook/internal/types';
  * story-docs provider writes the holes, as it knows what each arg reference is, and the renderer's
  * filler prints each one with the current args:
  *
- * - `⟦props …⟧`: the args a spread passes, as attributes; each renderer documents its words.
+ * - `⟦props …⟧`: the args a spread passes, as attributes; see {@link spreadArgs}.
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
  * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`, or that starts an arrow
  *   body or a statement; see {@link asOperand}.
  *
- * A renderer may add holes and words of its own, such as React's `⟦args⟧` for the args as an object
- * and a `=code` tail for the default of a destructured arg; its filler documents them.
+ * Words are separated by one space. A word that starts with `%` is the rest of it URI-encoded, so
+ * any arg name can be a word; see {@link holeWord}. A hole for one arg may end in a `?code` word,
+ * the code it prints while the arg is unset, as a parameter default gives it; see
+ * {@link defaultWord}.
+ *
+ * A renderer may add holes and words of its own, which its filler documents:
+ *
+ * - React: `⟦element Button -name…⟧` is the component with every arg, and `⟦args -name…⟧` the args
+ *   as an object, both without the args their `-name` words name.
+ * - Vue: `⟦element Card slot…⟧` is the component with its slots as content, and a `script` word on
+ *   `⟦value⟧` or `⟦operand⟧` marks a hole in the `<script>`.
+ * - Web Components: `⟦bool name arg⟧` and `⟦prop name arg⟧` are lit's `?name` and `.name`
+ *   bindings, and `⟦props⟧` words name the attribute, property or CSS property each arg sets, with
+ *   `^arg` for one the element writes itself.
+ * - Angular: `⟦value arg⟧` is the value of a host component field, which prints a `Date` as `new
+ *   Date(…)`.
  *
  * The template keeps the code around a hole as written, including the whitespace before it; a hole
  * that prints nothing takes that whitespace along, so an unset attribute leaves no gap or empty
@@ -34,20 +48,37 @@ export class UnprintableArgError extends Error {
   }
 }
 
-/** A template hole; a word holds no space and no bracket. */
+/** A template hole; each word is one {@link isHoleWord} or written with {@link holeWord}. */
 export const hole = (kind: string, ...words: string[]) => `⟦${[kind, ...words].join(' ')}⟧`;
 
-/** Whether `word`, such as an arg name, can be written in a hole. */
-export const isHoleWord = (word: string) => /^[^\s⟦⟧]+$/.test(word);
+/** Whether `word`, such as an arg name, can be written in a hole as it is. */
+export const isHoleWord = (word: string) => /^[^\s⟦⟧%][^\s⟦⟧]*$/.test(word);
+
+/** `word` as a hole writes it: as it is where it can be, else URI-encoded after a `%`. */
+export const holeWord = (word: string) =>
+  isHoleWord(word) ? word : `%${encodeURIComponent(word)}`;
+
+/** The word for the code a hole prints while its arg is unset: `?`, then the code URI-encoded. */
+export const defaultWord = (code: string) => `?${encodeURIComponent(code)}`;
+
+/** The code a {@link defaultWord} holds, or `undefined` for any other word. */
+export const defaultCode = (word: string | undefined) =>
+  word?.startsWith('?') ? decodeURIComponent(word.slice(1)) : undefined;
 
 /** Whether code already holds a hole bracket, so holes written in it could not be found again. */
 export const hasHoleBracket = (code: string) => /[⟦⟧]/.test(code);
 
-/** Replaces every hole in a template with what `fill` prints; see {@link FillSnippetTemplate}. */
+/**
+ * Replaces every hole in a template with what `fill` prints, given its words as {@link holeWord}
+ * took them; see {@link FillSnippetTemplate}.
+ */
 export const fillHoles = (template: string, fill: (kind: string, words: string[]) => string) =>
   template.replace(/(\s*)⟦([^⟧]*)⟧/g, (_, space: string, body: string) => {
     const [kind, ...words] = body.split(' ');
-    const printed = fill(kind!, words);
+    const printed = fill(
+      kind!,
+      words.map((word) => (word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word))
+    );
     return printed && space + printed;
   });
 

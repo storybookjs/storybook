@@ -46,10 +46,12 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate('  on = ⟦value on⟧;', { on: () => {} })).toThrow(UnprintableArgError);
   });
 
-  it("prints a value hole's `=code` tail while its arg is unset", () => {
-    expect(fillTemplate("  value = ⟦value value =''⟧;", {})).toBe("  value = '';");
-    expect(fillTemplate("  tags = ⟦value tags =['A', 'B']⟧;", {})).toBe("  tags = ['A', 'B'];");
-    expect(fillTemplate("  value = ⟦value value =''⟧;", { value: 'Go' })).toBe("  value = 'Go';");
+  it("prints a value hole's default word while its arg is unset", () => {
+    expect(fillTemplate("  value = ⟦value value ?''⟧;", {})).toBe("  value = '';");
+    expect(fillTemplate("  tags = ⟦value tags ?%5B'A'%2C%20'B'%5D⟧;", {})).toBe(
+      "  tags = ['A', 'B'];"
+    );
+    expect(fillTemplate("  value = ⟦value value ?''⟧;", { value: 'Go' })).toBe("  value = 'Go';");
   });
 
   it('throws for a value it cannot print', () => {

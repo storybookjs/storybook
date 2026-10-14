@@ -15,7 +15,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
+import { defaultWord, hasHoleBracket, hole, isHoleWord } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -360,7 +360,7 @@ const renderStorySnippet = async (
       const fallback = fallbacks.get(field.name);
       if (fallback?.code !== undefined) {
         heldArgs.push(fallback.arg);
-        return { ...field, value: hole('value', fallback.arg, `=${fallback.code}`) };
+        return { ...field, value: hole('value', fallback.arg, defaultWord(fallback.code)) };
       }
       if (field.computed) {
         heldArgs.push(...field.computed.args);

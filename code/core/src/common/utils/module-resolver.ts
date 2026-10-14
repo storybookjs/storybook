@@ -10,6 +10,8 @@ export interface ModuleResolverOptions {
   conditionNames?: string[];
   /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
   tsconfig?: 'auto' | { configFile: string };
+  /** Extensions tried in place of the one a specifier ends in, in order. */
+  extensionAlias?: Record<string, string[]>;
 }
 
 export interface ModuleResolver {
@@ -18,6 +20,18 @@ export interface ModuleResolver {
   /** Resolves `specifier` as if imported from a file in `fromDirectory`. Throws when unresolvable. */
   resolveSync(fromDirectory: string, specifier: string): string;
 }
+
+/**
+ * Resolves a specifier that names TypeScript source by the file it compiles to, as `./button.js`
+ * for `button.ts` under `NodeNext`. The written extension stays last, so a real JavaScript file
+ * still resolves.
+ */
+export const typeScriptExtensionAlias: Record<string, string[]> = {
+  '.js': ['.ts', '.tsx', '.js'],
+  '.jsx': ['.tsx', '.jsx'],
+  '.mjs': ['.mts', '.mjs'],
+  '.cjs': ['.cts', '.cjs'],
+};
 
 /**
  * Resolve the same files the preview bundles: the browser build's resolve conditions, trimmed to

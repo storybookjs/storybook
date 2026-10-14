@@ -27,6 +27,25 @@ including its layout, so with `{ loading: false, label: "Go" }` it fills to
 `false ? <Spinner /> : <Button loading={false} label="Go" />`. A hole that prints nothing, such as
 an unset attribute, takes the whitespace before it along.
 
+A hole is a kind and words, separated by one space. A word that starts with `%` is the rest of it
+URI-encoded, so an arg named `Render header?` is the word `%Render%20header%3F`. A hole for one arg
+may end in a `?` word, the code to print while the arg is unset, also URI-encoded: a story that
+renders `({ size = 'md' }) => <Button size={size} />` has the template
+`<Button ⟦attr size size ?'md'⟧ />`. `holeWord`, `defaultWord` and `defaultCode` write and read
+these words.
+
+Each renderer adds holes and words of its own, which its filler documents:
+
+- React: `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object,
+  both without the args their `-name` words name.
+- Vue: `⟦element Card header⟧` is the component with the slots its words name as content, and a
+  `script` word marks a `⟦value⟧` or `⟦operand⟧` in the `<script>`.
+- Web Components: `⟦bool⟧` and `⟦prop⟧` are lit's `?name` and `.name` bindings, and a `⟦props⟧`
+  word such as `.items=items` names what each arg sets, with `^arg` for one the element writes
+  itself.
+- Angular: `⟦value label⟧` is the value of a host component field, where a `Date` prints as
+  `new Date(…)`.
+
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
 builds alike. The story docs load once per version of a story, and the server keeps them current, so

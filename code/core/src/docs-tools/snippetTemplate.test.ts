@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   UnprintableArgError,
   dedentStoryCode,
+  defaultCode,
+  defaultWord,
   fillHoles,
   hole,
+  holeWord,
   printValue,
   spreadArgs,
 } from './snippetTemplate.ts';
@@ -19,6 +22,46 @@ describe('fillHoles', () => {
 
   it('keeps the code between the holes as written', () => {
     expect(fillHoles(`a ? ${hole('value', 'x')} : b`, () => '1')).toBe('a ? 1 : b');
+  });
+
+  it('passes a word holeWord encoded as the text it was given', () => {
+    const template = hole('attr', 'showHeader', holeWord('Render header?'), holeWord('%x'));
+    expect(template).toBe('⟦attr showHeader %Render%20header%3F %%25x⟧');
+    expect(fillHoles(template, (_, words) => words.join('|'))).toBe('showHeader|Render header?|%x');
+  });
+
+  it('passes a default word on as written, for defaultCode to read', () => {
+    const template = hole('value', 'size', defaultWord("'50 %'"));
+    expect(fillHoles(template, (_, [, word]) => defaultCode(word)!)).toBe("'50 %'");
+  });
+});
+
+describe('holeWord', () => {
+  it('writes a word that can stand in a hole as it is', () => {
+    expect(['label', '-children', '^size', 'a%b', '?x', 'label=label'].map(holeWord)).toEqual([
+      'label',
+      '-children',
+      '^size',
+      'a%b',
+      '?x',
+      'label=label',
+    ]);
+  });
+
+  it('encodes a word with a space, a hole bracket or a leading percent sign', () => {
+    expect(['a b', 'x⟧', '%'].map(holeWord)).toEqual(['%a%20b', '%x%E2%9F%A7', '%%25']);
+  });
+});
+
+describe('defaultWord', () => {
+  it('writes code after a question mark, URI-encoded, which defaultCode reads back', () => {
+    expect(defaultWord("{ size: 'md' }")).toBe("?%7B%20size%3A%20'md'%20%7D");
+    expect(defaultCode(defaultWord("{ size: 'md' }"))).toBe("{ size: 'md' }");
+  });
+
+  it('reads no code from any other word', () => {
+    expect(defaultCode('label')).toBeUndefined();
+    expect(defaultCode(undefined)).toBeUndefined();
   });
 });
 

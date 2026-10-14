@@ -38,6 +38,7 @@ export {
   type ResolvedStoryArgs,
   type StoryArgsResolver,
 } from './resolve-story-args.ts';
+export { rebaseSpecifier, resolveSpreadMeta, type SpreadMeta } from './spread-meta.ts';
 export {
   resolveEffectiveRender,
   resolveRenderFunction,

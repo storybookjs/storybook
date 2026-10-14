@@ -18,7 +18,7 @@ import {
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket } from 'storybook/internal/docs-tools';
+import { fillHoles, hasHoleBracket } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -33,6 +33,8 @@ import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet, printListenerScript } from './print-element.ts';
+import { fillTemplate } from '../../docs/fill-template.ts';
+import type { LiveTemplate, SpreadElement } from './story-template.ts';
 import { argsTemplate, argsWords, litTemplate } from './story-template.ts';
 import { litBindings, templateModule } from './template-calls.ts';
 import { printHtmlTemplate } from './template-print.ts';
@@ -83,7 +85,7 @@ export async function buildStoryDocsPayload(
       input,
       storyImportPath,
       csf,
-      authoredSnippetFactory(csf, storyFilePath, () => ({ warning: NO_COMPONENT_WARNING })),
+      authoredSnippetFactory(csf, storyFilePath, elementlessSnippet(csf, NO_COMPONENT_WARNING)),
       titleName
     );
   }
@@ -95,12 +97,17 @@ export async function buildStoryDocsPayload(
   const declaration = docgenPayload?.customElementsManifest?.declaration;
   const snippetFor: (exportName: string) => SnippetResult = declaration
     ? renderedSnippetFactory(csf, declaration, docgenPayload, storyFilePath)
-    : authoredSnippetFactory(csf, storyFilePath, () => ({
-        warning: `No static snippet: ${
-          docgenPayload.error?.message ??
-          'no Custom Elements Manifest declaration for this component.'
-        }`,
-      }));
+    : authoredSnippetFactory(
+        csf,
+        storyFilePath,
+        elementlessSnippet(
+          csf,
+          `No static snippet: ${
+            docgenPayload.error?.message ??
+            'no Custom Elements Manifest declaration for this component.'
+          }`
+        )
+      );
 
   return buildPayload(input, storyImportPath, csf, snippetFor, docgenPayload.name);
 }
@@ -194,11 +201,29 @@ const renderedSnippet = (exportName: string, deps: StoryDocDeps): SnippetResult 
 const authoredSnippetFactory = (
   csf: CsfFile,
   storyFilePath: string,
-  fallback: AuthoredFallback
+  fallback: (exportName: string, resolveStoryArgs: StoryArgsResolver) => AuthoredFallback
 ): ((exportName: string) => SnippetResult) => {
   const resolveStoryArgs = createStoryArgsResolver(csf, storyReferences(storyFilePath));
-  return (exportName) => authoredOrFallback(exportName, resolveStoryArgs, fallback);
+  return (exportName) =>
+    authoredOrFallback(exportName, resolveStoryArgs, fallback(exportName, resolveStoryArgs));
 };
+
+/**
+ * A story without `meta.component`, or whose component the manifest does not declare, has no
+ * element to write its args on, but a render reads them where it writes them, so its template and
+ * the static snippet it fills to need no manifest.
+ */
+const elementlessSnippet =
+  (csf: CsfFile, warning: string) =>
+  (exportName: string, resolveStoryArgs: StoryArgsResolver): AuthoredFallback =>
+  (resolved) => {
+    const render = resolveEffectiveRender(csf, exportName, resolveStoryArgs.ctx);
+    const live =
+      render.kind === 'resolved'
+        ? liveTemplate(render.path, resolved, csf, resolveStoryArgs, { tag: '', words: [] })
+        : undefined;
+    return filledSnippet(live, resolved) ?? { warning };
+  };
 
 const authoredOrFallback = (
   exportName: string,
@@ -228,7 +253,18 @@ const renderedArgsSnippet = (
 ): SnippetResult => {
   const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
-  const live = render.kind === 'resolved' ? liveTemplate(render.path, resolved, deps) : undefined;
+  const live =
+    render.kind === 'resolved'
+      ? liveTemplate(render.path, resolved, deps.csf, deps.resolveStoryArgs, {
+          tag: deps.tag,
+          words: argsWords(
+            Object.keys(resolved.args),
+            deps.docgenPayload.argTypes ?? {},
+            deps.declaration
+          ),
+          declaration: deps.declaration,
+        })
+      : undefined;
   if (render.kind === 'resolved') {
     const { ctx } = deps.resolveStoryArgs;
     const module = templateModule(
@@ -248,11 +284,19 @@ const renderedArgsSnippet = (
       warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
       const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
+      const filled = unresolved.length > 0 ? filledSnippet(live, resolved) : undefined;
+      if (filled) {
+        return filled;
+      }
       return {
         ...(hasSnippet ? { snippet: printed.snippet } : {}),
-        ...(live === undefined ? {} : { template: live }),
+        ...(live === undefined ? {} : { template: live.template }),
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
+    }
+    const filled = filledSnippet(live, resolved);
+    if (filled) {
+      return filled;
     }
     warnings.push(unresolvedWarning([sourceOf(render.path.node)]));
   } else if (render.kind === 'unresolved') {
@@ -271,30 +315,78 @@ const renderedArgsSnippet = (
   return {
     ...(args.snippet ? { snippet: args.snippet } : {}),
     ...(render.kind === 'missing' && args.template ? { template: args.template } : {}),
-    ...(live === undefined ? {} : { template: live }),
+    ...(live === undefined ? {} : { template: live.template }),
     ...joinWarnings(warnings),
   };
+};
+
+/**
+ * The static snippet a story's template fills to with the args written in the story file, for a
+ * render the static snippet cannot read. An arg the template reads whose value is not known keeps
+ * the static snippet.
+ */
+const filledSnippet = (
+  live: LiveTemplate | undefined,
+  resolved: ResolvedStoryArgs
+): SnippetResult | undefined => {
+  if (!live) {
+    return undefined;
+  }
+  const args: Record<string, unknown> = {};
+  for (const name of templateArgs(live.template)) {
+    const node = resolved.args[name];
+    const value = node ? evaluateArgValue(node) : { kind: 'unset' as const };
+    if (value.kind === 'unresolved') {
+      return undefined;
+    }
+    args[name] =
+      value.kind === 'value' ? value.value : value.kind === 'function' ? () => {} : undefined;
+  }
+  try {
+    return {
+      snippet: fillTemplate(live.template, args),
+      template: live.template,
+      ...joinWarnings([incompleteList(live.listeners, 'listeners not shown')]),
+    };
+  } catch {
+    return undefined;
+  }
+};
+
+// The args a template's holes print; a props hole names one per word.
+const templateArgs = (template: string): Set<string> => {
+  const names = new Set<string>();
+  fillHoles(template, (kind, words) => {
+    if (kind === 'props') {
+      words.forEach((word) =>
+        names.add(word.startsWith('^') ? word.slice(1) : word.split(/=(.*)/)[1]!)
+      );
+    } else {
+      names.add(['attr', 'bool', 'prop', 'slot'].includes(kind) ? words[1]! : words[0]!);
+    }
+    return '';
+  });
+  return names;
 };
 
 const liveTemplate = (
   render: RenderFunctionPath,
   resolved: ResolvedStoryArgs,
-  deps: StoryDocDeps
-): string | undefined => {
-  const { ctx } = deps.resolveStoryArgs;
+  csf: CsfFile,
+  { ctx }: StoryArgsResolver,
+  element: SpreadElement
+): LiveTemplate | undefined => {
   const program = render.findParent((path) => path.isProgram()) as NodePath<t.Program>;
   // A render function from another file is read in the code of that file.
   const filePath =
-    program.node === deps.csf._ast.program
+    program.node === csf._ast.program
       ? ctx.filePath
       : (program.hub as unknown as { file: { opts: { filename: string } } }).file.opts.filename;
   return litTemplate(render.node, templateModule({ program, filePath }, ctx.resolveModule), {
-    tag: deps.tag,
-    words: argsWords(
-      Object.keys(resolved.args),
-      deps.docgenPayload.argTypes ?? {},
-      deps.declaration
-    ),
+    ...element,
+    args: Object.entries(resolved.args)
+      .filter(([, node]) => evaluateArgValue(node).kind !== 'unset')
+      .map(([name]) => name),
   });
 };
 

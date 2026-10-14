@@ -49,6 +49,29 @@ export interface Markup {
   frame: Frame;
 }
 
+/**
+ * What an expression renders: lit html, one of two templates as a condition holds, or code that is
+ * no html, such as `nothing`, in a branch of one. A choice an `if` statement makes is not code as
+ * written.
+ */
+export type Template =
+  | { kind: 'markup'; markup: Markup }
+  | {
+      kind: 'choice';
+      test: t.Expression;
+      frame: Frame;
+      then: Template;
+      otherwise: Template;
+      statement: boolean;
+    }
+  | { kind: 'code'; expression: t.Expression; frame: Frame }
+  | { kind: 'toolkit'; tag: string; passed: Binding; slot?: t.Expression; frame: Frame };
+
+// What a function returns, read through its `if` statements and the constants it declares.
+type Returned =
+  | { kind: 'return'; expression: t.Expression; frame: Frame }
+  | { kind: 'choice'; test: t.Expression; frame: Frame; then: Returned; otherwise: Returned };
+
 const LIT_SOURCES = [
   'lit',
   'lit-html',
@@ -75,12 +98,7 @@ export function templateModule(
     return known;
   }
   const open = (specifier: string) => {
-    // A TypeScript module is imported by the name of the `.js` file it compiles to.
-    const found =
-      resolve?.(filePath, specifier) ??
-      (/^\.{1,2}\/.*\.[cm]?jsx?$/.test(specifier)
-        ? resolve?.(filePath, specifier.replace(/\.[cm]?jsx?$/, ''))
-        : undefined);
+    const found = resolve?.(filePath, specifier);
     return found && templateModule(found, resolve);
   };
   const module: TemplateModule = {
@@ -98,15 +116,43 @@ export function renderFrame(
   render: t.Function,
   module: TemplateModule
 ): { frame: Frame; returned: t.Expression } | undefined {
+  const frame = paramFrame(render, module);
+  const returned = frame && returnedIn(render, frame);
+  return returned && { frame: frame!, returned };
+}
+
+/** The frame of a render function with only its first parameter, which holds the args, bound. */
+export function paramFrame(render: t.Function, module: TemplateModule): Frame | undefined {
   const frame: Frame = { module, names: new Map() };
   const [first] = render.params;
   const param = t.isAssignmentPattern(first) ? first.left : first;
   const args: Binding = { kind: 'args', entries: new Map(), omitted: new Set(), open: true };
-  if (param && !(t.isLVal(param) && bindPattern(param, args, frame))) {
-    return undefined;
+  return param && !(t.isLVal(param) && bindPattern(param, args, frame)) ? undefined : frame;
+}
+
+/**
+ * Binds what a `const` statement of a render's body declares, when it holds the args or one of them,
+ * which no code of the snippet can name. Returns whether it bound every name it declares.
+ */
+export function bindArgsConstant(statement: t.Statement, frame: Frame): boolean {
+  if (!t.isVariableDeclaration(statement, { kind: 'const' })) {
+    return false;
   }
-  const returned = returnedIn(render, frame);
-  return returned && { frame, returned };
+  const bindings = statement.declarations.map(({ id, init }) => {
+    const value = init && bindingOf(init, frame);
+    return value && (value.kind === 'args' || value.kind === 'arg') ? { id, value } : undefined;
+  });
+  if (bindings.some((item) => !item)) {
+    return false;
+  }
+  const scratch: Frame = { module: frame.module, names: new Map(frame.names) };
+  if (
+    !bindings.every((item) => t.isLVal(item!.id) && bindPattern(item!.id, item!.value, scratch))
+  ) {
+    return false;
+  }
+  scratch.names.forEach((value, name) => frame.names.set(name, value));
+  return true;
 }
 
 /** What an expression holds, when it is a name or a member of one that a frame binds. */
@@ -142,11 +188,18 @@ export function resolveBinding(expression: t.Node, frame: Frame): Binding | unde
   return object?.kind === 'blocked' ? BLOCKED : undefined;
 }
 
+/** The lit template an expression is, when it is one written in place or a name or call for one. */
+export function resolveMarkup(expression: t.Node, frame: Frame): Markup | undefined {
+  const template = resolveTemplate(expression, frame);
+  return template?.kind === 'markup' ? template.markup : undefined;
+}
+
 /**
- * The lit template an expression is: one written in place, a name for one, or a call of a function
- * that returns one, read with its parameters bound to what the call passes.
+ * What an expression renders: a lit template written in place, a name for one, a condition between
+ * two, or a call of a function that returns one, read with its parameters bound to what the call
+ * passes and its `if` statements as conditions.
  */
-export function resolveMarkup(expression: t.Node, frame: Frame, depth = 0): Markup | undefined {
+export function resolveTemplate(expression: t.Node, frame: Frame, depth = 0): Template | undefined {
   const node = unwrapExpression(expression);
   if (depth > MAX_DEPTH) {
     return undefined;
@@ -154,24 +207,49 @@ export function resolveMarkup(expression: t.Node, frame: Frame, depth = 0): Mark
   if (t.isTaggedTemplateExpression(node)) {
     return t.isIdentifier(node.tag) && isLitHtml(node.tag.name, frame)
       ? {
-          quasis: node.quasi.quasis.map((quasi) => quasi.value.raw),
-          expressions: node.quasi.expressions.filter((item): item is t.Expression =>
-            t.isExpression(item)
-          ),
-          frame,
+          kind: 'markup',
+          markup: {
+            quasis: node.quasi.quasis.map((quasi) => quasi.value.raw),
+            expressions: node.quasi.expressions.filter((item): item is t.Expression =>
+              t.isExpression(item)
+            ),
+            frame,
+          },
         }
       : undefined;
   }
   if (t.isIdentifier(node)) {
     const binding = frame.names.get(node.name);
     return binding?.kind === 'code'
-      ? resolveMarkup(binding.expression, binding.frame, depth + 1)
+      ? resolveTemplate(binding.expression, binding.frame, depth + 1)
       : undefined;
   }
-  if (!t.isCallExpression(node) || !t.isIdentifier(node.callee)) {
+  if (t.isConditionalExpression(node)) {
+    return choiceOf(node.test, frame, [node.consequent, frame], [node.alternate, frame], depth);
+  }
+  if (!t.isCallExpression(node)) {
     return undefined;
   }
-  if (frame.names.has(node.callee.name)) {
+  const toolkit = toolkitTemplate(node, frame);
+  if (toolkit) {
+    return toolkit;
+  }
+  const called = calledFunction(node, frame);
+  const returned = called && returnsOf(called.fn, called.frame);
+  return returned && templateOf(returned, depth + 1);
+}
+
+/** The function a call runs, and its frame with the parameters bound to what the call passes. */
+export function calledFunction(
+  expression: t.Node,
+  frame: Frame
+): { fn: t.Function; frame: Frame } | undefined {
+  const node = unwrapExpression(expression);
+  if (
+    !t.isCallExpression(node) ||
+    !t.isIdentifier(node.callee) ||
+    frame.names.has(node.callee.name)
+  ) {
     return undefined;
   }
   const declared = functionOf(frame.module, node.callee.name);
@@ -180,8 +258,118 @@ export function resolveMarkup(expression: t.Node, frame: Frame, depth = 0): Mark
     return undefined;
   }
   const called = bindCall(fn, node.arguments, frame, declared.module);
-  const returned = called && returnedIn(fn, called);
-  return called && returned ? resolveMarkup(returned, called, depth + 1) : undefined;
+  return called && { fn, frame: called };
+}
+
+function templateOf(returned: Returned, depth: number): Template | undefined {
+  if (returned.kind === 'return') {
+    return resolveTemplate(returned.expression, returned.frame, depth);
+  }
+  const then = templateOf(returned.then, depth) ?? codeOf(returned.then);
+  const otherwise = templateOf(returned.otherwise, depth) ?? codeOf(returned.otherwise);
+  return then && otherwise && (then.kind !== 'code' || otherwise.kind !== 'code')
+    ? {
+        kind: 'choice',
+        test: returned.test,
+        frame: returned.frame,
+        then,
+        otherwise,
+        statement: true,
+      }
+    : undefined;
+}
+
+const codeOf = (returned: Returned): Template | undefined =>
+  returned.kind === 'return'
+    ? { kind: 'code', expression: returned.expression, frame: returned.frame }
+    : undefined;
+
+function choiceOf(
+  test: t.Expression,
+  frame: Frame,
+  [consequent, thenFrame]: [t.Expression, Frame],
+  [alternate, otherwiseFrame]: [t.Expression, Frame],
+  depth: number
+): Template | undefined {
+  const then = resolveTemplate(consequent, thenFrame, depth + 1);
+  const otherwise = resolveTemplate(alternate, otherwiseFrame, depth + 1);
+  return then || otherwise
+    ? {
+        kind: 'choice',
+        test,
+        frame,
+        then: then ?? { kind: 'code', expression: consequent, frame: thenFrame },
+        otherwise: otherwise ?? { kind: 'code', expression: alternate, frame: otherwiseFrame },
+        statement: false,
+      }
+    : undefined;
+}
+
+// `template(args, slot)` of `const { template } = getStorybookHelpers('my-element')`, which renders
+// the element with the args `@wc-toolkit/storybook-helpers` sorts by its manifest.
+function toolkitTemplate(call: t.CallExpression, frame: Frame): Template | undefined {
+  const tag = toolkitTag(call.callee, frame);
+  const [passed, slot, ...more] = call.arguments;
+  if (!tag || more.length > 0 || [passed, slot].some((item) => item && !t.isExpression(item))) {
+    return undefined;
+  }
+  return {
+    kind: 'toolkit',
+    tag,
+    passed: passed ? bindingOf(passed as t.Expression, frame) : UNDEFINED,
+    slot: slot as t.Expression | undefined,
+    frame,
+  };
+}
+
+const TOOLKIT_SOURCES = ['@wc-toolkit/storybook-helpers', 'wc-storybook-helpers'];
+
+function toolkitTag(callee: t.Node, frame: Frame): string | undefined {
+  const [name, member] = t.isIdentifier(callee)
+    ? [callee.name, 'template']
+    : t.isMemberExpression(callee) &&
+        t.isIdentifier(callee.object) &&
+        t.isIdentifier(callee.property, { name: 'template' }) &&
+        !callee.computed
+      ? [callee.object.name, undefined]
+      : [];
+  if (!name || frame.names.has(name)) {
+    return undefined;
+  }
+  for (const statement of frame.module.program.body) {
+    const declaration = t.isExportNamedDeclaration(statement) ? statement.declaration : statement;
+    if (!t.isVariableDeclaration(declaration, { kind: 'const' })) {
+      continue;
+    }
+    for (const { id, init } of declaration.declarations) {
+      const declares = member
+        ? t.isObjectPattern(id) &&
+          id.properties.some(
+            (property) =>
+              t.isObjectProperty(property) &&
+              !property.computed &&
+              keyOf(property) === member &&
+              t.isIdentifier(property.value, { name })
+          )
+        : t.isIdentifier(id, { name });
+      const call = declares ? unwrapExpression(init!) : undefined;
+      if (!call) {
+        continue;
+      }
+      const helpers =
+        t.isCallExpression(call) && t.isIdentifier(call.callee)
+          ? frame.module.bindings.get(call.callee.name)
+          : undefined;
+      const [tag] = t.isCallExpression(call) ? call.arguments : [];
+      return helpers &&
+        TOOLKIT_SOURCES.includes(helpers.importId) &&
+        helpers.importName === 'getStorybookHelpers' &&
+        t.isStringLiteral(tag)
+        ? tag.value
+        : undefined;
+    }
+  }
+  return undefined;
 }
 
 /** The name a callee was exported as, such as `spread` for `import { spread as s }`. */
@@ -192,15 +380,41 @@ export const calleeName = (callee: t.Node, frame: Frame): string | undefined =>
 
 // The expression a function returns, after the constants its body declares are bound in its frame.
 function returnedIn(fn: t.Function, frame: Frame): t.Expression | undefined {
-  if (t.isExpression(fn.body)) {
-    return fn.body;
-  }
-  const statements = fn.body.body;
-  const last = statements.at(-1);
-  if (!t.isReturnStatement(last) || !last.argument) {
-    return undefined;
-  }
-  for (const statement of statements.slice(0, -1)) {
+  const returned = returnsOf(fn, frame);
+  return returned?.kind === 'return' ? returned.expression : undefined;
+}
+
+// What a function returns, when its body is constants, `if` statements and returns; each branch
+// reads a frame of its own.
+function returnsOf(fn: t.Function, frame: Frame): Returned | undefined {
+  return t.isExpression(fn.body)
+    ? { kind: 'return', expression: fn.body, frame }
+    : returnsIn(fn.body.body, frame, fn);
+}
+
+function returnsIn(statements: t.Statement[], frame: Frame, fn: t.Function): Returned | undefined {
+  for (const [index, statement] of statements.entries()) {
+    if (t.isReturnStatement(statement)) {
+      return statement.argument
+        ? { kind: 'return', expression: statement.argument, frame }
+        : undefined;
+    }
+    if (t.isIfStatement(statement)) {
+      // A branch that does not return goes on with what follows the `if`, unless it declares names
+      // that would be read there out of their block.
+      const rest = statements.slice(index + 1);
+      const branch = (node: t.Statement | null | undefined) => {
+        const block = !node ? [] : t.isBlockStatement(node) ? node.body : [node];
+        const declares = block.some((item) => t.isDeclaration(item));
+        return returnsIn(declares ? block : [...block, ...rest], copyFrame(frame), fn);
+      };
+      const then = branch(statement.consequent);
+      const otherwise = branch(statement.alternate);
+      return then && otherwise && { kind: 'choice', test: statement.test, frame, then, otherwise };
+    }
+    if (t.isEmptyStatement(statement) || deleteFromCopy(statement, frame, fn)) {
+      continue;
+    }
     if (!t.isVariableDeclaration(statement, { kind: 'const' })) {
       return undefined;
     }
@@ -211,8 +425,50 @@ function returnedIn(fn: t.Function, frame: Frame): t.Expression | undefined {
       }
     }
   }
-  return last.argument;
+  return undefined;
 }
+
+// `delete rest.key` of a `const rest = { ...args }` the function declares, which leaves the key out
+// of its copy of the args.
+function deleteFromCopy(statement: t.Statement, frame: Frame, fn: t.Function): boolean {
+  const target =
+    t.isExpressionStatement(statement) &&
+    t.isUnaryExpression(statement.expression, { operator: 'delete' }) &&
+    t.isMemberExpression(statement.expression.argument)
+      ? statement.expression.argument
+      : undefined;
+  const key = target && memberKey(target);
+  if (!target || key === undefined || !t.isIdentifier(target.object)) {
+    return false;
+  }
+  const { name } = target.object;
+  const copy = frame.names.get(name);
+  const declared = t.isBlockStatement(fn.body)
+    ? fn.body.body.some(
+        (item) =>
+          t.isVariableDeclaration(item, { kind: 'const' }) &&
+          item.declarations.some(
+            ({ id, init }) => t.isIdentifier(id, { name }) && t.isObjectExpression(init)
+          )
+      )
+    : false;
+  if (copy?.kind !== 'args' || !declared) {
+    return false;
+  }
+  const entries = new Map(copy.entries);
+  entries.delete(key);
+  frame.names.set(name, { ...copy, entries, omitted: new Set([...copy.omitted, key]) });
+  return true;
+}
+
+const memberKey = (node: t.MemberExpression) =>
+  !node.computed && t.isIdentifier(node.property)
+    ? node.property.name
+    : t.isStringLiteral(node.property)
+      ? node.property.value
+      : undefined;
+
+const copyFrame = (frame: Frame): Frame => ({ module: frame.module, names: new Map(frame.names) });
 
 function bindCall(
   fn: t.Function,
@@ -245,7 +501,7 @@ function runOnce(binding: Binding, name: t.Node, fn: t.Function, once: number): 
   return binding.kind === 'code' &&
     t.isIdentifier(name) &&
     runsCall(binding.expression) &&
-    !resolveMarkup(binding.expression, binding.frame) &&
+    !resolveTemplate(binding.expression, binding.frame) &&
     countReads(fn.body, name.name) > once
     ? BLOCKED
     : binding;
@@ -282,6 +538,10 @@ function bindingOf(expression: t.Expression, frame: Frame): Binding {
   if (t.isObjectExpression(node)) {
     return recordOf(node, frame) ?? { kind: 'code', expression, frame };
   }
+  const assigned = assignedRecord(node, frame);
+  if (assigned) {
+    return assigned;
+  }
   const value = t.isFunction(node) ? undefined : evaluateArgValue(node);
   if (value?.kind === 'unset') {
     return UNDEFINED;
@@ -311,6 +571,42 @@ function recordOf(object: t.ObjectExpression, frame: Frame): Binding | undefined
   }
   return { kind: 'args', entries, omitted, open: base?.open ?? false };
 }
+
+// `Object.assign({}, args, { disabled: true })`, which holds what `{ ...args, disabled: true }` does.
+function assignedRecord(node: t.Node, frame: Frame): Binding | undefined {
+  if (
+    !t.isCallExpression(node) ||
+    !t.isMemberExpression(node.callee) ||
+    !t.isIdentifier(node.callee.object, { name: 'Object' }) ||
+    frame.names.has('Object') ||
+    frame.module.bindings.has('Object') ||
+    !t.isIdentifier(node.callee.property, { name: 'assign' }) ||
+    node.callee.computed
+  ) {
+    return undefined;
+  }
+  const [target, ...sources] = node.arguments;
+  if (!t.isObjectExpression(target) || target.properties.length > 0 || sources.length === 0) {
+    return undefined;
+  }
+  let record: ArgsRecord | undefined;
+  for (const [index, source] of sources.entries()) {
+    const value = t.isExpression(source) ? bindingOf(source, frame) : undefined;
+    if (value?.kind !== 'args' || (index > 0 && value.open)) {
+      return undefined;
+    }
+    record = record
+      ? {
+          ...record,
+          entries: new Map([...record.entries, ...value.entries]),
+          omitted: new Set([...record.omitted].filter((key) => !value.entries.has(key))),
+        }
+      : value;
+  }
+  return record;
+}
+
+type ArgsRecord = Extract<Binding, { kind: 'args' }>;
 
 function memberOf(args: Extract<Binding, { kind: 'args' }>, key: string): Binding {
   return (
@@ -388,6 +684,18 @@ const isLitHtml = (name: string, frame: Frame): boolean => {
   const exported = binding && litExport(frame.module, binding, new Set());
   return exported === 'html' || exported === 'default';
 };
+
+const STATIC_HTML_SOURCES = ['lit/static-html.js', 'lit-html/static.js'];
+
+/** Whether code writes html with lit's `html` tag, or with the `html` of its static templates. */
+export const writesLitHtml = (node: t.Node, frame: Frame): boolean =>
+  (t.isTaggedTemplateExpression(node) &&
+    t.isIdentifier(node.tag) &&
+    (isLitHtml(node.tag.name, frame) ||
+      (!frame.names.has(node.tag.name) &&
+        STATIC_HTML_SOURCES.includes(frame.module.bindings.get(node.tag.name)?.importId ?? '') &&
+        frame.module.bindings.get(node.tag.name)?.importName === 'html'))) ||
+  children(node).some((child) => writesLitHtml(child, frame));
 
 /**
  * The imports of a module, with `html` and `nothing` as imports from `lit` wherever they are lit's:

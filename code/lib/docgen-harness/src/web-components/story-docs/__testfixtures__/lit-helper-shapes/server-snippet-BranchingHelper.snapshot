@@ -1,3 +1,6 @@
-<lit-template-shapes label="Alpha" disabled></lit-template-shapes>
-
-warning: Incomplete snippet: `args => { if (args.disabled) { return html`<lit-template-shapes disabled></lit-template-shapes>`; } return Card(args); }` could not be resolved statically.
+if (true) {
+  return html`<lit-template-shapes disabled></lit-template-shapes>`;
+}
+return html`<lit-template-shapes label="Alpha" count="1" disabled
+  ></lit-template-shapes
+>`;

@@ -1,4 +1,3 @@
-<lit-template-shapes label="Written"></lit-template-shapes>
-
-warning: Incomplete snippet: `spreadProps(rest)`, `heading` could not be resolved statically.
-Incomplete snippet: args not bound by the render template: `count`.
+<lit-template-shapes label="Written" count="2"
+  ></lit-template-shapes
+>

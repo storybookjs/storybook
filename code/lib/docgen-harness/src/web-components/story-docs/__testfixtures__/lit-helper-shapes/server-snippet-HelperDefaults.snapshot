@@ -1,3 +1,3 @@
-<lit-template-shapes heading="Head"></lit-template-shapes>
-
-warning: Incomplete snippet: `args => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.
+<lit-template-shapes label="Untitled" count="5" .heading=${"Head"}
+  ><b>Head</b></lit-template-shapes
+>

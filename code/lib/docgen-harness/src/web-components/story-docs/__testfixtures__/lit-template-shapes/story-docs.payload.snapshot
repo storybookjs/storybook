@@ -26,11 +26,12 @@
     "webcomponentsstorydocs-lit-template-shapes--class-map": {
       "id": "webcomponentsstorydocs-lit-template-shapes--class-map",
       "name": "Class Map",
-      "snippet": "<lit-template-shapes></lit-template-shapes>",
+      "snippet": "<lit-template-shapes
+  class=${classMap({ active: Boolean(true) })}
+></lit-template-shapes>",
       "template": "<lit-template-shapes
   class=${classMap({ active: Boolean(⟦value active⟧) })}
 ></lit-template-shapes>",
-      "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
       "id": "webcomponentsstorydocs-lit-template-shapes--destructured",

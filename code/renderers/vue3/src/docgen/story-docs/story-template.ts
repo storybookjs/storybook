@@ -10,11 +10,14 @@ import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
+import { isFunctionExpression } from '../shared/classify-value.ts';
 import {
   createRenderContext,
+  hoistArgCode,
   hoistModelRef,
   renderPreparedSfcSnippet,
 } from '../shared/render-primitives.ts';
+import type { ClassifiedArg } from './classify-args/classify-args.ts';
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import {
   collectTemplateScopeBindings,
@@ -39,12 +42,16 @@ export function componentTemplate(name: string, importStatement: string, slots: 
  * The render function's template and the statements of its `setup` as written, with a hole
  * wherever they read an arg, for `fillTemplate`. It is `undefined` when they read the args in a way
  * no hole stands for, such as in an event handler, and the static snippet is shown instead.
+ *
+ * An arg the static snippet hoists to a `const`, as the story sets an object or array, is a `const`
+ * here too, so every read of it is the same value, as in the story.
  */
 export function renderTemplate(
   template: string,
   componentImports: Map<string, string>,
   slots: string[],
-  setup?: ForwardableSetup
+  setup?: ForwardableSetup,
+  args: ClassifiedArg[] = []
 ): string | undefined {
   const statements = setup?.statements ?? [];
   let invalid = [template, ...statements.map(({ source }) => source)].some(hasHoleBracket);
@@ -59,16 +66,32 @@ export function renderTemplate(
   ) {
     return undefined;
   }
+  const hoisted = new Map(
+    args
+      .filter((arg) => arg.role !== 'slot' && arg.role !== 'event')
+      .filter((arg) => arg.plan.kind === 'hoist' && !isFunctionExpression(arg.value))
+      .map((arg) => [arg.name, arg.role])
+  );
+  const constFor = (name: string) =>
+    hoisted.has(name)
+      ? hoistArgCode(name, hole('value', holeWord(name), 'script'), ctx)
+      : undefined;
 
   const visit = (node: TemplateChildNode): boolean => {
     if (node.type === NodeTypes.INTERPOLATION) {
       // `{{ args.label }}` is the arg as content.
       const { start, end } = node.loc;
-      const holes = argHoles(node.content as SimpleExpressionNode, template, (name) => ({
-        start: start.offset,
-        end: end.offset,
-        text: hole('text', holeWord(name)),
-      }));
+      const holes = argHoles(
+        node.content as SimpleExpressionNode,
+        template,
+        '"',
+        constFor,
+        (name) => ({
+          start: start.offset,
+          end: end.offset,
+          text: hole('text', holeWord(name)),
+        })
+      );
       edits.push(...(holes ?? []));
       return holes !== undefined;
     }
@@ -87,19 +110,31 @@ export function renderTemplate(
       const arg = prop.arg as SimpleExpressionNode | undefined;
       const { start, end } = prop.loc;
       // `v-bind="args"` passes every arg but the slots and the attributes written after it, which
-      // win; see `spreadArgs`.
+      // win; see `spreadArgs`. Vue merges a `class` or `style` arg with the element's own instead.
       if (prop.name === 'bind' && !arg && exp.content.trim() === 'args') {
-        const written = node.props.map(propName);
-        const before = written.slice(0, index).filter((name) => name !== undefined);
-        const after = written.slice(index + 1).filter((name) => name !== undefined);
+        const written = node.props.map(attributeName);
+        const names = (props: (string | undefined)[]) =>
+          props.flatMap((name) => (name === undefined || MERGED.has(name) ? [] : spellings(name)));
+        const own = [...slots, ...names(written.slice(index + 1))];
         const words = [
-          ...before.map((name) => `^${name}`),
-          ...[...slots, ...after].map((name) => `-${name}`),
+          ...names(written.slice(0, index)).map((name) => `^${name}`),
+          ...own.map((name) => `-${name}`),
+          ...[...MERGED].flatMap((name) => mergeWord(node, name)),
         ];
+        // An arg the static snippet hoists is its `const`, bound after the spread leaves it out.
+        const consts = [...hoisted]
+          .filter(([name, role]) => role === 'prop' && !own.includes(name))
+          .filter(([name]) => /^[A-Za-z_][\w-]*$/.test(name) && !MERGED.has(name))
+          .filter(([name]) => !words.includes(`^${name}`))
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([name]) => [name, constFor(name)!]);
+        const constWords = consts.map(([name]) => `-${name}`);
+        const constAttributes = consts.map(([name, binding]) => ` :${name}="${binding}"`);
         edits.push({
           start: start.offset,
           end: end.offset,
-          text: hole('props', ...words.map(holeWord)),
+          text:
+            hole('props', ...[...words, ...constWords].map(holeWord)) + constAttributes.join(''),
         });
         continue;
       }
@@ -119,7 +154,8 @@ export function renderTemplate(
       const owned = node.props.every(
         (other) => other === prop || other.type !== NodeTypes.ATTRIBUTE || other.name !== name
       );
-      const holes = argHoles(exp, template, (word) =>
+      const quote = template[exp.loc.start.offset - 1];
+      const holes = argHoles(exp, template, quote, constFor, (word) =>
         name !== undefined && owned
           ? { start: start.offset, end: end.offset, text: hole('attr', name, holeWord(word)) }
           : undefined
@@ -140,21 +176,29 @@ export function renderTemplate(
   for (const { start, end, text } of edits.sort((a, b) => b.start - a.start)) {
     templateCode = templateCode.slice(0, start) + text + templateCode.slice(end);
   }
-  // A statement reads its args as code in the `<script>`, which the `script` word says.
-  ctx.statements = statements.map((statement) =>
-    setupStatementCode(statement, ({ name, operand }) =>
-      hole(operand ? 'operand' : 'value', holeWord(name), 'script')
+  // A statement reads its args as code in the `<script>`, which the `script` word says, and `;`
+  // that it starts the statement after one without a `;`.
+  ctx.statements = statements.map((statement, index) =>
+    setupStatementCode(
+      statement,
+      statements[index - 1],
+      ({ name, operand }, _, startsLine) =>
+        constFor(name) ??
+        hole(operand ? 'operand' : 'value', holeWord(name), 'script', ...(startsLine ? [';'] : []))
     )
   );
   const code = renderPreparedSfcSnippet({ templateCode, ctx });
   return hasHoleBracket(code) ? code : undefined;
 }
 
-// A value hole for each `args.label` an expression reads, or the `whole` edit when it is nothing
-// but that read; `undefined` when it reads `args` another way.
+// A value hole for each `args.label` an expression reads, its `const` for an arg that has one, or
+// the `whole` edit when it is nothing but that read; `undefined` when it reads `args` another way.
+// A hole in an attribute value written in single quotes says so with a `'` word.
 function argHoles(
   exp: SimpleExpressionNode,
   template: string,
+  quote: string | undefined,
+  constFor: (name: string) => string | undefined,
   whole: (name: string) => Edit | undefined
 ): Edit[] | undefined {
   const offset = exp.loc.start.offset;
@@ -187,23 +231,49 @@ function argHoles(
         : parent.computed && t.isStringLiteral(parent.property) && parent.property.value);
     const around = ancestors.slice(0, -1).map((ancestor) => ancestor.node);
     const kind = isOperand(parent!, around.reverse()) ? 'operand' : 'value';
+    if (!name) {
+      holes.push(undefined);
+      return;
+    }
+    const at = { start: offset + parent.start!, end: offset + parent.end! };
+    const binding = constFor(name);
+    const quoted = quote === '"' || quote === "'";
     holes.push(
-      !name
-        ? undefined
-        : (parent === ast && whole(name)) || {
-            start: offset + parent.start!,
-            end: offset + parent.end!,
-            text: hole(kind, holeWord(name)),
-          }
+      binding !== undefined
+        ? { ...at, text: binding }
+        : (parent === ast && whole(name)) ||
+            (quoted
+              ? { ...at, text: hole(kind, holeWord(name), ...(quote === "'" ? ["'"] : [])) }
+              : undefined)
     );
   });
   return holes.every((edit) => edit !== undefined) ? holes : undefined;
 }
 
-// The prop an attribute, a bound attribute or a `v-model` sets, which a `v-bind="args"` spread
-// could also set: `max-count` sets `maxCount`.
-const propName = (prop: ElementNode['props'][number]) =>
-  attributeName(prop)?.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
+const MERGED = new Set(['class', 'style']);
+
+// The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
+const spellings = (name: string) => [
+  ...new Set([
+    name,
+    name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase()),
+    name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
+  ]),
+];
+
+// How a spread's `class` or `style` arg merges with the element's own: as a bound attribute next to
+// a written one, `+class`, as a written one next to a bound one, `+:class`, and not at all next to
+// both, `^class`.
+function mergeWord(node: ElementNode, name: string): string[] {
+  const written = node.props.some(
+    (prop) => prop.type === NodeTypes.ATTRIBUTE && prop.name === name
+  );
+  const bound = node.props.some(
+    (prop) =>
+      prop.type === NodeTypes.DIRECTIVE && prop.name === 'bind' && attributeName(prop) === name
+  );
+  return written && bound ? [`^${name}`] : written ? [`+${name}`] : bound ? [`+:${name}`] : [];
+}
 
 function attributeName(prop: ElementNode['props'][number]): string | undefined {
   if (prop.type === NodeTypes.ATTRIBUTE) {

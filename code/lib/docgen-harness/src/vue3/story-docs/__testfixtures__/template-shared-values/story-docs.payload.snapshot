@@ -1,0 +1,75 @@
+{
+  "id": "template-shared-values",
+  "name": "TemplateSharedValues",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-shared-values--for-each-item": {
+      "description": undefined,
+      "id": "forms-template-shared-values--for-each-item",
+      "name": "For Each Item",
+      "snippet": "<script lang="ts" setup>
+const items = [{ id: 1 }, { id: 2 }];
+</script>
+
+<template>
+  <ul><li v-for="item in items" :key="item.id">{{ item === items[0] ? 'first' : 'other' }}</li></ul>
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+const items = ⟦value items script⟧;
+</script>
+
+<template>
+  <ul><li v-for="item in items" :key="item.id">{{ item === items[0] ? 'first' : 'other' }}</li></ul>
+</template>",
+    },
+    "forms-template-shared-values--setup-mutation": {
+      "description": undefined,
+      "id": "forms-template-shared-values--setup-mutation",
+      "name": "Setup Mutation",
+      "snippet": "<script lang="ts" setup>
+import TemplateSharedValues from './TemplateSharedValues.vue';
+
+const items = ['a'];
+
+items?.push('b');
+</script>
+
+<template>
+  <TemplateSharedValues :items="items" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateSharedValues from './TemplateSharedValues.vue';
+
+const items = ⟦value items script⟧;
+
+items?.push('b');
+</script>
+
+<template>
+  <TemplateSharedValues :items="items" />
+</template>",
+    },
+    "forms-template-shared-values--spread-with-class": {
+      "description": undefined,
+      "id": "forms-template-shared-values--spread-with-class",
+      "name": "Spread With Class",
+      "snippet": "<script lang="ts" setup>
+import TemplateSharedValues from './TemplateSharedValues.vue';
+</script>
+
+<template>
+  <TemplateSharedValues label="Go" class="own" style="color: red" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateSharedValues from './TemplateSharedValues.vue';
+</script>
+
+<template>
+  <TemplateSharedValues ⟦props +class +style⟧ class="own" style="color: red" />
+</template>",
+    },
+  },
+}

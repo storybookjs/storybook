@@ -368,7 +368,11 @@ export function renderBoundArgAttribute(
 
 /** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
 export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): string {
-  const source = printValue(unwrapExpression(value));
+  return hoistArgCode(name, printValue(unwrapExpression(value)), ctx);
+}
+
+/** Hoist `source`, the code of an arg's value, and return the binding name that replaces it. */
+export function hoistArgCode(name: string, source: string, ctx: RenderContext): string {
   const existing = ctx.hoistedArgs.get(name);
   if (existing?.source === source) {
     return existing.binding;

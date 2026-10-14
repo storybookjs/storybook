@@ -29,6 +29,10 @@ const status = { state: 'available', version: '1.2.3' };
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = ⟦value release script⟧;
+
+const status = ⟦value status script⟧;
 </script>
 
 <template>
@@ -39,7 +43,7 @@ import TemplateArgsExpression from './TemplateArgsExpression.vue';
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression ⟦props⟧ />
+    <TemplateArgsExpression ⟦props -release -status⟧ :release="release" :status="status" />
   </div>
 </template>",
     },
@@ -69,6 +73,10 @@ const status = { state: 'available', version: '1.2.3' };
       "summary": undefined,
       "template": "<script lang="ts" setup>
 import TemplateArgsExpression from './TemplateArgsExpression.vue';
+
+const release = ⟦value release script⟧;
+
+const status = ⟦value status script⟧;
 </script>
 
 <template>
@@ -79,7 +87,7 @@ import TemplateArgsExpression from './TemplateArgsExpression.vue';
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression ⟦props⟧ />
+    <TemplateArgsExpression ⟦props -release -status⟧ :release="release" :status="status" />
   </div>
 </template>",
     },

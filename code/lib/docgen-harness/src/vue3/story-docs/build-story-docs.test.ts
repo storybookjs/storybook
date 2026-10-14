@@ -12,10 +12,14 @@ import type { DocgenPayload } from 'storybook/open-service';
 
 import { composeStories, setProjectAnnotations } from '@storybook/vue3';
 import { buildStoryDocsPayload } from '@storybook/vue3/internal/docgen';
+import * as Vue from 'vue';
 import { compileScript, compileTemplate, parse } from 'vue/compiler-sfc';
+import { renderToString } from 'vue/server-renderer';
 
 import { fillTemplate } from '../../../../../renderers/vue3/src/docs/fill-template.ts';
 import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
+import TemplateSharedValues from './__testfixtures__/template-shared-values/TemplateSharedValues.vue';
+import * as sharedValuesStories from './__testfixtures__/template-shared-values/input.stories.ts';
 
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const DOCGEN_FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '__testfixtures__');
@@ -110,6 +114,10 @@ function docgenForFixture(
     slots: {
       default: argType('default', 'slots'),
       header: argType('header', 'slots'),
+    },
+    'template-shared-values': {
+      items: argType('items', 'props'),
+      label: argType('label', 'props'),
     },
     'template-escaped-interpolation': {
       label: argType('label', 'props'),
@@ -276,9 +284,88 @@ function fill({ template, args }: { template: string; args: Args }): string | un
   }
 }
 
+const HOSTILE = 'a"b\'c`d${e}<f>&{{g}}';
+
+// Every value an arg holds changed: a string to one that quotes, escapes and interpolates, a number
+// to a negative one and a boolean flipped.
+function changed(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return HOSTILE;
+  }
+  if (typeof value === 'number') {
+    return -1;
+  }
+  if (typeof value === 'boolean') {
+    return !value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(changed);
+  }
+  return value && Object.getPrototypeOf(value) === Object.prototype && !Vue.isVNode(value)
+    ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, changed(entry)]))
+    : value;
+}
+
 describe('vue3 story templates', () => {
   it.each(liveStories)('$id compiles when filled with its args', (story) => {
     const filled = fill(story);
     expect(filled === undefined ? [] : compileErrors(filled)).toEqual([]);
+  });
+
+  it.each(liveStories)('$id compiles when filled with changed args', (story) => {
+    const filled = fill({ template: story.template, args: changed(story.args) as Args });
+    expect(filled === undefined ? [] : compileErrors(filled)).toEqual([]);
+  });
+});
+
+// The test build of Vue has no template compiler, so a template is compiled here.
+function compiled<T extends { template: string }>(component: T) {
+  const { code } = compileTemplate({
+    source: component.template,
+    filename: 'Story.vue',
+    id: 'story',
+    compilerOptions: { mode: 'function' },
+  });
+  return { ...component, render: new Function('Vue', code)(Vue) };
+}
+
+// A filled snippet as a component: its script, which imports only from `vue` and the fixture's
+// component, runs as the `setup` of its template.
+function snippetComponent(code: string) {
+  const { descriptor } = parse(code);
+  const body = (descriptor.scriptSetup?.content ?? '').replace(/^import .*$/gm, '');
+  const names = [...body.matchAll(/^const (\w+)/gm)].map(([, name]) => name);
+  const setup = new Function(
+    'Vue',
+    `const { ref } = Vue;\n${body}\nreturn { ${names.join(', ')} };`
+  );
+  return compiled({
+    components: { TemplateSharedValues },
+    setup: () => setup(Vue),
+    template: descriptor.template!.content,
+  });
+}
+
+const renderHtml = (component: object) => renderToString(Vue.createSSRApp(component));
+
+describe('vue3 filled story templates', () => {
+  const fixtureCase = storyDocsFixtureCases().find(
+    ({ name }) => name === 'template-shared-values'
+  )!;
+
+  it.each([
+    ['ForEachItem', { items: [{ id: 3 }, { id: 4 }, { id: 5 }] }],
+    ['SetupMutation', { items: ['x', 'y'] }],
+    ['SpreadWithClass', { label: HOSTILE, class: ['extra'], style: { margin: '1px' } }],
+  ] as const)('%s renders as its story', async (name, args) => {
+    const payload = await buildFixturePayload(fixtureCase);
+    const [, story] = Object.entries(payload?.stories ?? {}).find(([id]) =>
+      id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
+    )!;
+    const filled = fillTemplate(story.template!, structuredClone(args));
+    const render = sharedValuesStories[name].render!(structuredClone(args), {} as never);
+    expect(await renderHtml(snippetComponent(filled))).toBe(
+      await renderHtml(compiled(render as { template: string }))
+    );
   });
 });

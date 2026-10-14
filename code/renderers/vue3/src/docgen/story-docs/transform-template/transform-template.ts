@@ -266,8 +266,9 @@ export function seedForwardedSetup(setup: ForwardableSetup, ctx: RenderContext):
 
 function appendSetupStatements(setup: ForwardableSetup, state: TransformState): boolean {
   let printable = true;
-  for (const statement of setup.statements) {
-    const code = setupStatementCode(statement, (read, following) => {
+  for (const [index, statement] of setup.statements.entries()) {
+    const previous = setup.statements[index - 1];
+    const code = setupStatementCode(statement, previous, (read, following, startsLine) => {
       const arg = state.argsByName.get(read.name);
       const rendered = arg
         ? arg.role === 'prop'
@@ -279,24 +280,35 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
           ? 'undefined'
           : undefined;
       printable &&= rendered !== undefined;
-      return wrapSubstitution(rendered ?? '', following);
+      const text = wrapSubstitution(rendered ?? '', following);
+      return startsLine && continuesStatement(text) ? `;${text}` : text;
     });
     state.ctx.statements.push(code);
   }
   return printable;
 }
 
-/** A forwarded setup statement as `<script setup>` code, each args read as `print` writes it. */
+/**
+ * A forwarded setup statement as `<script setup>` code, each args read as `print` writes it.
+ * `startsLine` is set for a read that starts the statement right after one without a `;`, where a
+ * literal starting with `(` or `[` would continue that statement.
+ */
 export function setupStatementCode(
   statement: ForwardableStatement,
-  print: (read: ArgsRead, following: string) => string
+  previous: ForwardableStatement | undefined,
+  print: (read: ArgsRead, following: string, startsLine: boolean) => string
 ): string {
+  const afterOpenStatement = previous !== undefined && !/;\s*$/.test(previous.source);
   let text = statement.source;
   for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
-    text = text.slice(0, read.start) + print(read, text.slice(read.end)) + text.slice(read.end);
+    const printed = print(read, text.slice(read.end), afterOpenStatement && read.start === 0);
+    text = text.slice(0, read.start) + printed + text.slice(read.end);
   }
   return dedentBy(text.replace(/\r\n?/g, '\n'), statement.column);
 }
+
+// Whether code starting a line would continue the statement on the line before it.
+const continuesStatement = (code: string) => /^[[(`+\-/]/.test(code);
 
 /**
  * Parenthesize substituted text that would fuse with the surrounding expression.

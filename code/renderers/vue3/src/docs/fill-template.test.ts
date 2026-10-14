@@ -16,11 +16,36 @@ describe('fillTemplate', () => {
     ).toBe('<Card :disabled="false">\n    Body\n    <template #header>1</template>\n  </Card>');
   });
 
-  it('leaves out an unset arg and a function arg', () => {
-    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined, b: null, onClick: () => {} })).toBe(
-      '<Button />'
-    );
+  it('leaves out an unset arg, a spy and an action, and binds a null arg', () => {
+    const spy = Object.assign(() => {}, { getMockName: () => 'spy' });
+    const action = Object.assign(() => {}, { isAction: true });
+    expect(
+      fillTemplate('<Button ⟦props⟧ />', { a: undefined, onClick: spy, onHover: action })
+    ).toBe('<Button />');
     expect(fillTemplate('<Button ⟦attr label text⟧ />', {})).toBe('<Button />');
+    expect(fillTemplate('<Button ⟦attr label text⟧ />', { text: null })).toBe(
+      '<Button :label="null" />'
+    );
+  });
+
+  it('throws for a function arg that is neither a spy nor an action', () => {
+    const formatter = (value: number) => value.toFixed(2);
+    expect(() => fillTemplate('<Button ⟦attr format formatter⟧ />', { formatter })).toThrow(
+      UnprintableArgError
+    );
+    expect(() => fillTemplate('⟦element Button⟧', { formatter })).toThrow(UnprintableArgError);
+  });
+
+  it("merges a spread's class with the element's own", () => {
+    expect(fillTemplate('<div ⟦props +class⟧ class="a" />', { class: ['b'], id: 'x' })).toBe(
+      `<div id="x" :class="['b']" class="a" />`
+    );
+    expect(fillTemplate(`<div ⟦props +:class⟧ :class="'a'" />`, { class: 'b' })).toBe(
+      `<div class="b" :class="'a'" />`
+    );
+    expect(() => fillTemplate(`<div ⟦props +:class⟧ :class="'a'" />`, { class: ['b'] })).toThrow(
+      UnprintableArgError
+    );
   });
 
   it('leaves out the args a props hole names', () => {
@@ -56,6 +81,25 @@ describe('fillTemplate', () => {
     ).toBe(`<p v-if="true && 'a&quot;b'">`);
     expect(fillTemplate('<p>{{ ⟦value label⟧ }}</p>', { label: '&quot; }}' })).toBe(
       "<p>{{ '&amp;quot; }\\}' }}</p>"
+    );
+  });
+
+  it('escapes a value in an attribute written in single quotes for that quote', () => {
+    expect(fillTemplate(`<p :title='⟦value label '⟧ + "!"'>`, { label: `a"b'c` })).toBe(
+      `<p :title='"a\\"b&#39;c" + "!"'>`
+    );
+  });
+
+  it('starts a statement with a `;` where the literal would continue the one before', () => {
+    expect(fillTemplate('⟦operand n script ;⟧.toFixed()', { n: 5 })).toBe(';(5).toFixed()');
+    expect(fillTemplate('⟦operand n script ;⟧.forEach()', { n: [1] })).toBe(';[1].forEach()');
+    expect(fillTemplate('⟦operand n script ;⟧.at()', { n: 'ab' })).toBe("'ab'.at()");
+  });
+
+  it('writes text with a whitespace run or a `{` before an interpolation as code', () => {
+    expect(fillTemplate('<p>⟦text a⟧</p>', { a: 'a  b' })).toBe("<p>{{ 'a  b' }}</p>");
+    expect(fillTemplate('<p>⟦text a⟧⟦text b⟧</p>', { a: 'Price {', b: true })).toBe(
+      '<p>Price &#123;{{ true }}</p>'
     );
   });
 

@@ -1,6 +1,6 @@
 ---
 name: ui-workflow
-description: Storybook's workflow for UI changes in a project with Storybook - write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review. Use when the project's agent instructions (such as AGENTS.md) or the user ask for it.
+description: Storybook's workflow for UI changes in a project with Storybook - look up the components to reuse, write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review. Use when the project's agent instructions (such as AGENTS.md) or the user ask for it.
 ---
 
 Prerequisites:

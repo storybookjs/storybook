@@ -11,10 +11,10 @@ export type SkillId = (typeof SKILL_IDS)[number];
 export const SKILLS: Record<SkillId, { blurb: string }> = {
   'ui-workflow': {
     blurb:
-      'The workflow for UI changes, with every command it needs: write stories, test, and publish a review.',
+      'The workflow for UI changes, with every command it needs: look up components, write stories, test, and publish a review.',
   },
   'component-docs': {
-    blurb: 'Look up the components to reuse, and their props and usage, before changing the UI.',
+    blurb: 'Look up components, with their props and usage, to answer questions about them.',
   },
   'write-story': {
     blurb:

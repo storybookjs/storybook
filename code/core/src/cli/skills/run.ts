@@ -79,7 +79,7 @@ export function resolveSkillsIntent({
     return {
       kind: 'error',
       message:
-        'The `stories` skill is split into `ui-workflow` (write stories, test, review) and `component-docs` (look up components to reuse). Run `npx storybook skills ui-workflow` or `npx storybook skills component-docs`.',
+        'The `stories` skill is renamed to `ui-workflow`. Run `npx storybook skills ui-workflow`, or `npx storybook skills component-docs` for questions about a component.',
     };
   }
   if (!isSkillId(id)) {

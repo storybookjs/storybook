@@ -4,10 +4,10 @@ import { join } from 'node:path';
 // The skills do not claim UI changes on their own: this section is what makes agents use them.
 export const STORYBOOK_AGENT_INSTRUCTIONS = `## Storybook
 
-When you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories, use both Storybook skills, in this order:
+Use these Storybook skills:
 
-1. \`component-docs\`: look up the components to reuse, before you edit any file.
-2. \`ui-workflow\`: update your stories, run the tests, and publish a review of the results.
+- \`ui-workflow\`: when you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories. Follow it to look up the components to reuse, update your stories, run the tests, and publish a review of the results.
+- \`component-docs\`: when the user asks about a component's props, API, or usage.
 `;
 
 // Claude Code reads AGENTS.md only when the project has no CLAUDE.md, and resolves an import

@@ -90,11 +90,11 @@ describe('resolveSkillsIntent', () => {
     }
   });
 
-  it('names the two skills that replace stories', () => {
+  it('names ui-workflow, the new name of stories', () => {
     expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({
       kind: 'error',
       message: expect.stringContaining(
-        'Run `npx storybook skills ui-workflow` or `npx storybook skills component-docs`.'
+        'The `stories` skill is renamed to `ui-workflow`. Run `npx storybook skills ui-workflow`'
       ),
     });
   });
@@ -144,7 +144,7 @@ describe('runSkillsCommand', () => {
     expect(componentDocs.output).toContain('npx storybook tools docs show --id <id>');
 
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
-    expect(uiWorkflow.output).toContain('`npx storybook skills component-docs`');
+    expect(uiWorkflow.output).toContain('npx storybook tools docs show --id <id>');
 
     const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
     expect(writeStory.output).toContain('npx storybook tools docs list');

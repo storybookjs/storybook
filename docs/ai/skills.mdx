@@ -21,7 +21,7 @@ A skill is a folder with a `SKILL.md` file: instructions that an agent loads whe
 
 - Storybook 11.0 or later
 - A React (not React Native), Vue 3 + Vite, Angular + Vite, Svelte, or Web Components project
-- For the `component-docs` skill, a framework that generates a [components manifest](./manifests.mdx). See [framework support](./mcp/overview.mdx#framework-support).
+- To look up your components with their props and usage examples, a framework that generates a [components manifest](./manifests.mdx). See [framework support](./mcp/overview.mdx#framework-support).
 
 ## Install the skills
 
@@ -58,16 +58,16 @@ The skills do not take over every UI change on their own. A section in your `AGE
 ```md title="AGENTS.md"
 ## Storybook
 
-When you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories, use both Storybook skills, in this order:
+Use these Storybook skills:
 
-1. `component-docs`: look up the components to reuse, before you edit any file.
-2. `ui-workflow`: update your stories, run the tests, and publish a review of the results.
+- `ui-workflow`: when you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories. Follow it to look up the components to reuse, update your stories, run the tests, and publish a review of the results.
+- `component-docs`: when the user asks about a component's props, API, or usage.
 ```
 
-Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. Edit it to fit how you work. For example, to skip the review, change the last line to:
+Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. Edit it to fit how you work. For example, to skip the review, change the end of the `ui-workflow` line:
 
 ```md title="AGENTS.md"
-2. `ui-workflow`: update your stories and run the tests.
+- `ui-workflow`: when you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories. Follow it to look up the components to reuse, update your stories, and run the tests.
 ```
 
 To stop agents from using the skills on their own, remove the section. You can still ask for a skill in a prompt, for example `/ui-workflow` in Claude Code.
@@ -80,13 +80,13 @@ Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` or `CLAU
 
 ## Available skills
 
-| Skill               | What the agent does with it                                                                                                                             |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `component-docs`    | Looks up your components, their props, and usage examples, so it reuses them instead of building duplicates. Also answers questions about a component.  |
-| `ui-workflow`       | Writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](./agentic-review.mdx) of the result. |
-| `storybook-init`    | Adds Storybook to your project, then continues with `storybook-setup`.                                                                                  |
-| `storybook-setup`   | Follows the [agentic setup](./setup.mdx) instructions: configures the preview and writes stories for your components.                                   |
-| `storybook-upgrade` | Upgrades Storybook with [`storybook upgrade`](../releases/upgrading.mdx).                                                                               |
+| Skill               | What the agent does with it                                                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ui-workflow`       | Looks up your components to reuse them instead of building duplicates, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](./agentic-review.mdx) of the result. |
+| `component-docs`    | Answers questions about your components, their props, and usage examples, from your component docs.                                                                                                                            |
+| `storybook-init`    | Adds Storybook to your project, then continues with `storybook-setup`.                                                                                                                                                         |
+| `storybook-setup`   | Follows the [agentic setup](./setup.mdx) instructions: configures the preview and writes stories for your components.                                                                                                          |
+| `storybook-upgrade` | Upgrades Storybook with [`storybook upgrade`](../releases/upgrading.mdx).                                                                                                                                                      |
 
 In the Codex plugin, the last three skills are called `init`, `setup`, and `upgrade`, because Codex already shows them under the plugin's name.
 

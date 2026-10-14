@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { componentLookup } from './build-component-docs-skill.ts';
 import { buildUiWorkflowSkill, type UiWorkflowSkillInputs } from './build-ui-workflow-skill.ts';
 
 const everything: UiWorkflowSkillInputs = {
@@ -17,7 +18,7 @@ describe('buildUiWorkflowSkill', () => {
   it('shows every command with its arguments when every feature is on', () => {
     const text = buildUiWorkflowSkill(everything);
 
-    expect(text).toContain('`npx storybook skills component-docs`');
+    expect(text).toContain('npx storybook tools docs show --id <id>');
     expect(text).toContain(`npx storybook tools test run --stories '[{"storyId":"<id>"}]'`);
     expect(text).toContain('npx storybook tools stories changed');
     expect(text).toContain(`npx storybook tools stories find-by-component --componentPaths '["`);
@@ -25,13 +26,18 @@ describe('buildUiWorkflowSkill', () => {
     expect(text).toContain('accessibility violations');
   });
 
-  it('points to component-docs only when the project has component docs', () => {
-    expect(buildUiWorkflowSkill(everything)).toContain(
-      '## Reuse components first\n\nBefore you edit any file, run `npx storybook skills component-docs`'
-    );
-    expect(buildUiWorkflowSkill({ ...everything, docsEnabled: false })).not.toContain(
-      'component-docs'
-    );
+  it('includes the lookup of component-docs, so the agent cannot skip it', () => {
+    const text = buildUiWorkflowSkill(everything);
+
+    expect(text).toContain(`## Look up components first\n\n${componentLookup()}`);
+    expect(text).not.toContain('npx storybook skills component-docs');
+  });
+
+  it('looks up components only when the project has component docs', () => {
+    const text = buildUiWorkflowSkill({ ...everything, docsEnabled: false });
+
+    expect(text).not.toContain('Look up components first');
+    expect(text).not.toContain('npx storybook tools docs show');
   });
 
   it('leaves out testing when the project cannot run story tests', () => {

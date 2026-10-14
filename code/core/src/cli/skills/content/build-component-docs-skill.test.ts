@@ -14,10 +14,10 @@ describe('buildComponentDocsSkill', () => {
   });
 
   it.each([true, false])(
-    'hands over to ui-workflow when the agent instructions name it (docs enabled: %s)',
+    'sends a UI change to ui-workflow when the agent instructions name it (docs enabled: %s)',
     (docsEnabled) => {
       expect(buildComponentDocsSkill({ docsEnabled })).toContain(
-        'also name the `ui-workflow` skill, invoke it next for a UI change'
+        "For a change to the UI, use the `ui-workflow` skill when the project's agent instructions"
       );
     }
   );

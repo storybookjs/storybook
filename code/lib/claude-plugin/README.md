@@ -101,10 +101,10 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 ```md
 ## Storybook
 
-When you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories, use both Storybook skills, in this order:
+Use these Storybook skills:
 
-1. `component-docs`: look up the components to reuse, before you edit any file.
-2. `ui-workflow`: update your stories, run the tests, and publish a review of the results.
+- `ui-workflow`: when you make a change that could affect how the UI looks (components, styles, themes, design tokens), or the user asks to see components or stories. Follow it to look up the components to reuse, update your stories, run the tests, and publish a review of the results.
+- `component-docs`: when the user asks about a component's props, API, or usage.
 ```
 
 Edit that section to change when the agent uses the skills, for example to leave out the review, or remove it to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
@@ -125,11 +125,11 @@ Sets up your Storybook for agentic workflows, automatically configures your proj
 
 ### `component-docs`
 
-Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. The agent also uses it to answer questions about a component's props, API, or usage.
+Answers questions about the components of your Storybook: their props, API, and usage examples.
 
 ### `ui-workflow`
 
-The workflow for UI changes: the agent writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of the result.
+The workflow for UI changes: the agent looks up the components to reuse, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of the result.
 
 ### `upgrade`
 

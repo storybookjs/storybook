@@ -7,9 +7,11 @@
       "argCode": {
         "big": "{}",
         "builtin": "new Date(0)",
+        "color": "Color.Red",
         "cyclic": "{ peer: { peer: null } }",
         "dict": "{ a: 1 }",
         "inlined": "{ foo: 'foo', bar: 1 }",
+        "level": "Level.High",
         "localDate": "new Date(0)",
         "namespaced": "{ key: 'k', count: 2 }",
         "partialed": "{ age: 36 }",
@@ -47,7 +49,7 @@ const user = { name: 'Ada', age: 36 };
 </script>
 
 <template>
-  <NamedTypeDetails scalarAlias="abc-123" shapes="circle" :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user" />
+  <NamedTypeDetails :color="Color.Red" :level="Level.High" scalarAlias="abc-123" shapes="circle" :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

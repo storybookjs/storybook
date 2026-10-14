@@ -384,6 +384,17 @@ export const Primary = {
     expect(story?.snippet).toContain('<MyButton label="" :onHover="(x) => x" size="sm" />');
   });
 
+  it('prints an arg written with a name the snippet does not declare as written', async () => {
+    const story = await primaryStory(`
+import { fn } from 'storybook/test';
+import { LABELS } from './labels';
+
+export const Primary = { args: { label: LABELS.ok, size: 'sm', onClick: fn() } };
+`);
+    expect(story?.snippet).toContain('<MyButton :label="LABELS.ok" :onClick="fn()" size="sm" />');
+    expect(story?.warning).toContain('LABELS');
+  });
+
   it('has none for a story that fills a slot with a function', async () => {
     const story = await primaryStory(
       `export const Primary = { args: { label: 'Go', default: () => 'Hello' } };`
@@ -552,6 +563,20 @@ export const Primary = {
     const template = '<MyButton label="x" v-bind="args" :size="args.size" />';
     expect(renderTemplate(template, new Map(), [])).toContain(
       '<MyButton label="x" ⟦props ^label -size⟧ ⟦attr size size⟧ />'
+    );
+  });
+
+  it('leaves out of the args spread a listener the element writes', () => {
+    const template = '<MyButton v-bind="args" @click="track" />';
+    expect(renderTemplate(template, new Map(), [])).toContain(
+      '<MyButton ⟦props -onClick -on-click⟧ @click="track" />'
+    );
+  });
+
+  it('marks a hole in an interpolation', () => {
+    const template = '<MyButton>{{ args.label.trim() }}</MyButton>';
+    expect(renderTemplate(template, new Map(), [])).toContain(
+      '<MyButton>{{ ⟦operand label {{⟧.trim() }}</MyButton>'
     );
   });
 

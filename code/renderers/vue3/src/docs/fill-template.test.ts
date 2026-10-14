@@ -96,6 +96,15 @@ describe('fillTemplate', () => {
     ).toThrow(UnprintableArgError);
   });
 
+  it('keeps a string from ending the interpolation a value hole is in, and no written code', () => {
+    expect(fillTemplate('<p>{{ ⟦operand label {{⟧.trim() }}</p>', { label: 'a}}b' })).toBe(
+      "<p>{{ 'a}\\}b'.trim() }}</p>"
+    );
+    expect(() =>
+      fillTemplate('<p>{{ ⟦value fmt {{⟧(1) }}</p>', { fmt: writtenArg('(s) => ({a:{b:s}})') })
+    ).toThrow(UnprintableArgError);
+  });
+
   it('escapes a value in an attribute written in single quotes for that quote', () => {
     expect(fillTemplate(`<p :title='⟦value label '⟧ + "!"'>`, { label: `a"b'c` })).toBe(
       `<p :title='"a\\"b&#39;c" + "!"'>`
@@ -135,5 +144,11 @@ describe('fillTemplate', () => {
       UnprintableArgError
     );
     expect(() => fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
+  });
+
+  it('binds an arg named with a colon, as a listener for a model update', () => {
+    expect(fillTemplate('<Button ⟦props⟧ />', { 'onUpdate:modelValue': writtenArg('fn()') })).toBe(
+      '<Button :onUpdate:modelValue="fn()" />'
+    );
   });
 });

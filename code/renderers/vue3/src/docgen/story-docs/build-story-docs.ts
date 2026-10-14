@@ -41,7 +41,6 @@ import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybo
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
 import {
-  classifyArg,
   classifyArgs,
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
@@ -401,12 +400,7 @@ function enrichStoryDoc(
 
   // The static snippet is the template filled with the args the story is written with, and the
   // story printed as before where it has no template or the filler cannot print one of them.
-  // The story's own args, but those that read a name the snippet cannot declare.
-  const storyArgs = Object.fromEntries(
-    Object.entries(resolved.args).filter(
-      ([name, value]) => classifyArg(name, value, docgenArgInfo).kind !== 'unrepresentable'
-    )
-  );
+  const storyArgs = resolved.args;
   const template = storyTemplate(renderer, options.snippet, args, storyArgs);
   const warning = unresolvedWarning(unresolved);
   const filled =

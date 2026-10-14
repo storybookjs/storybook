@@ -14,8 +14,8 @@ import { isVNode } from 'vue';
 // Fills a Vue story template. Besides the shared holes, `⟦slots Card default header⟧` ends the open
 // tag of `Card` with the slots its words name as content, or closes it without any. A `script` word marks a
 // `⟦value⟧` or `⟦operand⟧` hole in the `<script>`, where no entity is decoded, a `;` word one that
-// starts a statement after one without a `;`, and a `'` word one in an attribute value written in
-// single quotes.
+// starts a statement after one without a `;`, a `'` word one in an attribute value written in
+// single quotes, and a `{{` word one in an interpolation.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', ...rest] = words;
@@ -75,15 +75,14 @@ function attribute(name: string, arg: unknown): string {
 const bound = (name: string, arg: unknown) => `:${checkedName(name)}="${value(name, arg)}"`;
 
 function checkedName(name: string) {
-  if (!/^[A-Za-z_][\w-]*$/.test(name)) {
+  if (!/^[A-Za-z_][\w:-]*$/.test(name)) {
     throw new UnprintableArgError(name);
   }
   return name;
 }
 
 // Vue collapses whitespace in text and reads `<`, `{{` and `&` as markup, as well as a `{` that ends
-// the text before an interpolation. In a string, `}\}` keeps `}}` from ending the interpolation;
-// any other value that prints `}}`, such as code the story wrote, has no such escape.
+// the text before an interpolation.
 function text(name: string, arg: unknown): string {
   if (arg === undefined || arg === null || arg === '') {
     return '';
@@ -96,22 +95,24 @@ function text(name: string, arg: unknown): string {
       .replaceAll('{{', '{&#123;')
       .replace(/\{$/, '&#123;');
   }
-  const printed = value(name, arg);
-  if (typeof arg !== 'string' && printed.includes('}}')) {
-    throw new UnprintableArgError(name);
-  }
-  return `{{ ${printed.replaceAll('}}', '}\\}')} }}`;
+  return `{{ ${value(name, arg, ['{{'])} }}`;
 }
 
 // A literal in an attribute value or an interpolation, both of which decode entities, so it is
 // written in the quote the attribute is not, and `<\/` keeps a string in the `<script>` from ending
-// the block. A VNode is a plain object, but no literal renders it.
+// the block. A VNode is a plain object, but no literal renders it. In an interpolation, the `{{`
+// word, `}\}` keeps a string's `}}` from ending it; other code that prints `}}`, such as code the
+// story wrote, has no such escape.
 function value(name: string, arg: unknown, words: string[] = []) {
   const singleQuoted = words.includes("'");
   const printed = printValue(arg, name, { quote: singleQuoted ? '"' : "'", opaque: isVNode });
   if (words.includes('script')) {
     return printed.replaceAll('</', '<\\/');
   }
-  const escaped = printed.replaceAll('&', '&amp;');
+  if (words.includes('{{') && typeof arg !== 'string' && printed.includes('}}')) {
+    throw new UnprintableArgError(name);
+  }
+  const closed = words.includes('{{') ? printed.replaceAll('}}', '}\\}') : printed;
+  const escaped = closed.replaceAll('&', '&amp;');
   return singleQuoted ? escaped.replaceAll("'", '&#39;') : escaped.replaceAll('"', '&quot;');
 }

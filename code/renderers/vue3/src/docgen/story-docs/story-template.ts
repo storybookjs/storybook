@@ -129,7 +129,7 @@ export function renderTemplate(
       const holes = argHoles(
         node.content as SimpleExpressionNode,
         template,
-        '"',
+        '{{',
         constFor,
         writtenAs,
         (name) => ({
@@ -238,9 +238,12 @@ export function renderTemplate(
   return hasHoleBracket(code) ? code : undefined;
 }
 
+const QUOTE_WORDS: Record<string, string[]> = { '"': [], "'": ["'"], '{{': ['{{'] };
+
 // A value hole for each `args.label` an expression reads, its `const` for an arg that has one, or
 // the `whole` edit when it is nothing but that read; `undefined` when it reads `args` another way.
-// A hole in an attribute value written in single quotes says so with a `'` word.
+// A hole in an attribute value written in single quotes says so with a `'` word, and one in an
+// interpolation, which `quote` gives as `{{`, with a `{{` word.
 function argHoles(
   exp: SimpleExpressionNode,
   template: string,
@@ -295,14 +298,12 @@ function argHoles(
     const kind = isOperand(parent!, around, writtenAs(name)) ? 'operand' : 'value';
     const at = { start: offset + parent.start!, end: offset + parent.end! };
     const binding = constFor(name);
-    const quoted = quote === '"' || quote === "'";
+    const words = QUOTE_WORDS[quote ?? ''];
     holes.push(
       binding !== undefined
         ? { ...at, text: binding }
         : (parent === ast && whole(name)) ||
-            (quoted
-              ? { ...at, text: hole(kind, holeWord(name), ...(quote === "'" ? ["'"] : [])) }
-              : undefined)
+            (words ? { ...at, text: hole(kind, holeWord(name), ...words) } : undefined)
     );
   });
   return holes.every((edit) => edit !== undefined) ? holes : undefined;
@@ -324,6 +325,10 @@ function attributeName(prop: ElementNode['props'][number]): string | undefined {
   const arg = prop.arg as SimpleExpressionNode | undefined;
   if (prop.name === 'model') {
     return arg?.content ?? 'modelValue';
+  }
+  // `@click` sets the `onClick` arg.
+  if (prop.name === 'on' && arg) {
+    return `on${arg.content.charAt(0).toUpperCase()}${arg.content.slice(1)}`;
   }
   return prop.name === 'bind' && arg ? arg.content : undefined;
 }

@@ -715,7 +715,7 @@ describe('run', (): void => {
       [
         [
           "/project/.storybook/preview.ts still imports ../custom-elements.json for: \`export const moduleCount = customElements.modules.length\`.
-      Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+      Docgen now reads the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
       Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.",
         ],
       ]
@@ -756,7 +756,7 @@ describe('run', (): void => {
       [
         [
           "/project/.storybook/preview.ts still imports ../custom-elements.json for: \`WebComponentFormatter(customElements)\`.
-      Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+      Docgen now reads the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
       Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.",
         ],
       ]
@@ -844,7 +844,7 @@ describe('run', (): void => {
       [
         [
           "/project/.storybook/preview.ts still imports ../custom-elements.json for: \`const m = format(customElements)\`.
-      Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+      Docgen now reads the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
       Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.",
         ],
       ]

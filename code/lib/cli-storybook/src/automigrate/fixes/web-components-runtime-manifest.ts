@@ -256,7 +256,7 @@ const logSurvivingManifestImport = (
 ): void =>
   logger.warn(dedent`
     ${previewConfigPath} still imports ${specifier} for: ${readers.map((node) => `\`${printStatement(node)}\``).join(', ')}.
-    Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+    Docgen now reads the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
     Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.
   `);
 

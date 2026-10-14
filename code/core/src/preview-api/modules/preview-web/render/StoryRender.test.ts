@@ -2,7 +2,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
-import { STORY_FINISHED } from 'storybook/internal/core-events';
+import {
+  STORY_FINISHED,
+  STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
+} from 'storybook/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type {
   PreparedStory,
   Renderer,
@@ -13,6 +18,10 @@ import type {
 import { ReporterAPI, type StoryStore } from '../../store/index.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { StoryRender, serializeError } from './StoryRender.ts';
+import { waitForAnimations } from './animation-utils.ts';
+
+// happy-dom has no document.getAnimations, so the completing phase would never wait.
+vi.mock('./animation-utils.ts', { spy: true });
 
 const entry = {
   type: 'story',
@@ -164,6 +173,53 @@ describe('StoryRender', () => {
 
     await render.renderToElement({} as any);
     expect(mountSpy).toHaveBeenCalledOnce();
+  });
+
+  it('hides argTypes from lifecycle hooks but passes them to the renderer', async () => {
+    const argTypes = { label: { name: 'label' } };
+    const hookContexts: StoryContext[] = [];
+    const story = buildStory({
+      applyLoaders: vi.fn(async (context) => {
+        hookContexts.push(context);
+        return {};
+      }),
+      applyBeforeEach: vi.fn(async (context) => {
+        hookContexts.push(context);
+        return [];
+      }),
+      playFunction: vi.fn(async (context) => {
+        hookContexts.push(context);
+        await context.step('step', async (stepContext: StoryContext) => {
+          hookContexts.push(stepContext);
+        });
+      }),
+      applyAfterEach: vi.fn(async (context) => {
+        hookContexts.push(context);
+      }),
+      runStep: vi.fn((label, play, context) => play(context)),
+    });
+    const renderToScreen = vi.fn();
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore({
+        getStoryContext: () => ({ argTypes, reporting: new ReporterAPI() }) as any,
+      }),
+      renderToScreen,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+
+    expect(hookContexts).toHaveLength(5);
+    for (const context of hookContexts) {
+      expect(() => context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+      expect('argTypes' in context).toBe(false);
+    }
+    expect(renderToScreen.mock.calls[0][0].storyContext.argTypes).toBe(argTypes);
   });
 
   it('does not call mount twice if mount called in play function', async () => {
@@ -376,6 +432,84 @@ describe('StoryRender', () => {
       openImportGate();
 
       await expect(preparePromise).rejects.toThrowError(PREPARE_ABORTED);
+    });
+
+    it('stops after the completing phase when torn down during it', async () => {
+      const [completingGate, openCompletingGate] = createGate();
+      vi.mocked(waitForAnimations).mockImplementationOnce(() => completingGate);
+      const story = buildStory({ playFunction: undefined });
+      const channel = new Channel({});
+      const emitSpy = vi.spyOn(channel, 'emit');
+      const render = new StoryRender(
+        channel,
+        buildStore(),
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('completing'));
+      await render.teardown();
+      openCompletingGate();
+      await tick();
+
+      const phases = emitSpy.mock.calls
+        .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+        .map(([, { newPhase }]) => newPhase);
+      expect(phases).toEqual(['loading', 'rendering', 'completing', 'aborted']);
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_RENDERED, expect.anything());
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_FINISHED, expect.anything());
+      expect(story.applyAfterEach).not.toHaveBeenCalled();
+    });
+
+    it('does not report a remounted render as aborted when its previous cycle finishes late', async () => {
+      const [completingGate, openCompletingGate] = createGate();
+      const [playGate, openPlayGate] = createGate();
+      vi.mocked(waitForAnimations).mockImplementationOnce(() => completingGate);
+      const story = buildStory({
+        playFunction: vi
+          .fn()
+          .mockImplementationOnce(async () => {})
+          .mockImplementationOnce(() => playGate),
+      });
+      const channel = new Channel({});
+      const emitSpy = vi.spyOn(channel, 'emit');
+      const render = new StoryRender(
+        channel,
+        buildStore(),
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('completing'));
+      const remounted = render.remount();
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      openCompletingGate();
+      await tick();
+      openPlayGate();
+      await remounted;
+
+      const phases = emitSpy.mock.calls
+        .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+        .map(([, { newPhase }]) => newPhase);
+      expect(phases.slice(phases.lastIndexOf('rendering'))).toEqual([
+        'rendering',
+        'playing',
+        'played',
+        'completing',
+        'completed',
+        'afterEach',
+        'finished',
+      ]);
     });
 
     it('reloads the page when tearing down during loading', async () => {

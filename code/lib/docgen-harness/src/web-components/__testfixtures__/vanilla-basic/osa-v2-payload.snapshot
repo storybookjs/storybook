@@ -1,0 +1,64 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "name": "label",
+        },
+        {
+          "name": "count",
+        },
+        {
+          "name": "disabled",
+        },
+        {
+          "description": "Old name for label. @deprecated Use label instead.",
+          "name": "legacy-label",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "cssStates": [
+        {
+          "description": "Set while the element is disabled.",
+          "name": "disabled",
+        },
+      ],
+      "customElement": true,
+      "description": "Plain custom element with attribute-backed properties.",
+      "kind": "class",
+      "members": [
+        {
+          "description": "Text label.",
+          "kind": "field",
+          "name": "label",
+        },
+        {
+          "description": "Item count.",
+          "kind": "field",
+          "name": "count",
+        },
+        {
+          "description": "Disabled state.",
+          "kind": "field",
+          "name": "disabled",
+          "readonly": true,
+        },
+      ],
+      "name": "VanillaBasic",
+      "superclass": {
+        "name": "HTMLElement",
+      },
+      "tagName": "vanilla-basic",
+    },
+    "manifestPath": "custom-elements.v2.json",
+  },
+  "description": "Plain custom element with attribute-backed properties.",
+  "id": "vanilla-basic",
+  "jsDocTags": {},
+  "name": "vanilla-basic",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

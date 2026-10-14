@@ -12,7 +12,8 @@ import * as path from 'node:path';
 
 import type * as ts from 'typescript';
 
-import { analyzeSourceFile } from './analyzer/analyze-file.ts';
+import { analyzeSourceFile, analyzerContext } from './analyzer/analyze-file.ts';
+import type { AnalyzerContext } from './analyzer/context.ts';
 import type { AngularClassMeta, AngularComponentMetaResult, AngularFileMeta } from './types.ts';
 
 export type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
@@ -106,13 +107,15 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
     }
 
     const checker = program.getTypeChecker();
-    const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker);
+    const context = analyzerContext(this.typescript, sourceFile, checker);
+    const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker, context);
     const entry = this.pickEntry(fileMeta, sourceFile, names);
     if (entry) {
       this.debug(`${describe(entry)} from ${fileName}`);
       return {
         entry,
         json: fileMeta,
+        context,
         ...jsDocInfoField(
           this.typescript,
           checker,
@@ -120,7 +123,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
         ),
       };
     }
-    const viaExports = this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
+    const viaExports = this.extractViaModuleExports(checker, sourceFile, fileMeta, context, names);
     if (viaExports) {
       this.debug(`${describe(viaExports.entry)} from ${fileName}, reached through its exports`);
       return viaExports;
@@ -165,6 +168,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
     checker: ts.TypeChecker,
     sourceFile: ts.SourceFile,
     fileMeta: AngularFileMeta,
+    context: AnalyzerContext,
     { exportName, localName }: { exportName: string; localName?: string }
   ): AngularComponentMetaResult | undefined {
     const { SymbolFlags, isClassDeclaration } = this.typescript;
@@ -187,15 +191,22 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
         continue;
       }
       const declarationFile = declaration.getSourceFile();
+      // A fresh context per analyzed file: the TypeIndex files what each analysis rendered, and the
+      // name-resolution scope must be the file the argTypes' type text came from.
+      const targetContext =
+        declarationFile === sourceFile
+          ? context
+          : analyzerContext(this.typescript, declarationFile, checker);
       const targetMeta =
         declarationFile === sourceFile
           ? fileMeta
-          : analyzeSourceFile(this.typescript, declarationFile, checker);
+          : analyzeSourceFile(this.typescript, declarationFile, checker, targetContext);
       const entry = findRecord(targetMeta, declaration.name.text);
       if (entry) {
         return {
           entry,
           json: targetMeta,
+          context: targetContext,
           ...jsDocInfoField(this.typescript, checker, declaration),
         };
       }

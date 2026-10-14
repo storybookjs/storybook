@@ -30,6 +30,7 @@ describe('toCommonJsGlobalInEsmError', () => {
     const wrapped = toCommonJsGlobalInEsmError(original, { location: '.storybook/main.ts' });
 
     expect(wrapped).toBeInstanceOf(CommonJsGlobalInEsmError);
+    expect(wrapped?.code).toBe(20);
     expect(wrapped?.data.global).toBe('__dirname');
     expect(wrapped?.data.error).toBe(original);
     expect(wrapped?.message).toContain('.storybook/main.ts');

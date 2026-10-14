@@ -60,8 +60,6 @@ const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
 
-  installArgs: string[] | undefined;
-
   /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
   #pnpmVersion: string | null | undefined;
 
@@ -114,19 +112,21 @@ export class PNPMProxy extends JsPackageManager {
     return version != null && gte(version, minimum);
   }
 
-  getInstallArgs(): string[] {
-    if (!this.installArgs) {
-      this.installArgs = [];
-
-      if (this.detectWorkspaceRoot()) {
-        this.installArgs.push('-w');
-      }
-    }
-    return this.installArgs;
+  /**
+   * `pnpm add` at a workspace root needs `-w` (pnpm 8 and 9 reject it otherwise), but `pnpm install
+   * -w` skips every other workspace project from pnpm 9 on.
+   */
+  getInstallArgs(command: 'install' | 'add'): string[] {
+    return command === 'add' && this.detectWorkspaceRoot() ? ['-w'] : [];
   }
 
   getPackageCommand(args: string[]): string {
     return `pnpm exec ${args.join(' ')}`;
+  }
+
+  getRemoteRunCommand(args: string[]): string {
+    const allowBuild = this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN) ? '--allow-build=esbuild ' : '';
+    return `pnpm ${allowBuild}dlx ${args.join(' ')}`;
   }
 
   public runPackageCommand({
@@ -253,6 +253,35 @@ export class PNPMProxy extends JsPackageManager {
     return typeof version === 'string' || typeof version === 'number' ? String(version) : null;
   }
 
+  override writeCatalogUpgrades(
+    specifiers: string[],
+    declared: Partial<Record<string, string>>
+  ): string[] {
+    const upgrades = specifiers.map((specifier) => {
+      const at = specifier.indexOf('@', 1);
+      const name = specifier.slice(0, at);
+      return {
+        specifier,
+        name,
+        version: specifier.slice(at + 1),
+        catalog: this.#getCatalogName(declared[name]),
+      };
+    });
+    const catalogued = upgrades.filter(({ catalog }) => catalog !== null);
+    const workspace = catalogued.length > 0 ? this.#readWorkspaceYaml() : undefined;
+    if (!workspace) {
+      return specifiers;
+    }
+    for (const { name, version, catalog } of catalogued) {
+      const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
+      const current = String(workspace.doc.getIn(keyPath) ?? '');
+      const modifier = /^[~^]/.test(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
+      workspace.doc.setIn(keyPath, `${modifier}${version}`);
+    }
+    writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+    return upgrades.filter(({ catalog }) => catalog === null).map(({ specifier }) => specifier);
+  }
+
   override applyVersionToRelatedPackages(
     packages: string[],
     version: string,
@@ -371,7 +400,7 @@ export class PNPMProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });
@@ -506,7 +535,7 @@ export class PNPMProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    const commandArgs = ['add', ...args, ...this.getInstallArgs()];
+    const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
     return executeCommand({
       command: 'pnpm',
@@ -624,7 +653,7 @@ export class PNPMProxy extends JsPackageManager {
   private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {
     const result = await this.runInternalCommand(
       'view',
-      ['--json', packageName, `time[${version}]`],
+      ['--json', packageName, 'time'],
       undefined,
       'pipe'
     );
@@ -634,7 +663,8 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
 
-    return parseReleaseTime(JSON.parse(normalizedValue));
+    const timeMap = parsePackageTimeMap(JSON.parse(normalizedValue));
+    return parseReleaseTime(timeMap?.[version]);
   }
 
   private async getLatestStableVersionAdheringToMinimumReleaseAge(

@@ -3,7 +3,13 @@
 import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 
 import { importedName, isTypeSpecifier } from './imports.ts';
-import { isCanonicalCsf2BindCall, isCsfFactoryCall, keyOf, unwrapExpression } from './utils.ts';
+import {
+  csfFactoryReceiver,
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
+  keyOf,
+  unwrapExpression,
+} from './utils.ts';
 
 /** Members of an object, and what reading it statically could not account for. */
 export interface ResolvedMembers {
@@ -594,7 +600,7 @@ const factoryCall = (
   }
   return {
     method,
-    parent: node.callee.object.name,
+    parent: csfFactoryReceiver(node).name,
     ...(config && t.isObjectExpression(config) ? { config } : {}),
   };
 };

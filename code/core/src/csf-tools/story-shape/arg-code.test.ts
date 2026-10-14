@@ -88,6 +88,12 @@ describe('fillWithStoryArgs', () => {
       )
     ).toBe('label("Go", (MB * 5).toFixed(0), () => null)');
   });
+
+  it('prints the value of an arg named as an Object member, such as constructor', () => {
+    expect(fillWithStoryArgs('⟦value constructor⟧', argsOf("{ constructor: 'Line' }"), fill)).toBe(
+      '"Line"'
+    );
+  });
 });
 
 describe('fillStoryTemplate', () => {

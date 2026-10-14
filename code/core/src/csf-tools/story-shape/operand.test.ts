@@ -34,6 +34,9 @@ describe('isOperand', () => {
     'args.n ** 2',
     'args.n.toFixed()',
     'args.f()',
+    'new args.C()',
+    'class X extends args.Base {}',
+    'x = class extends args.Base {}',
     'const f = () => args.o',
     'args.o;',
   ])('marks %s, where a literal could read differently', (code) => {

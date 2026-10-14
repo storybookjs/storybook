@@ -93,6 +93,12 @@ describe(getStoryContentTemplate.name, () => {
     ).toBe('<Button onclick={() => (args.label = "x")}>⟦text label⟧</Button>');
   });
 
+  it('keeps a delete of an arg as written', () => {
+    expect(getStoryContentTemplate('<Button onclick={() => delete args.label} n={args.n} />')).toBe(
+      '<Button onclick={() => delete args.label} ⟦attr n n⟧ />'
+    );
+  });
+
   it('is undefined for args no hole stands for', () => {
     for (const code of [
       '<Button />',

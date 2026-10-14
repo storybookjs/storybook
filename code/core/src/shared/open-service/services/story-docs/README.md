@@ -78,11 +78,10 @@ an args change makes no request. A provider sets `template` only where the fille
 right as the static one. The `warning` belongs to the static snippet: part of it may be about arg
 values the source does not show, which the filled snippet has. So a provider also sets
 `templateWarning` to what the filled snippet still leaves out, such as the `NgModule` a
-`standalone: false` Angular component needs, the listeners a Web Components story binds or a name
-in the `argCode` of an arg it prints as written, and the filled snippet is shown with that warning
-instead; without one it is shown with none. A filler throws for a value it cannot print; a missing
-template, a missing filler or a filler that throws falls back to the static `snippet` and its
-`warning`.
+`standalone: false` Angular component needs, or a name in the `argCode` of an arg it prints as
+written, and the filled snippet is shown with that warning instead; without one it is shown with
+none. A filler throws for a value it cannot print; a missing template, a missing filler or a filler
+that throws falls back to the static `snippet` and its `warning`.
 
 ## Providers
 

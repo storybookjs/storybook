@@ -1318,3 +1318,15 @@ test('should extract story description and summary from JSDoc comments', async (
     ]
   `);
 });
+
+test('leaves the template, its argCode and templateWarning out of the legacy manifest', async () => {
+  const code = withCSF3(dedent`
+    function shout(text) { return text.toUpperCase(); }
+    export const Primary = { args: { format: shout, primary: true } };
+  `);
+  const [story] = (await getManifestForStory(code))!.stories;
+  expect(story).toHaveProperty('warning');
+  expect(story).not.toHaveProperty('template');
+  expect(story).not.toHaveProperty('argCode');
+  expect(story).not.toHaveProperty('templateWarning');
+});

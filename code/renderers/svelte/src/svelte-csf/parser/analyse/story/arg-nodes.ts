@@ -1,4 +1,4 @@
-import { babelParse, types as t } from 'storybook/internal/babel';
+import { parser, recast, types as t } from 'storybook/internal/babel';
 import { unwrapExpression } from 'storybook/internal/csf-tools';
 
 import type { ESTreeAST, SvelteAST } from '../../ast.ts';
@@ -12,8 +12,9 @@ interface Params {
 
 /**
  * The node each arg of a `<Story>` is written with, read from the `args` of `defineMeta` and then
- * of the story, as babel parses their code. An arg a spread may set is left out, as its code is not
- * known here.
+ * of the story, as babel parses their code. An arg whose code is not known here is left out: any
+ * arg written before a spread, a method or a computed key, which may set it, and every arg when
+ * `args` is not an object literal, such as `args={storyArgs}`.
  */
 export function getStoryArgNodes({ component, defineMeta, originalCode }: Params) {
   const init = defineMeta.declarations[0]?.init;
@@ -31,37 +32,41 @@ export function getStoryArgNodes({ component, defineMeta, originalCode }: Params
   const value = Array.isArray(args?.value) ? args.value[0] : args?.value;
   const storyArgs =
     value && value !== true && value.type === 'ExpressionTag' ? value.expression : undefined;
-  const nodes: Record<string, t.Node> = {};
+  let nodes: Record<string, t.Node> = {};
   for (const written of [metaArgs, storyArgs]) {
     const { start, end } = (written ?? {}) as { start?: number; end?: number };
     if (start === undefined || end === undefined) {
       continue;
     }
-    const [statement] = babelParse(`(${originalCode.slice(start, end)})`).program.body;
+    const [statement] = parse(`(${originalCode.slice(start, end)})`).program.body;
     const object = t.isExpressionStatement(statement)
       ? unwrapExpression(statement.expression)
       : undefined;
-    if (!t.isObjectExpression(object)) {
-      continue;
-    }
-    for (const property of object.properties) {
-      if (t.isSpreadElement(property)) {
-        // A spread may set any arg written before it.
-        for (const name of Object.keys(nodes)) {
-          delete nodes[name];
-        }
-      } else if (t.isObjectProperty(property) && !property.computed) {
-        const { key } = property;
-        const name = t.isIdentifier(key)
-          ? key.name
-          : t.isStringLiteral(key)
-            ? key.value
-            : undefined;
-        if (name !== undefined) {
-          nodes[name] = property.value;
-        }
+    for (const property of t.isObjectExpression(object) ? object.properties : [undefined]) {
+      const name =
+        t.isObjectProperty(property) && !property.computed
+          ? t.isIdentifier(property.key)
+            ? property.key.name
+            : t.isStringLiteral(property.key)
+              ? property.key.value
+              : undefined
+          : undefined;
+      if (name === undefined) {
+        // It may set any arg written before it.
+        nodes = {};
+      } else {
+        nodes[name] = (property as t.ObjectProperty).value;
       }
     }
   }
   return nodes;
 }
+
+// Parsed as TypeScript without JSX, as a `.svelte` script is written, so `<number>x` is a cast.
+const parse = (code: string): t.File =>
+  recast.parse(code, {
+    parser: {
+      parse: (source: string) =>
+        parser.parse(source, { sourceType: 'module', plugins: ['typescript'], tokens: true }),
+    },
+  });

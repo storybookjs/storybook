@@ -31,7 +31,7 @@ export interface StoryDoc {
    */
   template?: string;
   /**
-   * The code the story writes each arg with, such as `shout`, `fn((o) => o.name)` or `(MB * 5)`,
+   * The code the story writes each arg with, such as `shout`, `fn((o) => o.name)` or `MB * 5`,
    * from `argCode` in `storybook/internal/csf-tools`: every arg but a plain string, number,
    * boolean, `null` or `undefined`. The preview fills an arg that still holds the value the story is
    * written with as this code, so the filled snippet keeps it as written; an arg a control changed

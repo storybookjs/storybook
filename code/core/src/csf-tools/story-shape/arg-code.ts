@@ -32,7 +32,7 @@ export function fillWithStoryArgs(
   const code = argCode(args);
   const values: Args = {};
   for (const [name, node] of Object.entries(args)) {
-    values[name] = name in code ? writtenArg(code[name]!) : literalOf(node)!.value;
+    values[name] = Object.hasOwn(code, name) ? writtenArg(code[name]!) : literalOf(node)!.value;
   }
   return fill(template, values);
 }

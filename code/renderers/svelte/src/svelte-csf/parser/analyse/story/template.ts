@@ -69,10 +69,11 @@ function argEdit(node: Node, path: Node[], args: Record<string, t.Node>): (Edit 
   const read = chained ? grandparent : parent!;
   const ancestors = path.slice(0, chained ? -2 : -1).reverse();
   const [tag, owner] = ancestors;
-  // `args.count++` or `args.label = …` is a write, no read, and stays as written.
+  // `args.count++`, `args.label = …` or `delete args.label` is a write, no read, and stays as written.
   if (
     tag?.type === 'UpdateExpression' ||
-    (tag?.type === 'AssignmentExpression' && tag.left === read)
+    (tag?.type === 'AssignmentExpression' && tag.left === read) ||
+    (tag?.type === 'UnaryExpression' && tag.operator === 'delete')
   ) {
     return [];
   }

@@ -1,3 +1,5 @@
+import React, { useEffect, useRef } from 'react';
+
 import type { PlayFunction } from 'storybook/internal/csf';
 
 import { ManagerContext } from 'storybook/manager-api';
@@ -166,5 +168,51 @@ export const StableAcrossStateSyncs = meta.story({
     for (const row of rows) {
       await expect(canvasElement.contains(row)).toBe(true);
     }
+  },
+});
+
+const cardHeights: number[] = [];
+
+const RecordCardHeights = ({ children }: { children: React.ReactNode }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const card = ref.current!.querySelector('#storybook-checklist-widget')!;
+    const observer = new MutationObserver(() =>
+      cardHeights.push(card.getBoundingClientRect().height)
+    );
+    observer.observe(card, { subtree: true, childList: true, attributes: true });
+    return () => observer.disconnect();
+  }, []);
+  return <div ref={ref}>{children}</div>;
+};
+
+export const StableHeightOnTaskCompletion = meta.story({
+  decorators: [(Story) => <RecordCardHeights>{Story()}</RecordCardHeights>],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Check responsiveness with Viewports');
+    await wait(3000);
+    const card = canvasElement.querySelector('#storybook-checklist-widget')!;
+    cardHeights.length = 0;
+    cardHeights.push(card.getBoundingClientRect().height);
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        viewports: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+      },
+    });
+    await wait(3000);
+
+    await expect(canvas.queryByText('Check responsiveness with Viewports')).not.toBeInTheDocument();
+    await expect(canvas.getByText('Group your components')).toBeInTheDocument();
+    const increases = cardHeights.filter((height, i) => i > 0 && height > cardHeights[i - 1]);
+    await expect(increases).toEqual([]);
   },
 });

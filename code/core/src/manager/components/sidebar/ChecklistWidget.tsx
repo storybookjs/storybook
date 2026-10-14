@@ -58,7 +58,6 @@ const useTransitionArray = <K, V>(
     allowMultiple: true,
     mountOnEnter: true,
     unmountOnExit: true,
-    preEnter: true,
     ...options,
   });
 

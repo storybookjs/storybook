@@ -1,19 +1,13 @@
 {
-  "ImportedItems": "<csf-shapes label="Meta" .items=${itemsFixture}></csf-shapes>",
+  "ImportedItems": "<csf-shapes .label=${"Meta"} .items=${itemsFixture}></csf-shapes>",
   "ImportedLabel": "<csf-shapes .label=${importedLabel}></csf-shapes>",
-  "Listener": "<csf-shapes label="Meta"></csf-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', () => {});
-  }
-</script>",
+  "Listener": "<csf-shapes .label=${"Meta"} @shape-change=${() => {}} .onShapeChange=${() => {}}></csf-shapes>",
   "PartsAndCss": "<style>
   csf-shapes::part(panel) { color: red; }
   csf-shapes:state(active) { outline: 1px solid; }
 </style>
-<csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
-  "SpreadArgs": "<csf-shapes label="Meta" count="2"></csf-shapes>",
-  "UnknownArg": "<csf-shapes label="Meta" .nope=${1}></csf-shapes>",
-  "Unset": "<csf-shapes disabled></csf-shapes>",
+<csf-shapes style="--csf-shapes-accent: teal;" .label=${"Meta"}></csf-shapes>",
+  "SpreadArgs": "<csf-shapes .label=${"Shared"} .count=${2}></csf-shapes>",
+  "UnknownArg": "<csf-shapes .label=${"Meta"} .nope=${1}></csf-shapes>",
+  "Unset": "<csf-shapes .disabled=${true}></csf-shapes>",
 }

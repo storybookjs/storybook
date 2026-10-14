@@ -1,4 +1,4 @@
 {
-  "Bare": "<csf-shapes label="Factory"></csf-shapes>",
-  "Primary": "<csf-shapes label="Factory" count="3"></csf-shapes>",
+  "Bare": "<csf-shapes .label=${"Factory"}></csf-shapes>",
+  "Primary": "<csf-shapes .label=${"Factory"} .count=${3}></csf-shapes>",
 }

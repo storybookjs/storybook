@@ -124,7 +124,7 @@ export const Primary = {
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
 
-      const onClick = (() => {});
+      const onClick = () => {};
       </script>
 
       <template>

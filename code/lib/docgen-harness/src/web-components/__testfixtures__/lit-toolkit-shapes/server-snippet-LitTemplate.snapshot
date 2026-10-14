@@ -3,6 +3,7 @@
   level="2"
   .tags=${['b']}
   label="Shaped"
+  @toolkit-resize=${args.onToolkitResize}
 ></lit-toolkit-shapes>
 
-warning: Incomplete snippet: listeners not shown: `toolkit-resize`.
+warning: Incomplete snippet: names the snippet does not import or declare: `args`.

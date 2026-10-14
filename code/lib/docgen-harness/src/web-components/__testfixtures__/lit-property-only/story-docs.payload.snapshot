@@ -10,8 +10,8 @@
       },
       "id": "webcomponentsfixtures-lit-property-only--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<lit-property-only label="Default render" .items=${[{ name: 'Alpha' }, { name: 'Beta' }]} .config=${{ dense: true, theme: 'dark' }}></lit-property-only>",
-      "template": "<lit-property-only ⟦props ~label=label .items=items .config=config *⟧></lit-property-only>",
+      "snippet": "<lit-property-only .label=${"Default render"} .items=${[{ name: 'Alpha' }, { name: 'Beta' }]} .config=${{ dense: true, theme: 'dark' }}></lit-property-only>",
+      "template": "<lit-property-only ⟦prop label label ?⟧ ⟦prop items items ?⟧ ⟦prop config config ?⟧></lit-property-only>",
     },
     "webcomponentsfixtures-lit-property-only--dom-node": {
       "argCode": {

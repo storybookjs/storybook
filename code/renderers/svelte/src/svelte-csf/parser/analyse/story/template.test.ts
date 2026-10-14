@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
+import { babelParse, type types as t } from 'storybook/internal/babel';
+import { writtenArg } from 'storybook/internal/docs-tools';
+
 import { fillTemplate } from '../../../../docs/fill-template.ts';
 import { getStoryContentTemplate } from './template.ts';
 
@@ -59,6 +62,23 @@ describe(getStoryContentTemplate.name, () => {
       '<Meter value={-(-1)} text={(-1).toFixed(2)} total={a-(-1)} />'
     );
     expect(getStoryContentTemplate('<p>{args.label!}</p>')).toBe('<p>{⟦value label⟧!}</p>');
+  });
+
+  it('keeps written code apart next to an operator, but not plain data', () => {
+    const written = (code: string) =>
+      (
+        (babelParse(`x = ${code}`).program.body[0] as t.ExpressionStatement)
+          .expression as t.AssignmentExpression
+      ).right;
+    const [onclick, count] = [written('() => null'), written('5')];
+    const template = getStoryContentTemplate(
+      '<Button disabled={!args.onclick} total={args.count + 1} />',
+      { onclick, count }
+    );
+    expect(template).toBe('<Button disabled={!⟦operand onclick⟧} total={⟦value count⟧ + 1} />');
+    expect(fillTemplate(template!, { onclick: writtenArg('() => null'), count: 5 })).toBe(
+      '<Button disabled={!(() => null)} total={5 + 1} />'
+    );
   });
 
   it('reads an arg named with a space, as one word', () => {

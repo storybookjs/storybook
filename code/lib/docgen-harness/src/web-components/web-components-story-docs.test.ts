@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { createStoryArgsResolver, fillWithStoryArgs, loadCsf } from 'storybook/internal/csf-tools';
+import {
+  createStoryArgsResolver,
+  createStoryReferenceResolver,
+  fillWithStoryArgs,
+  loadCsf,
+} from 'storybook/internal/csf-tools';
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
@@ -81,7 +86,11 @@ async function build({ testDir, title }: Case) {
     { entry },
     { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
   );
-  const resolver = createStoryArgsResolver(csf);
+  // The args as the provider reads them, through the files the story imports.
+  const resolver = createStoryArgsResolver(csf, {
+    filePath: storyPath,
+    resolveModule: createStoryReferenceResolver()().resolveModule,
+  });
   // Each template filled with the args of its story as the preview has them before a control
   // changes, each written as its code, or the error that keeps the static snippet.
   const filled: Record<string, string> = {};

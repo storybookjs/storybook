@@ -493,7 +493,7 @@ const renderStorySnippet = async (
   const holeFields = fields.map((field) => ({ ...field, value: field.computed!.template }));
   // A hole prints an arg value this pass could not read as written, until a control changes it;
   // args it could not see may still be bound to nothing.
-  const unread = holeInputs.flatMap((name) => {
+  const unread = [...new Set([...holeInputs, ...computedArgs(fields)])].flatMap((name) => {
     const node = shape.args[name];
     return node && isUnread(node, snippetMeta.enums) ? [sourceOf(node)] : [];
   });
@@ -590,16 +590,7 @@ const computedField = (
   shape: StoryShape,
   enums: AngularComponentSnippetMeta['enums']
 ): ComputedValue | undefined => {
-  const writable = code.args.every((arg) => {
-    const node = shape.args[arg];
-    return (
-      isHoleWord(arg) &&
-      (node === undefined ||
-        evaluateArgLiteral(node, enums) !== undefined ||
-        (isSelfContained(node) && !isFunctionValue(node)))
-    );
-  });
-  if (!writable) {
+  if (!code.args.every(isHoleWord)) {
     return undefined;
   }
   const { template } = code;
@@ -637,6 +628,13 @@ const referencedArgFields = (
     const field = computed && computedField(computed, shape, enums);
     if (field) {
       provided.push(name);
+      // An arg the story writes with a name the snippet lacks prints that name.
+      for (const arg of field.args) {
+        const written = shape.args[arg];
+        if (written && isUnread(written, enums)) {
+          unresolved.push({ name, source: sourceOf(written) });
+        }
+      }
       if (!taken.has(name)) {
         fields.push({ name, value: field.value, computed: field });
       }
@@ -649,19 +647,19 @@ const referencedArgFields = (
     if (taken.has(name)) {
       continue;
     }
-    if (value !== undefined) {
-      fields.push({ name, value, ...(arg === undefined ? {} : { arg }) });
-    } else if (fromArg && isSelfContained(node) && !isFunctionValue(node)) {
-      // A host field is TypeScript, which can hold what the story writes, such as a `Date`.
-      provided.push(name);
-      fields.push({ name, value: argFieldValue(node), ...(arg === undefined ? {} : { arg }) });
-    } else if (fromArg && isSelfContained(node)) {
-      // A function the story writes inline is code no control sets, so the field holds it as is.
-      provided.push(name);
-      fields.push({ name, value: argFieldValue(node) });
-    } else if (fromArg) {
+    if (value === undefined && !fromArg) {
+      continue;
+    }
+    // A host field is TypeScript, which can hold what the story writes, such as a `Date`; one that
+    // names what the snippet lacks is warned about.
+    if (value === undefined && !isSelfContained(node)) {
       unresolved.push({ name, source: sourceOf(node) });
     }
+    fields.push({
+      name,
+      value: value ?? argFieldValue(node),
+      ...(arg === undefined ? {} : { arg }),
+    });
   }
 
   return { fields, unresolved, provided };

@@ -1,3 +1,4 @@
+import type { types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 import { type AST, parse } from 'svelte/compiler';
@@ -14,9 +15,13 @@ interface Edit {
 /**
  * The story's raw code, from `getStoryContentRawCode`, with a hole wherever it reads `args`, for
  * `fillTemplate`. It is `undefined` when the code reads its args in a way no hole stands for, such
- * as passing `args` along whole, and the raw code is shown instead.
+ * as passing `args` along whole, and the raw code is shown instead. `args` holds the node each arg
+ * is written with, which decides where its code needs parentheses; see `isOperand`.
  */
-export function getStoryContentTemplate(rawCode: string): string | undefined {
+export function getStoryContentTemplate(
+  rawCode: string,
+  args: Record<string, t.Node> = {}
+): string | undefined {
   if (hasHoleBracket(rawCode)) {
     return undefined;
   }
@@ -33,7 +38,7 @@ export function getStoryContentTemplate(rawCode: string): string | undefined {
   walk(fragment as unknown as Node, null, {
     Identifier(node, { path }) {
       if (node.name === 'args') {
-        edits.push(...argEdit(node, path as Node[]));
+        edits.push(...argEdit(node, path as Node[], args));
       }
     },
   });
@@ -50,7 +55,7 @@ export function getStoryContentTemplate(rawCode: string): string | undefined {
 }
 
 // The edit for an `args` reference: none for a write, or `undefined` when it is not a hole.
-function argEdit(node: Node, path: Node[]): (Edit | undefined)[] {
+function argEdit(node: Node, path: Node[], args: Record<string, t.Node>): (Edit | undefined)[] {
   const [grandparent, parent] = path.slice(-2);
   if (parent?.type === 'SpreadAttribute') {
     return [spreadEdit(parent, grandparent!)];
@@ -77,7 +82,8 @@ function argEdit(node: Node, path: Node[]): (Edit | undefined)[] {
   if (tag?.type === 'ExpressionTag' && owner?.type === 'Fragment') {
     return [{ start: tag.start, end: tag.end, text: hole('text', holeWord(arg)) }];
   }
-  const kind = isOperand(read as never, ancestors as never) ? 'operand' : 'value';
+  const written = Object.hasOwn(args, arg) ? args[arg] : undefined;
+  const kind = isOperand(read as never, ancestors as never, written) ? 'operand' : 'value';
   return [{ start: read.start, end: read.end, text: hole(kind, holeWord(arg)) }];
 }
 

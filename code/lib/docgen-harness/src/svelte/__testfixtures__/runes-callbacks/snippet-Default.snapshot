@@ -1,1 +1,1 @@
-<Callbacks onclick={onclick} onchange={onchange} format={format} />
+<Callbacks onclick={fn()} onchange={fn()} format={(n: number) => `#${n}`} />

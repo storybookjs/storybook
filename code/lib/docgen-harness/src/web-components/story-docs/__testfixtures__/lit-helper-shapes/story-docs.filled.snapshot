@@ -5,11 +5,11 @@
 return Card({ label: "Alpha", disabled: true });",
   "Csf2Helper": "Card({ ...{ label: "Alpha" }, disabled: true })",
   "HelperCall": "Card({ label: "Alpha", count: 2 })",
-  "HelperDefaults": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>Head</b>`)",
-  "HelperInHtml": "<section>${List({ label: "Alpha", count: 2 })}</section>",
-  "ReExportedHtml": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
-  "SpreadDirective": "<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>",
-  "SpreadNextToAttribute": "<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  ></lit-template-shapes
->",
+  "HelperDefaults": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>${"Head"}</b>`)",
+  "HelperInHtml": "html`<section>${List({ label: "Alpha", count: 2 })}</section>`",
+  "ReExportedHtml": "html`<lit-template-shapes label=${"Alpha"}></lit-template-shapes>`",
+  "SpreadDirective": "html`<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>`",
+  "SpreadNextToAttribute": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
+  >${undefined}</lit-template-shapes
+>`",
 }

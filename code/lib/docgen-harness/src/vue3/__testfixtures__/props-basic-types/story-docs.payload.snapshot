@@ -28,7 +28,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
       "argCode": {
         "big": "BigInt('9007199254740993')",
         "config": "{ theme: 'dark', dense: true }",
-        "formatter": "((value: number) => `#${value}`)",
+        "formatter": "(value: number) => `#${value}`",
         "tags": "['alpha', 'beta']",
         "token": "Symbol('fixture')",
       },
@@ -42,7 +42,7 @@ const big = BigInt('9007199254740993');
 
 const config = { theme: 'dark', dense: true };
 
-const formatter = ((value: number) => `#${value}`);
+const formatter = (value: number) => `#${value}`;
 
 const tags = ['alpha', 'beta'];
 

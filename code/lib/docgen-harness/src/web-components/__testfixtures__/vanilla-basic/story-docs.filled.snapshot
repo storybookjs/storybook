@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
+  "ArgsDefaultRender": "<vanilla-basic .label=${"Default vanilla"} .count=${1} .disabled=${false}></vanilla-basic>",
   "DomNode": "const el = document.createElement('vanilla-basic');
 el.setAttribute('label', String("Vanilla"));
 el.setAttribute('count', String(4));

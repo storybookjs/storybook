@@ -141,7 +141,12 @@ describe(transformStoriesCode.name, () => {
       		},
       		__svelteCsf: {
       			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
+      			argCode: {
+      				"onclick": "fn()",
+      				"onmouseenter": "fn()",
+      				"onmouseleave": "fn()"
+      			}
       		}
       	}
       });
@@ -158,7 +163,12 @@ describe(transformStoriesCode.name, () => {
       		},
       		__svelteCsf: {
       			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
+      			argCode: {
+      				"onclick": "fn()",
+      				"onmouseenter": "fn()",
+      				"onmouseleave": "fn()"
+      			}
       		}
       	}
       });
@@ -175,7 +185,12 @@ describe(transformStoriesCode.name, () => {
       		},
       		__svelteCsf: {
       			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
+      			argCode: {
+      				"onclick": "fn()",
+      				"onmouseenter": "fn()",
+      				"onmouseleave": "fn()"
+      			}
       		}
       	}
       });
@@ -223,7 +238,12 @@ describe(transformStoriesCode.name, () => {
       	parameters: {
       		__svelteCsf: {
       			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>",
-      			template: "<Example ⟦props -children⟧>\\n  Forwarded label\\n</Example>"
+      			template: "<Example ⟦props -children⟧>\\n  Forwarded label\\n</Example>",
+      			argCode: {
+      				"onclick": "fn()",
+      				"onmouseenter": "fn()",
+      				"onmouseleave": "fn()"
+      			}
       		}
       	}
       });

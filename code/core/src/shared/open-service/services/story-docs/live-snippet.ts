@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import { type FillSnippetTemplate, writtenArg } from '../../../../docs-tools/snippetTemplate.ts';
+import { type FillSnippetTemplate, asWrittenArgs } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args, Parameters } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
@@ -52,7 +52,7 @@ export function selectLiveSnippetForStory(
     return {
       snippet: prependImportToSnippet(
         payload?.import,
-        fill(story.template, asWritten(args, story.argCode))
+        fill(story.template, asWrittenArgs(args, story.argCode))
       ),
       warning: story.templateWarning,
     };
@@ -66,15 +66,3 @@ export function selectLiveSnippetForStory(
     return staticSnippet();
   }
 }
-
-// An arg that still holds the value the story is written with is the code it is written with, as
-// the static snippet prints it; an arg a control changed is its value.
-const asWritten = ({ args, unmappedArgs, initialArgs }: StoryArgs, code: Args = {}): Args =>
-  Object.fromEntries(
-    Object.entries(args).map(([name, value]) => [
-      name,
-      Object.hasOwn(code, name) && unmappedArgs[name] === initialArgs[name]
-        ? writtenArg(code[name])
-        : value,
-    ])
-  );

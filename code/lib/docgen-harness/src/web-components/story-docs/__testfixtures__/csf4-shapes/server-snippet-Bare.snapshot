@@ -1,1 +1,1 @@
-<csf-shapes label="Factory"></csf-shapes>
+<csf-shapes .label=${"Factory"}></csf-shapes>

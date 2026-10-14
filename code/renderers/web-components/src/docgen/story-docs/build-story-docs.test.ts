@@ -143,27 +143,29 @@ const story = (body: string) => `
 const template = async (body: string) => (await firstStoryWithTemplate(story(body))).template;
 
 describe('buildStoryDocsPayload template', () => {
-  it('is the element with a props hole for a story without a render function', async () => {
+  it('is the element with each arg bound as Storybook sets it for a story without a render', async () => {
     const written = (await template(`{ args: { label: 'Hi', isOpen: true } }`))!;
     expect(written).toMatchInlineSnapshot(
-      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦props ~label=label ~is-open=isOpen -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --accent=--accent .items=items ~count=count ~disabled=disabled ~active=active ^is-open variant=variant ~heading=heading *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
+      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element⟦css --accent=--accent⟧ ⟦prop label label ?⟧ ⟦prop isOpen isOpen ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧ ⟦prop active active ?⟧ ⟦attr is-open is-open⟧ ⟦attr variant variant⟧ ⟦prop heading heading ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
     );
     expect(
       fillTemplate(written, {
         label: 'Bye',
-        isOpen: true,
+        'is-open': true,
         items: [1],
         '--accent': 'red',
-        theme: 'x',
       })
     ).toBe(
-      '<test-element label="Bye" is-open .items=${[1]} .theme=${"x"} style="--accent: red;"></test-element>'
+      '<test-element style="--accent: red;" .label=${"Bye"} .items=${[1]} is-open></test-element>'
     );
   });
 
-  it('keeps the listener script of the static snippet', async () => {
-    expect(await template(`{ args: { label: 'Hi', onShapeChange: () => {} } }`)).toContain(
-      "host.addEventListener('shape-change', () => {});"
+  it('writes a listener the story writes as a lit listener', async () => {
+    const { snippet } = await firstStoryWithTemplate(
+      story(`{ args: { 'shape-change-event': (event) => event.preventDefault() } }`)
+    );
+    expect(snippet).toBe(
+      '<test-element @shape-change=${(event) => event.preventDefault()}></test-element>'
     );
   });
 
@@ -205,6 +207,7 @@ describe('buildStoryDocsPayload template', () => {
         label="⟦quoted label⟧"
         ⟦bool disabled disabled⟧
         ⟦prop heading heading⟧
+        @shape-change=\${() => console.log(label)}
       >
         <span>⟦text label⟧ \\u2014 \${⟦operand items⟧.map((item) => html\`<i>\${item}</i>\`)}</span>
       </test-element>"
@@ -215,6 +218,7 @@ describe('buildStoryDocsPayload template', () => {
         label="a &lt; b"
         disabled
         .heading=\${"H"}
+        @shape-change=\${() => console.log(label)}
       >
         <span>a &lt; b \\u2014 \${[1].map((item) => html\`<i>\${item}</i>\`)}</span>
       </test-element>"
@@ -232,7 +236,7 @@ describe('buildStoryDocsPayload template', () => {
     expect(argCode).toEqual({
       items: '[new Date(0)]',
       heading: 'shout',
-      onShapeChange: '(() => {})',
+      onShapeChange: '() => {}',
     });
     expect(
       fillTemplate(template!, { label: 'Bye', count: 3, items: writtenArg(argCode!.items!) })
@@ -317,26 +321,19 @@ describe('buildStoryDocsPayload template', () => {
     );
   });
 
-  it('leaves out a listener that reads the args', async () => {
+  it('keeps a listener that reads the args as written', async () => {
     expect(
       await template(
         '{ render: (args) => html`<test-element @change=${track(args)} label=${args.label}></test-element>` }'
       )
-    ).toBe('<test-element label="⟦quoted label⟧"></test-element>');
+    ).toBe('<test-element @change=${track(args)} label="⟦quoted label⟧"></test-element>');
   });
 
-  it.each([
-    ['lit/html.js', `import { html } from 'lit/html.js';`, {}],
-    [
-      'a module that exports all of lit again',
-      `import { html } from './base.js';`,
-      { 'base.ts': `export * from './directives.js';\nexport * from 'lit';`, 'directives.ts': '' },
-    ],
-  ])('reads the html tag of %s', async (_, imports, files) => {
-    const source = `${imports}
+  it('reads the html tag of lit-html', async () => {
+    const source = `import { html } from 'lit-html';
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = { render: (args) => html\`<p>\${args.label}</p>\` };`;
-    expect((await firstStoryWithTemplate(source, { files })).template).toBe('<p>⟦text label⟧</p>');
+    expect((await firstStoryWithTemplate(source)).template).toBe('<p>⟦text label⟧</p>');
   });
 
   it('is the code as written for a html tag that is not lit', async () => {
@@ -351,7 +348,7 @@ describe('buildStoryDocsPayload template', () => {
 });
 
 describe('buildStoryDocsPayload static snippet from the template', () => {
-  it('fills the template with the args the story sets, and names what the snippet does not declare', async () => {
+  it('fills the template with the args the story sets, and does not name what the story file imports', async () => {
     const doc = await firstStoryWithTemplate(
       `import { html } from 'lit';
       import { spread } from '@open-wc/lit-helpers';
@@ -364,13 +361,12 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
     expect(doc).toMatchObject({
       snippet: '<test-element ${spread({ label: "Hi", disabled: false })}></test-element>',
       template: '<test-element ${spread(⟦args⟧)}></test-element>',
-      warning: 'Incomplete snippet: names the snippet does not import or declare: `spread`.',
-      templateWarning:
-        'Incomplete snippet: names the snippet does not import or declare: `spread`.',
     });
+    expect(doc.warning).toBeUndefined();
+    expect(doc.templateWarning).toBeUndefined();
   });
 
-  it('names what the code of an arg it prints reads, but not that of a listener it leaves out', async () => {
+  it('names what the code of an arg it prints reads, and the args a listener it keeps reads', async () => {
     const doc = await firstStoryWithTemplate(
       `import { html } from 'lit';
       import { fn } from 'storybook/test';
@@ -382,11 +378,38 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
       };`
     );
     expect(doc).toMatchObject({
-      snippet: '<test-element .items=${[ITEMS[0], new Date(0)]}></test-element>',
-      warning:
-        'Incomplete snippet: listeners not shown: `click`.\n' +
-        'Incomplete snippet: names the snippet does not import or declare: `ITEMS`.',
+      snippet:
+        '<test-element .items=${[ITEMS[0], new Date(0)]} @click=${args.onClick}></test-element>',
+      warning: 'Incomplete snippet: names the snippet does not import or declare: `args`, `ITEMS`.',
     });
+  });
+
+  it("does not name lit's own names in the code of an arg", async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { icon: html\`<b>Go</b>\` },
+        render: (args) => html\`<p>\${args.icon}</p>\`,
+      };`
+    );
+    expect(doc.snippet).toBe('<p>${html`<b>Go</b>`}</p>');
+    expect(doc.warning).toBeUndefined();
+  });
+
+  it('names a module name that a parameter default reads', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      const SIZES = { md: 'medium' };
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        render: ({ heading = SIZES.md }) => html\`<p>\${heading}</p>\`,
+      };`
+    );
+    expect(doc.snippet).toBe('<p>${SIZES.md}</p>');
+    expect(doc.templateWarning).toBe(
+      'Incomplete snippet: names the snippet does not import or declare: `SIZES`.'
+    );
   });
 
   it('prints the code of an arg it cannot read, and names what the snippet does not declare', async () => {
@@ -468,7 +491,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Meta" count="2" disabled></test-element>',
+        snippet: '<test-element .label=${"Meta"} .count=${2} .disabled=${true}></test-element>',
       },
     },
     {
@@ -635,17 +658,11 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: `<test-element></test-element>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => event.preventDefault());
-  }
-</script>`,
+        snippet: '<test-element @shape-change=${(event) => event.preventDefault()}></test-element>',
       },
     },
     {
-      name: 'args on-convention listener',
+      name: 'args on-convention function, which Storybook sets as a property',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
@@ -655,17 +672,11 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: `<test-element></test-element>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', () => {});
-  }
-</script>`,
+        snippet: '<test-element .onShapeChange=${() => {}}></test-element>',
       },
     },
     {
-      name: 'args duplicate event listeners',
+      name: 'args event listener and on-convention function',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
@@ -675,17 +686,12 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: `<test-element></test-element>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', event => first(event));
-  }
-</script>`,
+        snippet:
+          '<test-element @shape-change=${(event) => first(event)} .onShapeChange=${(event) => second(event)}></test-element>',
       },
     },
     {
-      name: 'args listener without matching event',
+      name: 'args function without matching event, which Storybook sets as a property',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
@@ -695,14 +701,11 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element></test-element>',
-        warning: 'Incomplete snippet: listeners the HTML snippet cannot express: `onUnknown`.',
-        templateWarning:
-          'Incomplete snippet: listeners the HTML snippet cannot express: `onUnknown`.',
+        snippet: '<test-element .onUnknown=${() => {}}></test-element>',
       },
     },
     {
-      name: 'function arg in non-event argTypes row warns as listener',
+      name: 'function arg in non-event argTypes row, which Storybook sets as a property',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
@@ -712,9 +715,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element></test-element>',
-        warning: 'Incomplete snippet: listeners the HTML snippet cannot express: `label`.',
-        templateWarning: 'Incomplete snippet: listeners the HTML snippet cannot express: `label`.',
+        snippet: "<test-element .label=${() => 'x'}></test-element>",
       },
     },
     {
@@ -727,7 +728,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Meta"></test-element>',
+        snippet: '<test-element .label=${"Meta"}></test-element>',
       },
     },
   ])('$name', async ({ source, expected, files }) => {
@@ -762,7 +763,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     ).resolves.toEqual({
       id: 'example-testelement--primary',
       name: 'Primary',
-      snippet: '<test-element label="Shared" count="2"></test-element>',
+      snippet: '<test-element .label=${"Shared"} .count=${2}></test-element>',
     });
   });
 
@@ -779,7 +780,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     ).resolves.toEqual({
       id: 'example-testelement--primary',
       name: 'Primary',
-      snippet: '<test-element label="Meta" .items=${itemsFixture}></test-element>',
+      snippet: '<test-element .label=${"Meta"} .items=${itemsFixture}></test-element>',
       warning: 'Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.',
       templateWarning:
         'Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.',
@@ -911,37 +912,40 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     {
       name: 'property true then attribute false',
       args: `{ isOpen: true, 'is-open': false }`,
-      expected: '<test-element></test-element>',
+      expected: '<test-element .isOpen=${true}></test-element>',
     },
     {
       name: 'attribute false then property true',
       args: `{ 'is-open': false, isOpen: true }`,
-      expected: '<test-element is-open></test-element>',
+      expected: '<test-element .isOpen=${true}></test-element>',
     },
     {
       name: 'property true then attribute string',
       args: `{ isOpen: true, 'is-open': 'later' }`,
-      expected: '<test-element is-open="later"></test-element>',
+      expected: '<test-element .isOpen=${true} is-open="later"></test-element>',
     },
     {
       name: 'attribute string then property false',
       args: `{ 'is-open': 'earlier', isOpen: false }`,
-      expected: '<test-element></test-element>',
+      expected: '<test-element is-open="earlier" .isOpen=${false}></test-element>',
     },
-  ])('uses the last write for duplicate attributes: $name', async ({ args, expected }) => {
-    const story = await firstStory(`
+  ])(
+    'sets the field and the attribute in the order the story writes them: $name',
+    async ({ args, expected }) => {
+      const story = await firstStory(`
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = { args: ${args} };
     `);
 
-    expect(story.snippet).toBe(expected);
-  });
+      expect(story.snippet).toBe(expected);
+    }
+  );
 
   it.each([
     {
       name: 'field-backed empty string',
       args: `{ label: '' }`,
-      expected: '<test-element label=""></test-element>',
+      expected: '<test-element .label=${""}></test-element>',
     },
     {
       name: 'attribute-only empty string',

@@ -1,3 +1,1 @@
 Card({ label: "Alpha", count: 2 })
-
-warning: Incomplete snippet: names the snippet does not import or declare: `Card`.

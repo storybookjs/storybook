@@ -1,1 +1,4 @@
-<RadioGroup label="Choice" onchange={onchange} values={[["a", "Alpha"], ["b", "Beta", "icon"]]} value="a" />
+<RadioGroup label="Choice" onchange={fn()} values={[
+  ['a', 'Alpha'],
+  ['b', 'Beta', 'icon'],
+]} value="a" />

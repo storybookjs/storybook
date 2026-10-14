@@ -9,10 +9,11 @@ vi.mock('storybook/internal/preview-api', { spy: true });
 
 const emit = vi.fn();
 
-const emitted = (__svelteCsf: object, args: Record<string, any>, docs = {}) => {
+const emitted = (__svelteCsf: object, args: Record<string, any>, docs = {}, initialArgs = args) => {
   const storyContext = {
     id: 'button--primary',
     unmappedArgs: args,
+    initialArgs,
     parameters: { __isArgsStory: true, __svelteCsf, docs },
   } as any;
   emitCode({ args, storyContext });
@@ -39,6 +40,20 @@ describe('emitCode', () => {
     expect(emit).toHaveBeenCalledWith(
       SNIPPET_RENDERED,
       expect.objectContaining({ id: 'button--primary' })
+    );
+  });
+
+  it('emits an arg that still holds the value the story writes as the code it writes', () => {
+    const onclick = Object.assign(() => {}, { getMockName: () => 'spy' });
+    const svelteCsf = {
+      rawCode: '<Button {...args} />',
+      template: '<Button ⟦props⟧ />',
+      argCode: { onclick: 'fn()' },
+    };
+    const initialArgs = { label: 'Go', onclick };
+    expect(emitted(svelteCsf, initialArgs)).toBe('<Button label="Go" onclick={fn()} />');
+    expect(emitted(svelteCsf, { label: 'Stop', onclick }, {}, initialArgs)).toBe(
+      '<Button label="Stop" onclick={fn()} />'
     );
   });
 

@@ -6,15 +6,14 @@ import { unwrapExpression } from './utils.ts';
 
 /**
  * The code a story writes each arg with, as `StoryDoc.argCode` holds it: every arg but a plain
- * string, number, boolean, `null` or `undefined`, which prints as its value. Code that is not a
- * simple value, such as `MB * 5` or an arrow function, is wrapped in parentheses unless the story
- * wrote them, so it reads the same in any hole, as in `(MB * 5).toFixed(0)`.
+ * string, number, boolean, `null` or `undefined`, which prints as its value. An `⟦operand⟧` hole
+ * puts the code in parentheses where it needs them, as in `(MB * 5).toFixed(0)`; see `asOperand`.
  */
 export function argCode(args: Record<string, t.Node>): Record<string, string> {
   const code: Record<string, string> = {};
   for (const [name, node] of Object.entries(args)) {
     if (!literalOf(node)) {
-      code[name] = printArg(unwrapExpression(node));
+      code[name] = recast.print(unwrapExpression(node)).code;
     }
   }
   return code;
@@ -90,25 +89,3 @@ const literalOf = (node: t.Node): { value: unknown } | undefined => {
   }
   return t.isIdentifier(value, { name: 'undefined' }) ? { value: undefined } : undefined;
 };
-
-const printArg = (node: t.Node): string => {
-  const code = recast.print(node).code;
-  return isSimpleValue(node, code) || node.extra?.parenthesized ? code : `(${code})`;
-};
-
-// A value no code around it reads differently; `new Foo` without arguments would take a member.
-// Code the story wrote in parentheses prints with them already.
-const isSimpleValue = (node: t.Node, code: string) =>
-  t.isIdentifier(node) ||
-  t.isJSXElement(node) ||
-  t.isJSXFragment(node) ||
-  t.isThisExpression(node) ||
-  t.isLiteral(node) ||
-  t.isArrayExpression(node) ||
-  t.isObjectExpression(node) ||
-  t.isMemberExpression(node) ||
-  t.isOptionalMemberExpression(node) ||
-  t.isCallExpression(node) ||
-  t.isOptionalCallExpression(node) ||
-  t.isTaggedTemplateExpression(node) ||
-  (t.isNewExpression(node) && code.endsWith(')'));

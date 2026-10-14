@@ -81,8 +81,9 @@ function attribute(name: string, value: unknown): string {
   if (value === true) {
     return name;
   }
-  // JSX decodes `&` entities in an attribute string, and it cannot hold its own quote.
-  return typeof value === 'string' && !/["&]/.test(value)
+  // JSX decodes `&` entities in an attribute string, and it cannot hold its own quote. A line break
+  // would take the indentation of the line it is on.
+  return typeof value === 'string' && !/["&\n\r]/.test(value)
     ? `${name}="${value}"`
     : `${name}={${printValue(value, name)}}`;
 }

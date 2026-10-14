@@ -1,1 +1,1 @@
-<Modal id="modal-footer-from-snippet" open footer={snippet} />
+<Modal id="modal-footer-from-snippet" open footer={sharedFooter} />

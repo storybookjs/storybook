@@ -1,3 +1,1 @@
-<section>${List({ label: "Alpha", count: 2 })}</section>
-
-warning: Incomplete snippet: names the snippet does not import or declare: `List`.
+html`<section>${List({ label: "Alpha", count: 2 })}</section>`

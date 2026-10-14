@@ -49,6 +49,12 @@ describe('fillTemplate', () => {
     expect(fillTemplate('use(⟦args⟧)', { formatter })).toBe('use({ formatter: shout })');
   });
 
+  it('puts written code in parentheses only where code reads on', () => {
+    const max = writtenArg('MB * 5');
+    expect(fillTemplate('⟦operand max⟧.toFixed(0)', { max })).toBe('(MB * 5).toFixed(0)');
+    expect(fillTemplate('<Chart ⟦attr max max⟧ />', { max })).toBe('<Chart max={MB * 5} />');
+  });
+
   it('leaves out the args a props hole names', () => {
     expect(fillTemplate('<Button ⟦props -children⟧>Hi</Button>', { children: 'x', a: 'b' })).toBe(
       '<Button a="b">Hi</Button>'
@@ -58,6 +64,10 @@ describe('fillTemplate', () => {
   it('writes a string an attribute cannot hold as an expression', () => {
     expect(fillTemplate('<Button ⟦attr label text⟧ />', { text: 'say "hi" & go' })).toBe(
       '<Button label={"say \\"hi\\" & go"} />'
+    );
+    // A line break would take the indentation of the line the attribute is on.
+    expect(fillTemplate('<div>\n  <Button ⟦attr label text⟧ />\n</div>', { text: 'a\nb' })).toBe(
+      '<div>\n  <Button label={"a\\nb"} />\n</div>'
     );
   });
 

@@ -2638,6 +2638,27 @@ describe('buildStoryDocsPayload', () => {
       expect(warning).toBeUndefined();
     });
 
+    it('prints an arg a computed prop reads as the story writes it, and warns about a name it lacks', async () => {
+      const stories = await storiesOf(dedent`
+        import { ButtonComponent } from './button.component';
+        const make = (label: string) => label;
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const S = {
+          args: { label: make('Go'), format: (v: string) => v.trim() },
+          render: (args) => ({
+            props: { text: args.format(args.label) },
+            template: '<sb-button [label]="text" />',
+          }),
+        };
+      `);
+      const { snippet, template, warning, templateWarning } = stories.get('S')!;
+      expect(template).toContain('  text = ⟦operand format⟧(⟦value label⟧);');
+      expect(snippet).toContain("  text = ((v: string) => v.trim())(make('Go'));");
+      const unresolved = "Incomplete snippet: `make('Go')` could not be resolved statically.";
+      expect(warning).toBe(unresolved);
+      expect(templateWarning).toBe(unresolved);
+    });
+
     it('binds an input the render computes from args to a host field', async () => {
       const stories = await storiesOf(dedent`
         import { ButtonComponent } from './button.component';

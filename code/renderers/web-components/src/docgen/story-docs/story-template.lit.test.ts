@@ -21,7 +21,6 @@ import { fillTemplate } from '../../docs/fill-template.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { argsTemplate, litTemplate } from './story-template.ts';
-import { templateModule } from './template-calls.ts';
 
 class XCard extends LitElement {
   static override properties = {
@@ -119,7 +118,6 @@ const spreadProps = directive(SpreadPropsDirective);
 // and a single-quoted value no `'`.
 const HOSTILE = 'a"b\'c`d${e}&g';
 const HOSTILE_TEXT = `${HOSTILE}<f>`;
-const HTML_HOSTILE = 'a"b\'c&g';
 
 // `unprintable` are args the template has no snippet for.
 const stories: [name: string, source: string, args: Args[], options?: { unprintable?: Args[] }][] =
@@ -222,7 +220,7 @@ const stories: [name: string, source: string, args: Args[], options?: { unprinta
     [
       'a property binding of an arg, set or not',
       `export const Primary = (args) => html\`<x-card .items=\${args.items} .count=\${args.count}>\${args.label}</x-card>\`;`,
-      // An unset property arg prints nothing, so it keeps the element's default.
+      // An unset property arg is set to `undefined`, as the story sets it.
       [{ items: [] }, { items: [1, 'a'], count: 0 }, { items: null, label: HOSTILE_TEXT }],
     ],
     [
@@ -320,11 +318,7 @@ describe('litTemplate', () => {
     const code = `import { html, nothing } from 'lit';\nexport default { title: 'T' };\n${source}`;
     const csf = loadCsf(code, { makeTitle: () => 'T' });
     const path = resolveEffectiveRender(csf.parse(), 'Primary');
-    const template =
-      path.kind === 'resolved'
-        ? litTemplate(path.path, templateModule({ program: csf._file.path, filePath: '' }))
-            ?.template
-        : undefined;
+    const template = path.kind === 'resolved' ? litTemplate(path.path)?.template : undefined;
     expect(template).toBeDefined();
 
     // A body that does more than return html is the snippet as a function body, and a render that
@@ -377,9 +371,7 @@ describe('litTemplate of a story that writes to its args', () => {
     const code = `import { html } from 'lit';\nexport default { title: 'T' };\nexport const Primary = ${render};`;
     const csf = loadCsf(code, { makeTitle: () => 'T' });
     const path = resolveEffectiveRender(csf.parse(), 'Primary');
-    const live =
-      path.kind === 'resolved' &&
-      litTemplate(path.path, templateModule({ program: csf._file.path, filePath: '' }));
+    const live = path.kind === 'resolved' && litTemplate(path.path);
     expect(live && live.template).toMatchInlineSnapshot(`
       "args.label = 'X';
       args.count++;
@@ -399,7 +391,7 @@ describe('litTemplate of a story that writes to its args', () => {
 
 describe('argsTemplate', () => {
   const argTypes = mapArgTypes(declaration);
-  const template = argsTemplate('x-card', ['other'], argTypes, declaration);
+  const template = argsTemplate('x-card', ['other'], argTypes, declaration)!;
 
   // Storybook's render sets the args on the element; a part or state style, which it scopes to the
   // element, is a rule of the snippet's `<style>`.
@@ -415,35 +407,39 @@ describe('argsTemplate', () => {
     { items: [1, 'a'], '--gap': '2px' },
     { 'default-slot': '<b>Body</b>', 'title-slot': 'Title' },
     { 'panel-part': 'color: red;', 'busy-state': 'outline: none;' },
-    // The snippet is html, which this test renders as a lit template: html has no backtick or `${`.
-    { other: 'x', label: HTML_HOSTILE, theme: 'dark' },
+    { other: 'x', label: HOSTILE, 'is-open': true },
+    { 'title-slot': "b'c`d${e}\\f", '--gap': 'a`b\\c$d', 'busy-state': 'content: "`${a}`"' },
   ])('fills to an element set as the story sets it with %j', (args) => {
     const filled = fillTemplate(template, args);
     const container = document.createElement('div');
     render(new Function('html', `return html\`${filled}\`;`)(html), container);
     const written = container.querySelector('x-card') as XCard;
     const { element, rules } = story(args);
-    // The render sets a field as a property, which the snippet sets with its attribute.
-    expect(properties(written), filled).toEqual(properties(element as XCard));
-    expect(written.innerHTML.replace(/<!--.*?-->/g, ''), filled).toEqual(element.innerHTML);
-    for (const key of ['other', 'theme']) {
-      expect((written as unknown as Record<string, unknown>)[key], filled).toEqual(
-        (element as unknown as Record<string, unknown>)[key]
-      );
-    }
+    expect(outline(written), filled).toEqual(outline(element));
+    expect((written as unknown as Args).other, filled).toEqual((element as unknown as Args).other);
     for (const rule of rules) {
       expect(container.querySelector('style')?.textContent).toContain(rule.replace(/ }$/, ''));
     }
   });
 
-  it('prints the attribute of a field once, and has no snippet while a second arg sets it too', () => {
-    expect(fillTemplate(template, { isOpen: true })).toBe('<x-card is-open></x-card>');
-    expect(() => fillTemplate(template, { isOpen: true, 'is-open': true })).toThrow(
-      UnprintableArgError
+  it('sets a field as its property, an attribute as that attribute, and leaves an unset one out', () => {
+    expect(fillTemplate(template, { isOpen: true, 'is-open': false, other: 1 })).toBe(
+      '<x-card .other=${1} .isOpen=${true}></x-card>'
+    );
+    expect(fillTemplate(template, { 'is-open': true, isOpen: undefined })).toBe(
+      '<x-card is-open></x-card>'
     );
   });
 
-  it('sets an arg only the runtime has, such as one of the story argTypes, as a property', () => {
-    expect(fillTemplate(template, { theme: 'dark' })).toBe('<x-card .theme=${"dark"}></x-card>');
+  it('writes a listener the story writes, and leaves out one only argTypes name', () => {
+    const listened = argsTemplate('x-card', ['close-event'], argTypes, declaration, [
+      'close-event',
+    ]);
+    expect(listened).toContain('@close=${⟦value close-event⟧}');
+    expect(template).not.toContain('event');
+  });
+
+  it('has no template for an arg whose name lit cannot bind', () => {
+    expect(argsTemplate('x-card', ['a b'], argTypes, declaration)).toBeUndefined();
   });
 });

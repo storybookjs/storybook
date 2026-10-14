@@ -94,8 +94,8 @@ describe('legacy behavior locked by the current recordings', () => {
     expect(namesOf(baseline('basicSvelteSnippet'))).toEqual(namesOf(baseline('basicPlainSnippet')));
   });
 
-  test('Svelte CSF and plain CSF record function args with their current mock spellings', () => {
-    expect(baseline('callbacksSvelteSnippet')).toContain('onclick={onclick}');
+  test('Svelte CSF records function args as written, and plain CSF as a mock spelling', () => {
+    expect(baseline('callbacksSvelteSnippet')).toContain('onclick={fn()}');
     expect(baseline('callbacksPlainSnippet')).toContain('onclick={<handler>}');
   });
 

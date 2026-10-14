@@ -5,29 +5,17 @@
   "stories": {
     "webcomponentsfixtures-lit-toolkit-shapes--args-default-render": {
       "argCode": {
-        "onToolkitResize": "(() => {})",
+        "onToolkitResize": "() => {}",
         "tags": "['b']",
       },
       "id": "webcomponentsfixtures-lit-toolkit-shapes--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<lit-toolkit-shapes size="small" level="3" .tags=${['b']} label="Default render"></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
-      "template": "⟦style lit-toolkit-shapes ::part(base)=base-part :state(active)=active-state⟧<lit-toolkit-shapes ⟦props ~size=size ~level=level ~tags=tags ~label=label -onToolkitResize -toolkit-resize-event -click-event -focusItem-method -default-slot -label-slot -base-part -active-state --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap .computed=computed .version=version .pressed=pressed ~old-size=oldSize .onSelect=onSelect ~target=target ~when=when ^old-size *⟧>⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
+      "snippet": "<lit-toolkit-shapes .size=${"small"} .level=${3} .tags=${['b']} .label=${"Default render"} .onToolkitResize=${() => {}}></lit-toolkit-shapes>",
+      "template": "⟦style lit-toolkit-shapes ::part(base)=base-part :state(active)=active-state⟧<lit-toolkit-shapes⟦css --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap⟧ ⟦prop size size ?⟧ ⟦prop level level ?⟧ ⟦prop tags tags ?⟧ ⟦prop label label ?⟧ ⟦prop onToolkitResize onToolkitResize ?⟧ ⟦prop computed computed ?⟧ ⟦prop version version ?⟧ ⟦prop pressed pressed ?⟧ ⟦prop oldSize oldSize ?⟧ ⟦prop onSelect onSelect ?⟧ ⟦prop target target ?⟧ ⟦prop when when ?⟧ ⟦attr old-size old-size⟧>⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
       "argCode": {
-        "onToolkitResize": "(() => {})",
+        "onToolkitResize": "() => {}",
         "tags": "['b']",
       },
       "id": "webcomponentsfixtures-lit-toolkit-shapes--dom-node",
@@ -44,12 +32,12 @@ el.setAttribute('size', String(⟦value size⟧));
 el.setAttribute('level', String(⟦value level⟧));
 el.setAttribute('label', String(⟦value label⟧));
 (el as HTMLElement & { tags: string[] }).tags = ⟦value tags⟧ as string[];
-el.addEventListener('toolkit-resize', ⟦value onToolkitResize⟧ as EventListener);
+el.addEventListener('toolkit-resize', ⟦operand onToolkitResize⟧ as EventListener);
 return el;",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--lit-template": {
       "argCode": {
-        "onToolkitResize": "(() => {})",
+        "onToolkitResize": "() => {}",
         "tags": "['b']",
       },
       "id": "webcomponentsfixtures-lit-toolkit-shapes--lit-template",
@@ -59,15 +47,17 @@ return el;",
   level="2"
   .tags=${['b']}
   label="Shaped"
+  @toolkit-resize=${args.onToolkitResize}
 ></lit-toolkit-shapes>",
       "template": "<lit-toolkit-shapes
   size="⟦quoted size⟧"
   level="⟦quoted level⟧"
   ⟦prop tags tags⟧
   label="⟦quoted label⟧"
+  @toolkit-resize=${args.onToolkitResize}
 ></lit-toolkit-shapes>",
-      "templateWarning": "Incomplete snippet: listeners not shown: `toolkit-resize`.",
-      "warning": "Incomplete snippet: listeners not shown: `toolkit-resize`.",
+      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `args`.",
+      "warning": "Incomplete snippet: names the snippet does not import or declare: `args`.",
     },
   },
 }

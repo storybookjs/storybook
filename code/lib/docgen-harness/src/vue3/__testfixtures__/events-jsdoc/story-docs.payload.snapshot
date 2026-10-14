@@ -5,8 +5,8 @@
   "stories": {
     "forms-events-jsdoc--with-handlers": {
       "argCode": {
-        "onCancel": "(() => {})",
-        "onSave": "(() => {})",
+        "onCancel": "() => {}",
+        "onSave": "() => {}",
       },
       "description": undefined,
       "id": "forms-events-jsdoc--with-handlers",
@@ -14,9 +14,9 @@
       "snippet": "<script lang="ts" setup>
 import EventsJsdoc from './EventsJsdoc.vue';
 
-const onCancel = (() => {});
+const onCancel = () => {};
 
-const onSave = (() => {});
+const onSave = () => {};
 </script>
 
 <template>

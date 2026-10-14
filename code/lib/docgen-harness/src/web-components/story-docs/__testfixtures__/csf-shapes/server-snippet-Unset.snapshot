@@ -1,1 +1,1 @@
-<csf-shapes disabled></csf-shapes>
+<csf-shapes .disabled=${true}></csf-shapes>

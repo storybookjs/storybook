@@ -1,5 +1,3 @@
-<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  ></lit-template-shapes
->
-
-warning: Incomplete snippet: names the snippet does not import or declare: `spreadProps`.
+html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
+  >${undefined}</lit-template-shapes
+>`

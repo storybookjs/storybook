@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   UnprintableArgError,
+  asOperand,
   dedentStoryCode,
   defaultCode,
   defaultWord,
@@ -94,6 +95,42 @@ describe('spreadArgs', () => {
   it('throws for a set arg written before the spread', () => {
     expect(() => spreadArgs({ a: 1 }, ['^a'])).toThrow(new UnprintableArgError('a'));
     expect(spreadArgs({ b: 2 }, ['^a'])).toEqual([['b', 2]]);
+  });
+});
+
+describe('asOperand', () => {
+  it('leaves a name, a chain of names, a string or code one pair of brackets encloses', () => {
+    for (const code of [
+      'args',
+      'icons.arrow',
+      'a?.b',
+      'null',
+      '"a"',
+      "'it\\'s'",
+      '["a)", [1]]',
+      '(MB * 5)',
+    ]) {
+      expect(asOperand(code)).toBe(code);
+    }
+  });
+
+  it('wraps any other value or code', () => {
+    for (const code of [
+      '5',
+      '-1',
+      '{ a: 1 }',
+      '() => null',
+      'MB * 5',
+      '"a" + "b"',
+      '(a) + (b)',
+      'fn()',
+    ]) {
+      expect(asOperand(code)).toBe(`(${code})`);
+    }
+    // Brackets a template literal, a regex or JSX text holds are not counted.
+    for (const code of ['[`]`]', '[/]/]', '[<p>]</p>]']) {
+      expect(asOperand(code)).toBe(`(${code})`);
+    }
   });
 });
 

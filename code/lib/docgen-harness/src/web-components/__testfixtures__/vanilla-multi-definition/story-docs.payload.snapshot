@@ -8,7 +8,7 @@
       "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
       "name": "Args Default Render",
       "snippet": "<multi-beta .betaLabel=${"Default beta"}></multi-beta>",
-      "template": "<multi-beta ⟦props .betaLabel=betaLabel beta-label=beta-label *⟧></multi-beta>",
+      "template": "<multi-beta ⟦prop betaLabel betaLabel ?⟧ ⟦attr beta-label beta-label⟧></multi-beta>",
     },
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
       "argCode": {},

@@ -59,19 +59,16 @@ describe('argCode', () => {
     });
   });
 
-  it('wraps code that is not a simple value in parentheses', () => {
-    expect(
-      argCode(argsOf(`{ a: MB * 5, b: (o) => o.name, c: on ? 1 : 2, d: new Foo, e: !on }`))
-    ).toEqual({
-      a: '(MB * 5)',
-      b: '((o) => o.name)',
-      c: '(on ? 1 : 2)',
-      d: '(new Foo)',
-      e: '(!on)',
+  it('adds no parentheses, which an operand hole adds where it needs them', () => {
+    expect(argCode(argsOf(`{ a: MB * 5, b: (o) => o.name, c: on ? 1 : 2, d: new Foo }`))).toEqual({
+      a: 'MB * 5',
+      b: '(o) => o.name',
+      c: 'on ? 1 : 2',
+      d: 'new Foo',
     });
   });
 
-  it('keeps the parentheses the story wrote, and an element as it is', () => {
+  it('keeps the parentheses the story wrote', () => {
     expect(argCode(argsOf(`{ a: (MB * 5), b: <Icon />, c: (<>Hi</>), d: <>Hi</> }`))).toEqual({
       a: '(MB * 5)',
       b: '<Icon />',
@@ -85,11 +82,11 @@ describe('fillWithStoryArgs', () => {
   it('fills the template with the code of each arg that has it and the value of any other', () => {
     expect(
       fillWithStoryArgs(
-        'label(⟦value label⟧, ⟦operand max⟧.toFixed(0), ⟦operand count⟧ * 2)',
-        argsOf(`{ label: 'Go', max: MB * 5, count: 1 + 2 }`),
+        'label(⟦value label⟧, ⟦operand max⟧.toFixed(0), ⟦value onClick⟧)',
+        argsOf(`{ label: 'Go', max: MB * 5, onClick: () => null }`),
         fill
       )
-    ).toBe('label("Go", (MB * 5).toFixed(0), (1 + 2) * 2)');
+    ).toBe('label("Go", (MB * 5).toFixed(0), () => null)');
   });
 });
 

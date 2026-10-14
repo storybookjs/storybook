@@ -9,7 +9,7 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--back",
       "name": "Back",
-      "snippet": "<demo-wc-card .backSide=${true} .rows=${[]}
+      "snippet": "<demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
   ><span slot="prefix"></span>A simple card</demo-wc-card
 >",
       "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
@@ -22,7 +22,7 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
-      "snippet": "<demo-wc-card .backSide=${false} .rows=${[]}
+      "snippet": "<demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
   ><span slot="prefix"></span>A simple card</demo-wc-card
 >",
       "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧

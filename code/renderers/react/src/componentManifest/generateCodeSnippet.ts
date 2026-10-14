@@ -62,7 +62,7 @@ export function getCodeSnippet(
     fnPath && fnPath.findParent((path) => path.isProgram())?.node !== csf._ast.program;
   const template =
     runs && !inOtherFile
-      ? buildStoryTemplate(storyName, fnPath, componentName, csf._file.code)
+      ? buildStoryTemplate(storyName, fnPath, componentName, csf._file.code, args)
       : undefined;
   const filled = template
     ? fillStoryTemplate(template, args, fillTemplate, unresolvedWarning(unresolved))

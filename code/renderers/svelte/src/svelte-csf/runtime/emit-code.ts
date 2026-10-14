@@ -1,5 +1,10 @@
 import { logger } from 'storybook/internal/client-logger';
-import { SourceType, SNIPPET_RENDERED, UnprintableArgError } from 'storybook/internal/docs-tools';
+import {
+  SourceType,
+  SNIPPET_RENDERED,
+  UnprintableArgError,
+  asWrittenArgs,
+} from 'storybook/internal/docs-tools';
 import { addons } from 'storybook/internal/preview-api';
 
 import { fillTemplate } from '../../docs/fill-template.ts';
@@ -22,12 +27,15 @@ export const emitCode = (params: Params) => {
     return;
   }
 
-  const { rawCode, template } = storyContext.parameters.__svelteCsf;
+  const { rawCode, template, argCode } = storyContext.parameters.__svelteCsf;
   let codeToEmit = rawCode;
   try {
-    codeToEmit = template ? fillTemplate(template, params.args) : rawCode;
+    // An arg that still holds the value the story is written with shows as the code it writes.
+    const { unmappedArgs = params.args, initialArgs } = storyContext;
+    const args = asWrittenArgs({ args: params.args, unmappedArgs, initialArgs }, argCode);
+    codeToEmit = template ? fillTemplate(template, args) : rawCode;
   } catch (error) {
-    // An arg the template cannot show, such as a snippet, leaves the raw code.
+    // An arg the template cannot show, such as a function, a snippet or a date, leaves the raw code.
     if (!(error instanceof UnprintableArgError)) {
       logger.warn(error);
     }

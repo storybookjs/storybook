@@ -1,11 +1,5 @@
 {
-  "ArgsDefaultRender": "<lit-toolkit-shapes size="small" level="3" .tags=${['b']} label="Default render"></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
+  "ArgsDefaultRender": "<lit-toolkit-shapes .size=${"small"} .level=${3} .tags=${['b']} .label=${"Default render"} .onToolkitResize=${() => {}}></lit-toolkit-shapes>",
   "DomNode": "const el = document.createElement('lit-toolkit-shapes');
 el.setAttribute('size', String("large"));
 el.setAttribute('level', String(2));
@@ -18,5 +12,6 @@ return el;",
   level="2"
   .tags=${['b']}
   label="Shaped"
+  @toolkit-resize=${args.onToolkitResize}
 ></lit-toolkit-shapes>",
 }

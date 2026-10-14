@@ -52,18 +52,11 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('prints a date as the code that makes it', () => {
-    expect(fillTemplate('<Day ⟦props⟧ />', { when: new Date(0) })).toBe(
-      '<Day when={new Date("1970-01-01T00:00:00.000Z")} />'
-    );
-  });
-
-  it('prints a function, such as an action or a snippet, as its name', () => {
-    const onclick = () => {};
-    const snippet = createRawSnippet(() => ({ render: () => '<span></span>' }));
-    expect(fillTemplate('<Button ⟦props⟧ />', { onclick, icon: snippet })).toBe(
-      '<Button onclick={onclick} icon={() => {}} />'
-    );
+  it('leaves out an action Storybook adds', () => {
+    const onclick = Object.assign(() => {}, { getMockName: () => 'spy' });
+    expect(
+      fillTemplate('<Button ⟦props⟧ ⟦attr onhover hover⟧ />', { onclick, hover: onclick })
+    ).toBe('<Button />');
   });
 
   it('throws for an arg it cannot print or name as an attribute', () => {
@@ -71,8 +64,10 @@ describe('fillTemplate', () => {
       UnprintableArgError
     );
     expect(() => fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
-    expect(() => fillTemplate('<Day ⟦props⟧ />', { when: new Date(Number.NaN) })).toThrow(
-      UnprintableArgError
-    );
+    // A function, a snippet or a date has no literal; the story writes the code that makes it.
+    const snippet = createRawSnippet(() => ({ render: () => '<span></span>' }));
+    for (const value of [() => {}, snippet, new Date(0)]) {
+      expect(() => fillTemplate('<Button ⟦props⟧ />', { value })).toThrow(UnprintableArgError);
+    }
   });
 });

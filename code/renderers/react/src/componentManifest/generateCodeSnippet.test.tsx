@@ -1070,6 +1070,27 @@ test('template: shows the static snippet once an arg overrides an attribute befo
   expect(() => filled(input, 'Before', { size: 'lg' })).toThrow(UnprintableArgError);
 });
 
+test('template: an attribute written after the spread too wins over the arg', () => {
+  const input = withCSF3(
+    `export const Both: Story = { render: (args) => <Button size="sm" {...args} size="md" /> };`
+  );
+  expect(template(input, 'Both')).toBe(
+    'const Both = () => <Button size="sm" ⟦props -size -children⟧ size="md"⟦close Button⟧;'
+  );
+  expect(filled(input, 'Both', { size: 'lg', label: 'Go' })).toBe(
+    'const Both = () => <Button size="sm" label="Go" size="md" />;'
+  );
+});
+
+test('template: none for a component that names no element', () => {
+  const input = dedent`
+    import { Button } from './Button';
+    export default { component: Button as any };
+    export const Cast = { args: { label: 'Go' } };
+  `;
+  expect(template(input, 'Cast')).toBeUndefined();
+});
+
 test('template: keeps a literal the code reads on apart', () => {
   const input = withCSF3(dedent`
     export const Fields: Story = {
@@ -1097,7 +1118,7 @@ test('template: prints a component arg as the story writes it, and none a contro
   );
   const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
   expect(getCodeSnippet(csf, 'Icon', 'Button').snippet).toBe(
-    'const Icon = () => <Button icon={HeartIcon} render={(() => <b />)}>Click me</Button>;'
+    'const Icon = () => <Button icon={HeartIcon} render={() => <b />}>Click me</Button>;'
   );
   const HeartIcon = () => null;
   expect(() => filled(input, 'Icon', { icon: HeartIcon })).toThrow(UnprintableArgError);
@@ -1251,7 +1272,7 @@ test('template: keeps another spread on the element as written', () => {
     };
   `);
   expect(template(input, 'Dynamic')).toBe(
-    'const Dynamic = () => <Button size="sm" ⟦props ^size -onClick⟧ {...dynamicArgs} onClick={log} />;'
+    'const Dynamic = () => <Button size="sm" ⟦props -onClick ^size⟧ {...dynamicArgs} onClick={log} />;'
   );
 });
 
@@ -1406,6 +1427,36 @@ test('template: an arg that still holds the value the story writes stays as writ
       control={new FormControl('x')}
     >Click me</Button>;"
   `
+  );
+});
+
+test('template: code the story writes an arg with gets parentheses only where code reads on', () => {
+  const input = withCSF3(dedent`
+    export const Code: Story = {
+      args: { max: MB * 5, onClick: () => null },
+      render: (args) => <Button max={args.max.toFixed(0)} onClick={args.onClick} />,
+    };
+  `);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  expect(getCodeSnippet(csf, 'Code', 'Button').snippet).toBe(
+    'const Code = () => <Button max={(MB * 5).toFixed(0)} onClick={() => null} />;'
+  );
+});
+
+test('template: code the story writes an arg with gets parentheses next to an operator', () => {
+  const input = withCSF3(dedent`
+    export const Operators: Story = {
+      args: { onClick: () => null, count: 5 },
+      render: (args) => <Button disabled={!args.onClick} onClick={args.onClick || noop} count={args.count + 1} />,
+    };
+  `);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  const { snippet, template: written } = getCodeSnippet(csf, 'Operators', 'Button');
+  expect(written).toBe(
+    'const Operators = () => <Button disabled={!⟦operand onClick⟧} onClick={⟦operand onClick⟧ || noop} count={⟦value count⟧ + 1} />;'
+  );
+  expect(snippet).toBe(
+    'const Operators = () => <Button disabled={!(() => null)} onClick={(() => null) || noop} count={5 + 1} />;'
   );
 });
 

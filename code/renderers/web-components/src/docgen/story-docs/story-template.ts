@@ -1,5 +1,5 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
-import { isOperand } from 'storybook/internal/csf-tools';
+import { collectImportBindings, isOperand } from 'storybook/internal/csf-tools';
 import {
   asOperand,
   dedentStoryCode,
@@ -13,15 +13,15 @@ import type { StrictArgTypes } from 'storybook/internal/types';
 import { parseArgKey } from '../../arg-keys.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { classifyArg } from './classify-args.ts';
-import { LIT_SOURCES, type TemplateModule } from './template-calls.ts';
+import { TEMPLATE_TAG_SOURCES } from './template-scope.ts';
 
 /**
- * A story's template; the listeners it leaves out; and the names its code reads that the snippet
- * neither declares nor imports, but for lit's own, such as `args` in a write `args.count++`.
+ * A story's template, and the names its code reads that the snippet does not declare: a name the
+ * render declares where the template leaves it out, such as `args` in a write `args.count++`, and
+ * a name of the module a parameter default reads.
  */
 export interface LiveTemplate {
   template: string;
-  listeners: string[];
   free: string[];
 }
 
@@ -44,12 +44,13 @@ interface Slot {
 }
 
 /**
- * `<tag ⟦props …⟧></tag>` for a story without a render function: each arg as Storybook's render
- * applies it, an attribute, property or custom property in the tag, a slot as content, and a part
- * or state style in a `<style>` before it. Any other arg the story gets at runtime, such as one
- * only its argTypes name, is set as a property, by the `*` word. An arg whose name the snippet
- * cannot write, or that sets what another arg sets already, gets a `^arg` word: the snippet cannot
- * show it while it is set. A `functions` arg is a listener, which the snippet leaves out.
+ * The element of a story without a render, with each arg as Storybook's render (`bindArgs`) sets
+ * it: a custom property in its `style`, a field as its property, an attribute the manifest declares
+ * as that attribute, a slot as content, a part or state in a `<style>` before it, a listener the
+ * story writes as a lit listener, and any other arg as a property. An unset property is left out,
+ * as the render leaves out an arg that is not there. A listener or method the story does not write
+ * gets no binding, as no control sets it. A story with an arg whose name lit cannot bind has no
+ * template.
  */
 export function argsTemplate(
   tag: string,
@@ -57,78 +58,63 @@ export function argsTemplate(
   argTypes: StrictArgTypes,
   declaration: ManifestDeclaration,
   functions: string[] = []
-): string {
-  const props: string[] = [];
-  const styles: string[] = [];
-  const slots: string[] = [];
-  const taken = new Set<string>();
-  // The word of an arg, or its `^arg` word where the name cannot be written or is taken.
-  const word = (arg: string, target: string, valid: RegExp, text: string) => {
-    const ok = valid.test(target.replace(/^[.:]+/, '')) && !taken.has(target);
-    taken.add(target);
-    return ok ? text : `^${arg}`;
-  };
+): string | undefined {
+  const fields = new Set(
+    declaration.members?.flatMap((member) => (member.kind === 'field' ? [member.name] : []))
+  );
+  const attributes = new Set(declaration.attributes?.map(({ name }) => name));
+  const [css, bindings, slots, styles]: string[][] = [[], [], [], []];
   for (const arg of new Set([...storyArgs, ...Object.keys(argTypes)])) {
-    const binding = classifyArg(arg, functions.includes(arg), argTypes, declaration);
-    const parsed = binding.kind === 'unknown' ? parseArgKey(arg) : undefined;
-    const kind = parsed ? CATEGORY_KINDS[parsed.category] : binding.kind;
-    const name = parsed?.name ?? ('name' in binding ? binding.name : arg);
-    const field = binding.kind === 'attribute' && binding.viaField ? '~' : '';
-    switch (kind) {
-      case 'attribute':
-      case 'cssProperty':
-        props.push(word(arg, name, NAME, `${field}${name}=${arg}`));
-        break;
-      case 'property':
-      case 'unknown':
-        props.push(word(arg, `.${name}`, NAME, `.${name}=${arg}`));
-        break;
-      case 'slot': {
-        const slot = word(arg, `slot:${name}`, /^slot:[\w-]+$/, hole('slot', name, holeWord(arg)));
-        // A `-arg` word keeps the `*` word from setting it as a property too.
-        (slot.startsWith('^') ? props : slots).push(slot);
-        props.push(`-${arg}`);
-        break;
-      }
-      case 'cssPart':
-      case 'cssState': {
-        const selector = kind === 'cssPart' ? `::part(${name})` : `:state(${name})`;
-        const rule = word(arg, selector, /^\w[\w-]*\(([\w-]+)\)$/, `${selector}=${arg}`);
-        (rule.startsWith('^') ? props : styles).push(rule);
-        props.push(`-${arg}`);
-        break;
-      }
-      default:
-        // A listener or a method, which the snippet leaves out.
-        props.push(`-${arg}`);
-        break;
+    const { kind } = classifyArg(arg, functions.includes(arg), argTypes, declaration);
+    if (!storyArgs.includes(arg) && (kind === 'listener' || kind === 'method')) {
+      continue;
+    }
+    if (!NAME.test(arg)) {
+      return undefined;
+    }
+    const parsed = parseArgKey(arg);
+    const word = holeWord(arg);
+    if (parsed?.category === 'cssProperties') {
+      css.push(holeWord(`${arg}=${arg}`));
+    } else if (fields.has(arg) || (!parsed && !attributes.has(arg))) {
+      bindings.push(hole('prop', word, word, defaultWord('')));
+    } else if (!parsed) {
+      bindings.push(hole('attr', word, word));
+    } else if (parsed.category === 'slots') {
+      slots.push(hole('slot', holeWord(parsed.name), word));
+    } else if (parsed.category === 'events') {
+      bindings.push(`@${parsed.name}=\${${hole('value', word)}}`);
+    } else if (parsed.category !== 'methods') {
+      const selector = parsed.category === 'cssParts' ? '::part' : ':state';
+      styles.push(holeWord(`${selector}(${parsed.name})=${arg}`));
     }
   }
-  const style = styles.length > 0 ? hole('style', tag, ...styles.map(holeWord)) : '';
-  const words = [...props, '*'].map(holeWord);
-  return `${style}<${tag} ${hole('props', ...words)}>${slots.join('')}</${tag}>`;
+  const style = styles.length > 0 ? hole('style', holeWord(tag), ...styles) : '';
+  const custom = css.length > 0 ? hole('css', ...css) : '';
+  const opened = [`<${tag}${custom}`, ...bindings].join(' ');
+  return `${style}${opened}>${slots.join('')}</${tag}>`;
 }
+
+/** Whether a name is declared by an import from lit, which a lit snippet has. */
+export const isLitImport = (declared: NodePath | undefined) =>
+  !!declared?.parentPath?.isImportDeclaration() &&
+  TEMPLATE_TAG_SOURCES.includes(declared.parentPath.node.source.value);
 
 // A name lit reads whole as an attribute or property in a tag.
 const NAME = /^[^\s"'<>/=`$\\{}⟦⟧]+$/;
-
-// The binding of an arg the manifest does not know, by the suffix Storybook's render reads.
-const CATEGORY_KINDS = {
-  cssProperties: 'cssProperty',
-  slots: 'slot',
-  cssParts: 'cssPart',
-  cssStates: 'cssState',
-  events: 'listener',
-  methods: 'method',
-} as const;
 
 /**
  * The story's render as written, with a hole wherever it reads an arg: the html when it returns a
  * lit template, else its code. It is `undefined` when the story reads its args in a way no hole
  * stands for, such as reading the story context.
  */
-export function litTemplate(render: RenderPath, module: TemplateModule): LiveTemplate | undefined {
-  const { code, bindings } = module;
+export function litTemplate(
+  render: RenderPath,
+  args: Record<string, t.Node> = {}
+): LiveTemplate | undefined {
+  const program = render.findParent((path) => path.isProgram()) as NodePath<t.Program>;
+  const { code } = (program.hub as unknown as { file: { code: string } }).file;
+  const bindings = collectImportBindings(program);
   const [param, context] = render.get('params');
   if (!param || hasHoleBracket(code) || (context && readsAny(context))) {
     return undefined;
@@ -136,7 +122,7 @@ export function litTemplate(render: RenderPath, module: TemplateModule): LiveTem
   const isLit = (tag: t.Node, scope: Scope) =>
     t.isIdentifier(tag) &&
     scope.getBinding(tag.name)?.kind === 'module' &&
-    LIT_SOURCES.includes(bindings.get(tag.name)?.importId ?? '') &&
+    TEMPLATE_TAG_SOURCES.includes(bindings.get(tag.name)?.importId ?? '') &&
     bindings.get(tag.name)?.importName === 'html';
   // Every expression of a lit template in the render, with where it sits in the html.
   const slots = new Map<t.Node, Slot>();
@@ -148,7 +134,7 @@ export function litTemplate(render: RenderPath, module: TemplateModule): LiveTem
     },
   });
   const target = param.isAssignmentPattern() ? param.get('left') : param;
-  const found = argEdits(target, code, (read) => slots.get(read.node));
+  const found = argEdits(target, code, (read) => slots.get(read.node), args);
   if (!found || found.edits.length === 0) {
     return undefined;
   }
@@ -182,32 +168,21 @@ export function litTemplate(render: RenderPath, module: TemplateModule): LiveTem
     html || body.isBlockStatement()
       ? /^\s*\n([ \t]*)/.exec(text)?.[1]!.length
       : body.node.loc!.start.column;
-  const free = new Set<string>();
+  // Whether the template leaves code out: code outside the cut, or that a hole stands for.
+  const cut = (node: t.Node) =>
+    node.start! < start ||
+    node.end! > end ||
+    edits.some((edit) => edit.start <= node.start! && node.end! <= edit.end);
+  const free = new Set(found.free);
   render.traverse({
     ReferencedIdentifier(path) {
-      const binding = path.scope.getBinding(path.node.name);
-      const kept = !edits.some(
-        (edit) => edit.start <= path.node.start! && path.node.end! <= edit.end
-      );
-      const imported = bindings.get(path.node.name)?.importId;
-      if (
-        kept &&
-        path.node.start! >= start &&
-        path.node.end! <= end &&
-        // A name of the module, or a parameter of the render that a hole does not stand for.
-        (binding?.scope.path.isProgram() ||
-          (binding?.kind === 'param' && binding.scope === render.scope)) &&
-        !(imported && /^(lit|lit-html|lit-element|@lit\/[^/]+)(\/|$)/.test(imported))
-      ) {
+      const declared = path.scope.getBinding(path.node.name);
+      if (declared?.path.isDescendant(render) && cut(declared.identifier) && !cut(path.node)) {
         free.add(path.node.name);
       }
     },
   });
-  return {
-    template: dedentStoryCode(text.trim(), column),
-    listeners: found.listeners,
-    free: [...free],
-  };
+  return { template: dedentStoryCode(text.trim(), column), free: [...free] };
 }
 
 // The expressions of a lit template, each with where it sits in the html.
@@ -226,13 +201,11 @@ function htmlSlots(quasi: t.TemplateLiteral, slots: Map<t.Node, Slot>): void {
     if (binding && whole && NAME.test(binding[2]!)) {
       const prefix = binding[1]!;
       const kind = ({ '?': 'bool', '.': 'prop', '@': 'listener' } as const)[prefix] ?? 'attr';
-      const space = /\s*$/.exec(before.slice(0, -binding[0].length))![0].length;
-      const from = start - binding[0].length - (kind === 'listener' ? space : 0);
       slots.set(expression, {
         kind,
         name: binding[2]!,
         quote,
-        start: from,
+        start: start - binding[0].length,
         end: end + quote.length,
       });
     } else if (state.in === '"' || state.in === "'" || !inTag) {
@@ -251,16 +224,17 @@ const readsAny = (param: NodePath) =>
 interface Found {
   edits: Edit[];
   removed: Set<t.Node>;
-  listeners: string[];
+  free: string[];
 }
 
 // An edit per arg read, or `undefined` when one is not a hole.
 function argEdits(
   param: NodePath,
   code: string,
-  slotFor: (read: NodePath) => Slot | undefined
+  slotFor: (read: NodePath) => Slot | undefined,
+  args: Record<string, t.Node>
 ): Found | undefined {
-  const found: Found = { edits: [], removed: new Set(), listeners: [] };
+  const found: Found = { edits: [], removed: new Set(), free: [] };
   let ok = true;
   const add = (edit: Edit | undefined) => {
     ok &&= edit !== undefined;
@@ -268,26 +242,20 @@ function argEdits(
       found.edits.push(edit);
     }
   };
-  // A read inside a listener binding leaves the whole binding out, as no control sets a listener.
-  const heard = (read: NodePath) => {
-    let path: NodePath | null = read;
-    while (path && !slotFor(path)) {
-      path = path.parentPath;
-    }
-    const slot = path && slotFor(path);
-    if (slot?.kind !== 'listener') {
-      return false;
-    }
-    if (!found.edits.some((edit) => edit.start === slot.start)) {
-      found.listeners.push(slot.name);
-      found.edits.push({ start: slot.start, end: slot.end, text: '' });
-    }
-    return true;
-  };
+  // A listener binding stays as written, as no control sets a listener.
+  const inListener = (read: NodePath) => !!read.find((path) => slotFor(path)?.kind === 'listener');
   const read = (path: NodePath, arg: string, fallback: string) => {
     // The target of a write, as in `args.count++`, is no read and stays as written.
-    if (!isWritten(path) && !heard(path)) {
-      add(readEdit(path, arg, fallback, slotFor(path)));
+    if (!isWritten(path) && !inListener(path)) {
+      add(
+        readEdit(
+          path,
+          arg,
+          fallback,
+          slotFor(path),
+          Object.hasOwn(args, arg) ? args[arg] : undefined
+        )
+      );
     }
   };
 
@@ -315,7 +283,7 @@ function argEdits(
         patternReads(parent.get('id') as NodePath, omitted);
         found.edits.push(removeEdit(declaration, code));
         found.removed.add(declaration);
-      } else if (!heard(reference)) {
+      } else if (!inListener(reference)) {
         add(wholeEdit(reference, omitted));
       }
     }
@@ -341,7 +309,7 @@ function argEdits(
       const arg = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : undefined;
       const local = t.isAssignmentPattern(value) ? value.left : value;
       const fallback = t.isAssignmentPattern(value)
-        ? fallbackCode(property.get('value.right') as NodePath<t.Expression>, pattern, code)
+        ? fallbackCode(property.get('value.right') as NodePath<t.Expression>, pattern, code, found)
         : '';
       const references = t.isIdentifier(local) && referencesOf(pattern.scope, local.name);
       if (
@@ -356,7 +324,7 @@ function argEdits(
       taken.push(arg);
       for (const reference of references) {
         const shorthand = reference.parentPath;
-        if (shorthand?.isObjectProperty() && shorthand.node.shorthand) {
+        if (shorthand?.isObjectProperty() && shorthand.node.shorthand && !inListener(reference)) {
           add(nodeEdit(shorthand.node, `${arg}: ${argHole('value', [arg], fallback)}`));
         } else {
           read(reference, arg, fallback);
@@ -374,9 +342,15 @@ function argEdits(
 }
 
 // A lit binding or html text for a read that is a whole slot, or `⟦value⟧` or `⟦operand⟧` in code.
-function readEdit(read: NodePath, arg: string, fallback: string, slot: Slot | undefined): Edit {
+function readEdit(
+  read: NodePath,
+  arg: string,
+  fallback: string,
+  slot: Slot | undefined,
+  written?: t.Node
+): Edit {
   if (!slot) {
-    return startsOperand(read)
+    return startsOperand(read, written)
       ? nodeEdit(read.node, argHole('operand', [arg], fallback && asOperand(fallback)))
       : nodeEdit(read.node, argHole('value', [arg], fallback));
   }
@@ -449,11 +423,13 @@ function removeEdit(statement: t.Node, code: string): Edit {
 }
 
 // The code of a default, as in `{ size = 'md' }`, to write wherever the arg is read; `undefined` for
-// one that reads the story's own names, or is not the same value at each read, such as a call.
+// one that reads the story's own names, or is not the same value at each read, such as a call. The
+// names it reads from outside the story, such as `SIZES` in `SIZES.md`, are `free` in the snippet.
 function fallbackCode(
   fallback: NodePath<t.Expression>,
   pattern: NodePath,
-  code: string
+  code: string,
+  { free }: Found
 ): string | undefined {
   const story = pattern.getFunctionParent()!;
   let inlinable = true;
@@ -475,6 +451,9 @@ function fallbackCode(
       const declared = path.scope.getBinding(path.node.name)?.path;
       const within = ({ node }: NodePath) => declared?.findParent((parent) => parent.node === node);
       inlinable &&= !within(story) || !!within(fallback);
+      if (declared && !within(story) && !isLitImport(declared)) {
+        free.push(path.node.name);
+      }
     }
   };
   visit(fallback);
@@ -495,13 +474,14 @@ const isWritten = ({ node, parent }: NodePath) =>
   t.isUpdateExpression(parent) ||
   t.isUnaryExpression(parent, { operator: 'delete' });
 
-const startsOperand = (read: NodePath) =>
+const startsOperand = (read: NodePath, written?: t.Node) =>
   isOperand(
     read.node,
     read
       .getAncestry()
       .slice(1)
-      .map((path) => path.node)
+      .map((path) => path.node),
+    written
   );
 
 // A hole for one arg, with the code the story defaults it to while it is unset.

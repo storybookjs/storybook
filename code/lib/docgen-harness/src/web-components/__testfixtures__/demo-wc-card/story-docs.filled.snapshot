@@ -1,8 +1,8 @@
 {
-  "Back": "<demo-wc-card .backSide=${true} .rows=${[]}
+  "Back": "<demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
   ><span slot="prefix"></span>A simple card</demo-wc-card
 >",
-  "Front": "<demo-wc-card .backSide=${false} .rows=${[]}
+  "Front": "<demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
   ><span slot="prefix"></span>A simple card</demo-wc-card
 >",
   "Prefix": "<demo-wc-card .backSide=${false} .header=${"my header"} .rows=${[]}

@@ -9,8 +9,8 @@
       },
       "id": "webcomponentsfixtures-fast-attributes--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<fast-attributes label="Default count" size="large" .disabled=${false} max-count="2" .items=${['a']}></fast-attributes>",
-      "template": "<fast-attributes ⟦props ~label=label ~size=size ~disabled=disabled ~max-count=maxCount .items=items -fast-count-change-event -increment-method .count=count ^max-count *⟧></fast-attributes>",
+      "snippet": "<fast-attributes .label=${"Default count"} .size=${"large"} .disabled=${false} .maxCount=${2} .items=${['a']}></fast-attributes>",
+      "template": "<fast-attributes ⟦prop label label ?⟧ ⟦prop size size ?⟧ ⟦prop disabled disabled ?⟧ ⟦prop maxCount maxCount ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦attr max-count max-count⟧></fast-attributes>",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {
       "argCode": {

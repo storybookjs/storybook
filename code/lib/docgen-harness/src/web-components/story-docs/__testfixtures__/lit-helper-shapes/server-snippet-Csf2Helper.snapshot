@@ -1,3 +1,1 @@
 Card({ ...{ label: "Alpha" }, disabled: true })
-
-warning: Incomplete snippet: names the snippet does not import or declare: `Card`.

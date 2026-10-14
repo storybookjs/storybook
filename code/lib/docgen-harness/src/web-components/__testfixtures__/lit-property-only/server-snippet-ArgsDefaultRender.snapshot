@@ -1,1 +1,1 @@
-<lit-property-only label="Default render" .items=${[{ name: 'Alpha' }, { name: 'Beta' }]} .config=${{ dense: true, theme: 'dark' }}></lit-property-only>
+<lit-property-only .label=${"Default render"} .items=${[{ name: 'Alpha' }, { name: 'Beta' }]} .config=${{ dense: true, theme: 'dark' }}></lit-property-only>

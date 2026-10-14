@@ -7,8 +7,8 @@
       "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
-      "template": "<vanilla-basic ⟦props label=label count=count disabled=disabled legacy-label=legacy-label *⟧></vanilla-basic>",
+      "snippet": "<vanilla-basic .label=${"Default vanilla"} .count=${1} .disabled=${false}></vanilla-basic>",
+      "template": "<vanilla-basic ⟦prop label label ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧ ⟦attr legacy-label legacy-label⟧></vanilla-basic>",
     },
     "webcomponentsfixtures-vanilla-basic--dom-node": {
       "argCode": {},

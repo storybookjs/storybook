@@ -31,9 +31,9 @@ Keep it to these rules:
 - An arg that still holds the value the story is written with prints the code the story writes it
   with. An arg a control changed prints its value, which is plain data. So next to `template` the
   provider emits `argCode`, which `argCode` from `storybook/internal/csf-tools` builds from the
-  story's args: the code of every arg but a plain string, number, boolean, `null` or `undefined`, such as `shout`, `fn((o) => o.name)` or
-  `new FormControl('x')`. Code that is not a simple value comes in parentheses, unless the story
-  wrote them, so `max: MB * 5` read as `args.max.toFixed(0)` fills to `(MB * 5).toFixed(0)`.
+  story's args: the code of every arg but a plain string, number, boolean, `null` or `undefined`,
+  such as `shout`, `() => null` or `new FormControl('x')`, as written. Only an `⟦operand⟧` hole puts
+  it in parentheses, so `max: MB * 5` read as `args.max.toFixed(0)` fills to `(MB * 5).toFixed(0)`.
 - The static snippet is the same template filled with the args the story is written with, so the
   snippet keeps its form when a control changes. `fillStoryTemplate` from
   `storybook/internal/csf-tools` builds it on the server with the renderer's own filler, exactly as
@@ -64,19 +64,12 @@ renders `({ size = 'md' }) => <Button size={size} />` has the template
 `<Button ⟦attr size size ?'md'⟧ />`. `holeWord`, `defaultWord` and `defaultCode` write and read
 these words.
 
-Each renderer adds holes and words of its own, which its filler documents:
-
-- React: `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object,
-  both without the args their `-name` words name. `⟦close Button⟧` ends a self-closing element
-  with a spread of the args, as ` />`, or with the `children` arg as content.
-- Vue: `⟦slots Card header⟧` closes the component's tag with the slots its words name as content,
-  or ` />` without any, and a `script` word marks a `⟦value⟧` or `⟦operand⟧` in the `<script>`.
-- Web Components: `⟦bool⟧` and `⟦prop⟧` are lit's `?name` and `.name` bindings, and a `⟦props⟧`
-  word such as `.items=items` names what each arg sets.
-- Angular: `⟦value label⟧` is the value of a host component field.
-
-In any `⟦props⟧` hole a `-name` word leaves an arg out, and a `^name` word names an arg the snippet
-cannot show while it is set, such as one an attribute written before the spread would lose to.
+Each renderer adds holes and words of its own, which the comment on its `fill-template.ts`
+documents, such as React's `⟦element Button⟧` or Vue's `⟦slots Card⟧`. In a React, Vue or Svelte
+`⟦props⟧` hole a `-name` word leaves an arg out, and a `^name` word names an arg the snippet cannot
+show while it is set, such as one an attribute written before the spread would lose to. Angular's
+`⟦props⟧` instead names the inputs it binds, and an `=` word before them binds an arg set to
+`undefined` too.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static

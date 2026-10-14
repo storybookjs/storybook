@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<lit-union-jsdoc variant="ghost" old-label="Legacy" label="Default render"></lit-union-jsdoc>",
+  "ArgsDefaultRender": "<lit-union-jsdoc .variant=${"ghost"} .oldLabel=${"Legacy"} .label=${"Default render"}></lit-union-jsdoc>",
   "DomNode": "const el = document.createElement('lit-union-jsdoc');
 el.setAttribute('variant', String("secondary"));
 el.setAttribute('old-label', String("Old"));

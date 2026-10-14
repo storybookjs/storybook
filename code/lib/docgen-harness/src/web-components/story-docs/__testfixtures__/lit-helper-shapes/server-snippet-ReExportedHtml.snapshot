@@ -1,1 +1,1 @@
-<lit-template-shapes label="Alpha"></lit-template-shapes>
+html`<lit-template-shapes label=${"Alpha"}></lit-template-shapes>`

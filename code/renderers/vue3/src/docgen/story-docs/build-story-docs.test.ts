@@ -354,7 +354,7 @@ export const Primary = {
 };
 `);
     expect(story?.argCode).toEqual({
-      formatter: '((text: string) => text.toUpperCase())',
+      formatter: '(text: string) => text.toUpperCase()',
       when: "new Date('2024-01-01')",
       items: '[{ id: 1 }]',
     });
@@ -380,8 +380,8 @@ export const Primary = {
     const story = await primaryStory(
       `export const Primary = { args: { label: '', size: 'sm', onHover: (x) => x } };`
     );
-    expect(story?.argCode).toEqual({ onHover: '((x) => x)' });
-    expect(story?.snippet).toContain('<MyButton label="" :onHover="((x) => x)" size="sm" />');
+    expect(story?.argCode).toEqual({ onHover: '(x) => x' });
+    expect(story?.snippet).toContain('<MyButton label="" :onHover="(x) => x" size="sm" />');
   });
 
   it('has none for a story that fills a slot with a function', async () => {

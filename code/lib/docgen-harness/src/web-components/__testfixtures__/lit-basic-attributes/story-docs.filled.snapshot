@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
+  "ArgsDefaultRender": "<lit-basic-attributes .label=${"Default render"} .count=${3} .disabled=${true} .isOpen=${true}></lit-basic-attributes>",
   "DomNode": "const el = document.createElement('lit-basic-attributes');
 el.setAttribute('label', String("Open panel"));
 el.setAttribute('count', String(7));

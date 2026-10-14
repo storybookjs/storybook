@@ -15,8 +15,6 @@ return Card({ label: "Alpha", disabled: true });",
   return html`<lit-template-shapes disabled></lit-template-shapes>`;
 }
 return Card(⟦args⟧);",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
       "argCode": {},
@@ -24,8 +22,6 @@ return Card(⟦args⟧);",
       "name": "Csf 2 Helper",
       "snippet": "Card({ ...{ label: "Alpha" }, disabled: true })",
       "template": "Card({ ...⟦args⟧, disabled: true })",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
       "argCode": {},
@@ -33,55 +29,45 @@ return Card(⟦args⟧);",
       "name": "Helper Call",
       "snippet": "Card({ label: "Alpha", count: 2 })",
       "template": "Card(⟦args⟧)",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
       "name": "Helper Defaults",
-      "snippet": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>Head</b>`)",
-      "template": "Card({ ...⟦args⟧, count: 5 }, html`<b>⟦text heading⟧</b>`)",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
+      "snippet": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>${"Head"}</b>`)",
+      "template": "Card({ ...⟦args⟧, count: 5 }, html`<b>${⟦value heading⟧}</b>`)",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
       "name": "Helper In Html",
-      "snippet": "<section>${List({ label: "Alpha", count: 2 })}</section>",
-      "template": "<section>${List(⟦args⟧)}</section>",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `List`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `List`.",
+      "snippet": "html`<section>${List({ label: "Alpha", count: 2 })}</section>`",
+      "template": "html`<section>${List(⟦args⟧)}</section>`",
     },
     "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
       "name": "Re Exported Html",
-      "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
-      "template": "<lit-template-shapes label="⟦quoted label⟧"></lit-template-shapes>",
+      "snippet": "html`<lit-template-shapes label=${"Alpha"}></lit-template-shapes>`",
+      "template": "html`<lit-template-shapes label=${⟦value label⟧}></lit-template-shapes>`",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
       "name": "Spread Directive",
-      "snippet": "<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>",
-      "template": "<lit-template-shapes ${spreadProps(⟦args⟧)}></lit-template-shapes>",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `spreadProps`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `spreadProps`.",
+      "snippet": "html`<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>`",
+      "template": "html`<lit-template-shapes ${spreadProps(⟦args⟧)}></lit-template-shapes>`",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
       "name": "Spread Next To Attribute",
-      "snippet": "<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  ></lit-template-shapes
->",
-      "template": "<lit-template-shapes label="Written" ${spreadProps(⟦args -heading⟧)}
-  >⟦text heading⟧</lit-template-shapes
->",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `spreadProps`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `spreadProps`.",
+      "snippet": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
+  >${undefined}</lit-template-shapes
+>`",
+      "template": "html`<lit-template-shapes label="Written" ${spreadProps(⟦args -heading⟧)}
+  >${⟦value heading⟧}</lit-template-shapes
+>`",
     },
   },
 }

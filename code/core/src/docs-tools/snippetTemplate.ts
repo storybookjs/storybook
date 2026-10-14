@@ -12,28 +12,18 @@ import type { Args } from 'storybook/internal/types';
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
- * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`, or that starts an arrow
- *   body or a statement; see {@link asOperand}.
+ * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`, that starts an arrow
+ *   body or a statement, or code the story writes the arg with next to an operator, as in
+ *   `!args.onClick`, in parentheses where it needs them; see `isOperand` and {@link asOperand}.
  *
  * Words are separated by one space. A word that starts with `%` is the rest of it URI-encoded, so
  * any arg name can be a word; see {@link holeWord}. A hole for one arg may end in a `?code` word,
  * the code it prints while the arg is unset, as a parameter default gives it; see
  * {@link defaultWord}.
  *
- * A renderer may add holes and words of its own, which its filler documents:
- *
- * - React: `⟦element Button -name…⟧` is the component with every arg, and `⟦args -name…⟧` the args
- *   as an object, both without the args their `-name` words name. `⟦close Button⟧` ends a
- *   self-closing element with a spread of the args, as ` />`, or with the `children` arg as content.
- * - Vue: `⟦slots Card slot…⟧` closes the component's tag with its slots as content, and a `script` word on
- *   `⟦value⟧` or `⟦operand⟧` marks a hole in the `<script>`.
- * - Web Components: `⟦bool name arg⟧` and `⟦prop name arg⟧` are lit's `?name` and `.name`
- *   bindings, `⟦quoted arg⟧` is the arg inside a quoted attribute value, `⟦raw arg⟧` the text of a
- *   `<style>` or `<script>`, and `⟦style tag …⟧` the `<style>` of part and state args. `⟦props⟧`
- *   words name the attribute, property or CSS property each arg sets, with `~name` for a field's
- *   attribute; `*` sets every other arg as a property. `⟦args -name…⟧` is the args as an object,
- *   as React has it.
- * - Angular: `⟦value arg⟧` is the value of a host component field.
+ * A renderer may add holes and words of its own, which the comment on its filler documents, such
+ * as React's `⟦element Button⟧` or Vue's `⟦slots Card⟧`. Angular's `⟦props⟧` instead names the
+ * inputs it binds, and an `=` word before them binds an arg set to `undefined` too.
  *
  * The template keeps the code around a hole as written, including the whitespace before it. An
  * attribute hole, `⟦props⟧`, `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`, that prints nothing takes that
@@ -70,6 +60,25 @@ const WRITTEN = Symbol.for('storybook/written-arg');
  */
 export const writtenArg = (code: string): object => ({ [WRITTEN]: code });
 
+/**
+ * The args to fill a template with: each arg that still holds the value the story is written with
+ * and has `argCode`, the code the story writes it with, as a {@link writtenArg} of that code, so
+ * the snippet shows it as the story writes it; any other arg, such as one a control changed, as its
+ * value.
+ */
+export const asWrittenArgs = (
+  { args, unmappedArgs, initialArgs }: { args: Args; unmappedArgs: Args; initialArgs: Args },
+  argCode: Record<string, string> = {}
+): Args =>
+  Object.fromEntries(
+    Object.entries(args).map(([name, value]) => [
+      name,
+      Object.hasOwn(argCode, name) && unmappedArgs[name] === initialArgs[name]
+        ? writtenArg(argCode[name]!)
+        : value,
+    ])
+  );
+
 /** The code a {@link writtenArg} holds, or `undefined` for any other value. */
 const writtenCode = (value: unknown): string | undefined =>
   typeof value === 'object' && value !== null && WRITTEN in value
@@ -78,8 +87,8 @@ const writtenCode = (value: unknown): string | undefined =>
 
 /**
  * Whether an arg is a spy from `fn()` or a handler from `action()`, which a filled snippet leaves
- * out. One the story writes comes as a {@link writtenArg} instead, so this is one Storybook adds, as
- * `argTypesRegex` does.
+ * out. One the story writes comes as a {@link writtenArg} instead, so this is one Storybook adds,
+ * as `argTypesRegex` does.
  */
 export const isAction = (value: unknown) =>
   typeof value === 'function' && ('getMockName' in value || 'isAction' in value);
@@ -129,12 +138,34 @@ export const fillHoles = (template: string, fill: (kind: string, words: string[]
 const ATTRIBUTE_HOLES = new Set(['props', 'attr', 'bool', 'prop']);
 
 /**
- * A printed value in parentheses where code reading on would read it differently, as `5.x`,
- * `--1`, `{ a: 1 }` as an arrow body or `() => {}()`. Code from `argCode` that needs them already
- * has them, so `(MB * 5)` is left as it is.
+ * A printed value or the code the story writes an arg with, in parentheses unless code reading on
+ * reads it the same: a name or a chain of names, a string, or code one pair of brackets encloses,
+ * such as an array. So `5`, `-1`, `{ a: 1 }`, `() => null` and `MB * 5` get them, where `5.x`,
+ * `--1`, `{ a: 1 }` as an arrow body or `MB * 5.toFixed()` would read differently.
  */
 export const asOperand = (printed: string) =>
-  /^(?:[-\d{]|\(\))/.test(printed) ? `(${printed})` : printed;
+  /^[A-Za-z_$][\w$]*(?:\??\.[A-Za-z_$][\w$]*)*$/.test(printed) ||
+  /^(["'])(?:\\.|(?!\1)[^\\\n])*\1$/.test(printed) ||
+  enclosed(printed)
+    ? printed
+    : `(${printed})`;
+
+// Whether the bracket `code` starts with closes at its end, as in `[1, [2]]`. Code whose brackets
+// a template literal, a regex, a comment or JSX text could hold is not.
+function enclosed(code: string) {
+  const bare = code.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
+  if (!/^[[(]/.test(bare) || /[`/<]/.test(bare)) {
+    return false;
+  }
+  let depth = 0;
+  for (let index = 0; index < bare.length; index++) {
+    depth += '([{'.includes(bare[index]!) ? 1 : ')]}'.includes(bare[index]!) ? -1 : 0;
+    if (depth === 0) {
+      return index === bare.length - 1;
+    }
+  }
+  return false;
+}
 
 /**
  * The args a `⟦props …⟧` spread passes: every arg but those its `-name` words name, which the

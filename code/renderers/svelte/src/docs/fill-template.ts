@@ -3,11 +3,12 @@ import {
   UnprintableArgError,
   asOperand,
   fillHoles,
+  isAction,
   printValue,
   spreadArgs,
 } from 'storybook/internal/docs-tools';
 
-// Fills a template from `getStoryContentTemplate`.
+// Fills a template from `getStoryContentTemplate`. An attribute leaves out an action Storybook adds.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', second = ''] = words;
@@ -22,14 +23,14 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
       case 'text':
         return text(first, args[first]);
       case 'operand':
-        return asOperand(literal(first, args[first]));
+        return asOperand(printValue(args[first], first));
       default:
-        return literal(first, args[first]);
+        return printValue(args[first], first);
     }
   });
 
 function attribute(name: string, value: unknown): string {
-  if (value === undefined) {
+  if (value === undefined || isAction(value)) {
     return '';
   }
   if (!/^[A-Za-z_$][\w:$-]*$/.test(name)) {
@@ -42,7 +43,7 @@ function attribute(name: string, value: unknown): string {
   // cannot hold its own quote.
   return typeof value === 'string' && !/["{}&]/.test(value)
     ? `${name}="${value}"`
-    : `${name}={${literal(name, value)}}`;
+    : `${name}={${printValue(value, name)}}`;
 }
 
 // Svelte collapses whitespace in text and reads `{`, `<` and `&` as code.
@@ -52,21 +53,5 @@ function text(name: string, value: unknown): string {
   }
   const plain =
     typeof value === 'number' || (typeof value === 'string' && /^\S(.*\S)?$/.test(value));
-  return plain && !/[{}<>&]/.test(String(value)) ? String(value) : `{${literal(name, value)}}`;
-}
-
-// The story's only snippet is this one, so a function, such as an action, shows as its name, and
-// a date as the code that makes it.
-function literal(name: string, value: unknown): string {
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) {
-      throw new UnprintableArgError(name);
-    }
-    return `new Date(${printValue(value.toISOString(), name)})`;
-  }
-  if (typeof value !== 'function') {
-    return printValue(value, name);
-  }
-  const fnName = (value as { getMockName?: () => string }).getMockName?.() ?? value.name;
-  return fnName && fnName !== 'spy' && /^[A-Za-z_$][\w$]*$/.test(fnName) ? fnName : '() => {}';
+  return plain && !/[{}<>&]/.test(String(value)) ? String(value) : `{${printValue(value, name)}}`;
 }

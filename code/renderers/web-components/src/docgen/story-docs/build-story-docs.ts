@@ -1,13 +1,7 @@
-import type { NodePath } from 'storybook/internal/babel';
 import { traverse, types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type {
-  CsfFile,
-  RenderFunctionPath,
-  StoryArgsResolver,
-  StoryReferences,
-} from 'storybook/internal/csf-tools';
+import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
 import {
   authoredSource,
   createStoryArgsResolver,
@@ -19,7 +13,6 @@ import {
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket } from 'storybook/internal/docs-tools';
 import type {
   Args,
   StoryDoc,
@@ -38,11 +31,10 @@ import {
 import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
-import { printElementSnippet, printListenerScript } from './print-element.ts';
+import { printElementSnippet } from './print-element.ts';
 import { fillTemplate } from '../../docs/fill-template.ts';
 import type { LiveTemplate } from './story-template.ts';
-import { argsTemplate, litTemplate } from './story-template.ts';
-import { templateModule } from './template-calls.ts';
+import { argsTemplate, isLitImport, litTemplate } from './story-template.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
@@ -235,8 +227,7 @@ const elementlessSnippet =
   (exportName: string, resolveStoryArgs: StoryArgsResolver): AuthoredFallback =>
   (resolved) => {
     const render = resolveEffectiveRender(csf, exportName, resolveStoryArgs.ctx);
-    const live =
-      render.kind === 'resolved' ? liveTemplate(render.path, resolveStoryArgs.ctx) : undefined;
+    const live = render.kind === 'resolved' ? litTemplate(render.path, resolved.args) : undefined;
     return withTemplate({ warning }, live, resolved, resolveStoryArgs.ctx);
   };
 
@@ -268,8 +259,7 @@ const renderedArgsSnippet = (
 ): SnippetResult => {
   const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
-  const live =
-    render.kind === 'resolved' ? liveTemplate(render.path, deps.resolveStoryArgs.ctx) : undefined;
+  const live = render.kind === 'resolved' ? litTemplate(render.path, resolved.args) : undefined;
   if (render.kind === 'resolved') {
     const template = resolveHtmlTemplate(render.path, deps.csf);
     if (template) {
@@ -304,9 +294,19 @@ const renderedArgsSnippet = (
   );
   warnings.push(args.warning);
   const own = { ...(args.snippet ? { snippet: args.snippet } : {}), ...joinWarnings(warnings) };
-  if (render.kind === 'missing' && args.template) {
-    const element = { template: args.template, listeners: [], free: [] };
-    return withTemplate(own, element, resolved, deps.resolveStoryArgs.ctx, [args.templateWarning]);
+  if (render.kind === 'missing') {
+    const element = argsTemplate(
+      deps.tag,
+      Object.keys(resolved.args),
+      deps.docgenPayload.argTypes ?? {},
+      deps.declaration,
+      // A function arg, such as a listener the story writes.
+      Object.keys(resolved.args).filter(
+        (key) => evaluateArgValue(resolved.args[key]!).kind === 'function'
+      )
+    );
+    const template = element === undefined ? undefined : { template: element, free: [] };
+    return withTemplate(own, template, resolved, deps.resolveStoryArgs.ctx);
   }
   return withTemplate(own, live, resolved, deps.resolveStoryArgs.ctx);
 };
@@ -321,8 +321,7 @@ const withTemplate = (
   own: SnippetResult,
   live: LiveTemplate | undefined,
   resolved: ResolvedStoryArgs,
-  ctx: StoryArgsResolver['ctx'],
-  warnings: (string | undefined)[] = []
+  ctx: StoryArgsResolver['ctx']
 ): SnippetResult => {
   if (!live) {
     return own;
@@ -353,12 +352,13 @@ const withTemplate = (
   const free = new Set([
     ...live.free,
     ...written.flatMap((name) =>
-      freeNames(resolved.args[name]!).filter((free) => ctx.program.scope.getBinding(free))
+      freeNames(resolved.args[name]!).filter((free) => {
+        const declared = ctx.program.scope.getBinding(free)?.path;
+        return declared && !isLitImport(declared);
+      })
     ),
   ]);
   const { warning } = joinWarnings([
-    ...warnings,
-    incompleteList(live.listeners, 'listeners not shown'),
     incompleteList([...free], 'names the snippet does not import or declare'),
   ]);
   // What the file cannot read, but for the names the warning names already.
@@ -387,19 +387,6 @@ const freeNames = (node: t.Node): string[] => {
     });
   }
   return names;
-};
-
-// A render function from another file is read in the code of that file.
-const liveTemplate = (
-  render: RenderFunctionPath,
-  ctx: StoryArgsResolver['ctx']
-): LiveTemplate | undefined => {
-  const program = render.findParent((path) => path.isProgram()) as NodePath<t.Program>;
-  const filePath =
-    program.node === ctx.program.node
-      ? ctx.filePath
-      : (program.hub as unknown as { file: { opts: { filename: string } } }).file.opts.filename;
-  return litTemplate(render, templateModule({ program, filePath }, ctx.resolveModule));
 };
 
 const unboundTemplateArgs = (
@@ -484,10 +471,8 @@ const argsSnippet = (
     }
   }
 
-  // What the template, which prints each arg as the story applies it, still leaves out.
-  const left = [incompleteList(listeners, 'listeners the HTML snippet cannot express')];
   const warnings = [
-    ...left,
+    incompleteList(listeners, 'listeners the HTML snippet cannot express'),
     incompleteList(falseDefaultAttributes(snippet), 'false values that HTML cannot express'),
     incompleteList(properties, 'properties without an attribute'),
     incompleteList(unknown, `args not declared by \`${tag}\``),
@@ -495,21 +480,9 @@ const argsSnippet = (
   const allUnresolved = [...unresolvedArgs, ...unresolved];
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
   warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
-  // A function arg, such as an action, is a listener, which the static snippet's script adds.
-  const element = argsTemplate(
-    tag,
-    Object.keys(args),
-    argTypes ?? {},
-    declaration,
-    Object.keys(args).filter((key) => evaluateArgValue(args[key]!).kind === 'function')
-  );
-  const script = printListenerScript(tag, snippet.listeners);
-  const template =
-    script && hasHoleBracket(script) ? undefined : [element, script].filter(Boolean).join('\n');
 
   return {
     ...(printed ? { snippet: printElementSnippet(snippet) } : {}),
-    ...(template ? { template, templateWarning: joinWarnings(left).warning } : {}),
     ...joinWarnings(warnings),
   };
 };

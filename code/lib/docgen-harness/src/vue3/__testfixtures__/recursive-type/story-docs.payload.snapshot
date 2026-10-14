@@ -33,7 +33,7 @@ const node = ⟦value node script⟧;
 </script>
 
 <template>
-  <RecursiveTree ⟦props -node⟧ :node="node"⟦slots RecursiveTree⟧
+  <RecursiveTree :node="node" ⟦props -node⟧⟦slots RecursiveTree⟧
 </template>",
     },
   },

@@ -49,7 +49,7 @@ const user = { name: 'Ada', age: 36 };
 </script>
 
 <template>
-  <NamedTypeDetails :color="Color.Red" :level="Level.High" scalarAlias="abc-123" shapes="circle" :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user" />
+  <NamedTypeDetails :big="big" :builtin="builtin" :color="Color.Red" :cyclic="cyclic" :dict="dict" :inlined="inlined" :level="Level.High" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" scalarAlias="abc-123" shapes="circle" :user="user" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -79,7 +79,7 @@ const user = ⟦value user script⟧;
 </script>
 
 <template>
-  <NamedTypeDetails ⟦props -big -builtin -cyclic -dict -inlined -localDate -namespaced -partialed -picked -prefs -user⟧ :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user"⟦slots NamedTypeDetails⟧
+  <NamedTypeDetails :big="big" :builtin="builtin" ⟦attr color color⟧ :cyclic="cyclic" :dict="dict" :inlined="inlined" ⟦attr level level⟧ :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" ⟦attr scalarAlias scalarAlias⟧ ⟦attr shapes shapes⟧ :user="user" ⟦props -big -builtin -color -cyclic -dict -inlined -level -localDate -namespaced -partialed -picked -prefs -scalarAlias -shapes -user⟧⟦slots NamedTypeDetails⟧
 </template>",
       "templateWarning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",

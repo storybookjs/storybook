@@ -21,7 +21,7 @@ import { ImportOverride as ImportOverrideButton } from 'my-design-system';
 </script>
 
 <template>
-  <ImportOverrideButton ⟦props⟧⟦slots ImportOverrideButton⟧
+  <ImportOverrideButton ⟦attr label label⟧ ⟦props -label⟧⟦slots ImportOverrideButton⟧
 </template>",
     },
   },

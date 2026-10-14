@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-unset-args--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-unset-args--primary",
       "name": "Primary",
@@ -22,6 +23,21 @@ const modelValue = ref();
   />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import TemplateUnsetArgs from './TemplateUnsetArgs.vue';
+
+const modelValue = ref(⟦value modelValue script ?⟧);
+</script>
+
+<template>
+  <TemplateUnsetArgs
+    ⟦attr id id⟧
+    ⟦attr label label⟧
+    ⟦attr hint hint⟧
+    v-model="modelValue"
+  />
+</template>",
     },
   },
 }

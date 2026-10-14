@@ -21,7 +21,7 @@ import PropSlotNameCollision from './PropSlotNameCollision.vue';
 </script>
 
 <template>
-  <PropSlotNameCollision ⟦props -default⟧⟦slots PropSlotNameCollision default⟧
+  <PropSlotNameCollision ⟦attr icon icon⟧ ⟦props -default -icon⟧⟦slots PropSlotNameCollision default⟧
 </template>",
     },
   },

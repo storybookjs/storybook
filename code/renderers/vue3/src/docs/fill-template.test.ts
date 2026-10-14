@@ -90,19 +90,21 @@ describe('fillTemplate', () => {
     expect(
       fillTemplate('<p :config="⟦value config⟧">', { config: writtenArg('{a: {b: 1}}') })
     ).toBe('<p :config="{a: {b: 1}}">');
-    expect(fillTemplate('<p>⟦text label⟧</p>', { label: 'a  }}' })).toBe("<p>{{ 'a  }\\}' }}</p>");
-    expect(() =>
-      fillTemplate('<p>⟦text label⟧</p>', { label: writtenArg('JSON.stringify({a:{b:1}})') })
-    ).toThrow(UnprintableArgError);
+    expect(fillTemplate('<p>⟦text label⟧</p>', { label: 'a  }}}' })).toBe(
+      "<p>{{ 'a  }\\}\\}' }}</p>"
+    );
+    expect(
+      fillTemplate('<p>⟦text label⟧</p>', { label: writtenArg('JSON.stringify({a:{b:{}}})') })
+    ).toBe('<p>{{ JSON.stringify({a:{b:{} } }) }}</p>');
   });
 
-  it('keeps a string from ending the interpolation a value hole is in, and no written code', () => {
+  it('keeps a string or written code from ending the interpolation a value hole is in', () => {
     expect(fillTemplate('<p>{{ ⟦operand label {{⟧.trim() }}</p>', { label: 'a}}b' })).toBe(
       "<p>{{ 'a}\\}b'.trim() }}</p>"
     );
-    expect(() =>
+    expect(
       fillTemplate('<p>{{ ⟦value fmt {{⟧(1) }}</p>', { fmt: writtenArg('(s) => ({a:{b:s}})') })
-    ).toThrow(UnprintableArgError);
+    ).toBe('<p>{{ (s) => ({a:{b:s} })(1) }}</p>');
   });
 
   it('escapes a value in an attribute written in single quotes for that quote', () => {

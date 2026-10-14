@@ -21,7 +21,7 @@ import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
 </script>
 
 <template>
-  <CrossFileUnionAlias ⟦props -default⟧⟦slots CrossFileUnionAlias default⟧
+  <CrossFileUnionAlias ⟦attr size size⟧ ⟦attr variant variant⟧ ⟦props -default -size -variant⟧⟦slots CrossFileUnionAlias default⟧
 </template>",
     },
   },

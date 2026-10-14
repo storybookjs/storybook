@@ -21,7 +21,7 @@ import CrossFileRuntimeProps from './CrossFileRuntimeProps.vue';
 </script>
 
 <template>
-  <CrossFileRuntimeProps ⟦props⟧⟦slots CrossFileRuntimeProps⟧
+  <CrossFileRuntimeProps ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧⟦slots CrossFileRuntimeProps⟧
 </template>",
     },
   },

@@ -21,7 +21,7 @@ import PropsUnionEnum from './PropsUnionEnum.vue';
 </script>
 
 <template>
-  <PropsUnionEnum ⟦props⟧⟦slots PropsUnionEnum⟧
+  <PropsUnionEnum ⟦attr size size⟧ ⟦attr status status⟧ ⟦props -size -status⟧⟦slots PropsUnionEnum⟧
 </template>",
     },
   },

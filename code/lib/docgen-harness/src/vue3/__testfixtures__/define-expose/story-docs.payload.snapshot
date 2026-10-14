@@ -21,7 +21,7 @@ import DefineExpose from './DefineExpose.vue';
 </script>
 
 <template>
-  <DefineExpose ⟦props⟧⟦slots DefineExpose⟧
+  <DefineExpose ⟦attr label label⟧ ⟦props -label⟧⟦slots DefineExpose⟧
 </template>",
     },
   },

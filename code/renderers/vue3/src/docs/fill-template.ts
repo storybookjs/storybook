@@ -1,6 +1,7 @@
 import {
   type FillSnippetTemplate,
   UnprintableArgError,
+  defaultCode,
   asOperand,
   fillHoles,
   isAction,
@@ -31,25 +32,38 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
       case 'operand':
         return startingStatement(asOperand(value(first, args[first], rest)), rest);
       default:
-        return startingStatement(value(first, args[first], rest), rest);
+        return (
+          (args[first] === undefined ? defaultCode(rest.at(-1)) : undefined) ??
+          startingStatement(value(first, args[first], rest), rest)
+        );
     }
   });
 
 const startingStatement = (printed: string, words: string[]) =>
   words.includes(';') && /^[[(`+\-/]/.test(printed) ? `;${printed}` : printed;
 
-// The element is the whole of the snippet's `<template>`, so its slots are indented one further.
+// The element is the whole of the snippet's `<template>`, so its slots are indented one further. A
+// slot the story writes as more than a literal comes as the content the provider printed for it;
+// see `componentTemplate`.
 function slots(name: string, slotNames: string[], args: Args): string {
   const content = slotNames
-    .map((slot) => [slot, text(slot, args[slot])])
+    .map((slot) => [slot, writtenCode(args[slot]) ?? text(slot, args[slot])])
     .filter(([, printed]) => printed)
     .map(([slot, printed]) =>
-      slot === 'default' ? printed : `<template #${slot}>\n      ${printed}\n    </template>`
+      slot === 'default'
+        ? printed.replaceAll('\n', '\n    ')
+        : `<template #${slot}>\n      ${printed.replaceAll('\n', '\n      ')}\n    </template>`
     );
   return content.length === 0
     ? ' />'
     : `>\n${content.map((line) => `    ${line}\n`).join('')}  </${name}>`;
 }
+
+// The code of a `writtenArg`.
+const writtenCode = (arg: unknown) =>
+  typeof arg === 'object' && arg !== null && WRITTEN in arg ? printValue(arg, '') : undefined;
+
+const WRITTEN = Symbol.for('storybook/written-arg');
 
 const spread = (args: Args, words: string[]) =>
   attributesOf(spreadArgs(args, words).sort(([a], [b]) => a.localeCompare(b)));
@@ -101,18 +115,17 @@ function text(name: string, arg: unknown): string {
 // A literal in an attribute value or an interpolation, both of which decode entities, so it is
 // written in the quote the attribute is not, and `<\/` keeps a string in the `<script>` from ending
 // the block. A VNode is a plain object, but no literal renders it. In an interpolation, the `{{`
-// word, `}\}` keeps a string's `}}` from ending it; other code that prints `}}`, such as code the
-// story wrote, has no such escape.
+// word, `}\}` keeps a string's `}}` from ending it, and a space other code's, such as `{a:{b:1}}` the
+// story wrote.
 function value(name: string, arg: unknown, words: string[] = []) {
   const singleQuoted = words.includes("'");
   const printed = printValue(arg, name, { quote: singleQuoted ? '"' : "'", opaque: isVNode });
   if (words.includes('script')) {
     return printed.replaceAll('</', '<\\/');
   }
-  if (words.includes('{{') && typeof arg !== 'string' && printed.includes('}}')) {
-    throw new UnprintableArgError(name);
-  }
-  const closed = words.includes('{{') ? printed.replaceAll('}}', '}\\}') : printed;
+  const closed = words.includes('{{')
+    ? printed.replace(/}(?=})/g, typeof arg === 'string' ? '}\\' : '} ')
+    : printed;
   const escaped = closed.replaceAll('&', '&amp;');
   return singleQuoted ? escaped.replaceAll("'", '&#39;') : escaped.replaceAll('"', '&quot;');
 }

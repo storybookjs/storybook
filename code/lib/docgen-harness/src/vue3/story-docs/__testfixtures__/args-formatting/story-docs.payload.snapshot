@@ -23,7 +23,7 @@ const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>
-  <ArgsFormattingButton :count="3" :disabled="false" emptyLabel="" enabled label="Formatted" :onSubmit="() => undefined" :items="items" :options="options" :quotationLabel="quotationLabel" />
+  <ArgsFormattingButton :count="3" :disabled="false" emptyLabel="" enabled :items="items" label="Formatted" :onSubmit="() => undefined" :options="options" :quotationLabel="quotationLabel" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -37,7 +37,7 @@ const quotationLabel = ⟦value quotationLabel script⟧;
 </script>
 
 <template>
-  <ArgsFormattingButton ⟦props -items -options -quotationLabel⟧ :items="items" :options="options" :quotationLabel="quotationLabel"⟦slots ArgsFormattingButton⟧
+  <ArgsFormattingButton ⟦attr count count⟧ ⟦attr disabled disabled⟧ ⟦attr emptyLabel emptyLabel⟧ ⟦attr enabled enabled⟧ :items="items" ⟦attr label label⟧ ⟦attr onSubmit onSubmit⟧ :options="options" :quotationLabel="quotationLabel" ⟦props -count -disabled -emptyLabel -enabled -items -label -onSubmit -options -quotationLabel⟧⟦slots ArgsFormattingButton⟧
 </template>",
     },
     "forms-args-formatting--unset-arg": {
@@ -58,7 +58,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  <ArgsFormattingButton ⟦props⟧⟦slots ArgsFormattingButton⟧
+  <ArgsFormattingButton ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧⟦slots ArgsFormattingButton⟧
 </template>",
     },
   },

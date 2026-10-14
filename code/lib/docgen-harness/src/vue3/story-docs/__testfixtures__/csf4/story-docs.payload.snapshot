@@ -42,7 +42,7 @@ import CsfFourButton from './CsfFourButton.vue';
 </script>
 
 <template>
-  <CsfFourButton ⟦props⟧⟦slots CsfFourButton⟧
+  <CsfFourButton ⟦attr label label⟧ ⟦props -label⟧⟦slots CsfFourButton⟧
 </template>",
     },
   },

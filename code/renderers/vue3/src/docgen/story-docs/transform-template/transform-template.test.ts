@@ -5,12 +5,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
+import { fillWithStoryArgs } from 'storybook/internal/csf-tools';
+import { writtenArg } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { buildStoryDocsPayload } from '../build-story-docs.ts';
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { transformTemplate } from './transform-template.ts';
+import { fillTemplate } from '../../../docs/fill-template.ts';
+import { componentTemplate, transformTemplate } from './transform-template.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -276,27 +279,19 @@ export const Primary = {
 
   it('keeps a write to an arg as written, and fills each read', () => {
     expect(
-      transformTemplate({
+      snippetOf({
         args: [prop('count', '1')],
-        componentImports: new Map(),
-        componentName: 'C',
-        importBindings: new Map(),
         template: '<C :count="args.count" :next="(args.count += 1)" />',
-        unsetArgs: new Set(),
-      })?.snippet
+      })
     ).toContain('<C :count="1" :next="(args.count += 1)" />');
   });
 
   it('normalizes leading and trailing whitespace from author template literals', () => {
     expect(
-      transformTemplate({
+      snippetOf({
         args: [prop('label', `'...'`)],
-        componentImports: new Map(),
-        componentName: 'C',
-        importBindings: new Map(),
         template: '\n  <C :label="args.label" />\n',
-        unsetArgs: new Set(),
-      })?.snippet
+      })
     ).toMatchInlineSnapshot(`
       "<template>
         <C label="..." />
@@ -306,14 +301,10 @@ export const Primary = {
 
   it('dedents multi-line author template literals while preserving relative indentation', () => {
     expect(
-      transformTemplate({
+      snippetOf({
         args: [prop('label', `'Nested'`)],
-        componentImports: new Map(),
-        componentName: 'C',
-        importBindings: new Map(),
         template: '\n    <div>\n      <C :label="args.label" />\n    </div>\n  ',
-        unsetArgs: new Set(),
-      })?.snippet
+      })
     ).toMatchInlineSnapshot(`
       "<template>
         <div>
@@ -325,14 +316,10 @@ export const Primary = {
 
   it('keeps internal blank lines empty when normalizing author template literals', () => {
     expect(
-      transformTemplate({
+      snippetOf({
         args: [prop('label', `'Blank'`)],
-        componentImports: new Map(),
-        componentName: 'C',
-        importBindings: new Map(),
         template: '\n  <C :label="args.label" />\n    \n  <C :label="args.label" />\n',
-        unsetArgs: new Set(),
-      })?.snippet
+      })
     ).toMatchInlineSnapshot(`
       "<template>
         <C label="Blank" />
@@ -344,14 +331,10 @@ export const Primary = {
 
   it('dedents tab-indented author template literals', () => {
     expect(
-      transformTemplate({
+      snippetOf({
         args: [prop('label', `'Tabbed'`)],
-        componentImports: new Map(),
-        componentName: 'C',
-        importBindings: new Map(),
         template: '\n\t<C :label="args.label" />\n',
-        unsetArgs: new Set(),
-      })?.snippet
+      })
     ).toMatchInlineSnapshot(`
       "<template>
         <C label="Tabbed" />
@@ -563,7 +546,7 @@ export const Primary = {
     `);
   });
 
-  it('drops an event binding whose handler arg is undefined', async () => {
+  it('attaches no listener for an undefined handler arg', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -609,7 +592,7 @@ export const Primary = {
       import { ref } from "vue";
       import MyButton from './MyButton.vue';
 
-      const modelValue = ref(undefined);
+      const modelValue = ref();
       </script>
 
       <template>
@@ -721,7 +704,7 @@ export const Primary = {
       </script>
 
       <template>
-        <div :style="{ '--w': '52px', width: false ? '52px' : '176px' }"><UpdateStatusItem :isCollapsed="false" :updateProgressInfo="null" :release="release" :status="status" /></div>
+        <div :style="{ '--w': '52px', width: false ? '52px' : '176px' }"><UpdateStatusItem :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" /></div>
       </template>"
     `);
   });
@@ -1276,7 +1259,7 @@ export const Primary = {
     `);
   });
 
-  it('removes an earlier attribute an expanded arg overrides', async () => {
+  it('leaves out of the args spread an attribute the element writes before it', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1294,7 +1277,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton label="FromArgs" />
+        <MyButton label="static" />
       </template>"
     `);
   });
@@ -1304,20 +1287,25 @@ export const Primary = {
       'an expanded event arg collides with a listener',
       `{ onClick: () => {} }`,
       '<MyButton @click="args.onClick" v-bind="args" />',
+      '<MyButton @click="onClick" />',
     ],
     [
       'an expanded model arg collides with a v-model',
       `{ modelValue: 'Typed text' }`,
       '<MyButton v-model="args.modelValue" v-bind="args" />',
+      '<MyButton v-model="modelValue" />',
     ],
     [
       'an expanded class arg collides with a class attribute',
       `{ class: 'primary' }`,
       '<MyButton class="static" v-bind="args" />',
+      '<MyButton class="static" />',
     ],
-  ])('bails when %s already on the element', async (_name, argsSource, template) => {
-    expect(
-      await primarySnippet(`
+  ])(
+    'leaves out of the args spread what the element writes before it, when %s',
+    async (_name, argsSource, template, element) => {
+      expect(
+        await primarySnippet(`
 export const Primary = {
   args: ${argsSource},
   render: (args) => ({
@@ -1327,8 +1315,9 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
-  });
+      ).toContain(element);
+    }
+  );
 
   it('keeps a binding next to a static attribute of the same name', async () => {
     expect(
@@ -1375,11 +1364,26 @@ export const Primary = {
     `);
   });
 
+  it.each(['<MyButton @click="args.count++" />', '<MyButton @click="args.count = 1" />'])(
+    'keeps a write to an arg in an event handler as written: %s',
+    async (template) => {
+      expect(
+        await primarySnippet(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: ${JSON.stringify(template)},
+  }),
+};
+`)
+      ).toContain(template);
+    }
+  );
+
   it.each([
     ['spread args', '<MyButton v-bind="{ ...args }" />', { count: 2 }],
     ['computed args member', '<MyButton :x="args[key]" />', { count: 2 }],
-    ['update expression in event handler', '<MyButton @click="args.count++" />', { count: 2 }],
-    ['assignment in event handler', '<MyButton @click="args.count = 1" />', { count: 2 }],
     ['v-for args shadowing', '<MyButton v-for="args in items" :key="args.id" />', { count: 2 }],
     [
       'v-slot args shadowing',
@@ -1483,9 +1487,9 @@ export const Primary = {
     const story = payload.stories['example-mybutton--primary']!;
     expect(story.snippet).toContain('<Component v-model="modelValue" />');
     expect(story.snippet).toContain("const modelValue = ref('Test value');");
-    expect(story.template).toContain('const modelValue = ref(⟦value modelValue script⟧);');
+    expect(story.template).toContain('const modelValue = ref(⟦value modelValue script ?⟧);');
     expect(story.template).toContain(
-      '<Component ⟦props -default -header -modelValue⟧ v-model="modelValue"'
+      '<Component v-model="modelValue" ⟦props -default -header -modelValue⟧'
     );
   });
 
@@ -1798,11 +1802,11 @@ export const Primary = {
   });
 });
 
-// The render-less story path synthesizes this template and hands classified args to the engine.
-describe('transformTemplate with a synthesized v-bind template', () => {
+// A story without a render function: Storybook's render of the component, filled with its args.
+describe('componentTemplate', () => {
   it.each<[input: string, output: string]>([
     [`'Hello'`, 'label="Hello"'],
-    [`'She said "hi"'`, `label='She said "hi"'`],
+    [`'She said "hi"'`, `label="She said &quot;hi&quot;"`],
     ['3', ':label="3"'],
     ['true', 'label'],
     ['false', ':label="false"'],
@@ -1817,13 +1821,13 @@ import C from './C.vue';
 </template>`);
   });
 
-  it('hoists a value that needs script scope, indented like the snippet around it', () => {
+  it('hoists a value that needs script scope, as the story writes it', () => {
     expect(render([prop('options', `{\n    tone: "neutral"\n}`, 'hoist')]))
       .toBe(`<script lang="ts" setup>
 import C from './C.vue';
 
 const options = {
-  tone: "neutral"
+    tone: "neutral"
 };
 </script>
 
@@ -1858,7 +1862,7 @@ const ariaLabel2 = [];
 
 const _default = {};
 
-const modelValue = ref("value");
+const modelValue = ref('value');
 
 const ref2 = {};
 </script>
@@ -1869,7 +1873,7 @@ const ref2 = {};
   });
 
   it('renders slots as children and named slots as templates', () => {
-    const snippet = render([slot('header', `'Title'`), slot('default', `'Body'`)]);
+    const snippet = render([slot('default', `'Body'`), slot('header', `'Title'`)]);
 
     expect(snippet).toBe(`<script lang="ts" setup>
 import C from './C.vue';
@@ -1885,23 +1889,20 @@ import C from './C.vue';
 </template>`);
   });
 
-  it('uses the overridden component import inside function slots', () => {
-    const result = transformTemplate({
-      args: [slot('default', `() => h(C, { label: 'Nested' })`, 'function-slot')],
-      componentImports: new Map([['C', "import C from '@example/C.vue';"]]),
-      componentName: 'C',
-      importBindings: new Map([['C', { importId: './C.vue', importName: 'default' }]]),
-      template: '<C v-bind="args" />',
-      unsetArgs: new Set(),
-    });
+  // The slot's content is what its function returns, printed once by the provider as its argCode.
+  it('renders a function slot as the markup it returns, with its imports', () => {
+    const snippet = render([
+      slot('default', `() => h(Child, { label: 'Nested' })`, 'function-slot'),
+    ]);
 
-    expect(result?.snippet).toBe(`<script lang="ts" setup>
-import C from '@example/C.vue';
+    expect(snippet).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+import Child from './Child.vue';
 </script>
 
 <template>
   <C>
-    <C label="Nested" />
+    <Child label="Nested" />
   </C>
 </template>`);
   });
@@ -1909,6 +1910,7 @@ import C from '@example/C.vue';
   it('interpolates a hoisted slot value', () => {
     const snippet = render([slot('default', `['a']`, 'hoist')]);
 
+    expect(snippet).toContain('const _default = ["a"];');
     expect(snippet).toContain('{{ _default }}');
   });
 
@@ -1917,7 +1919,7 @@ import C from '@example/C.vue';
   it('escapes inline slot text the template parser would read as markup', () => {
     const snippet = render([slot('default', `'<script>{{ evil }}</script>'`)]);
 
-    expect(snippet).toContain('<C>\n    &lt;script&gt;&#123;&#123; evil }}&lt;/script&gt;\n  </C>');
+    expect(snippet).toContain('<C>\n    &lt;script&gt;{&#123; evil }}&lt;/script&gt;\n  </C>');
     expect(snippet).toContain("import C from './C.vue';");
   });
 
@@ -1927,11 +1929,10 @@ import C from '@example/C.vue';
     expect(snippet).toContain('<C>\n    a &lt; b\n  </C>');
   });
 
-  it('hoists inline slot text whose whitespace raw template text would condense', () => {
+  it('interpolates slot text whose whitespace raw template text would condense', () => {
     const snippet = render([slot('default', `'  padded  '`)]);
 
-    expect(snippet).toContain('const _default = "  padded  ";');
-    expect(snippet).toContain('{{ _default }}');
+    expect(snippet).toContain(`{{ '  padded  ' }}`);
   });
 
   it('hoists a listener and renders it as a Vue event binding', () => {
@@ -1955,18 +1956,41 @@ const onSubmit = () => null;
   });
 });
 
+// Storybook's render of a component without a render function, filled with the story's own args
+// and the slot content the provider prints.
 function render(args: ClassifiedArg[], componentName = 'C'): string {
-  return transformTemplate({
-    args,
-    componentImports: new Map([
-      [componentName, `import ${componentName} from './${componentName}.vue';`],
-    ]),
+  const slots = args.filter((arg) => arg.role === 'slot').map((arg) => arg.name);
+  const written = writtenArgs(args);
+  const { template, argCode = {} } = componentTemplate(
     componentName,
-    importBindings: new Map(),
-    template: `<${componentName} v-bind="args" />`,
-    unsetArgs: new Set(),
-  })!.snippet.replaceAll('\r\n', '\n');
+    `import ${componentName} from './${componentName}.vue';`,
+    slots,
+    args,
+    written,
+    new Map([['Child', { importId: './Child.vue', importName: 'default' }]])
+  )!;
+  const slotCode = Object.fromEntries(
+    Object.entries(argCode).map(([name, code]) => [name, writtenArg(code)])
+  );
+  return fillWithStoryArgs(template, written, (code, values) =>
+    fillTemplate(code, { ...values, ...slotCode })
+  );
 }
+
+// The template of a render template, filled with the story's own args.
+function snippetOf({ args, template }: { args: ClassifiedArg[]; template: string }) {
+  const code = transformTemplate({
+    args,
+    componentImports: new Map(),
+    slots: [],
+    template,
+    written: writtenArgs(args),
+  });
+  return code === undefined ? undefined : fillWithStoryArgs(code, writtenArgs(args), fillTemplate);
+}
+
+const writtenArgs = (args: ClassifiedArg[]) =>
+  Object.fromEntries(args.map((arg) => [arg.name, arg.value]));
 
 function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
   return { name, value: expression(code), role: 'prop', plan: { kind } };

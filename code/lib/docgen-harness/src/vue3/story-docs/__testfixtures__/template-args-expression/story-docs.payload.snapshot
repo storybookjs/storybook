@@ -27,7 +27,7 @@ const status = { state: 'available', version: '1.2.3' };
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression isCollapsed :updateProgressInfo="null" :release="release" :status="status" />
+    <TemplateArgsExpression isCollapsed :release="release" :status="status" :updateProgressInfo="null" />
   </div>
 </template>",
       "summary": undefined,
@@ -47,7 +47,7 @@ const status = ⟦value status script⟧;
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression ⟦props -release -status⟧ :release="release" :status="status" />
+    <TemplateArgsExpression ⟦attr isCollapsed isCollapsed⟧ :release="release" :status="status" ⟦attr updateProgressInfo updateProgressInfo⟧ ⟦props -isCollapsed -release -status -updateProgressInfo⟧ />
   </div>
 </template>",
     },
@@ -75,7 +75,7 @@ const status = { state: 'available', version: '1.2.3' };
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression :isCollapsed="false" :updateProgressInfo="null" :release="release" :status="status" />
+    <TemplateArgsExpression :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" />
   </div>
 </template>",
       "summary": undefined,
@@ -95,7 +95,7 @@ const status = ⟦value status script⟧;
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression ⟦props -release -status⟧ :release="release" :status="status" />
+    <TemplateArgsExpression ⟦attr isCollapsed isCollapsed⟧ :release="release" :status="status" ⟦attr updateProgressInfo updateProgressInfo⟧ ⟦props -isCollapsed -release -status -updateProgressInfo⟧ />
   </div>
 </template>",
     },

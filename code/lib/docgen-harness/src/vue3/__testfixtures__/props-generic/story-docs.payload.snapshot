@@ -17,7 +17,7 @@ const items = ['alpha', 'beta'];
 </script>
 
 <template>
-  <PropsGeneric selected="alpha" :items="items" />
+  <PropsGeneric :items="items" selected="alpha" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -27,7 +27,7 @@ const items = ⟦value items script⟧;
 </script>
 
 <template>
-  <PropsGeneric ⟦props -items⟧ :items="items"⟦slots PropsGeneric⟧
+  <PropsGeneric :items="items" ⟦attr selected selected⟧ ⟦props -items -selected⟧⟦slots PropsGeneric⟧
 </template>",
     },
   },

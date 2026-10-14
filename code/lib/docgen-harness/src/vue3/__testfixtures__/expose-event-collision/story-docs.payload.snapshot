@@ -21,7 +21,7 @@ import ExposeEventCollision from './ExposeEventCollision.vue';
 </script>
 
 <template>
-  <ExposeEventCollision ⟦props⟧⟦slots ExposeEventCollision⟧
+  <ExposeEventCollision ⟦attr label label⟧ ⟦props -label⟧⟦slots ExposeEventCollision⟧
 </template>",
     },
   },

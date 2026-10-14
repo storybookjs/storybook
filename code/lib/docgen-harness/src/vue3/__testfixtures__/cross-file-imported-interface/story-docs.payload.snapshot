@@ -21,7 +21,7 @@ import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
 </script>
 
 <template>
-  <ImportedInterfaceProps ⟦props⟧⟦slots ImportedInterfaceProps⟧
+  <ImportedInterfaceProps ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧⟦slots ImportedInterfaceProps⟧
 </template>",
     },
   },

@@ -21,7 +21,7 @@ import AsCastButton from './AsCastButton.vue';
 </script>
 
 <template>
-  <AsCastButton ⟦props⟧⟦slots AsCastButton⟧
+  <AsCastButton ⟦attr label label⟧ ⟦props -label⟧⟦slots AsCastButton⟧
 </template>",
     },
   },

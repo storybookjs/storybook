@@ -21,7 +21,7 @@ import DefineSlotsWithProps from './DefineSlotsWithProps.vue';
 </script>
 
 <template>
-  <DefineSlotsWithProps ⟦props -default -icon⟧⟦slots DefineSlotsWithProps default icon⟧
+  <DefineSlotsWithProps ⟦attr disabled disabled⟧ ⟦attr label label⟧ ⟦props -default -icon -disabled -label⟧⟦slots DefineSlotsWithProps default icon⟧
 </template>",
     },
   },

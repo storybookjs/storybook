@@ -21,7 +21,7 @@ import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
 </script>
 
 <template>
-  <CrossFilePropsSpread ⟦props⟧⟦slots CrossFilePropsSpread⟧
+  <CrossFilePropsSpread ⟦attr label label⟧ ⟦attr optional optional⟧ ⟦attr value value⟧ ⟦props -label -optional -value⟧⟦slots CrossFilePropsSpread⟧
 </template>",
     },
   },

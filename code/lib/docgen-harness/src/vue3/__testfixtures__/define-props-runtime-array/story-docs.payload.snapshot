@@ -21,7 +21,7 @@ import RuntimeArrayProps from './RuntimeArrayProps.vue';
 </script>
 
 <template>
-  <RuntimeArrayProps ⟦props⟧⟦slots RuntimeArrayProps⟧
+  <RuntimeArrayProps ⟦attr appearance appearance⟧ ⟦attr label label⟧ ⟦props -appearance -label⟧⟦slots RuntimeArrayProps⟧
 </template>",
     },
   },

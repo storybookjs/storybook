@@ -23,11 +23,11 @@ const modelValue = ref('Draft text');
 import { ref } from "vue";
 import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
 
-const modelValue = ref(⟦value modelValue script⟧);
+const modelValue = ref(⟦value modelValue script ?⟧);
 </script>
 
 <template>
-  <TemplateVModelExpansion ⟦props -modelValue⟧ v-model="modelValue" />
+  <TemplateVModelExpansion ⟦attr label label⟧ v-model="modelValue" ⟦props -label -modelValue⟧ />
 </template>",
     },
   },

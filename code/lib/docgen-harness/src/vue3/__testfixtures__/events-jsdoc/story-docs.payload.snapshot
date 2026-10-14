@@ -32,7 +32,7 @@ const onSave = ⟦value onSave script⟧;
 </script>
 
 <template>
-  <EventsJsdoc ⟦props -onCancel -onSave⟧ @cancel="onCancel" @save="onSave"⟦slots EventsJsdoc⟧
+  <EventsJsdoc ⟦attr label label⟧ ⟦props -label -onCancel -onSave⟧ @cancel="onCancel" @save="onSave"⟦slots EventsJsdoc⟧
 </template>",
     },
   },

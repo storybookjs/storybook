@@ -10,7 +10,9 @@ import { vol } from 'memfs';
 
 import { fillTemplate } from '../../docs/fill-template.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
-import { renderTemplate } from './story-template.ts';
+import type { ClassifiedArg } from './classify-args/classify-args.ts';
+import type { ForwardableSetup } from './transform-template/forward-setup.ts';
+import { transformTemplate } from './transform-template/transform-template.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -373,7 +375,7 @@ export const Primary = {
         { args, unmappedArgs: args, initialArgs },
         fillTemplate
       ).snippet
-    ).toContain(`<MyButton label="Stop" :formatter="formatter" :items="items" :when="when" />`);
+    ).toContain(`<MyButton :formatter="formatter" :items="items" label="Stop" :when="when" />`);
   });
 
   it('is filled with every arg the story writes, as an empty string or a function the component does not declare', async () => {
@@ -395,12 +397,18 @@ export const Primary = { args: { label: LABELS.ok, size: 'sm', onClick: fn() } }
     expect(story?.warning).toContain('LABELS');
   });
 
-  it('has none for a story that fills a slot with a function', async () => {
+  // The slot's content is what its function returns, printed once on the server as its argCode; a
+  // control sets the slot to a string, which prints as text.
+  it('has a hole at the content of a slot the story fills with a function', async () => {
     const story = await primaryStory(
       `export const Primary = { args: { label: 'Go', default: () => 'Hello' } };`
     );
-    expect(story?.template).toBeUndefined();
+    expect(story?.template).toContain('⟦slots MyButton default header⟧');
+    expect(story?.argCode).toEqual({ default: 'Hello' });
     expect(story?.snippet).toContain('<MyButton label="Go">\n    Hello\n  </MyButton>');
+    expect(fillTemplate(story!.template!, { label: 'Go', default: 'Bye' })).toContain(
+      '<MyButton label="Go">\n    Bye\n  </MyButton>'
+    );
   });
 
   it("is Storybook's render of the component, its slots as content, for a story without a render function", async () => {
@@ -412,7 +420,7 @@ export const Primary = { args: { label: LABELS.ok, size: 'sm', onClick: fn() } }
         '</script>',
         '',
         '<template>',
-        '  <MyButton ⟦props -default -header⟧⟦slots MyButton default header⟧',
+        '  <MyButton ⟦attr label label⟧ ⟦props -default -header -label⟧⟦slots MyButton default header⟧',
         '</template>',
       ].join('\n')
     );
@@ -449,7 +457,7 @@ export const Primary = {
         '<template>',
         '  <div v-if="⟦value active⟧" :title="⟦value label⟧ + \'!\'">',
         '    <Icon ⟦attr name size⟧ />',
-        '    <MyButton ⟦props -default -header⟧>⟦text label⟧</MyButton>',
+        '    <MyButton ⟦attr active active⟧ ⟦attr label label⟧ ⟦attr size size⟧ ⟦props -default -header -active -label -size⟧>⟦text label⟧</MyButton>',
         '  </div>',
         '</template>',
       ].join('\n')
@@ -520,7 +528,7 @@ export const Primary = {
         'import { ref } from "vue";',
         "import MyButton from './MyButton.vue';",
         '',
-        'const label = ref(⟦value label script⟧);',
+        'const label = ref(⟦value label script ?⟧);',
         '</script>',
         '',
         '<template>',
@@ -531,65 +539,75 @@ export const Primary = {
     expect(fillTemplate(story!.template!, { label: 'a & "b"' })).toContain(
       `const label = ref('a & "b"');`
     );
-    expect(fillTemplate(story!.template!, {})).toContain('const label = ref(undefined);');
+    expect(fillTemplate(story!.template!, {})).toContain('const label = ref();');
   });
 
   it('names the ref of a v-model past a setup binding and a v-for variable', () => {
     const setup = { bindings: ['open'], imports: [], statements: [] };
     const template = '<MyButton v-for="size in 3" v-model:open="args.open" v-model="args.size" />';
-    expect(renderTemplate(template, new Map(), [], setup)).toContain(
+    expect(templateOf(template, setup)).toContain(
       '<MyButton v-for="size in 3" v-model:open="open2" v-model="size2" />'
     );
   });
 
   it('is none for a setup binding or a v-for variable named args', () => {
     const setup = { bindings: ['args'], imports: [], statements: [] };
-    expect(renderTemplate('<MyButton :label="args.label" />', new Map(), [], setup)).toBe(
-      undefined
-    );
+    expect(templateOf('<MyButton :label="args.label" />', setup)).toBe(undefined);
     const template = '<MyButton v-for="args in items" :label="args.label" />';
-    expect(renderTemplate(template, new Map(), [])).toBeUndefined();
+    expect(templateOf(template)).toBeUndefined();
+  });
+
+  it('binds a listener on an arg to a const that holds the arg, and none on an unset arg', () => {
+    const onClick = {
+      name: 'onClick',
+      value: {} as never,
+      role: 'event' as const,
+      eventName: 'click',
+      plan: { kind: 'inline' as const },
+    };
+    const code = templateOf('<MyButton @click="args.onClick" />', undefined, [onClick])!;
+    expect(code).toContain('const onClick = ⟦value onClick script⟧;');
+    expect(code).toContain('<MyButton @click="onClick" />');
+    expect(templateOf('<MyButton\n  @click="args.onClick"\n/>')).toContain('<MyButton\n  />');
   });
 
   it.each([
-    ['an event handler reading an arg', '<MyButton @click="args.onClick" />'],
+    ['an event handler calling an arg', '<MyButton @click="args.onClick()" />'],
     ['a v-model on part of an arg', '<MyButton v-model="args.item.label" />'],
     ['the args passed whole', '<MyButton :item="args" />'],
   ])('is none for %s', (_, template) => {
-    expect(renderTemplate(template, new Map(), [])).toBeUndefined();
+    expect(templateOf(template)).toBeUndefined();
   });
 
   it('marks the attributes written before the args spread and leaves out those after it', () => {
     const template = '<MyButton label="x" v-bind="args" :size="args.size" />';
-    expect(renderTemplate(template, new Map(), [])).toContain(
+    expect(templateOf(template)).toContain(
       '<MyButton label="x" ⟦props ^label -size⟧ ⟦attr size size⟧ />'
     );
   });
 
   it('leaves out of the args spread a listener the element writes', () => {
     const template = '<MyButton v-bind="args" @click="track" />';
-    expect(renderTemplate(template, new Map(), [])).toContain(
+    expect(templateOf(template)).toContain(
       '<MyButton ⟦props -onClick -on-click⟧ @click="track" />'
     );
   });
 
   it('marks a hole in an interpolation', () => {
     const template = '<MyButton>{{ args.label.trim() }}</MyButton>';
-    expect(renderTemplate(template, new Map(), [])).toContain(
-      '<MyButton>{{ ⟦operand label {{⟧.trim() }}</MyButton>'
-    );
+    expect(templateOf(template)).toContain('<MyButton>{{ ⟦operand label {{⟧.trim() }}</MyButton>');
   });
 
   it('names an attribute around the args spread by the prop it sets', () => {
     const template = '<MyButton max-count="3" v-bind="args" :is-open="args.open" />';
-    expect(renderTemplate(template, new Map(), [])).toContain(
+    expect(templateOf(template)).toContain(
       '<MyButton max-count="3" ⟦props ^max-count ^maxCount -is-open -isOpen⟧ ⟦attr is-open open⟧ />'
     );
   });
 
   it('reads an arg named with a space, as one word', () => {
     const template = `<MyButton :title="args['Button title']">{{ args['Button title'] }}</MyButton>`;
-    const code = renderTemplate(template, new Map(), [])!;
+    const code = templateOf(template)!;
     expect(code).toContain(
       '<MyButton ⟦attr title %Button%20title⟧>⟦text %Button%20title⟧</MyButton>'
     );
@@ -600,7 +618,7 @@ export const Primary = {
 
   it('keeps a binding the element also writes as an attribute, or binds with a modifier', () => {
     const template = '<MyButton class="a" :class="args.c" :label.prop="args.label" />';
-    expect(renderTemplate(template, new Map(), [])).toContain(
+    expect(templateOf(template)).toContain(
       '<MyButton class="a" :class="⟦value c⟧" :label.prop="⟦value label⟧" />'
     );
   });
@@ -667,17 +685,11 @@ export const Primary = {
         plan: { kind: 'hoist' as const },
       },
     ];
-    const code = renderTemplate(
-      '<MyButton v-bind="args" :label="args.items[0]" />',
-      new Map(),
-      [],
-      undefined,
-      args
-    )!;
+    const code = templateOf('<MyButton v-bind="args" :label="args.items[0]" />', undefined, args)!;
     expect(code).toContain('const items = ⟦value items script⟧;');
-    expect(code).toContain('<MyButton ⟦props -label -items⟧ :items="items" :label="items[0]" />');
+    expect(code).toContain('<MyButton :items="items" ⟦props -label -items⟧ :label="items[0]" />');
     expect(fillTemplate(code, { items: ['a'], size: 'sm' })).toContain(
-      `<MyButton size="sm" :items="items" :label="items[0]" />`
+      `<MyButton :items="items" size="sm" :label="items[0]" />`
     );
   });
 
@@ -750,18 +762,23 @@ export const Primary = {
   });
 
   it('marks a hole in an attribute written in single quotes, and none in one without quotes', () => {
-    const code = renderTemplate(`<MyButton :label='args.label + "!"' />`, new Map(), [])!;
+    const code = templateOf(`<MyButton :label='args.label + "!"' />`)!;
     expect(code).toContain(`<MyButton :label='⟦value label '⟧ + "!"' />`);
     expect(fillTemplate(code, { label: `it's "x"` })).toContain(
       `<MyButton :label='"it&#39;s \\"x\\"" + "!"' />`
     );
-    expect(renderTemplate('<MyButton :label=args.label+1 />', new Map(), [])).toBeUndefined();
+    expect(templateOf('<MyButton :label=args.label+1 />')).toBeUndefined();
   });
 
   it('leaves out an arg a spread passes under the other spelling of an attribute', () => {
-    const code = renderTemplate('<div v-bind="args" :aria-label="args.label" />', new Map(), [])!;
+    const code = templateOf('<div v-bind="args" :aria-label="args.label" />')!;
     expect(fillTemplate(code, { 'aria-label': 'x', ariaLabel: 'y', label: 'z' })).toContain(
       '<div label="z" aria-label="z" />'
     );
   });
 });
+
+// The template of a render template, for a component without slots.
+function templateOf(template: string, setup?: ForwardableSetup, args: ClassifiedArg[] = []) {
+  return transformTemplate({ template, componentImports: new Map(), slots: [], setup, args });
+}

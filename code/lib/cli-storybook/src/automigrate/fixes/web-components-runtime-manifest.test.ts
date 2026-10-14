@@ -337,12 +337,14 @@ describe('check', (): void => {
     const result = await checkFix(webComponentsRuntimeManifest, checkOptions({}));
 
     expect(result).toBeNull();
-    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      'Left the setCustomElementsManifest() call in /project/.storybook/preview.ts alone: ' +
-        '/project/custom-elements.json is not a readable Custom Elements Manifest. Generate ' +
-        'one with @custom-elements-manifest/analyzer, then rerun "storybook automigrate ' +
-        'web-components-runtime-manifest".'
-    );
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Left the setCustomElementsManifest() call in /project/.storybook/preview.ts alone: /project/custom-elements.json is not a readable Custom Elements Manifest.
+      Generate one with @custom-elements-manifest/analyzer, then rerun "storybook automigrate web-components-runtime-manifest".",
+        ],
+      ]
+    `);
   });
 
   it('returns null when package.json customElements includes a WCA manifest', async (): Promise<void> => {
@@ -381,12 +383,14 @@ describe('check', (): void => {
     const result = await checkFix(webComponentsRuntimeManifest, checkOptions({}));
 
     expect(result).toBeNull();
-    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      'Left the setCustomElementsManifest() call in /project/.storybook/preview.ts alone: ' +
-        '/project/custom-elements.json is not a readable Custom Elements Manifest. Generate ' +
-        'one with @custom-elements-manifest/analyzer, then rerun "storybook automigrate ' +
-        'web-components-runtime-manifest".'
-    );
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Left the setCustomElementsManifest() call in /project/.storybook/preview.ts alone: /project/custom-elements.json is not a readable Custom Elements Manifest.
+      Generate one with @custom-elements-manifest/analyzer, then rerun "storybook automigrate web-components-runtime-manifest".",
+        ],
+      ]
+    `);
   });
 });
 
@@ -477,6 +481,7 @@ describe('run', (): void => {
     expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
       "export const parameters = { controls: { expanded: true } };"
     `);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('strips an inline object call and the setter specifier', async (): Promise<void> => {
@@ -497,6 +502,28 @@ describe('run', (): void => {
     `);
   });
 
+  it('does not warn about a JSON import the inline object call never used', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        setCustomElementsManifest({});
+
+        export const moduleCount = customElements.modules.length;
+      `,
+    });
+
+    await runWith();
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "import customElements from "../custom-elements.json";
+
+      export const moduleCount = customElements.modules.length;"
+    `);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
   it('strips both setters when the preview calls both', async (): Promise<void> => {
     vol.fromNestedJSON({
       [PREVIEW]: dedent`
@@ -515,6 +542,60 @@ describe('run', (): void => {
 
     expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
       "export const parameters = {};"
+    `);
+  });
+
+  it('does not warn when both setters read the same JSON import', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElements, setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        setCustomElementsManifest(customElements);
+        setCustomElements(customElements);
+
+        export const parameters = {};
+      `,
+    });
+
+    await runWith({ setterNames: ['setCustomElementsManifest', 'setCustomElements'] });
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "export const parameters = {};"
+    `);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('only hints at manual removal when the other setter keeps the JSON import', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElements, setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        setCustomElementsManifest(customElements);
+        setCustomElements(customElements);
+
+        export const configure = setCustomElements;
+      `,
+    });
+
+    await runWith({ setterNames: ['setCustomElementsManifest', 'setCustomElements'] });
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "import { setCustomElements } from "@storybook/web-components";
+      import customElements from "../custom-elements.json";
+
+      setCustomElements(customElements);
+
+      export const configure = setCustomElements;"
+    `);
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Left the setCustomElements wiring in /project/.storybook/preview.ts alone: setCustomElements is still used elsewhere.
+      Remove the runtime call by hand when convenient.",
+        ],
+      ]
     `);
   });
 
@@ -585,6 +666,95 @@ describe('run', (): void => {
 
       export const moduleCount = customElements.modules.length;"
     `);
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "/project/.storybook/preview.ts still imports ../custom-elements.json for: \`export const moduleCount = customElements.modules.length\`.
+      Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+      Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.",
+        ],
+      ]
+    `);
+  });
+
+  it('warns only about top-level readers of a surviving JSON import', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        WebComponentFormatter(customElements);
+        setCustomElementsManifest(customElements);
+
+        function WebComponentFormatter(customElements) {
+          for (const module of customElements.modules) {
+            module.path = module.path.replace(/\\.ts$/, '.js');
+          }
+        }
+      `,
+    });
+
+    await runWith();
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "import customElements from "../custom-elements.json";
+
+      WebComponentFormatter(customElements);
+
+      function WebComponentFormatter(customElements) {
+        for (const module of customElements.modules) {
+          module.path = module.path.replace(/\\.ts$/, '.js');
+        }
+      }"
+    `);
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "/project/.storybook/preview.ts still imports ../custom-elements.json for: \`WebComponentFormatter(customElements)\`.
+      Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+      Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.",
+        ],
+      ]
+    `);
+  });
+
+  it('drops the JSON import when only a shadowing parameter shares its name', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        setCustomElementsManifest(customElements);
+
+        export function count(customElements) { return customElements.modules.length; }
+      `,
+    });
+
+    await runWith();
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "export function count(customElements) { return customElements.modules.length; }"
+    `);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('prints the reader code without its leading comment', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        // Fix the paths before docs read them
+        WebComponentFormatter(customElements);
+        setCustomElementsManifest(customElements);
+      `,
+    });
+
+    await runWith();
+
+    expect(vi.mocked(logger.warn).mock.calls[0][0]).toContain(
+      'for: `WebComponentFormatter(customElements)`.'
+    );
   });
 
   it('leaves the preview alone and warns when the setter is also referenced elsewhere', async (): Promise<void> => {

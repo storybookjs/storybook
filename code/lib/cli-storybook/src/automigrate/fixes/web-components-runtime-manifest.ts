@@ -1,14 +1,21 @@
-import { babelParse, types as t } from 'storybook/internal/babel';
+import { babelParse, generate, types as t } from 'storybook/internal/babel';
 import { findFilesUp } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import { dirname, relative, resolve } from 'pathe';
+import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
-import { countReferences, removeTopLevelCall, topLevelCalls } from '../helpers/preview-call.ts';
+import {
+  countReferences,
+  isTopLevelCall,
+  removeTopLevelCall,
+  topLevelCalls,
+  topLevelReaders,
+} from '../helpers/preview-call.ts';
 import { findWorkspaceFiles, readJsonFile } from '../helpers/workspace-files.ts';
 import type { FixTransform } from '../pipeline.ts';
 import type { Fix } from '../types.ts';
@@ -19,6 +26,7 @@ const WEB_COMPONENTS_PACKAGES = new Set([
   '@storybook/web-components-vite',
 ]);
 const AUTOMIGRATE_COMMAND = 'storybook automigrate web-components-runtime-manifest';
+const MAX_STATEMENT_LENGTH = 80;
 
 type SetterName = (typeof SETTER_NAMES)[number];
 
@@ -198,11 +206,10 @@ const logInvalidManifestWarning = (
   setterName: SetterName,
   path: string
 ): void =>
-  logger.warn(
-    `Left the ${setterName}() call in ${previewConfigPath} alone: ${path} is not a readable ` +
-      `Custom Elements Manifest. Generate one with @custom-elements-manifest/analyzer, then rerun ` +
-      `"${AUTOMIGRATE_COMMAND}".`
-  );
+  logger.warn(dedent`
+    Left the ${setterName}() call in ${previewConfigPath} alone: ${path} is not a readable Custom Elements Manifest.
+    Generate one with @custom-elements-manifest/analyzer, then rerun "${AUTOMIGRATE_COMMAND}".
+  `);
 
 const findDefaultJsonImportSpecifier = (program: t.Program, name: string): string | null => {
   for (const node of program.body) {
@@ -228,25 +235,60 @@ const logManualRemovalHint = (
   setterName: SetterName,
   reason: string
 ): void =>
-  logger.warn(
-    `Left the ${setterName} wiring in ${previewConfigPath} alone: ${reason}. ` +
-      `Remove the runtime call by hand when convenient.`
-  );
+  logger.warn(dedent`
+    Left the ${setterName} wiring in ${previewConfigPath} alone: ${reason}.
+    Remove the runtime call by hand when convenient.
+  `);
+
+const printStatement = (node: t.Statement): string => {
+  const [firstLine] = generate(node, { comments: false }).code.split('\n');
+  const line = firstLine.replace(/;$/, '');
+  return line.length > MAX_STATEMENT_LENGTH ? `${line.slice(0, MAX_STATEMENT_LENGTH)}...` : line;
+};
+
+const logSurvivingManifestImport = (
+  previewConfigPath: string,
+  specifier: string,
+  readers: t.Statement[]
+): void =>
+  logger.warn(dedent`
+    ${previewConfigPath} still imports ${specifier} for: ${readers.map((node) => `\`${printStatement(node)}\``).join(', ')}.
+    Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+    Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.
+  `);
 
 const removePreviewWiring = (
   preview: ConfigFile,
   previewConfigPath: string,
   setterNames: SetterName[]
 ): void => {
+  const { program } = preview._ast;
+  const keptImports = new Map<string, string>();
   for (const setterName of setterNames) {
-    const reason = removeTopLevelCall(preview._ast.program, {
+    const result = removeTopLevelCall(program, {
       callee: setterName,
       calleeSources: WEB_COMPONENTS_PACKAGES,
     });
-    if (reason) {
-      logManualRemovalHint(previewConfigPath, setterName, reason);
+    if (!result.removed) {
+      logManualRemovalHint(previewConfigPath, setterName, result.reason);
       continue;
     }
     logger.debug(`Removed the ${setterName} wiring from ${previewConfigPath}`);
+    for (const name of result.keptArguments) {
+      const specifier = findDefaultJsonImportSpecifier(program, name);
+      if (specifier) {
+        keptImports.set(name, specifier);
+      }
+    }
+  }
+
+  for (const [name, specifier] of keptImports) {
+    // A setter call left in place already got the manual-removal hint.
+    const readers = topLevelReaders(program, name).filter(
+      (node) => !SETTER_NAMES.some((setterName) => isTopLevelCall(node, setterName))
+    );
+    if (readers.length > 0) {
+      logSurvivingManifestImport(previewConfigPath, specifier, readers);
+    }
   }
 };

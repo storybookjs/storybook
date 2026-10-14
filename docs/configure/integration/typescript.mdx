@@ -76,6 +76,129 @@ Now, when you define a story or update an existing one, you'll automatically get
 
 <CodeSnippets path="button-story-baseline-with-satisfies-story-level.md" />
 
+## Exclude stories from declaration builds
+
+Story files are development-time assets. Consumers of a library use its components, not its stories, so published packages typically don't need declarations for story modules.
+
+If a declaration build includes stories, TypeScript may report portability errors such as `TS2742` or `TS4023`. These errors occur when TypeScript can't name an inferred Storybook type in the generated declaration. [`isolatedDeclarations`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#isolated-declarations) also requires explicit annotations on exports. The `satisfies` operator doesn't provide an annotation, and [CSF factories](../../api/csf/csf-next.mdx) rely on inference, so annotating every story export isn't always possible.
+
+For example, a declaration build that includes a story written with `satisfies` can fail with:
+
+```text
+Button.stories.ts(5,7): error TS9010: Variable must have an explicit type
+annotation with --isolatedDeclarations.
+```
+
+### Use a separate declaration config
+
+Keep stories in the config that your editor and regular type check use. Set `noEmit` so this config checks the files without generating declarations:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true
+  },
+  "include": ["src", ".storybook"]
+}
+```
+
+Create a declaration config that includes your source directory, excludes stories, and overrides `noEmit`. TypeScript 6 requires an explicit `rootDir` when the compiler needs to adjust the output layout. Use `.storybook` rather than a pattern ending in `/**`, which TypeScript 6 rejects:
+
+```json title="tsconfig.build.json"
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "isolatedDeclarations": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.stories.*", "src/**/*.story.*"]
+}
+```
+
+Run the declaration build with `tsc -p tsconfig.build.json`. In this configuration, TypeScript checks stories through `tsconfig.json`, while `tsconfig.build.json` emits declarations only for library source files.
+
+If your library source doesn't use `isolatedDeclarations`, omit that option from `tsconfig.build.json`.
+
+<Callout variant="warning" icon="⚠️">
+
+`exclude` only affects files discovered through `include`. If library code imports a story, TypeScript adds that story to the program again. Don't export stories from your package entry points.
+
+</Callout>
+
+### Use project references
+
+A [referenced project](https://www.typescriptlang.org/docs/handbook/project-references.html) must set `composite: true`, which requires declaration emit. Therefore, a referenced Storybook config can't combine `composite: true` with `declaration: false`.
+
+To check stories without emitting their declarations, run the story-checking config directly with `tsc -b`. It can reference the declaration project, but another project must not reference it. Start with a shared config for options that both projects use:
+
+```json title="tsconfig.base.json"
+{
+  "compilerOptions": {
+    "strict": true
+  }
+}
+```
+
+The referenced library project emits declarations and excludes stories:
+
+```json title="tsconfig.build.json"
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "isolatedDeclarations": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.stories.*", "src/**/*.story.*"]
+}
+```
+
+The top-level project checks stories and references the library project:
+
+```json title="tsconfig.json"
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "isolatedDeclarations": false,
+    "noEmit": true
+  },
+  "include": ["src/**/*.stories.*", "src/**/*.story.*", ".storybook"],
+  "references": [{ "path": "./tsconfig.build.json" }]
+}
+```
+
+Run `tsc -b` to build the referenced library project and then check the top-level project. In a monorepo, pass each story-checking config to `tsc -b` or configure your task runner to run it. Don't add it as a reference from another solution config.
+
+If your build graph must reference the story project, TypeScript must generate declarations for it. Keep `declaration: true`, turn off `isolatedDeclarations` if your stories rely on inference, and write the output to a private directory that you don't publish:
+
+```json title="tsconfig.storybook.json"
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "isolatedDeclarations": false,
+    "outDir": ".cache/storybook-types",
+    "rootDir": "."
+  },
+  "include": ["src/**/*.stories.*", "src/**/*.story.*", ".storybook"],
+  "references": [{ "path": "./tsconfig.build.json" }]
+}
+```
+
+This last configuration satisfies TypeScript's composite-project rules, but it doesn't exclude story declarations. It also can't prevent all `TS2742` or `TS4023` errors: if TypeScript can't name an inferred Storybook type, the declaration emit can still fail. There is no valid `composite: true` and `declaration: false` workaround for that case.
+
 ## Troubleshooting
 
 ### The `satisfies` operator is not working as expected

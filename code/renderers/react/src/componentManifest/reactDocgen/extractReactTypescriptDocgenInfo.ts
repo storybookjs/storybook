@@ -3,6 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
 import { extractArgTypes } from '../../extractArgTypes.ts';
+import { shareReactDocgenTypescript } from '../componentMeta/loadTypeScript.ts';
 import { type GetArgTypesDataOptions, getTsConfig } from './utils.ts';
 
 interface PropFilterProps {
@@ -27,7 +28,7 @@ export const extractArgTypesFromDocgenTypescript = async ({
   reactDocgenTypescriptOptions,
 }: GetArgTypesDataOptions) => {
   try {
-    // Using dynamic import for react-docgen-typescript
+    await shareReactDocgenTypescript();
     const { withCompilerOptions } = (await import('react-docgen-typescript')).default;
 
     // Default options that match Storybook's expected behavior

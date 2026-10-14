@@ -14,6 +14,7 @@ import {
   getPackageDetails,
   isCI,
   optionalEnvToBoolean,
+  typescript6PackageToInstall,
 } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
@@ -230,6 +231,11 @@ export async function baseGenerator(
     }
   } catch (err) {
     // any failure regarding configuring the eslint plugin should not fail the whole generator
+  }
+
+  const typescript6Package = await typescript6PackageToInstall(packageManager);
+  if (typescript6Package) {
+    packagesToInstall.push(typescript6Package);
   }
 
   const versionedPackages = await packageManager.getVersionedPackages(

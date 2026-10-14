@@ -65,6 +65,7 @@ export * from './utils/command.ts';
 export * from './utils/file-lock.ts';
 export * from './utils/process-ancestry.ts';
 export * from './node-version.ts';
+export * from './utils/typescript6-dependency.ts';
 
 export { versions };
 

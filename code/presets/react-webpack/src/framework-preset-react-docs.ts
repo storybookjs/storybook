@@ -1,10 +1,14 @@
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+import { packageRootFromFile, shareTypeScriptCompilerApi } from 'storybook/internal/component-meta';
 import { deprecate } from 'storybook/internal/node-logger';
 
 import type { Configuration } from 'webpack';
 
 import type { StorybookConfig } from './types.ts';
+
+const require = createRequire(import.meta.url);
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
@@ -55,6 +59,14 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     };
   }
 
+  await shareTypeScriptCompilerApi(
+    packageRootFromFile(require.resolve('@storybook/react-docgen-typescript-plugin')),
+    {
+      typescript: () => import('typescript'),
+      typescript6: () => import('@typescript/typescript6'),
+    },
+    () => require.resolve('@typescript/typescript6')
+  );
   const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
 
   return {

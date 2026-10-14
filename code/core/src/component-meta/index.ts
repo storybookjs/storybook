@@ -7,8 +7,9 @@ export type {
   JsDocHost,
   JsDocSymbolLike,
 } from './jsdoc-info.ts';
-export { loadTypeScriptCompilerApi } from './load-typescript.ts';
+export { loadTypeScriptCompilerApi, shareTypeScriptCompilerApi } from './load-typescript.ts';
 export { parseTsconfigCommandLine } from './parse-tsconfig.ts';
+export { packageRootFromFile, redirectTypeScriptRequires } from './redirect-typescript.ts';
 export type { FileExtensionInfo, TsconfigParserModule } from './parse-tsconfig.ts';
 export { ProjectFileTracker, filterSourceFilePaths } from './ProjectFileTracker.ts';
 export { ProgramBackedProject } from './ProgramBackedProject.ts';

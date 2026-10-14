@@ -8,6 +8,7 @@ import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
+import { typescript6 } from './typescript6.ts';
 import { docgenServer } from './docgen-server.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
@@ -28,6 +29,7 @@ export * from '../types.ts';
 
 export const allFixes: Fix[] = [
   eslintPlugin,
+  typescript6,
   upgradeStorybookRelatedDependencies,
   vitestSetupFile,
   componentSubtitle,

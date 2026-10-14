@@ -1,5 +1,7 @@
 import { once } from 'storybook/internal/node-logger';
 
+import { redirectTypeScriptRequires } from './redirect-typescript.ts';
+
 type ModuleImporter = () => Promise<unknown>;
 
 interface TypeScriptLike {
@@ -55,4 +57,25 @@ export async function loadTypeScriptCompilerApi<TypeScript>(importers: {
     once.warn(MISSING_COMPILER_API_WARNING);
   }
   return undefined;
+}
+
+/**
+ * When the compiler API comes from `@typescript/typescript6`, redirect `typescript` loads inside
+ * `packageDir` to that same module.
+ */
+export async function shareTypeScriptCompilerApi(
+  packageDir: string,
+  importers: {
+    typescript: ModuleImporter;
+    typescript6: ModuleImporter;
+  },
+  typescript6Entry: () => string
+): Promise<void> {
+  const [typescript, typescript6] = await Promise.all([
+    loadTypeScriptCompilerApi(importers),
+    importModule(importers.typescript6),
+  ]);
+  if (typescript && typescript === typescript6) {
+    redirectTypeScriptRequires(packageDir, typescript6Entry());
+  }
 }

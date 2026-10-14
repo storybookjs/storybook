@@ -11,6 +11,12 @@ import {
   ɵReflectionCapabilities as ReflectionCapabilities,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import {
+  BrowserAnimationsModule,
+  NoopAnimationsModule,
+  provideAnimations,
+  provideNoopAnimations,
+} from '@angular/platform-browser/animations';
 import { dedent } from 'ts-dedent';
 
 import type { NgModuleMetadata } from '../../types.ts';
@@ -118,25 +124,37 @@ export class PropertyExtractor implements NgModuleMetadata {
       return [true];
     }
 
-    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name;
-
-    if (ngModuleName === 'BrowserAnimationsModule' || ngModuleName === 'NoopAnimationsModule') {
-      const provideFn =
-        ngModuleName === 'BrowserAnimationsModule' ? 'provideAnimations' : 'provideNoopAnimations';
-      console.warn(
-        dedent`
-          Storybook Warning:
-          "${ngModuleName}" was found and removed from moduleMetadata.imports, but @storybook/angular-vite no longer registers its providers automatically.
-          This module is part of Angular's legacy animations API, which is deprecated since Angular 20.2 and intended for removal in v23.
-          To migrate:
-            - Preferred: Use native CSS transitions or the 'animate.enter'/'animate.leave' bindings (Angular 20.2+).
-            - Or: Keep using the legacy animations API yourself by adding '${provideFn}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
-        `
-      );
-      return [true];
+    // Detect by identity first: bundlers can rename the exported class binding (e.g. to
+    // `_BrowserAnimationsModule`), which defeats a name-only check.
+    let animationModuleName: 'BrowserAnimationsModule' | 'NoopAnimationsModule' | undefined;
+    if (ngModule === BrowserAnimationsModule) {
+      animationModuleName = 'BrowserAnimationsModule';
+    } else if (ngModule === NoopAnimationsModule) {
+      animationModuleName = 'NoopAnimationsModule';
+    } else {
+      const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name;
+      if (ngModuleName === 'BrowserAnimationsModule' || ngModuleName === 'NoopAnimationsModule') {
+        animationModuleName = ngModuleName;
+      }
     }
 
-    return [false];
+    if (!animationModuleName) {
+      return [false];
+    }
+
+    const provideFn =
+      animationModuleName === 'BrowserAnimationsModule' ? provideAnimations : provideNoopAnimations;
+    console.warn(
+      dedent`
+        Storybook Warning:
+        You have added the "${animationModuleName}" to the list of "imports" in your moduleMetadata definition of your Story.
+        In Storybook we use Angular's 'bootstrapApplication' API to mount the component to the DOM, which accepts a list of providers to set up application-wide providers.
+        Storybook has automatically added '${provideFn.name}()' to the application providers to keep your animations working.
+        This module is part of Angular's legacy animations API, which is deprecated since Angular 20.2 and intended for removal in v23.
+        To migrate: use native CSS transitions or the 'animate.enter'/'animate.leave' bindings (Angular 20.2+), or remove "${animationModuleName}" from moduleMetadata.imports and add '${provideFn.name}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
+      `
+    );
+    return [true, provideFn()];
   };
 
   static analyzeDecorators = (component: any) => {

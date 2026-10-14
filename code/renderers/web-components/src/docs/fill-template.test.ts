@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
 import { html } from 'lit';
+import { fn } from 'storybook/test';
 
 import { fillTemplate } from './fill-template.ts';
 
@@ -15,12 +16,116 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('leaves out an unset, false or function arg, and an arg no word names', () => {
+  it('leaves out an unset or false arg, an action, and an arg no word names', () => {
     const template = '<x-card ⟦props label=label .open=open size=size .onClose=onClose⟧></x-card>';
-    expect(fillTemplate(template, { label: '', size: false, onClose: () => {}, other: 1 })).toBe(
+    expect(fillTemplate(template, { label: '', size: false, onClose: fn(), other: 1 })).toBe(
       '<x-card></x-card>'
     );
-    expect(fillTemplate('<x-card ⟦attr label text⟧></x-card>', {})).toBe('<x-card></x-card>');
+  });
+
+  it.each([
+    ['a props word', '<x-card ⟦props size=size⟧></x-card>'],
+    ['a property word', '<x-card ⟦props .size=size⟧></x-card>'],
+    ['a boolean word', '<x-card ⟦props ?size=size⟧></x-card>'],
+    ['a spread', '<x-card ⟦props !spread *⟧></x-card>'],
+    ['a property', '<x-card ⟦prop size size⟧></x-card>'],
+    ['a boolean attribute', '<x-card ⟦bool size size⟧></x-card>'],
+    ['a slot', '<x-card>⟦slot default size⟧</x-card>'],
+  ])('leaves out an action in %s, and has no snippet for any other function', (_, template) => {
+    expect(fillTemplate(template, { size: fn() })).toBe(template.replace(/ ?⟦.*?⟧/, ''));
+    expect(() => fillTemplate(template, { size: () => 'l' })).toThrow(UnprintableArgError);
+  });
+
+  it('writes the args as an object without the names its words leave out, and actions', () => {
+    const template = '<p ${spread(⟦args -count⟧)}></p>';
+    expect(
+      fillTemplate(template, {
+        label: 'Hi',
+        'is-open': true,
+        count: 2,
+        onClick: fn(),
+        x: undefined,
+      })
+    ).toBe('<p ${spread({ label: "Hi", "is-open": true })}></p>');
+    expect(() => fillTemplate(template, { label: () => 'Hi' })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate(template, { label: html`<b></b>` })).toThrow(UnprintableArgError);
+  });
+
+  it('leaves out every function in a toolkit spread, as the toolkit does', () => {
+    expect(fillTemplate('<x-card ⟦props !toolkit *⟧></x-card>', { size: () => 'l' })).toBe(
+      '<x-card></x-card>'
+    );
+  });
+
+  it('sets the field of a `~` word to false or null as a property, as the render does', () => {
+    const template = '<x-card ⟦props ~active=active ~label=label⟧></x-card>';
+    expect(fillTemplate(template, { active: false, label: '' })).toBe(
+      '<x-card .active=${false} label=""></x-card>'
+    );
+    expect(fillTemplate(template, { active: true, label: null })).toBe(
+      '<x-card active .label=${null}></x-card>'
+    );
+  });
+
+  it('writes an attribute binding as lit does, empty while its arg is unset', () => {
+    const template = '<x-card ⟦attr label text⟧ ⟦attr open open⟧ ⟦attr data data⟧></x-card>';
+    expect(fillTemplate(template, { open: false, data: [1, 2] })).toBe(
+      '<x-card label="" open="false" data="1,2"></x-card>'
+    );
+    expect(() => fillTemplate(template, { text: () => {} })).toThrow(UnprintableArgError);
+  });
+
+  it('writes an arg inside a larger attribute value as text in its quotes', () => {
+    expect(fillTemplate("<p title=\"⟦quoted t⟧!\" lang='⟦quoted t '⟧'>", { t: `"a'&` })).toBe(
+      `<p title="&quot;a'&amp;!" lang='"a&#39;&amp;'>`
+    );
+    expect(fillTemplate('<p title="⟦quoted t⟧!">', {})).toBe('<p title="!">');
+  });
+
+  it('writes the text of a style or script as it is, but for its end tag', () => {
+    expect(fillTemplate('<style>⟦raw css⟧</style>', { css: 'a > b { content: "&" }' })).toBe(
+      '<style>a > b { content: "&" }</style>'
+    );
+    expect(() => fillTemplate('<style>⟦raw css⟧</style>', { css: '</style><b>' })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('writes the part and state styles and custom properties of a style hole', () => {
+    const template =
+      '⟦style x-card --gap=--gap ::part(panel)=panel-part :state(busy)=busy-state⟧<x-card></x-card>';
+    expect(fillTemplate(template, {})).toBe('<x-card></x-card>');
+    expect(
+      fillTemplate(template, { '--gap': '2px', 'panel-part': 'color: red;', 'busy-state': ' ' })
+    ).toBe(
+      '<style>\n  x-card { --gap: 2px; }\n  x-card::part(panel) { color: red; }\n</style>\n<x-card></x-card>'
+    );
+    expect(() => fillTemplate(template, { 'panel-part': '}</style>' })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('passes every arg as `@open-wc/lit-helpers` `spread` and `spreadProps` set it', () => {
+    const args = { label: 'Hi', open: true, off: false, none: null, '.items': [1], '?on': 1 };
+    expect(fillTemplate('<x-card ⟦props !spread * -label⟧></x-card>', args)).toBe(
+      '<x-card open="true" off="false" .items=${[1]} on></x-card>'
+    );
+    expect(
+      fillTemplate('<x-card ⟦props !spreadProps *⟧></x-card>', { ...args, '?on': undefined })
+    ).toBe(
+      '<x-card .label=${"Hi"} .open=${true} .off=${false} .none=${null} ..items=${[1]}></x-card>'
+    );
+    expect(() => fillTemplate('<x-card ⟦props !spread *⟧></x-card>', { '--gap': '1px' })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('passes the args as `@wc-toolkit/storybook-helpers` does', () => {
+    const template =
+      '<x-card ⟦props !toolkit * -label -open -items label=label ?open=open .items=items⟧></x-card>';
+    expect(
+      fillTemplate(template, { label: '', open: 'false', items: [1], extra: 2, onClick: 'x' })
+    ).toBe('<x-card label="" .items=${[1]} extra="2"></x-card>');
   });
 
   it('sets a property to whatever its arg holds, false and null too', () => {
@@ -35,7 +140,7 @@ describe('fillTemplate', () => {
       '<p title="a &quot;b&quot; &amp; &lt;c>">a "b" &amp; &lt;c&gt;</p>'
     );
     expect(fillTemplate('<p ⟦attr data d⟧></p>', { d: { a: 1 } })).toBe(
-      '<p data="{&quot;a&quot;:1}"></p>'
+      '<p data="[object Object]"></p>'
     );
   });
 

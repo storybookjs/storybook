@@ -26,15 +26,22 @@ import type { Args } from 'storybook/internal/types';
  * - Vue: `⟦element Card slot…⟧` is the component with its slots as content, and a `script` word on
  *   `⟦value⟧` or `⟦operand⟧` marks a hole in the `<script>`.
  * - Web Components: `⟦bool name arg⟧` and `⟦prop name arg⟧` are lit's `?name` and `.name`
- *   bindings, and `⟦props⟧` words name the attribute, property or CSS property each arg sets, with
- *   `^arg` for one the element writes itself.
+ *   bindings, `⟦quoted arg⟧` is the arg inside a quoted attribute value, `⟦raw arg⟧` the text of a
+ *   `<style>` or `<script>`, and `⟦style tag …⟧` the `<style>` of part, state and CSS property
+ *   args. `⟦props⟧` words name the attribute, property or CSS property each arg sets, with `~name`
+ *   for a field's attribute and `^arg` for one the element writes itself; a `!spread`,
+ *   `!spreadProps` or `!toolkit` word prints them as that helper sets them, `*` passes every other
+ *   arg and `-arg` leaves one out. `⟦args -name…⟧` is the args as an object, as React has it.
  * - Angular: `⟦value arg⟧` is the value of a host component field, which prints a `Date` as `new
  *   Date(…)`.
  *
  * The template keeps the code around a hole as written, including the whitespace before it. An
  * attribute hole, `⟦props⟧`, `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`, that prints nothing takes that
  * whitespace along, so an unset attribute leaves no gap or empty line. Any other hole keeps it, as
- * the story renders it, unless it holds a line break, where it would leave an empty line. A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
+ * the story renders it, unless it holds a line break, where it would leave an empty line; the Web
+ * Components `⟦style⟧`, `⟦quoted⟧` and `⟦raw⟧` are no attribute holes.
+ *
+ * A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
  * {@link UnprintableArgError} for a value the snippet cannot show, and the static snippet is shown
  * instead.
  */

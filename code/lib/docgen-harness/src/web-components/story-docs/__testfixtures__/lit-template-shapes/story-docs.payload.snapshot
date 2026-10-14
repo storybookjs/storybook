@@ -100,6 +100,7 @@
       "template": "<lit-template-shapes
   >${html`<button @click=${⟦value onInnerClick⟧}>Go</button>`}</lit-template-shapes
 >",
+      "templateWarning": "Incomplete snippet: listeners not shown: `shape-change`.",
       "warning": "Incomplete snippet: listeners not shown: `@click`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--nothing": {
@@ -114,7 +115,7 @@
       "id": "webcomponentsstorydocs-lit-template-shapes--prefixed-class",
       "name": "Prefixed Class",
       "snippet": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
-      "template": "<lit-template-shapes class="btn-${⟦value size⟧}"></lit-template-shapes>",
+      "template": "<lit-template-shapes class="btn-⟦quoted size⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-only": {
       "id": "webcomponentsstorydocs-lit-template-shapes--property-only",
@@ -140,7 +141,7 @@
       "name": "Quoted And Multi Hole",
       "snippet": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
       "template": "<lit-template-shapes
-  class="card ${⟦value tone⟧} ${⟦value size⟧}"
+  class="card ⟦quoted tone⟧ ⟦quoted size⟧"
   ⟦attr label label⟧
 ></lit-template-shapes>",
     },
@@ -149,6 +150,7 @@
       "name": "Unbound Arg",
       "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label⟧></lit-template-shapes>",
+      "templateWarning": "Incomplete snippet: args not bound by the render template: `count`.",
       "warning": "Incomplete snippet: args not bound by the render template: `count`.",
     },
   },

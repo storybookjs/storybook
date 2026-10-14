@@ -1,0 +1,8 @@
+{
+  "ArgsDefaultRender": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
+  "LitTemplate": "<lit-basic-attributes
+  label="Open panel"
+  count="7"
+  is-open
+></lit-basic-attributes>",
+}

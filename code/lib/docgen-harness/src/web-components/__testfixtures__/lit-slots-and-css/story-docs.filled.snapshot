@@ -1,0 +1,7 @@
+{
+  "ArgsDefaultRender": "UnprintableArgError: The snippet cannot show the value of the `actions-slot` arg.",
+  "LitTemplate": "<lit-slots-and-css heading="Projected">
+  <p>Default slot content</p>
+  <button slot="actions">Confirm</button>
+</lit-slots-and-css>",
+}

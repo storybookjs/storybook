@@ -1,0 +1,4 @@
+{
+  "ArgsDefaultRender": "<multi-beta .betaLabel=${"Default beta"}></multi-beta>",
+  "LitTemplate": "<multi-beta beta-label="Beta"></multi-beta>",
+}

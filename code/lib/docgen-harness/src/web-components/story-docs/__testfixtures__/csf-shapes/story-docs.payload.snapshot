@@ -16,13 +16,13 @@
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "template": "<csf-shapes ⟦props label=label .items=items --csf-shapes-accent=--csf-shapes-accent count=count disabled=disabled⟧></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label .items=items --csf-shapes-accent=--csf-shapes-accent ~count=count ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
       "id": "webcomponentsstorydocs-csf-shapes--imported-label",
       "name": "Imported Label",
-      "template": "<csf-shapes ⟦props label=label --csf-shapes-accent=--csf-shapes-accent .items=items count=count disabled=disabled⟧></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "warning": "No static snippet: `importedLabel` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--listener": {
@@ -35,7 +35,7 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-      "template": "<csf-shapes ⟦props label=label --csf-shapes-accent=--csf-shapes-accent .items=items count=count disabled=disabled⟧></csf-shapes>
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -51,6 +51,7 @@
   csf-shapes:state(active) { outline: 1px solid; }
 </style>
 <csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--render-fallback": {
       "id": "webcomponentsstorydocs-csf-shapes--render-fallback",
@@ -65,25 +66,26 @@
   Body <b>text</b>
   <button slot="actions">Go</button>
 </csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--spread-args": {
       "id": "webcomponentsstorydocs-csf-shapes--spread-args",
       "name": "Spread Args",
       "snippet": "<csf-shapes label="Shared" count="2"></csf-shapes>",
-      "template": "<csf-shapes ⟦props label=label count=count --csf-shapes-accent=--csf-shapes-accent .items=items disabled=disabled⟧></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label ~count=count --csf-shapes-accent=--csf-shapes-accent .items=items ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--unknown-arg": {
       "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
       "name": "Unknown Arg",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "template": "<csf-shapes ⟦props label=label --csf-shapes-accent=--csf-shapes-accent .items=items count=count disabled=disabled⟧></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label .nope=nope --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
     },
     "webcomponentsstorydocs-csf-shapes--unset": {
       "id": "webcomponentsstorydocs-csf-shapes--unset",
       "name": "Unset",
       "snippet": "<csf-shapes disabled></csf-shapes>",
-      "template": "<csf-shapes ⟦props label=label disabled=disabled --csf-shapes-accent=--csf-shapes-accent .items=items count=count⟧></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label ~disabled=disabled --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
   },
 }

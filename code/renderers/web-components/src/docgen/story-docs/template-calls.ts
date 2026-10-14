@@ -5,6 +5,7 @@ import type {
   ReferenceModule,
 } from 'storybook/internal/csf-tools';
 import { collectImportBindings, keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import { hasHoleBracket } from 'storybook/internal/docs-tools';
 
 import { evaluateArgValue } from './arg-values.ts';
 
@@ -16,10 +17,14 @@ export interface TemplateModule {
   resolveModule: (specifier: string) => TemplateModule | undefined;
 }
 
-/** The scope an expression is read in: what each name it can see holds. */
+/**
+ * The scope an expression is read in: what each name it can see holds. `owner` is the same for
+ * every frame of one call of a function, so code written from it knows which names it sees.
+ */
 export interface Frame {
   module: TemplateModule;
   names: Map<string, Binding>;
+  owner: object;
 }
 
 /**
@@ -123,7 +128,7 @@ export function renderFrame(
 
 /** The frame of a render function with only its first parameter, which holds the args, bound. */
 export function paramFrame(render: t.Function, module: TemplateModule): Frame | undefined {
-  const frame: Frame = { module, names: new Map() };
+  const frame: Frame = { module, names: new Map(), owner: {} };
   const [first] = render.params;
   const param = t.isAssignmentPattern(first) ? first.left : first;
   const args: Binding = { kind: 'args', entries: new Map(), omitted: new Set(), open: true };
@@ -145,7 +150,7 @@ export function bindArgsConstant(statement: t.Statement, frame: Frame): boolean 
   if (bindings.some((item) => !item)) {
     return false;
   }
-  const scratch: Frame = { module: frame.module, names: new Map(frame.names) };
+  const scratch = copyFrame(frame);
   if (
     !bindings.every((item) => t.isLVal(item!.id) && bindPattern(item!.id, item!.value, scratch))
   ) {
@@ -360,17 +365,31 @@ function toolkitTag(callee: t.Node, frame: Frame): string | undefined {
         t.isCallExpression(call) && t.isIdentifier(call.callee)
           ? frame.module.bindings.get(call.callee.name)
           : undefined;
-      const [tag] = t.isCallExpression(call) ? call.arguments : [];
+      const [tag, options, ...more] = t.isCallExpression(call) ? call.arguments : [];
       return helpers &&
         TOOLKIT_SOURCES.includes(helpers.importId) &&
         helpers.importName === 'getStorybookHelpers' &&
-        t.isStringLiteral(tag)
+        t.isStringLiteral(tag) &&
+        more.length === 0 &&
+        (!options || keepsTemplate(options))
         ? tag.value
         : undefined;
     }
   }
   return undefined;
 }
+
+// Options of `getStorybookHelpers` that leave what `template(args)` renders as it is: any but
+// `excludeCategories`, which leaves out slots and styles, and `setComponentVariable`, which adds
+// a script.
+const keepsTemplate = (options: t.Node) =>
+  t.isObjectExpression(options) &&
+  options.properties.every(
+    (property) =>
+      t.isObjectProperty(property) &&
+      !property.computed &&
+      !['excludeCategories', 'setComponentVariable'].includes(keyOf(property) ?? '')
+  );
 
 /** The name a callee was exported as, such as `spread` for `import { spread as s }`. */
 export const calleeName = (callee: t.Node, frame: Frame): string | undefined =>
@@ -419,6 +438,10 @@ function returnsIn(statements: t.Statement[], frame: Frame, fn: t.Function): Ret
       return undefined;
     }
     for (const { id, init } of statement.declarations) {
+      // A constant is written where it is read, so one that changes the args would change them late.
+      if (init && mayWriteArgs(init, frame)) {
+        return undefined;
+      }
       const value = init && runOnce(bindingOf(init, frame), id, fn, 2);
       if (!value || !t.isLVal(id) || !bindPattern(id, value, frame)) {
         return undefined;
@@ -468,7 +491,7 @@ const memberKey = (node: t.MemberExpression) =>
       ? node.property.value
       : undefined;
 
-const copyFrame = (frame: Frame): Frame => ({ module: frame.module, names: new Map(frame.names) });
+const copyFrame = (frame: Frame): Frame => ({ ...frame, names: new Map(frame.names) });
 
 function bindCall(
   fn: t.Function,
@@ -476,7 +499,7 @@ function bindCall(
   caller: Frame,
   module: TemplateModule
 ): Frame | undefined {
-  const frame: Frame = { module, names: new Map() };
+  const frame: Frame = { module, names: new Map(), owner: {} };
   for (const [index, param] of fn.params.entries()) {
     const argument = passed[index];
     if (t.isRestElement(param) || (argument && !t.isExpression(argument))) {
@@ -495,8 +518,8 @@ function bindCall(
 }
 
 // Code is written wherever its name is read, which runs a call in it once per read: a name read
-// twice cannot stand for one, unless the call is for html. `once` is how often the name is written
-// when read once, which counts its declaration in the body.
+// twice, or in a function that may run more than once, cannot stand for one, unless the call is for
+// html. `once` is how often the name is written when read once, which counts its declaration.
 function runOnce(binding: Binding, name: t.Node, fn: t.Function, once: number): Binding {
   return binding.kind === 'code' &&
     t.isIdentifier(name) &&
@@ -515,10 +538,60 @@ const runsCall = (node: t.Node): boolean =>
   t.isUpdateExpression(node) ||
   (!t.isFunction(node) && children(node).some(runsCall));
 
-const countReads = (node: t.Node, name: string): number =>
+const countReads = (node: t.Node, name: string, nested = false): number =>
   t.isIdentifier(node, { name })
-    ? 1
-    : children(node).reduce((count, child) => count + countReads(child, name), 0);
+    ? nested
+      ? Infinity
+      : 1
+    : children(node).reduce(
+        (count, child) => count + countReads(child, name, nested || t.isFunction(node)),
+        0
+      );
+
+// Calls that write into the object their first argument is.
+const OBJECT_WRITERS: Record<string, string[]> = {
+  Object: ['assign', 'defineProperty', 'defineProperties', 'setPrototypeOf'],
+  Reflect: ['set', 'defineProperty', 'deleteProperty', 'setPrototypeOf'],
+};
+
+/**
+ * Whether code may change the args: it writes into them, as `Object.assign(args, …)` does, or
+ * passes them whole to a call that is no template, which may.
+ */
+export function mayWriteArgs(node: t.Node, frame: Frame): boolean {
+  if (t.isFunction(node)) {
+    return false;
+  }
+  if (t.isCallExpression(node) || t.isNewExpression(node)) {
+    const [first] = node.arguments;
+    const callee = node.callee;
+    const writer =
+      t.isMemberExpression(callee) &&
+      !callee.computed &&
+      t.isIdentifier(callee.object) &&
+      t.isIdentifier(callee.property) &&
+      !frame.names.has(callee.object.name) &&
+      OBJECT_WRITERS[callee.object.name]?.includes(callee.property.name);
+    if (writer ? !!first && holdsArgs(first, frame) : passesArgs(node, frame)) {
+      return true;
+    }
+  }
+  return children(node).some((child) => mayWriteArgs(child, frame));
+}
+
+const passesArgs = (call: t.CallExpression | t.NewExpression, frame: Frame) =>
+  call.arguments.some((item) => resolveBinding(item, frame)?.kind === 'args') &&
+  !resolveTemplate(call, frame);
+
+// Whether an expression is the args, one of them, or a value inside one.
+function holdsArgs(node: t.Node, frame: Frame): boolean {
+  let item = unwrapExpression(node);
+  while (t.isMemberExpression(item) || t.isOptionalMemberExpression(item)) {
+    item = item.object;
+  }
+  const bound = t.isIdentifier(item) ? frame.names.get(item.name) : undefined;
+  return bound?.kind === 'args' || bound?.kind === 'arg';
+}
 
 /** The nodes inside a node, without the names of the members and keys it writes. */
 export const children = (node: t.Node): t.Node[] =>
@@ -545,6 +618,10 @@ function bindingOf(expression: t.Expression, frame: Frame): Binding {
   const value = t.isFunction(node) ? undefined : evaluateArgValue(node);
   if (value?.kind === 'unset') {
     return UNDEFINED;
+  }
+  // A hole bracket in a value would be read as a hole once the value is written in a template.
+  if (value?.kind === 'value' && hasHoleBracket(JSON.stringify(value.value) ?? '')) {
+    return BLOCKED;
   }
   return value?.kind === 'value' && (value.value === null || typeof value.value !== 'object')
     ? { kind: 'value', value: value.value }
@@ -756,7 +833,7 @@ function functionOf(
 }
 
 // The function or constant a module declares or imports under `name`, and the module it is in.
-function declarationOf(
+export function declarationOf(
   module: TemplateModule,
   name: string,
   seen = new Set<t.Program>()

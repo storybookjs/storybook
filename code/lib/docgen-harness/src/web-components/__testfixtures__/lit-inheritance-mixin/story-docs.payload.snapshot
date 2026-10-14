@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-inheritance-mixin--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
-      "template": "<lit-inheritance-mixin ⟦props base-label=baseLabel mixed-active=mixedActive count=count⟧></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin ⟦props ~base-label=baseLabel ~mixed-active=mixedActive ~count=count base-label=base-label mixed-active=mixed-active⟧></lit-inheritance-mixin>",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--dom-node": {
       "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",

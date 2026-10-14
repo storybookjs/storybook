@@ -1,0 +1,39 @@
+{
+  "Aliased": "<lit-template-shapes label="Aliased" count="7" .heading=${"Head"}
+  ><b>Aliased</b></lit-template-shapes
+>",
+  "Attributes": "<lit-template-shapes
+  label="Alpha"
+  count="2"
+  disabled
+></lit-template-shapes>",
+  "ClassMap": "<lit-template-shapes
+  class=${classMap({ active: Boolean(true) })}
+></lit-template-shapes>",
+  "Destructured": "<lit-template-shapes label="Destructured" count="6"></lit-template-shapes>",
+  "DisabledFalse": "<lit-template-shapes
+  label="Beta"
+  count="3"
+></lit-template-shapes>",
+  "IfDefined": "<lit-template-shapes
+  label=${ifDefined(undefined)}
+  count=${ifDefined(4)}
+></lit-template-shapes>",
+  "MemberPath": "<lit-template-shapes label=${({ name: "Bob", admin: false }).name}
+  >${({ name: "Bob", admin: false }).admin ? 'admin' : 'guest'}</lit-template-shapes
+>",
+  "Nested": "<lit-template-shapes>${html`<span>${"Nested"}</span>`}</lit-template-shapes>",
+  "NestedListener": "UnprintableArgError: The snippet cannot show the value of the `onInnerClick` arg.",
+  "Nothing": "<lit-template-shapes label=${"Set" ? "Set" : nothing}
+  >${false ? html`<b>shown</b>` : nothing}</lit-template-shapes
+>",
+  "PrefixedClass": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
+  "PropertyOnly": "<lit-template-shapes .items=${[{ name: "Alpha" }]}></lit-template-shapes>",
+  "PropertyPaired": "<lit-template-shapes .heading=${"Heading"} .open=${true}></lit-template-shapes>",
+  "PropertyPairedFalse": "<lit-template-shapes .heading=${"Closed"} .open=${false}></lit-template-shapes>",
+  "QuotedAndMultiHole": "<lit-template-shapes
+  class="card warm large"
+  label="Quoted"
+></lit-template-shapes>",
+  "UnboundArg": "<lit-template-shapes label="Bound"></lit-template-shapes>",
+}

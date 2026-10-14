@@ -13,6 +13,7 @@
   Body <b>text</b>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",
+      "template": "⟦style lit-slots-and-css ::part(panel)=panel-part⟧<lit-slots-and-css ⟦props ~heading=heading --slot-panel-color=--slot-panel-color⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</lit-slots-and-css>",
     },
     "webcomponentsfixtures-lit-slots-and-css--dom-node": {
       "id": "webcomponentsfixtures-lit-slots-and-css--dom-node",

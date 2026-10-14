@@ -376,8 +376,13 @@ const unresolvedMarkers = (text: string, state: TemplatePrintState): void => {
 const containsMarker = (text: string, state: TemplatePrintState): boolean =>
   markersIn(text, state).length > 0;
 
-const markersIn = (text: string, state: TemplatePrintState): string[] =>
-  [...state.markers.keys()].filter((marker) => text.includes(marker));
+const markersIn = (text: string, state: TemplatePrintState): string[] => [
+  ...new Set(
+    [...text.matchAll(/__STORYBOOK_HOLE_[0-9a-z]+_[0-9a-z]+_\d+__/g)]
+      .map(([marker]) => marker)
+      .filter((marker) => state.markers.has(marker))
+  ),
+];
 
 const markerSources = (markers: string[], state: TemplatePrintState): string =>
   markers

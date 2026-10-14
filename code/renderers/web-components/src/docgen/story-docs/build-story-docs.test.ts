@@ -154,7 +154,7 @@ describe('buildStoryDocsPayload template', () => {
   it('is the element with a props hole for a story without a render function', async () => {
     const written = (await template(`{ args: { label: 'Hi', isOpen: true } }`))!;
     expect(written).toMatchInlineSnapshot(
-      `"<test-element ⟦props label=label is-open=isOpen --accent=--accent .items=items count=count disabled=disabled active=active variant=variant heading=heading⟧></test-element>"`
+      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦props ~label=label ~is-open=isOpen --accent=--accent .items=items ~count=count ~disabled=disabled ~active=active is-open=is-open variant=variant ~heading=heading⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
     );
     expect(
       fillTemplate(written, { label: 'Bye', isOpen: true, items: [1], '--accent': 'red' })
@@ -166,7 +166,7 @@ describe('buildStoryDocsPayload template', () => {
   it('keeps the listener script of the static snippet', async () => {
     expect(await template(`{ args: { label: 'Hi', onShapeChange: () => {} } }`))
       .toMatchInlineSnapshot(`
-        "<test-element ⟦props label=label --accent=--accent is-open=isOpen .items=items count=count disabled=disabled active=active variant=variant heading=heading⟧></test-element>
+        "⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦props ~label=label --accent=--accent ~is-open=isOpen .items=items ~count=count ~disabled=disabled ~active=active is-open=is-open variant=variant ~heading=heading⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>
         <script>
           {
             const host = document.currentScript.previousElementSibling;
@@ -174,6 +174,24 @@ describe('buildStoryDocsPayload template', () => {
           }
         </script>"
       `);
+  });
+
+  it('writes slot content as html and part and state styles as a style element', async () => {
+    const written = (await template(`{ args: { 'default-slot': 'Body' } }`))!;
+    expect(
+      fillTemplate(written, {
+        'default-slot': '<b>Body</b>',
+        'actions-slot': 'Go',
+        'panel-part': 'color: red;',
+        'active-state': 'outline: none;',
+      })
+    ).toMatchInlineSnapshot(`
+      "<style>
+        test-element::part(panel) { color: red; }
+        test-element:state(active) { outline: none; }
+      </style>
+      <test-element><b>Body</b><span slot="actions">Go</span></test-element>"
+    `);
   });
 
   it('is the html of a render function as written, with a hole for each arg it reads', async () => {
@@ -225,11 +243,8 @@ describe('buildStoryDocsPayload template', () => {
   });
 
   it.each([
-    ['slot content', `{ args: { 'default-slot': 'Body' } }`],
-    ['a css part', `{ args: { 'panel-part': 'color: red;' } }`],
     ['a string template', '{ render: (args) => `<test-element label="${args.label}">` }'],
     ['a render that reads no args', '{ render: () => html`<test-element></test-element>` }'],
-    ['args passed along whole', '{ render: (args) => html`<p>${String(args)}</p>` }'],
     ['an arg name bound again', '{ render: ({ a }) => html`${[1].map((a) => a)}` }'],
     ['an arg in a shorthand property', '{ render: ({ a }) => html`${JSON.stringify({ a })}` }'],
   ])('is not there for %s', async (_, body) => {
@@ -315,6 +330,53 @@ describe('buildStoryDocsPayload template', () => {
     );
   });
 
+  it('writes a constant of another file the story file does not name as its value', async () => {
+    const written = await templateOf(
+      `import { Titled } from './titled.js';
+      const Card = 'Other';
+      export const Primary = { render: (args) => Titled(args) };`,
+      {
+        'titled.ts': [
+          `import { html } from 'lit';`,
+          `const Card = 'Untitled';`,
+          'export const Titled = ({ label = Card }) => html`<p title=${label}></p>`;',
+        ].join('\n'),
+      }
+    );
+    expect(written).toBe('<p ⟦attr title label ?title%3D%24%7B%22Untitled%22%7D⟧></p>');
+    expect(fillTemplate(written!, {})).toBe('<p title=${"Untitled"}></p>');
+  });
+
+  it('writes html another file holds in a constant in place', async () => {
+    const written = await templateOf(
+      `import { Iconed } from './iconed.js';
+      export const Primary = { render: (args) => Iconed(args) };`,
+      {
+        'iconed.ts': [
+          `import { html } from 'lit';`,
+          'const icon = html`<svg></svg>`;',
+          'export const Iconed = (props) => html`<p>${icon} ${props.label}</p>`;',
+        ].join('\n'),
+      }
+    );
+    expect(written).toBe('<p>${html`<svg></svg>`} ⟦text label⟧</p>');
+  });
+
+  it('writes a constant of another file by its name where the story file imports it', async () => {
+    const written = await templateOf(
+      `import { Titled, Card } from './titled.js';
+      export const Primary = { render: (args) => Titled(args) };`,
+      {
+        'titled.ts': [
+          `import { html } from 'lit';`,
+          `export const Card = 'Untitled';`,
+          'export const Titled = ({ label = Card }) => html`<p title=${label}></p>`;',
+        ].join('\n'),
+      }
+    );
+    expect(written).toBe('<p ⟦attr title label ?title%3D%24%7BCard%7D⟧></p>');
+  });
+
   it('keeps a call that reads single args as written, and writes one inside code as html', async () => {
     const written = await templateOf(`
       const Badge = (label) => html\`<b>\${label}</b>\`;
@@ -335,20 +397,24 @@ describe('buildStoryDocsPayload template', () => {
       export const Primary = {
         render: ({ count, ...rest }) => html\`
           <test-element \${spread(rest)} \${spreadEvents(rest)}></test-element>
-          <test-element heading="Fixed" \${spread(rest, ['label', 'variant'])}></test-element>
-          \${Card({ ...rest, label: 'Written', heading: rest.variant })}
+          <test-element heading="Fixed" \${spread(rest)}></test-element>
+          \${Card({ ...rest, heading: rest.variant })}
+          <test-element \${spreadProps({ label: 'Written' })}></test-element>
         \`,
       };
     `))!;
     expect(written).toMatchInlineSnapshot(`
-      "<test-element ⟦props --accent=--accent is-open=isOpen .items=items label=label disabled=disabled active=active variant=variant heading=heading⟧></test-element>
-      <test-element heading="Fixed" ⟦props --accent=--accent is-open=isOpen .items=items disabled=disabled active=active ^heading⟧></test-element>
-      <test-element ⟦props --accent=--accent is-open=isOpen .items=items disabled=disabled active=active variant=variant heading=variant⟧ label="Written"></test-element>"
+      "<test-element ⟦props !spread * -count⟧></test-element>
+      <test-element heading="Fixed" ⟦props !spread * -count ^heading⟧></test-element>
+      <test-element ⟦props !spreadProps * -count -heading .heading=variant⟧></test-element>
+      <test-element \${spreadProps({ label: 'Written' })}></test-element>"
     `);
-    expect(fillTemplate(written, { label: 'Hi', variant: 'a', count: 2 })).toMatchInlineSnapshot(`
-      "<test-element label="Hi" variant="a"></test-element>
-      <test-element heading="Fixed"></test-element>
-      <test-element variant="a" heading="a" label="Written"></test-element>"
+    expect(fillTemplate(written, { label: 'Hi', variant: 'a', count: 2, active: false }))
+      .toMatchInlineSnapshot(`
+      "<test-element label="Hi" variant="a" active="false"></test-element>
+      <test-element heading="Fixed" label="Hi" variant="a" active="false"></test-element>
+      <test-element .heading=\${"a"} .label=\${"Hi"} .variant=\${"a"} .active=\${false}></test-element>
+      <test-element \${spreadProps({ label: 'Written' })}></test-element>"
     `);
     expect(() => fillTemplate(written, { heading: 'Set' })).toThrow(UnprintableArgError);
   });
@@ -387,20 +453,78 @@ describe('buildStoryDocsPayload template', () => {
       'own`<p>${args.label}</p>`',
     ],
     ['a function that is not in reach', `import { Far } from 'far';`, 'Far(args)'],
-    ['args written over an entry', '', 'Card({ label: 1, ...args })'],
-    ['a spread on another element', '', 'html`<p ${spread(args)}></p>`'],
     ['a call read twice', '', 'Twice(args, next())'],
-    ['code that names what the html binds', '', 'html`${Each(args, (item) => item)}`'],
+    ['a call read in a loop', '', 'Looped(args, next())'],
+    [
+      'code of another file that names a constant with no literal',
+      `import { Titled } from './titled.js';`,
+      'Titled(args)',
+    ],
+    ['code that holds a hole', '', "html`<p title=${'⟦text heading⟧'}>${args.label}</p>`"],
   ])('is not there for %s', async (_, imports, returned) => {
     const written = await templateOf(
       `${imports}
       const Card = (props) => html\`<p>\${props.label}</p>\`;
       const Twice = (props, id) => html\`<p id=\${id} title=\${id}>\${props.label}</p>\`;
       const Each = (props, render) => html\`\${props.items.map((item) => render)}\`;
+      const Looped = (props, id) => html\`\${props.items.map(() => id)}\`;
       export const Primary = { render: (args) => ${returned} };`,
-      { 'own.ts': 'export const html = (strings) => strings.join("");' }
+      {
+        'own.ts': 'export const html = (strings) => strings.join("");',
+        'titled.ts': [
+          `import { html } from 'lit';`,
+          `const Card = String(Date.now());`,
+          'export const Titled = ({ label = Card }) => html`<p title=${label}></p>`;',
+        ].join('\n'),
+      }
     );
     expect(written).toBeUndefined();
+  });
+});
+
+describe('buildStoryDocsPayload template of code that takes the args whole', () => {
+  it.each([
+    [
+      'a spread of the project',
+      `import { spread } from './spread.js';`,
+      'html`<p ${spread(args)}></p>`',
+      '<p ${spread(⟦args⟧)}></p>',
+      '<p ${spread({ label: "Hi", count: 2 })}></p>',
+    ],
+    [
+      'a spread that takes more than the args',
+      `import { spread } from '@open-wc/lit-helpers';`,
+      "html`<p ${spread(args, ['label'])}></p>`",
+      "<p ${spread(⟦args⟧, ['label'])}></p>",
+      `<p \${spread({ label: "Hi", count: 2 }, ['label'])}></p>`,
+    ],
+    [
+      'a call it cannot write as html',
+      `import { renderSlots } from './spread.js';`,
+      'html`<p>${String(args)}${renderSlots(args)}</p>`',
+      '<p>${String(⟦args⟧)}${renderSlots(⟦args⟧)}</p>',
+      '<p>${String({ label: "Hi", count: 2 })}${renderSlots({ label: "Hi", count: 2 })}</p>',
+    ],
+    [
+      'a copy with an entry it writes over',
+      'const Card = (props) => html`<p>${props.label}</p>`;',
+      'Card({ label: 1, ...args })',
+      '<p>${({ label: 1, ...⟦args⟧ }).label}</p>',
+      '<p>${({ label: 1, ...{ label: "Hi", count: 2 } }).label}</p>',
+    ],
+    [
+      'a function it would write with a name the html binds',
+      'const Each = (props, render) => html`${props.items.map((item) => render)}`;',
+      'html`${[1].map((item) => Each(args, item))}`',
+      '${[1].map((item) => Each(⟦args⟧, item))}',
+      '${[1].map((item) => Each({ label: "Hi", count: 2 }, item))}',
+    ],
+  ])('keeps %s as written', async (_, imports, returned, expected, filled) => {
+    const written = await templateOf(`${imports}
+      export const Primary = { render: (args) => ${returned} };`);
+    expect(written).toBe(expected);
+    expect(fillTemplate(written!, { label: 'Hi', count: 2, other: undefined })).toBe(filled);
+    expect(() => fillTemplate(written!, { label: () => 'Hi' })).toThrow(UnprintableArgError);
   });
 });
 
@@ -426,9 +550,34 @@ describe('buildStoryDocsPayload template of a render that branches or has statem
   it('writes the branch an arg the story leaves unset takes, guarded by that arg', async () => {
     const written = (await templateOf(`${Branch}
       export const Primary = { args: { label: 'Hi' }, render: (args) => Branch(args) };`))!;
-    expect(written).toBe('⟦props ^active⟧⟦props ^variant⟧<p>⟦text label⟧</p>');
+    expect(written).toBe('<p>⟦text label⟧</p>⟦props ^variant⟧⟦props ^active⟧');
     expect(fillTemplate(written, { label: 'Hi' })).toBe('<p>Hi</p>');
     expect(() => fillTemplate(written, { label: 'Hi', active: true })).toThrow(UnprintableArgError);
+  });
+
+  it('writes the guard of a returned branch after the html it returns', async () => {
+    const written = (await templateOf(`${Branch}
+      export const Primary = {
+        args: { label: 'Hi' },
+        render: (args) => {
+          if (args.heading) {
+            return html\`<h1>\${args.heading}</h1>\`;
+          }
+          return Branch(args);
+        },
+      };`))!;
+    expect(written).toMatchInlineSnapshot(`
+      "if (⟦value heading⟧) {
+        return html\`<h1>⟦text heading⟧</h1>\`;
+      }
+      return html\`<p>⟦text label⟧</p>\`⟦props ^variant⟧⟦props ^active⟧;"
+    `);
+    expect(fillTemplate(written, { label: 'Bye' })).toMatchInlineSnapshot(`
+      "if (undefined) {
+        return html\`<h1></h1>\`;
+      }
+      return html\`<p>Bye</p>\`;"
+    `);
   });
 
   it('writes a render with statements as its body, without the constants that hold args', async () => {
@@ -488,6 +637,14 @@ describe('buildStoryDocsPayload template of a render that branches or has statem
       '(args) => { args.label = args.label.trim(); return html`<p>${args.label}</p>`; }',
     ],
     ['pushes onto an arg', '(args) => { args.items.push(1); return html`<p>${args.items}</p>`; }'],
+    [
+      'assigns to the args',
+      "(args) => { Object.assign(args, { label: 'x' }); return html`<p>${args.label}</p>`; }",
+    ],
+    [
+      'passes the args to code that may write them',
+      '(args) => { const done = prepare(args); return html`<p>${args.label}</p>`; }',
+    ],
   ])('is not there for a body that %s', async (_, render) => {
     expect(await template(`{ render: ${render} }`)).toBeUndefined();
   });
@@ -504,6 +661,7 @@ describe('buildStoryDocsPayload template of a render that branches or has statem
 
   it('reads a copy of the args with an entry deleted or assigned', async () => {
     const written = await templateOf(`
+      import { spread } from '@open-wc/lit-helpers';
       const Card = (props) => html\`<test-element \${spread(props)}></test-element>\`;
       export const Primary = {
         render: (args) => {
@@ -513,7 +671,7 @@ describe('buildStoryDocsPayload template of a render that branches or has statem
         },
       };`);
     expect(written).toMatchInlineSnapshot(
-      `"<test-element ⟦props --accent=--accent is-open=isOpen .items=items count=count disabled=disabled active=active variant=variant⟧ label="Fixed"></test-element>"`
+      `"<test-element ⟦props !spread * -heading -label⟧ label="Fixed"></test-element>"`
     );
   });
 });
@@ -530,12 +688,9 @@ describe('buildStoryDocsPayload template of @wc-toolkit/storybook-helpers', () =
       '(args) => template(args)',
       "{ label: 'Hi', 'actions-slot': 'Go' }"
     ))!;
-    expect(written).toMatchInlineSnapshot(`
-      "<test-element ⟦props label=label count=count disabled=disabled active=active is-open=is-open heading=heading .items=items --accent=--accent⟧>
-        ⟦slot default default-slot⟧
-        ⟦slot actions actions-slot⟧
-      </test-element>"
-    `);
+    expect(written).toMatchInlineSnapshot(
+      `"⟦style test-element --accent=--accent ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦props !toolkit * -label -count -disabled -active -isOpen -is-open -heading -items -refresh -refresh-method ---accent -panel -panel-part -active-state -default -default-slot -actions -actions-slot -shape-change -shape-change-event label=label count=count disabled=disabled active=active is-open=is-open .isOpen=isOpen heading=heading .items=items⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
+    );
     expect(
       fillTemplate(written, {
         label: 'Hi',
@@ -544,24 +699,57 @@ describe('buildStoryDocsPayload template of @wc-toolkit/storybook-helpers', () =
         '--accent': 'red',
       })
     ).toMatchInlineSnapshot(`
-      "<test-element label="Hi" style="--accent: red;">
-        <b>Text</b>
-        <span slot="actions">Go</span>
-      </test-element>"
+      "<style>
+        test-element { --accent: red; }
+      </style>
+      <test-element label="Hi"><b>Text</b><span slot="actions">Go</span></test-element>"
     `);
+  });
+
+  it.each([
+    ['{ hideArgRef: true }', true],
+    ["{ excludeCategories: ['slots'] }", false],
+    ['{ setComponentVariable: true }', false],
+    ['options', false],
+  ])('reads the helpers of options %s only where they keep the template', async (options, kept) => {
+    const written = await templateOf(`
+      import { getStorybookHelpers } from '@wc-toolkit/storybook-helpers';
+      const options = {};
+      const { template } = getStorybookHelpers('test-element', ${options});
+      export const Primary = { render: (args) => template(args) };`);
+    expect(written !== undefined).toBe(kept);
   });
 
   it('writes values the render passes, and the html it passes as content', async () => {
     const written = await toolkit(
       "(args) => template({ ...args, count: 2, items: [1], 'actions-slot': '<b slot=\\'x\\'>Go</b> now' }, html`<b>${args.heading}</b>`)"
     );
-    expect(written).toMatchInlineSnapshot(`
-      "<test-element ⟦props label=label disabled=disabled active=active is-open=is-open heading=heading --accent=--accent⟧ count="2" .items=\${[1]}>
-        ⟦slot default default-slot⟧
-        <b slot="actions">Go</b><span slot="actions"> now</span>
-        <b>⟦text heading⟧</b>
-      </test-element>"
-    `);
+    expect(written).toMatchInlineSnapshot(
+      `"⟦style test-element --accent=--accent ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦props !toolkit * -label -count -disabled -active -isOpen -is-open -heading -items -refresh -refresh-method ---accent -panel -panel-part -active-state -default -default-slot -actions -actions-slot -shape-change -shape-change-event label=label disabled=disabled active=active is-open=is-open .isOpen=isOpen heading=heading⟧ count="2" .items=\${[1]}>⟦slot default default-slot⟧<b slot="actions">Go</b><span slot="actions"> now</span><b>⟦text heading⟧</b></test-element>"`
+    );
+  });
+});
+
+describe('buildStoryDocsPayload template of a fixed object the render passes', () => {
+  it.each([
+    [
+      'the toolkit, which writes it as an attribute',
+      `import { getStorybookHelpers } from '@wc-toolkit/storybook-helpers';
+      const { template } = getStorybookHelpers('test-element');`,
+      "template({ ...args, items: { a: 1 }, format: { style: 'currency' } })",
+      '<test-element label="Hi" .items=${{ a: 1 }} format="[object Object]"></test-element>',
+    ],
+    [
+      'spreadProps',
+      `import { spreadProps } from '@open-wc/lit-helpers';
+      const Card = (props) => html\`<test-element \${spreadProps(props)}></test-element>\`;`,
+      "Card({ ...args, format: { style: 'currency' } })",
+      '<test-element .label=${"Hi"} .format=${{ style: "currency" }}></test-element>',
+    ],
+  ])('passes it to %s', async (_, imports, returned, filled) => {
+    const written = (await templateOf(`${imports}
+      export const Primary = { render: (args) => ${returned} };`))!;
+    expect(fillTemplate(written, { label: 'Hi' })).toBe(filled);
   });
 });
 
@@ -590,7 +778,69 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
       };`
     );
     expect(doc.template).toBe('<test-element>${[⟦value label⟧].join()}</test-element>');
-    expect(doc).toMatchObject({ snippet: expect.not.stringContaining('⟦') });
+    expect({ snippet: doc.snippet, warning: doc.warning }).toMatchInlineSnapshot(`
+      {
+        "snippet": "<test-element></test-element>",
+        "warning": "Incomplete snippet: \`[args.label].join()\` could not be resolved statically.",
+      }
+    `);
+  });
+
+  it('keeps the static snippet while a spread of the args is not known', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      import { baseArgs } from './far.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { ...baseArgs, heading: 'H' },
+        render: (args) => html\`<test-element label=\${args.label} heading=\${args.heading}></test-element>\`,
+      };`
+    );
+    expect(doc.template).toBe(
+      '<test-element ⟦attr label label⟧ ⟦attr heading heading⟧></test-element>'
+    );
+    expect({ snippet: doc.snippet, warning: doc.warning }).toMatchInlineSnapshot(`
+      {
+        "snippet": "<test-element label="" heading="H"></test-element>",
+        "warning": "Incomplete snippet: \`...baseArgs\` could not be resolved statically.",
+      }
+    `);
+  });
+
+  it('reads a spread of the project as Storybook sets the args, where the template keeps it', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      import { spread } from './spread.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Hi', isOpen: true, items: [1] },
+        render: (args) => html\`<test-element \${spread(args)}></test-element>\`,
+      };`
+    );
+    expect(doc).toMatchObject({
+      template: '<test-element ${spread(⟦args⟧)}></test-element>',
+      snippet: '<test-element label="Hi" is-open .items=${[1]}></test-element>',
+    });
+  });
+
+  it('names a constant of another file it has no literal for, where it has no template', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      import { Listed } from './listed.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Hi' }, render: (args) => Listed(args) };`,
+      {
+        files: {
+          'listed.ts': [
+            `import { html } from 'lit';`,
+            'const items = [1, 2].map(String);',
+            'export const Listed = (props) => html`<test-element .items=${items} label=${props.label}></test-element>`;',
+          ].join('\n'),
+        },
+      }
+    );
+    expect(doc.template).toBeUndefined();
+    expect(doc.snippet).toBe('<test-element .items=${items} label="Hi"></test-element>');
   });
 
   it('is the render alone for a story without meta.component', async () => {
@@ -777,6 +1027,7 @@ describe('buildStoryDocsPayload', () => {
         name: 'Primary',
         snippet: '<test-element label="Bound"></test-element>',
         warning: 'Incomplete snippet: args not bound by the render template: `count`.',
+        templateWarning: 'Incomplete snippet: args not bound by the render template: `count`.',
       },
     },
     {
@@ -869,6 +1120,8 @@ describe('buildStoryDocsPayload', () => {
         name: 'Primary',
         snippet: '<test-element></test-element>',
         warning: 'Incomplete snippet: listeners the HTML snippet cannot express: `onUnknown`.',
+        templateWarning:
+          'Incomplete snippet: listeners the HTML snippet cannot express: `onUnknown`.',
       },
     },
     {
@@ -884,6 +1137,7 @@ describe('buildStoryDocsPayload', () => {
         name: 'Primary',
         snippet: '<test-element></test-element>',
         warning: 'Incomplete snippet: listeners the HTML snippet cannot express: `label`.',
+        templateWarning: 'Incomplete snippet: listeners the HTML snippet cannot express: `label`.',
       },
     },
     {

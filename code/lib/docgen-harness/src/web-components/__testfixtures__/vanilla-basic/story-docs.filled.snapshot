@@ -1,0 +1,8 @@
+{
+  "ArgsDefaultRender": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
+  "LitTemplate": "<vanilla-basic
+  label="Vanilla"
+  count="4"
+  disabled
+></vanilla-basic>",
+}

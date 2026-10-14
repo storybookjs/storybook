@@ -1,0 +1,9 @@
+{
+  "ArgsDefaultRender": "<fast-attributes label="Default count" size="large" .disabled=${false} max-count="2" .items=${["a"]}></fast-attributes>",
+  "LitTemplate": "<fast-attributes
+  label="Count"
+  size="large"
+  max-count="5"
+  .items=${["a"]}
+></fast-attributes>",
+}

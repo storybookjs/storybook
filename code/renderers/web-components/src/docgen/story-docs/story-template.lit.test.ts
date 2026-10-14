@@ -5,7 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { loadCsf, resolveEffectiveRender } from 'storybook/internal/csf-tools';
 import type { Args } from 'storybook/internal/types';
 
-import { html, nothing, render } from 'lit';
+import { LitElement, html, noChange, nothing, render } from 'lit';
+import { Directive, type ElementPart, directive } from 'lit/directive.js';
 import { choose } from 'lit/directives/choose.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -15,11 +16,107 @@ import { when } from 'lit/directives/when.js';
 
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
+import { bindArgs } from '../../bind-args.ts';
 import { fillTemplate } from '../../docs/fill-template.ts';
-import { litTemplate } from './story-template.ts';
+import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
+import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
+import { argsTemplate, litTemplate } from './story-template.ts';
 import { templateModule } from './template-calls.ts';
 
-// happy-dom leaves `&lt;` in an attribute value as written, so only text gets a `<`.
+class XCard extends LitElement {
+  static override properties = {
+    label: {},
+    size: {},
+    count: { type: Number },
+    open: { type: Boolean },
+    isOpen: { type: Boolean, attribute: 'is-open' },
+    active: { type: Boolean },
+    items: { attribute: false },
+  };
+
+  declare label?: string;
+  declare size?: string;
+  declare count?: number;
+  declare open: boolean;
+  declare isOpen: boolean;
+  declare active: boolean;
+  declare items?: unknown[];
+
+  constructor() {
+    super();
+    this.open = false;
+    this.isOpen = false;
+    this.active = true;
+    this.items = [];
+  }
+}
+customElements.define('x-card', XCard);
+
+const declaration: ManifestDeclaration = {
+  kind: 'class',
+  name: 'XCard',
+  customElement: true,
+  tagName: 'x-card',
+  attributes: [
+    { name: 'label', fieldName: 'label' },
+    { name: 'count', fieldName: 'count' },
+    { name: 'is-open', fieldName: 'isOpen' },
+    { name: 'active', fieldName: 'active' },
+  ],
+  members: [
+    { kind: 'field', name: 'label', attribute: 'label' },
+    { kind: 'field', name: 'count', attribute: 'count' },
+    { kind: 'field', name: 'isOpen', attribute: 'is-open' },
+    { kind: 'field', name: 'active', attribute: 'active', default: 'true' },
+    { kind: 'field', name: 'items', default: '[]' },
+  ],
+  slots: [{ name: '' }, { name: 'title' }],
+  cssParts: [{ name: 'panel' }],
+  cssStates: [{ name: 'busy' }],
+  cssProperties: [{ name: '--gap' }],
+} as ManifestDeclaration;
+
+// `@open-wc/lit-helpers`, which this package does not depend on, as it sets an object on its first
+// render: `spreadProps` each key as a property, and `spread` each key as an attribute, a `.key` as a
+// property and a `?key` as a boolean attribute; both pass over an `undefined` value.
+class SpreadPropsDirective extends Directive {
+  render(_data: Record<string, unknown>) {
+    return nothing;
+  }
+
+  override update({ element }: ElementPart, [data]: [Record<string, unknown>]) {
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        (element as unknown as Record<string, unknown>)[key] = value;
+      }
+    }
+    return noChange;
+  }
+}
+
+class SpreadDirective extends SpreadPropsDirective {
+  override update({ element }: ElementPart, [data]: [Record<string, unknown>]) {
+    for (const [key, value] of Object.entries(data)) {
+      if (value === undefined || key.startsWith('@')) {
+        continue;
+      }
+      if (key.startsWith('.')) {
+        (element as unknown as Record<string, unknown>)[key.slice(1)] = value;
+      } else if (key.startsWith('?')) {
+        element.toggleAttribute(key.slice(1), Boolean(value));
+      } else if (value !== null) {
+        element.setAttribute(key, String(value));
+      }
+    }
+    return noChange;
+  }
+}
+
+const spread = directive(SpreadDirective);
+const spreadProps = directive(SpreadPropsDirective);
+
+// happy-dom leaves `&lt;` and `&#39;` in an attribute value as written, so only text gets a `<`,
+// and a single-quoted value no `'`.
 const HOSTILE = 'a"b\'c`d${e}&g';
 const HOSTILE_TEXT = `${HOSTILE}<f>`;
 
@@ -124,6 +221,45 @@ const stories: [
     ],
   ],
   [
+    'a property binding of an arg, set or not',
+    `export const Primary = (args) => html\`<x-card .items=\${args.items} .count=\${args.count}>\${args.label}</x-card>\`;`,
+    [{}, { items: [1, 'a'], count: 0 }, { items: null, label: HOSTILE_TEXT }],
+  ],
+  [
+    'an arg inside a larger attribute value, quoted or not',
+    `export const Primary = (args) =>
+       html\`<x-card title="\${args.label}!" size=\${args.size}-x lang='\${args.lang} \${args.size}'></x-card>\`;`,
+    [{}, { label: 'Hi', size: 'l', lang: 'en' }, { label: HOSTILE, size: 7, lang: false }],
+  ],
+  [
+    'an arg as the text of a style',
+    `export const Primary = (args) => html\`<style>\${args.css}</style><x-card>\${args.label}</x-card>\`;`,
+    [{}, { css: 'x-card > b { color: red }', label: 'a < b' }],
+  ],
+  [
+    'a spread of the args',
+    `import { spread } from '@open-wc/lit-helpers';
+     export const Primary = (args) => html\`<x-card \${spread(args)}></x-card>\`;`,
+    [
+      { label: 'Hi', open: true },
+      { label: HOSTILE, count: 0, active: false, items: [1, 2] },
+      { '.items': ['a'], '?open': 1, label: null },
+    ],
+  ],
+  [
+    'a spread of the args as properties, with an entry written over them',
+    `import { spreadProps } from '@open-wc/lit-helpers';
+     export const Primary = (args) => {
+       const props = { ...args, size: 'l' };
+       return html\`<x-card label="Written" \${spreadProps(props)}></x-card>\`;
+     };`,
+    [
+      { open: true, active: false },
+      { items: [1], isOpen: true, size: 's', count: 2 },
+    ],
+    { unprintable: [{ label: 'Set' }] },
+  ],
+  [
     'a copy of the args with an entry deleted and others assigned',
     `const Card = (props) => html\`<x-card title=\${ifDefined(props.label)} size=\${ifDefined(props.size)} ?open=\${!!props.open}></x-card>\`;
      export const Primary = (args) => {
@@ -136,13 +272,16 @@ const stories: [
 ];
 
 // The elements with their attributes in name order, as lit sets a bound one after the written ones,
-// and the text between them as one, as lit renders each binding into a text node of its own. A run of
-// whitespace renders as one space, and the snippet indents a function body less than the story does.
+// and the properties of an `x-card`, and the text between them as one, as lit renders each binding
+// into a text node of its own. A run of whitespace renders as one space, and the snippet indents a
+// function body less than the story does.
 const outline = (element: Element): string =>
   `<${element.localName} ${[...element.attributes]
     .map(({ name, value }) => `${name}=${JSON.stringify(value)}`)
     .sort()
-    .join(' ')}>${[...element.childNodes]
+    .join(' ')}${element instanceof XCard ? ` ${properties(element)}` : ''}>${[
+    ...element.childNodes,
+  ]
     .filter((child) => child.nodeType !== Node.COMMENT_NODE)
     .map((child) =>
       child instanceof Element
@@ -151,6 +290,18 @@ const outline = (element: Element): string =>
     )
     .join('')
     .replaceAll('""', '')}`;
+
+const properties = (card: XCard) =>
+  JSON.stringify({
+    label: card.label,
+    size: card.size,
+    count: card.count,
+    open: card.open,
+    isOpen: card.isOpen,
+    active: card.active,
+    items: card.items,
+    style: card.style.cssText,
+  });
 
 const rendered = (result: unknown) => {
   const container = document.createElement('div');
@@ -168,14 +319,25 @@ describe('litTemplate', () => {
         ? litTemplate(
             path.path.node,
             templateModule({ program: csf._file.path, filePath: '' }, undefined),
-            { tag: 'x-card', words: [], args: options?.set }
+            { tag: 'x-card', declaration, args: options?.set }
           )?.template
         : undefined;
     expect(template).toBeDefined();
 
     // A body that does more than return html is the snippet as a function body.
     const body = /^\s*return\b/m.test(template!);
-    const scope = { html, nothing, ifDefined, classMap, styleMap, repeat, when, choose };
+    const scope = {
+      html,
+      nothing,
+      ifDefined,
+      classMap,
+      styleMap,
+      repeat,
+      when,
+      choose,
+      spread,
+      spreadProps,
+    };
     for (const args of argsList) {
       const filled = fillTemplate(template!, args);
       const snippet = body ? `(() => {\n${filled}\n})()` : `html\`${filled}\``;
@@ -183,7 +345,7 @@ describe('litTemplate', () => {
       const run = new Function(
         ...Object.keys(scope),
         'args',
-        `${source.replace('export ', '')}\nreturn [Primary(args), ${snippet}];`
+        `${source.replace(/^\s*import .*$/gm, '').replace('export ', '')}\nreturn [Primary(args), ${snippet}];`
       );
       const [story, written] = run(...Object.values(scope), args);
       expect(rendered(written), filled).toEqual(rendered(story));
@@ -191,5 +353,52 @@ describe('litTemplate', () => {
     for (const args of options?.unprintable ?? []) {
       expect(() => fillTemplate(template!, args)).toThrow(UnprintableArgError);
     }
+  });
+});
+
+describe('argsTemplate', () => {
+  const argTypes = mapArgTypes(declaration);
+  const template = argsTemplate('x-card', ['other'], argTypes, declaration);
+
+  // Storybook's render sets the args on the element; a part or state style, which it scopes to the
+  // element, is a rule of the snippet's `<style>`.
+  const story = (args: Args) => {
+    const element = document.createElement('x-card');
+    const rules = bindArgs(element, args);
+    return { element, rules };
+  };
+
+  it.each<Args>([
+    { label: 'Hi', count: 0, active: false },
+    { isOpen: true },
+    { 'is-open': true },
+    { items: [1, 'a'], '--gap': '2px' },
+    { 'default-slot': '<b>Body</b>', 'title-slot': 'Title' },
+    { 'panel-part': 'color: red;', 'busy-state': 'outline: none;' },
+    { other: 'x', label: HOSTILE },
+  ])('fills to an element set as the story sets it with %j', (args) => {
+    const filled = fillTemplate(template, args);
+    const container = document.createElement('div');
+    render(new Function('html', `return html\`${filled}\`;`)(html), container);
+    const written = container.querySelector('x-card') as XCard;
+    const { element, rules } = story(args);
+    // The render sets a field as a property, which the snippet sets with its attribute.
+    expect(properties(written), filled).toEqual(properties(element as XCard));
+    expect(written.innerHTML.replace(/<!--.*?-->/g, ''), filled).toEqual(element.innerHTML);
+    expect((written as unknown as Record<string, unknown>).other, filled).toEqual(
+      (element as unknown as Record<string, unknown>).other
+    );
+    for (const rule of rules) {
+      expect(container.querySelector('style')?.textContent).toContain(rule.replace(/ }$/, ''));
+    }
+  });
+
+  it('prints a field and its attribute once, and throws while they set different values', () => {
+    expect(fillTemplate(template, { isOpen: true, 'is-open': true })).toBe(
+      '<x-card is-open></x-card>'
+    );
+    expect(() => fillTemplate(template, { isOpen: false, 'is-open': true })).toThrow(
+      UnprintableArgError
+    );
   });
 });

@@ -12,7 +12,7 @@
   variant="full"
   aria-label-text="Default rating"
 ></stencil-props>",
-      "template": "<stencil-props ⟦props value=value max=max variant=variant aria-label-text=labelText .hovered=hovered labels=labels⟧></stencil-props>",
+      "template": "<stencil-props ⟦props ~value=value ~max=max ~variant=variant ~aria-label-text=labelText .hovered=hovered aria-label-text=aria-label-text ~labels=labels⟧></stencil-props>",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
       "id": "webcomponentsfixtures-stencil-props--dom-node",

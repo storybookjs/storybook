@@ -69,7 +69,7 @@ return html`<lit-template-shapes ⟦attr label label ?label%3D%22Untitled%22⟧ 
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
       "name": "Spread Directive",
       "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
-      "template": "<lit-template-shapes ⟦props label=label count=count disabled=disabled .items=items heading=heading open=open⟧></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦props !spreadProps *⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
@@ -77,7 +77,7 @@ return html`<lit-template-shapes ⟦attr label label ?label%3D%22Untitled%22⟧ 
       "snippet": "<lit-template-shapes label="Written" count="2"
   ></lit-template-shapes
 >",
-      "template": "<lit-template-shapes label="Written" ⟦props count=count .items=items ^label disabled=disabled open=open⟧
+      "template": "<lit-template-shapes label="Written" ⟦props !spreadProps * -heading ^label⟧
   >⟦text heading⟧</lit-template-shapes
 >",
     },

@@ -1,0 +1,5 @@
+{
+  "Csf2Function": "<meta-render label="csf2"></meta-render>",
+  "FromMeta": "<meta-render label="from-meta"></meta-render>",
+  "Override": "<meta-render label="override" class="override"></meta-render>",
+}

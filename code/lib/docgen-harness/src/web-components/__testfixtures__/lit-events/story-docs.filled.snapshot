@@ -1,0 +1,13 @@
+{
+  "ArgsDefaultRender": "<lit-events value="default event"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
+  "LitTemplate": "<lit-events
+  value="changed"
+></lit-events>",
+}

@@ -47,7 +47,18 @@ const Panel: FC<any> = (props) => {
   const panels = useMemo(() => {
     const allPanels = api.getElements(Addon_TypesEnum.PANEL);
 
-    if (!allPanels || type !== 'story') {
+    if (!allPanels) {
+      return allPanels;
+    }
+
+    // No story prepared yet: no panel content is valid to render. Returning all
+    // panels flashes every registered panel, including ones disabled for the
+    // story about to load (e.g. the internal Open Service demo panel).
+    if (!story) {
+      return {};
+    }
+
+    if (type !== 'story') {
       return allPanels;
     }
 
@@ -64,7 +75,7 @@ const Panel: FC<any> = (props) => {
     });
 
     return filteredPanels;
-  }, [api, type, parameters]);
+  }, [api, story, type, parameters]);
 
   return (
     <AddonPanel

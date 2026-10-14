@@ -1505,6 +1505,25 @@ describe('StoryIndexGenerator', () => {
         `);
       });
 
+      it('does not generate docs entries when autodocs is disabled for a test build', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          docs: {},
+          build: { test: { disableAutoDocs: true } },
+        });
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(Object.values(storyIndex.entries).some((entry) => entry.type === 'docs')).toBe(
+          false
+        );
+      });
+
       it('prioritizes using the component id over meta.title for generating its id, if provided. (autodocs)', async () => {
         const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './docs-id-generation/A.stories.jsx',

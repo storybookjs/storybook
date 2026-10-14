@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import type { FillSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import { type FillSnippetTemplate, writtenArg } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args, Parameters } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
@@ -21,15 +21,18 @@ export function getFillTemplate(
 // Story ids whose filler failed; filling runs on every args change, so each warns once.
 const storiesWarnedAbout = new Set<string>();
 
+/** The args a story renders with, before they are mapped, and those it is written with. */
+export type StoryArgs = { args: Args; unmappedArgs: Args; initialArgs: Args };
+
 /**
- * Resolves the display snippet for one story with `args` filled into its `template`, with its
- * `templateWarning`. Without args to fill (the story still has the args it is written with), a
- * template or a filler, or when filling throws, it is the static snippet with its `warning`.
+ * Resolves the display snippet for one story with its args filled into its `template`, with its
+ * `templateWarning`. While the story still has the args it is written with, without a template or a
+ * filler, or when filling throws, it is the static snippet with its `warning`.
  */
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
   storyId: string,
-  args: Args | undefined,
+  args: StoryArgs | undefined,
   fill: FillSnippetTemplate | undefined
 ): { snippet?: string; warning?: string } {
   const staticSnippet = () => ({
@@ -37,12 +40,20 @@ export function selectLiveSnippetForStory(
     warning: selectWarningForStory(payload, storyId),
   });
   const story = payload?.stories[storyId];
-  if (args === undefined || story?.template === undefined || fill === undefined) {
+  if (
+    args === undefined ||
+    isEqual(args.unmappedArgs, args.initialArgs) ||
+    story?.template === undefined ||
+    fill === undefined
+  ) {
     return staticSnippet();
   }
   try {
     return {
-      snippet: prependImportToSnippet(payload?.import, fill(story.template, args)),
+      snippet: prependImportToSnippet(
+        payload?.import,
+        fill(story.template, asWritten(args, story.argCode))
+      ),
       warning: story.templateWarning,
     };
   } catch (error) {
@@ -56,14 +67,14 @@ export function selectLiveSnippetForStory(
   }
 }
 
-/**
- * The args to fill a story's template with: `undefined` while the story has the args it is written
- * with, so the snippet reads as written until the args change.
- */
-export function argsToFill(story: {
-  args: Args;
-  unmappedArgs: Args;
-  initialArgs: Args;
-}): Args | undefined {
-  return isEqual(story.unmappedArgs, story.initialArgs) ? undefined : story.args;
-}
+// An arg that still holds the value the story is written with is the code it is written with, as
+// the static snippet prints it; an arg a control changed is its value.
+const asWritten = ({ args, unmappedArgs, initialArgs }: StoryArgs, code: Args = {}): Args =>
+  Object.fromEntries(
+    Object.entries(args).map(([name, value]) => [
+      name,
+      Object.hasOwn(code, name) && unmappedArgs[name] === initialArgs[name]
+        ? writtenArg(code[name])
+        : value,
+    ])
+  );

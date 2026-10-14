@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-define-props-runtime-array--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-define-props-runtime-array--props-as-written",
       "name": "Props As Written",

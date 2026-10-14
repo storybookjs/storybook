@@ -4,6 +4,19 @@
   "path": "__PATH__",
   "stories": {
     "forms-named-type-details--props-as-written": {
+      "argCode": {
+        "big": "{}",
+        "builtin": "new Date(0)",
+        "cyclic": "{ peer: { peer: null } }",
+        "dict": "{ a: 1 }",
+        "inlined": "{ foo: 'foo', bar: 1 }",
+        "localDate": "new Date(0)",
+        "namespaced": "{ key: 'k', count: 2 }",
+        "partialed": "{ age: 36 }",
+        "picked": "{ name: 'Ada' }",
+        "prefs": "{ locale: 'en-US' }",
+        "user": "{ name: 'Ada', age: 36 }",
+      },
       "description": undefined,
       "id": "forms-named-type-details--props-as-written",
       "name": "Props As Written",

@@ -5,8 +5,6 @@ import { SourceType } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
 
-import { argsToFill } from 'storybook/open-service';
-
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
 import type { DocsContextProps } from './DocsContext';
@@ -200,8 +198,8 @@ const SourceWithStoryDocsSnippet: FC<
   const [argsUpdate] = useArgs(story, docsContext);
   const args = useMemo(
     () => {
-      const { args: mappedArgs, unmappedArgs, initialArgs } = docsContext.getStoryContext(story);
-      return argsToFill({ args: mappedArgs, unmappedArgs, initialArgs });
+      const { args, unmappedArgs, initialArgs } = docsContext.getStoryContext(story);
+      return { args, unmappedArgs, initialArgs };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `argsUpdate` is the trigger
     [argsUpdate, story, docsContext]

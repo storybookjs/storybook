@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-events-jsdoc--with-handlers": {
+      "argCode": {
+        "onCancel": "() => {}",
+        "onSave": "() => {}",
+      },
       "description": undefined,
       "id": "forms-events-jsdoc--with-handlers",
       "name": "With Handlers",

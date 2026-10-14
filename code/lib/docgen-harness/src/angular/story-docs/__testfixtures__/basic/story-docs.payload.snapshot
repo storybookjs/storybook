@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-basic--primary": {
+      "argCode": {},
       "description": "The default state.",
       "id": "storydocs-basic--primary",
       "name": "Primary",
@@ -32,6 +33,7 @@ export class DemoComponent {
 }",
     },
     "storydocs-basic--renamed": {
+      "argCode": {},
       "description": "Named through the `name` annotation.",
       "id": "storydocs-basic--renamed",
       "name": "Custom name",

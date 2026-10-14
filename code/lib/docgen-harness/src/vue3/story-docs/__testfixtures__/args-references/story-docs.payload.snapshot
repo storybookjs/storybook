@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-args-references--identifier-arg": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-args-references--identifier-arg",
       "name": "Identifier Arg",
@@ -24,6 +25,12 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </template>",
     },
     "forms-args-references--spread-object-arg": {
+      "argCode": {
+        "options": "{
+  size: 'md',
+  tone: 'neutral'
+}",
+      },
       "description": undefined,
       "id": "forms-args-references--spread-object-arg",
       "name": "Spread Object Arg",

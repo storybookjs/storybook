@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from './fill-template.ts';
 
@@ -35,6 +35,16 @@ describe('fillTemplate', () => {
     for (const template of ['⟦element Chart⟧', '<Chart ⟦attr formatter formatter⟧ />', '⟦args⟧']) {
       expect(() => fillTemplate(template, args)).toThrow(UnprintableArgError);
     }
+  });
+
+  it('prints a written arg as its code, in every hole', () => {
+    const formatter = writtenArg('shout');
+    expect(fillTemplate('⟦element Chart⟧', { formatter })).toBe('<Chart formatter={shout} />');
+    expect(fillTemplate('<Chart ⟦attr format formatter⟧ />', { formatter })).toBe(
+      '<Chart format={shout} />'
+    );
+    expect(fillTemplate('<p>⟦text formatter⟧</p>', { formatter })).toBe('<p>{shout}</p>');
+    expect(fillTemplate('use(⟦args⟧)', { formatter })).toBe('use({ formatter: shout })');
   });
 
   it('leaves out the args a props hole names', () => {

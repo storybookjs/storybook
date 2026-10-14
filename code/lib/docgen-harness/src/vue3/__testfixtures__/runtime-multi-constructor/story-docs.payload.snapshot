@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-runtime-multi-constructor--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-runtime-multi-constructor--props-as-written",
       "name": "Props As Written",

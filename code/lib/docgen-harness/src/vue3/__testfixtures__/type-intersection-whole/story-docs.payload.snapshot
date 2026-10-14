@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-type-intersection-whole--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-type-intersection-whole--props-as-written",
       "name": "Props As Written",

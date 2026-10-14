@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-args-expression--collapsed": {
+      "argCode": {
+        "release": "{ tag: 'v1.2.3', name: 'Release 1.2.3' }",
+        "status": "{ state: 'available', version: '1.2.3' }",
+      },
       "description": undefined,
       "id": "forms-template-args-expression--collapsed",
       "name": "Collapsed",
@@ -48,6 +52,10 @@ const status = ⟦value status script⟧;
 </template>",
     },
     "forms-template-args-expression--primary": {
+      "argCode": {
+        "release": "{ tag: 'v1.2.3', name: 'Release 1.2.3' }",
+        "status": "{ state: 'available', version: '1.2.3' }",
+      },
       "description": undefined,
       "id": "forms-template-args-expression--primary",
       "name": "Primary",

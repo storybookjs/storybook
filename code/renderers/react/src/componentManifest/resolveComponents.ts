@@ -175,7 +175,7 @@ export function extractStorySnippets(
           id: story.id,
           name,
           snippet: recast.print(snippet.node).code,
-          ...(snippet.template ? { template: snippet.template } : {}),
+          ...(snippet.template ? { template: snippet.template, argCode: snippet.argCode } : {}),
           description,
           summary,
           ...(warning ? { warning } : {}),

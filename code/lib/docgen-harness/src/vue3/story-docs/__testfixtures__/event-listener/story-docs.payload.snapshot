@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-event-listener--primary": {
+      "argCode": {
+        "formatter": "(value: string) => value.toUpperCase()",
+        "onSubmit": "(payload: { value: string }) => console.log(payload)",
+      },
       "description": undefined,
       "id": "forms-event-listener--primary",
       "name": "Primary",

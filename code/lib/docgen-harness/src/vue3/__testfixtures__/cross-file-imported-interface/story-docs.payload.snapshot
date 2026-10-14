@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-cross-file-imported-interface--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-cross-file-imported-interface--props-as-written",
       "name": "Props As Written",

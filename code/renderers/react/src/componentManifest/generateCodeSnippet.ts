@@ -1,4 +1,4 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import {
   collectImportBindings,
   createStoryArgsResolver,
@@ -32,6 +32,8 @@ export interface CodeSnippet {
   unresolved: string[];
   /** The story with a hole wherever it reads an arg, for the preview to fill; see `StoryDoc.template`. */
   template?: string;
+  /** The code the snippet prints for each arg it writes as code; see `StoryDoc.argCode`. */
+  argCode?: Record<string, string>;
 }
 
 export function getCodeSnippet(
@@ -61,9 +63,18 @@ export function getCodeSnippet(
     node: buildSnippetNode(storyName, fnPath?.node, componentName, args),
     imports,
     unresolved,
-    ...(template ? { template } : {}),
+    ...(template ? { template, argCode: argCodeOf(args) } : {}),
   };
 }
+
+// A string or boolean the snippet prints from its value, as an attribute or text, so the filled
+// snippet prints it from the value too.
+const argCodeOf = (args: Record<string, t.Node>) =>
+  Object.fromEntries(
+    Object.entries(args)
+      .filter(([, node]) => !t.isStringLiteral(node) && !t.isBooleanLiteral(node))
+      .map(([name, node]) => [name, recast.print(node).code])
+  );
 
 function importedBoundStory(
   csf: CsfFile,

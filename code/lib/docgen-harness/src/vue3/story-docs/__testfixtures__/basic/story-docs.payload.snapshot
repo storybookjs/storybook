@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-basic--primary": {
+      "argCode": {},
       "description": "Primary button description.",
       "id": "forms-basic--primary",
       "name": "Primary",

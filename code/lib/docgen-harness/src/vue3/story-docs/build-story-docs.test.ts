@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { sanitize, storyNameFromExport } from 'storybook/internal/csf';
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 import type { Args, IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -246,12 +246,12 @@ const liveStories = (
           join(fixtureCase.testDir, STORIES_FILE)
         );
         const composed = Object.entries(composeStories(stories) as Record<string, { args: Args }>);
-        return Object.values(payload?.stories ?? {}).flatMap(({ id, template }) => {
+        return Object.values(payload?.stories ?? {}).flatMap(({ id, template, argCode = {} }) => {
           // A composed story is named after its export, so it is found by the id that name makes.
           const args = composed.find(([name]) =>
             id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
           )?.[1].args;
-          return template !== undefined && args ? [{ id, template, args }] : [];
+          return template !== undefined && args ? [{ id, template, args, argCode }] : [];
         });
       })
   )
@@ -307,8 +307,12 @@ function changed(value: unknown): unknown {
 }
 
 describe('vue3 story templates', () => {
-  it.each(liveStories)('$id compiles when filled with its args', (story) => {
-    const filled = fill(story);
+  it.each(liveStories)('$id compiles when filled with its args, as written', (story) => {
+    const written = Object.entries(story.argCode).map(([name, code]) => [name, writtenArg(code)]);
+    const filled = fill({
+      template: story.template,
+      args: { ...story.args, ...Object.fromEntries(written) },
+    });
     expect(filled === undefined ? [] : compileErrors(filled)).toEqual([]);
   });
 

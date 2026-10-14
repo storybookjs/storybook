@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-props-basic-types--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-props-basic-types--props-as-written",
       "name": "Props As Written",
@@ -24,6 +25,13 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
+      "argCode": {
+        "big": "BigInt('9007199254740993')",
+        "config": "{ theme: 'dark', dense: true }",
+        "formatter": "(value: number) => `#${value}`",
+        "tags": "['alpha', 'beta']",
+        "token": "Symbol('fixture')",
+      },
       "description": undefined,
       "id": "forms-props-basic-types--unrepresentable-args",
       "name": "Unrepresentable Args",

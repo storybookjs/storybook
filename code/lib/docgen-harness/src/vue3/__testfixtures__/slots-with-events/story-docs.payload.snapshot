@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-slots-with-events--string-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots-with-events--string-child",
       "name": "String Child",

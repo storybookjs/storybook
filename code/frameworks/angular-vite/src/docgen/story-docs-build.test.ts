@@ -12,10 +12,13 @@ import { dedent } from 'ts-dedent';
 import { vol } from 'memfs';
 
 import type { AngularDocgenPayload } from './build-docgen.ts';
+import { selectLiveSnippetForStory } from 'storybook/open-service';
+
 import type { BuildStoryDocsContext } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 import { extractHostComponentTemplate } from './story-docs-snippet.ts';
 import { fillTemplate } from '../client/docs/fill-template.ts';
+import { writtenArg } from 'storybook/internal/docs-tools';
 
 vi.mock('node:fs', { spy: true });
 
@@ -2166,6 +2169,49 @@ describe('buildStoryDocsPayload', () => {
     const fill = (template: string | undefined, args: Record<string, unknown>) =>
       extractHostComponentTemplate(fillTemplate(template!, args));
 
+    it('keeps an arg that still holds the value the story writes as written', async () => {
+      const story = await storyOf(dedent`
+        import { fn } from 'storybook/test';
+        import { FormControl } from '@angular/forms';
+        import { shout } from './format';
+        export const S = {
+          args: { label: 'Go', formatter: shout, select: fn((o) => o.name), control: new FormControl('x') },
+          render: (args) => ({ props: args, template: '<sb-button [label]="label" [formatter]="formatter" [select]="select" [control]="control" />' }),
+        };
+      `);
+      expect(story.argCode).toEqual({
+        formatter: 'shout',
+        select: 'fn((o) => o.name)',
+        control: "new FormControl('x')",
+      });
+      class FormControl {
+        constructor(readonly value: string) {}
+      }
+      const initialArgs = {
+        label: 'Go',
+        formatter: (text: string) => text.toUpperCase(),
+        select: vi.fn((o: { name: string }) => o.name),
+        control: new FormControl('x'),
+      };
+      const args = { ...initialArgs, label: 'Stop' };
+      const payload = { id: 'b', name: 'B', path: STORY_PATH, stories: { [story.id]: story } };
+      const { snippet, warning } = selectLiveSnippetForStory(
+        payload,
+        story.id,
+        { args, unmappedArgs: args, initialArgs },
+        fillTemplate
+      );
+      expect(snippet).toContain(
+        [
+          "  label = 'Stop';",
+          '  formatter = shout;',
+          '  select = fn((o) => o.name);',
+          "  control = new FormControl('x');",
+        ].join('\n')
+      );
+      expect(warning).toBe(story.warning);
+    });
+
     it.each([
       `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args }) };`,
       `export const S = { args: { label: 'Go' }, render: ({ ...args }) => ({ props: args }) };`,
@@ -2195,7 +2241,7 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    it('is kept past an arg the snippet cannot read, unless the hole may drop it', async () => {
+    it('is kept past an arg the snippet cannot read, which its holes print as written', async () => {
       const stories = await storiesOf(dedent`
         import { fn } from 'storybook/test';
         import { ButtonComponent } from './button.component';
@@ -2209,11 +2255,19 @@ describe('buildStoryDocsPayload', () => {
       expect(fill(stories.get('Plain')!.template, { label: 'Go', clicked: () => {} })).toBe(
         `<sb-button [label]="'Go'" (clicked)="clicked($event)" />`
       );
-      // An imported name may hold a function, which the hole would leave out.
-      expect(stories.get('Imported Label')!.template).toBeUndefined();
-      expect(stories.get('Built Label')!.warning).toContain('could not be resolved statically');
       expect(stories.get('Plain')!.templateWarning).toBeUndefined();
-      expect(stories.get('Built Label')!.templateWarning).toBeUndefined();
+      const imported = stories.get('Imported Label')!;
+      expect(imported.argCode).toEqual({ label: 'LABEL', clicked: 'fn()' });
+      expect(imported.templateWarning).toBe(
+        'Incomplete snippet: `LABEL` could not be resolved statically.'
+      );
+      expect(fill(imported.template, { label: writtenArg('LABEL') })).toBe(
+        `<sb-button [label]="LABEL" (clicked)="clicked($event)" />`
+      );
+      expect(stories.get('Built Label')!.warning).toContain('could not be resolved statically');
+      expect(stories.get('Built Label')!.templateWarning).toBe(
+        "Incomplete snippet: `new Label('Go')` could not be resolved statically."
+      );
       expect(fill(stories.get('Built Label')!.template, { label: 'Hi' })).toBe(
         `<sb-button [label]="'Hi'" (clicked)="clicked($event)" />`
       );
@@ -2425,7 +2479,7 @@ describe('buildStoryDocsPayload', () => {
       expect(template).toContain('  label = ⟦value label⟧;');
     });
 
-    it('keeps the template past an arg the snippet cannot read, as its value is the hole', async () => {
+    it('keeps the template past an arg the snippet cannot read, and its warning, as the hole prints it as written', async () => {
       const stories = await storiesOf(dedent`
         import { ButtonComponent } from './button.component';
         import { LABEL } from './labels';
@@ -2436,7 +2490,8 @@ describe('buildStoryDocsPayload', () => {
         };
       `);
       expect(stories.get('S')!.warning).toContain('could not be resolved statically');
-      expect(stories.get('S')!.templateWarning).toBeUndefined();
+      expect(stories.get('S')!.templateWarning).toBe(stories.get('S')!.warning);
+      expect(stories.get('S')!.argCode).toEqual({ label: 'LABEL' });
       expect(fillTemplate(stories.get('S')!.template!, { label: 'Go' })).toContain(
         "  label = 'Go';"
       );

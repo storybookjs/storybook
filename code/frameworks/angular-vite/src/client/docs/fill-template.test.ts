@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from './fill-template.ts';
 
@@ -13,19 +13,28 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('leaves out an unset input and an action', () => {
-    const spy = Object.assign(() => {}, { getMockName: () => 'spy' });
-    const handler = Object.assign(() => {}, { isAction: true });
-    expect(fillTemplate(template, { label: undefined, size: spy, data: handler })).toBe(
+  it('leaves out an unset input', () => {
+    expect(fillTemplate(template, { label: undefined })).toBe(
       'template: `<app-button (clicked)="clicked($event)" />`,'
     );
   });
 
-  it('throws for any other function arg, so the static snippet shows', () => {
+  it('prints a written arg as its code, in a binding and in a host field', () => {
+    const control = writtenArg(`new FormControl("x")`);
+    expect(fillTemplate(' ⟦props label⟧', { label: control })).toBe(
+      ` [label]="new FormControl(&quot;x&quot;)"`
+    );
+    expect(
+      fillTemplate('  select = ⟦value select⟧;', { select: writtenArg('fn((o) => o.name)') })
+    ).toBe('  select = fn((o) => o.name);');
+  });
+
+  it('throws for a function arg, so the static snippet shows', () => {
     expect(() => fillTemplate(template, { label: 'Go', size: (n: number) => `${n}` })).toThrow(
       UnprintableArgError
     );
     const action = Object.assign(() => {}, { isAction: true });
+    expect(() => fillTemplate(template, { size: action })).toThrow(UnprintableArgError);
     expect(() => fillTemplate('  on = ⟦value on⟧;', { on: action })).toThrow(UnprintableArgError);
   });
 
@@ -65,12 +74,6 @@ describe('fillTemplate', () => {
       '  data = { a: [1] };'
     );
     expect(fillTemplate('  label = ⟦value label⟧;', {})).toBe('  label = undefined;');
-    expect(fillTemplate('  min = ⟦value min⟧;', { min: new Date(Date.UTC(2024, 5, 1)) })).toBe(
-      "  min = new Date('2024-06-01T00:00:00.000Z');"
-    );
-    expect(() => fillTemplate('  min = ⟦value min⟧;', { min: new Date(NaN) })).toThrow(
-      UnprintableArgError
-    );
     expect(() => fillTemplate('  on = ⟦value on⟧;', { on: () => {} })).toThrow(UnprintableArgError);
   });
 

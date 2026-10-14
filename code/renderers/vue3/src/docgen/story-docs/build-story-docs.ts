@@ -47,6 +47,7 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { componentTemplate, renderTemplate } from './story-template.ts';
+import { printValue } from '../shared/classify-value.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
 import {
   readTemplateRenderConfig,
@@ -408,10 +409,18 @@ function enrichStoryDoc(
   return {
     ...storyDoc,
     snippet: rendered.snippet,
-    ...(template !== undefined ? { template } : {}),
+    ...(template !== undefined ? { template, argCode: argCodeOf(args) } : {}),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
+
+// The code the snippet hoists for an arg; an arg it writes inline is a literal its value prints as.
+const argCodeOf = (args: ClassifyArgsResult['args']) =>
+  Object.fromEntries(
+    args
+      .filter((arg) => arg.role !== 'slot' && arg.plan.kind === 'hoist')
+      .map((arg) => [arg.name, printValue(unwrapExpression(arg.value))])
+  );
 
 /**
  * The context to read a render function in: the story file's, or for one another story file

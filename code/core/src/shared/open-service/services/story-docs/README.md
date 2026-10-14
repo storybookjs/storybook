@@ -27,17 +27,26 @@ Keep it to these rules:
   `render: (args) => Button(args)` fills to `Button({ label: "Go" })`.
 - The static snippet is the same template filled with the args the story is written with, so the
   snippet keeps its form when a control changes.
+- An arg that still holds the value the story is written with prints the code the story writes it
+  with, exactly as the static snippet prints it. An arg a control changed prints its value, which
+  is plain data. So next to `template` the provider emits `argCode`, the code the static snippet
+  prints for each arg, such as `shout`, `fn((o) => o.name)` or `new FormControl('x')`; an arg
+  written as a literal its value prints as, such as `'Go'`, may be left out.
 - The browser only replaces each hole with a value. All decisions are the provider's.
 
 The renderer fills the holes in the browser with the current args through
 `parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`,
-where `snippetTemplate.ts` lists the hole kinds. Everything between the holes stays as written,
-including its layout, so with `{ loading: false, label: "Go" }` it fills to
-`const Story = () => false ? <Spinner /> : <Button loading={false} label="Go" />;`. An attribute hole (`⟦props⟧`,
-`⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`) that prints nothing takes the whitespace before it along, so an
-unset attribute leaves no gap or empty line. Any other hole keeps it, as the story renders it, so
-`Hello ⟦text name⟧!` fills to `Hello !` while `name` is unset, unless it holds a line break, where it
-would leave an empty line.
+where `snippetTemplate.ts` lists the hole kinds. `selectLiveSnippetForStory` passes it each arg
+whose value is still its initial value (`===`) and that has `argCode` as a `writtenArg`, which
+`printValue` prints as its code, so a filler needs nothing of its own for it.
+
+Everything between the holes stays as written, including its layout, so with
+`{ loading: false, label: "Go" }` it fills to
+`const Story = () => false ? <Spinner /> : <Button loading={false} label="Go" />;`. An attribute
+hole (`⟦props⟧`, `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`) that prints nothing takes the whitespace before it
+along, so an unset attribute leaves no gap or empty line. Any other hole keeps it, as the story
+renders it, so `Hello ⟦text name⟧!` fills to `Hello !` while `name` is unset, unless it holds a line
+break, where it would leave an empty line.
 
 A hole is a kind and words, separated by one space. A word that starts with `%` is the rest of it
 URI-encoded, so an arg named `Render header?` is the word `%Render%20header%3F`. A hole for one arg
@@ -55,8 +64,7 @@ Each renderer adds holes and words of its own, which its filler documents:
 - Web Components: `⟦bool⟧` and `⟦prop⟧` are lit's `?name` and `.name` bindings, and a `⟦props⟧`
   word such as `.items=items` names what each arg sets, with `^arg` for one the element writes
   itself.
-- Angular: `⟦value label⟧` is the value of a host component field, where a `Date` prints as
-  `new Date(…)`.
+- Angular: `⟦value label⟧` is the value of a host component field.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
@@ -65,10 +73,11 @@ an args change makes no request. A provider sets `template` only where the fille
 right as the static one. The `warning` belongs to the static snippet: part of it may be about arg
 values the source does not show, which the filled snippet has. So a provider also sets
 `templateWarning` to what the filled snippet still leaves out, such as the `NgModule` a
-`standalone: false` Angular component needs or the listeners a Web Components story binds, and the
-filled snippet is shown with that warning instead; without one it is shown with none. A filler
-throws for a value it cannot print; a missing template, a missing filler or a filler that throws
-falls back to the static `snippet` and its `warning`.
+`standalone: false` Angular component needs, the listeners a Web Components story binds or a name
+in the `argCode` of an arg it prints as written, and the filled snippet is shown with that warning
+instead; without one it is shown with none. A filler throws for a value it cannot print; a missing
+template, a missing filler or a filler that throws falls back to the static `snippet` and its
+`warning`.
 
 ## Providers
 

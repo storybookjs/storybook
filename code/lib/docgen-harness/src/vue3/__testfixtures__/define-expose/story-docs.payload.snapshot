@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-define-expose--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-define-expose--props-as-written",
       "name": "Props As Written",

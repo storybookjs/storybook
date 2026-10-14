@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-expose-event-collision--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-expose-event-collision--primary",
       "name": "Primary",

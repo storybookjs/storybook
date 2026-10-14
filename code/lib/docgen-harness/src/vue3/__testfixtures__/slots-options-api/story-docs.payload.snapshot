@@ -11,6 +11,7 @@
       "warning": "No static snippet: a slot function could not be resolved statically.",
     },
     "forms-slots-options-api--string-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots-options-api--string-child",
       "name": "String Child",

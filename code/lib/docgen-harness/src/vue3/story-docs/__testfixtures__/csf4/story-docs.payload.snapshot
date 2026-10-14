@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-csf4--empty": {
+      "argCode": {},
       "description": "Empty CSF4 story description.",
       "id": "forms-csf4--empty",
       "name": "Empty",
@@ -24,6 +25,7 @@ import CsfFourButton from './CsfFourButton.vue';
 </template>",
     },
     "forms-csf4--primary": {
+      "argCode": {},
       "description": "CSF4 button description.",
       "id": "forms-csf4--primary",
       "name": "Primary",

@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-as-cast--casted": {
+      "argCode": {},
       "description": "Args behind an `as const` assertion.",
       "id": "storydocs-as-cast--casted",
       "name": "Casted",
@@ -27,6 +28,7 @@ import { AsCastComponent } from './as-cast.component.ts';
 export class DemoComponent {}",
     },
     "storydocs-as-cast--satisfied": {
+      "argCode": {},
       "id": "storydocs-as-cast--satisfied",
       "name": "Satisfied",
       "snippet": "import { Component } from '@angular/core';

@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-args-formatting--primary": {
+      "argCode": {
+        "items": "['one', 'two']",
+        "options": "{ tone: 'neutral', compact: true }",
+      },
       "description": undefined,
       "id": "forms-args-formatting--primary",
       "name": "Primary",
@@ -30,6 +34,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </template>",
     },
     "forms-args-formatting--unset-arg": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-args-formatting--unset-arg",
       "name": "Unset Arg",

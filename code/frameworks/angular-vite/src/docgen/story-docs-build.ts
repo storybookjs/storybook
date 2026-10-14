@@ -170,14 +170,17 @@ const buildStoryDoc = async (
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
-    const rendered = await renderedSnippet(storyShape(exportName, deps), deps);
+    const shape = storyShape(exportName, deps);
+    const rendered = await renderedSnippet(shape, deps);
 
     return {
       id: story.id,
       name,
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
-      ...(rendered?.template === undefined ? {} : { template: rendered.template }),
+      ...(rendered?.template === undefined
+        ? {}
+        : { template: rendered.template, argCode: argCodeOf(shape, deps) }),
       ...(rendered?.templateWarning === undefined
         ? {}
         : { templateWarning: rendered.templateWarning }),
@@ -193,6 +196,15 @@ const buildStoryDoc = async (
     };
   }
 };
+
+// The code the snippet writes each arg with that no literal its value prints as stands for, as a
+// host field holds it.
+const argCodeOf = (shape: StoryShape, { snippetMeta }: StoryDocDeps) =>
+  Object.fromEntries(
+    Object.entries(shape.args)
+      .filter(([, node]) => evaluateArgLiteral(node, snippetMeta?.enums ?? []) === undefined)
+      .map(([name, node]) => [name, argFieldValue(node)])
+  );
 
 // `parameters.docs.source.code` is the example the author chose to publish, so it replaces what
 // this pass would derive rather than competing with it.
@@ -220,17 +232,19 @@ const renderedSnippet = async (
     : derived;
 };
 
+// An arg that still carries a name has to be reported: an Angular binding is evaluated against the
+// host component the snippet ships, so a name that component does not have reads as `undefined`
+// there rather than failing to compile. An enum member still resolves, and an expression that only
+// names what it declares itself - a handler's own parameters - needs nothing from the host.
+const isUnread = (node: t.Node, enums: AngularComponentSnippetMeta['enums']) =>
+  evaluateArgLiteral(node, enums) === undefined && !isSelfContained(node);
+
 const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
   const resolved = deps.resolveStoryArgs.resolve(exportName);
   const enums = deps.snippetMeta?.enums ?? [];
   const unresolved = [...resolved.unresolved];
   for (const value of Object.values(resolved.args)) {
-    // An arg that still carries a name has to be reported: an Angular binding is evaluated against
-    // the host component the snippet ships, so a name that component does not have reads as
-    // `undefined` there rather than failing to compile. An enum member still resolves, and an
-    // expression that only names what it declares itself - a handler's own parameters - needs
-    // nothing from the host.
-    if (evaluateArgLiteral(value, enums) === undefined && !isSelfContained(value)) {
+    if (isUnread(value, enums)) {
       unresolved.push(sourceOf(value));
     }
   }
@@ -432,11 +446,9 @@ const renderStorySnippet = async (
         hole('props', ...expanded(allows))
       );
     }
-    // An arg value this pass could not read stops mattering where a hole prints it.
-    const holes = new Set(unset.map(({ name }) => name));
-    const unread = hostArgs.unresolved.filter(({ name }) => !holes.has(name));
+    // A hole prints an arg value this pass could not read as written, until a control changes it.
     return withTemplate(rendered, host(markup, false, boundOutputs, holeFields), [
-      unresolvedWarning([...configUnresolved, ...unread.map(({ source }) => source)]),
+      unresolvedWarning([...configUnresolved, ...hostArgs.unresolved.map(({ source }) => source)]),
       unprovided,
       unbound,
     ]);
@@ -487,10 +499,14 @@ const renderStorySnippet = async (
     },
   });
   const holeFields = fields.map((field) => ({ ...field, value: field.computed!.template }));
-  // The holes bind every input, so arg values it could not read here stop mattering once it is
-  // filled; args it could not see may still be bound to nothing.
+  // A hole prints an arg value this pass could not read as written, until a control changes it;
+  // args it could not see may still be bound to nothing.
+  const unread = holeInputs.flatMap((name) => {
+    const node = shape.args[name];
+    return node && isUnread(node, snippetMeta.enums) ? [sourceOf(node)] : [];
+  });
   return withTemplate(rendered, host(markup, false, snippetMeta.outputs, holeFields), [
-    unresolvedWarning(shape.hidingArgs),
+    unresolvedWarning([...shape.hidingArgs, ...unread]),
     unbound,
   ]);
 };
@@ -786,8 +802,6 @@ const componentBindings = (
     const field = arg === undefined && computed && computedField(computed, shape, enums);
     if (arg !== undefined && arg in shape.args) {
       bound.push({ name, node: shape.args[arg]!, arg });
-      // The hole leaves a function out, which the element would then no longer bind.
-      standsAsWritten &&= !mayHoldFunction(shape.args[arg]!, enums);
     } else if (code && field) {
       bound.push({ name, node: code, computed: field });
     } else if (code && evaluateArgLiteral(code, enums) === undefined && !isSelfContained(code)) {
@@ -852,19 +866,6 @@ const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StorySha
     }
   }
   return { inputs, outputs };
-};
-
-// Whether an arg this pass cannot read may turn out to be a function: a name or a call may, a
-// literal with a part it cannot read may not.
-const mayHoldFunction = (node: t.Node, enums: AngularComponentSnippetMeta['enums']): boolean => {
-  const unwrapped = unwrapExpression(node);
-  return (
-    evaluateArgLiteral(node, enums) === undefined &&
-    !t.isObjectExpression(unwrapped) &&
-    !t.isArrayExpression(unwrapped) &&
-    !t.isNewExpression(unwrapped) &&
-    !t.isTemplateLiteral(unwrapped)
-  );
 };
 
 const isFunctionValue = (node: t.Node): boolean => {

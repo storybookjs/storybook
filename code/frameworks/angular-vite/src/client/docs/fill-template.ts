@@ -1,9 +1,7 @@
 import {
   type FillSnippetTemplate,
-  UnprintableArgError,
   defaultCode,
   fillHoles,
-  isAction,
   printValue,
 } from 'storybook/internal/docs-tools';
 
@@ -26,42 +24,21 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
     if (kind === 'value') {
       return (
         (args[words[0]!] === undefined && defaultCode(words[1])) ||
-        fieldValue(args[words[0]!], words[0]!)
+        printValue(args[words[0]!], words[0]!, { quote: "'" })
       );
     }
     const bindsUndefined = words[0] === BINDS_UNDEFINED;
     return (bindsUndefined ? words.slice(1) : words)
       .filter((name) => args[name] !== undefined || (bindsUndefined && name in args))
       .map((name) => escapeTemplateLiteral(binding(name, args[name])))
-      .filter(Boolean)
       .join(separator);
   });
 };
 
-// A host field is TypeScript, which can hold a date an Angular template has no literal for. A
-// function, an action too, has no literal.
-function fieldValue(value: unknown, name: string): string {
-  if (typeof value === 'function') {
-    throw new UnprintableArgError(name);
-  }
-  return value instanceof Date && !Number.isNaN(value.getTime())
-    ? `new Date('${value.toISOString()}')`
-    : printValue(value, name, { quote: "'" });
-}
-
-// An action is left out, as no control changes it; the snippet binds an output to a host method of
-// its own. Any other function, such as a `formatter` input, has no literal. A string is bound too,
-// as the story binds it: a plain attribute would also land on the element, where `title`, `hidden`
-// or a native host's `disabled` act on their own.
-function binding(name: string, value: unknown): string {
-  if (isAction(value)) {
-    return '';
-  }
-  if (typeof value === 'function') {
-    throw new UnprintableArgError(name);
-  }
-  return `[${name}]="${escapeAttribute(printValue(value, name, { quote: "'", opaque: isNonFinite }))}"`;
-}
+// A string is bound too, as the story binds it: a plain attribute would also land on the element,
+// where `title`, `hidden` or a native host's `disabled` act on their own.
+const binding = (name: string, value: unknown) =>
+  `[${name}]="${escapeAttribute(printValue(value, name, { quote: "'", opaque: isNonFinite }))}"`;
 
 // Only an `&` that starts an entity reads differently, as the static snippet escapes it.
 const escapeAttribute = (text: string) =>

@@ -4,6 +4,10 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-shared-values--filter-by-item": {
+      "argCode": {
+        "item": "{ id: 2 }",
+        "items": "[{ id: 1 }, { id: 2 }]",
+      },
       "description": undefined,
       "id": "forms-template-shared-values--filter-by-item",
       "name": "Filter By Item",
@@ -32,6 +36,9 @@ const item2 = ⟦value item script⟧;
 </template>",
     },
     "forms-template-shared-values--for-each-item": {
+      "argCode": {
+        "items": "[{ id: 1 }, { id: 2 }]",
+      },
       "description": undefined,
       "id": "forms-template-shared-values--for-each-item",
       "name": "For Each Item",
@@ -52,6 +59,9 @@ const items = ⟦value items script⟧;
 </template>",
     },
     "forms-template-shared-values--setup-mutation": {
+      "argCode": {
+        "items": "['a']",
+      },
       "description": undefined,
       "id": "forms-template-shared-values--setup-mutation",
       "name": "Setup Mutation",
@@ -80,6 +90,7 @@ items?.push('b');
 </template>",
     },
     "forms-template-shared-values--spread-with-class": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-shared-values--spread-with-class",
       "name": "Spread With Class",

@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-csf1-legacy--assigned-args": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-csf1-legacy--assigned-args",
       "name": "Assigned Args",
@@ -24,6 +25,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </template>",
     },
     "forms-csf1-legacy--assigned-args-override-inline": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-csf1-legacy--assigned-args-override-inline",
       "name": "Assigned Args Override Inline",

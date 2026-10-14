@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-meta-render--inherits-meta-render": {
+      "argCode": {},
       "description": "Inherits the meta-level render, so no snippet can be derived.",
       "id": "storydocs-meta-render--inherits-meta-render",
       "name": "Inherits Meta Render",

@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-csf4--empty": {
+      "argCode": {},
       "description": "A factory story with no config at all.",
       "id": "storydocs-csf4--empty",
       "name": "Empty",
@@ -31,6 +32,7 @@ export class DemoComponent {
 }",
     },
     "storydocs-csf4--primary": {
+      "argCode": {},
       "description": "A CSF4 factory story.",
       "id": "storydocs-csf4--primary",
       "name": "Primary",

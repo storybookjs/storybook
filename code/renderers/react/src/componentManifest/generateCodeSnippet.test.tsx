@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest';
 import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { selectLiveSnippetForStory } from 'storybook/open-service';
 
 import { dedent } from 'ts-dedent';
 
@@ -1357,5 +1358,64 @@ test('template: an arg named with a space is one word', () => {
   );
   expect(filled(input, 'SpacedRead', { 'Button title': 'Go on' })).toMatchInlineSnapshot(
     `"const SpacedRead = () => <Button title="Go on">Go on</Button>;"`
+  );
+});
+
+test('template: an arg that still holds the value the story writes stays as written', () => {
+  const input = withCSF3(dedent`
+    import { fn } from 'storybook/test';
+    import { FormControl } from '@angular/forms';
+    import { shout } from './format';
+
+    export const Form: Story = {
+      args: {
+        label: 'Go',
+        formatter: shout,
+        select: fn((o) => o.name),
+        control: new FormControl('x'),
+      },
+    };
+  `);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  const { node, template, argCode } = getCodeSnippet(csf, 'Form', 'Button');
+  expect(argCode).toEqual({
+    formatter: 'shout',
+    select: 'fn((o) => o.name)',
+    control: "new FormControl('x')",
+  });
+  class FormControl {
+    constructor(readonly value: string) {}
+  }
+  const initialArgs = {
+    children: 'Click me',
+    label: 'Go',
+    formatter: (text: string) => text.toUpperCase(),
+    select: vi.fn((o: { name: string }) => o.name),
+    control: new FormControl('x'),
+  };
+  const args = { ...initialArgs, label: 'Stop' };
+  const payload = {
+    id: 't',
+    name: 'T',
+    path: './T.stories.tsx',
+    stories: {
+      't--form': {
+        id: 't--form',
+        name: 'Form',
+        snippet: recast.print(node).code,
+        template,
+        argCode,
+      },
+    },
+  };
+  expect(
+    selectLiveSnippetForStory(
+      payload,
+      't--form',
+      { args, unmappedArgs: args, initialArgs },
+      fillTemplate
+    ).snippet
+  ).toMatchInlineSnapshot(
+    `"const Form = () => <Button label="Stop" formatter={shout} select={fn((o) => o.name)} control={new FormControl('x')}>Click me</Button>;"`
   );
 });

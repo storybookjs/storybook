@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-setup-renamed-args--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-setup-renamed-args--primary",
       "name": "Primary",

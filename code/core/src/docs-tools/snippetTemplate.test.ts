@@ -10,6 +10,7 @@ import {
   holeWord,
   printValue,
   spreadArgs,
+  writtenArg,
 } from './snippetTemplate.ts';
 
 describe('fillHoles', () => {
@@ -104,6 +105,13 @@ describe('dedentStoryCode', () => {
 });
 
 describe('printValue', () => {
+  it('prints a written arg as its code, whatever the value would print as', () => {
+    expect(printValue(writtenArg('fn((o) => o.name)'), 'select')).toBe('fn((o) => o.name)');
+    expect(printValue(writtenArg(`new FormControl('x')`), 'control', { quote: "'" })).toBe(
+      `new FormControl('x')`
+    );
+  });
+
   it('prints primitives as literals', () => {
     expect(printValue('Go', 'label')).toBe('"Go"');
     expect(printValue('it\'s "x"\n', 'label', { quote: "'" })).toBe("'it\\'s \"x\"\\n'");

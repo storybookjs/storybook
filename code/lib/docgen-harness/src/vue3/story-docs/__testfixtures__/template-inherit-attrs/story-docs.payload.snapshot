@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-inherit-attrs--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-inherit-attrs--primary",
       "name": "Primary",

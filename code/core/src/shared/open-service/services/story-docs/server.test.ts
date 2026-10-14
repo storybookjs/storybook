@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { printValue } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args } from '../../../../types/modules/csf.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
@@ -81,7 +82,7 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
-  it('keeps the template warning through the query, so the filled snippet shows it', async () => {
+  it('keeps the template warning and the arg code through the query, so the filled snippet shows them', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({
       stories: {
@@ -89,7 +90,8 @@ describe('story-docs open service', () => {
           id: 'button--primary',
           name: 'Primary',
           snippet: '<Button />',
-          template: '<Button ⟦label⟧ />',
+          template: '<Button ⟦label⟧ ⟦onClick⟧ />',
+          argCode: { onClick: 'fn()' },
           warning: 'label could not be resolved',
           templateWarning: 'Add the NgModule',
         },
@@ -101,16 +103,20 @@ describe('story-docs open service', () => {
     });
     await service.commands.extractStoryDocs({ id: 'button' });
     const fill = (template: string, args: Args) =>
-      template.replace('⟦label⟧', `label="${args.label}"`);
+      template
+        .replace('⟦label⟧', `label="${args.label}"`)
+        .replace('⟦onClick⟧', `onClick={${printValue(args.onClick, 'onClick')}}`);
+    const initialArgs = { label: 'Hi', onClick: () => {} };
+    const args = { ...initialArgs, label: 'Go' };
 
     expect(
       selectLiveSnippetForStory(
         service.queries.storyDocs.get({ id: 'button' }),
         'button--primary',
-        { label: 'Go' },
+        { args, unmappedArgs: args, initialArgs },
         fill
       )
-    ).toEqual({ snippet: '<Button label="Go" />', warning: 'Add the NgModule' });
+    ).toEqual({ snippet: '<Button label="Go" onClick={fn()} />', warning: 'Add the NgModule' });
   });
 
   describe('a component with several story files', () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { h } from 'vue';
 
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from './fill-template.ts';
 
@@ -34,6 +34,16 @@ describe('fillTemplate', () => {
       UnprintableArgError
     );
     expect(() => fillTemplate('⟦element Button⟧', { formatter })).toThrow(UnprintableArgError);
+  });
+
+  it('prints a written arg as its code, escaped for the attribute it lands in', () => {
+    const formatter = writtenArg('(v) => v && "x"');
+    expect(fillTemplate('⟦element Chart⟧', { formatter })).toBe(
+      '<Chart :formatter="(v) => v &amp;&amp; &quot;x&quot;" />'
+    );
+    expect(fillTemplate('const f = ⟦value formatter script⟧;', { formatter })).toBe(
+      'const f = (v) => v && "x";'
+    );
   });
 
   it("merges a spread's class with the element's own", () => {

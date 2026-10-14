@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-setup-computed--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-setup-computed--primary",
       "name": "Primary",

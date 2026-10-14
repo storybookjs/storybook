@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-prop-slot-name-collision--icon-prop-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-prop-slot-name-collision--icon-prop-as-written",
       "name": "Icon Prop As Written",

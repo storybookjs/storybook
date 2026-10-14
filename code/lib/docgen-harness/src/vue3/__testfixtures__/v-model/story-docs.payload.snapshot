@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-v-model--v-model-binding": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-v-model--v-model-binding",
       "name": "V Model Binding",

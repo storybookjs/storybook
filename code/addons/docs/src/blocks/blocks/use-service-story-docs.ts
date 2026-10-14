@@ -1,9 +1,10 @@
 import { useCallback, useMemo } from 'react';
 
-import type { Args, PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
+  type StoryArgs,
   getFillTemplate,
   selectLiveSnippetForStory,
   selectStoryDoc,
@@ -54,12 +55,12 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
 }
 
 /**
- * One story's display snippet with `args` filled into its template by the story's renderer, or its
- * static snippet and warning when there are no args to fill or it has no template.
+ * One story's display snippet with its `args` filled into its template by the story's renderer, or
+ * its static snippet and warning while it has the args it is written with or no template.
  */
 export function useServiceStoryLiveSnippet(
   story: PreparedStory,
-  args: Args | undefined
+  args: StoryArgs | undefined
 ): QueryState<{ snippet?: string; warning?: string }> {
   // The selector is stable, so an args change fills the template again without a new subscription,
   // which would load the story docs again.

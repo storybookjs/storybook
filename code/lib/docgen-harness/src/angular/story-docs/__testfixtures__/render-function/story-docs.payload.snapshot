@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-render-function--custom-render": {
+      "argCode": {},
       "description": "Renders a hand-written template.",
       "id": "storydocs-render-function--custom-render",
       "name": "Custom Render",
@@ -31,6 +32,7 @@ export class DemoComponent {
 }",
     },
     "storydocs-render-function--no-render": {
+      "argCode": {},
       "id": "storydocs-render-function--no-render",
       "name": "No Render",
       "snippet": "import { Component } from '@angular/core';

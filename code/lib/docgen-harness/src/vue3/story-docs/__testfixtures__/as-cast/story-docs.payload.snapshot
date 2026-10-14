@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-as-cast--primary": {
+      "argCode": {},
       "description": "Cast story description.",
       "id": "forms-as-cast--primary",
       "name": "Primary",

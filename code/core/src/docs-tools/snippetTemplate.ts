@@ -32,14 +32,16 @@ import type { Args } from 'storybook/internal/types';
  *   for a field's attribute and `^arg` for one the element writes itself; a `!spread`,
  *   `!spreadProps` or `!toolkit` word prints them as that helper sets them, `*` passes every other
  *   arg and `-arg` leaves one out. `⟦args -name…⟧` is the args as an object, as React has it.
- * - Angular: `⟦value arg⟧` is the value of a host component field, which prints a `Date` as `new
- *   Date(…)`.
+ * - Angular: `⟦value arg⟧` is the value of a host component field.
  *
  * The template keeps the code around a hole as written, including the whitespace before it. An
  * attribute hole, `⟦props⟧`, `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`, that prints nothing takes that
  * whitespace along, so an unset attribute leaves no gap or empty line. Any other hole keeps it, as
  * the story renders it, unless it holds a line break, where it would leave an empty line; the Web
  * Components `⟦style⟧`, `⟦quoted⟧` and `⟦raw⟧` are no attribute holes.
+ *
+ * An arg that still holds the value the story is written with comes as a {@link writtenArg}, the
+ * code the story writes it with, which {@link printValue} prints as it is.
  *
  * A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
  * {@link UnprintableArgError} for a value the snippet cannot show, and the static snippet is shown
@@ -55,6 +57,23 @@ export class UnprintableArgError extends Error {
     super(`The snippet cannot show the value of the \`${argName}\` arg.`);
   }
 }
+
+// A symbol shared across bundles: the preview runtime and a renderer may each bundle a copy of this
+// module, so a class would fail `instanceof`.
+const WRITTEN = Symbol.for('storybook/written-arg');
+
+/**
+ * An arg as `code`, the code the story writes it with, which {@link printValue} prints as it is.
+ * The preview fills a template with it for an arg that still holds the value the story is written
+ * with, so the filled snippet shows that arg as the static snippet does; see `StoryDoc.argCode`.
+ */
+export const writtenArg = (code: string): object => ({ [WRITTEN]: code });
+
+/** The code a {@link writtenArg} holds, or `undefined` for any other value. */
+const writtenCode = (value: unknown): string | undefined =>
+  typeof value === 'object' && value !== null && WRITTEN in value
+    ? (value[WRITTEN] as string)
+    : undefined;
 
 /**
  * Whether an arg is a spy from `fn()` or a handler from `action()`, which a filled snippet leaves
@@ -141,15 +160,20 @@ export function dedentStoryCode(text: string, column = Infinity): string {
 }
 
 /**
- * Prints an arg value as the JavaScript literal it would be written as. A value with no literal,
- * such as a function, a class instance, a cycle or anything `opaque` matches at any depth, throws
- * an {@link UnprintableArgError} for `name`, and so does a literal too long to read in a snippet.
+ * Prints an arg value as the JavaScript literal it would be written as, and a {@link writtenArg} as
+ * its code. A value with no literal, such as a function, a class instance, a cycle or anything
+ * `opaque` matches at any depth, throws an {@link UnprintableArgError} for `name`, and so does a
+ * literal too long to read in a snippet.
  */
 export function printValue(
   value: unknown,
   name: string,
   { quote = '"', opaque }: { quote?: '"' | "'"; opaque?: (value: unknown) => boolean } = {}
 ): string {
+  const code = writtenCode(value);
+  if (code !== undefined) {
+    return code;
+  }
   const parents = new Set<unknown>();
   // What is left of the length a literal may have; printing stops as soon as it runs out.
   let left = MAX_LITERAL_LENGTH;

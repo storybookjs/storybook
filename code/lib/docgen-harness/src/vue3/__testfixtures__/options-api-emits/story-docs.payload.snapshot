@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-options-api-emits--stepper": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-options-api-emits--stepper",
       "name": "Stepper",

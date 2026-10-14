@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-jsdoc-tags--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-jsdoc-tags--props-as-written",
       "name": "Props As Written",

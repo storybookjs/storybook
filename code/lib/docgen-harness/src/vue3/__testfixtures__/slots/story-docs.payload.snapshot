@@ -11,6 +11,7 @@
       "warning": "No static snippet: a slot function could not be resolved statically.",
     },
     "forms-slots--string-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots--string-child",
       "name": "String Child",
@@ -33,6 +34,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </template>",
     },
     "forms-slots--v-node-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots--v-node-child",
       "name": "V Node Child",

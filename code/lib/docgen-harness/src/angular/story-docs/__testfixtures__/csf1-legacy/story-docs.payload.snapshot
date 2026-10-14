@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-csf1-legacy--bound": {
+      "argCode": {},
       "description": "Bound from a shared template.",
       "id": "storydocs-csf1-legacy--bound",
       "name": "Bound",

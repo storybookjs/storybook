@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-import-override--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-import-override--primary",
       "name": "Primary",

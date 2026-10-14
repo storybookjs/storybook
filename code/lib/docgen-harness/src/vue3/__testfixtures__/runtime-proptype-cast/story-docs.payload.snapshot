@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-runtime-proptype-cast--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-runtime-proptype-cast--props-as-written",
       "name": "Props As Written",

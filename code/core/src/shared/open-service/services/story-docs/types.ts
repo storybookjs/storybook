@@ -31,6 +31,14 @@ export interface StoryDoc {
    */
   template?: string;
   /**
+   * The code the static snippet prints for each arg it writes as code, such as `shout`,
+   * `fn((o) => o.name)` or `new Date('2024-01-01')`. The preview fills an arg that still holds the
+   * value the story is written with as this code, so the filled snippet keeps it as written; an arg
+   * a control changed prints its value. An arg written as a literal its value prints as, such as
+   * `'Go'`, may be left out.
+   */
+  argCode?: Record<string, string>;
+  /**
    * What the filled `template` still leaves out, such as an `NgModule` the component needs, shown
    * with it in place of `warning`. The provider chooses it, as it knows which parts of `warning`
    * are about arg values, which the filled snippet has.

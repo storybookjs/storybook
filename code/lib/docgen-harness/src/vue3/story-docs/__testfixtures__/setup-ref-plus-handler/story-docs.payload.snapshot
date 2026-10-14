@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-setup-ref-plus-handler--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-setup-ref-plus-handler--primary",
       "name": "Primary",

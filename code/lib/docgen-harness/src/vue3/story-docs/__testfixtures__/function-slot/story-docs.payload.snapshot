@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-function-slot--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-function-slot--primary",
       "name": "Primary",

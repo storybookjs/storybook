@@ -1,5 +1,6 @@
-// Fills each live story-docs template with the args its story declares, which has to give the static
-// snippet, and with values that stress the printer: the whole host component has to parse, and its
+// Fills each live story-docs template with the args its story declares, each as the code it is
+// written with where it has one, as the preview fills it, which has to give the static snippet, and
+// with values that stress the printer: the whole host component has to parse, and its
 // markup has to compile.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -11,7 +12,7 @@ import { parseTemplate } from '@angular/compiler';
 import ts from 'typescript';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { fillTemplate } from '../../../../frameworks/angular-vite/src/client/docs/fill-template.ts';
@@ -48,6 +49,12 @@ const stressValues: unknown[] = [
   null,
   true,
 ];
+
+// The args as the preview fills them while they hold the values the story writes.
+const asWritten = (args: Record<string, unknown>, argCode: Record<string, string> = {}) => ({
+  ...args,
+  ...Object.fromEntries(Object.entries(argCode).map(([name, code]) => [name, writtenArg(code)])),
+});
 
 const argSets = (args: Record<string, unknown>) => [
   args,
@@ -113,6 +120,7 @@ interface FilledStory {
   snippet: string;
   warning?: string;
   templateWarning?: string;
+  argCode?: Record<string, string>;
   args: Record<string, unknown>;
 }
 
@@ -149,7 +157,13 @@ const buildStories = async (fixtureCase: string) => {
     Annotations | undefined
   >;
   const snippets = Object.entries(csf._stories).flatMap(([exportName, story]) => {
-    const { template = '', snippet, warning, templateWarning } = payload!.stories[story.id]!;
+    const {
+      template = '',
+      snippet,
+      warning,
+      templateWarning,
+      argCode,
+    } = payload!.stories[story.id]!;
     const args = { ...argsOf(storiesModule.default), ...argsOf(storiesModule[exportName]) };
     return snippet === undefined
       ? []
@@ -160,6 +174,7 @@ const buildStories = async (fixtureCase: string) => {
             snippet,
             warning,
             templateWarning,
+            argCode,
             args,
           },
         ];
@@ -169,10 +184,12 @@ const buildStories = async (fixtureCase: string) => {
 
 describe('angular story-docs templates', () => {
   it.each(cases)('%s fills to code that parses and markup that compiles', async (fixtureCase) => {
-    for (const { name, template, snippet, args } of (await buildFixture(fixtureCase)).stories) {
-      expect(fillOrSkip(template, args) ?? snippet, `${name} filled with its own args`).toBe(
-        snippet
-      );
+    for (const { name, template, snippet, args, argCode } of (await buildFixture(fixtureCase))
+      .stories) {
+      expect(
+        fillOrSkip(template, asWritten(args, argCode)) ?? snippet,
+        `${name} filled with its own args`
+      ).toBe(snippet);
       for (const set of argSets(args)) {
         const filled = fillOrSkip(template, set);
         if (filled !== undefined) {

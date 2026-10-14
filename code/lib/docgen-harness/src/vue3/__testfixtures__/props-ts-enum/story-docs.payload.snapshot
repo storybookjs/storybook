@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-props-ts-enum--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-props-ts-enum--props-as-written",
       "name": "Props As Written",

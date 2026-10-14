@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-model-with-runtime-emits--bound": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-model-with-runtime-emits--bound",
       "name": "Bound",

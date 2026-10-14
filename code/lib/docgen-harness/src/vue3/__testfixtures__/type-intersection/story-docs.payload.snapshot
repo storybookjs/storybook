@@ -4,6 +4,9 @@
   "path": "__PATH__",
   "stories": {
     "forms-type-intersection--props-as-written": {
+      "argCode": {
+        "mixed": "{ label: 'Intersected', count: 2, extra: true }",
+      },
       "description": undefined,
       "id": "forms-type-intersection--props-as-written",
       "name": "Props As Written",

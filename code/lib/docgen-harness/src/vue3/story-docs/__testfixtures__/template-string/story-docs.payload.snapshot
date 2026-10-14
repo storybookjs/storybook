@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-string--assigned-args": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-string--assigned-args",
       "name": "Assigned Args",
@@ -24,6 +25,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </template>",
     },
     "forms-template-string--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-string--primary",
       "name": "Primary",

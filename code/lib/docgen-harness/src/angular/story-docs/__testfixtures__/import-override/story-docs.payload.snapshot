@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-import-override--primary": {
+      "argCode": {},
       "id": "storydocs-import-override--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';

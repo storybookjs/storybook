@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
+import { printValue } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsService } from './definition.ts';
-import { argsToFill, getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
+import { getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -58,6 +59,12 @@ const payloadWithTemplateWarning: StoryDocsPayload = {
 };
 const fillTemplate = (template: string, args: Record<string, unknown>) =>
   template.replace('{args.label}', `"${String(args.label)}"`);
+// The story's args once `label` changed to `Go` from the `hi` it is written with.
+const changed = {
+  args: { label: 'Go' },
+  unmappedArgs: { label: 'Go' },
+  initialArgs: { label: 'hi' },
+};
 
 /**
  * Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
@@ -106,14 +113,14 @@ describe('selectLiveSnippetForStory', () => {
   });
 
   it('fills the template with the args, without the static warning', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithTemplate, storyId, { label: 'Go' }, fillTemplate)
-    ).toEqual({ snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />' });
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)).toEqual({
+      snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
+    });
   });
 
   it('fills the template with the args, with its templateWarning', () => {
     expect(
-      selectLiveSnippetForStory(payloadWithTemplateWarning, storyId, { label: 'Go' }, fillTemplate)
+      selectLiveSnippetForStory(payloadWithTemplateWarning, storyId, changed, fillTemplate)
     ).toEqual({
       snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
       warning: templateWarning,
@@ -121,15 +128,17 @@ describe('selectLiveSnippetForStory', () => {
   });
 
   it('selects the static snippet and its warning without a filler', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithTemplate, storyId, { label: 'Go' }, undefined)
-    ).toEqual({ snippet: serviceSnippet, warning });
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, undefined)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
   });
 
   it('selects the static snippet and its warning without a template', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, storyId, { label: 'Go' }, fillTemplate)
-    ).toEqual({ snippet: serviceSnippet, warning });
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, fillTemplate)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
   });
 
   it('selects the static snippet and warns once when the filler throws', () => {
@@ -138,7 +147,8 @@ describe('selectLiveSnippetForStory', () => {
       throw new Error('unexpected value');
     };
     for (const label of ['Go', 'Stop']) {
-      expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, { label }, throwing)).toEqual({
+      const args = { ...changed, args: { label }, unmappedArgs: { label } };
+      expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, args, throwing)).toEqual({
         snippet: serviceSnippet,
         warning,
       });
@@ -154,26 +164,68 @@ describe('selectLiveSnippetForStory', () => {
     const unprintable = () => {
       throw new UnprintableArgError('label');
     };
-    expect(
-      selectLiveSnippetForStory(payloadWithTemplate, storyId, { label: 'Go' }, unprintable)
-    ).toEqual({ snippet: serviceSnippet, warning });
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, unprintable)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
     expect(warn).not.toHaveBeenCalled();
   });
 });
 
-describe('argsToFill', () => {
+describe('selectLiveSnippetForStory with written args', () => {
+  const shout = (text: string) => text.toUpperCase();
+  const initialArgs = { label: 'hi', formatter: shout };
+  const payloadWithArgCode: StoryDocsPayload = {
+    ...payload,
+    stories: {
+      [storyId]: {
+        ...payload.stories[storyId]!,
+        template: '<Button ⟦value label⟧ ⟦value formatter⟧ />',
+        argCode: { label: "'hi'", formatter: 'shout' },
+      },
+    },
+  };
+  const fill = (template: string, args: Record<string, unknown>) =>
+    template.replace(/⟦value (\w+)⟧/g, (_, name: string) => printValue(args[name], name));
+
   it('fills nothing while the story has the args it is written with', () => {
-    const initialArgs = { label: 'Hi', onClick: () => {} };
     expect(
-      argsToFill({ args: { ...initialArgs }, unmappedArgs: { ...initialArgs }, initialArgs })
-    ).toBeUndefined();
+      selectLiveSnippetForStory(
+        payloadWithArgCode,
+        storyId,
+        { args: { ...initialArgs }, unmappedArgs: { ...initialArgs }, initialArgs },
+        fill
+      )
+    ).toEqual({ snippet: serviceSnippet, warning: undefined });
   });
 
-  it('fills the args after mapping once they change', () => {
-    const args = { icon: '<Icon />' };
+  it('prints an arg that still holds its written value as its code, and a changed one as its value', () => {
+    const args = { ...initialArgs, label: 'Go' };
     expect(
-      argsToFill({ args, unmappedArgs: { icon: 'star' }, initialArgs: { icon: 'none' } })
-    ).toBe(args);
+      selectLiveSnippetForStory(
+        payloadWithArgCode,
+        storyId,
+        { args, unmappedArgs: args, initialArgs },
+        fill
+      ).snippet
+    ).toBe('import { Button } from \'./Button\';\n\n<Button "Go" shout />');
+  });
+
+  it('fills the args after mapping, comparing those before mapping', () => {
+    const icon = { mapped: true };
+    expect(
+      selectLiveSnippetForStory(
+        {
+          ...payloadWithArgCode,
+          stories: {
+            [storyId]: { ...payloadWithArgCode.stories[storyId]!, template: '⟦value icon⟧' },
+          },
+        },
+        storyId,
+        { args: { icon }, unmappedArgs: { icon: 'star' }, initialArgs: { icon: 'none' } },
+        fill
+      ).snippet
+    ).toContain('{ mapped: true }');
   });
 });
 

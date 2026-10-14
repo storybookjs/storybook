@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { babelParseFile } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
-import type { DocgenPayload } from 'storybook/open-service';
+import { type DocgenPayload, selectLiveSnippetForStory } from 'storybook/open-service';
 
 import { vol } from 'memfs';
 
@@ -20,11 +20,13 @@ const STORY_ID = 'example-mybutton--primary';
 const DOCGEN_CATEGORIES: Record<string, string> = {
   active: 'props',
   count: 'props',
+  formatter: 'props',
   default: 'slots',
   header: 'slots',
   items: 'props',
   label: 'props',
   size: 'props',
+  when: 'props',
 };
 
 const docgen = (id: string): DocgenPayload => ({
@@ -343,6 +345,39 @@ export default {
 });
 
 describe('template', () => {
+  it('keeps an arg that still holds the value the story writes as written', async () => {
+    const story = await primaryStory(`
+const shout = (text: string) => text.toUpperCase();
+
+export const Primary = {
+  args: { label: 'Go', formatter: shout, when: new Date('2024-01-01'), items: [{ id: 1 }] },
+};
+`);
+    expect(story?.argCode).toEqual({
+      formatter: '(text: string) => text.toUpperCase()',
+      when: "new Date('2024-01-01')",
+      items: '[{ id: 1 }]',
+    });
+    const initialArgs = {
+      label: 'Go',
+      formatter: (text: string) => text.toUpperCase(),
+      when: new Date('2024-01-01'),
+      items: [{ id: 1 }],
+    };
+    const args = { ...initialArgs, label: 'Stop' };
+    const payload = { id: 'p', name: 'P', path: STORY_PATH, stories: { [STORY_ID]: story! } };
+    expect(
+      selectLiveSnippetForStory(
+        payload,
+        STORY_ID,
+        { args, unmappedArgs: args, initialArgs },
+        fillTemplate
+      ).snippet
+    ).toContain(
+      `<MyButton label="Stop" :formatter="(text: string) => text.toUpperCase()" :when="new Date('2024-01-01')" :items="[{ id: 1 }]" />`
+    );
+  });
+
   it('is the component with every arg and its slots for a story without a render function', async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
     expect(story?.template).toBe(

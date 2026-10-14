@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-non-standalone--primary": {
+      "argCode": {},
       "id": "storydocs-non-standalone--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';

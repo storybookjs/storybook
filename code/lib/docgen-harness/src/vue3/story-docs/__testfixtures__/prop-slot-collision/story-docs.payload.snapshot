@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-prop-slot-collision--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-prop-slot-collision--primary",
       "name": "Primary",

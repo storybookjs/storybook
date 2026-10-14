@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-v-model-expansion--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-template-v-model-expansion--primary",
       "name": "Primary",

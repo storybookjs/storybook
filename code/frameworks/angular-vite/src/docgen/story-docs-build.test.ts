@@ -2681,6 +2681,23 @@ describe('buildStoryDocsPayload', () => {
       expect(fillTemplate(template!, { label: 'Go' })).toContain("  label = 'Go';");
     });
 
+    it('has a hole at each read of a story that writes to its args', async () => {
+      const template = await templateOf(dedent`
+        export const S = {
+          args: { label: 'Go', count: 1 },
+          render: (args) => {
+            args.label = 'Fixed';
+            args.count++;
+            return { props: args, template: '<sb-button [label]="label" [count]="count" />' };
+          },
+        };
+      `);
+      expect(template).toContain('  label = ⟦value label⟧;\n  count = ⟦value count⟧;');
+      expect(fillTemplate(template!, { label: 'Stop', count: 2 })).toContain(
+        "  label = 'Stop';\n  count = 2;"
+      );
+    });
+
     it.each([
       ['markup without arg reads', `export const S = { template: '<sb-button></sb-button>' };`],
       [
@@ -2713,66 +2730,6 @@ describe('buildStoryDocsPayload', () => {
         `export const S = { args: { label: 'Go' }, render: (args) => ({ props: { ...args, label: 'Fixed' }, template: \`<sb-button \${argsToTemplate(args)} />\` }) };`,
       ],
       [
-        'a render that assigns before it returns',
-        `export const S = { args: { label: 'Go' }, render: (args) => { args.label = 'Fixed'; return { props: args }; } };`,
-      ],
-      [
-        'a render that hands its args to code before it returns',
-        `export const S = { args: { label: 'Go' }, render: (args) => { Object.assign(args, { label: 'Fixed' }); return { props: args }; } };`,
-      ],
-      [
-        'a render that hands its args to a call it declares a local with',
-        `export const S = { args: { label: 'Go' }, render: (args) => { const x = mutate(args); return { props: args }; } };`,
-      ],
-      [
-        'a render that hands its args to a call in a condition',
-        `export const S = { args: { label: 'Go' }, render: (args) => { if (mutate(args)) {} return { props: args }; } };`,
-      ],
-      [
-        'a render that hands its args to a call in its props',
-        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: { label: args.label, x: mutate(args) } }) };`,
-      ],
-      [
-        'markup next to a call its args are handed to',
-        `export const S = { args: { label: 'Go' }, render: (args) => { const x = mutate(args); return { props: args, template: \`<sb-button \${argsToTemplate(args)} />\` }; } };`,
-      ],
-      [
-        'markup next to an Object.assign onto the args',
-        `export const S = { args: { label: 'Go' }, render: (args) => { const x = Object.assign(args, { label: 'F' }); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
-      ],
-      [
-        'a render that hands a rest of its args to a call',
-        `export const S = { args: { label: 'Go' }, render: ({ ...rest }) => { const x = mutate(rest); return { props: rest }; } };`,
-      ],
-      [
-        'a render that pushes onto an arg',
-        `export const S = { args: { items: [1] }, render: ({ items, ...rest }) => { if (items) items.push(2); return { props: { items, ...rest } }; } };`,
-      ],
-      [
-        'markup next to an Object.assign onto an alias of the args',
-        `export const S = { args: { label: 'Go' }, render: (args) => { const a = args; Object.assign(a, { label: 'X' }); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
-      ],
-      [
-        'markup next to a call that declares a local from an alias of the args',
-        `export const S = { args: { label: 'Go' }, render: (args) => { const a = args; const x = mutate(a); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
-      ],
-      [
-        'markup next to a push onto an alias of an arg',
-        `export const S = { args: { items: [1] }, render: (args) => { const list = args.items; const n = list.push(2); return { props: args, template: '<sb-button [count]="items.length" />' }; } };`,
-      ],
-      [
-        'markup next to a push onto an arg the body destructures',
-        `export const S = { args: { items: [1] }, render: (args) => { const { items } = args; const n = items.push(2); return { props: args, template: '<sb-button [count]="items.length" />' }; } };`,
-      ],
-      [
-        'markup next to a call a rest of the args is handed to',
-        `export const S = { args: { label: 'Go' }, render: (args) => { const { label, ...rest } = args; const x = mutate(rest); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
-      ],
-      [
-        'markup next to a callback that writes to the elements of an arg',
-        `export const S = { args: { items: [{ a: 1 }] }, render: (args) => { const x = args.items.forEach((item) => { item.a = 2; }); return { props: args, template: '<sb-button [count]="items[0].a" />' }; } };`,
-      ],
-      [
         'a render that changes the object a prop holds',
         `export const S = { args: { label: 'Go' }, render: (args) => { const control = new FormControl(args.label); control.disable(); return { props: { control }, template: '<sb-button [label]="control.value" />' }; } };`,
       ],
@@ -2786,23 +2743,6 @@ describe('buildStoryDocsPayload', () => {
       ],
     ])('is left out for %s', async (_, story) => {
       expect(await templateOf(story)).toBeUndefined();
-    });
-
-    it.each([
-      ['reads them', `const x = JSON.stringify(args);`],
-      ['copies them', `const x = Object.assign({}, args);`],
-      ['passes an arg of them on', `const x = new Wrapper(args.label);`],
-      ['reads an alias of them', `const a = args; const n = a.label.length + format(a.label);`],
-      [
-        'changes a copy of an arg',
-        `const list = args.items.map((i) => i); const n = list.push(1);`,
-      ],
-    ])('is kept for a render that hands its args to a call that only %s', async (_, statement) => {
-      expect(
-        await templateOf(
-          `export const S = { args: { label: 'Go' }, render: (args) => { ${statement} return { props: args }; } };`
-        )
-      ).toBeDefined();
     });
   });
 });

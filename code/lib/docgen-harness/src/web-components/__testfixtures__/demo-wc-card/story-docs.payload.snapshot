@@ -4,6 +4,9 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-demo-wc-card--back": {
+      "argCode": {
+        "rows": "[]",
+      },
       "id": "webcomponentsfixtures-demo-wc-card--back",
       "name": "Back",
       "snippet": "<demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
@@ -14,6 +17,9 @@
 >",
     },
     "webcomponentsfixtures-demo-wc-card--front": {
+      "argCode": {
+        "rows": "[]",
+      },
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
       "snippet": "<demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
@@ -24,6 +30,9 @@
 >",
     },
     "webcomponentsfixtures-demo-wc-card--prefix": {
+      "argCode": {
+        "rows": "[]",
+      },
       "id": "webcomponentsfixtures-demo-wc-card--prefix",
       "name": "Prefix",
       "snippet": "<demo-wc-card .backSide=${false} .header=${"my header"} .rows=${[]}

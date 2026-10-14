@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-toolkit-shapes--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-toolkit-shapes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-toolkit-shapes
@@ -27,6 +28,9 @@
 </script>",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
+      "argCode": {
+        "tags": "['b']",
+      },
       "id": "webcomponentsfixtures-lit-toolkit-shapes--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-toolkit-shapes
@@ -41,9 +45,19 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
+      "template": "const el = document.createElement('lit-toolkit-shapes');
+el.setAttribute('size', String(⟦value size⟧));
+el.setAttribute('level', String(⟦value level⟧));
+el.setAttribute('label', String(⟦value label⟧));
+(el as HTMLElement & { tags: string[] }).tags = ⟦value tags⟧ as string[];
+el.addEventListener('toolkit-resize', ⟦value onToolkitResize⟧ as EventListener);
+return el;",
       "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-toolkit-shapes'); el.setAttribute('size', String(args.size)); el.setAttribute('level', String(args.level)); el.setAttribute('label', String(args.label)); (el as HTMLElement & { tags: string[]; }).tags = args.tags as string[]; el.addEventListener('toolkit-resize', args.onToolkitResize as EventListener); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--lit-template": {
+      "argCode": {
+        "tags": "['b']",
+      },
       "id": "webcomponentsfixtures-lit-toolkit-shapes--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-toolkit-shapes

@@ -4,12 +4,14 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-vanilla-multi-definition--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
       "name": "Args Default Render",
       "snippet": "<multi-beta .betaLabel=${"Default beta"}></multi-beta>",
       "template": "<multi-beta ⟦props .betaLabel=betaLabel beta-label=beta-label *⟧></multi-beta>",
     },
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
       "name": "Dom Node",
       "snippet": "const el = document.createElement('multi-beta');
@@ -20,6 +22,7 @@ el.setAttribute('beta-label', String(⟦value betaLabel⟧));
 return el;",
     },
     "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
       "snippet": "<multi-beta beta-label="Beta"></multi-beta>",

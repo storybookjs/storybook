@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-schema-warning--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-schema-warning--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-schema-warning label="Hello" count="2"></lit-schema-warning>",

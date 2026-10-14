@@ -593,6 +593,32 @@ export const Primary = {
     );
   });
 
+  it('has a hole at each read of a setup that writes to its args', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Go', count: 1 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      args.label = 'Fixed';
+      args.count++;
+      const text = args.label + args.count;
+      return { args, text };
+    },
+    template: '<MyButton :label="text" :count="args.count" />',
+  }),
+};
+`);
+    const written = "args.label = 'Fixed';\nargs.count++;\n";
+    expect(story?.template).toContain(
+      `${written}const text = ⟦value label script⟧ + ⟦value count script⟧;`
+    );
+    expect(story?.template).toContain('<MyButton :label="text" ⟦attr count count⟧ />');
+    expect(fillTemplate(story!.template!, { label: 'Stop', count: 2 })).toContain(
+      `${written}const text = 'Stop' + 2;`
+    );
+  });
+
   it('binds an object arg a spread passes to its const', () => {
     const args = [
       {

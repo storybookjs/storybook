@@ -24,7 +24,8 @@ Keep it to these rules:
 
 - The template is the story's code as written. The provider only marks where it reads an arg; it
   never rewrites the code around it, inlines a helper or imitates what a helper or directive does.
-  `render: (args) => Button(args)` fills to `Button({ label: "Go" })`.
+  `render: (args) => Button(args)` fills to `Button({ label: "Go" })`. A write to an arg, such as
+  `args.count++`, is no read and stays as written.
 - The static snippet is the same template filled with the args the story is written with, so the
   snippet keeps its form when a control changes.
 - An arg that still holds the value the story is written with prints the code the story writes it

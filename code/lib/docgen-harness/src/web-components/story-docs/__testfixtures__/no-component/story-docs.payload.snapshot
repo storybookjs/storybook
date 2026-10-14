@@ -9,6 +9,7 @@
       "snippet": "<h1>Authored</h1>",
     },
     "webcomponentsstorydocs-no-component--default": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-no-component--default",
       "name": "Default",
       "snippet": "<h1>Hello</h1>",

@@ -4,12 +4,14 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-basic-attributes--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
       "template": "<lit-basic-attributes ⟦props ~label=label ~count=count ~disabled=disabled ~is-open=isOpen ^is-open *⟧></lit-basic-attributes>",
     },
     "webcomponentsfixtures-lit-basic-attributes--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
       "name": "Dom Node",
       "snippet": "const el = document.createElement('lit-basic-attributes');
@@ -34,6 +36,7 @@ if (⟦value isOpen⟧) {
 return el;",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-basic-attributes

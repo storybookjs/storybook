@@ -311,17 +311,6 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
       return;
     }
 
-    // A mutation whose target roots at the args parameter has no substitutable value form.
-    const mutationTarget = t.isAssignmentExpression(node)
-      ? node.left
-      : t.isUpdateExpression(node) || (t.isUnaryExpression(node) && node.operator === 'delete')
-        ? node.argument
-        : undefined;
-    if (mutationTarget && rootIdentifierName(mutationTarget) === argsParam) {
-      blocked = argsParam;
-      return;
-    }
-
     if (t.isIdentifier(node, { name: argsParam })) {
       const [parent, ...around] = ancestors;
       const member =
@@ -333,6 +322,15 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
           : undefined;
       if (!member || !t.isIdentifier(member.property) || member.loc == null) {
         blocked = argsParam;
+        return;
+      }
+      // The target of a write, as in `args.count++`, is no read and stays as written.
+      const [above] = around;
+      if (
+        t.isAssignmentExpression(above, { left: member }) ||
+        t.isUpdateExpression(above) ||
+        t.isUnaryExpression(above, { operator: 'delete' })
+      ) {
         return;
       }
       reads.push({
@@ -363,15 +361,6 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
   visit(statement);
 
   return blocked ? { ok: false, reference: blocked } : { ok: true, reads };
-}
-
-// args.theme.color -> 'args'
-function rootIdentifierName(node: t.Node): string | undefined {
-  let current: t.Node = node;
-  while (t.isMemberExpression(current) || t.isOptionalMemberExpression(current)) {
-    current = current.object;
-  }
-  return t.isIdentifier(current) ? current.name : undefined;
 }
 
 // args.label -> 'label' and { label: 1 } -> 'label' are name positions, not references

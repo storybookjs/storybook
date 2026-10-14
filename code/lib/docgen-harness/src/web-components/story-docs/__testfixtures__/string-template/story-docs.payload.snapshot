@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-string-template--default": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-string-template--default",
       "name": "Default",
       "snippet": "<string-template label="Default"></string-template>",
@@ -15,6 +16,7 @@
       "snippet": "<string-template label="static"></string-template>",
     },
     "webcomponentsstorydocs-string-template--untagged": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-string-template--untagged",
       "name": "Untagged",
       "snippet": "`<string-template label="${"Untagged"}" ?fake=${true}></string-template>`",

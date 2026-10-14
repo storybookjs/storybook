@@ -14,7 +14,7 @@ import {
 
 import { evaluateArgLiteral } from './story-docs-args.ts';
 import type { PropCode } from './story-docs-prop-code.ts';
-import { functionPath, isSubscription, propCode } from './story-docs-prop-code.ts';
+import { functionPath, propCode } from './story-docs-prop-code.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
 
 /** One story, as much of it as reading the markup it supplies needs. */
@@ -584,12 +584,10 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
   const fn = csf2?.fn ?? (render?.kind === 'value' ? declaredValue(shape, render.node) : undefined);
   const returned = csf2?.returned ?? returnedObject(fn);
   const props = returned && resolvedProperty(returned, 'props');
-  if (!t.isFunction(fn) || !props || props.kind === 'unresolvable' || reassigns(fn)) {
+  if (!t.isFunction(fn) || !props || props.kind === 'unresolvable') {
     return undefined;
   }
   const scope = functionScope(fn);
-  // What a prop reads of the args is unknown once the body has handed them to other code.
-  const argsUnknown = handsArgsOn(fn, scope) || writesArgs(fn, scope);
   const value = props.kind === 'value' ? unwrapExpression(props.node as t.Expression) : undefined;
   const properties =
     value === undefined
@@ -607,7 +605,7 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
       const except = t.isIdentifier(property.argument)
         ? scope.argsExpansions.get(property.argument.name)
         : undefined;
-      if (except === undefined || argsUnknown) {
+      if (except === undefined) {
         return undefined;
       }
       spreadExcept = spreadExcept?.filter((name) => except.includes(name)) ?? except;
@@ -631,9 +629,6 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
     const defaulted = t.isObjectProperty(property)
       ? defaultedRead(property.value, scope)
       : undefined;
-    if ((arg !== undefined || defaulted) && argsUnknown) {
-      return undefined;
-    }
     if (arg !== undefined) {
       named.set(name, { arg });
       continue;
@@ -645,7 +640,7 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
     const code = propertyValue(property);
     fnPath ??= functionPath(shape.csf._file.path, fn);
     const computed =
-      fnPath && t.isObjectProperty(property) && !argsUnknown
+      fnPath && t.isObjectProperty(property)
         ? propCode(fnPath, unwrapExpression(property.value as t.Expression), scope)
         : undefined;
     named.set(name, computed ? { code, computed } : { code });
@@ -684,243 +679,6 @@ const defaultedRead = (node: t.Node, scope: FunctionScope): RenderedProp | undef
   return code && evaluateArgLiteral(code, []) !== undefined
     ? { arg: scope.argBindings.get((unwrapped as t.Identifier).name), code }
     : undefined;
-};
-
-// A body that assigns may change what a parameter holds before the props read it.
-const reassigns = (fn: t.Function): boolean =>
-  t.isBlockStatement(fn.body) &&
-  fn.body.body.some(
-    (statement) =>
-      t.isExpressionStatement(statement) &&
-      (t.isAssignmentExpression(statement.expression) || t.isUpdateExpression(statement.expression))
-  );
-
-// A statement of the body that hands an arg to code, such as `Object.assign(args, …)`, may change
-// it before the props read it.
-const handsArgsOn = (fn: t.Function, scope: FunctionScope): boolean =>
-  t.isBlockStatement(fn.body) &&
-  fn.body.body.some(
-    (statement) =>
-      t.isExpressionStatement(statement) &&
-      !isSubscription(statement) &&
-      readsAny(statement, new Set([...scope.parameterNames, ...scope.argBindings.keys()]))
-  );
-
-// Whether the body may change an arg wherever it reads one, directly or through a local that holds
-// it: it passes the args object to a call not known to only read it, or writes to an arg through
-// a call, a property or an array method.
-const writesArgs = (fn: t.Function, scope: FunctionScope): boolean => {
-  const holders = argHolders(fn, scope);
-  let found = false;
-  t.traverse(fn.body, (node, ancestors) => {
-    const parent = ancestors.at(-1);
-    if (
-      !found &&
-      t.isIdentifier(node) &&
-      holders.has(node.name) &&
-      parent !== undefined &&
-      t.isReferenced(node, parent.node, ancestors.at(-2)?.node)
-    ) {
-      found = mayChange(
-        [...ancestors.map((ancestor) => ancestor.node), node],
-        holders.get(node.name)!
-      );
-    }
-  });
-  return found;
-};
-
-/**
- * The names that hold the args or an arg's value, each mapped to whether it holds the whole args
- * object: the parameters, and the locals and callback parameters taken from them, such as
- * `const a = args`, `const list = args.items`, `const { items } = args` or the `item` of
- * `args.items.forEach((item) => …)`. Names are matched without scoping, which can only add holders.
- */
-const argHolders = (fn: t.Function, scope: FunctionScope): ReadonlyMap<string, boolean> => {
-  const holders = new Map<string, boolean>();
-  scope.parameterNames.forEach((name) => holders.set(name, scope.argsExpansions.has(name)));
-  const add = (name: string, whole: boolean) => {
-    if (!holders.has(name) || (whole && !holders.get(name))) {
-      holders.set(name, whole);
-      grew = true;
-    }
-  };
-  const hold = (pattern: t.Node, whole: boolean) => {
-    if (t.isIdentifier(pattern)) {
-      add(pattern.name, whole);
-      return;
-    }
-    const names = new Set<string>();
-    collectPatternNames(pattern, names);
-    // A rest element of the args object is a copy of it, whose values are the args' own.
-    const rest =
-      whole && t.isObjectPattern(pattern)
-        ? pattern.properties.find((property) => t.isRestElement(property))
-        : undefined;
-    names.forEach((name) =>
-      add(name, t.isRestElement(rest) && t.isIdentifier(rest.argument, { name }))
-    );
-  };
-  let grew = true;
-  while (grew) {
-    grew = false;
-    t.traverse(fn.body, (node) => {
-      if (t.isVariableDeclarator(node) && node.init) {
-        const whole = heldValue(node.init, holders);
-        if (whole !== undefined) {
-          hold(node.id, whole);
-        }
-      } else if (t.isAssignmentExpression(node) && node.operator === '=') {
-        const whole = heldValue(node.right, holders);
-        if (whole !== undefined) {
-          hold(node.left, whole);
-        }
-      } else if (
-        (t.isCallExpression(node) || t.isOptionalCallExpression(node)) &&
-        (t.isMemberExpression(node.callee) || t.isOptionalMemberExpression(node.callee)) &&
-        heldValue(node.callee.object, holders) !== undefined
-      ) {
-        // A callback a held value calls back with its own elements, such as `forEach` or `map`.
-        for (const argument of node.arguments) {
-          if (t.isFunction(argument)) {
-            argument.params.forEach((param) => hold(param, false));
-          }
-        }
-      }
-    });
-  }
-  return holders;
-};
-
-// Whether an expression evaluates to a value a holder holds, and if so whether that value is the
-// whole args object; `undefined` when it holds none.
-const heldValue = (node: t.Node, holders: ReadonlyMap<string, boolean>): boolean | undefined => {
-  const unwrapped = unwrapExpression(node as t.Expression);
-  if (t.isIdentifier(unwrapped)) {
-    return holders.get(unwrapped.name);
-  }
-  if (t.isMemberExpression(unwrapped) || t.isOptionalMemberExpression(unwrapped)) {
-    return heldValue(unwrapped.object, holders) === undefined ? undefined : false;
-  }
-  const options = t.isLogicalExpression(unwrapped)
-    ? [unwrapped.left, unwrapped.right]
-    : t.isConditionalExpression(unwrapped)
-      ? [unwrapped.consequent, unwrapped.alternate]
-      : t.isSequenceExpression(unwrapped)
-        ? [unwrapped.expressions.at(-1)!]
-        : t.isAssignmentExpression(unwrapped)
-          ? [unwrapped.right]
-          : [];
-  const held = options.map((option) => heldValue(option, holders));
-  return held.includes(true) ? true : held.includes(false) ? false : undefined;
-};
-
-// Whether the code around the last node of `chain` may change the object it is. A `whole` args
-// object may be changed by any call it is passed to that is not known to only read it.
-const mayChange = (chain: t.Node[], whole: boolean): boolean => {
-  for (let index = chain.length - 1; index > 0; index--) {
-    const value = chain[index]!;
-    const parent = chain[index - 1]!;
-    if (
-      t.isTSAsExpression(parent) ||
-      t.isTSSatisfiesExpression(parent) ||
-      t.isTSNonNullExpression(parent) ||
-      t.isParenthesizedExpression(parent)
-    ) {
-      continue;
-    }
-    if (
-      t.isCallExpression(parent) ||
-      t.isOptionalCallExpression(parent) ||
-      t.isNewExpression(parent)
-    ) {
-      const position = (parent.arguments as t.Node[]).indexOf(value);
-      if (position >= 0) {
-        const callee = calleeName(parent.callee);
-        return (
-          (position === 0 && WRITING_CALLS.includes(callee)) ||
-          (whole && !PURE_CALLS.includes(callee) && !(callee === 'Object.assign' && position > 0))
-        );
-      }
-    }
-    if (
-      (!t.isMemberExpression(parent) && !t.isOptionalMemberExpression(parent)) ||
-      parent.object !== value
-    ) {
-      return false;
-    }
-    const above = chain[index - 2];
-    if (
-      (t.isAssignmentExpression(above) && above.left === parent) ||
-      (t.isUpdateExpression(above) && above.argument === parent) ||
-      (t.isUnaryExpression(above) && above.operator === 'delete' && above.argument === parent) ||
-      ((t.isCallExpression(above) || t.isOptionalCallExpression(above)) &&
-        above.callee === parent &&
-        !parent.computed &&
-        t.isIdentifier(parent.property) &&
-        ARRAY_MUTATORS.includes(parent.property.name))
-    ) {
-      return true;
-    }
-    whole = false;
-  }
-  return false;
-};
-
-// `argsToTemplate` or `Object.assign`, as a call names its callee.
-const calleeName = (callee: t.Node): string =>
-  t.isIdentifier(callee)
-    ? callee.name
-    : (t.isMemberExpression(callee) || t.isOptionalMemberExpression(callee)) &&
-        !callee.computed &&
-        t.isIdentifier(callee.object) &&
-        t.isIdentifier(callee.property)
-      ? `${callee.object.name}.${callee.property.name}`
-      : '';
-
-const PURE_CALLS = [
-  'argsToTemplate',
-  'JSON.stringify',
-  'Object.keys',
-  'Object.values',
-  'Object.entries',
-  'structuredClone',
-];
-
-const WRITING_CALLS = [
-  'Object.assign',
-  'Object.defineProperty',
-  'Object.defineProperties',
-  'Object.setPrototypeOf',
-  'Reflect.set',
-  'Reflect.defineProperty',
-  'Reflect.deleteProperty',
-  'Reflect.setPrototypeOf',
-];
-
-const ARRAY_MUTATORS = [
-  'copyWithin',
-  'fill',
-  'pop',
-  'push',
-  'reverse',
-  'shift',
-  'sort',
-  'splice',
-  'unshift',
-];
-
-const readsAny = (node: t.Node, names: ReadonlySet<string>): boolean => {
-  let found = false;
-  t.traverse(node, (child, ancestors) => {
-    const parent = ancestors.at(-1);
-    found ||=
-      t.isIdentifier(child) &&
-      names.has(child.name) &&
-      parent !== undefined &&
-      t.isReferenced(child, parent.node, ancestors.at(-2)?.node);
-  });
-  return found;
 };
 
 /** The CSF2 function story and the object it returns, for `export const S = () => ({ template })`. */

@@ -367,23 +367,31 @@ describe('litTemplate', () => {
 });
 
 describe('litTemplate of a story that writes to its args', () => {
-  it.each([
-    `(args) => { args.label = 'X'; return html\`<b>\${args.label}</b>\`; }`,
-    `(args) => { const _ = (args.label = 'X'); return html\`<b>\${args.label}</b>\`; }`,
-    `(args) => { const a = args; a.label = 'X'; return html\`<b>\${args.label}</b>\`; }`,
-    `(args) => { const a = args; Object.assign(a, { label: 'X' }); return html\`<b>\${args.label}</b>\`; }`,
-    `(args) => { const list = args.items; list.push('x'); return html\`<b>\${args.items}</b>\`; }`,
-    `(args) => html\`<b>\${args.items.sort()}</b>\``,
-    `({ label, ...rest }) => { rest.count = 9; return html\`<b>\${label}</b>\`; }`,
-  ])('has none for %s', (render) => {
+  it('has a hole at each read, and leaves each write as written', () => {
+    const render = `(args) => {
+  args.label = 'X';
+  args.count++;
+  args.items.push('x');
+  return html\`<x-card title=\${args.label} .items=\${args.items}>\${args.count}</x-card>\`;
+}`;
     const code = `import { html } from 'lit';\nexport default { title: 'T' };\nexport const Primary = ${render};`;
     const csf = loadCsf(code, { makeTitle: () => 'T' });
     const path = resolveEffectiveRender(csf.parse(), 'Primary');
-    expect(path.kind).toBe('resolved');
     const module = templateModule({ program: csf._file.path, filePath: '' }, undefined);
-    expect(
-      path.kind === 'resolved' && litTemplate(path.path, module, { tag: 'x-card' })
-    ).toBeUndefined();
+    const live = path.kind === 'resolved' && litTemplate(path.path, module, { tag: 'x-card' });
+    expect(live && live.template).toMatchInlineSnapshot(`
+      "args.label = 'X';
+      args.count++;
+      ⟦operand items⟧.push('x');
+      return html\`<x-card title="⟦quoted label⟧" ⟦prop items items⟧>⟦text count⟧</x-card>\`;"
+    `);
+    expect(live && fillTemplate(live.template, { label: 'Go', count: 1, items: ['a'] }))
+      .toMatchInlineSnapshot(`
+        "args.label = 'X';
+        args.count++;
+        ["a"].push('x');
+        return html\`<x-card title="Go" .items=\${["a"]}>1</x-card>\`;"
+      `);
   });
 });
 

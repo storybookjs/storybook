@@ -132,7 +132,7 @@ const CATEGORY_KINDS = {
 /**
  * The story's render as written, with a hole wherever it reads an arg: the html when it returns a
  * lit template, else its code. It is `undefined` when the story reads its args in a way no hole
- * stands for, such as writing to them.
+ * stands for, such as reading the story context.
  */
 export function litTemplate(
   render: RenderPath,
@@ -301,7 +301,8 @@ function argEdits(
     return true;
   };
   const read = (path: NodePath, arg: string, fallback: string) => {
-    if (!heard(path, arg)) {
+    // The target of a write, as in `args.count++`, is no read and stays as written.
+    if (!isWritten(path) && !heard(path, arg)) {
       add(readEdit(path, arg, fallback, slotFor(path), element));
     }
   };
@@ -313,6 +314,9 @@ function argEdits(
         return add(undefined);
       }
       const parent = reference.parentPath!;
+      if (t.isMemberExpression(parent.node, { object: reference.node }) && isWritten(parent)) {
+        continue;
+      }
       const arg = memberName(parent, reference.node);
       if (arg !== undefined) {
         if (omitted.includes(arg)) {
@@ -385,18 +389,14 @@ function argEdits(
   return ok ? found : undefined;
 }
 
-// A lit binding or html text for a read that is a whole slot, or `⟦value⟧` or `⟦operand⟧` in code;
-// `undefined` for a read the story writes to, such as `args.count++`.
+// A lit binding or html text for a read that is a whole slot, or `⟦value⟧` or `⟦operand⟧` in code.
 function readEdit(
   read: NodePath,
   arg: string,
   fallback: string,
   slot: Slot | undefined,
   element: SpreadElement
-): Edit | undefined {
-  if (isWritten(read) || mayChange(read)) {
-    return undefined;
-  }
+): Edit {
   if (!slot) {
     return startsOperand(read)
       ? nodeEdit(read.node, argHole('operand', [arg], fallback && asOperand(fallback)))
@@ -437,7 +437,7 @@ function unsetProperty(
 // The args passed along whole, as in `${spread(args)}`: the object they are, as a literal.
 function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   const { node, parentPath: parent } = read;
-  if (!read.isIdentifier() || !parent || parent.isTSTypeQuery() || mayChange(read)) {
+  if (!read.isIdentifier() || !parent || parent.isTSTypeQuery()) {
     return undefined;
   }
   const literal = hole('args', ...omitted.map((name) => holeWord(`-${name}`)));
@@ -447,110 +447,8 @@ function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   return nodeEdit(node, startsOperand(read) ? `(${literal})` : literal);
 }
 
-// Whether the story may change the object `read` reads, or one in it: it writes to a property, calls
-// a method that changes an array, or passes it to a call that writes to it, also through a name it
-// declares for it, as in `const list = args.items`, or a callback's parameter.
-function mayChange(read: NodePath): boolean {
-  const changedThrough = (pattern: NodePath, within: NodePath) =>
-    Object.keys(pattern.getBindingIdentifiers()).some((name) =>
-      pattern.scope
-        .getBinding(name)
-        ?.referencePaths.some(
-          (reference) => !reference.isDescendant(within) && mayChange(reference)
-        )
-    );
-  for (let value = read; ; value = value.parentPath!) {
-    const { parentPath: parent } = value;
-    if (
-      parent?.isTSAsExpression() ||
-      parent?.isTSSatisfiesExpression() ||
-      parent?.isTSNonNullExpression() ||
-      parent?.isParenthesizedExpression() ||
-      parent?.isLogicalExpression() ||
-      parent?.isSequenceExpression() ||
-      (parent?.isConditionalExpression() && parent.node.test !== value.node)
-    ) {
-      continue;
-    }
-    if (parent?.isVariableDeclarator() && parent.node.init === value.node) {
-      return changedThrough(parent.get('id'), parent);
-    }
-    if (parent?.isAssignmentExpression() && parent.node.right === value.node) {
-      return true;
-    }
-    if (
-      parent?.isCallExpression() ||
-      parent?.isOptionalCallExpression() ||
-      parent?.isNewExpression()
-    ) {
-      const index = (parent.node.arguments as t.Node[]).indexOf(value.node);
-      if (index >= 0) {
-        return index === 0 && WRITING_CALLS.includes(calleeName(parent.node.callee));
-      }
-    }
-    if (
-      (!parent?.isMemberExpression() && !parent?.isOptionalMemberExpression()) ||
-      parent.node.object !== value.node
-    ) {
-      return false;
-    }
-    const call = parent.parentPath;
-    const { property, computed } = parent.node;
-    const method =
-      (call?.isCallExpression() || call?.isOptionalCallExpression()) &&
-      call.node.callee === parent.node;
-    if (
-      isWritten(parent) ||
-      (method && !computed && t.isIdentifier(property) && ARRAY_MUTATORS.includes(property.name)) ||
-      (method &&
-        (call.get('arguments') as NodePath[]).some(
-          (argument) =>
-            argument.isFunction() &&
-            argument.get('params').some((param) => changedThrough(param, param))
-        ))
-    ) {
-      return true;
-    }
-  }
-}
-
-// `Object.assign`, as a call names its callee.
-const calleeName = (callee: t.Node): string =>
-  (t.isMemberExpression(callee) || t.isOptionalMemberExpression(callee)) &&
-  !callee.computed &&
-  t.isIdentifier(callee.object) &&
-  t.isIdentifier(callee.property)
-    ? `${callee.object.name}.${callee.property.name}`
-    : '';
-
-const WRITING_CALLS = [
-  'Object.assign',
-  'Object.defineProperty',
-  'Object.defineProperties',
-  'Object.setPrototypeOf',
-  'Reflect.set',
-  'Reflect.defineProperty',
-  'Reflect.deleteProperty',
-  'Reflect.setPrototypeOf',
-];
-
-const ARRAY_MUTATORS = [
-  'copyWithin',
-  'fill',
-  'pop',
-  'push',
-  'reverse',
-  'shift',
-  'sort',
-  'splice',
-  'unshift',
-];
-
-// The places a name is read; `undefined` when the story assigns to it.
-function referencesOf(scope: Scope, name: string): NodePath[] | undefined {
-  const binding = scope.getBinding(name);
-  return binding && binding.constantViolations.length === 0 ? binding.referencePaths : undefined;
-}
+// The places a name is read.
+const referencesOf = (scope: Scope, name: string) => scope.getBinding(name)?.referencePaths;
 
 // The arg `args.label` or `args['label']` reads.
 function memberName(member: NodePath, object: t.Node): string | undefined {

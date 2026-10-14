@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-lit-template-shapes--aliased": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--aliased",
       "name": "Aliased",
       "snippet": "const heading = "Head";
@@ -18,6 +19,7 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
 >`;",
     },
     "webcomponentsstorydocs-lit-template-shapes--attributes": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--attributes",
       "name": "Attributes",
       "snippet": "<lit-template-shapes
@@ -32,6 +34,7 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
 ></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--class-map": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--class-map",
       "name": "Class Map",
       "snippet": "<lit-template-shapes
@@ -42,12 +45,14 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
 ></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--destructured",
       "name": "Destructured",
       "snippet": "<lit-template-shapes label="Destructured" count="6"></lit-template-shapes>",
       "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--disabled-false": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--disabled-false",
       "name": "Disabled False",
       "snippet": "<lit-template-shapes
@@ -61,6 +66,7 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
 ></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--if-defined": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--if-defined",
       "name": "If Defined",
       "snippet": "<lit-template-shapes
@@ -84,6 +90,9 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
 </script>",
     },
     "webcomponentsstorydocs-lit-template-shapes--member-path": {
+      "argCode": {
+        "user": "{ name: 'Bob', admin: false }",
+      },
       "id": "webcomponentsstorydocs-lit-template-shapes--member-path",
       "name": "Member Path",
       "snippet": "const user = { name: "Bob", admin: false } as { name: string; admin: boolean };
@@ -96,6 +105,7 @@ return html`<lit-template-shapes label=${user.name}
 >`;",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--nested",
       "name": "Nested",
       "snippet": "<lit-template-shapes>${html`<span>Nested</span>`}</lit-template-shapes>",
@@ -116,6 +126,7 @@ return html`<lit-template-shapes label=${user.name}
       "warning": "Incomplete snippet: listeners not shown: `@click`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--nothing": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--nothing",
       "name": "Nothing",
       "snippet": "<lit-template-shapes label=${"Set" ? "Set" : nothing}
@@ -126,30 +137,37 @@ return html`<lit-template-shapes label=${user.name}
 >",
     },
     "webcomponentsstorydocs-lit-template-shapes--prefixed-class": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--prefixed-class",
       "name": "Prefixed Class",
       "snippet": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
       "template": "<lit-template-shapes class="btn-⟦quoted size⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-only": {
+      "argCode": {
+        "items": "[{ name: 'Alpha' }]",
+      },
       "id": "webcomponentsstorydocs-lit-template-shapes--property-only",
       "name": "Property Only",
       "snippet": "<lit-template-shapes .items=${[{ name: "Alpha" }]}></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦prop items items⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--property-paired",
       "name": "Property Paired",
       "snippet": "<lit-template-shapes .heading=${"Heading"} .open=${true}></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦prop heading heading⟧ ⟦prop open open⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired-false": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--property-paired-false",
       "name": "Property Paired False",
       "snippet": "<lit-template-shapes .heading=${"Closed"} .open=${false}></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦prop heading heading⟧ ⟦prop open open⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole",
       "name": "Quoted And Multi Hole",
       "snippet": "<lit-template-shapes
@@ -162,6 +180,7 @@ return html`<lit-template-shapes label=${user.name}
 ></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--unbound-arg": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--unbound-arg",
       "name": "Unbound Arg",
       "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",

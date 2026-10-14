@@ -66,6 +66,10 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
   const objectEdits = (scope: Scope, name: string, omitted: string[]): (Edit | undefined)[] =>
     referencesOf(scope, name)?.flatMap((reference) => {
       const parent = reference.parentPath!;
+      // The target of a write, as in `args.count++`, is no read and stays as written.
+      if (t.isMemberExpression(parent.node, { object: reference.node }) && isWritten(parent)) {
+        return [];
+      }
       if (parent.isJSXSpreadAttribute()) {
         // A second spread of the args on one element would write each attribute twice.
         const first = !spreadInto.has(parent.parent);
@@ -122,7 +126,7 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
         if (shorthand?.isObjectProperty() && shorthand.node.shorthand) {
           const name = (local as t.Identifier).name;
           edits.push(nodeEdit(shorthand.node, `${name}: ${argHole('value', [arg], fallback)}`));
-        } else {
+        } else if (!isWritten(reference)) {
           // `<Tag>` for `{ as: Tag }` names a component, which no literal can.
           edits.push(reference.isJSXIdentifier() ? undefined : readEdit(reference, arg, fallback));
         }
@@ -137,11 +141,8 @@ function argEdits(param: NodePath, code: string): Edit[] | undefined {
   return edits.every((edit) => edit !== undefined) ? (edits as Edit[]) : undefined;
 }
 
-// The places a name is read; `undefined` when the story assigns to it.
-function referencesOf(scope: Scope, name: string): NodePath[] | undefined {
-  const binding = scope.getBinding(name);
-  return binding && binding.constantViolations.length === 0 ? binding.referencePaths : undefined;
-}
+// The places a name is read.
+const referencesOf = (scope: Scope, name: string) => scope.getBinding(name)?.referencePaths;
 
 // The arg `args.label` or `args['label']` reads.
 function memberName(member: NodePath, object: t.Node): string | undefined {
@@ -257,13 +258,9 @@ function spreadEdit(
   return nodeEdit(spread.node, hole('props', ...words.map(holeWord)));
 }
 
-// `label={args.label}`, `{args.label}` as a child, or `args.label` in code; `undefined` for a read
-// the story writes to, such as `args.count++`.
-function readEdit(read: NodePath, arg: string, fallback = ''): Edit | undefined {
+// `label={args.label}`, `{args.label}` as a child, or `args.label` in code.
+function readEdit(read: NodePath, arg: string, fallback = ''): Edit {
   const { node } = read;
-  if (isWritten(read) || mayChange(read, false)) {
-    return undefined;
-  }
   const container = read.parentPath;
   if (container?.isJSXExpressionContainer()) {
     const attribute = container.parentPath;
@@ -280,17 +277,11 @@ function readEdit(read: NodePath, arg: string, fallback = ''): Edit | undefined 
 }
 
 // The args passed along whole, as in `useState(args)`: the object they are, as a literal. It is
-// `undefined` where another object with the same args would not do: one the story may change, or
-// compares by identity, as a hook's dependency list does.
+// `undefined` where another object with the same args would not do: one the story compares by
+// identity, as a hook's dependency list does.
 function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   const { node, parentPath: parent } = read;
-  if (
-    !read.isIdentifier() ||
-    !parent ||
-    parent.isTSTypeQuery() ||
-    parent.isArrayExpression() ||
-    mayChange(read, true)
-  ) {
+  if (!read.isIdentifier() || !parent || parent.isTSTypeQuery() || parent.isArrayExpression()) {
     return undefined;
   }
   const literal = hole('args', ...omitted.map((name) => holeWord(`-${name}`)));
@@ -299,123 +290,6 @@ function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   }
   return nodeEdit(node, startsOperand(read) ? `(${literal})` : literal);
 }
-
-// Whether the story may change the object `read` reads, or one in it: it writes to a property, calls
-// a method that changes an array, or passes it to a call that writes to it, also through a name it
-// declares for it, as in `const list = args.items`, or a callback's parameter, as in
-// `args.items.forEach((item) => …)`. A whole object, as the args are, may be changed by any call
-// not known to only read it.
-function mayChange(read: NodePath, whole: boolean): boolean {
-  // The names `pattern` declares for the value, read anywhere but in `pattern`'s own declaration.
-  const changedThrough = (pattern: NodePath, within: NodePath) =>
-    Object.keys(pattern.getBindingIdentifiers()).some((name) =>
-      pattern.scope
-        .getBinding(name)
-        ?.referencePaths.some(
-          (reference) => !reference.isDescendant(within) && mayChange(reference, whole)
-        )
-    );
-  for (let value = read; ; value = value.parentPath!) {
-    const { parentPath: parent } = value;
-    if (
-      parent?.isTSAsExpression() ||
-      parent?.isTSSatisfiesExpression() ||
-      parent?.isTSNonNullExpression() ||
-      parent?.isLogicalExpression() ||
-      (parent?.isConditionalExpression() && parent.node.test !== value.node)
-    ) {
-      continue;
-    }
-    if (parent?.isVariableDeclarator() && parent.node.init === value.node) {
-      return changedThrough(parent.get('id'), parent);
-    }
-    if (
-      parent?.isCallExpression() ||
-      parent?.isOptionalCallExpression() ||
-      parent?.isNewExpression()
-    ) {
-      const index = (parent.node.arguments as t.Node[]).indexOf(value.node);
-      const callee = calleeName(parent.node.callee);
-      if (index >= 0) {
-        return (
-          (index === 0 && WRITING_CALLS.includes(callee)) ||
-          (whole && !PURE_CALLS.includes(callee) && !(callee === 'Object.assign' && index > 0))
-        );
-      }
-    }
-    if (
-      (!parent?.isMemberExpression() && !parent?.isOptionalMemberExpression()) ||
-      parent.node.object !== value.node
-    ) {
-      return false;
-    }
-    const call = parent.parentPath;
-    const { property, computed } = parent.node;
-    const method =
-      (call?.isCallExpression() || call?.isOptionalCallExpression()) &&
-      call.node.callee === parent.node;
-    if (
-      isWritten(parent) ||
-      (method && !computed && t.isIdentifier(property) && ARRAY_MUTATORS.includes(property.name))
-    ) {
-      return true;
-    }
-    if (
-      method &&
-      (call.get('arguments') as NodePath[]).some(
-        (argument) =>
-          argument.isFunction() &&
-          argument.get('params').some((param) => changedThrough(param, param))
-      )
-    ) {
-      return true;
-    }
-  }
-}
-
-// `useState` or `Object.assign`, as a call names its callee.
-const calleeName = (callee: t.Node): string =>
-  t.isIdentifier(callee)
-    ? callee.name
-    : (t.isMemberExpression(callee) || t.isOptionalMemberExpression(callee)) &&
-        !callee.computed &&
-        t.isIdentifier(callee.object) &&
-        t.isIdentifier(callee.property)
-      ? `${callee.object.name}.${callee.property.name}`
-      : '';
-
-const PURE_CALLS = [
-  'JSON.stringify',
-  'Object.keys',
-  'Object.values',
-  'Object.entries',
-  'structuredClone',
-  'useState',
-  'React.useState',
-];
-
-const WRITING_CALLS = [
-  'Object.assign',
-  'Object.defineProperty',
-  'Object.defineProperties',
-  'Object.setPrototypeOf',
-  'Reflect.set',
-  'Reflect.defineProperty',
-  'Reflect.deleteProperty',
-  'Reflect.setPrototypeOf',
-];
-
-const ARRAY_MUTATORS = [
-  'copyWithin',
-  'fill',
-  'pop',
-  'push',
-  'reverse',
-  'shift',
-  'sort',
-  'splice',
-  'unshift',
-];
 
 const isWritten = ({ node, parent }: NodePath) =>
   t.isAssignmentExpression(parent, { left: node }) ||

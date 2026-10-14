@@ -1,5 +1,6 @@
 {
   "ArgsDefaultRender": "UnprintableArgError: The snippet cannot show the value of the `onToolkitResize` arg.",
+  "DomNode": "UnprintableArgError: The snippet cannot show the value of the `onToolkitResize` arg.",
   "LitTemplate": "<lit-toolkit-shapes
   size="large"
   level="2"

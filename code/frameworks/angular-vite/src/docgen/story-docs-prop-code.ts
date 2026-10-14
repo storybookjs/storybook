@@ -193,7 +193,7 @@ const onlyHere = (
   );
 
 // `control.valueChanges.subscribe(…)`, which reads what the object emits and changes nothing of it.
-export const isSubscription = (
+const isSubscription = (
   statement: t.Node
 ): statement is t.ExpressionStatement & {
   expression: t.CallExpression & { callee: t.MemberExpression };

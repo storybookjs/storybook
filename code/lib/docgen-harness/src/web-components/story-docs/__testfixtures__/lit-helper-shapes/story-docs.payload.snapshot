@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-lit-helper-shapes--branching-helper": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--branching-helper",
       "name": "Branching Helper",
       "snippet": "if (true) {
@@ -18,6 +19,7 @@ return Card(⟦args⟧);",
       "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper",
       "name": "Csf 2 Helper",
       "snippet": "Card({ ...{ label: "Alpha" }, disabled: true })",
@@ -26,6 +28,7 @@ return Card(⟦args⟧);",
       "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-call",
       "name": "Helper Call",
       "snippet": "Card({ label: "Alpha", count: 2 })",
@@ -34,6 +37,7 @@ return Card(⟦args⟧);",
       "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
       "name": "Helper Defaults",
       "snippet": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>Head</b>`)",
@@ -42,6 +46,7 @@ return Card(⟦args⟧);",
       "warning": "Incomplete snippet: names the snippet does not import or declare: `Card`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
       "name": "Helper In Html",
       "snippet": "<section>${List({ label: "Alpha", count: 2 })}</section>",
@@ -50,12 +55,14 @@ return Card(⟦args⟧);",
       "warning": "Incomplete snippet: names the snippet does not import or declare: `List`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
       "name": "Re Exported Html",
       "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
       "template": "<lit-template-shapes label="⟦quoted label⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
       "name": "Spread Directive",
       "snippet": "<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>",
@@ -64,6 +71,7 @@ return Card(⟦args⟧);",
       "warning": "Incomplete snippet: names the snippet does not import or declare: `spreadProps`.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
       "name": "Spread Next To Attribute",
       "snippet": "<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}

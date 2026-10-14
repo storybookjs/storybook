@@ -57,6 +57,7 @@ interface StoryDocDeps {
 type SnippetResult = {
   snippet?: string;
   template?: string;
+  argCode?: Record<string, string>;
   templateWarning?: string;
   warning?: string;
 };
@@ -172,7 +173,9 @@ const baseStoryDoc = (
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
     ...(result.snippet === undefined ? {} : { snippet: result.snippet }),
-    ...(result.template === undefined ? {} : { template: result.template }),
+    ...(result.template === undefined
+      ? {}
+      : { template: result.template, argCode: result.argCode }),
     ...(result.template === undefined || result.templateWarning === undefined
       ? {}
       : { templateWarning: result.templateWarning }),
@@ -304,6 +307,7 @@ const renderedArgsSnippet = (
     return {
       ...(filledSnippet(args.template, resolved) ?? own),
       template: args.template,
+      argCode: argCodeOf(args.template, resolved),
       ...(args.templateWarning ? { templateWarning: args.templateWarning } : {}),
     };
   }
@@ -328,6 +332,7 @@ const withTemplate = (
   return {
     ...(filled ? { ...filled, ...joinWarnings([filled.warning, warning]) } : own),
     template: live.template,
+    argCode: argCodeOf(live.template, resolved),
     ...(warning === undefined ? {} : { templateWarning: warning }),
   };
 };
@@ -393,10 +398,20 @@ const templateWarning = (
   return warning === undefined ? {} : { templateWarning: warning };
 };
 
-// The args a template's holes print; a props hole names one per word, or all with a `*` word.
-const templateArgs = (template: string): { names: Set<string>; all: boolean } => {
+// The args a template's holes print; a props hole names one per word, or all with a `*` word. The
+// `text` ones are those a hole prints as text, such as an attribute value, which their code is not.
+const templateArgs = (
+  template: string
+): { names: Set<string>; text: Set<string>; all: boolean } => {
   const names = new Set<string>();
+  const text = new Set<string>();
   let all = false;
+  const add = (name: string, asText: boolean) => {
+    names.add(name);
+    if (asText) {
+      text.add(name);
+    }
+  };
   fillHoles(template, (kind, words) => {
     if (kind === 'props') {
       for (const word of words) {
@@ -404,19 +419,39 @@ const templateArgs = (template: string): { names: Set<string>; all: boolean } =>
         if (word.startsWith('^')) {
           names.add(word.slice(1));
         } else if (word.includes('=')) {
-          names.add(word.split(/=(.*)/)[1]!);
+          add(word.split(/=(.*)/)[1]!, !word.startsWith('.'));
         }
       }
     } else if (kind === 'style') {
-      words.slice(1).forEach((word) => names.add(word.split(/=(.*)/)[1]!));
+      words.slice(1).forEach((word) => add(word.split(/=(.*)/)[1]!, true));
     } else if (kind === 'args') {
       all = true;
     } else {
-      names.add(['attr', 'bool', 'prop', 'slot'].includes(kind) ? words[1]! : words[0]!);
+      const name = ['attr', 'bool', 'prop', 'slot'].includes(kind) ? words[1]! : words[0]!;
+      add(name, !['value', 'operand', 'prop'].includes(kind));
     }
     return '';
   });
-  return { names, all };
+  return { names, text, all };
+};
+
+// The code the story writes each arg with; see `StoryDoc.argCode`. A literal prints as its value, a
+// function is a listener the snippet leaves out, and a hole that prints an arg as text has no code.
+const argCodeOf = (template: string, resolved: ResolvedStoryArgs) => {
+  const { text } = templateArgs(template);
+  return Object.fromEntries(
+    Object.entries(resolved.args)
+      .filter(
+        ([name, node]) =>
+          !text.has(name) &&
+          !t.isStringLiteral(node) &&
+          !t.isNumericLiteral(node) &&
+          !t.isBooleanLiteral(node) &&
+          !t.isNullLiteral(node) &&
+          !['unset', 'function'].includes(evaluateArgValue(node).kind)
+      )
+      .map(([name, node]) => [name, sourceOf(node)])
+  );
 };
 
 const LISTENER = Object.assign(() => {}, { isAction: true });

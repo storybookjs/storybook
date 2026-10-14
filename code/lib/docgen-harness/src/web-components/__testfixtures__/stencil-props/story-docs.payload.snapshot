@@ -4,12 +4,14 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-stencil-props--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-stencil-props--args-default-render",
       "name": "Args Default Render",
       "snippet": "<stencil-props value="1" max="5" variant="full" aria-label-text="Default rating"></stencil-props>",
       "template": "<stencil-props ⟦props ~value=value ~max=max ~variant=variant ~aria-label-text=labelText -ratingChange-event -stencil-reset-event -clear-method -render-method .hovered=hovered ^aria-label-text ~labels=labels *⟧></stencil-props>",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-stencil-props--dom-node",
       "name": "Dom Node",
       "snippet": "const el = document.createElement('stencil-props');
@@ -26,6 +28,7 @@ el.setAttribute('aria-label-text', String(⟦value labelText⟧));
 return el;",
     },
     "webcomponentsfixtures-stencil-props--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
       "snippet": "<stencil-props

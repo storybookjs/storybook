@@ -4,12 +4,14 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-csf4-shapes--bare": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf4-shapes--bare",
       "name": "Bare",
       "snippet": "<csf-shapes label="Factory"></csf-shapes>",
       "template": "<csf-shapes ⟦props ~label=label ~count=count *⟧></csf-shapes>",
     },
     "webcomponentsstorydocs-csf4-shapes--primary": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf4-shapes--primary",
       "name": "Primary",
       "snippet": "<csf-shapes label="Factory" count="3"></csf-shapes>",

@@ -444,13 +444,6 @@ describe('renderedProps', () => {
   it.each([
     `(args) => ({ props: { ...args, ...extra() } })`,
     `(args) => ({ props: build(args) })`,
-    `(args) => { args.label = 'x'; return { props: args }; }`,
-    `(args) => { Object.assign(args, { label: 'x' }); return { props: args }; }`,
-    `({ label }) => { label.push('x'); return { props: { label } }; }`,
-    `(args) => { const a = args; Object.assign(a, { label: 'x' }); return { props: args }; }`,
-    `(args) => { const list = args.label; const n = list.push('x'); return { props: args }; }`,
-    `(args) => { const { label } = args; const n = label.push('x'); return { props: args }; }`,
-    `(args) => { const n = args.label.forEach((item) => { item.x = 1; }); return { props: args }; }`,
     `(args) => (args.on ? { props: args } : {})`,
   ])('cannot read the props of %s', (render) => {
     expect(propsOf(`render: ${render}`, ['label'])).toBeUndefined();

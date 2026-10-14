@@ -4,12 +4,14 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-inheritance-mixin--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
       "template": "<lit-inheritance-mixin ⟦props ~base-label=baseLabel ~mixed-active=mixedActive ~count=count ^base-label ^mixed-active *⟧></lit-inheritance-mixin>",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",
       "name": "Dom Node",
       "snippet": "const el = document.createElement('lit-inheritance-mixin');
@@ -28,6 +30,7 @@ el.setAttribute('count', String(⟦value count⟧));
 return el;",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-inheritance-mixin

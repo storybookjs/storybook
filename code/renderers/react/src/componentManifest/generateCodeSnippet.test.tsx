@@ -1250,73 +1250,48 @@ test('template: none for args no hole stands for', () => {
   const input = withCSF3(dedent`
     export const NoArgs: Story = { render: () => <Button /> };
     export const Twice: Story = { render: (args) => <Button {...args} {...args} /> };
-    export const Changed: Story = { render: (args) => { normalize(args); return <Button {...args} />; } };
     export const Compared: Story = { render: (args) => { useEffect(log, [args]); return <Button {...args} />; } };
-    export const Written: Story = { render: (args) => { args.label = 'x'; return <Button {...args} />; } };
-    export const Keyed: Story = { render: (args) => { args[key] = 'x'; return <Button {...args} />; } };
-    export const Reassigned: Story = { render: ({ label }) => { label = 'x'; return <Button label={label} />; } };
     export const Shadowed: Story = { render: (args) => <Button label={args.label} />, ...Base };
     export const Tag: Story = { render: ({ as: Tag, label }) => <Tag>{label}</Tag> };
     export const Member: Story = { render: (args) => <args.Icon /> };
   `);
-  const stories = ['NoArgs', 'Twice', 'Changed', 'Compared', 'Written', 'Keyed', 'Reassigned'];
+  const stories = ['NoArgs', 'Twice', 'Compared'];
   const unusual = ['Shadowed', 'Tag', 'Member'];
   for (const story of [...stories, ...unusual]) {
     expect(template(input, story)).toBeUndefined();
   }
 });
 
-test('template: none where the story may change the args through a call', () => {
+test('template: a story that writes to its args has a hole at each read', () => {
   const input = withCSF3(dedent`
-    export const Assigned: Story = {
+    export const Search: Story = {
       render: (args) => {
-        const merged = Object.assign(args, { label: 'override' });
-        return <Button label={args.label} />;
+        args.search = '';
+        args.count++;
+        delete args.hidden;
+        args.items.push(4);
+        return <List search={args.search} count={args.count} items={args.items} />;
       },
     };
-    export const Passed: Story = {
-      render: ({ label, ...rest }) => <Button size={sizeOf(rest)} {...rest}>{label}</Button>,
-    };
-    export const Pushed: Story = {
-      render: (args) => { args.items.push(4); return <List items={args.items} />; },
-    };
-    export const Sorted: Story = { render: ({ items }) => <List items={items.sort()} /> };
-    export const Nested: Story = {
-      render: (args) => { args.style.color = 'red'; return <Button style={args.style} />; },
-    };
-    export const Reflected: Story = {
-      render: ({ style }) => { Reflect.set(style, 'color', 'red'); return <Button style={style} />; },
-    };
   `);
-  for (const story of ['Assigned', 'Passed', 'Pushed', 'Sorted', 'Nested', 'Reflected']) {
-    expect(template(input, story)).toBeUndefined();
-  }
-});
-
-test('template: none where the story changes the args through a name or a callback', () => {
-  const input = withCSF3(dedent`
-    export const Aliased: Story = {
-      render: (args) => { const list = args.items ?? []; list.push(4); return <List items={args.items} />; },
-    };
-    export const Destructured: Story = {
-      render: (args) => { const { style } = args; style.color = 'red'; return <Button style={args.style} />; },
-    };
-    export const Callback: Story = {
-      render: (args) => {
-        args.items.forEach((item) => { item.label = item.label.toUpperCase(); });
-        return <List items={args.items} />;
-      },
-    };
-    export const Read: Story = {
-      render: (args) => { const list = args.items; return <List items={list.map((item) => item.label)} />; },
-    };
+  expect(template(input, 'Search')).toMatchInlineSnapshot(`
+    "const Search = () => {
+      args.search = '';
+      args.count++;
+      delete args.hidden;
+      ⟦operand items⟧.push(4);
+      return <List ⟦attr search search⟧ ⟦attr count count⟧ ⟦attr items items⟧ />;
+    };"
   `);
-  for (const story of ['Aliased', 'Destructured', 'Callback']) {
-    expect(template(input, story)).toBeUndefined();
-  }
-  expect(template(input, 'Read')).toBe(
-    'const Read = () => { const list = ⟦value items⟧; return <List items={list.map((item) => item.label)} />; };'
-  );
+  expect(filled(input, 'Search', { search: 'a', count: 1, items: [3] })).toMatchInlineSnapshot(`
+    "const Search = () => {
+      args.search = '';
+      args.count++;
+      delete args.hidden;
+      [3].push(4);
+      return <List search="a" count={1} items={[3]} />;
+    };"
+  `);
 });
 
 test('template: a render behind a spread of a story or a helper call', () => {

@@ -13,6 +13,9 @@
       "name": "Authored Disabled",
     },
     "webcomponentsstorydocs-csf-shapes--imported-items": {
+      "argCode": {
+        "items": "itemsFixture",
+      },
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
@@ -20,12 +23,14 @@
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--imported-label",
       "name": "Imported Label",
       "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "warning": "No static snippet: `importedLabel` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--listener": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--listener",
       "name": "Listener",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>
@@ -44,6 +49,7 @@
 </script>",
     },
     "webcomponentsstorydocs-csf-shapes--parts-and-css": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--parts-and-css",
       "name": "Parts And Css",
       "snippet": "<style>
@@ -60,6 +66,7 @@
       "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--slots": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--slots",
       "name": "Slots",
       "snippet": "<csf-shapes label="Meta">
@@ -69,18 +76,21 @@
       "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label -default-slot -actions-slot -shape-change-event -refresh-method -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--spread-args": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--spread-args",
       "name": "Spread Args",
       "snippet": "<csf-shapes label="Shared" count="2"></csf-shapes>",
       "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label ~count=count -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--unknown-arg": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
       "name": "Unknown Arg",
       "snippet": "<csf-shapes label="Meta" .nope=${1}></csf-shapes>",
       "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label .nope=nope -shape-change-event -refresh-method -default-slot -actions-slot -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--unset": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--unset",
       "name": "Unset",
       "snippet": "<csf-shapes disabled></csf-shapes>",

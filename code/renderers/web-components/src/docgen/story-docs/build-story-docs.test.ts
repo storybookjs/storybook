@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { writtenArg } from 'storybook/internal/docs-tools';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
@@ -111,7 +111,7 @@ const writeFixture = (source: string, files: Record<string, string> = {}) => {
 };
 
 const firstStory = async (...args: Parameters<typeof firstStoryWithTemplate>) => {
-  const { template: _template, ...doc } = await firstStoryWithTemplate(...args);
+  const { template: _template, argCode: _argCode, ...doc } = await firstStoryWithTemplate(...args);
   return doc;
 };
 
@@ -141,14 +141,6 @@ const story = (body: string) => `
 `;
 
 const template = async (body: string) => (await firstStoryWithTemplate(story(body))).template;
-
-const templateOf = async (stories: string, files: Record<string, string> = {}) => {
-  const source = `
-    import { html, nothing } from 'lit';
-    export default { title: 'Example/TestElement', component: 'test-element' };
-    ${stories}`;
-  return (await firstStoryWithTemplate(source, { files })).template;
-};
 
 describe('buildStoryDocsPayload template', () => {
   it('is the element with a props hole for a story without a render function', async () => {
@@ -229,6 +221,20 @@ describe('buildStoryDocsPayload template', () => {
     `);
   });
 
+  it('emits the code the story writes each arg with that a hole prints as code', async () => {
+    const { template, argCode } = await firstStoryWithTemplate(
+      story(`{
+        args: { label: 'Hi', count: 2, items: [new Date(0)], heading: shout, onShapeChange: () => {} },
+        render: ({ label, count, items, heading }) =>
+          html\`<test-element label=\${label} .count=\${count} .items=\${items}>\${heading}</test-element>\`,
+      }`)
+    );
+    expect(argCode).toEqual({ items: '[new Date(0)]' });
+    expect(
+      fillTemplate(template!, { label: 'Bye', count: 3, items: writtenArg(argCode!.items!) })
+    ).toBe('<test-element label="Bye" .count=${3} .items=${[new Date(0)]}></test-element>');
+  });
+
   it('keeps the indentation of the lines after the first', async () => {
     const written = await template(`{
       render: (args) => html\`
@@ -246,14 +252,6 @@ describe('buildStoryDocsPayload template', () => {
     [
       'a render that reads the story context',
       '{ render: (args, { id }) => html`<p id=${id}>${args.a}</p>` }',
-    ],
-    [
-      'a render that writes an arg',
-      "{ render: (args) => { args.a = 'x'; return html`${args.a}`; } }",
-    ],
-    [
-      'a render that writes the args through a name',
-      '{ render: (args) => { const b = args; Object.assign(b, { a: 1 }); return html`${args.a}`; } }',
     ],
   ])('is not there for %s', async (_, body) => {
     expect(await template(body)).toBeUndefined();

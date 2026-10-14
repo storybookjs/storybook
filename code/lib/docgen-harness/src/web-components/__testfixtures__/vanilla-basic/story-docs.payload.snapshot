@@ -4,12 +4,14 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-vanilla-basic--args-default-render": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--args-default-render",
       "name": "Args Default Render",
       "snippet": "<vanilla-basic label="Default vanilla" count="1"></vanilla-basic>",
       "template": "<vanilla-basic ⟦props label=label count=count disabled=disabled legacy-label=legacy-label *⟧></vanilla-basic>",
     },
     "webcomponentsfixtures-vanilla-basic--dom-node": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--dom-node",
       "name": "Dom Node",
       "snippet": "const el = document.createElement('vanilla-basic');
@@ -28,6 +30,7 @@ if (⟦value disabled⟧) {
 return el;",
     },
     "webcomponentsfixtures-vanilla-basic--lit-template": {
+      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--lit-template",
       "name": "Lit Template",
       "snippet": "<vanilla-basic

@@ -68,7 +68,7 @@ type AllowNonFunctionSlots<Slots> = {
   [K in keyof Slots]: Slots[K] | VNodeChild;
 };
 
-export type ComponentPropsAndSlots<C> = ComponentProps<C> & ExtractSlots<C>;
+export type ComponentPropsAndSlots<C> = OmitIndexSignature<ComponentProps<C>> & ExtractSlots<C>;
 
 type ComponentPropsOrProps<TCmpOrArgs> =
   TCmpOrArgs extends Constructor<any>

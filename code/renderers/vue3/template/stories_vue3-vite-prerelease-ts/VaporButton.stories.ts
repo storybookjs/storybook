@@ -16,10 +16,9 @@ const onClick = fn();
 
 /** A Vapor mode component, rendered through Vue's interop with the VDOM app Storybook creates. */
 const meta = {
-  // `Meta` rejects the function type that vue-tsc gives Vapor components, like it does for generic components.
-  component: VaporButton as Meta['component'],
+  component: VaporButton,
   args: { label: 'Vapor', onClick },
-} satisfies Meta;
+} satisfies Meta<typeof VaporButton>;
 
 export default meta;
 

@@ -16,16 +16,19 @@ describe('fillTemplate', () => {
   });
 
   it('leaves out an unset arg and the args a props hole names', () => {
-    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined, b: null })).toBe('<Button />');
+    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined })).toBe('<Button />');
     expect(fillTemplate('<Button ⟦attr label text⟧ />', {})).toBe('<Button />');
     expect(fillTemplate('<Button ⟦props -children⟧>Hi</Button>', { children: 'x', a: 'b' })).toBe(
       '<Button a="b">Hi</Button>'
     );
   });
 
-  it('prints a null arg read on its own', () => {
+  it('prints a null arg, which a prop default does not stand for', () => {
     expect(fillTemplate('<Button icon={⟦value icon⟧}>⟦text icon⟧</Button>', { icon: null })).toBe(
       '<Button icon={null}></Button>'
+    );
+    expect(fillTemplate('<Button ⟦props -size⟧ ⟦attr size size⟧ />', { b: null, size: null })).toBe(
+      '<Button b={null} size={null} />'
     );
   });
 
@@ -68,5 +71,8 @@ describe('fillTemplate', () => {
       UnprintableArgError
     );
     expect(() => fillTemplate('<Button ⟦props⟧ />', { 'my prop': 1 })).toThrow(UnprintableArgError);
+    expect(() => fillTemplate('<Day ⟦props⟧ />', { when: new Date(Number.NaN) })).toThrow(
+      UnprintableArgError
+    );
   });
 });

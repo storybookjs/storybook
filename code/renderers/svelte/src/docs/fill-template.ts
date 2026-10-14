@@ -29,7 +29,7 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
   });
 
 function attribute(name: string, value: unknown): string {
-  if (value === undefined || value === null) {
+  if (value === undefined) {
     return '';
   }
   if (!/^[A-Za-z_$][\w:$-]*$/.test(name)) {
@@ -59,6 +59,9 @@ function text(name: string, value: unknown): string {
 // a date as the code that makes it.
 function literal(name: string, value: unknown): string {
   if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      throw new UnprintableArgError(name);
+    }
     return `new Date(${printValue(value.toISOString(), name)})`;
   }
   if (typeof value !== 'function') {

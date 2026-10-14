@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
@@ -16,11 +16,25 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('leaves out an unset arg and a function arg', () => {
-    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined, b: null, onClick: () => {} })).toBe(
+  it('leaves out an unset arg and an action', () => {
+    const onBlur = Object.assign(() => {}, { isAction: true });
+    expect(fillTemplate('<Button ⟦props⟧ />', { a: undefined, onClick: vi.fn(), onBlur })).toBe(
       '<Button />'
     );
     expect(fillTemplate('<Button ⟦attr label text⟧ />', {})).toBe('<Button />');
+  });
+
+  it('prints a null arg, which a prop default does not stand for', () => {
+    expect(fillTemplate('<Button ⟦props -icon⟧ ⟦attr icon icon⟧ />', { b: null, icon: null })).toBe(
+      '<Button b={null} icon={null} />'
+    );
+  });
+
+  it('throws for a function arg that is neither an action nor a component', () => {
+    const args = { title: 'T', formatter: (v: number) => v.toFixed(2) };
+    for (const template of ['⟦element Chart⟧', '<Chart ⟦attr formatter formatter⟧ />', '⟦args⟧']) {
+      expect(() => fillTemplate(template, args)).toThrow(UnprintableArgError);
+    }
   });
 
   it('leaves out the args a props hole names', () => {
@@ -47,13 +61,13 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('prints the args as an object, without a function arg and the args it names', () => {
+  it('prints the args as an object, without an action and the args it names', () => {
     const HeartIcon = () => null;
     const args = {
       label: 'Go',
       'data-id': 1,
       icon: HeartIcon,
-      onClick: () => {},
+      onClick: vi.fn(),
       unset: undefined,
     };
     expect(fillTemplate('use(⟦args⟧)', args)).toBe(
@@ -70,7 +84,9 @@ describe('fillTemplate', () => {
     expect(fillTemplate(template, { size: 'lg', label: 'Go', n: 2 })).toBe(
       '<a size="lg">Go</a> 2 (2)'
     );
-    expect(fillTemplate(template, { size: null, label: null, n: null })).toBe('<a></a> null null');
+    expect(fillTemplate(template, { size: null, label: null, n: null })).toBe(
+      '<a size={null}></a> null null'
+    );
   });
 
   it('prints a value hole as a literal in the code around it', () => {

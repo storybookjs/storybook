@@ -45,11 +45,8 @@ const attributesOf = (args: Args) =>
     .filter(Boolean)
     .join(' ');
 
-// A component arg, such as an icon, is written by its name. Any other function arg, such as an
-// action, is left out, as no control changes it.
 function attribute(name: string, value: unknown): string {
-  const component = componentName(value);
-  if (value === undefined || value === null || (typeof value === 'function' && !component)) {
+  if (value === undefined || isAction(value)) {
     return '';
   }
   if (!/^[A-Za-z_][\w:-]*$/.test(name)) {
@@ -61,17 +58,15 @@ function attribute(name: string, value: unknown): string {
   // JSX decodes `&` entities in an attribute string, and it cannot hold its own quote.
   return typeof value === 'string' && !/["&]/.test(value)
     ? `${name}="${value}"`
-    : `${name}={${component ?? printValue(value, name)}}`;
+    : `${name}={${literal(name, value)}}`;
 }
 
+// A component arg, such as an icon, is written by its name; any other function throws.
 const literal = (name: string, value: unknown) => componentName(value) ?? printValue(value, name);
 
-// As a spread of the args leaves a function arg out, so does the object they are.
 const object = (entries: [string, unknown][]) => {
   const properties = entries
-    .filter(
-      ([, value]) => value !== undefined && (typeof value !== 'function' || componentName(value))
-    )
+    .filter(([, value]) => value !== undefined && !isAction(value))
     .map(
       ([name, value]) =>
         `${/^[A-Za-z_$][\w$]*$/.test(name) ? name : printValue(name, name)}: ${literal(name, value)}`
@@ -79,9 +74,14 @@ const object = (entries: [string, unknown][]) => {
   return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
 };
 
-// A function named like a component, which a mock such as `fn()` never is.
+// A spy from `fn()` or a handler from `action()`, which the snippet leaves out as no control
+// changes it.
+const isAction = (value: unknown) =>
+  typeof value === 'function' && ('getMockName' in value || 'isAction' in value);
+
+// A function named like a component, which an action never is.
 const componentName = (value: unknown) =>
-  typeof value === 'function' && !('getMockName' in value) && /^[A-Z][\w$]*$/.test(value.name)
+  typeof value === 'function' && !isAction(value) && /^[A-Z][\w$]*$/.test(value.name)
     ? value.name
     : undefined;
 

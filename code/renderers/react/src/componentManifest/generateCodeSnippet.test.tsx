@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
@@ -1065,7 +1065,7 @@ test('template: keeps a literal the code reads on apart', () => {
   const input = withCSF3(dedent`
     export const Fields: Story = {
       render: (args) => (
-        <Meter value={-args.n} text={args.n.toFixed(2)} big={args.n ** 2} />
+        <Meter value={-args.n} text={args.n.toFixed(2)} big={args.n ** 2} total={a-args.n} />
       ),
     };
     export const Body: Story = { render: (args) => args.style };
@@ -1073,7 +1073,7 @@ test('template: keeps a literal the code reads on apart', () => {
     export const Statement: Story = { render: (args) => { args.user && log(); return <Button />; } };
   `);
   expect(filled(input, 'Fields', { n: -1 })).toBe(
-    'const Fields = () => <Meter value={-(-1)} text={(-1).toFixed(2)} big={(-1) ** 2} />;'
+    'const Fields = () => <Meter value={-(-1)} text={(-1).toFixed(2)} big={(-1) ** 2} total={a-(-1)} />;'
   );
   expect(filled(input, 'Body', { style: { a: 1 } })).toBe('const Body = () => ({ a: 1 });');
   expect(filled(input, 'Starts', { user: { a: 1 } })).toBe(
@@ -1085,7 +1085,7 @@ test('template: keeps a literal the code reads on apart', () => {
 test('template: writes a component arg by its name', () => {
   const input = withCSF3(`export const Icon: Story = {};`);
   const HeartIcon = () => null;
-  expect(filled(input, 'Icon', { icon: HeartIcon, onClick: () => {} })).toBe(
+  expect(filled(input, 'Icon', { icon: HeartIcon, onClick: vi.fn() })).toBe(
     'const Icon = () => <Button icon={HeartIcon} />;'
   );
 });
@@ -1160,6 +1160,9 @@ test('template: a default stands for its arg while that is unset', () => {
       );"
     `);
   expect(filled(input, 'Outer', {})).toBe('const Outer = () => <Button size={sizes.md} />;');
+  expect(filled(input, 'Outer', { size: null })).toBe(
+    'const Outer = () => <Button size={null} />;'
+  );
   expect(template(input, 'Computed')).toBeUndefined();
   expect(template(input, 'Called')).toBeUndefined();
 });
@@ -1202,8 +1205,10 @@ test('template: args destructured in the body are holes, without the statement',
 test('template: args passed along whole are the object they are', () => {
   const input = withCSF3(dedent`
     export const Prop: Story = { render: (args) => <Tabs tabProps={args} /> };
-    export const Called: Story = {
-      render: ({ label, ...rest }) => <Button size={sizeOf(rest)} {...wrap(rest)}>{label}</Button>,
+    export const Read: Story = {
+      render: ({ label, ...rest }) => (
+        <Button title={JSON.stringify(rest)} {...Object.assign({}, rest)}>{label}</Button>
+      ),
     };
     export const Spread: Story = {
       render: (args) => {
@@ -1216,12 +1221,12 @@ test('template: args passed along whole are the object they are', () => {
   expect(template(input, 'Prop')).toBe('const Prop = () => <Tabs tabProps={⟦args⟧} />;');
   const HeartIcon = () => null;
   expect(
-    filled(input, 'Prop', { 'aria-label': 'a"b', icon: HeartIcon, onClick: () => {}, n: 1 })
+    filled(input, 'Prop', { 'aria-label': 'a"b', icon: HeartIcon, onClick: vi.fn(), n: 1 })
   ).toBe(
     'const Prop = () => <Tabs tabProps={{ "aria-label": "a\\"b", icon: HeartIcon, n: 1 }} />;'
   );
-  expect(filled(input, 'Called', { label: 'Go', size: 'sm' })).toBe(
-    'const Called = () => <Button size={sizeOf({ size: "sm" })} {...wrap({ size: "sm" })}>Go</Button>;'
+  expect(filled(input, 'Read', { label: 'Go', size: 'sm' })).toMatchInlineSnapshot(
+    `"const Read = () => <Button title={JSON.stringify({ size: "sm" })} {...Object.assign({}, { size: "sm" })}>Go</Button>;"`
   );
   expect(filled(input, 'Spread', {})).toContain(
     'const props = { ...{}, args: {}, value: ({} as any)[key] };'
@@ -1256,6 +1261,33 @@ test('template: none for args no hole stands for', () => {
   const stories = ['NoArgs', 'Twice', 'Changed', 'Compared', 'Written', 'Keyed', 'Reassigned'];
   const unusual = ['Shadowed', 'Tag', 'Member'];
   for (const story of [...stories, ...unusual]) {
+    expect(template(input, story)).toBeUndefined();
+  }
+});
+
+test('template: none where the story may change the args through a call', () => {
+  const input = withCSF3(dedent`
+    export const Assigned: Story = {
+      render: (args) => {
+        const merged = Object.assign(args, { label: 'override' });
+        return <Button label={args.label} />;
+      },
+    };
+    export const Passed: Story = {
+      render: ({ label, ...rest }) => <Button size={sizeOf(rest)} {...rest}>{label}</Button>,
+    };
+    export const Pushed: Story = {
+      render: (args) => { args.items.push(4); return <List items={args.items} />; },
+    };
+    export const Sorted: Story = { render: ({ items }) => <List items={items.sort()} /> };
+    export const Nested: Story = {
+      render: (args) => { args.style.color = 'red'; return <Button style={args.style} />; },
+    };
+    export const Reflected: Story = {
+      render: ({ style }) => { Reflect.set(style, 'color', 'red'); return <Button style={style} />; },
+    };
+  `);
+  for (const story of ['Assigned', 'Passed', 'Pushed', 'Sorted', 'Nested', 'Reflected']) {
     expect(template(input, story)).toBeUndefined();
   }
 });

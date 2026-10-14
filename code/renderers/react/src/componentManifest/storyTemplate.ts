@@ -261,7 +261,7 @@ function spreadEdit(
 // the story writes to, such as `args.count++`.
 function readEdit(read: NodePath, arg: string, fallback = ''): Edit | undefined {
   const { node } = read;
-  if (isWritten(read)) {
+  if (isWritten(read) || mayChange(read, false)) {
     return undefined;
   }
   const container = read.parentPath;
@@ -284,14 +284,12 @@ function readEdit(read: NodePath, arg: string, fallback = ''): Edit | undefined 
 // compares by identity, as a hook's dependency list does.
 function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   const { node, parentPath: parent } = read;
-  const passedTo = parent?.isCallExpression() && parent.node.callee !== node && parent.parentPath;
   if (
     !read.isIdentifier() ||
     !parent ||
     parent.isTSTypeQuery() ||
     parent.isArrayExpression() ||
-    (passedTo && passedTo.isExpressionStatement()) ||
-    (parent.isMemberExpression() && isWritten(parent))
+    mayChange(read, true)
   ) {
     return undefined;
   }
@@ -301,6 +299,98 @@ function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
   }
   return nodeEdit(node, startsOperand(read) ? `(${literal})` : literal);
 }
+
+// Whether the story may change the object `read` reads, or one in it: it writes to a property, calls
+// a method that changes an array, or passes it to a call that writes to it. A whole object, as the
+// args are, may be changed by any call not known to only read it.
+function mayChange(read: NodePath, whole: boolean): boolean {
+  for (let value = read; ; value = value.parentPath!) {
+    const { parentPath: parent } = value;
+    if (
+      parent?.isTSAsExpression() ||
+      parent?.isTSSatisfiesExpression() ||
+      parent?.isTSNonNullExpression()
+    ) {
+      continue;
+    }
+    if (
+      parent?.isCallExpression() ||
+      parent?.isOptionalCallExpression() ||
+      parent?.isNewExpression()
+    ) {
+      const index = (parent.node.arguments as t.Node[]).indexOf(value.node);
+      const callee = calleeName(parent.node.callee);
+      if (index >= 0) {
+        return (
+          (index === 0 && WRITING_CALLS.includes(callee)) ||
+          (whole && !PURE_CALLS.includes(callee) && !(callee === 'Object.assign' && index > 0))
+        );
+      }
+    }
+    if (
+      (!parent?.isMemberExpression() && !parent?.isOptionalMemberExpression()) ||
+      parent.node.object !== value.node
+    ) {
+      return false;
+    }
+    const call = parent.parentPath;
+    const { property, computed } = parent.node;
+    if (
+      isWritten(parent) ||
+      ((call?.isCallExpression() || call?.isOptionalCallExpression()) &&
+        call.node.callee === parent.node &&
+        !computed &&
+        t.isIdentifier(property) &&
+        ARRAY_MUTATORS.includes(property.name))
+    ) {
+      return true;
+    }
+  }
+}
+
+// `useState` or `Object.assign`, as a call names its callee.
+const calleeName = (callee: t.Node): string =>
+  t.isIdentifier(callee)
+    ? callee.name
+    : (t.isMemberExpression(callee) || t.isOptionalMemberExpression(callee)) &&
+        !callee.computed &&
+        t.isIdentifier(callee.object) &&
+        t.isIdentifier(callee.property)
+      ? `${callee.object.name}.${callee.property.name}`
+      : '';
+
+const PURE_CALLS = [
+  'JSON.stringify',
+  'Object.keys',
+  'Object.values',
+  'Object.entries',
+  'structuredClone',
+  'useState',
+  'React.useState',
+];
+
+const WRITING_CALLS = [
+  'Object.assign',
+  'Object.defineProperty',
+  'Object.defineProperties',
+  'Object.setPrototypeOf',
+  'Reflect.set',
+  'Reflect.defineProperty',
+  'Reflect.deleteProperty',
+  'Reflect.setPrototypeOf',
+];
+
+const ARRAY_MUTATORS = [
+  'copyWithin',
+  'fill',
+  'pop',
+  'push',
+  'reverse',
+  'shift',
+  'sort',
+  'splice',
+  'unshift',
+];
 
 const isWritten = ({ node, parent }: NodePath) =>
   t.isAssignmentExpression(parent, { left: node }) ||

@@ -49,10 +49,14 @@ describe(getStoryContentTemplate.name, () => {
   });
 
   it('reads TypeScript, and keeps a literal the code reads on apart', () => {
-    const template = getStoryContentTemplate('<Meter value={-args.n} text={args.n.toFixed(2)} />');
-    expect(template).toBe('<Meter value={-⟦operand n⟧} text={⟦operand n⟧.toFixed(2)} />');
+    const template = getStoryContentTemplate(
+      '<Meter value={-args.n} text={args.n.toFixed(2)} total={a-args.n} />'
+    );
+    expect(template).toBe(
+      '<Meter value={-⟦operand n⟧} text={⟦operand n⟧.toFixed(2)} total={a-⟦operand n⟧} />'
+    );
     expect(fillTemplate(template!, { n: -1 })).toBe(
-      '<Meter value={-(-1)} text={(-1).toFixed(2)} />'
+      '<Meter value={-(-1)} text={(-1).toFixed(2)} total={a-(-1)} />'
     );
     expect(getStoryContentTemplate('<p>{args.label!}</p>')).toBe('<p>{⟦value label⟧!}</p>');
   });

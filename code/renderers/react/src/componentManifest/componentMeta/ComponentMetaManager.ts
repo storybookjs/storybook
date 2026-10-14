@@ -110,10 +110,8 @@ function createReactProjectFactory(typescript: typeof ts): {
 function assertTypeScriptCompilerApi(typescript: typeof ts): void {
   if (typeof typescript?.sys?.fileExists !== 'function') {
     throw new Error(
-      'The resolved `typescript` package does not expose the compiler API (`ts.sys` is undefined). ' +
-        'This happens when `typescript` resolves to a build without the full API, such as the ' +
-        'TypeScript 7 native-preview package. Component metadata extraction requires a standard ' +
-        'TypeScript installation.'
+      'The resolved `typescript` package does not expose the compiler API (`ts.sys` is undefined), ' +
+        'which is the case for TypeScript 7. Component metadata extraction requires TypeScript 5.9 or 6.'
     );
   }
 }

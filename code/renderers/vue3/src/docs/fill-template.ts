@@ -3,6 +3,7 @@ import {
   UnprintableArgError,
   asOperand,
   fillHoles,
+  isAction,
   printValue,
   spreadArgs,
 } from 'storybook/internal/docs-tools';
@@ -103,11 +104,6 @@ function checkedName(name: string) {
   }
   return name;
 }
-
-// A spy from `fn()` or a handler from `action()`, which the snippet leaves out as no control
-// changes it; any other function throws.
-const isAction = (arg: unknown) =>
-  typeof arg === 'function' && ('getMockName' in arg || 'isAction' in arg);
 
 // Vue collapses whitespace in text and reads `<`, `{{` and `&` as markup, as well as a `{` that ends
 // the text before an interpolation.

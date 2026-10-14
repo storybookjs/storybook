@@ -49,6 +49,14 @@ export class UnprintableArgError extends Error {
   }
 }
 
+/**
+ * Whether an arg is a spy from `fn()` or a handler from `action()`, which a filled snippet leaves
+ * out, as no control changes it. Any other function has no literal, so a filler throws
+ * {@link UnprintableArgError} for it.
+ */
+export const isAction = (value: unknown) =>
+  typeof value === 'function' && ('getMockName' in value || 'isAction' in value);
+
 /** A template hole; each word is one {@link isHoleWord} or written with {@link holeWord}. */
 export const hole = (kind: string, ...words: string[]) => `⟦${[kind, ...words].join(' ')}⟧`;
 

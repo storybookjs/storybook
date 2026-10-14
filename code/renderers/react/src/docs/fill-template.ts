@@ -4,6 +4,7 @@ import {
   asOperand,
   defaultCode,
   fillHoles,
+  isAction,
   printValue,
   spreadArgs,
 } from 'storybook/internal/docs-tools';
@@ -73,11 +74,6 @@ const object = (entries: [string, unknown][]) => {
     );
   return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
 };
-
-// A spy from `fn()` or a handler from `action()`, which the snippet leaves out as no control
-// changes it.
-const isAction = (value: unknown) =>
-  typeof value === 'function' && ('getMockName' in value || 'isAction' in value);
 
 // A function named like a component, which an action never is.
 const componentName = (value: unknown) =>

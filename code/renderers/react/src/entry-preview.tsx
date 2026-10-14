@@ -6,7 +6,12 @@ import { global } from '@storybook/global';
 
 import { configure } from 'storybook/test';
 
-import { createEventWrapper, getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat.ts';
+import {
+  createEventWrapper,
+  getAct,
+  getReactActEnvironment,
+  setReactActEnvironment,
+} from './act-compat.ts';
 import type { Decorator } from './public-types.ts';
 
 export { render } from './render.tsx';

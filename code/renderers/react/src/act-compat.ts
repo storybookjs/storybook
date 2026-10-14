@@ -63,14 +63,15 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
 }
 
 export function createEventWrapper(act: (cb: () => unknown) => unknown) {
-  let actDepth = 0;
+  let isInsideAct = false;
 
   return <T>(cb: () => T): T => {
-    if (actDepth > 0) {
+    // Nested user-event dispatches (e.g. blur on focused-element removal) must reuse the outer act scope.
+    if (isInsideAct) {
       return cb();
     }
 
-    actDepth += 1;
+    isInsideAct = true;
     try {
       let result!: T;
       act(() => {
@@ -78,7 +79,7 @@ export function createEventWrapper(act: (cb: () => unknown) => unknown) {
       });
       return result;
     } finally {
-      actDepth -= 1;
+      isInsideAct = false;
     }
   };
 }

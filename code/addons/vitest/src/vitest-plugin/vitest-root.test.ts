@@ -145,6 +145,37 @@ describe('internal setup files', () => {
   });
 });
 
+describe('project annotations provider', () => {
+  // The injected `setup-file-with-project-annotations` imports the project-annotations virtual
+  // module, which only `storybookProjectAnnotationsPlugin` serves. That plugin normally arrives
+  // via the builder's `viteCorePlugins` preset — but a builder preset that fails to load is
+  // silently dropped by the preset loader (non-critical passes return []), which used to leave
+  // the provider unregistered and kill every suite at setup with an unresolved import.
+  it('registers the provider itself when the preset chain delivers none', async () => {
+    const plugins = await storybookTest({ configDir: CONFIG_DIR });
+
+    expect(
+      plugins.filter((plugin) => plugin?.name === 'storybook:project-annotations-plugin')
+    ).toHaveLength(1);
+  });
+
+  it('does not register a second provider when the preset chain delivers one', async () => {
+    const applyPreset = presetApply.getMockImplementation()!;
+    presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+      if (key === 'viteCorePlugins') {
+        return [{ name: 'storybook:project-annotations-plugin' }];
+      }
+      return applyPreset(key, fallback);
+    });
+
+    const plugins = await storybookTest({ configDir: CONFIG_DIR });
+
+    expect(
+      plugins.filter((plugin) => plugin?.name === 'storybook:project-annotations-plugin')
+    ).toHaveLength(1);
+  });
+});
+
 describe('browser API permissions', () => {
   interface ApiPermissions {
     allowWrite?: boolean;

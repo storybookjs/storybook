@@ -18,11 +18,6 @@
       "id": "webcomponentsfixtures-lit-inheritance-mixin--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
-      "warning": "Incomplete snippet: `args => html`<lit-inheritance-mixin
-      base-label=${args.baseLabel}
-      ?mixed-active=${args.mixedActive}
-      count=${args.count}
-    ></lit-inheritance-mixin>`` could not be resolved statically.",
     },
   },
 }

@@ -9,7 +9,7 @@ import {
 } from 'storybook/internal/common';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import { WebpackMissingPreviewTemplateError } from 'storybook/internal/server-errors';
-import type { Options } from 'storybook/internal/types';
+import type { Options, SecurityConfig } from 'storybook/internal/types';
 
 import { type BuilderOptions } from '@storybook/core-webpack';
 
@@ -62,6 +62,7 @@ export default async (
     modulesCount,
     build,
     tagsOptions,
+    security,
   ] = await Promise.all([
     presets.apply('core'),
     presets.apply('frameworkOptions'),
@@ -76,6 +77,7 @@ export default async (
     options.cache?.get('modulesCount', 1000),
     options.presets.apply('build'),
     presets.apply('tags', {}),
+    presets.apply<SecurityConfig | undefined>('security'),
   ]);
 
   const stories = normalizeStories(nonNormalizedStories, {
@@ -162,6 +164,7 @@ export default async (
             DOCS_OPTIONS: docsOptions,
             TAGS_OPTIONS: tagsOptions,
             ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
+            ...(security?.insecureIframeMessaging ? { INSECURE_IFRAME_MESSAGING: true } : {}),
           },
           headHtmlSnippet,
           bodyHtmlSnippet,

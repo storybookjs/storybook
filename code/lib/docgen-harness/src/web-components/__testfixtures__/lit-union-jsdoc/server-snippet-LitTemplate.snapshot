@@ -1,7 +1,1 @@
 <lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>
-
-warning: Incomplete snippet: `args => html`<lit-union-jsdoc
-      variant=${args.variant}
-      old-label=${args.oldLabel}
-      label=${args.label}
-    ></lit-union-jsdoc>`` could not be resolved statically.

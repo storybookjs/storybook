@@ -53,6 +53,23 @@ export const TourGuide = ({
   const [stepIndex, setStepIndex] = useState<number | null>(step ? null : 0);
   const theme = useTheme();
 
+  const resizeObserverRef = useRef<ResizeObserver | undefined>(undefined);
+  useEffect(() => () => resizeObserverRef.current?.disconnect(), []);
+
+  // Popper only repositions on scroll and window resize, so a tooltip whose content grows after it
+  // opens (such as a lazily loaded code snippet) would otherwise spill out of the viewport.
+  const followTooltipSize = useCallback(
+    (popper: { instance: { popper: Element; update: () => void } }, origin: string) => {
+      if (origin !== 'floater') {
+        return;
+      }
+      resizeObserverRef.current?.disconnect();
+      resizeObserverRef.current = new ResizeObserver(() => popper.instance.update());
+      resizeObserverRef.current.observe(popper.instance.popper);
+    },
+    []
+  );
+
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const updateStepIndex = useCallback((index: number) => {
     clearTimeout(timeoutRef.current);
@@ -128,6 +145,7 @@ export const TourGuide = ({
       callback={callback}
       tooltipComponent={TourTooltip}
       floaterProps={{
+        getPopper: followTooltipSize,
         disableAnimation: true,
         styles: {
           arrow: {

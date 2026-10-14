@@ -1,7 +1,1 @@
-<demo-wc-card rows="[]"></demo-wc-card>
-
-warning: Incomplete snippet: `({ backSide, header, rows, prefix }) => html`
-    <demo-wc-card .backSide=${backSide} .header=${header} .rows=${rows}
-      ><span slot="prefix">${prefix}</span>A simple card</demo-wc-card
-    >
-  `` could not be resolved statically.
+<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>

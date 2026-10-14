@@ -1,10 +1,12 @@
-<lit-toolkit-shapes size="large" level="2" tags="[&quot;b&quot;]" label="Shaped"></lit-toolkit-shapes>
-
-warning: Incomplete snippet: `args => html`<lit-toolkit-shapes
-      size=${args.size}
-      level=${args.level}
-      .tags=${args.tags}
-      label=${args.label}
-      @toolkit-resize=${args.onToolkitResize}
-    ></lit-toolkit-shapes>`` could not be resolved statically.
-Incomplete snippet: listeners the HTML snippet cannot express: `onToolkitResize`.
+<lit-toolkit-shapes
+  size="large"
+  level="2"
+  tags="[&quot;b&quot;]"
+  label="Shaped"
+></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>

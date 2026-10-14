@@ -30,7 +30,7 @@ const unpluginFactory: UnpluginFactory<EnrichCsfOptions> = (options) => ({
     transform: {
       order: 'post',
       async handler(code, id) {
-        return transformCsf.call(this, code, id, options);
+        return transformCsf(code, id, options);
       },
     },
   },

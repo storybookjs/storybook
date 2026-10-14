@@ -1,4 +1,4 @@
-import type { types as t } from 'storybook/internal/babel';
+import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
@@ -8,8 +8,8 @@ import {
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   noSnippetWarning,
-  normalizeStoryDeclaration,
   sourceOf,
+  unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
@@ -26,6 +26,9 @@ import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
+import { printHtmlTemplate } from './template-print.ts';
+import { resolveHtmlTemplate } from './template-scope.ts';
+import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
   getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
@@ -214,9 +217,29 @@ const renderedArgsSnippet = (
   deps: StoryDocDeps
 ): SnippetResult => {
   const warnings: (string | undefined)[] = [];
-  const renderSource = renderFallbackSource(exportName, resolved, deps);
-  if (renderSource) {
-    warnings.push(unresolvedWarning([renderSource]));
+  const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
+  if (render.kind === 'resolved') {
+    const template = resolveHtmlTemplate(render.path, deps.csf);
+    if (template) {
+      const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
+      const unresolved = [...resolved.unresolved, ...printed.unresolved];
+      warnings.push(unresolvedWarning(unresolved));
+      warnings.push(incompleteList(printed.properties, 'properties without an attribute'));
+      warnings.push(
+        incompleteList(printed.falseDefaults ?? [], 'false values that HTML cannot express')
+      );
+      warnings.push(incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'));
+      warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
+      const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
+      const hasSnippet = printed.snippet !== '' || !hasFailedHole;
+      return {
+        ...(hasSnippet ? { snippet: printed.snippet } : {}),
+        ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
+      };
+    }
+    warnings.push(unresolvedWarning([sourceOf(render.path.node)]));
+  } else if (render.kind === 'unresolved') {
+    warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
   }
 
   const args = argsSnippet(
@@ -234,21 +257,26 @@ const renderedArgsSnippet = (
   };
 };
 
-const renderFallbackSource = (
-  exportName: string,
-  resolved: ReturnType<StoryArgsResolver['resolve']>,
-  deps: StoryDocDeps
+const unboundTemplateArgs = (
+  args: Record<string, t.Node>,
+  referenced: readonly string[]
 ): string | undefined => {
-  const normalized = normalizeStoryDeclaration(deps.csf._storyDeclarationPath[exportName]);
-  if (normalized.type === 'fn') {
-    return sourceOf(normalized.path.node);
-  }
-  const storyRender = resolved.storyMembers.properties.render;
-  if (storyRender) {
-    return sourceOf(storyRender);
-  }
-  const metaRender = resolved.metaMembers.properties.render;
-  return metaRender ? sourceOf(metaRender) : undefined;
+  const bound = new Set(referenced);
+  const unbound = Object.entries(args)
+    .filter(([name, node]) => !bound.has(name) && evaluateArgValue(node).kind !== 'unset')
+    .map(([name]) => name);
+  return incompleteList(unbound, 'args not bound by the render template');
+};
+
+const unresolvedRenderSource = (
+  render: Extract<ReturnType<typeof resolveEffectiveRender>, { kind: 'unresolved' }>,
+  resolved: ResolvedStoryArgs
+): string[] => {
+  const node =
+    resolved.storyMembers.properties.render ??
+    resolved.metaMembers.properties.render ??
+    render.shadowedRender?.node;
+  return node ? [sourceOf(node)] : [];
 };
 
 const argsSnippet = (
@@ -262,6 +290,7 @@ const argsSnippet = (
     tag,
     attributes: [],
     cssProperties: [],
+    listeners: [],
     slots: [],
     styleRules: [],
   };
@@ -278,7 +307,11 @@ const argsSnippet = (
     const binding = classifyArg(key, value.kind === 'function', argTypes ?? {}, declaration);
     switch (binding.kind) {
       case 'listener':
-        listeners.push(key);
+        if (binding.event) {
+          snippet.listeners.push({ event: binding.event, handler: listenerHandler(node), tag });
+        } else {
+          listeners.push(key);
+        }
         break;
       case 'property':
         properties.push(key);
@@ -390,8 +423,14 @@ const falseDefaultAttributes = (snippet: ElementSnippet): string[] =>
 const hasSnippetContent = (snippet: ElementSnippet): boolean =>
   snippet.attributes.length > 0 ||
   snippet.cssProperties.length > 0 ||
+  snippet.listeners.length > 0 ||
   snippet.slots.length > 0 ||
   snippet.styleRules.length > 0;
+
+const listenerHandler = (node: t.Node): string => {
+  const unwrapped = t.isExpression(node) ? unwrapExpression(node) : node;
+  return t.isFunction(unwrapped) ? sourceOf(node) : '() => {}';
+};
 
 const incompleteList = (names: string[], suffix: string): string | undefined =>
   names.length === 0

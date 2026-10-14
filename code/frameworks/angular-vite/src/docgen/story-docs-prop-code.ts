@@ -49,15 +49,16 @@ export const propCode = (
   names: ArgNames
 ): PropCode | undefined => {
   const local = t.isIdentifier(value) ? fn.scope.getOwnBinding(value.name) : undefined;
-  const code = (local && constInit(local)) ?? value;
-  const root = findPath(fn, code);
-  if (!root) {
+  const init = local && constInit(local);
+  const root = findPath(fn, init ?? value);
+  if (!root || (init && !onlyHere(fn, local!, (reference) => reference.node === value))) {
     return undefined;
   }
+  const program = fn.scope.getProgramParent().path.node as t.Program;
 
   const reads = new Map<t.Node, { arg: string; alone: boolean }>();
-  // A `const` the code names in turn, written in its place where nothing else but a statement of
-  // the body reads it, so the snippet has one copy just as the render does.
+  // A `const` the code names in turn, written in its place where nothing else but a subscription
+  // reads it, so the snippet has one copy just as the render does.
   const inlined = new Map<t.Node, { code: t.Node; alone: boolean }>();
   const roots: NodePath[] = [];
   const imports = new Set<string>();
@@ -67,6 +68,9 @@ export const propCode = (
     const { parentPath } = path;
     if (
       parentPath?.isCallExpression({ callee: path.node }) ||
+      parentPath?.isOptionalCallExpression({ callee: path.node }) ||
+      parentPath?.isNewExpression({ callee: path.node }) ||
+      parentPath?.isTaggedTemplateExpression({ tag: path.node }) ||
       parentPath?.isAssignmentExpression({ left: path.node }) ||
       parentPath?.isUpdateExpression()
     ) {
@@ -77,7 +81,12 @@ export const propCode = (
   const visit = (path: NodePath<t.Identifier | t.JSXIdentifier>) => {
     const { name } = path.node;
     const binding = path.scope.getBinding(name);
-    if (!binding || roots.some((within) => binding.path.isDescendant(within))) {
+    if (!binding) {
+      // A type the story file declares is no import the snippet could bring along.
+      carried &&= !declaresType(program, name);
+      return;
+    }
+    if (roots.some((within) => binding.path.isDescendant(within))) {
       return;
     }
     if (binding.scope === fn.scope) {
@@ -93,7 +102,11 @@ export const propCode = (
         read(path, arg);
       } else if (key !== undefined && !except!.includes(key)) {
         read(member!, key);
-      } else if (init && !roots.some(({ node }) => node === init) && onlyHere(fn, binding, roots)) {
+      } else if (
+        init &&
+        !roots.some(({ node }) => node === init) &&
+        onlyHere(fn, binding, (reference) => roots.some((within) => reference.isDescendant(within)))
+      ) {
         inlined.set(path.node, { code: init, alone: standsAlone(path) });
         walk(findPath(fn, init));
       } else {
@@ -102,10 +115,13 @@ export const propCode = (
     } else if (binding.path.findParent((parent) => parent.node === fn.node)) {
       carried = false;
     } else {
-      const source = binding.path.parentPath?.isImportDeclaration()
-        ? binding.path.parentPath.node.source.value
-        : undefined;
-      if (source === undefined || STORYBOOK_MODULE.test(source)) {
+      const declaration = binding.path.parentPath;
+      const source = declaration?.isImportDeclaration() ? declaration.node.source.value : undefined;
+      // The snippet's import statements bring values along, which a type-only import is not.
+      const typeOnly =
+        declaration?.isImportDeclaration({ importKind: 'type' }) ||
+        (binding.path.isImportSpecifier() && binding.path.node.importKind === 'type');
+      if (source === undefined || STORYBOOK_MODULE.test(source) || typeOnly) {
         carried = false;
       } else {
         imports.add(name);
@@ -165,14 +181,49 @@ const constInit = (binding: Binding): t.Expression | undefined => {
     : undefined;
 };
 
-// Whether the code is all that reads a binding, besides statements of the body such as a
-// subscription.
-const onlyHere = (fn: NodePath<t.Function>, binding: Binding, roots: NodePath[]) =>
+// Whether the code is all that reads a binding, besides a statement of the body that subscribes to
+// it: any other may change the object, or share it, which the snippet declares afresh.
+const onlyHere = (
+  fn: NodePath<t.Function>,
+  binding: Binding,
+  carries: (reference: NodePath) => boolean
+) =>
   binding.referencePaths.every(
-    (reference) =>
-      roots.some((within) => reference.isDescendant(within)) ||
-      reference.findParent((parent) => parent.isExpressionStatement())?.parent === fn.node.body
+    (reference) => carries(reference) || subscribesTo(fn.node, reference)
   );
+
+// `control.valueChanges.subscribe(…)`, which reads what the object emits and changes nothing of it.
+export const isSubscription = (
+  statement: t.Node
+): statement is t.ExpressionStatement & {
+  expression: t.CallExpression & { callee: t.MemberExpression };
+} =>
+  t.isExpressionStatement(statement) &&
+  t.isCallExpression(statement.expression) &&
+  t.isMemberExpression(statement.expression.callee, { computed: false }) &&
+  t.isIdentifier(statement.expression.callee.property, { name: 'subscribe' });
+
+const subscribesTo = (fn: t.Function, reference: NodePath) => {
+  let path = reference;
+  while (path.parentPath?.isMemberExpression({ object: path.node, computed: false })) {
+    path = path.parentPath;
+  }
+  const statement = path.parentPath?.parentPath;
+  return (
+    statement?.parent === fn.body &&
+    isSubscription(statement.node) &&
+    statement.node.expression.callee === path.node
+  );
+};
+
+const declaresType = (program: t.Program, name: string) =>
+  program.body.some((statement) => {
+    const declaration = t.isExportNamedDeclaration(statement) ? statement.declaration : statement;
+    return (
+      (t.isTSInterfaceDeclaration(declaration) || t.isTSTypeAliasDeclaration(declaration)) &&
+      declaration.id.name === name
+    );
+  });
 
 const findPath = (within: NodePath, node: t.Node): NodePath | undefined => {
   let found: NodePath | undefined;
@@ -195,16 +246,50 @@ const memberName = (member: t.MemberExpression): string | undefined => {
 };
 
 // Whether a literal printed in place of the read is read the same: `5.toFixed()`, `--1` and
-// `() => { a: 1 }` are not, so a read elsewhere is parenthesised.
-const standsAlone = ({ parent, listKey, key }: NodePath): boolean =>
-  (t.isObjectProperty(parent) && key === 'value') ||
-  t.isArrayExpression(parent) ||
-  ((t.isCallExpression(parent) || t.isNewExpression(parent)) && listKey === 'arguments') ||
-  t.isLogicalExpression(parent) ||
-  t.isConditionalExpression(parent) ||
-  t.isTemplateLiteral(parent) ||
-  t.isSpreadElement(parent) ||
-  (t.isBinaryExpression(parent) && parent.operator !== '**');
+// `() => { a: 1 } || {}` are not, so a read elsewhere is parenthesised.
+const standsAlone = (path: NodePath): boolean => {
+  const { parent, listKey, key } = path;
+  const operand =
+    (t.isObjectProperty(parent) && key === 'value') ||
+    t.isArrayExpression(parent) ||
+    ((t.isCallExpression(parent) || t.isNewExpression(parent)) && listKey === 'arguments') ||
+    t.isLogicalExpression(parent) ||
+    t.isConditionalExpression(parent) ||
+    t.isTemplateLiteral(parent) ||
+    t.isSpreadElement(parent) ||
+    (t.isBinaryExpression(parent) && parent.operator !== '**');
+  return operand && !opensBody(path);
+};
+
+// Whether code printed in place of the node would open an arrow body or a statement, where `{`
+// reads as a block.
+const opensBody = (path: NodePath): boolean => {
+  for (let current = path; current.parentPath; current = current.parentPath) {
+    const { parentPath, parent, key } = current;
+    if (
+      parentPath.isExpressionStatement() ||
+      (parentPath.isArrowFunctionExpression() && key === 'body')
+    ) {
+      return true;
+    }
+    const leads =
+      (key === 'left' && (t.isBinary(parent) || t.isAssignmentExpression(parent))) ||
+      (key === 'test' && t.isConditionalExpression(parent)) ||
+      (key === 'object' &&
+        (t.isMemberExpression(parent) || t.isOptionalMemberExpression(parent))) ||
+      (key === 'callee' && (t.isCallExpression(parent) || t.isOptionalCallExpression(parent))) ||
+      (key === 'tag' && t.isTaggedTemplateExpression(parent)) ||
+      (key === 0 && t.isSequenceExpression(parent)) ||
+      (key === 'expression' &&
+        (t.isTSAsExpression(parent) ||
+          t.isTSSatisfiesExpression(parent) ||
+          t.isTSNonNullExpression(parent)));
+    if (!leads) {
+      return false;
+    }
+  }
+  return false;
+};
 
 // A copy of the code with the nodes `replace` answers for swapped out.
 const rewritten = (node: t.Node, replace: (node: t.Node) => t.Node | undefined): t.Node => {

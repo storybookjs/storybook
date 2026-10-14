@@ -21,7 +21,7 @@ import { OverrideComponent } from '@design-system/components';
 @Component({
   selector: 'app-demo',
   imports: [OverrideComponent],
-  template: `<sb-import-override ⟦props heading⟧ />`,
+  template: `<sb-import-override ⟦props = heading⟧ />`,
 })
 export class DemoComponent {}",
     },

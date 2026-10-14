@@ -19,9 +19,10 @@ export class DemoComponent {}",
 @Component({
   selector: 'app-demo',
   imports: [LocalComponent],
-  template: `<sb-local-component ⟦props heading⟧ />`,
+  template: `<sb-local-component ⟦props = heading⟧ />`,
 })
 export class DemoComponent {}",
+      "templateWarning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
     },
   },

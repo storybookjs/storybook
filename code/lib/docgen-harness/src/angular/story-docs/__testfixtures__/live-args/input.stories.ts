@@ -32,3 +32,11 @@ export const OwnMarkupFunction: Story = {
     template: `<sb-live-args [label]="label" [formatter]="formatter"></sb-live-args>`,
   }),
 };
+
+export const ComputedProps: Story = {
+  args: { label: 'Go' },
+  render: (args) => ({
+    props: { describe: () => args.label || 'none' },
+    template: `<sb-live-args [label]="describe()"></sb-live-args>`,
+  }),
+};

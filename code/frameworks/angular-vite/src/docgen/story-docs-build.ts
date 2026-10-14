@@ -37,6 +37,7 @@ import type { HostComponentSnippet } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
 import {
+  BINDS_UNDEFINED,
   buildComponentOutletTemplate,
   buildTemplate,
   formatPropInTemplate,
@@ -177,6 +178,9 @@ const buildStoryDoc = async (
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
       ...(rendered?.template === undefined ? {} : { template: rendered.template }),
+      ...(rendered?.templateWarning === undefined
+        ? {}
+        : { templateWarning: rendered.templateWarning }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -238,6 +242,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
     metaMembers: resolved.metaMembers,
     args: resolved.args,
     unresolvedArgs: unresolved,
+    hidingArgs: [...resolved.unresolved],
   };
 };
 
@@ -298,28 +303,50 @@ const renderStorySnippet = async (
         : [];
     const hostArgs = referencedArgFields(
       referencedNames,
-      userMarkup.representedArgs,
       shape,
       boundOutputs,
       snippetMeta.enums,
       props
     );
+    // A name the markup calls holds a function, which no control sets.
+    const notRead = new Set([
+      ...boundOutputs,
+      ...(analysis.kind === 'resolved' ? analysis.calledNames : []),
+    ]);
+    const read = [...referencedNames].filter((name) => !notRead.has(name));
+    const declared = new Set(hostArgs.fields.map(({ name }) => name));
+    const unset = read.flatMap((name): HostField[] => {
+      const arg = declared.has(name) || !props ? undefined : heldArg(props, name);
+      const written = arg === undefined ? undefined : shape.args[arg];
+      return arg === undefined || (written && isFunctionValue(written))
+        ? []
+        : [{ name, value: 'undefined', arg }];
+    });
+    // A prop holding an arg the story leaves unset reads `undefined`, as the template's hole prints.
+    const unsetArgs =
+      shape.unresolvedArgs.length === 0 ? unset.filter(({ arg }) => !(arg! in shape.args)) : [];
+    const configUnresolved = [...shape.metaMembers.unresolved, ...shape.members.unresolved];
+    const unprovided = unknownTemplateReferencesWarning(referencedNames, [
+      ...hostArgs.provided,
+      ...boundOutputs,
+      ...unsetArgs.map(({ name }) => name),
+    ]);
+    const unbound = unboundArgsWarning(
+      localName,
+      snippetMeta,
+      shape,
+      [...userMarkup.representedArgs, ...referencedNames],
+      computedArgs(hostArgs.fields)
+    );
     const rendered = withWarnings(
-      host(formatTemplateMarkup(analysis.markup), false, boundOutputs, hostArgs.fields),
-      unresolvedWarning([
-        ...shape.metaMembers.unresolved,
-        ...shape.members.unresolved,
-        ...hostArgs.unresolved,
+      host(formatTemplateMarkup(analysis.markup), false, boundOutputs, [
+        ...hostArgs.fields,
+        ...unsetArgs,
       ]),
+      unresolvedWarning([...configUnresolved, ...hostArgs.unresolved.map(({ source }) => source)]),
       templateAnalysisWarning(analysis),
-      unknownTemplateReferencesWarning(referencedNames, [...hostArgs.provided, ...boundOutputs]),
-      unboundArgsWarning(
-        localName,
-        snippetMeta,
-        shape,
-        [...userMarkup.representedArgs, ...referencedNames],
-        computedArgs(hostArgs.fields)
-      )
+      unprovided,
+      unbound
     );
     // Markup follows the controls where it reads its args through `argsToTemplate` or by name; a
     // name the props hold an arg under is a host field, whose value is the hole.
@@ -328,17 +355,6 @@ const renderStorySnippet = async (
     if (analysis.kind !== 'resolved' || !onlyExpanded || !props) {
       return rendered;
     }
-    // A name the markup calls holds a function, which no control sets.
-    const notRead = new Set([...boundOutputs, ...analysis.calledNames]);
-    const read = [...referencedNames].filter((name) => !notRead.has(name));
-    const declared = new Set(hostArgs.fields.map(({ name }) => name));
-    const unset = read.flatMap((name): HostField[] => {
-      const arg = declared.has(name) ? undefined : heldArg(props, name);
-      const written = arg === undefined ? undefined : shape.args[arg];
-      return arg === undefined || (written && isFunctionValue(written))
-        ? []
-        : [{ name, value: 'undefined', arg }];
-    });
     // A prop an arg replaces only while it is set holds the code it is written with until then,
     // which the hole prints while the arg is unset; other code shows neither value for certain.
     const fallbacks = new Map<string, { arg: string; code?: string }>();
@@ -374,7 +390,7 @@ const renderStorySnippet = async (
     });
     const eitherWay = [...fallbacks.values()].some(({ code }) => code === undefined);
     // `argsToTemplate` binds every arg that holds no function to the prop of its name, which has
-    // to be that arg.
+    // to be that arg. The snippet binds the inputs among them, as `argsExpansion` does.
     const bindable = [
       ...new Set([
         ...snippetMeta.inputs,
@@ -383,11 +399,11 @@ const renderStorySnippet = async (
         ),
       ]),
     ];
-    const expanded = (allows: (name: string) => boolean) =>
-      bindable.filter((name) => allows(name) && isHoleWord(name));
     const followsControls = expansions.every(({ allows }) =>
-      expanded(allows).every((name) => heldArg(props, name) === name)
+      bindable.every((name) => !allows(name) || heldArg(props, name) === name)
     );
+    const expanded = (allows: (name: string) => boolean) =>
+      inArgsOrder(snippetMeta.inputs, shape).filter((name) => allows(name) && isHoleWord(name));
     if (
       (expansions.length === 0 && heldArgs.length === 0) ||
       !followsControls ||
@@ -396,16 +412,27 @@ const renderStorySnippet = async (
     ) {
       return rendered;
     }
-    // Each expansion stands in for its own marker until the markup is formatted, then for a hole.
+    // Each expansion stands in for its own marker until the markup is formatted, laid out as the
+    // bindings the snippet gives it, then for a hole.
     const marked = expansions.map((e) => ({ ...e, inputAttributes: [e.marker] }));
-    let markup = formatTemplateMarkup(analyzeStoryTemplate(userMarkup.markup, marked).markup);
+    let markup = formatTemplateMarkup(
+      analyzeStoryTemplate(userMarkup.markup, marked).markup,
+      new Map(expansions.map((e) => [e.marker, e.inputAttributes]))
+    );
     for (const { marker, allows } of expansions) {
       markup = markup.replace(
         new RegExp(`${marker}(?![\\w-])`),
         hole('props', ...expanded(allows))
       );
     }
-    return withTemplate(rendered, host(markup, false, boundOutputs, holeFields));
+    // An arg value this pass could not read stops mattering where a hole prints it.
+    const holes = new Set(unset.map(({ name }) => name));
+    const unread = hostArgs.unresolved.filter(({ name }) => !holes.has(name));
+    return withTemplate(rendered, host(markup, false, boundOutputs, holeFields), [
+      unresolvedWarning([...configUnresolved, ...unread.map(({ source }) => source)]),
+      unprovided,
+      unbound,
+    ]);
   }
 
   const markupSources = userMarkup?.source === undefined ? [] : [userMarkup.source];
@@ -419,6 +446,13 @@ const renderStorySnippet = async (
   }
 
   const { bindings, fields, unresolved, holeInputs } = componentBindings(snippetMeta, shape, props);
+  const unbound = unboundArgsWarning(
+    localName,
+    snippetMeta,
+    shape,
+    undefined,
+    computedArgs(fields)
+  );
   const rendered = withWarnings(
     host(
       buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
@@ -427,33 +461,54 @@ const renderStorySnippet = async (
       fields
     ),
     unresolvedWarning([...markupSources, ...shape.unresolvedArgs, ...unresolved]),
-    unboundArgsWarning(localName, snippetMeta, shape, undefined, computedArgs(fields))
+    unbound
   );
   // The component's own element follows the controls, unless the story binds an input to code
   // other than code that reads args.
   if (userMarkup || fields.some(({ computed }) => !computed) || !holeInputs) {
     return rendered;
   }
-  const element = buildTemplate(snippetMeta.selector, {
+  const markup = buildTemplate(snippetMeta.selector, {
     inputs: bindings.inputs.filter(({ name }) => !holeInputs.includes(name)),
     outputs: snippetMeta.outputs,
     selfClosing: true,
+    hole: {
+      text: hole('props', BINDS_UNDEFINED, ...holeInputs.filter(isHoleWord)),
+      standsFor: bindings.inputs
+        .filter(({ name }) => holeInputs.includes(name))
+        .map(({ name, expression }) => `[${name}]="${expression}"`),
+    },
   });
-  const markup = element.replace(
-    /^<[\w-]+/,
-    (tag) => `${tag} ${hole('props', ...holeInputs.filter(isHoleWord))}`
-  );
   const holeFields = fields.map((field) => ({ ...field, value: field.computed!.template }));
-  return withTemplate(rendered, host(markup, false, snippetMeta.outputs, holeFields));
+  // The holes bind every input, so arg values it could not read here stop mattering once it is
+  // filled; args it could not see may still be bound to nothing.
+  return withTemplate(rendered, host(markup, false, snippetMeta.outputs, holeFields), [
+    unresolvedWarning(shape.hidingArgs),
+    unbound,
+  ]);
 };
 
-// A warning tells what the snippet leaves out, and the template leaves out the same, so only a
-// snippet whose own code holds a hole bracket has no template.
+// A snippet whose own code holds a hole bracket has no template, and neither has one whose holes
+// name no arg, as no args change it. The filled snippet keeps those of the warnings the args it is
+// filled with do not answer.
 const withTemplate = (
   rendered: HostComponentSnippet,
-  template: HostComponentSnippet
-): HostComponentSnippet =>
-  hasHoleBracket(rendered.snippet) ? rendered : { ...rendered, template: template.snippet };
+  template: HostComponentSnippet,
+  stillApplies: (string | undefined)[]
+): HostComponentSnippet => {
+  const namesAnArg = [...template.snippet.matchAll(/⟦\S+((?: [^\s⟧]+)*)⟧/g)].some(([, words]) =>
+    words!.split(' ').some((word) => word !== '' && word !== BINDS_UNDEFINED)
+  );
+  if (hasHoleBracket(rendered.snippet) || !namesAnArg) {
+    return rendered;
+  }
+  const { warning: templateWarning } = withWarnings(template, ...stillApplies);
+  return {
+    ...rendered,
+    template: template.snippet,
+    ...(templateWarning === undefined ? {} : { templateWarning }),
+  };
+};
 
 interface HostField {
   name: string;
@@ -473,6 +528,21 @@ interface ComputedField {
 
 type ComputedValue = ComputedField & { value: string };
 
+// Code the story writes an arg with, which a hole holds in place of a literal: `1 + 2` is
+// parenthesised, so it stays one operand.
+const operand = (node: t.Node) => {
+  const code = argFieldValue(node);
+  const unwrapped = unwrapExpression(node);
+  return t.isLiteral(unwrapped) ||
+    t.isArrayExpression(unwrapped) ||
+    t.isObjectExpression(unwrapped) ||
+    t.isCallExpression(unwrapped) ||
+    t.isNewExpression(unwrapped) ||
+    t.isMemberExpression(unwrapped)
+    ? code
+    : `(${code})`;
+};
+
 // The args host fields the render computes read, which reach the markup through them.
 const computedArgs = (fields: readonly HostField[]) =>
   fields.flatMap(({ computed }) => computed?.args ?? []);
@@ -491,7 +561,7 @@ const computedField = (
       node === undefined
         ? 'undefined'
         : (evaluateArgLiteral(node, enums) ??
-          (isSelfContained(node) && !isFunctionValue(node) ? argFieldValue(node) : undefined));
+          (isSelfContained(node) && !isFunctionValue(node) ? operand(node) : undefined));
     if (value === undefined || !isHoleWord(arg)) {
       return undefined;
     }
@@ -509,16 +579,15 @@ const computedField = (
 // that name. Props that need the story to run are read as the args, as the snippet shows.
 const referencedArgFields = (
   referencedNames: ReadonlySet<string>,
-  representedArgs: readonly string[],
   shape: StoryShape,
   boundOutputs: readonly string[],
   enums: AngularComponentSnippetMeta['enums'],
   props: RenderedProps | undefined
-): { fields: HostField[]; unresolved: string[]; provided: string[] } => {
-  const taken = new Set([...representedArgs, ...boundOutputs]);
+): { fields: HostField[]; unresolved: { name: string; source: string }[]; provided: string[] } => {
+  const taken = new Set(boundOutputs);
   const argNames = Object.keys(shape.args);
   const fields: HostField[] = [];
-  const unresolved: string[] = [];
+  const unresolved: { name: string; source: string }[] = [];
   const provided: string[] = [];
 
   const read = [...referencedNames].flatMap((name) => {
@@ -550,8 +619,12 @@ const referencedArgFields = (
     }
     if (value !== undefined) {
       fields.push({ name, value, ...(arg === undefined ? {} : { arg }) });
+    } else if (fromArg && isSelfContained(node) && !isFunctionValue(node)) {
+      // A host field is TypeScript, which can hold what the story writes, such as a `Date`.
+      provided.push(name);
+      fields.push({ name, value: argFieldValue(node), ...(arg === undefined ? {} : { arg }) });
     } else if (fromArg) {
-      unresolved.push(sourceOf(node));
+      unresolved.push({ name, source: sourceOf(node) });
     }
   }
 
@@ -617,6 +690,16 @@ const unboundArgsWarning = (
     `Incomplete snippet: ${unbound.map(({ name }) => `\`${name}\``).join(', ')} could not be bound, ` +
     `since ${componentName} ${reason}.`
   );
+};
+
+// Names in the order the snippet binds them: the story's args first, as it writes them.
+const inArgsOrder = (names: readonly string[], shape: StoryShape) => {
+  const argNames = Object.keys(shape.args);
+  const position = (name: string) => {
+    const index = argNames.indexOf(name);
+    return index === -1 ? argNames.length : index;
+  };
+  return [...names].sort((left, right) => position(left) - position(right));
 };
 
 // The arg a prop holds whatever the args are, so a hole can print it.
@@ -685,7 +768,11 @@ const componentBindings = (
     fields,
     unresolved,
     ...(standsAsWritten && props
-      ? { holeInputs: snippetMeta.inputs.filter((name) => heldArg(props, name) === name) }
+      ? {
+          holeInputs: inArgsOrder(snippetMeta.inputs, shape).filter(
+            (name) => heldArg(props, name) === name
+          ),
+        }
       : {}),
   };
 };

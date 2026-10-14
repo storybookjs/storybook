@@ -18,6 +18,7 @@ const shapeOf = (source: string, exportName: string): StoryShape => {
     metaMembers: resolved.metaMembers,
     args: resolved.args,
     unresolvedArgs: resolved.unresolved,
+    hidingArgs: resolved.unresolved,
   };
 };
 
@@ -331,6 +332,11 @@ describe('renderedProps', () => {
     ).toEqual({ before: 'before or code', after: 'code', label: 'label' });
   });
 
+  it('holds the code of a prop that reads no arg past a statement handing the args on', () => {
+    const render = `render: (args) => { track(args); return { props: { label: 'Fixed', x: [args.label] } }; }`;
+    expect(propsOf(render, ['label', 'x'])).toEqual({ label: 'code', x: 'code' });
+  });
+
   it('holds nothing for a render without props', () => {
     expect(propsOf(`render: (args) => ({ template: '<sb-button />' })`, ['label'])).toEqual({
       label: undefined,
@@ -363,6 +369,9 @@ describe('renderedProps', () => {
       [`(args) => ({ props: { x: args.count.toFixed(1) } })`, '(«count»).toFixed(1)'],
       [`(args) => ({ props: { x: -args.count } })`, '-(«count»)'],
       [`(args) => ({ props: { x: (v) => v + args.label } })`, '(v) => v + «label»'],
+      [`(args) => ({ props: { x: () => args.config || {} } })`, '() => («config») || {}'],
+      [`(args) => ({ props: { x: () => args.on ? 1 : 2 } })`, '() => («on») ? 1 : 2'],
+      [`(args) => ({ props: { x: () => [args.label] } })`, '() => [«label»]'],
     ])('writes each arg read in place in %s', (render, code) => {
       expect(computedOf(story(render), 'x')).toEqual({ code, imports: [] });
     });
@@ -381,6 +390,18 @@ describe('renderedProps', () => {
       });
     });
 
+    it('imports a type the code names as the story file imports it', () => {
+      const render = `(args) => ({ props: { x: new FormControl<Shape>(args.value) } })`;
+      const header = dedent`
+        import { FormControl } from '@angular/forms';
+        import { Shape } from './shape';
+      `;
+      expect(computedOf(story(render, header), 'x')).toEqual({
+        code: 'new FormControl<Shape>(«value»)',
+        imports: ['FormControl', 'Shape'],
+      });
+    });
+
     it.each([
       ['a name of the story file', `(args) => ({ props: { x: args.label + suffix } })`],
       ['a storybook import', `(args) => ({ props: { x: action(args.label) } })`],
@@ -391,12 +412,30 @@ describe('renderedProps', () => {
         'a const another prop reads too',
         `(args) => { const c = [args.label]; return { props: { x: { c }, c } }; }`,
       ],
+      [
+        'a const another prop holds too',
+        `(args) => { const c = [args.label]; return { props: { x: c, y: c } }; }`,
+      ],
+      [
+        'a const a statement of the body changes',
+        `(args) => { const x = new FormControl(args.label); x.disable(); return { props: { x } }; }`,
+      ],
+      [
+        'a const a subscription changes',
+        `(args) => { const c = [args.label]; d.subscribe(() => c.pop()); return { props: { x: { c } } }; }`,
+      ],
+      ['an arg it calls if set', `(args) => ({ props: { x: () => args.format?.(1) } })`],
+      ['an arg it constructs', `(args) => ({ props: { x: new args.Shape(1) } })`],
+      ['a type only imported', `(args) => ({ props: { x: build<TypeOnly>(args.label) } })`],
+      ['a type of the story file', `(args) => ({ props: { x: build<Local>(args.label) } })`],
       ['no arg', `(args) => ({ props: { x: [1, 2] } })`],
     ])('is left out for code reading %s', (_, render) => {
       const header = dedent`
         import { action } from 'storybook/actions';
         import { build } from './build';
+        import type { TypeOnly } from './types';
         const suffix = '!';
+        interface Local { a: string }
       `;
       expect(computedOf(story(render, header), 'x')).toBeUndefined();
     });
@@ -406,6 +445,8 @@ describe('renderedProps', () => {
     `(args) => ({ props: { ...args, ...extra() } })`,
     `(args) => ({ props: build(args) })`,
     `(args) => { args.label = 'x'; return { props: args }; }`,
+    `(args) => { Object.assign(args, { label: 'x' }); return { props: args }; }`,
+    `({ label }) => { label.push('x'); return { props: { label } }; }`,
     `(args) => (args.on ? { props: args } : {})`,
   ])('cannot read the props of %s', (render) => {
     expect(propsOf(`render: ${render}`, ['label'])).toBeUndefined();

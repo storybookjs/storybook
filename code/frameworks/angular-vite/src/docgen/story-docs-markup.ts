@@ -14,7 +14,7 @@ import {
 
 import { evaluateArgLiteral } from './story-docs-args.ts';
 import type { PropCode } from './story-docs-prop-code.ts';
-import { functionPath, propCode } from './story-docs-prop-code.ts';
+import { functionPath, isSubscription, propCode } from './story-docs-prop-code.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
 
 /** One story, as much of it as reading the markup it supplies needs. */
@@ -29,6 +29,8 @@ export interface StoryShape {
   args: Record<string, t.Node>;
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
   unresolvedArgs: string[];
+  /** Those of `unresolvedArgs` that hide which args there are, rather than one arg's value. */
+  hidingArgs: string[];
 }
 
 export { sourceOf };
@@ -586,6 +588,8 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
     return undefined;
   }
   const scope = functionScope(fn);
+  // What a prop reads of the args is unknown once the body has handed them to other code.
+  const argsUnknown = handsArgsOn(fn, scope) || writesArgs(fn, scope);
   const value = props.kind === 'value' ? unwrapExpression(props.node as t.Expression) : undefined;
   const properties =
     value === undefined
@@ -603,7 +607,7 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
       const except = t.isIdentifier(property.argument)
         ? scope.argsExpansions.get(property.argument.name)
         : undefined;
-      if (except === undefined) {
+      if (except === undefined || argsUnknown) {
         return undefined;
       }
       spreadExcept = spreadExcept?.filter((name) => except.includes(name)) ?? except;
@@ -624,13 +628,16 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
       return undefined;
     }
     const arg = t.isObjectProperty(property) ? argRead(property.value, scope) : undefined;
+    const defaulted = t.isObjectProperty(property)
+      ? defaultedRead(property.value, scope)
+      : undefined;
+    if ((arg !== undefined || defaulted) && argsUnknown) {
+      return undefined;
+    }
     if (arg !== undefined) {
       named.set(name, { arg });
       continue;
     }
-    const defaulted = t.isObjectProperty(property)
-      ? defaultedRead(property.value, scope)
-      : undefined;
     if (defaulted) {
       named.set(name, defaulted);
       continue;
@@ -638,7 +645,7 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
     const code = propertyValue(property);
     fnPath ??= functionPath(shape.csf._file.path, fn);
     const computed =
-      fnPath && t.isObjectProperty(property)
+      fnPath && t.isObjectProperty(property) && !argsUnknown
         ? propCode(fnPath, unwrapExpression(property.value as t.Expression), scope)
         : undefined;
     named.set(name, computed ? { code, computed } : { code });
@@ -687,6 +694,147 @@ const reassigns = (fn: t.Function): boolean =>
       t.isExpressionStatement(statement) &&
       (t.isAssignmentExpression(statement.expression) || t.isUpdateExpression(statement.expression))
   );
+
+// A statement of the body that hands an arg to code, such as `Object.assign(args, …)`, may change
+// it before the props read it.
+const handsArgsOn = (fn: t.Function, scope: FunctionScope): boolean =>
+  t.isBlockStatement(fn.body) &&
+  fn.body.body.some(
+    (statement) =>
+      t.isExpressionStatement(statement) &&
+      !isSubscription(statement) &&
+      readsAny(statement, new Set([...scope.parameterNames, ...scope.argBindings.keys()]))
+  );
+
+// Whether the body may change an arg wherever it reads one: it passes the args object to a call
+// not known to only read it, or writes to an arg through a call, a property or an array method.
+const writesArgs = (fn: t.Function, scope: FunctionScope): boolean => {
+  let found = false;
+  t.traverse(fn.body, (node, ancestors) => {
+    const parent = ancestors.at(-1);
+    if (
+      !found &&
+      t.isIdentifier(node) &&
+      scope.parameterNames.has(node.name) &&
+      parent !== undefined &&
+      t.isReferenced(node, parent.node, ancestors.at(-2)?.node)
+    ) {
+      found = mayChange(
+        [...ancestors.map((ancestor) => ancestor.node), node],
+        scope.argsExpansions.has(node.name)
+      );
+    }
+  });
+  return found;
+};
+
+// Whether the code around the last node of `chain` may change the object it is. A `whole` args
+// object may be changed by any call it is passed to that is not known to only read it.
+const mayChange = (chain: t.Node[], whole: boolean): boolean => {
+  for (let index = chain.length - 1; index > 0; index--) {
+    const value = chain[index]!;
+    const parent = chain[index - 1]!;
+    if (
+      t.isTSAsExpression(parent) ||
+      t.isTSSatisfiesExpression(parent) ||
+      t.isTSNonNullExpression(parent) ||
+      t.isParenthesizedExpression(parent)
+    ) {
+      continue;
+    }
+    if (
+      t.isCallExpression(parent) ||
+      t.isOptionalCallExpression(parent) ||
+      t.isNewExpression(parent)
+    ) {
+      const position = (parent.arguments as t.Node[]).indexOf(value);
+      if (position >= 0) {
+        const callee = calleeName(parent.callee);
+        return (
+          (position === 0 && WRITING_CALLS.includes(callee)) ||
+          (whole && !PURE_CALLS.includes(callee) && !(callee === 'Object.assign' && position > 0))
+        );
+      }
+    }
+    if (
+      (!t.isMemberExpression(parent) && !t.isOptionalMemberExpression(parent)) ||
+      parent.object !== value
+    ) {
+      return false;
+    }
+    const above = chain[index - 2];
+    if (
+      (t.isAssignmentExpression(above) && above.left === parent) ||
+      (t.isUpdateExpression(above) && above.argument === parent) ||
+      (t.isUnaryExpression(above) && above.operator === 'delete' && above.argument === parent) ||
+      ((t.isCallExpression(above) || t.isOptionalCallExpression(above)) &&
+        above.callee === parent &&
+        !parent.computed &&
+        t.isIdentifier(parent.property) &&
+        ARRAY_MUTATORS.includes(parent.property.name))
+    ) {
+      return true;
+    }
+    whole = false;
+  }
+  return false;
+};
+
+// `argsToTemplate` or `Object.assign`, as a call names its callee.
+const calleeName = (callee: t.Node): string =>
+  t.isIdentifier(callee)
+    ? callee.name
+    : (t.isMemberExpression(callee) || t.isOptionalMemberExpression(callee)) &&
+        !callee.computed &&
+        t.isIdentifier(callee.object) &&
+        t.isIdentifier(callee.property)
+      ? `${callee.object.name}.${callee.property.name}`
+      : '';
+
+const PURE_CALLS = [
+  'argsToTemplate',
+  'JSON.stringify',
+  'Object.keys',
+  'Object.values',
+  'Object.entries',
+  'structuredClone',
+];
+
+const WRITING_CALLS = [
+  'Object.assign',
+  'Object.defineProperty',
+  'Object.defineProperties',
+  'Object.setPrototypeOf',
+  'Reflect.set',
+  'Reflect.defineProperty',
+  'Reflect.deleteProperty',
+  'Reflect.setPrototypeOf',
+];
+
+const ARRAY_MUTATORS = [
+  'copyWithin',
+  'fill',
+  'pop',
+  'push',
+  'reverse',
+  'shift',
+  'sort',
+  'splice',
+  'unshift',
+];
+
+const readsAny = (node: t.Node, names: ReadonlySet<string>): boolean => {
+  let found = false;
+  t.traverse(node, (child, ancestors) => {
+    const parent = ancestors.at(-1);
+    found ||=
+      t.isIdentifier(child) &&
+      names.has(child.name) &&
+      parent !== undefined &&
+      t.isReferenced(child, parent.node, ancestors.at(-2)?.node);
+  });
+  return found;
+};
 
 /** The CSF2 function story and the object it returns, for `export const S = () => ({ template })`. */
 const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpression } | undefined => {
@@ -816,9 +964,13 @@ const collectPatternNames = (pattern: t.Node, into: Set<string>): void => {
  * the name would replace it with a fabricated element. An imported name has no initializer here,
  * so it stays an identifier and no snippet is generated.
  */
-const declaredValue = (shape: StoryShape, node: t.Node | undefined): t.Node | undefined => {
+const declaredValue = (
+  shape: StoryShape,
+  node: t.Node | undefined,
+  followed = new Set<t.Node>()
+): t.Node | undefined => {
   if (t.isMemberExpression(node)) {
-    return declaredMember(shape, node) ?? node;
+    return declaredMember(shape, node, followed) ?? node;
   }
   if (!t.isIdentifier(node)) {
     return node;
@@ -836,12 +988,18 @@ const declaredValue = (shape: StoryShape, node: t.Node | undefined): t.Node | un
   return t.isFunctionDeclaration(declaration) ? declaration : node;
 };
 
-// `render: Primary.render` is what the other story wrote, unless something assigns to it later.
-const declaredMember = (shape: StoryShape, node: t.MemberExpression): t.Node | undefined => {
+// `render: Primary.render` is what the other story wrote, unless something assigns to it later or
+// it leads back to itself.
+const declaredMember = (
+  shape: StoryShape,
+  node: t.MemberExpression,
+  followed: Set<t.Node>
+): t.Node | undefined => {
   const { object, property } = node;
-  if (node.computed || !t.isIdentifier(object) || !t.isIdentifier(property)) {
+  if (followed.has(node) || node.computed || !t.isIdentifier(object) || !t.isIdentifier(property)) {
     return undefined;
   }
+  followed.add(node);
   const binding = shape.csf._file.path.scope.getBinding(object.name);
   const written = binding?.referencePaths.some(
     ({ parentPath }) =>
@@ -856,5 +1014,5 @@ const declaredMember = (shape: StoryShape, node: t.MemberExpression): t.Node | u
     return undefined;
   }
   const member = resolvedProperty(literal, property.name);
-  return member.kind === 'value' ? declaredValue(shape, member.node) : undefined;
+  return member.kind === 'value' ? declaredValue(shape, member.node, followed) : undefined;
 };

@@ -48,7 +48,7 @@ import { RenderFunctionComponent } from './render-function.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [RenderFunctionComponent],
-  template: `<sb-render-function ⟦props label⟧ />`,
+  template: `<sb-render-function ⟦props = label⟧ />`,
 })
 export class DemoComponent {}",
     },

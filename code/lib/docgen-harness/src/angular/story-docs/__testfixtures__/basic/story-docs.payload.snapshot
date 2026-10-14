@@ -25,7 +25,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic ⟦props count label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-basic ⟦props = label count⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -52,7 +52,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic ⟦props count label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-basic ⟦props = label count⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

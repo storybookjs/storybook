@@ -56,8 +56,8 @@ const quoteExpressionString = (value: string): string =>
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')}'`;
 
-// Renders an evaluated arg as a template expression, in the same shape the runtime generator
-// prints, but losslessly for strings carrying quotes.
+// Renders an evaluated arg as a template expression, in the shape the live snippet's `printValue`
+// prints it, but losslessly for strings carrying quotes.
 const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
   if (typeof value === 'string') {
     return quoteExpressionString(value);
@@ -78,7 +78,7 @@ const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
       ([key, entryValue]) =>
         `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printExpressionValue(entryValue, seen)}`
     );
-  return `{${entries.join(', ')}}`;
+  return entries.length === 0 ? '{}' : `{ ${entries.join(', ')} }`;
 };
 
 const escapeAttributeExpression = (expression: string): string =>

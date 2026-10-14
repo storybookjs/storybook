@@ -3,6 +3,32 @@
   "name": "LiveArgsComponent",
   "path": "__PATH__",
   "stories": {
+    "storydocs-live-args--computed-props": {
+      "id": "storydocs-live-args--computed-props",
+      "name": "Computed Props",
+      "snippet": "import { Component } from '@angular/core';
+import { LiveArgsComponent } from './live-args.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LiveArgsComponent],
+  template: `<sb-live-args [label]="describe()"></sb-live-args>`,
+})
+export class DemoComponent {
+  describe = () => ('Go') || 'none';
+}",
+      "template": "import { Component } from '@angular/core';
+import { LiveArgsComponent } from './live-args.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LiveArgsComponent],
+  template: `<sb-live-args [label]="describe()"></sb-live-args>`,
+})
+export class DemoComponent {
+  describe = () => (⟦value label⟧) || 'none';
+}",
+    },
     "storydocs-live-args--imported-control": {
       "id": "storydocs-live-args--imported-control",
       "name": "Imported Control",
@@ -55,7 +81,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args ⟦props control formatter label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args ⟦props = label control formatter⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -86,6 +112,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 export class DemoComponent {
   label = ⟦value label⟧;
 }",
+      "templateWarning": "Incomplete snippet: `value => value.trim()` could not be resolved statically.",
       "warning": "Incomplete snippet: `value => value.trim()` could not be resolved statically.",
     },
   },

@@ -36,6 +36,8 @@ export interface HostComponentSnippet {
   warning?: string;
   /** The snippet with a hole where it binds the args, for the preview to fill; see `StoryDoc.template`. */
   template?: string;
+  /** The warning that still holds for the filled template; see `StoryDoc.templateWarning`. */
+  templateWarning?: string;
 }
 
 const unescapeTemplateLiteral = (template: string): string =>

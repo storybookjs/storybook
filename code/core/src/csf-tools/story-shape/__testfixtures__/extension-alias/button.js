@@ -1,2 +1,2 @@
-/** Fixture: a JavaScript file next to `button.ts`, which the TypeScript source wins over. */
+/** Fixture: a JavaScript file next to `button.ts`, which a `./button.js` import reads. */
 export const shared = { label: 'js' };

@@ -30,13 +30,20 @@ export interface StoryDoc {
    * snippet follows the controls. Set only when every arg read is a hole.
    */
   template?: string;
+  /**
+   * What the filled `template` still leaves out, such as an `NgModule` the component needs, shown
+   * with it in place of `warning`. The provider chooses it, as it knows which parts of `warning`
+   * are about arg values, which the filled snippet has.
+   */
+  templateWarning?: string;
   description?: string;
   summary?: string;
   /**
    * What a static pass could not resolve, in the source text it was written as. Next to a
    * `snippet` it marks the example as partial; on its own it says why no static snippet could be
    * produced at all. It belongs to the static snippet, which reads arg values from the source: a
-   * filled `template` has the runtime values instead. An `error` means the provider itself failed.
+   * filled `template` has the runtime values instead, and `templateWarning` says what it leaves
+   * out. An `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;

@@ -40,7 +40,9 @@ export function returnedObject(
   // Each name the function declares stands for a node: a parameter for its argument, a `const` for
   // its initializer.
   const values = new Map<string, t.Node>();
-  for (const [index, param] of node.params.entries()) {
+  // A TypeScript `this` parameter only types the receiver; the arguments start after it.
+  const params = node.params.filter((param) => !t.isIdentifier(param, { name: 'this' }));
+  for (const [index, param] of params.entries()) {
     const name = t.isAssignmentPattern(param) ? param.left : param;
     if (!t.isIdentifier(name)) {
       return undefined;
@@ -122,14 +124,28 @@ export function returnedObject(
       (reference) => reference.start! >= current.start! && reference.end! <= current.end!
     );
 
+  // The value a name stands for, or `undefined` for one that reads itself, as `const a = b; const
+  // b = a` does, which throws before it returns.
+  const following = new Set<string>();
+  const follow = <T>(name: string, read: (value: t.Node) => T): T | undefined => {
+    if (following.has(name)) {
+      return undefined;
+    }
+    following.add(name);
+    try {
+      return read(values.get(name)!);
+    } finally {
+      following.delete(name);
+    }
+  };
+
   // The object literal an expression evaluates to, following names and the choices the arguments
   // decide; read on the function as written.
   const choose = (expression: t.Node): t.ObjectExpression | undefined => {
     const current = unwrapExpression(expression);
     const name = references.get(current);
     if (name !== undefined) {
-      const value = values.get(name)!;
-      return passedArgs.has(value) ? undefined : choose(value);
+      return follow(name, (value) => (passedArgs.has(value) ? undefined : choose(value)));
     }
     if (t.isObjectExpression(current)) {
       return current;
@@ -149,14 +165,17 @@ export function returnedObject(
     return undefined;
   };
 
-  const literalOf = (expression: t.Node): t.Node => {
+  const literalOf = (expression: t.Node): t.Node | undefined => {
     const current = unwrapExpression(expression);
     const name = references.get(current);
-    return name === undefined ? current : literalOf(values.get(name)!);
+    return name === undefined ? current : follow(name, literalOf);
   };
 
   const truthOf = (expression: t.Node): boolean | undefined => {
     const current = literalOf(expression);
+    if (current === undefined) {
+      return undefined;
+    }
     if (t.isUnaryExpression(current, { operator: '!' })) {
       const inner = truthOf(current.argument);
       return inner === undefined ? undefined : !inner;
@@ -174,6 +193,9 @@ export function returnedObject(
 
   const nullishOf = (expression: t.Node): boolean | undefined => {
     const current = literalOf(expression);
+    if (current === undefined) {
+      return undefined;
+    }
     if (t.isNullLiteral(current) || t.isIdentifier(current, { name: 'undefined' })) {
       return true;
     }

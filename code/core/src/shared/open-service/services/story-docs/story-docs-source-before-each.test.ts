@@ -51,6 +51,11 @@ const payloadWithTemplate: StoryDocsPayload = {
     [storyId]: { ...payload.stories[storyId]!, template: '<Button label={args.label} />', warning },
   },
 };
+const templateWarning = 'Button needs the NgModule that declares it, which the snippet leaves out.';
+const payloadWithTemplateWarning: StoryDocsPayload = {
+  ...payloadWithTemplate,
+  stories: { [storyId]: { ...payloadWithTemplate.stories[storyId]!, templateWarning } },
+};
 const fillTemplate = (template: string, args: Record<string, unknown>) =>
   template.replace('{args.label}', `"${String(args.label)}"`);
 
@@ -104,6 +109,15 @@ describe('selectLiveSnippetForStory', () => {
     expect(
       selectLiveSnippetForStory(payloadWithTemplate, storyId, { label: 'Go' }, fillTemplate)
     ).toEqual({ snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />' });
+  });
+
+  it('fills the template with the args, with its templateWarning', () => {
+    expect(
+      selectLiveSnippetForStory(payloadWithTemplateWarning, storyId, { label: 'Go' }, fillTemplate)
+    ).toEqual({
+      snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
+      warning: templateWarning,
+    });
   });
 
   it('selects the static snippet and its warning without a filler', () => {
@@ -265,6 +279,25 @@ describe('storyDocsSourceBeforeEach', () => {
       );
     }
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
+  });
+
+  it('emits the filled template with its templateWarning', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithTemplateWarning));
+    const context = {
+      id: storyId,
+      args: { label: 'Go' },
+      unmappedArgs: { label: 'Go' },
+      initialArgs: { label: 'hi' },
+      parameters: { __isArgsStory: true, docs: { source: { fillTemplate } } },
+    } as unknown as StoryContext;
+
+    await render(context);
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      `import { Button } from './Button';\n\n<Button label="Go" />`,
+      context,
+      templateWarning
+    );
   });
 
   it('emits every args change in order, even when an emit before it is not done', async () => {

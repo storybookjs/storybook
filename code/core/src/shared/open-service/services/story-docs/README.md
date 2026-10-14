@@ -24,8 +24,11 @@ The renderer fills the holes in the browser with the current args through
 `parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`,
 where `snippetTemplate.ts` lists the hole kinds. Everything between the holes stays as written,
 including its layout, so with `{ loading: false, label: "Go" }` it fills to
-`false ? <Spinner /> : <Button loading={false} label="Go" />`. A hole that prints nothing, such as
-an unset attribute, takes the whitespace before it along.
+`false ? <Spinner /> : <Button loading={false} label="Go" />`. An attribute hole (`⟦props⟧`,
+`⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`) that prints nothing takes the whitespace before it along, so an
+unset attribute leaves no gap or empty line. Any other hole keeps it, as the story renders it, so
+`Hello ⟦text name⟧!` fills to `Hello !` while `name` is unset, unless it holds a line break, where it
+would leave an empty line.
 
 A hole is a kind and words, separated by one space. A word that starts with `%` is the rest of it
 URI-encoded, so an arg named `Render header?` is the word `%Render%20header%3F`. A hole for one arg
@@ -50,9 +53,13 @@ The Code panel, Canvas › Show code and the `Source` block show the static `sni
 has the args it is written with, and fill the template once the args change, in dev and in static
 builds alike. The story docs load once per version of a story, and the server keeps them current, so
 an args change makes no request. A provider sets `template` only where the filled snippet is as
-right as the static one: what the static snippet leaves out with a `warning`, the filled one leaves
-out too. A filler throws for a value it cannot print; a missing template, a missing filler or a
-filler that throws falls back to the static `snippet`.
+right as the static one. The `warning` belongs to the static snippet: part of it may be about arg
+values the source does not show, which the filled snippet has. So a provider also sets
+`templateWarning` to what the filled snippet still leaves out, such as the `NgModule` a
+`standalone: false` Angular component needs or the listeners a Web Components story binds, and the
+filled snippet is shown with that warning instead; without one it is shown with none. A filler
+throws for a value it cannot print; a missing template, a missing filler or a filler that throws
+falls back to the static `snippet` and its `warning`.
 
 ## Providers
 

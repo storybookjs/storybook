@@ -505,6 +505,157 @@ describe('spreads of a call', () => {
     expect(storyMembers(ctx, 'Story')?.unresolved).toEqual(['...withButton()']);
   });
 
+  it('reads what a function another module exports spreads from the call in the calling file', () => {
+    const ctx = contextOf(
+      {
+        'helpers.ts': dedent`
+        const Primary = { args: { label: 'helpers' } };
+        const make = () => ({ args: { label: 'helpers' } });
+        export const withLayout = (story) => ({ ...story, parameters: { layout: 'centered' } });
+        export const wrap = (fn) => ({ ...fn() });
+      `,
+        'entry.ts': dedent`
+        import { withLayout, wrap } from './helpers';
+        const Primary = { args: { label: 'entry' } };
+        const make = () => ({ args: { label: 'entry' } });
+        export const Spread = { ...withLayout(Primary) };
+        export const Called = { ...wrap(make) };
+      `,
+      },
+      'entry.ts',
+      selfContained
+    );
+    expect(argsOf('', 'Spread', ctx)).toEqual({ args: { label: "'entry'" }, unresolved: [] });
+    expect(argsOf('', 'Called', ctx)).toEqual({ args: { label: "'entry'" }, unresolved: [] });
+  });
+
+  it('reports a spread in a function another module exports that mixes its names with the call', () => {
+    const ctx = contextOf(
+      {
+        'helpers.ts': dedent`
+        const withDocs = (story) => ({ ...story });
+        export const withLayout = (story) => ({ ...withDocs(story) });
+      `,
+        'entry.ts': dedent`
+        import { withLayout } from './helpers';
+        const Primary = { args: { label: 'entry' } };
+        export const S = { ...withLayout(Primary) };
+      `,
+      },
+      'entry.ts',
+      selfContained
+    );
+    expect(storyMembers(ctx, 'S')?.unresolved).toEqual(['...withLayout(Primary)']);
+  });
+
+  it('reads what a local function spreads as of the call', () => {
+    const code = dedent`
+      const withLayout = (story) => ({ ...story, parameters: {} });
+      const Base = { args: { label: 'declared' } };
+      Base.args = { label: 'assigned' };
+      export const S = { ...withLayout(Base) };
+    `;
+    expect(argsOf(code, 'S')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
+  });
+
+  it('binds the arguments after a TypeScript this parameter', () => {
+    const code = dedent`
+      function make(this: void, label: string, size = 'md') { return { args: { label, size } }; }
+      export const S = { ...make('Go', 'lg') };
+    `;
+    expect(argsOf(code, 'S')).toEqual({ args: { label: "'Go'", size: "'lg'" }, unresolved: [] });
+  });
+
+  it.each([
+    ['constants that read each other', 'const a = b; const b = a; return a;'],
+    ['a constant that reads itself', 'const a = a; return a;'],
+    ['a choice on such constants', 'const a = b; const b = a; return a ? { args: {} } : {};'],
+  ])('reports a spread of a function with %s', (_, body) => {
+    const code = `const make = () => { ${body} }; export const S = { ...make() };`;
+    expect(storyMembers(contextOf({ 'entry.ts': code }), 'S')?.unresolved).toEqual(['...make()']);
+  });
+
+  it.each([
+    ['re-exports', `export { make } from './b';`, `export { make } from './a';`],
+    [
+      'imports it re-exports',
+      `import { make } from './b'; export { make };`,
+      `import { make } from './a'; export { make };`,
+    ],
+    [
+      'default exports',
+      `import make from './b'; export default make;`,
+      `import make from './a'; export default make;`,
+    ],
+  ])('reports a spread of a function whose %s lead back to themselves', (_, a, b) => {
+    const ctx = contextOf({
+      'a.ts': a,
+      'b.ts': b,
+      'entry.ts': `import make, { make as named } from './a'; export const S = { ...make(), ...named() };`,
+    });
+    expect(storyMembers(ctx, 'S')?.unresolved).toEqual(['...make()', '...named()']);
+  });
+
+  describe('an import from a module with export *', () => {
+    const helpers = (label: string) =>
+      `export const make = () => ({ args: { label: '${label}' } });`;
+    const labelOf = (files: Record<string, string>) =>
+      argsOf(
+        '',
+        'S',
+        contextOf({
+          ...files,
+          'entry.ts': `import { make } from './a'; export const S = { ...make() };`,
+        })
+      );
+
+    it('reads the module it re-exports from, past a local the module does not export', () => {
+      expect(
+        labelOf({
+          'a.ts': `const make = () => ({ args: { label: 'local' } }); export * from './b';`,
+          'b.ts': helpers('star'),
+        })
+      ).toEqual({ args: { label: "'star'" }, unresolved: [] });
+    });
+
+    it('reads an export of the module itself over one it re-exports', () => {
+      expect(
+        labelOf({
+          'a.ts': `export * from './b'; export const make = () => ({ args: { label: 'own' } });`,
+          'b.ts': helpers('star'),
+        })
+      ).toEqual({ args: { label: "'own'" }, unresolved: [] });
+    });
+
+    it('reports a name two modules it re-exports both export', () => {
+      expect(
+        labelOf({
+          'a.ts': `export * from './b'; export * from './c';`,
+          'b.ts': helpers('b'),
+          'c.ts': helpers('c'),
+        })
+      ).toEqual({ args: {}, unresolved: ['...make()'] });
+    });
+
+    it('reads a value through it the same way', () => {
+      const ctx = contextOf({
+        'a.ts': `const base = { args: { label: 'local' } }; export * from './b';`,
+        'b.ts': `export const base = { args: { label: 'star' } };`,
+        'entry.ts': `import { base } from './a'; export const S = { ...base };`,
+      });
+      expect(argsOf('', 'S', ctx)).toEqual({ args: { label: "'star'" }, unresolved: [] });
+    });
+  });
+
+  it('reports a spread of a value whose re-exports lead back to themselves', () => {
+    const ctx = contextOf({
+      'a.ts': `export { base } from './b';`,
+      'b.ts': `export { base } from './a';`,
+      'entry.ts': `import { base } from './a'; export const S = { ...base };`,
+    });
+    expect(storyMembers(ctx, 'S')?.unresolved).toEqual(['...base']);
+  });
+
   it.each([
     ['a function no module declares', 'export const S = { ...unknown() };'],
     [

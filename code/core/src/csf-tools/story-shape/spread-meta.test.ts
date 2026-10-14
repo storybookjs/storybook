@@ -5,6 +5,7 @@ import { recast } from 'storybook/internal/babel';
 import { dedent } from 'ts-dedent';
 
 import { babelParseFile, loadCsf } from '../CsfFile.ts';
+import { authoredSource } from './authored-source.ts';
 import { resolveEffectiveRender } from './render.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
 import { sourceOf } from './resolve-members.ts';
@@ -92,6 +93,20 @@ describe('a story file whose meta spreads another story file meta', () => {
     expect(unresolved).toEqual([]);
   });
 
+  it('reports a meta arg whose import the story file binds to something else', () => {
+    const { resolver } = storyFile(`
+      import meta from '../base.stories';
+      import { Icon } from './other-icon';
+      export default { ...meta, title: 'Button/Interactions' };
+      export const A = { args: { other: Icon } };
+    `);
+    const { imports, unresolved } = resolver.resolve('A');
+    expect(imports.filter((ref) => ref.localImportName === 'Icon')).toEqual([
+      { localImportName: 'Icon', importId: './other-icon', importName: 'Icon' },
+    ]);
+    expect(unresolved).toEqual(['Icon']);
+  });
+
   it('renders with the render of that meta, read in its file', () => {
     const { csf, resolver } = storyFile(`
       import meta from '../base.stories';
@@ -112,6 +127,46 @@ describe('a story file whose meta spreads another story file meta', () => {
     `);
     const render = resolveEffectiveRender(csf, 'A', resolver.ctx);
     expect(render.kind === 'resolved' && recast.print(render.path.node).code).toBe(`() => 'own'`);
+  });
+});
+
+describe('the meta members of a story file whose meta spreads another story file meta', () => {
+  const OTHER = dedent`
+    const Template = (args) => ({ template: '<base-button></base-button>' });
+    const code = '<base-button></base-button>';
+    export default {
+      component: 'base-button',
+      render: Template,
+      parameters: { docs: { source: { code } } },
+      tags: ['autodocs'],
+    };
+  `;
+  const resolveA = () => {
+    const { resolver } = storyFile(
+      `
+        import meta from '../base.stories';
+        const Template = (args) => ({ template: '<story-button></story-button>' });
+        const code = '<story-button></story-button>';
+        export default { ...meta, title: 'Button/Interactions' };
+        export const A = { render: Template, parameters: { docs: { source: { code } } } };
+      `,
+      { '/stories/base.stories': OTHER }
+    );
+    return { resolved: resolver.resolve('A'), ctx: resolver.ctx };
+  };
+
+  it('shadows a member whose value names something, as it would be read in the wrong file', () => {
+    const { metaMembers } = resolveA().resolved;
+    expect(metaMembers.shadowed.sort()).toEqual(['parameters', 'render']);
+    expect(Object.keys(metaMembers.properties)).toContain('tags');
+  });
+
+  it('reads no authored source from such a member', () => {
+    const { resolved, ctx } = resolveA();
+    expect(authoredSource({ ...resolved, storyMembers: resolved.metaMembers }, ctx)).toEqual({
+      kind: 'unresolvable',
+      source: '{ docs: { source: { code } } }',
+    });
   });
 });
 

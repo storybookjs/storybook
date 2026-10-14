@@ -3,6 +3,7 @@
 import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 
 import { importedName, isTypeSpecifier } from './imports.ts';
+import { isSelfContained } from './resolve-arg-value.ts';
 import { returnedObject } from './returned-object.ts';
 import {
   csfFactoryReceiver,
@@ -181,10 +182,16 @@ export const resolveReferencedValue = (
   return undefined;
 };
 
+/** Where a spread is read: the module its names resolve in, and as of which position there. */
+type SpreadScope = (
+  spread: t.SpreadElement
+) => { ctx: ReferenceContext; position: number | undefined } | undefined;
+
 const membersOf = (
   object: t.ObjectExpression,
   ctx: ReferenceContext,
-  visited: Set<string>
+  visited: Set<string>,
+  scopeOf: SpreadScope = (spread) => ({ ctx, position: spread.start ?? undefined })
 ): ResolvedMembers => {
   const properties: Record<string, t.Node> = {};
   const unresolved: string[] = [];
@@ -201,7 +208,8 @@ const membersOf = (
 
   for (const property of object.properties) {
     if (t.isSpreadElement(property)) {
-      const spread = spreadMembers(ctx, property, visited);
+      const scope = scopeOf(property);
+      const spread = scope && spreadMembers(scope.ctx, property, scope.position, visited);
       if (spread === undefined || spread.unresolved.length > 0) {
         shadowKnownMembers(sourceOf(property));
         continue;
@@ -240,6 +248,7 @@ const membersOf = (
 const spreadMembers = (
   ctx: ReferenceContext,
   spread: t.SpreadElement,
+  position: number | undefined,
   visited: Set<string>
 ): ResolvedMembers | undefined => {
   const argument = unwrapExpression(spread.argument);
@@ -247,8 +256,8 @@ const spreadMembers = (
     return membersOf(argument, ctx, visited);
   }
   return t.isCallExpression(argument)
-    ? callMembers(ctx, argument, spread.start ?? undefined, visited)
-    : resolveReference(ctx, argument, spread.start ?? undefined, visited);
+    ? callMembers(ctx, argument, position, visited)
+    : resolveReference(ctx, argument, position, visited);
 };
 
 /**
@@ -270,22 +279,47 @@ const callMembers = (
   }
   visited.add(key);
   try {
-    const fn = functionBinding(ctx, call.callee.name, position);
+    const fn = functionBinding(ctx, call.callee.name, position, new Set());
     const returned = fn && returnedObject(fn.path, call.arguments);
     if (!fn || !returned) {
       return undefined;
     }
-    const members = membersOf(returned.object, fn.ctx, visited);
+    // The function runs when it is called, so what it spreads is read as of the call.
     if (!fn.external) {
-      return members;
+      return membersOf(returned.object, ctx, visited, () => ({ ctx, position }));
     }
+    // What the function spreads is read in its own module, but what the call passes it is read
+    // where the call is written; a spread that mixes the two has no one scope to be read in.
+    const passed = new Set<t.Node>(call.arguments);
+    const standIns = new Map(
+      returned.object.properties.map((property, index) => [
+        property,
+        returned.standIn.properties[index] as t.SpreadElement,
+      ])
+    );
+    const inModule = () => ({ ctx: fn.ctx, position: undefined });
+    const members = membersOf(returned.object, fn.ctx, visited, (spread) => {
+      if (isSelfContained(standIns.get(spread)!.argument)) {
+        return { ctx, position };
+      }
+      return holdsAny(spread.argument, passed) ? undefined : inModule();
+    });
     return returned.leftOut
-      ? externalizedCall(members, membersOf(returned.standIn, fn.ctx, visited), fn.ctx)
+      ? externalizedCall(members, membersOf(returned.standIn, fn.ctx, visited, inModule), fn.ctx)
       : externalized(members, fn.ctx);
   } finally {
     visited.delete(key);
   }
 };
+
+const holdsAny = (node: t.Node, nodes: Set<t.Node>): boolean =>
+  nodes.has(node) ||
+  (t.VISITOR_KEYS[node.type] ?? []).some((key) => {
+    const child = (node as unknown as Record<string, unknown>)[key];
+    return (Array.isArray(child) ? child : [child]).some(
+      (item) => t.isNode(item) && holdsAny(item, nodes)
+    );
+  });
 
 /**
  * {@link externalized} for what a call to another module returns. That module's code has to stand
@@ -308,11 +342,15 @@ const externalizedCall = (
   return rewritten ? undefined : members;
 };
 
-/** The function a module-level name is bound to, following an import to the module declaring it. */
+/**
+ * The function a module-level name is bound to, following an import to the module declaring it.
+ * `followed` holds the exports already followed, so imports that lead back to one read nothing.
+ */
 const functionBinding = (
   ctx: ReferenceContext,
   name: string,
-  position: number | undefined
+  position: number | undefined,
+  followed: Set<string>
 ): { path: NodePath<t.Function>; ctx: ReferenceContext; external: boolean } | undefined => {
   const binding = ctx.program.scope.getBinding(name);
   if (!binding) {
@@ -333,7 +371,7 @@ const functionBinding = (
     const exportName = t.isImportDefaultSpecifier(specifier)
       ? 'default'
       : importedName(specifier.imported);
-    const exported = target && exportedFunction(target, exportName);
+    const exported = target && exportedFunction(target, exportName, followed);
     return exported && { ...exported, external: true };
   }
   if (!binding.constant) {
@@ -357,8 +395,14 @@ const functionBinding = (
 /** The function a module's export name reaches, following a re-export to the module that owns it. */
 const exportedFunction = (
   ctx: ReferenceContext,
-  exportName: string
+  exportName: string,
+  followed: Set<string>
 ): { path: NodePath<t.Function>; ctx: ReferenceContext } | undefined => {
+  const key = `${ctx.filePath}#${exportName}`;
+  if (followed.has(key)) {
+    return undefined;
+  }
+  followed.add(key);
   for (const statement of ctx.program.get('body')) {
     if (statement.isExportDefaultDeclaration() && exportName === 'default') {
       const declaration = statement.get('declaration');
@@ -366,7 +410,7 @@ const exportedFunction = (
         return { path: declaration, ctx };
       }
       return declaration.isIdentifier()
-        ? functionBinding(ctx, declaration.node.name, undefined)
+        ? functionBinding(ctx, declaration.node.name, undefined, followed)
         : undefined;
     }
     if (!statement.isExportNamedDeclaration() || statement.node.exportKind === 'type') {
@@ -380,13 +424,77 @@ const exportedFunction = (
       continue;
     }
     if (!statement.node.source) {
-      return functionBinding(ctx, specifier.local.name, undefined);
+      return functionBinding(ctx, specifier.local.name, undefined, followed);
     }
     const target = resolveTargetModule(ctx, statement.node.source.value);
-    return target ? exportedFunction(target, specifier.local.name) : undefined;
+    return target ? exportedFunction(target, specifier.local.name, followed) : undefined;
   }
-  return exportName === 'default' ? undefined : functionBinding(ctx, exportName, undefined);
+  if (exportName === 'default') {
+    return undefined;
+  }
+  if (declaresExport(ctx, exportName)) {
+    return functionBinding(ctx, exportName, undefined, followed);
+  }
+  const star = starExport(ctx, exportName);
+  return star && exportedFunction(star, exportName, followed);
 };
+
+/** Whether a module exports a declaration of its own under `name`, as `export const name = …`. */
+const declaresExport = (ctx: ReferenceContext, name: string): boolean => {
+  const declaration = ctx.program.scope.getBinding(name)?.path;
+  const statement = declaration?.isVariableDeclarator()
+    ? declaration.parentPath.parentPath
+    : declaration?.parentPath;
+  return statement?.isExportNamedDeclaration() === true && statement.node.exportKind !== 'type';
+};
+
+/**
+ * The module an `export * from` hands `name` on from, for a module that exports no `name` of its
+ * own. `undefined` when none does, or when more than one may, as such a name is not exported.
+ */
+const starExport = (ctx: ReferenceContext, name: string): ReferenceContext | undefined => {
+  if (exportsExplicitly(ctx, name)) {
+    return undefined;
+  }
+  const candidates = starSources(ctx).filter(
+    (target) => target === undefined || mayExport(target, name, new Set([ctx.filePath]))
+  );
+  return candidates.length === 1 ? candidates[0] : undefined;
+};
+
+// The modules a module's `export * from` statements name, `undefined` for one that cannot be read.
+const starSources = (ctx: ReferenceContext): (ReferenceContext | undefined)[] =>
+  ctx.program.node.body
+    .filter(
+      (statement): statement is t.ExportAllDeclaration =>
+        t.isExportAllDeclaration(statement) && statement.exportKind !== 'type'
+    )
+    .map((statement) => resolveTargetModule(ctx, statement.source.value));
+
+// Whether a module may export `name`: it does, or a module it reads `export *` from may.
+const mayExport = (ctx: ReferenceContext, name: string, seen: Set<string>): boolean => {
+  if (seen.has(ctx.filePath)) {
+    return false;
+  }
+  seen.add(ctx.filePath);
+  return (
+    exportsExplicitly(ctx, name) ||
+    starSources(ctx).some((target) => target === undefined || mayExport(target, name, seen))
+  );
+};
+
+// Whether a module exports `name` by a statement of its own, which wins over any `export *`.
+const exportsExplicitly = (ctx: ReferenceContext, name: string): boolean =>
+  declaresExport(ctx, name) ||
+  ctx.program.node.body.some(
+    (statement) =>
+      t.isExportNamedDeclaration(statement) &&
+      statement.specifiers.some(
+        (specifier) =>
+          (t.isExportSpecifier(specifier) || t.isExportNamespaceSpecifier(specifier)) &&
+          importedName(specifier.exported) === name
+      )
+  );
 
 /** A member chain of statically-known keys, like `HeaderStories.LoggedIn.input.args`. */
 const memberChain = (node: t.Node): { root: string; path: string[] } | undefined => {
@@ -904,6 +1012,24 @@ const exportedBinding = (
   exportName: string,
   visited: Set<string>
 ): BoundMembers | undefined => {
+  // A re-export can lead back to itself, as `export { base } from './a'` in both `a` and `b` does.
+  const key = `export:${ctx.filePath}#${exportName}`;
+  if (visited.has(key)) {
+    return undefined;
+  }
+  visited.add(key);
+  try {
+    return unguardedExportedBinding(ctx, exportName, visited);
+  } finally {
+    visited.delete(key);
+  }
+};
+
+const unguardedExportedBinding = (
+  ctx: ReferenceContext,
+  exportName: string,
+  visited: Set<string>
+): BoundMembers | undefined => {
   const asExternal = (bound: BoundMembers | undefined) =>
     bound === undefined || bound.kind === 'namespace' ? bound : { ...bound, external: true };
 
@@ -942,8 +1068,12 @@ const exportedBinding = (
     return target ? exportedBinding(target, specifier.local.name, visited) : undefined;
   }
 
-  // `export const X = …` binds `X` in module scope, so the local lookup is the export.
-  return exportName === 'default'
-    ? undefined
-    : asExternal(bindingMembers(ctx, exportName, undefined, visited));
+  if (exportName === 'default') {
+    return undefined;
+  }
+  if (declaresExport(ctx, exportName)) {
+    return asExternal(bindingMembers(ctx, exportName, undefined, visited));
+  }
+  const star = starExport(ctx, exportName);
+  return star && exportedBinding(star, exportName, visited);
 };

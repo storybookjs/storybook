@@ -24,6 +24,26 @@ describe('fillHoles', () => {
     expect(fillHoles(`a ? ${hole('value', 'x')} : b`, () => '1')).toBe('a ? 1 : b');
   });
 
+  it('drops the whitespace before an attribute hole that prints nothing', () => {
+    const template = `<Button ${hole('attr', 'size', 'size')}\n  ${hole('props')} />`;
+    expect(fillHoles(template, () => '')).toBe('<Button />');
+  });
+
+  it('keeps the whitespace on its line before any other hole that prints nothing', () => {
+    expect(fillHoles(`Hello ${hole('text', 'name')}!`, () => '')).toBe('Hello !');
+    expect(fillHoles(`f(a, ${hole('value', 'b')})`, () => '')).toBe('f(a, )');
+  });
+
+  it('drops the line of any other hole that prints nothing on a line of its own', () => {
+    const template = `<Button>\n  ${hole('text', 'children')}\n</Button>`;
+    expect(fillHoles(template, () => '')).toBe('<Button>\n</Button>');
+  });
+
+  it('fills a template with a long run of whitespace in linear time', () => {
+    const template = `${' '.repeat(200_000)}x${hole('attr', 'a', 'a')}`;
+    expect(fillHoles(template, () => '')).toBe(`${' '.repeat(200_000)}x`);
+  });
+
   it('passes a word holeWord encoded as the text it was given', () => {
     const template = hole('attr', 'showHeader', holeWord('Render header?'), holeWord('%x'));
     expect(template).toBe('⟦attr showHeader %Render%20header%3F %%25x⟧');
@@ -97,6 +117,20 @@ describe('printValue', () => {
     expect(printValue({ a: 1, 'b-c': ['x'], d: undefined, e: {} }, 'data')).toBe(
       '{ a: 1, "b-c": ["x"], e: {} }'
     );
+  });
+
+  it('prints a literal up to 2000 characters long, and throws for a longer one', () => {
+    expect(printValue('x'.repeat(1998), 'text')).toHaveLength(2000);
+    expect(() => printValue('x'.repeat(1999), 'text')).toThrow(new UnprintableArgError('text'));
+    expect(() => printValue({ a: 'x'.repeat(1992) }, 'data')).toThrow(UnprintableArgError);
+    expect(printValue({ a: 'x'.repeat(1991) }, 'data')).toHaveLength(2000);
+  });
+
+  it('stops printing a large value as soon as it is too long', () => {
+    const items = Array.from({ length: 1_000_000 }, (_, id) => ({ id, name: `item ${id}` }));
+    const start = performance.now();
+    expect(() => printValue(items, 'items')).toThrow(UnprintableArgError);
+    expect(performance.now() - start).toBeLessThan(50);
   });
 
   it('throws for a value with no literal', () => {

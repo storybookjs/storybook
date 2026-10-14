@@ -22,9 +22,9 @@ export function getFillTemplate(
 const storiesWarnedAbout = new Set<string>();
 
 /**
- * Resolves the display snippet for one story with `args` filled into its `template`. Without args to
- * fill (the story still has the args it is written with), a template or a filler, or when filling
- * throws, it is the static snippet with the warning that belongs to it.
+ * Resolves the display snippet for one story with `args` filled into its `template`, with its
+ * `templateWarning`. Without args to fill (the story still has the args it is written with), a
+ * template or a filler, or when filling throws, it is the static snippet with its `warning`.
  */
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
@@ -36,12 +36,15 @@ export function selectLiveSnippetForStory(
     snippet: selectSnippetForStory(payload, storyId),
     warning: selectWarningForStory(payload, storyId),
   });
-  const template = payload?.stories[storyId]?.template;
-  if (args === undefined || template === undefined || fill === undefined) {
+  const story = payload?.stories[storyId];
+  if (args === undefined || story?.template === undefined || fill === undefined) {
     return staticSnippet();
   }
   try {
-    return { snippet: prependImportToSnippet(payload?.import, fill(template, args)) };
+    return {
+      snippet: prependImportToSnippet(payload?.import, fill(story.template, args)),
+      warning: story.templateWarning,
+    };
   } catch (error) {
     // An unprintable value is expected; anything else is a bug in the filler.
     const unprintable = error instanceof Error && error.name === 'UnprintableArgError';

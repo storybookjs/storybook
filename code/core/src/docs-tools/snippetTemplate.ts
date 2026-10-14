@@ -31,9 +31,10 @@ import type { Args } from 'storybook/internal/types';
  * - Angular: `⟦value arg⟧` is the value of a host component field, which prints a `Date` as `new
  *   Date(…)`.
  *
- * The template keeps the code around a hole as written, including the whitespace before it; a hole
- * that prints nothing takes that whitespace along, so an unset attribute leaves no gap or empty
- * line. A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
+ * The template keeps the code around a hole as written, including the whitespace before it. An
+ * attribute hole, `⟦props⟧`, `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`, that prints nothing takes that
+ * whitespace along, so an unset attribute leaves no gap or empty line. Any other hole keeps it, as
+ * the story renders it, unless it holds a line break, where it would leave an empty line. A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
  * {@link UnprintableArgError} for a value the snippet cannot show, and the static snippet is shown
  * instead.
  */
@@ -72,15 +73,25 @@ export const hasHoleBracket = (code: string) => /[⟦⟧]/.test(code);
  * Replaces every hole in a template with what `fill` prints, given its words as {@link holeWord}
  * took them; see {@link FillSnippetTemplate}.
  */
-export const fillHoles = (template: string, fill: (kind: string, words: string[]) => string) =>
-  template.replace(/(\s*)⟦([^⟧]*)⟧/g, (_, space: string, body: string) => {
-    const [kind, ...words] = body.split(' ');
+export const fillHoles = (template: string, fill: (kind: string, words: string[]) => string) => {
+  let filled = '';
+  let end = 0;
+  for (const match of template.matchAll(/⟦([^⟧]*)⟧/g)) {
+    const [kind = '', ...words] = match[1]!.split(' ');
     const printed = fill(
-      kind!,
+      kind,
       words.map((word) => (word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word))
     );
-    return printed && space + printed;
-  });
+    const before = template.slice(end, match.index);
+    const code = before.trimEnd();
+    const takesSpace = ATTRIBUTE_HOLES.has(kind) || before.slice(code.length).includes('\n');
+    filled += (printed || !takesSpace ? before : code) + printed;
+    end = match.index + match[0].length;
+  }
+  return filled + template.slice(end);
+};
+
+const ATTRIBUTE_HOLES = new Set(['props', 'attr', 'bool', 'prop']);
 
 /**
  * A printed literal in parentheses where code reading on would read it differently, as `5.x`,
@@ -125,11 +136,24 @@ export function printValue(
   { quote = '"', opaque }: { quote?: '"' | "'"; opaque?: (value: unknown) => boolean } = {}
 ): string {
   const parents = new Set<unknown>();
+  // What is left of the length a literal may have; printing stops as soon as it runs out.
+  let left = MAX_LITERAL_LENGTH;
+  const spend = (text: string) => {
+    left -= text.length;
+    if (left < 0) {
+      throw new UnprintableArgError(name);
+    }
+    return text;
+  };
   const print = (item: unknown): string => {
     if (opaque?.(item) || parents.has(item)) {
       throw new UnprintableArgError(name);
     }
     if (typeof item === 'string') {
+      // Escaping only lengthens a string, so one already too long is not escaped at all.
+      if (item.length > left) {
+        throw new UnprintableArgError(name);
+      }
       const escaped = item
         .replace(/\\/g, '\\\\')
         .replace(/\n/g, '\\n')
@@ -137,32 +161,44 @@ export function printValue(
         .replace(/\u2028/g, '\\u2028')
         .replace(/\u2029/g, '\\u2029')
         .replaceAll(quote, `\\${quote}`);
-      return `${quote}${escaped}${quote}`;
+      return spend(`${quote}${escaped}${quote}`);
     }
     if (item === null || ['undefined', 'number', 'boolean'].includes(typeof item)) {
-      return String(item);
+      return spend(String(item));
     }
     if (!Array.isArray(item) && !isPlainObject(item)) {
       throw new UnprintableArgError(name);
     }
     parents.add(item);
-    const printed = Array.isArray(item) ? `[${item.map(print).join(', ')}]` : printObject(item);
+    const printed = Array.isArray(item) ? printArray(item) : printObject(item);
     parents.delete(item);
     return printed;
   };
+  const printArray = (array: unknown[]) => {
+    const elements: string[] = [];
+    spend('[]');
+    for (let index = 0; index < array.length; index++) {
+      if (index > 0) {
+        spend(', ');
+      }
+      elements.push(index in array ? print(array[index]) : '');
+    }
+    return `[${elements.join(', ')}]`;
+  };
   const printObject = (object: Record<string, unknown>) => {
-    const properties = Object.entries(object)
-      .filter(([, entry]) => entry !== undefined)
-      .map(
-        ([key, entry]) => `${/^[A-Za-z_$][\w$]*$/.test(key) ? key : print(key)}: ${print(entry)}`
-      );
+    const properties: string[] = [];
+    spend('{}');
+    for (const key in object) {
+      if (object[key] === undefined) {
+        continue;
+      }
+      spend(properties.length === 0 ? '  ' : ', ');
+      const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) ? spend(key) : print(key);
+      properties.push(`${printedKey}${spend(': ')}${print(object[key])}`);
+    }
     return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
   };
-  const printed = print(value);
-  if (printed.length > MAX_LITERAL_LENGTH) {
-    throw new UnprintableArgError(name);
-  }
-  return printed;
+  return print(value);
 }
 
 // Longer data, such as a GeoJSON file, would bury the rest of the snippet.

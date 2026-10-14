@@ -380,7 +380,7 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories, including CSF2 parameter assignments. Unsupported
+   * Discover editors for the meta and stories, including CSF2 parameter and argTypes assignments. Unsupported
    * targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
@@ -816,19 +816,8 @@ export class CsfFile {
             const annotationKey = expression.left.property.name;
             const annotationValue = expression.right;
 
-            // v1-style annotation
-            // A.story = { parameters: ..., decorators: ... }
-
             if (self._storyAnnotations[exportName]) {
-              if (annotationKey === 'story' && t.isObjectExpression(annotationValue)) {
-                (annotationValue.properties as t.ObjectProperty[]).forEach((prop) => {
-                  if (t.isIdentifier(prop.key)) {
-                    self._storyAnnotations[exportName][prop.key.name] = prop.value;
-                  }
-                });
-              } else {
-                self._storyAnnotations[exportName][annotationKey] = annotationValue;
-              }
+              self._storyAnnotations[exportName][annotationKey] = annotationValue;
             }
 
             if (annotationKey === 'storyName' && t.isStringLiteral(annotationValue)) {

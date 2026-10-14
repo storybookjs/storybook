@@ -11,6 +11,7 @@
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
+  - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
@@ -69,6 +70,7 @@
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
+  - [CSF `.story` annotations removed](#csf-story-annotations-removed)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -848,9 +850,49 @@ export default {
 };
 ```
 
-`table.defaultValue` and `globalTypes.defaultValue` are unchanged.
+`table.defaultValue` is unchanged. The `defaultValue` property on toolbar `globalTypes` entries is removed, see [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed).
 
 The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When that property cannot be removed, the file is left unchanged and listed in `automigrations-summary.md`.
+
+The automigration covers Storybook config and configured story files, including static CSF2 `Story.argTypes` assignments. It does not scan shared utility modules; remove deprecated fields in those modules manually.
+
+### Toolbar `globalTypes` entries: index signature and `defaultValue` removed
+
+Toolbar entries in `globalTypes` no longer allow extra, undocumented keys. The loose index signature that accepted them existed only for compatibility with `InputType` and is now removed, so an unknown key in a toolbar entry is a type error. Move any extra data out of the toolbar entry:
+
+```diff
+export default {
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: { items: ['en', 'es'] },
+-     myAddonData: { timezone: 'CET' },
+    },
+  },
+};
+```
+
+The `defaultValue` property on a toolbar entry is removed as well. Until 11.0, the preview runtime still read it: `GlobalsStore` seeded starting globals from `globalTypes[].defaultValue`, and portable stories did the same through an internal helper. In 11.0 that seeding stops and globals are seeded from `initialGlobals` only. Set `initialGlobals` instead:
+
+```diff
+// .storybook/preview.js
+export default {
++ initialGlobals: {
++   locale: 'en',
++ },
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+-     defaultValue: 'en',
+      toolbar: { items: ['en', 'es'] },
+    },
+  },
+};
+```
+
+See [From version 8.x to 9.0.0](#from-version-8x-to-900) for details on the `initialGlobals` change.
+
+This change also removes the internal helper `getValuesFromGlobalTypes` from the preview-api store barrel. It only existed to service the `defaultValue` seeding; if you imported it, derive the values from `initialGlobals` instead.
 
 ### Docs Code panel enabled by default
 
@@ -1863,6 +1905,35 @@ The deprecated `getStatus` and `getGraphRevision` query aliases on the `core/mod
 The `ExternalDocs` and `ExternalDocsContainer` components have been removed from `@storybook/addon-docs/blocks`, along with their supporting implementation. They rendered docs pages outside of the Storybook UI, an approach that was never stabilized.
 
 To write documentation, use Doc Blocks inside MDX docs entries rendered by Storybook. To build a custom block, use the `useOf` hook. There is no supported standalone docs renderer. To show docs outside of Storybook, embed a built Storybook.
+
+### CSF `.story` annotations removed
+
+Storybook 11 no longer reads annotations nested under `Story.story`. That form was deprecated in Storybook 6.0. Move each field onto the story. When the story is a function, `name` becomes `storyName`.
+
+```diff
+ export const Basic = () => <Button />;
+-Basic.story = {
+-  name: 'foo',
+-  parameters: { layout: 'centered' },
+-  decorators: [withLayout],
+-};
++Basic.storyName = 'foo';
++Basic.parameters = { layout: 'centered' };
++Basic.decorators = [withLayout];
+```
+
+Assignments one property at a time move the same way: `Basic.story.name = 'foo'` becomes `Basic.storyName = 'foo'`, and `Basic.story.parameters = { ... }` becomes `Basic.parameters = { ... }`.
+
+If the value is not a static object, move the fields yourself. This includes a variable, a function call, a spread, or a computed key:
+
+```diff
+ const shared = { parameters: { layout: 'centered' }, decorators: [withLayout] };
+-Basic.story = shared;
++Basic.parameters = shared.parameters;
++Basic.decorators = shared.decorators;
+```
+
+`storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
 
 ## From version 10.6.1 to 10.6.2
 

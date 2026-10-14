@@ -17,34 +17,6 @@ export function getSvelteAST(options: GetSvelteASTOptions) {
 }
 
 /**
- * Create Svelte compliant AST node for {@link SvelteAST.Attibute} with optional value.
- * By default it will create an shorthand attribute.
- */
-export function createASTAttribute(
-  name: string,
-  value: SvelteAST.Attribute['value'] = true
-): SvelteAST.Attribute {
-  return {
-    type: 'Attribute',
-    name,
-    value,
-  };
-}
-
-/**
- * Create Svelte compliant AST node for {@link SvelteAST.ExpressionTag} with optional value.
- * By default it will create an shorthand attribute.
- */
-export function createASTExpressionTag(
-  expression: SvelteAST.ExpressionTag['expression']
-): SvelteAST.ExpressionTag {
-  return {
-    type: 'ExpressionTag',
-    expression,
-  };
-}
-
-/**
  * Create ESTree compliant AST node for {@link ESTreeAST.Property}
  */
 export function createASTProperty(
@@ -100,26 +72,6 @@ export function appendASTProperty(
   property: ESTreeAST.ObjectExpression['properties'][number]
 ): void {
   node.properties = [...node.properties, property];
-}
-
-interface ASTScriptOptions {
-  module?: boolean;
-  content: SvelteAST.Script['content'];
-}
-export function createASTScript(options: ASTScriptOptions): SvelteAST.Script {
-  const { content, module = false } = options;
-  const attributes: SvelteAST.Attribute[] = [];
-
-  if (module) {
-    attributes.push(createASTAttribute('module'));
-  }
-
-  return {
-    type: 'Script',
-    context: module ? 'module' : 'default',
-    attributes,
-    content,
-  };
 }
 
 /**

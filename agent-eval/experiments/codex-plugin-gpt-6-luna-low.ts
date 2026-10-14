@@ -5,6 +5,7 @@ import {
   PLUGIN_STORYBOOK_EVALS,
 } from '../lib/experiment.ts';
 import {
+  commitSandboxBaseline,
   setupSandbox,
   writeCodexInAppBrowserMock,
   writeCodexPluginSkills,
@@ -24,5 +25,6 @@ export default {
     await writeCodexPluginSkills(sandbox);
     await writeCodexInAppBrowserMock(sandbox);
     await writeStorybookAgentInstructions(sandbox);
+    await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

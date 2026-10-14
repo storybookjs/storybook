@@ -11,6 +11,7 @@
     "storybook": "10.4.0"
   },
   "evals": {
-    "template": "vite-app"
+    "template": "vite-app",
+    "checkoutRegistry": true
   }
 }

@@ -10,7 +10,7 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import { coerce, gte } from 'semver';
+import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 import { type Document, parseDocument } from 'yaml';
 
@@ -275,7 +275,8 @@ export class PNPMProxy extends JsPackageManager {
     for (const { name, version, catalog } of catalogued) {
       const keyPath = [...this.#catalogKeyPath(workspace.doc, catalog!), name];
       const current = String(workspace.doc.getIn(keyPath) ?? '');
-      const modifier = /^[~^]/.test(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
+      const modifier =
+        /^[~^]/.test(version) || prerelease(version) ? '' : (current.match(/^[~^]/)?.[0] ?? '');
       workspace.doc.setIn(keyPath, `${modifier}${version}`);
     }
     writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');

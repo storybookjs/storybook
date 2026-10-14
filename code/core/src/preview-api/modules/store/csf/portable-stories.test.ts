@@ -125,7 +125,7 @@ describe('composeStory', () => {
     const projectAnnotations = {
       parameters: { injected: true },
       globalTypes: {
-        locale: { defaultValue: 'en' },
+        locale: {},
       },
       decorators: [decoratorFromProjectAnnotations],
       tags: ['projectTag'],
@@ -279,21 +279,20 @@ describe('composeStory', () => {
     );
   });
 
-  it('should provide globals based on globalTypes', async () => {
+  it('should seed globals from initialGlobals only; globalTypes declarations do not seed', async () => {
     const storyAnnotations = { render: () => {} };
-    const metaAnnotations: Meta = { globals: { language: 'de' } };
+    const metaAnnotations: Meta = {};
     const projectAnnotations: ProjectAnnotations = {
       initialGlobals: { language: 'nl' },
       globalTypes: {
-        theme: {
-          name: 'Theme',
-          defaultValue: 'light',
-        },
+        theme: {},
       },
     };
 
     const composed = composeStory(storyAnnotations, metaAnnotations, projectAnnotations);
-    expect(composed.globals.theme).toEqual('light');
+    // theme is declared but never seeded; language comes from initialGlobals alone
+    expect(composed.globals.theme).toBeUndefined();
+    expect(composed.globals.language).toEqual('nl');
   });
 
   it('should call and compose loaders data', async () => {

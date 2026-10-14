@@ -1,1 +1,7 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal id="modal-content-only" open>
+  <p>Only content</p>
+</Modal>

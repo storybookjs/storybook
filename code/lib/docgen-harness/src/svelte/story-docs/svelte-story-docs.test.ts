@@ -9,6 +9,8 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
+import { buildDocgenPayload } from '../../../../../renderers/svelte/src/docgen/component-docgen/build-docgen.ts';
+import { createDocgenCache } from '../../../../../renderers/svelte/src/docgen/component-docgen/svelte2tsx/generate-docgen.ts';
 import { createIndexer } from '../../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
 import {
@@ -19,7 +21,16 @@ import {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const indexer = createIndexer();
-const SNIPPET_PARITY = new Set<string>();
+const docgenContext = { cache: createDocgenCache() };
+const DECLARED_OMISSIONS: Record<string, readonly string[]> = {
+  'runes-basic-props/Default': ['count', 'primary'],
+  'runes-callbacks/Default': ['onclick', 'onchange'],
+  'runes-component-props-indexed/WithSnippets': ['confirmType'],
+  'runes-component-props-indexed/WithRender': ['confirmType'],
+  'runes-component-props-indexed/FooterFromArgs': ['footer'],
+  'runes-generics-inline-type/Default': ['onchange'],
+  'runes-module-exports-classvalue/Default': ['size'],
+};
 
 const cases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -77,6 +88,7 @@ const indexedCases = await Promise.all(
     return { ...fixture, storyPath, stories };
   })
 );
+const SNIPPET_PARITY = new Set(cases.map(({ fixtureCase }) => fixtureCase));
 
 describe('svelte story-docs server snippets', () => {
   it.each(indexedCases)(
@@ -92,8 +104,15 @@ describe('svelte story-docs server snippets', () => {
           subtype: 'story',
           importPath: storyPath,
         };
-        const payload = await buildStoryDocsPayload({ entry });
+        const payload = await buildStoryDocsPayload(
+          { entry },
+          {
+            readDocgen: () => buildDocgenPayload({ entry }, docgenContext),
+          }
+        );
         const storyDoc = payload?.stories[story.id];
+        expect(payload?.import).toBeUndefined();
+        expect(storyDoc?.snippet).toMatch(/^<script>\n/);
         if (payload !== undefined) {
           expect(storyDoc, `${story.exportName} missing from payload`).toBeDefined();
         }
@@ -110,6 +129,7 @@ describe('svelte story-docs server snippets', () => {
             ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
           ].join('\n\n'),
           legacyParity: SNIPPET_PARITY.has(fixtureCase),
+          declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${story.exportName}`],
         });
       }
       expectNoStaleSnippets(
@@ -132,7 +152,7 @@ it('every story has its legacy and server snippet baselines', () => {
   }
 });
 
-describe('svelte server snippets hold the legacy baseline (red until SNIPPET_PARITY lists the fixture)', () => {
+describe('svelte server snippets hold the legacy baseline', () => {
   for (const { fixtureCase, extension, testDir, stories, prefix, legacyPrefix } of indexedCases) {
     for (const { exportName } of stories) {
       (SNIPPET_PARITY.has(fixtureCase) ? it : it.fails)(
@@ -143,6 +163,7 @@ describe('svelte server snippets hold the legacy baseline (red until SNIPPET_PAR
             framework: 'svelte',
             baseline: readFileSync(join(testDir, `${legacyPrefix}${exportName}.snapshot`), 'utf8'),
             candidate: readFileSync(join(testDir, `${prefix}${exportName}.snapshot`), 'utf8'),
+            declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${exportName}`],
           });
         }
       );

@@ -494,6 +494,24 @@ describe.each([
       { size: 'large', baseOnly: true },
     ],
     ['handles spreads without args', '...WithoutArgs', {}],
+    ['handles undefined spreads', '...UndefinedBase', {}],
+    ['handles null spreads', '...NullBase', {}],
+    [
+      'preserves existing args before an undefined spread',
+      'args: { label: "old", size: "small" }, ...UndefinedBase',
+      { size: 'small' },
+    ],
+    [
+      'preserves existing args before a null spread',
+      'args: { label: "old", size: "small" }, ...NullBase',
+      { size: 'small' },
+    ],
+    [
+      'inherits args alongside nullish spreads',
+      '...UndefinedBase, ...Base, ...NullBase',
+      { size: 'large', baseOnly: true },
+    ],
+    ['handles optional input spreads', '...UndefinedBase?.input', {}],
     [
       'merges args when a later spread has undefined args',
       '...Base, ...Cleared',
@@ -533,6 +551,8 @@ describe.each([
       Base: { args: { label: 'base', size: 'large', baseOnly: true } },
       Override: { args: { label: 'override', size: 'small', onClick } },
       WithoutArgs: { parameters: { layout: 'centered' } },
+      UndefinedBase: undefined,
+      NullBase: null,
       Cleared: { args: undefined },
       meta: { story: (input: unknown) => input },
     };
@@ -574,7 +594,7 @@ test('prints composed args for a CSF3 story spread', async () => {
       ...Base,
 
       args: {
-        ...Base.args,
+        ...Base?.args,
         label: "saved",
       },
     };
@@ -599,7 +619,7 @@ test('prints composed args for a CSF4 input spread', async () => {
       ...Base.input,
 
       args: {
-        ...Base.input.args,
+        ...Base.input?.args,
         label: "saved",
       },
     });

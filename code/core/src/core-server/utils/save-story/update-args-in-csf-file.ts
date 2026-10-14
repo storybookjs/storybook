@@ -64,7 +64,14 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
     argsObject.properties = properties.slice(0, lastSpreadIndex + 1).flatMap((property) => {
       if (t.isSpreadElement(property)) {
         return [
-          t.spreadElement(t.memberExpression(t.cloneNode(property.argument), t.identifier('args'))),
+          t.spreadElement(
+            t.optionalMemberExpression(
+              t.cloneNode(property.argument),
+              t.identifier('args'),
+              false,
+              true
+            )
+          ),
         ];
       }
       return property === argsProperty ? existingArgs : [];

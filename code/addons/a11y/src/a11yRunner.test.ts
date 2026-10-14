@@ -5,8 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants.ts';
+import { getIsVitestStandaloneRun } from './utils.ts';
 
-const { axeMock, documentMock, getIsVitestStandaloneRunMock } = vi.hoisted(() => {
+const { axeMock, documentMock } = vi.hoisted(() => {
   const documentMock = {
     body: {},
     getElementById: vi.fn(),
@@ -20,7 +21,6 @@ const { axeMock, documentMock, getIsVitestStandaloneRunMock } = vi.hoisted(() =>
       configure: vi.fn(),
       run: vi.fn(),
     },
-    getIsVitestStandaloneRunMock: vi.fn(),
   };
 });
 
@@ -34,9 +34,7 @@ vi.mock('axe-core', () => ({
   default: axeMock,
 }));
 
-vi.mock('./utils.ts', () => ({
-  getIsVitestStandaloneRun: getIsVitestStandaloneRunMock,
-}));
+vi.mock('./utils.ts', { spy: true });
 
 vi.mock('storybook/preview-api');
 const mockedAddons = vi.mocked(addons);
@@ -57,7 +55,7 @@ describe('a11yRunner', () => {
 
     documentMock.getElementById.mockReturnValue(null);
     axeMock.run.mockResolvedValue(axeResults);
-    getIsVitestStandaloneRunMock.mockReturnValue(false);
+    vi.mocked(getIsVitestStandaloneRun).mockReturnValue(false);
 
     mockChannel = { on: vi.fn(), emit: vi.fn() };
     mockedAddons.getChannel.mockReturnValue(
@@ -135,25 +133,29 @@ describe('a11yRunner', () => {
     });
   });
 
-  it('defaults resultTypes to violations and incomplete in a standalone Vitest run', async () => {
-    getIsVitestStandaloneRunMock.mockReturnValue(true);
-    const { run } = await import('./a11yRunner.ts');
-
-    await run({ config: {}, options: {} }, 'example-story');
-
-    expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
-      resultTypes: ['violations', 'incomplete'],
+  describe('standalone Vitest runs', () => {
+    beforeEach(() => {
+      vi.mocked(getIsVitestStandaloneRun).mockReturnValue(true);
     });
-  });
 
-  it('keeps a user-provided resultTypes in a standalone Vitest run', async () => {
-    getIsVitestStandaloneRunMock.mockReturnValue(true);
-    const { run } = await import('./a11yRunner.ts');
+    it('defaults resultTypes to violations and incomplete in a standalone Vitest run', async () => {
+      const { run } = await import('./a11yRunner.ts');
 
-    await run({ config: {}, options: { resultTypes: ['passes'] } }, 'example-story');
+      await run({ config: {}, options: {} }, 'example-story');
 
-    expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
-      resultTypes: ['passes'],
+      expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
+        resultTypes: ['violations', 'incomplete'],
+      });
+    });
+
+    it('keeps a user-provided resultTypes in a standalone Vitest run', async () => {
+      const { run } = await import('./a11yRunner.ts');
+
+      await run({ config: {}, options: { resultTypes: ['passes'] } }, 'example-story');
+
+      expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
+        resultTypes: ['passes'],
+      });
     });
   });
 });

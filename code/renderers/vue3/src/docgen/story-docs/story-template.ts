@@ -85,10 +85,10 @@ function spreadAttributes(args: ClassifiedArg[], words: string[], ctx: RenderCon
 /**
  * The render function's template and the statements of its `setup` as written, with a hole
  * wherever they read an arg, for `fillTemplate`. It is `undefined` when they read the args in a way
- * no hole stands for, such as in an event handler, and the static snippet is shown instead.
+ * no hole stands for, such as in an event handler, and the story then has no template.
  *
- * An arg the static snippet hoists to a `const`, as the story sets an object or array, is a `const`
- * here too, so every read of it is the same value, as in the story.
+ * An arg the story sets to more than a literal, such as an object or an array, is a `const` with a
+ * hole for its value, so every read of it is the same value, as in the story.
  */
 export function renderTemplate(
   template: string,

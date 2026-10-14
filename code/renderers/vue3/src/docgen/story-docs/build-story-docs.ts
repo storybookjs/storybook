@@ -41,6 +41,7 @@ import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybo
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
 import {
+  classifyArg,
   classifyArgs,
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
@@ -49,6 +50,7 @@ import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { componentTemplate, renderTemplate } from './story-template.ts';
 import { fillTemplate } from '../../docs/fill-template.ts';
+import { isFunctionExpression } from '../shared/classify-value.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
 import {
   readTemplateRenderConfig,
@@ -118,6 +120,8 @@ type StaticStoryRenderer =
     };
 type StorySnippetResult = { snippet: string };
 type StaticStoryArgs = {
+  /** The args the story is written with, each read through to its value. */
+  args: Record<string, t.Node>;
   classified: ClassifyArgsResult;
   /** Source text of everything reading the args statically could not account for. */
   unresolved: string[];
@@ -397,8 +401,13 @@ function enrichStoryDoc(
 
   // The static snippet is the template filled with the args the story is written with, and the
   // story printed as before where it has no template or the filler cannot print one of them.
-  const template = storyTemplate(renderer, options.snippet, args);
-  const storyArgs = Object.fromEntries(args.map((arg) => [arg.name, arg.value]));
+  // The story's own args, but those that read a name the snippet cannot declare.
+  const storyArgs = Object.fromEntries(
+    Object.entries(resolved.args).filter(
+      ([name, value]) => classifyArg(name, value, docgenArgInfo).kind !== 'unrepresentable'
+    )
+  );
+  const template = storyTemplate(renderer, options.snippet, args, storyArgs);
   const warning = unresolvedWarning(unresolved);
   const filled =
     template === undefined
@@ -463,12 +472,14 @@ function inFileOf(
 function storyTemplate(
   renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
   { componentName, componentImportStatement, docgenArgInfo }: StorySnippetContext,
-  args: ClassifyArgsResult['args']
+  args: ClassifyArgsResult['args'],
+  storyArgs: Record<string, t.Node>
 ): string | undefined {
   const slots = [...docgenArgInfo.slots];
-  // A slot the story fills with a function, as `() => h(Icon)`, has no value to show as content.
+  // A slot the story fills with a function, as `() => 'Hello'`, has no value to show as content.
   if (renderer.kind === 'sfc') {
-    return componentImportStatement && !args.some((arg) => arg.plan.kind === 'function-slot')
+    return componentImportStatement &&
+      !slots.some((slot) => slot in storyArgs && isFunctionExpression(storyArgs[slot]!))
       ? componentTemplate(componentName, componentImportStatement, slots, args)
       : undefined;
   }
@@ -525,6 +536,7 @@ function resolveStaticStoryArgs(
   // A name another module owns stays as written, for the classifier to report.
   const resolved = options.resolver.resolve(storyExport);
   return {
+    args: resolved.args,
     classified: classifyArgs(resolved.args, docgenArgInfo),
     unresolved: resolved.unresolved,
   };

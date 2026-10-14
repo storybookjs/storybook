@@ -376,6 +376,22 @@ export const Primary = {
     ).toContain(`<MyButton label="Stop" :formatter="formatter" :items="items" :when="when" />`);
   });
 
+  it('is filled with every arg the story writes, as an empty string or a function the component does not declare', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { label: '', size: 'sm', onHover: (x) => x } };`
+    );
+    expect(story?.argCode).toEqual({ onHover: '((x) => x)' });
+    expect(story?.snippet).toContain('<MyButton label="" :onHover="((x) => x)" size="sm" />');
+  });
+
+  it('has none for a story that fills a slot with a function', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { label: 'Go', default: () => 'Hello' } };`
+    );
+    expect(story?.template).toBeUndefined();
+    expect(story?.snippet).toContain('<MyButton label="Go">\n    Hello\n  </MyButton>');
+  });
+
   it("is Storybook's render of the component, its slots as content, for a story without a render function", async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
     expect(story?.template).toBe(

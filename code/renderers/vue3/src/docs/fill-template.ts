@@ -82,20 +82,25 @@ function checkedName(name: string) {
 }
 
 // Vue collapses whitespace in text and reads `<`, `{{` and `&` as markup, as well as a `{` that ends
-// the text before an interpolation. `}\}` keeps a string from ending the interpolation.
+// the text before an interpolation. In a string, `}\}` keeps `}}` from ending the interpolation;
+// any other value that prints `}}`, such as code the story wrote, has no such escape.
 function text(name: string, arg: unknown): string {
   if (arg === undefined || arg === null || arg === '') {
     return '';
   }
-  const plain = typeof arg === 'number' || (typeof arg === 'string' && /^\S+( \S+)*$/.test(arg));
-  return plain
-    ? String(arg)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('{{', '{&#123;')
-        .replace(/\{$/, '&#123;')
-    : `{{ ${value(name, arg).replaceAll('}}', '}\\}')} }}`;
+  if (typeof arg === 'number' || (typeof arg === 'string' && /^\S+( \S+)*$/.test(arg))) {
+    return String(arg)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('{{', '{&#123;')
+      .replace(/\{$/, '&#123;');
+  }
+  const printed = value(name, arg);
+  if (typeof arg !== 'string' && printed.includes('}}')) {
+    throw new UnprintableArgError(name);
+  }
+  return `{{ ${printed.replaceAll('}}', '}\\}')} }}`;
 }
 
 // A literal in an attribute value or an interpolation, both of which decode entities, so it is

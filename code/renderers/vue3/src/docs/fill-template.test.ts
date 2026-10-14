@@ -91,6 +91,9 @@ describe('fillTemplate', () => {
       fillTemplate('<p :config="⟦value config⟧">', { config: writtenArg('{a: {b: 1}}') })
     ).toBe('<p :config="{a: {b: 1}}">');
     expect(fillTemplate('<p>⟦text label⟧</p>', { label: 'a  }}' })).toBe("<p>{{ 'a  }\\}' }}</p>");
+    expect(() =>
+      fillTemplate('<p>⟦text label⟧</p>', { label: writtenArg('JSON.stringify({a:{b:1}})') })
+    ).toThrow(UnprintableArgError);
   });
 
   it('escapes a value in an attribute written in single quotes for that quote', () => {

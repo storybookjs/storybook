@@ -372,6 +372,14 @@ describe('renderedProps', () => {
       [`(args) => ({ props: { x: () => args.config || {} } })`, '() => ⟦operand config⟧ || {}'],
       [`(args) => ({ props: { x: () => args.on ? 1 : 2 } })`, '() => ⟦operand on⟧ ? 1 : 2'],
       [`(args) => ({ props: { x: () => [args.label] } })`, '() => [⟦value label⟧]'],
+      [`(args) => ({ props: { x: args.format(1) } })`, '⟦operand format⟧(1)'],
+      [`(args) => ({ props: { x: () => args.format?.(1) } })`, '() => ⟦operand format⟧?.(1)'],
+      [`(args) => ({ props: { x: new args.Shape(1) } })`, 'new ⟦operand Shape⟧(1)'],
+      [`(args) => ({ props: { x: args.tag\`a\` } })`, '⟦operand tag⟧`a`'],
+      [
+        `(args) => ({ props: { x: () => { args.count++; args.label = 'a'; return args.count; } } })`,
+        "() => { args.count++; args.label = 'a'; return ⟦value count⟧; }",
+      ],
       [
         `(args) => ({\n  props: {\n    x: [\n      args.label,\n    ],\n  },\n})`,
         '[\n  ⟦value label⟧,\n]',
@@ -395,7 +403,6 @@ describe('renderedProps', () => {
     it.each([
       ['a name of the story file', `(args) => ({ props: { x: args.label + suffix } })`],
       ['a storybook import', `(args) => ({ props: { x: action(args.label) } })`],
-      ['an arg it calls', `(args) => ({ props: { x: args.format(1) } })`],
       ['the args whole', `(args) => ({ props: { x: build(args) } })`],
       ['an arg with a default', `({ label = 'Go' }) => ({ props: { x: label + '!' } })`],
       [
@@ -406,8 +413,6 @@ describe('renderedProps', () => {
         'a const of the render body it names',
         `(args) => { const c = [args.label]; return { props: { x: { c } } }; }`,
       ],
-      ['an arg it calls if set', `(args) => ({ props: { x: () => args.format?.(1) } })`],
-      ['an arg it constructs', `(args) => ({ props: { x: new args.Shape(1) } })`],
       ['a type only imported', `(args) => ({ props: { x: build<TypeOnly>(args.label) } })`],
       ['a type of the story file', `(args) => ({ props: { x: build<Local>(args.label) } })`],
       ['no arg', `(args) => ({ props: { x: [1, 2] } })`],

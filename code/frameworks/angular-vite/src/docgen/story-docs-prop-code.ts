@@ -59,30 +59,31 @@ export const propCode = (
   const imports = new Set<string>();
   let carried = true;
   const read = (path: NodePath, arg: string) => {
-    // An arg the code calls or writes holds what no control sets.
-    const { parentPath } = path;
+    const { node, parent, parentPath } = path;
+    // The target of a write, as in `args.count++`, is no read and stays as written.
     if (
-      parentPath?.isCallExpression({ callee: path.node }) ||
-      parentPath?.isOptionalCallExpression({ callee: path.node }) ||
-      parentPath?.isNewExpression({ callee: path.node }) ||
-      parentPath?.isTaggedTemplateExpression({ tag: path.node }) ||
-      parentPath?.isAssignmentExpression({ left: path.node }) ||
-      parentPath?.isUpdateExpression()
+      t.isAssignmentExpression(parent, { left: node }) ||
+      t.isUpdateExpression(parent) ||
+      t.isUnaryExpression(parent, { operator: 'delete' })
     ) {
-      carried = false;
+      return;
     }
     // Code around the read is only what the prop holds, so a literal in its place is read as it is
     // there.
-    const around = path.getAncestry().map(({ node }) => node);
+    const around = path.getAncestry().map((ancestor) => ancestor.node);
     const within = around.slice(1, around.indexOf(root.node) + 1);
     // `{ value }` reads the arg and names the property at once.
-    const shorthand =
-      parentPath?.isObjectProperty({ value: path.node }) && parentPath.node.shorthand;
+    const shorthand = parentPath?.isObjectProperty({ value: node }) && parentPath.node.shorthand;
     reads.push({
-      node: shorthand ? parentPath.node : path.node,
+      node: shorthand ? parentPath.node : node,
       arg,
-      kind: isOperand(path.node, within) ? 'operand' : 'value',
-      ...(shorthand ? { key: code.slice(path.node.start!, path.node.end!) } : {}),
+      kind:
+        isOperand(node, within) ||
+        t.isNewExpression(parent, { callee: node }) ||
+        t.isTaggedTemplateExpression(parent, { tag: node })
+          ? 'operand'
+          : 'value',
+      ...(shorthand ? { key: code.slice(node.start!, node.end!) } : {}),
     });
   };
   const visit = (path: NodePath<t.Identifier | t.JSXIdentifier>) => {

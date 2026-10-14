@@ -19,6 +19,7 @@ function onClick() {
 
 <template>
   <button type="button" :class="{ primary }" @click="onClick">
+    <span data-testid="icon"><slot name="icon" /></span>
     {{ label }} {{ count }}
     <slot />
   </button>

@@ -63,3 +63,9 @@ it('prints one space when all spread props are omitted', () => {
     '<Button />'
   );
 });
+
+it('removes the line containing an empty spread', () => {
+  expect(
+    printSvelteCsfSnippet({ code: '<Button\n  {...args}\n  primary\n/>', args: {}, argTypes: {} })
+  ).toBe('<Button\n  primary\n/>');
+});

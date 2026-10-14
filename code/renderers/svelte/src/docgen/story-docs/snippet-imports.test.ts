@@ -144,3 +144,56 @@ it('keeps await results and const declarations local', () => {
     )
   ).toEqual({ unresolved: [], unresolvedIdentifiers: ['promise'] });
 });
+
+it.each([
+  '{#each items as { name }}{name}{/each}',
+  '{#each items as [name]}{name}{/each}',
+  '{#snippet row({ name })}{name}{/snippet}',
+  '{#snippet row([name])}{name}{/snippet}',
+  '{#await items then { name }}{name}{/await}',
+  '{#await items then [name]}{name}{/await}',
+])('keeps destructured block bindings local: %s', (markup) => {
+  const result = buildSnippetImportBlock(markup, { bindings: bindings('') });
+  expect(result).toEqual({
+    unresolved: [],
+    ...(markup.includes('items') ? { unresolvedIdentifiers: ['items'] } : {}),
+  });
+});
+
+it('resolves browser globals without hiding unknown identifiers', () => {
+  expect(
+    buildSnippetImportBlock(
+      '<button onclick={() => { console.log(window, document); alert("x"); setTimeout(() => missing, 0); }} />',
+      { bindings: bindings('') }
+    )
+  ).toEqual({ unresolved: [], unresolvedIdentifiers: ['missing'] });
+});
+
+it.each(['let:item', 'let:value={item}', 'let:value={{ item }}', 'let:value={[item]}'])(
+  'keeps slot bindings local: %s',
+  (directive) => {
+    expect(
+      buildSnippetImportBlock(`<Comp ${directive}>{item}</Comp>`, {
+        bindings: bindings("import Comp from './Comp.svelte';"),
+      })
+    ).toEqual({
+      block: "<script>\n  import Comp from './Comp.svelte';\n</script>",
+      unresolved: [],
+    });
+  }
+);
+
+it('includes imports and state referenced by directives', () => {
+  expect(
+    buildSnippetImportBlock('<div use:tooltip transition:fade animate:flip />', {
+      bindings: bindings(
+        "import { fade } from 'svelte/transition'; import { flip } from 'svelte/animate';"
+      ),
+      instanceScript: { code: 'function tooltip() {}', typescript: false },
+    })
+  ).toEqual({
+    block:
+      "<script>\n  import { fade } from 'svelte/transition';\n  import { flip } from 'svelte/animate';\n\n  function tooltip() {}\n</script>",
+    unresolved: [],
+  });
+});

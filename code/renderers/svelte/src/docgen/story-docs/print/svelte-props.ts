@@ -119,7 +119,13 @@ function generateServerCode({
     `\\{\\.\\.\\.args\\}|="[^"\\n]*"|='[^'\\n]*'|=\\{\\s*(${path})\\s*\\}|\\{\\s*(${path})\\s*\\}|${path}`,
     'g'
   );
-  return (spread ? code : code.replace(/[ \t]*\{\.\.\.args\}[ \t]*/g, ' '))
+  return (
+    spread
+      ? code
+      : code
+          .replace(/^[ \t]*\{\.\.\.args\}[ \t]*\r?\n/gm, '')
+          .replace(/[ \t]*\{\.\.\.args\}[ \t]*/g, ' ')
+  )
     .replace(pattern, (match, attributePath?: string, textPath?: string) => {
       if (match === '{...args}') return spread;
       if (match.startsWith('="') || match.startsWith("='")) {

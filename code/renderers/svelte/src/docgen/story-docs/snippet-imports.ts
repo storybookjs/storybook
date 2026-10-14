@@ -35,12 +35,14 @@ export function buildSnippetImportBlock(
   const visitedExpressions = new Set<object>();
   walk<SvelteAST.SvelteNode, null>(ast.fragment, null, {
     Identifier(node, { path }) {
-      const declarationPatterns = path.flatMap((ancestor) =>
-        ancestor.type === 'AwaitBlock'
-          ? [ancestor.value, ancestor.error]
-          : ancestor.type === 'ConstTag'
-            ? ancestor.declaration.declarations.map((declaration) => declaration.id)
-            : []
+      const declarationPatterns = path.flatMap<object | null>((ancestor) =>
+        ancestor.type === 'LetDirective'
+          ? [ancestor.expression]
+          : ancestor.type === 'AwaitBlock'
+            ? [ancestor.value, ancestor.error]
+            : ancestor.type === 'ConstTag'
+              ? ancestor.declaration.declarations.map((declaration) => declaration.id)
+              : []
       );
       if (
         declarationPatterns.some(
@@ -95,13 +97,34 @@ export function buildSnippetImportBlock(
             typeof pattern.end !== 'number'
           )
             continue;
-          const declaration = babelParse(`let ${markup.slice(pattern.start, pattern.end)};`);
-          for (const statement of declaration.program.body) {
-            for (const name of Object.keys(t.getBindingIdentifiers(statement)))
-              scopedNames.add(name);
-          }
+          const declaration = babelParse(`(${markup.slice(pattern.start, pattern.end)}) => {}`);
+          traverse(declaration, {
+            ArrowFunctionExpression(parameter) {
+              for (const pattern of parameter.node.params)
+                for (const name of Object.keys(t.getBindingIdentifiers(pattern)))
+                  scopedNames.add(name);
+            },
+          });
         }
         if (ancestor.type === 'EachBlock' && ancestor.index) scopedNames.add(ancestor.index);
+        if ('attributes' in ancestor) {
+          for (const attribute of ancestor.attributes) {
+            if (attribute.type !== 'LetDirective') continue;
+            if (!attribute.expression) scopedNames.add(attribute.name);
+            else {
+              const parameter = babelParse(
+                `(${markup.slice(attribute.expression.start, attribute.expression.end)}) => {}`
+              );
+              traverse(parameter, {
+                ArrowFunctionExpression(parameter) {
+                  for (const pattern of parameter.node.params)
+                    for (const name of Object.keys(t.getBindingIdentifiers(pattern)))
+                      scopedNames.add(name);
+                },
+              });
+            }
+          }
+        }
       }
       const code = markup.slice(expression.start, expression.end);
       const parsed = babelParse(`(${code})`);
@@ -114,6 +137,20 @@ export function buildSnippetImportBlock(
             identifiers.add(reference.node.name);
         },
       });
+    },
+  });
+  walk<SvelteAST.SvelteNode, null>(ast.fragment, null, {
+    UseDirective(node, { next }) {
+      identifiers.add(node.name.split('.')[0]);
+      next();
+    },
+    TransitionDirective(node, { next }) {
+      identifiers.add(node.name.split('.')[0]);
+      next();
+    },
+    AnimateDirective(node, { next }) {
+      identifiers.add(node.name.split('.')[0]);
+      next();
     },
   });
   const declarations = new Set<t.Statement>();
@@ -145,7 +182,36 @@ export function buildSnippetImportBlock(
           ['$state', '$derived', '$effect', '$props', '$bindable', '$inspect', '$host'].includes(
             name
           ) ||
-          ['undefined', 'NaN', 'Infinity'].includes(name)
+          [
+            'undefined',
+            'NaN',
+            'Infinity',
+            'console',
+            'window',
+            'document',
+            'navigator',
+            'location',
+            'history',
+            'localStorage',
+            'sessionStorage',
+            'alert',
+            'confirm',
+            'prompt',
+            'setTimeout',
+            'clearTimeout',
+            'setInterval',
+            'clearInterval',
+            'requestAnimationFrame',
+            'cancelAnimationFrame',
+            'fetch',
+            'URL',
+            'URLSearchParams',
+            'performance',
+            'queueMicrotask',
+            'structuredClone',
+            'Event',
+            'CustomEvent',
+          ].includes(name)
         )
           return;
         const binding = path.scope.getBinding(name);

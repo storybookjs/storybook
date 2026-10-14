@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { getService } from 'storybook/internal/core-server';
-import { toId } from 'storybook/internal/csf';
+import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import {
   collectImportBindings,
   createStoryArgsResolver,
@@ -185,7 +185,7 @@ export async function buildStoryDocsPayload(
         : undefined,
     ].filter(Boolean);
     const storyId = filename.endsWith('.svelte')
-      ? toId(csf.meta.title ?? input.entry.title, exportName)
+      ? toId(csf.meta.id ?? csf.meta.title ?? input.entry.title, storyNameFromExport(exportName))
       : story.id;
     stories[storyId] = {
       id: storyId,

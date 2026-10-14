@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { toId } from 'storybook/internal/csf';
+import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
@@ -64,7 +64,7 @@ const indexedCases = await Promise.all(
               throw new Error(`${storyPath}: every story must have a title and export name`);
             }
             return {
-              id: toId(story.title, story.exportName),
+              id: toId(story.metaId ?? story.title, storyNameFromExport(story.exportName)),
               title: story.title,
               exportName: story.exportName,
               name: story.name ?? story.exportName,
@@ -168,5 +168,69 @@ describe('svelte server snippets hold the legacy baseline', () => {
         }
       );
     }
+  }
+});
+
+it.each([
+  ['story-identifiers.stories.svelte', 'identifiers'],
+  ['story-meta-id.stories.svelte', 'custom-id'],
+])('keys server snippets by indexed IDs in %s', async (filename, metaId) => {
+  const storyPath = join(dirname(fileURLToPath(import.meta.url)), `__fixtures__/${filename}`);
+  const indexed = await indexer.createIndex(storyPath, {
+    makeTitle: (title) => title ?? 'Identifiers',
+  });
+  expect(
+    indexed.map((story) =>
+      toId(
+        story.metaId ?? story.title ?? 'Identifiers',
+        storyNameFromExport(story.exportName ?? '')
+      )
+    )
+  ).toEqual([`${metaId}--icon-before`, `${metaId}--explicit-export-name`]);
+  const payload = await buildStoryDocsPayload(
+    {
+      entry: {
+        id: `${metaId}--icon-before`,
+        name: 'Icon before',
+        title: 'Identifiers',
+        type: 'story',
+        subtype: 'story',
+        importPath: storyPath,
+      },
+    },
+    { readDocgen: async () => undefined }
+  );
+  expect(Object.keys(payload?.stories ?? {})).toEqual([
+    `${metaId}--icon-before`,
+    `${metaId}--explicit-export-name`,
+  ]);
+  expect(payload?.stories[`${metaId}--icon-before`]?.snippet).toContain('label="Download"');
+  expect(payload?.stories[`${metaId}--explicit-export-name`]?.snippet).toContain(
+    'label="Explicit"'
+  );
+});
+
+it('keeps every story payload when block bindings are destructured', async () => {
+  const payload = await buildStoryDocsPayload(
+    {
+      entry: {
+        id: 'destructuring--sibling',
+        name: 'Sibling',
+        title: 'Destructuring',
+        type: 'story',
+        subtype: 'story',
+        importPath: join(
+          dirname(fileURLToPath(import.meta.url)),
+          '__fixtures__/destructured-bindings.stories.svelte'
+        ),
+      },
+    },
+    { readDocgen: async () => undefined }
+  );
+  expect(Object.values(payload?.stories ?? {})).toHaveLength(7);
+  expect(payload?.stories['destructuring--sibling']?.snippet).toContain('label="Sibling"');
+  for (const story of Object.values(payload?.stories ?? {})) {
+    expect(story.snippet).toBeDefined();
+    expect(story.warning ?? '').not.toContain('`name`');
   }
 });

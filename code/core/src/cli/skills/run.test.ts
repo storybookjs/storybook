@@ -153,7 +153,7 @@ describe('runSkillsCommand', () => {
   it('leaves the component lookup out of ui-workflow when the CLI docs gate is off', async () => {
     const d = deps();
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
-    expect(uiWorkflow.output).not.toContain('component-docs');
+    expect(uiWorkflow.output).not.toContain('## Look up components first');
     expect(uiWorkflow.output).not.toContain('npx storybook tools docs');
   });
 

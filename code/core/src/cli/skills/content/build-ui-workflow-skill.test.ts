@@ -33,6 +33,20 @@ describe('buildUiWorkflowSkill', () => {
     expect(text).not.toContain('npx storybook skills component-docs');
   });
 
+  it('looks up components before it writes any', () => {
+    const text = buildUiWorkflowSkill(everything);
+
+    expect(text.indexOf('## Look up components first')).toBeLessThan(
+      text.indexOf('## Write the component and its stories')
+    );
+  });
+
+  it('never lets the agent instructions skip the component lookup', () => {
+    const text = buildUiWorkflowSkill(everything);
+
+    expect(text).toContain('but always look up the components first');
+  });
+
   it('looks up components only when the project has component docs', () => {
     const text = buildUiWorkflowSkill({ ...everything, docsEnabled: false });
 

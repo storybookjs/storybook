@@ -410,7 +410,10 @@ const renderStorySnippet = async (
       bindable.every((name) => !allows(name) || heldArg(props, name) === name)
     );
     const expanded = (allows: (name: string) => boolean) =>
-      inArgsOrder(snippetMeta.inputs, shape).filter((name) => allows(name) && isHoleWord(name));
+      inArgsOrder(snippetMeta.inputs, shape).filter((name) => {
+        const node = shape.args[name];
+        return allows(name) && isHoleWord(name) && !(node && isFunctionValue(node));
+      });
     if (
       (expansions.length === 0 && heldArgs.length === 0) ||
       !followsControls ||

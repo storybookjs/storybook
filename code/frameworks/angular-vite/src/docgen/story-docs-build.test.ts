@@ -1541,6 +1541,64 @@ describe('buildStoryDocsPayload', () => {
       `);
       expect(story.snippet).toContain(`label = (value) => value.trim();`);
     });
+
+    const configDocgen = async (): Promise<AngularDocgenPayload> => ({
+      ...(await buttonDocgen()()),
+      angularComponentMeta: {
+        ...(await buttonDocgen()()).angularComponentMeta!,
+        inputs: ['label', 'config', 'formatter'],
+      },
+    });
+
+    it('binds an arg that evaluates as its value, which the template parser reads', async () => {
+      const story = await soleStory(
+        `
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: {
+            label: 'Go',
+            config: {
+              a: 1 as number, // first
+              b: [1_000, 0x10],
+            },
+          },
+          render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)} />\` }),
+        };
+        `,
+        configDocgen
+      );
+      const binding = `[config]="{ a: 1, b: [1000, 16] }"`;
+      expect(story.snippet).toContain(binding);
+      expect(story.argCode).toEqual({ config: '{ a: 1, b: [1000, 16] }' });
+      expect(
+        parseTemplate(extractHostComponentTemplate(story.snippet!)!, 'story-docs.html').errors
+      ).toBeNull();
+      expect(
+        fillTemplate(story.template!, { label: 'Go', config: writtenArg(story.argCode!.config!) })
+      ).toContain(binding);
+    });
+
+    it('leaves a function arg out of the inputs argsToTemplate binds, and reports it', async () => {
+      const story = await soleStory(
+        `
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Go', formatter: (v) => v },
+          render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)} />\` }),
+        };
+        `,
+        configDocgen
+      );
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(`<sb-button [label]="'Go'" />`);
+      expect(story.template).not.toContain('formatter');
+      expect(story.warning).toBe(
+        'Incomplete snippet: `formatter` could not be bound, since ButtonComponent declares no such output.'
+      );
+    });
   });
 
   describe('args a template expression cannot carry', () => {

@@ -44,16 +44,11 @@ export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string |
 export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
 
 /**
- * The arg as the story writes it, but each enum member and template literal without expressions in
- * it, at any depth, as its value: the host component has no enum in scope, and an Angular binding
- * reads no template literal before Angular 19.2.
+ * The arg as the story writes it, but each part that evaluates, at any depth, as its value: an
+ * Angular binding reads neither the host's enums nor TypeScript, comments or numeric separators.
  */
 export const writtenValue = (node: t.Node, enums: SnippetEnum[]): t.Node => {
-  const unwrapped = unwrapExpression(node);
-  const literal =
-    t.isMemberExpression(unwrapped) || t.isTemplateLiteral(unwrapped)
-      ? evaluateArgLiteral(unwrapped, enums)
-      : undefined;
+  const literal = evaluateArgLiteral(node, enums);
   if (literal !== undefined) {
     // Parsed, so recast prints the literal as it is written here.
     const statement = babelParse(`[${literal}]`).program.body[0] as t.ExpressionStatement;

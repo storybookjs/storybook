@@ -1,4 +1,4 @@
-import type { ComponentType, SVGAttributes } from 'react';
+import type { Icon } from '@storybook/icons';
 
 import type { InputType } from 'storybook/internal/types';
 
@@ -14,22 +14,10 @@ export interface ToolbarShortcutConfig {
 export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig>;
 
 /**
- * The props accepted by the icon components exported from `@storybook/icons`.
- *
- * The package exports only the individual icon components, not their props type, so the shape is
- * mirrored here.
- */
-type ToolbarIconProps = SVGAttributes<SVGElement> & {
-  children?: never;
-  color?: string;
-  size?: number;
-};
-
-/**
  * An icon component individually imported from `@storybook/icons`, e.g. `CircleHollowIcon`.
  * Legacy string icon names are no longer supported.
  */
-export type ToolbarIconType = ComponentType<ToolbarIconProps>;
+export type ToolbarIconType = Icon;
 
 export interface ToolbarItem {
   value?: string;

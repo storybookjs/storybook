@@ -6,7 +6,6 @@
     "storydocs-meta-actions--imported-label": {
       "argCode": {
         "label": "SHARED_LABEL",
-        "onClick": "fn()",
       },
       "id": "storydocs-meta-actions--imported-label",
       "name": "Imported Label",
@@ -36,9 +35,7 @@ export class DemoComponent {
       "warning": "Incomplete snippet: `fn()`, `SHARED_LABEL` could not be resolved statically.",
     },
     "storydocs-meta-actions--primary": {
-      "argCode": {
-        "onClick": "fn()",
-      },
+      "argCode": {},
       "id": "storydocs-meta-actions--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';

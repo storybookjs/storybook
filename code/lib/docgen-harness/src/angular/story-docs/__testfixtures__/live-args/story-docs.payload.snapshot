@@ -120,9 +120,7 @@ export class DemoComponent {
 }",
     },
     "storydocs-live-args--own-markup-function": {
-      "argCode": {
-        "formatter": "(value) => value.trim()",
-      },
+      "argCode": {},
       "id": "storydocs-live-args--own-markup-function",
       "name": "Own Markup Function",
       "snippet": "import { Component } from '@angular/core';

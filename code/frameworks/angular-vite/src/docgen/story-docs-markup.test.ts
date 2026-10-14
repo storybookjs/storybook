@@ -376,20 +376,6 @@ describe('renderedProps', () => {
       expect(computedOf(story(render), 'x')).toEqual({ code, imports: [] });
     });
 
-    it('follows the consts of the render body the props name', () => {
-      const render = dedent`(args) => {
-        const control = new FormControl(args.value, Validators.required);
-        control.valueChanges.subscribe(() => {});
-        const form = new FormGroup({ control });
-        return { props: { form } };
-      }`;
-      const header = `import { FormControl, FormGroup, Validators } from '@angular/forms';`;
-      expect(computedOf(story(render, header), 'form')).toEqual({
-        code: 'new FormGroup({\n  control: new FormControl(«value», Validators.required),\n})',
-        imports: ['FormGroup', 'FormControl', 'Validators'],
-      });
-    });
-
     it('imports a type the code names as the story file imports it', () => {
       const render = `(args) => ({ props: { x: new FormControl<Shape>(args.value) } })`;
       const header = dedent`
@@ -409,20 +395,12 @@ describe('renderedProps', () => {
       ['the args whole', `(args) => ({ props: { x: build(args) } })`],
       ['an arg with a default', `({ label = 'Go' }) => ({ props: { x: label + '!' } })`],
       [
-        'a const another prop reads too',
-        `(args) => { const c = [args.label]; return { props: { x: { c }, c } }; }`,
+        'a const of the render body',
+        `(args) => { const c = [args.label]; return { props: { x: c } }; }`,
       ],
       [
-        'a const another prop holds too',
-        `(args) => { const c = [args.label]; return { props: { x: c, y: c } }; }`,
-      ],
-      [
-        'a const a statement of the body changes',
-        `(args) => { const x = new FormControl(args.label); x.disable(); return { props: { x } }; }`,
-      ],
-      [
-        'a const a subscription changes',
-        `(args) => { const c = [args.label]; d.subscribe(() => c.pop()); return { props: { x: { c } } }; }`,
+        'a const of the render body it names',
+        `(args) => { const c = [args.label]; return { props: { x: { c } } }; }`,
       ],
       ['an arg it calls if set', `(args) => ({ props: { x: () => args.format?.(1) } })`],
       ['an arg it constructs', `(args) => ({ props: { x: new args.Shape(1) } })`],

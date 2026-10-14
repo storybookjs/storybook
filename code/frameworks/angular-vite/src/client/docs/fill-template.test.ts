@@ -29,6 +29,16 @@ describe('fillTemplate', () => {
     ).toBe('  select = fn((o) => o.name);');
   });
 
+  it('continues code over several lines at the indentation of its line', () => {
+    const data = writtenArg('{\n  a: 1,\n}');
+    expect(fillTemplate('  data = ⟦value data⟧;', { data })).toBe('  data = {\n    a: 1,\n  };');
+    expect(fillTemplate('<a\n    ⟦props data⟧\n/>', { data })).toBe(
+      '<a\n    [data]="{\n      a: 1,\n    }"\n/>'
+    );
+    const text = writtenArg('`a\nb`');
+    expect(fillTemplate('  text = ⟦value text⟧;', { text })).toBe('  text = `a\nb`;');
+  });
+
   it('throws for a function arg, so the static snippet shows', () => {
     expect(() => fillTemplate(template, { label: 'Go', size: (n: number) => `${n}` })).toThrow(
       UnprintableArgError

@@ -2,8 +2,6 @@
 // field that follows the args it reads.
 import { type NodePath, babelPrint, types as t } from 'storybook/internal/babel';
 
-type Binding = NonNullable<ReturnType<NodePath['scope']['getBinding']>>;
-
 /** The names a render function binds its args under; see `functionScope`. */
 export interface ArgNames {
   argBindings: ReadonlyMap<string, string>;
@@ -40,27 +38,21 @@ export const functionPath = (
 };
 
 /**
- * The code a prop holds, following the `const`s of the render body it names, or `undefined` when it
- * reads no arg or names something only the story file or the running render has.
+ * The code a prop holds, or `undefined` when it reads no arg or names something only the story
+ * file or the running render has.
  */
 export const propCode = (
   fn: NodePath<t.Function>,
   value: t.Node,
   names: ArgNames
 ): PropCode | undefined => {
-  const local = t.isIdentifier(value) ? fn.scope.getOwnBinding(value.name) : undefined;
-  const init = local && constInit(local);
-  const root = findPath(fn, init ?? value);
-  if (!root || (init && !onlyHere(fn, local!, (reference) => reference.node === value))) {
+  const root = findPath(fn, value);
+  if (!root) {
     return undefined;
   }
   const program = fn.scope.getProgramParent().path.node as t.Program;
 
   const reads = new Map<t.Node, { arg: string; alone: boolean }>();
-  // A `const` the code names in turn, written in its place where nothing else but a subscription
-  // reads it, so the snippet has one copy just as the render does.
-  const inlined = new Map<t.Node, { code: t.Node; alone: boolean }>();
-  const roots: NodePath[] = [];
   const imports = new Set<string>();
   let carried = true;
   const read = (path: NodePath, arg: string) => {
@@ -76,7 +68,7 @@ export const propCode = (
     ) {
       carried = false;
     }
-    reads.set(path.node, { arg, alone: roots.includes(path) || standsAlone(path) });
+    reads.set(path.node, { arg, alone: path === root || standsAlone(path) });
   };
   const visit = (path: NodePath<t.Identifier | t.JSXIdentifier>) => {
     const { name } = path.node;
@@ -86,7 +78,7 @@ export const propCode = (
       carried &&= !declaresType(program, name);
       return;
     }
-    if (roots.some((within) => binding.path.isDescendant(within))) {
+    if (binding.path.isDescendant(root)) {
       return;
     }
     if (binding.scope === fn.scope) {
@@ -97,18 +89,10 @@ export const propCode = (
         except && member?.isMemberExpression({ object: path.node })
           ? memberName(member.node)
           : undefined;
-      const init = constInit(binding);
       if (arg !== undefined) {
         read(path, arg);
       } else if (key !== undefined && !except!.includes(key)) {
         read(member!, key);
-      } else if (
-        init &&
-        !roots.some(({ node }) => node === init) &&
-        onlyHere(fn, binding, (reference) => roots.some((within) => reference.isDescendant(within)))
-      ) {
-        inlined.set(path.node, { code: init, alone: standsAlone(path) });
-        walk(findPath(fn, init));
       } else {
         carried = false;
       }
@@ -128,25 +112,16 @@ export const propCode = (
       }
     }
   };
-  const walk = (path: NodePath | undefined) => {
-    if (!path) {
-      carried = false;
-      return;
-    }
-    roots.push(path);
-    if (path.isIdentifier()) {
-      visit(path);
-    }
-    path.traverse({
-      ReferencedIdentifier: visit,
-      ThisExpression(self) {
-        const owner = self.getFunctionParent();
-        carried &&=
-          owner !== null && owner.isDescendant(path) && !owner.isArrowFunctionExpression();
-      },
-    });
-  };
-  walk(root);
+  if (root.isIdentifier()) {
+    visit(root);
+  }
+  root.traverse({
+    ReferencedIdentifier: visit,
+    ThisExpression(self) {
+      const owner = self.getFunctionParent();
+      carried &&= owner !== null && owner.isDescendant(root) && !owner.isArrowFunctionExpression();
+    },
+  });
 
   const args = [...new Set([...reads.values()].map(({ arg }) => arg))];
   if (!carried || args.length === 0) {
@@ -158,62 +133,15 @@ export const propCode = (
     print: (write) => {
       const replace = (node: t.Node): t.Node | undefined => {
         const found = reads.get(node);
-        const inline = inlined.get(node);
-        const written = found
-          ? t.identifier(write(found.arg))
-          : inline && rewritten(inline.code, replace);
-        const alone = found?.alone ?? inline?.alone;
-        return written && !alone ? t.parenthesizedExpression(written as t.Expression) : written;
+        if (!found) {
+          return undefined;
+        }
+        const written = t.identifier(write(found.arg));
+        return found.alone ? written : t.parenthesizedExpression(written);
       };
       return babelPrint(rewritten(root.node, replace));
     },
   };
-};
-
-// The value of a `const` binding the code can be written with.
-const constInit = (binding: Binding): t.Expression | undefined => {
-  const declarator = binding.path.node;
-  return binding.constant &&
-    binding.kind === 'const' &&
-    t.isVariableDeclarator(declarator) &&
-    t.isIdentifier(declarator.id)
-    ? (declarator.init ?? undefined)
-    : undefined;
-};
-
-// Whether the code is all that reads a binding, besides a statement of the body that subscribes to
-// it: any other may change the object, or share it, which the snippet declares afresh.
-const onlyHere = (
-  fn: NodePath<t.Function>,
-  binding: Binding,
-  carries: (reference: NodePath) => boolean
-) =>
-  binding.referencePaths.every(
-    (reference) => carries(reference) || subscribesTo(fn.node, reference)
-  );
-
-// `control.valueChanges.subscribe(…)`, which reads what the object emits and changes nothing of it.
-const isSubscription = (
-  statement: t.Node
-): statement is t.ExpressionStatement & {
-  expression: t.CallExpression & { callee: t.MemberExpression };
-} =>
-  t.isExpressionStatement(statement) &&
-  t.isCallExpression(statement.expression) &&
-  t.isMemberExpression(statement.expression.callee, { computed: false }) &&
-  t.isIdentifier(statement.expression.callee.property, { name: 'subscribe' });
-
-const subscribesTo = (fn: t.Function, reference: NodePath) => {
-  let path = reference;
-  while (path.parentPath?.isMemberExpression({ object: path.node, computed: false })) {
-    path = path.parentPath;
-  }
-  const statement = path.parentPath?.parentPath;
-  return (
-    statement?.parent === fn.body &&
-    isSubscription(statement.node) &&
-    statement.node.expression.callee === path.node
-  );
 };
 
 const declaresType = (program: t.Program, name: string) =>

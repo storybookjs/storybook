@@ -221,5 +221,57 @@ describe('wrapGetAbsolutePath', () => {
         "
       `);
     });
+
+    it('wraps bare specifiers but leaves relative addon paths untouched', async () => {
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+      writeFile.mockClear();
+
+      await runFix(wrapGetAbsolutePath, {
+        mainConfigPath: require.resolve('./__test__/main-config-with-relative-and-bare-addons.js'),
+        storiesPaths: [],
+        result: {},
+      } as unknown as Omit<RunOptions<object>, 'files'>);
+
+      const output = String(writeFile.mock.calls[0]?.[1]);
+
+      // bare specifiers are still wrapped
+      expect(output).toContain("getAbsolutePath('@storybook/addon-vitest')");
+      expect(output).toContain("getAbsolutePath('@storybook/react-vite')");
+      // relative paths resolve natively from the config dir and must stay untouched:
+      // the wrapper resolves `${value}/package.json`, which breaks file targets
+      // (SB_CORE-SERVER_0007 after upgrading)
+      expect(output).toMatch(/['"]\.\/addons\/google-analytics\/register['"]/);
+      expect(output).toMatch(/['"]\.\/addons\/local-manager['"]/);
+      expect(output).not.toContain("getAbsolutePath('./addons");
+      expect(output).not.toContain('getAbsolutePath("./addons');
+    });
+
+    it('does not touch configs that only contain relative paths', async () => {
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+      writeFile.mockClear();
+
+      await runFix(wrapGetAbsolutePath, {
+        mainConfigPath: require.resolve('./__test__/main-config-with-only-relative-addons.js'),
+        storiesPaths: [],
+        result: {},
+      } as unknown as Omit<RunOptions<object>, 'files'>);
+
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('does not re-wrap relative entries in a config that already declares a wrapper', async () => {
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+      writeFile.mockClear();
+
+      await runFix(wrapGetAbsolutePath, {
+        mainConfigPath: require.resolve(
+          './__test__/main-config-with-wrapper-and-relative-addon.js'
+        ),
+        storiesPaths: [],
+        result: {},
+      } as unknown as Omit<RunOptions<object>, 'files'>);
+
+      expect(writeFile).not.toHaveBeenCalled();
+    });
   });
 });

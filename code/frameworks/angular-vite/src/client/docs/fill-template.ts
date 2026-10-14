@@ -14,7 +14,9 @@ import { BINDS_UNDEFINED, escapeTemplateLiteral } from '../../template-grammar.t
 // arg set to `undefined` too. `⟦value label⟧` is an arg in a host field's code, such as the field's
 // value for an arg the markup reads by name, and `⟦operand label⟧` one the code reads on; a default
 // word is printed while the arg is unset. Code over several lines continues at the indentation of
-// the hole's line.
+// the hole's line. `⟦text label⟧` is an arg the story's markup interpolates, as the text it renders:
+// a string as itself, any other value as it prints in code, with the `{`, `}` and `@` Angular would
+// read as its own syntax escaped as Angular escapes them.
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const lines = [...template.matchAll(/⟦[^⟧]*⟧/g)].map(({ index }) =>
     template.slice(template.lastIndexOf('\n', index) + 1, index)
@@ -29,6 +31,11 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
         printValue(args[arg], arg, { quote: "'" });
       return continued(kind === 'operand' ? asOperand(printed) : printed, line);
     }
+    if (kind === 'text') {
+      const value = args[words[0]!];
+      const text = typeof value === 'string' ? value : printValue(value, words[0]!, { quote: "'" });
+      return escapeTemplateLiteral(text.replace(/[{}@]/g, (char) => TEXT_ESCAPES[char]!));
+    }
     const separator = line.trim() === '' ? `\n${line}` : ' ';
     const bindsUndefined = words[0] === BINDS_UNDEFINED;
     return (bindsUndefined ? words.slice(1) : words)
@@ -37,6 +44,8 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
       .join(separator);
   });
 };
+
+const TEXT_ESCAPES: Record<string, string> = { '{': "{{ '{' }}", '}': "{{ '}' }}", '@': '&#64;' };
 
 const continued = (code: string, line: string) =>
   code.replaceAll('\n', `\n${line.match(/^\s*/)![0]}`);

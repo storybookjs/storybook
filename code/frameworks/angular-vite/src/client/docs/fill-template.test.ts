@@ -93,6 +93,16 @@ describe('fillTemplate', () => {
     expect(fillTemplate("  value = ⟦value value ?''⟧;", { value: 'Go' })).toBe("  value = 'Go';");
   });
 
+  it('prints a text hole as the text the markup renders, escaped where Angular reads its own syntax', () => {
+    expect(fillTemplate('<b>⟦text label⟧</b>', { label: 'Bye <i>now</i>' })).toBe(
+      '<b>Bye <i>now</i></b>'
+    );
+    expect(fillTemplate('<b>⟦text label⟧</b>', { label: 2 })).toBe('<b>2</b>');
+    expect(fillTemplate('<b>⟦text label⟧</b>', { label: 'a {x} @if `t` ${y}' })).toBe(
+      "<b>a {{ '{' }}x{{ '}' }} &#64;if \\`t\\` \\${{ '{' }}y{{ '}' }}</b>"
+    );
+  });
+
   it('throws for a value it cannot print', () => {
     expect(() => fillTemplate(' ⟦props date⟧', { date: new Date() })).toThrow(UnprintableArgError);
     expect(() => fillTemplate(' ⟦props max⟧', { max: [Infinity] })).toThrow(UnprintableArgError);

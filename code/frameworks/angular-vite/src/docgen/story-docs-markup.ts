@@ -53,6 +53,14 @@ export interface ArgsExpansion extends TemplateExpansion {
   allows: (name: string) => boolean;
 }
 
+/** One `${name}` that interpolates an arg, which the markup holds as its text. */
+export interface TextInterpolation {
+  /** What stands for the text in `markedMarkup`. */
+  marker: string;
+  arg: string;
+  text: string;
+}
+
 /** Which arg names a binding list covers, mirroring `argsToTemplate`'s own options. */
 interface BindingFilter {
   include?: readonly string[];
@@ -95,8 +103,11 @@ export type TemplateResult =
   | {
       kind: 'literal';
       markup: string;
+      /** `markup` with each arg it interpolates as the marker of one of `texts`. */
+      markedMarkup: string;
       representedArgs: readonly string[];
       expansions: readonly ArgsExpansion[];
+      texts: readonly TextInterpolation[];
     }
   /**
    * A `template` or `render` exists, but its markup needs the story to run. `source` is that
@@ -223,29 +234,36 @@ const templateFrom = (
     return undefined;
   }
   if (t.isStringLiteral(node)) {
-    return literalTemplate(node.value, new Set(), []);
+    return literalTemplate(node.value, new Set(), [], []);
   }
   const parts = templateParts(node);
   if (parts) {
     const representedArgs = new Set<string>();
     const expansions: ArgsExpansion[] = [];
-    const markup = interpolate(parts, shape, bindings, scope, representedArgs, expansions);
+    const texts: TextInterpolation[] = [];
+    const markup = interpolate(parts, shape, bindings, scope, representedArgs, expansions, texts);
     return markup === undefined
       ? { kind: 'unresolvable', source: sourceOf(node) }
-      : literalTemplate(markup, representedArgs, expansions);
+      : literalTemplate(markup, representedArgs, expansions, texts);
   }
   return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
 const literalTemplate = (
-  markup: string,
+  markedMarkup: string,
   representedArgs: ReadonlySet<string>,
-  expansions: readonly ArgsExpansion[]
+  expansions: readonly ArgsExpansion[],
+  texts: readonly TextInterpolation[]
 ): Extract<TemplateResult, { kind: 'literal' }> => ({
   kind: 'literal',
-  markup,
+  markup: texts.reduce(
+    (markup, { marker, text }) => markup.replace(marker, () => text),
+    markedMarkup
+  ),
+  markedMarkup,
   representedArgs: [...representedArgs],
   expansions,
+  texts,
 });
 
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
@@ -255,23 +273,28 @@ const interpolate = (
   bindings: Bindings | undefined,
   scope: FunctionScope,
   representedArgs: Set<string>,
-  expansions: ArgsExpansion[]
+  expansions: ArgsExpansion[],
+  texts: TextInterpolation[]
 ): string | undefined => {
   let markup = quasis[0] ?? '';
-
-  for (const [index, expression] of expressions.entries()) {
-    let marker = `data-storybook-args-to-template-${index}`;
+  const unique = (marker: string) => {
     while (markup.includes(marker) || quasis.some((quasi) => quasi.includes(marker))) {
       marker += '-x';
     }
+    return marker;
+  };
+
+  for (const [index, expression] of expressions.entries()) {
     const substituted = substituteExpression(
       expression,
       shape,
       bindings,
       scope,
       representedArgs,
-      marker,
-      expansions
+      unique(`data-storybook-args-to-template-${index}`),
+      expansions,
+      unique(`__storybook_arg_text_${index}__`),
+      texts
     );
     if (substituted === undefined) {
       return undefined;
@@ -301,7 +324,9 @@ const substituteExpression = (
   scope: FunctionScope,
   representedArgs: Set<string>,
   marker: string,
-  expansions: ArgsExpansion[]
+  expansions: ArgsExpansion[],
+  textMarker: string,
+  texts: TextInterpolation[]
 ): string | undefined => {
   if (t.isCallExpression(expression) && isImportedArgsToTemplate(expression, shape)) {
     // Only the args parameter (whole, or as a rest binding) has a knowable expansion; a derived
@@ -330,10 +355,12 @@ const substituteExpression = (
   const argName = scope.argBindings.get(expression.name);
   if (argName !== undefined) {
     const text = shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
-    if (text !== undefined) {
-      representedArgs.add(argName);
+    if (text === undefined) {
+      return undefined;
     }
-    return text;
+    representedArgs.add(argName);
+    texts.push({ marker: textMarker, arg: argName, text });
+    return textMarker;
   }
   if (scope.parameterNames.has(expression.name)) {
     return undefined;

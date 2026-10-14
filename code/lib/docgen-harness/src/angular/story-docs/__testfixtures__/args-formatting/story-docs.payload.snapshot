@@ -4,6 +4,11 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-args-formatting--every-value-shape": {
+      "argCode": {
+        "data": "{ id: 7, nested: { deep: true } }",
+        "formatter": "(value) => value.replace('"', '\'')",
+        "tags": "['a', 'b']",
+      },
       "id": "storydocs-args-formatting--every-value-shape",
       "name": "Every Value Shape",
       "snippet": "import { Component } from '@angular/core';
@@ -25,6 +30,21 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
 })
 export class DemoComponent {
   formatter = (value) => value.replace('"', '\'');
+}",
+      "template": "import { Component } from '@angular/core';
+import { ArgsFormattingComponent } from './args-formatting.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ArgsFormattingComponent],
+  template: `
+    <sb-args-formatting
+        ⟦props = label kind offset data tags greeting⟧
+        [formatter]="formatter"
+    />`,
+})
+export class DemoComponent {
+  formatter = ⟦value formatter⟧;
 }",
     },
   },

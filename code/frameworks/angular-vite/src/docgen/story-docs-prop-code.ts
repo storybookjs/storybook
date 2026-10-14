@@ -2,7 +2,7 @@
 // field that follows the args it reads.
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import { isOperand } from 'storybook/internal/csf-tools';
-import { dedentStoryCode, hole } from 'storybook/internal/docs-tools';
+import { dedentStoryCode, hole, holeWord } from 'storybook/internal/docs-tools';
 
 /** The names a render function binds its args under; see `functionScope`. */
 export interface ArgNames {
@@ -149,7 +149,8 @@ export const propCode = (
   const { start, end, loc } = root.node;
   let text = code.slice(start!, end!);
   for (const { node, arg, kind, key } of reads.sort((a, b) => b.node.start! - a.node.start!)) {
-    const written = key === undefined ? hole(kind, arg) : `${key}: ${hole(kind, arg)}`;
+    const written =
+      key === undefined ? hole(kind, holeWord(arg)) : `${key}: ${hole(kind, holeWord(arg))}`;
     text = text.slice(0, node.start! - start!) + written + text.slice(node.end! - start!);
   }
   return {

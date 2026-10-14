@@ -14,9 +14,7 @@ export function isOperand(node: t.Node, ancestors: t.Node[]) {
     ((t.isCallExpression(parent) || t.isOptionalCallExpression(parent)) &&
       parent.callee === node) ||
     t.isUnaryExpression(parent, { operator: '-' }) ||
-    t.isUnaryExpression(parent, { operator: '+' }) ||
     t.isBinaryExpression(parent, { operator: '-', right: node }) ||
-    t.isBinaryExpression(parent, { operator: '+', right: node }) ||
     t.isBinaryExpression(parent, { operator: '**', left: node }) ||
     ancestors.some(
       (ancestor) =>

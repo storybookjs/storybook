@@ -25,9 +25,7 @@ describe('isOperand', () => {
   it.each([
     'a - args.n',
     'a-args.n',
-    'a + args.n',
     '-args.n',
-    '+args.n',
     'args.n ** 2',
     'args.n.toFixed()',
     'args.f()',
@@ -40,6 +38,8 @@ describe('isOperand', () => {
   it.each([
     'x = args.n - a',
     'x = args.n + a',
+    'a + args.n',
+    '+args.n',
     '2 ** args.n',
     '!args.n',
     '~args.n',

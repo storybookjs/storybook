@@ -13,18 +13,27 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls, a provider can also
 emit a `template`: the same story as written, with a hole wherever it reads an arg. The provider
-knows what each arg reference is, so it marks it. A story that renders
-`args.loading ? <Spinner /> : <Button {...args} />` has this template:
+knows what each arg reference is, so it marks it. A React story `Story` with the render
+`(args) => args.loading ? <Spinner /> : <Button {...args} />` has this template:
 
 ```tsx
-⟦value loading⟧ ? <Spinner /> : <Button ⟦props⟧ />
+const Story = () => ⟦operand loading⟧ ? <Spinner /> : ⟦element Button⟧;
 ```
+
+Keep it to these rules:
+
+- The template is the story's code as written. The provider only marks where it reads an arg; it
+  never rewrites the code around it, inlines a helper or imitates what a helper or directive does.
+  `render: (args) => Button(args)` fills to `Button({ label: "Go" })`.
+- The static snippet is the same template filled with the args the story is written with, so the
+  snippet keeps its form when a control changes.
+- The browser only replaces each hole with a value. All decisions are the provider's.
 
 The renderer fills the holes in the browser with the current args through
 `parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`,
 where `snippetTemplate.ts` lists the hole kinds. Everything between the holes stays as written,
 including its layout, so with `{ loading: false, label: "Go" }` it fills to
-`false ? <Spinner /> : <Button loading={false} label="Go" />`. An attribute hole (`⟦props⟧`,
+`const Story = () => false ? <Spinner /> : <Button loading={false} label="Go" />;`. An attribute hole (`⟦props⟧`,
 `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`) that prints nothing takes the whitespace before it along, so an
 unset attribute leaves no gap or empty line. Any other hole keeps it, as the story renders it, so
 `Hello ⟦text name⟧!` fills to `Hello !` while `name` is unset, unless it holds a line break, where it

@@ -7,7 +7,7 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { babelParseExpression, types as t } from 'storybook/internal/babel';
+import { babelParseExpression, parser, types as t } from 'storybook/internal/babel';
 import {
   keyOf,
   propertyValue,
@@ -249,6 +249,9 @@ export function transformTemplate(
 export function seedForwardedSetup(setup: ForwardableSetup, ctx: RenderContext): boolean {
   for (const name of setup.bindings) {
     ctx.bindings.add(name);
+  }
+  for (const statement of setup.statements) {
+    reserveDeclaredNames(statement.source, ctx);
   }
   for (const { localName, binding } of setup.imports) {
     if (binding.importName === localName) {
@@ -702,12 +705,18 @@ function substituteArgsExpression(
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
 }
 
-/** Reserves the names `v-for` and slot scopes declare; `false` for one that cannot be read. */
+/**
+ * Reserves the names `v-for` and slot scopes declare, and those an expression declares, such as the
+ * parameter of `(item) => …`; `false` for a `v-for` or slot scope that cannot be read.
+ */
 export function collectTemplateScopeBindings(
   nodes: TemplateChildNode[],
   ctx: RenderContext
 ): boolean {
   for (const node of nodes) {
+    if (node.type === NodeTypes.INTERPOLATION) {
+      reserveDeclaredNames((node.content as SimpleExpressionNode).content, ctx);
+    }
     if (node.type !== NodeTypes.ELEMENT) {
       continue;
     }
@@ -715,6 +724,9 @@ export function collectTemplateScopeBindings(
     for (const prop of node.props) {
       if (prop.type !== NodeTypes.DIRECTIVE) {
         continue;
+      }
+      if (prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION) {
+        reserveDeclaredNames(prop.exp.content, ctx);
       }
 
       const pattern = bindingPatternForDirective(prop);
@@ -729,6 +741,32 @@ export function collectTemplateScopeBindings(
   }
 
   return true;
+}
+
+// A hoisted const named as a name the code declares would be read as that name inside its scope,
+// as `item` in `args.items.filter((item) => item.id !== args.item.id)`. Code that does not parse
+// declares nothing the snippet could keep.
+function reserveDeclaredNames(code: string, ctx: RenderContext) {
+  let ast: t.File;
+  try {
+    ast = parser.parse(code, { plugins: ['typescript'], errorRecovery: true });
+  } catch {
+    return;
+  }
+  t.traverseFast(ast, (node) => {
+    const patterns = t.isFunction(node)
+      ? node.params
+      : t.isVariableDeclarator(node)
+        ? [node.id]
+        : t.isCatchClause(node) && node.param
+          ? [node.param]
+          : [];
+    for (const pattern of patterns) {
+      for (const name of Object.keys(t.getBindingIdentifiers(pattern))) {
+        ctx.bindings.add(name);
+      }
+    }
+  });
 }
 
 function bindingPatternForDirective(directive: DirectiveNode): string | undefined {

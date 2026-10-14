@@ -1292,6 +1292,32 @@ test('template: none where the story may change the args through a call', () => 
   }
 });
 
+test('template: none where the story changes the args through a name or a callback', () => {
+  const input = withCSF3(dedent`
+    export const Aliased: Story = {
+      render: (args) => { const list = args.items ?? []; list.push(4); return <List items={args.items} />; },
+    };
+    export const Destructured: Story = {
+      render: (args) => { const { style } = args; style.color = 'red'; return <Button style={args.style} />; },
+    };
+    export const Callback: Story = {
+      render: (args) => {
+        args.items.forEach((item) => { item.label = item.label.toUpperCase(); });
+        return <List items={args.items} />;
+      },
+    };
+    export const Read: Story = {
+      render: (args) => { const list = args.items; return <List items={list.map((item) => item.label)} />; },
+    };
+  `);
+  for (const story of ['Aliased', 'Destructured', 'Callback']) {
+    expect(template(input, story)).toBeUndefined();
+  }
+  expect(template(input, 'Read')).toBe(
+    'const Read = () => { const list = ⟦value items⟧; return <List items={list.map((item) => item.label)} />; };'
+  );
+});
+
 test('template: a render behind a spread of a story or a helper call', () => {
   const input = withCSF3(dedent`
     const createStory = (label) => ({ args: { label }, render: (args) => <Button {...args} /> });

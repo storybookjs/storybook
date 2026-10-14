@@ -21,6 +21,18 @@ export const ForEachItem: Story = {
   }),
 };
 
+export const FilterByItem: Story = {
+  args: {
+    items: [{ id: 1 }, { id: 2 }],
+    item: { id: 2 },
+  } as Story['args'],
+  render: (args) => ({
+    components: { TemplateSharedValues },
+    setup: () => ({ args }),
+    template: `<TemplateSharedValues :items="args.items.filter((item) => item.id !== args.item.id)" />`,
+  }),
+};
+
 export const SetupMutation: Story = {
   args: {
     items: ['a'],

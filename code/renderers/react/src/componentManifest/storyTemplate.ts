@@ -301,17 +301,33 @@ function wholeEdit(read: NodePath, omitted: string[]): Edit | undefined {
 }
 
 // Whether the story may change the object `read` reads, or one in it: it writes to a property, calls
-// a method that changes an array, or passes it to a call that writes to it. A whole object, as the
-// args are, may be changed by any call not known to only read it.
+// a method that changes an array, or passes it to a call that writes to it, also through a name it
+// declares for it, as in `const list = args.items`, or a callback's parameter, as in
+// `args.items.forEach((item) => …)`. A whole object, as the args are, may be changed by any call
+// not known to only read it.
 function mayChange(read: NodePath, whole: boolean): boolean {
+  // The names `pattern` declares for the value, read anywhere but in `pattern`'s own declaration.
+  const changedThrough = (pattern: NodePath, within: NodePath) =>
+    Object.keys(pattern.getBindingIdentifiers()).some((name) =>
+      pattern.scope
+        .getBinding(name)
+        ?.referencePaths.some(
+          (reference) => !reference.isDescendant(within) && mayChange(reference, whole)
+        )
+    );
   for (let value = read; ; value = value.parentPath!) {
     const { parentPath: parent } = value;
     if (
       parent?.isTSAsExpression() ||
       parent?.isTSSatisfiesExpression() ||
-      parent?.isTSNonNullExpression()
+      parent?.isTSNonNullExpression() ||
+      parent?.isLogicalExpression() ||
+      (parent?.isConditionalExpression() && parent.node.test !== value.node)
     ) {
       continue;
+    }
+    if (parent?.isVariableDeclarator() && parent.node.init === value.node) {
+      return changedThrough(parent.get('id'), parent);
     }
     if (
       parent?.isCallExpression() ||
@@ -335,13 +351,22 @@ function mayChange(read: NodePath, whole: boolean): boolean {
     }
     const call = parent.parentPath;
     const { property, computed } = parent.node;
+    const method =
+      (call?.isCallExpression() || call?.isOptionalCallExpression()) &&
+      call.node.callee === parent.node;
     if (
       isWritten(parent) ||
-      ((call?.isCallExpression() || call?.isOptionalCallExpression()) &&
-        call.node.callee === parent.node &&
-        !computed &&
-        t.isIdentifier(property) &&
-        ARRAY_MUTATORS.includes(property.name))
+      (method && !computed && t.isIdentifier(property) && ARRAY_MUTATORS.includes(property.name))
+    ) {
+      return true;
+    }
+    if (
+      method &&
+      (call.get('arguments') as NodePath[]).some(
+        (argument) =>
+          argument.isFunction() &&
+          argument.get('params').some((param) => changedThrough(param, param))
+      )
     ) {
       return true;
     }

@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Args } from '../../../../types/modules/csf.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
+import { selectLiveSnippetForStory } from './live-snippet.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
@@ -77,6 +79,38 @@ describe('story-docs open service', () => {
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
     expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
+  });
+
+  it('keeps the template warning through the query, so the filled snippet shows it', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload({
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button />',
+          template: '<Button ⟦label⟧ />',
+          warning: 'label could not be resolved',
+          templateWarning: 'Add the NgModule',
+        },
+      },
+    });
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: async () => payload,
+    });
+    await service.commands.extractStoryDocs({ id: 'button' });
+    const fill = (template: string, args: Args) =>
+      template.replace('⟦label⟧', `label="${args.label}"`);
+
+    expect(
+      selectLiveSnippetForStory(
+        service.queries.storyDocs.get({ id: 'button' }),
+        'button--primary',
+        { label: 'Go' },
+        fill
+      )
+    ).toEqual({ snippet: '<Button label="Go" />', warning: 'Add the NgModule' });
   });
 
   describe('a component with several story files', () => {

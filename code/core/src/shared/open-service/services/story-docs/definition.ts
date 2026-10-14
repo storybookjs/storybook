@@ -12,11 +12,14 @@ const storyDocsErrorSchema = v.object({
   message: v.string(),
 });
 
+// The query output is parsed with these schemas, which drop every key they don't list; the type
+// test next to this file keeps them equal to the hand-written types in `types.ts`.
 const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
   snippet: v.optional(v.string()),
   template: v.optional(v.string()),
+  templateWarning: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),

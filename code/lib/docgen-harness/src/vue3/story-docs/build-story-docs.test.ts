@@ -355,6 +355,7 @@ describe('vue3 filled story templates', () => {
 
   it.each<[Exclude<keyof typeof sharedValuesStories, 'default'>, Record<string, unknown>]>([
     ['ForEachItem', { items: [{ id: 3 }, { id: 4 }, { id: 5 }] }],
+    ['FilterByItem', { items: [{ id: 1 }, { id: 2 }], item: { id: 1 } }],
     ['SetupMutation', { items: ['x', 'y'] }],
     ['SpreadWithClass', { label: HOSTILE, class: ['extra'], style: { margin: '1px' } }],
   ])('%s renders as its story', async (name, args) => {

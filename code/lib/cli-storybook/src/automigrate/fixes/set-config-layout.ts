@@ -1,6 +1,10 @@
 import type { Fix } from '../types.ts';
 
-const managerApiPackages = new Set(['storybook/manager-api', '@storybook/manager-api']);
+const managerApiPackages = new Set([
+  'storybook/manager-api',
+  'storybook/internal/manager-api',
+  '@storybook/manager-api',
+]);
 
 const optionGroups = {
   layout: [

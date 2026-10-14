@@ -88,6 +88,31 @@ describe('set-config-layout transform', () => {
     `);
   });
 
+  it('migrates an import from the internal manager-api specifier', async () => {
+    const source = dedent`
+      import { addons } from 'storybook/internal/manager-api';
+
+      addons.setConfig({ showNav: false, panelPosition: 'right', enableShortcuts: false, theme });
+    `;
+
+    expect(await migrate(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/internal/manager-api';
+
+      addons.setConfig({
+        layout: {
+          showNav: false,
+          panelPosition: 'right'
+        },
+
+        ui: {
+          enableShortcuts: false
+        },
+
+        theme
+      });"
+    `);
+  });
+
   it('reports conflicts because nested layout and UI options are authoritative', async () => {
     const source = dedent`
       import { addons as managerAddons } from '@storybook/manager-api';
@@ -442,6 +467,28 @@ describe('setConfigLayout', () => {
 
     await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: {
+        showToolbar: false
+      } });"
+    `);
+  });
+
+  it('detects and writes a manager config migration for the internal specifier', async () => {
+    const source = dedent`
+      import { addons } from 'storybook/internal/manager-api';
+      addons.setConfig({ showToolbar: false });
+    `;
+    vol.fromJSON({ [managerConfigPath]: source });
+
+    const result = await check();
+    if (!result) {
+      throw new Error('expected a migration result');
+    }
+
+    await run(result);
+
+    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/internal/manager-api';
       addons.setConfig({ layout: {
         showToolbar: false
       } });"

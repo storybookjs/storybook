@@ -1,10 +1,9 @@
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import {
-  argCode,
   collectImportBindings,
   createStoryArgsResolver,
   type CsfFile,
-  fillWithStoryArgs,
+  fillStoryTemplate,
   type ImportRef,
   isCanonicalCsf2BindCall,
   metaObjectPath,
@@ -13,6 +12,7 @@ import {
   type RenderResolution,
   resolveRenderFunction,
   type StoryArgsResolver,
+  unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
 import { fillTemplate } from '../docs/fill-template.ts';
@@ -37,6 +37,8 @@ export interface CodeSnippet {
   template?: string;
   /** The code the story writes each arg with; see `StoryDoc.argCode`. */
   argCode?: Record<string, string>;
+  /** What the filled `template` leaves out; see `StoryDoc.templateWarning`. */
+  templateWarning?: string;
 }
 
 export function getCodeSnippet(
@@ -62,24 +64,16 @@ export function getCodeSnippet(
     runs && !inOtherFile
       ? buildStoryTemplate(storyName, fnPath, componentName, csf._file.code)
       : undefined;
-  const filled = template === undefined ? undefined : staticFill(template, args);
+  const filled = template
+    ? fillStoryTemplate(template, args, fillTemplate, unresolvedWarning(unresolved))
+    : undefined;
   return {
-    snippet:
-      filled ?? recast.print(buildSnippetNode(storyName, fnPath?.node, componentName, args)).code,
+    ...(filled ?? {
+      snippet: recast.print(buildSnippetNode(storyName, fnPath?.node, componentName, args)).code,
+    }),
     imports,
     unresolved,
-    ...(template ? { template, argCode: argCode(args) } : {}),
   };
-}
-
-// The template filled with the args the story is written with, or `undefined` where the filler
-// cannot print one of them.
-function staticFill(template: string, args: Record<string, t.Node>) {
-  try {
-    return fillWithStoryArgs(template, args, fillTemplate);
-  } catch {
-    return undefined;
-  }
 }
 
 function importedBoundStory(

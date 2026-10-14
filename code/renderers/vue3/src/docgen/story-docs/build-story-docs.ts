@@ -10,13 +10,12 @@ import {
 import { getService } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
-  argCode,
   buildImportStatements,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
-  fillWithStoryArgs,
+  fillStoryTemplate,
   jsDocTagsForPath,
   keyOf,
   loadCsf,
@@ -400,8 +399,13 @@ function enrichStoryDoc(
   // story printed as before where it has no template or the filler cannot print one of them.
   const template = storyTemplate(renderer, options.snippet, args);
   const storyArgs = Object.fromEntries(args.map((arg) => [arg.name, arg.value]));
+  const warning = unresolvedWarning(unresolved);
+  const filled =
+    template === undefined
+      ? undefined
+      : fillStoryTemplate(template, storyArgs, fillTemplate, warning);
   const snippet =
-    (template !== undefined && staticFill(template, storyArgs)) ||
+    filled?.snippet ||
     renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, renderOptions)
       ?.snippet;
   if (!snippet) {
@@ -410,18 +414,10 @@ function enrichStoryDoc(
 
   return {
     ...storyDoc,
+    ...filled,
     snippet,
-    ...(template !== undefined ? { template, argCode: argCode(storyArgs) } : {}),
-    ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
+    ...(warning === undefined ? {} : { warning }),
   };
-}
-
-function staticFill(template: string, args: Record<string, t.Node>): string | undefined {
-  try {
-    return fillWithStoryArgs(template, args, fillTemplate);
-  } catch {
-    return undefined;
-  }
 }
 
 /**

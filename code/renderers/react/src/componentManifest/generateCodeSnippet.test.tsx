@@ -1,6 +1,6 @@
 import { expect, test, vi } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, unresolvedWarning } from 'storybook/internal/csf-tools';
 import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 import { selectLiveSnippetForStory } from 'storybook/open-service';
 
@@ -1407,4 +1407,32 @@ test('template: an arg that still holds the value the story writes stays as writ
     >Click me</Button>;"
   `
   );
+});
+
+test('template: the filled snippet keeps the warning of the static one', () => {
+  const input = withCSF3(dedent`
+    function shout(text) { return text.toUpperCase(); }
+    export const Shout: Story = { args: { format: shout, label: 'Go' } };
+  `);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  const { template, unresolved, templateWarning } = getCodeSnippet(csf, 'Shout', 'Button');
+  expect(template).toBeDefined();
+  expect(unresolved).not.toEqual([]);
+  expect(templateWarning).toBe(unresolvedWarning(unresolved));
+});
+
+test('template: none where the filler cannot print an arg the story is written with', () => {
+  const input = withCSF3(dedent`
+    export const Spaced: Story = { args: { 'my label': 'Go' } };
+  `);
+  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
+  const { snippet, template, argCode } = getCodeSnippet(csf, 'Spaced', 'Button');
+  expect(template).toBeUndefined();
+  expect(argCode).toBeUndefined();
+  expect(snippet).toMatchInlineSnapshot(`
+    "const Spaced = () => <Button
+        {...{
+            "my label": 'Go'
+        }}>Click me</Button>;"
+  `);
 });

@@ -79,6 +79,7 @@ const user = ⟦value user script⟧;
 <template>
   <NamedTypeDetails ⟦props -big -builtin -cyclic -dict -inlined -localDate -namespaced -partialed -picked -prefs -user⟧ :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" :user="user"⟦slots NamedTypeDetails⟧
 </template>",
+      "templateWarning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
     },
   },

@@ -1,5 +1,4 @@
 {
-  "ArgsDefaultRender": "UnprintableArgError: The snippet cannot show the value of the `actions-slot` arg.",
   "DomNode": "const el = document.createElement('lit-slots-and-css');
 el.setAttribute('heading', String("Projected"));
 const body = document.createElement('p');

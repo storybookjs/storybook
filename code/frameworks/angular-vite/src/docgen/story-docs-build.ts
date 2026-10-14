@@ -3,13 +3,13 @@ import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
 import {
-  argCode,
   buildImportStatements,
   authoredSource,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
+  fillStoryTemplate,
   fillWithStoryArgs,
   isSelfContained,
   parseReferenceModule,
@@ -545,20 +545,16 @@ const withTemplate = (
   if (!read?.size) {
     return unfilled();
   }
-  let snippet: string;
-  try {
-    snippet = fillWithStoryArgs(template.snippet, args, fillTemplate);
-  } catch {
+  const { warning: templateWarning } = withWarnings(template, ...templateWarnings);
+  const filled = fillStoryTemplate(template.snippet, args, fillTemplate, templateWarning);
+  if (!filled) {
     return unfilled();
   }
   const { warning } = withWarnings(template, ...warnings);
-  const { warning: templateWarning } = withWarnings(template, ...templateWarnings);
   return {
-    snippet,
+    ...filled,
     ...(warning === undefined ? {} : { warning }),
-    template: template.snippet,
-    argCode: Object.fromEntries(Object.entries(argCode(args)).filter(([name]) => read.has(name))),
-    ...(templateWarning === undefined ? {} : { templateWarning }),
+    argCode: Object.fromEntries(Object.entries(filled.argCode).filter(([name]) => read.has(name))),
   };
 };
 

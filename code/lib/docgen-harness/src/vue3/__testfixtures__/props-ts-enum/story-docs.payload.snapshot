@@ -23,6 +23,7 @@ import TsEnumProps from './TsEnumProps.vue';
 <template>
   <TsEnumProps ⟦props -default⟧⟦slots TsEnumProps default⟧
 </template>",
+      "templateWarning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
       "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
     },
   },

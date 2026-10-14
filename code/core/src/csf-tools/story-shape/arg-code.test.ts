@@ -5,10 +5,11 @@ import { babelParse, type types as t } from 'storybook/internal/babel';
 import {
   type FillSnippetTemplate,
   asOperand,
+  UnprintableArgError,
   fillHoles,
   printValue,
 } from '../../docs-tools/snippetTemplate.ts';
-import { argCode, fillWithStoryArgs } from './arg-code.ts';
+import { argCode, fillStoryTemplate, fillWithStoryArgs } from './arg-code.ts';
 
 const argsOf = (code: string): Record<string, t.Node> => {
   const statement = babelParse(`(${code})`).program.body[0] as t.ExpressionStatement;
@@ -89,5 +90,36 @@ describe('fillWithStoryArgs', () => {
         fill
       )
     ).toBe('label("Go", (MB * 5).toFixed(0), (1 + 2) * 2)');
+  });
+});
+
+describe('fillStoryTemplate', () => {
+  it('returns the static snippet with the template, its argCode and the warning', () => {
+    expect(
+      fillStoryTemplate('f(⟦value format⟧)', argsOf(`{ format: shout }`), fill, 'Uses `shout`.')
+    ).toEqual({
+      snippet: 'f(shout)',
+      template: 'f(⟦value format⟧)',
+      argCode: { format: 'shout' },
+      templateWarning: 'Uses `shout`.',
+    });
+  });
+
+  it('returns nothing where the filler cannot print an arg', () => {
+    const unprintable: FillSnippetTemplate = () => {
+      throw new UnprintableArgError('format');
+    };
+    expect(fillStoryTemplate('f(⟦value format⟧)', argsOf(`{ format: 1 }`), unprintable)).toBe(
+      undefined
+    );
+  });
+
+  it('throws any other error of the filler', () => {
+    const broken: FillSnippetTemplate = () => {
+      throw new TypeError('bug');
+    };
+    expect(() => fillStoryTemplate('f(⟦value format⟧)', argsOf(`{ format: 1 }`), broken)).toThrow(
+      'bug'
+    );
   });
 });

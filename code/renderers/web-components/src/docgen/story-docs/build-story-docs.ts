@@ -9,12 +9,11 @@ import type {
   StoryReferences,
 } from 'storybook/internal/csf-tools';
 import {
-  argCode,
   authoredSource,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
-  fillWithStoryArgs,
+  fillStoryTemplate,
   noSnippetWarning,
   sourceOf,
   unwrapExpression,
@@ -314,8 +313,9 @@ const renderedArgsSnippet = (
 
 /**
  * The story's template, if any, and as its static snippet the template filled with the args the
- * story is written with. Where the story spreads args the file cannot read, or the filler cannot
- * print an arg, the static snippet is the one the story has without a template, with its warning.
+ * story is written with. Where the filler cannot print an arg, the story has no template. Where it
+ * spreads args the file cannot read, the static snippet is the one the story has without a
+ * template, with its warning.
  */
 const withTemplate = (
   own: SnippetResult,
@@ -327,7 +327,6 @@ const withTemplate = (
   if (!live) {
     return own;
   }
-  const code = argCode(resolved.args);
   // The args the filler reads.
   const printed = new Set<string>();
   const reads = (args: Args) =>
@@ -339,14 +338,13 @@ const withTemplate = (
         return Reflect.get(target, name);
       },
     });
-  let snippet: string | undefined;
-  try {
-    snippet = fillWithStoryArgs(live.template, resolved.args, (template, args) =>
-      fillTemplate(template, reads(args))
-    );
-  } catch {
-    // The static snippet is the one the story has without a template.
+  const filled = fillStoryTemplate(live.template, resolved.args, (template, args) =>
+    fillTemplate(template, reads(args))
+  );
+  if (!filled) {
+    return own;
   }
+  const code = filled.argCode;
   // The args it prints as their code, whose names the story file binds the snippet has to declare.
   const written = [...printed].filter((name) => name in code);
   // A spread of args the file cannot read may set an arg the snippet prints.
@@ -365,9 +363,10 @@ const withTemplate = (
   ]);
   // What the file cannot read, but for the names the warning names already.
   const unread = unresolvedWarning(resolved.unresolved.filter((source) => !free.has(source)));
+  // The warning hangs on the args the fill printed, so it is known only after it.
   return {
-    ...(snippet === undefined || unknown ? own : { snippet, ...joinWarnings([unread, warning]) }),
-    template: live.template,
+    ...(unknown ? own : { snippet: filled.snippet, ...joinWarnings([unread, warning]) }),
+    template: filled.template,
     argCode: code,
     ...(warning === undefined ? {} : { templateWarning: warning }),
   };

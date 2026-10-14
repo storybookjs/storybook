@@ -35,9 +35,12 @@ Keep it to these rules:
   `new FormControl('x')`. Code that is not a simple value comes in parentheses, unless the story
   wrote them, so `max: MB * 5` read as `args.max.toFixed(0)` fills to `(MB * 5).toFixed(0)`.
 - The static snippet is the same template filled with the args the story is written with, so the
-  snippet keeps its form when a control changes. `fillWithStoryArgs` from
+  snippet keeps its form when a control changes. `fillStoryTemplate` from
   `storybook/internal/csf-tools` builds it on the server with the renderer's own filler, exactly as
-  the browser fills the template while no control has changed.
+  the browser fills the template while no control has changed, next to `template`, `argCode` and
+  `templateWarning`: the provider's warning, or the part of it that still holds once a control
+  changes. Where the filler cannot print an arg the story is written with, it returns nothing, and
+  the provider prints its snippet as it does for a story without a template.
 - The browser only replaces each hole with a value. All decisions are the provider's.
 
 The renderer fills the holes in the browser with the current args through

@@ -74,14 +74,12 @@
       "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--slots": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--slots",
       "name": "Slots",
       "snippet": "<csf-shapes label="Meta">
   Body <b>text</b>
   <button slot="actions">Go</button>
 </csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦props ~label=label -default-slot -actions-slot -shape-change-event -refresh-method -panel-part -active-state --csf-shapes-accent=--csf-shapes-accent .items=items ~count=count ~disabled=disabled *⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--spread-args": {
       "argCode": {},

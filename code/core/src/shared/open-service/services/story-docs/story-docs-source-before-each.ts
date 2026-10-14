@@ -91,6 +91,11 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       logger.debug(`Story docs snippet for ${storyId} unavailable: ${String(error)}`);
     });
   emits.set(storyId, codePanelSnippetPromise);
+  void codePanelSnippetPromise.finally(() => {
+    if (emits.get(storyId) === codePanelSnippetPromise) {
+      emits.delete(storyId);
+    }
+  });
 
   return () => {
     cancelled = true;

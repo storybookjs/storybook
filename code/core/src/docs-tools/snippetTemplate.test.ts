@@ -173,9 +173,17 @@ describe('printValue', () => {
 
   it('stops printing a large value as soon as it is too long', () => {
     const items = Array.from({ length: 1_000_000 }, (_, id) => ({ id, name: `item ${id}` }));
-    const start = performance.now();
-    expect(() => printValue(items, 'items')).toThrow(UnprintableArgError);
-    expect(performance.now() - start).toBeLessThan(50);
+    let visited = 0;
+    const counted = new Proxy(items, {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && /^\d+$/.test(key)) {
+          visited++;
+        }
+        return Reflect.get(target, key, receiver);
+      },
+    });
+    expect(() => printValue(counted, 'items')).toThrow(UnprintableArgError);
+    expect(visited).toBeLessThan(100);
   });
 
   it('throws for a value with no literal', () => {

@@ -183,7 +183,7 @@ export function renderTemplate(
       // `v-model="args.open"` binds a ref that starts as the arg, as the static snippet writes it.
       const model = prop.name === 'model' && /^args\.([A-Za-z_$][\w$]*)$/.exec(exp.content.trim());
       if (model) {
-        const text = hoistModelRef(model[1]!, hole('value', model[1]!, 'script'), ctx);
+        const text = hoistModelRef(model[1]!, hole('value', holeWord(model[1]!), 'script'), ctx);
         edits.push({ start: exp.loc.start.offset, end: exp.loc.end.offset, text });
         continue;
       }

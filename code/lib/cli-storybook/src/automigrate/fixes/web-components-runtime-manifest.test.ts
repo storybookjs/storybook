@@ -67,6 +67,7 @@ const runWith = async (
     result: {
       setterNames: ['setCustomElementsManifest'],
       manifestPath: '../custom-elements.json',
+      manifestFiles: ['/project/custom-elements.json'],
       ...result,
     },
     mainConfigPath: MAIN,
@@ -138,6 +139,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -149,6 +151,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -166,6 +169,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -182,6 +186,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElements'],
         manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -235,6 +240,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: null,
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -251,6 +257,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -268,6 +275,43 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
+      },
+    },
+    {
+      name: 'uses the workspace manifest when the setter argument wraps the import',
+      files: {
+        '/project/custom-elements.json': CEM,
+        [PREVIEW]: dedent`
+          import { setCustomElementsManifest } from "@storybook/web-components";
+          import customElements from "../custom-elements.json";
+
+          setCustomElementsManifest(format(customElements));
+        `,
+      },
+      expected: {
+        setterNames: ['setCustomElementsManifest'],
+        manifestPath: '../custom-elements.json',
+        manifestFiles: ['/project/custom-elements.json'],
+      },
+    },
+    {
+      name: 'uses package.json customElements when the setter reads a derived variable',
+      files: {
+        '/project/custom-elements.json': CEM,
+        [PACKAGE_JSON]: JSON.stringify({ customElements: 'custom-elements.json' }),
+        [PREVIEW]: dedent`
+          import { setCustomElementsManifest } from "@storybook/web-components";
+          import customElements from "../custom-elements.json";
+
+          const m = format(customElements);
+          setCustomElementsManifest(m);
+        `,
+      },
+      expected: {
+        setterNames: ['setCustomElementsManifest'],
+        manifestPath: null,
+        manifestFiles: ['/project/custom-elements.json'],
       },
     },
     {
@@ -310,6 +354,7 @@ describe('check', (): void => {
       expected: {
         setterNames: ['setCustomElementsManifest'],
         manifestPath: '../preview-elements.json',
+        manifestFiles: ['/project/preview-elements.json'],
       },
     },
   ];
@@ -502,24 +547,24 @@ describe('run', (): void => {
     `);
   });
 
-  it('does not warn about a JSON import the inline object call never used', async (): Promise<void> => {
+  it('does not warn about a read JSON import of another file', async (): Promise<void> => {
     vol.fromNestedJSON({
       [PREVIEW]: dedent`
         import { setCustomElementsManifest } from "@storybook/web-components";
-        import customElements from "../custom-elements.json";
+        import tokens from "../tokens.json";
 
         setCustomElementsManifest({});
 
-        export const moduleCount = customElements.modules.length;
+        export const tokenCount = tokens.length;
       `,
     });
 
     await runWith();
 
     expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
-      "import customElements from "../custom-elements.json";
+      "import tokens from "../tokens.json";
 
-      export const moduleCount = customElements.modules.length;"
+      export const tokenCount = tokens.length;"
     `);
     expect(logger.warn).not.toHaveBeenCalled();
   });
@@ -755,6 +800,73 @@ describe('run', (): void => {
     expect(vi.mocked(logger.warn).mock.calls[0][0]).toContain(
       'for: `WebComponentFormatter(customElements)`.'
     );
+  });
+
+  it('drops a manifest import that only fed a wrapped setter argument', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        setCustomElementsManifest(format(customElements));
+
+        export const parameters = {};
+      `,
+    });
+
+    await runWith({ manifestPath: null });
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "export const parameters = {};"
+    `);
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it('warns about a manifest import that feeds the setter through a variable', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import customElements from "../custom-elements.json";
+
+        const m = format(customElements);
+        setCustomElementsManifest(m);
+      `,
+    });
+
+    await runWith({ manifestPath: null });
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "import customElements from "../custom-elements.json";
+
+      const m = format(customElements);"
+    `);
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "/project/.storybook/preview.ts still imports ../custom-elements.json for: \`const m = format(customElements)\`.
+      Docs now read the manifest from disk, so changes made to it in the preview no longer apply, and the import makes the preview build fail when the manifest is invalid.
+      Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.",
+        ],
+      ]
+    `);
+  });
+
+  it('leaves an unused JSON import of another file alone', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCustomElementsManifest } from "@storybook/web-components";
+        import tokens from "../tokens.json";
+
+        setCustomElementsManifest({});
+      `,
+    });
+
+    await runWith({ manifestPath: null });
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "import tokens from "../tokens.json";"
+    `);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('leaves the preview alone and warns when the setter is also referenced elsewhere', async (): Promise<void> => {

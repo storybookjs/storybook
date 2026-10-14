@@ -37,6 +37,8 @@ export interface WebComponentsRuntimeManifestOptions {
   setterNames: SetterName[];
   /** Manifest path relative to the config dir; `null` when `package.json#customElements` already names it. */
   manifestPath: string | null;
+  /** Absolute paths of the manifests the docgen server will read. */
+  manifestFiles: string[];
 }
 
 export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptions> = {
@@ -87,6 +89,7 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
     return {
       setterNames,
       manifestPath,
+      manifestFiles: manifestPaths,
     };
   },
 
@@ -113,7 +116,7 @@ export const webComponentsRuntimeManifest: Fix<WebComponentsRuntimeManifestOptio
     {
       filter: { kind: ['preview'], code: 'setCustomElements' },
       editConfig: (preview, { id }): void => {
-        removePreviewWiring(preview, id, result.setterNames);
+        removePreviewWiring(preview, id, result);
       },
     },
   ],
@@ -257,13 +260,50 @@ const logSurvivingManifestImport = (
     Move manifest transforms into your manifest generator (for example an analyzer plugin), then remove the import.
   `);
 
+const findManifestImports = (
+  program: t.Program,
+  previewDir: string,
+  manifestFiles: string[]
+): Map<string, string> => {
+  const imports = new Map<string, string>();
+  for (const node of program.body) {
+    if (
+      !t.isImportDeclaration(node) ||
+      !isRelativeJsonSpecifier(node.source.value) ||
+      !manifestFiles.includes(resolve(previewDir, node.source.value))
+    ) {
+      continue;
+    }
+    for (const specifier of node.specifiers) {
+      if (t.isImportDefaultSpecifier(specifier)) {
+        imports.set(specifier.local.name, node.source.value);
+      }
+    }
+  }
+  return imports;
+};
+
+const removeDefaultImport = (program: t.Program, name: string): void => {
+  program.body = program.body.filter((node) => {
+    if (!t.isImportDeclaration(node)) {
+      return true;
+    }
+    node.specifiers = node.specifiers.filter(
+      (specifier) => !(t.isImportDefaultSpecifier(specifier) && specifier.local.name === name)
+    );
+    return node.specifiers.length > 0;
+  });
+};
+
 const removePreviewWiring = (
   preview: ConfigFile,
   previewConfigPath: string,
-  setterNames: SetterName[]
+  { setterNames, manifestFiles }: WebComponentsRuntimeManifestOptions
 ): void => {
   const { program } = preview._ast;
-  const keptImports = new Map<string, string>();
+  const manifestImports = findManifestImports(program, dirname(previewConfigPath), manifestFiles);
+  const keptImports = new Map(manifestImports);
+  let removedAnySetter = false;
   for (const setterName of setterNames) {
     const result = removeTopLevelCall(program, {
       callee: setterName,
@@ -273,6 +313,7 @@ const removePreviewWiring = (
       logManualRemovalHint(previewConfigPath, setterName, result.reason);
       continue;
     }
+    removedAnySetter = true;
     logger.debug(`Removed the ${setterName} wiring from ${previewConfigPath}`);
     for (const name of result.keptArguments) {
       const specifier = findDefaultJsonImportSpecifier(program, name);
@@ -280,6 +321,9 @@ const removePreviewWiring = (
         keptImports.set(name, specifier);
       }
     }
+  }
+  if (!removedAnySetter) {
+    return;
   }
 
   for (const [name, specifier] of keptImports) {
@@ -289,6 +333,8 @@ const removePreviewWiring = (
     );
     if (readers.length > 0) {
       logSurvivingManifestImport(previewConfigPath, specifier, readers);
+    } else if (manifestImports.has(name) && countReferences(program, name) === 0) {
+      removeDefaultImport(program, name);
     }
   }
 };

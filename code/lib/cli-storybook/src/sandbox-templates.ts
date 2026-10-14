@@ -536,8 +536,7 @@ export const baseTemplates = {
       useCsfFactory: true,
       extraDependencies: ['vue@rc'],
     },
-    // This sandbox has no dedicated Chromatic project yet.
-    skipTasks: ['e2e-tests', 'bench', 'chromatic'],
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',

@@ -40,8 +40,11 @@ export interface ArgsRead {
   start: number;
   end: number;
   name: string;
-  /** Whether a literal in its place needs parentheses; see `isOperand`. */
-  operand: boolean;
+  /**
+   * Whether code in its place needs parentheses, given the node the story writes the arg with; see
+   * `isOperand`.
+   */
+  operand: (written?: t.Node) => boolean;
 }
 
 export type ForwardableSetupResolution =
@@ -337,7 +340,7 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
         start: member.loc.start,
         end: member.loc.end,
         name: member.property.name,
-        operand: isOperand(member, around),
+        operand: (written) => isOperand(member, around, written),
       });
       return;
     }

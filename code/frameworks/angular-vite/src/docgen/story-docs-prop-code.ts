@@ -41,13 +41,16 @@ export const functionPath = (
 
 /**
  * The code a prop holds, or `undefined` when it reads no arg or names something only the story
- * file or the running render has. `code` is the source text of the story file.
+ * file or the running render has. `code` is the source text of the story file, and `written` holds
+ * the node the story writes each arg with, which decides where its code needs parentheses; see
+ * `isOperand`.
  */
 export const propCode = (
   fn: NodePath<t.Function>,
   value: t.Node,
   names: ArgNames,
-  code: string
+  code: string,
+  written: Record<string, t.Node> = {}
 ): PropCode | undefined => {
   const root = findPath(fn, value);
   if (!root) {
@@ -78,7 +81,7 @@ export const propCode = (
       node: shorthand ? parentPath.node : node,
       arg,
       kind:
-        isOperand(node, within) ||
+        isOperand(node, within, Object.hasOwn(written, arg) ? written[arg] : undefined) ||
         t.isNewExpression(parent, { callee: node }) ||
         t.isTaggedTemplateExpression(parent, { tag: node })
           ? 'operand'

@@ -706,6 +706,24 @@ export const Primary = {
     expect(filled).toContain('<MyButton :count="left" :label="10 -(-1)" />');
   });
 
+  it('reads an arg the story writes as code next to an operator as an operand, but not data', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { onClick: () => null, count: 5 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const off = !args.onClick;
+      return { args, off };
+    },
+    template: '<MyButton :active="args.onClick || off" :count="args.count + 1" />',
+  }),
+};
+`);
+    expect(story?.snippet).toContain('const off = !(() => null);');
+    expect(story?.snippet).toContain('<MyButton :active="(() => null) || off" :count="5 + 1" />');
+  });
+
   it('marks a hole in an attribute written in single quotes, and none in one without quotes', () => {
     const code = renderTemplate(`<MyButton :label='args.label + "!"' />`, new Map(), [])!;
     expect(code).toContain(`<MyButton :label='⟦value label '⟧ + "!"' />`);

@@ -486,7 +486,14 @@ function storyTemplate(
   if (renderer.kind !== 'template') {
     return undefined;
   }
-  return renderTemplate(renderer.template, renderer.componentImports, slots, renderer.setup, args);
+  return renderTemplate(
+    renderer.template,
+    renderer.componentImports,
+    slots,
+    renderer.setup,
+    args,
+    storyArgs
+  );
 }
 
 function staticRendererForRenderFunction(

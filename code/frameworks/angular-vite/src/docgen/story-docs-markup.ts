@@ -645,7 +645,8 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
             fnPath,
             unwrapExpression(property.value as t.Expression),
             scope,
-            shape.csf._file.code
+            shape.csf._file.code,
+            shape.args
           )
         : undefined;
     named.set(name, computed ? { code, computed } : { code });

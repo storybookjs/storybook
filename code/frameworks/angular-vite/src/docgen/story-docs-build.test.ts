@@ -2659,6 +2659,25 @@ describe('buildStoryDocsPayload', () => {
       expect(templateWarning).toBe(unresolved);
     });
 
+    it('reads an arg the story writes as code next to an operator as an operand, but not data', async () => {
+      const stories = await storiesOf(dedent`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const S = {
+          args: { onClick: () => null, count: 5 },
+          render: (args) => ({
+            props: { off: !args.onClick, total: args.count + 1 },
+            template: '<sb-button [disabled]="off" [label]="total" />',
+          }),
+        };
+      `);
+      const { snippet, template } = stories.get('S')!;
+      expect(template).toContain('  off = !⟦operand onClick⟧;');
+      expect(template).toContain('  total = ⟦value count⟧ + 1;');
+      expect(snippet).toContain('  off = !(() => null);');
+      expect(snippet).toContain('  total = 5 + 1;');
+    });
+
     it('binds an input the render computes from args to a host field', async () => {
       const stories = await storiesOf(dedent`
         import { ButtonComponent } from './button.component';

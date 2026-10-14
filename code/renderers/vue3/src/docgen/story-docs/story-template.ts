@@ -88,14 +88,17 @@ function spreadAttributes(args: ClassifiedArg[], words: string[], ctx: RenderCon
  * no hole stands for, such as in an event handler, and the story then has no template.
  *
  * An arg the story sets to more than a literal, such as an object or an array, is a `const` with a
- * hole for its value, so every read of it is the same value, as in the story.
+ * hole for its value, so every read of it is the same value, as in the story. `written` holds the
+ * node the story writes each arg with, which decides where its code needs parentheses; see
+ * `isOperand`.
  */
 export function renderTemplate(
   template: string,
   componentImports: Map<string, string>,
   slots: string[],
   setup?: ForwardableSetup,
-  args: ClassifiedArg[] = []
+  args: ClassifiedArg[] = [],
+  written: Record<string, t.Node> = {}
 ): string | undefined {
   const statements = setup?.statements ?? [];
   let invalid = [template, ...statements.map(({ source }) => source)].some(hasHoleBracket);
@@ -113,6 +116,7 @@ export function renderTemplate(
   const hoisted = new Set(
     args.filter((arg) => arg.role !== 'slot' && arg.plan.kind === 'hoist').map((arg) => arg.name)
   );
+  const writtenAs = (name: string) => (Object.hasOwn(written, name) ? written[name] : undefined);
   const constFor = (name: string) =>
     hoisted.has(name)
       ? hoistArgCode(name, hole('value', holeWord(name), 'script'), ctx)
@@ -127,6 +131,7 @@ export function renderTemplate(
         template,
         '"',
         constFor,
+        writtenAs,
         (name) => ({
           start: start.offset,
           end: end.offset,
@@ -192,7 +197,7 @@ export function renderTemplate(
         (other) => other === prop || other.type !== NodeTypes.ATTRIBUTE || other.name !== name
       );
       const quote = template[exp.loc.start.offset - 1];
-      const holes = argHoles(exp, template, quote, constFor, (word) =>
+      const holes = argHoles(exp, template, quote, constFor, writtenAs, (word) =>
         name !== undefined && owned
           ? { start: start.offset, end: end.offset, text: hole('attr', name, holeWord(word)) }
           : undefined
@@ -221,7 +226,12 @@ export function renderTemplate(
       statements[index - 1],
       ({ name, operand }, _, startsLine) =>
         constFor(name) ??
-        hole(operand ? 'operand' : 'value', holeWord(name), 'script', ...(startsLine ? [';'] : []))
+        hole(
+          operand(writtenAs(name)) ? 'operand' : 'value',
+          holeWord(name),
+          'script',
+          ...(startsLine ? [';'] : [])
+        )
     )
   );
   const code = renderPreparedSfcSnippet({ templateCode, ctx });
@@ -236,6 +246,7 @@ function argHoles(
   template: string,
   quote: string | undefined,
   constFor: (name: string) => string | undefined,
+  writtenAs: (name: string) => t.Node | undefined,
   whole: (name: string) => Edit | undefined
 ): Edit[] | undefined {
   const offset = exp.loc.start.offset;
@@ -277,11 +288,11 @@ function argHoles(
     ) {
       return;
     }
-    const kind = isOperand(parent!, around) ? 'operand' : 'value';
     if (!name) {
       holes.push(undefined);
       return;
     }
+    const kind = isOperand(parent!, around, writtenAs(name)) ? 'operand' : 'value';
     const at = { start: offset + parent.start!, end: offset + parent.end! };
     const binding = constFor(name);
     const quoted = quote === '"' || quote === "'";

@@ -16,7 +16,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
   template: `<sb-live-args [label]="describe()"></sb-live-args>`,
 })
 export class DemoComponent {
-  describe = () => ('Go') || 'none';
+  describe = () => 'Go' || 'none';
 }",
       "template": "import { Component } from '@angular/core';
 import { LiveArgsComponent } from './live-args.component.ts';
@@ -27,7 +27,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
   template: `<sb-live-args [label]="describe()"></sb-live-args>`,
 })
 export class DemoComponent {
-  describe = () => (⟦value label⟧) || 'none';
+  describe = () => ⟦operand label⟧ || 'none';
 }",
     },
     "storydocs-live-args--imported-control": {
@@ -120,7 +120,9 @@ export class DemoComponent {
 }",
     },
     "storydocs-live-args--own-markup-function": {
-      "argCode": {},
+      "argCode": {
+        "formatter": "(value) => value.trim()",
+      },
       "id": "storydocs-live-args--own-markup-function",
       "name": "Own Markup Function",
       "snippet": "import { Component } from '@angular/core';
@@ -145,7 +147,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 })
 export class DemoComponent {
   label = ⟦value label⟧;
-  formatter = (value) => value.trim();
+  formatter = ⟦value formatter⟧;
 }",
     },
   },

@@ -20,7 +20,7 @@ vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 // A factory, not `spy: true`: the real module cannot load once `node:fs` reads from memfs.
-vi.mock('@typescript/typescript6', () => ({ default: typescript }));
+vi.mock('typescript', () => ({ default: typescript }));
 vi.mock('./component-docgen/source/generator.ts', { spy: true });
 vi.mock('./component-docgen/source/source-manager.ts', { spy: true });
 

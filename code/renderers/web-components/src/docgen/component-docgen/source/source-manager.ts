@@ -1,7 +1,7 @@
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenError } from 'storybook/internal/types';
 
-import type * as ts from '@typescript/typescript6';
+import type * as ts from 'typescript';
 import { isAbsolute, normalize, relative } from 'pathe';
 
 import type { CemTag } from '../manifest/cem-manager.ts';

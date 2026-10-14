@@ -42,65 +42,26 @@ const WAIVED_ARGTYPES: Record<string, Record<string, string>> = {
     'side-changed-event': 'Generator emitted Event instead of CustomEvent.',
     'toggle-method': 'Generator emitted () => void instead of ().',
   },
-  'lit-basic-attributes': {
-    count: 'Generator omitted the default value 2.',
-    disabled: 'Generator omitted the default value false.',
-    'is-open': 'Generator omitted the default value false.',
-    isOpen: 'Generator omitted the default value false.',
-    label: "Generator omitted the default value 'Basic label'.",
-  },
   'lit-events': {
     'close-method': 'Generator emitted () => void instead of ().',
     'emitChange-method': 'Generator emitted () => void instead of ().',
-    value: "Generator omitted the default value 'ready'.",
   },
   'lit-inheritance-mixin': {
     'base-label': "Generator omitted the inherited description and default value 'Final'.",
     baseLabel: "Generator omitted the inherited description and default value 'Final'.",
-    count: 'Generator omitted the default value 1.',
-    'mixed-active': 'Generator omitted the default value false.',
-    mixedActive: 'Generator omitted the default value false.',
   },
   'lit-property-only': {
     config:
       'Generator omitted the default object value and emitted an object control instead of disabling controls.',
-    items: 'Generator omitted the default array value.',
-    label: "Generator omitted the default value 'Items'.",
-  },
-  'lit-schema-warning': {
-    count: 'Generator omitted the default value 0.',
-    label: "Generator omitted the default value 'Label'.",
-  },
-  'lit-slots-and-css': {
-    heading: "Generator omitted the default value 'Details'.",
   },
   'lit-toolkit-shapes': {
-    '--toolkit-color':
-      'Generator omitted the CSS property syntax type, so color control cannot be inferred.',
-    '--toolkit-scale':
-      'Generator omitted the CSS property syntax type, so the value falls back to string.',
-    'active-state': 'Generator omitted the CSS state declaration.',
     'click-event': 'Generator emitted Event instead of CustomEvent.',
-    computed: 'Generator did not mark the readonly getter as disabled controls.',
-    label: "Generator omitted the default value 'Label'.",
-    level: 'Generator omitted the default value 1.',
-    'old-size': "Generator omitted the default value ''.",
-    oldSize: "Generator omitted the default value ''.",
-    onSelect: 'Generator omitted the explicit undefined default summary.',
-    pressed: 'Generator omitted the default value false.',
-    size: "Generator omitted the default value 'medium'.",
-    tags: "Generator omitted the default value ['a'].",
-    target: "Generator omitted the default value 'self'.",
     'toolkit-resize-event':
       'Generator preserved the Size alias in CustomEvent detail instead of expanding the union.',
     version: 'Generator emitted literal enum "1.0.0" instead of string.',
-    when: 'Generator omitted the default value new Date(0).',
   },
   'lit-union-jsdoc': {
     label: 'Generator emitted the string default with double quotes instead of single quotes.',
-    'old-label': "Generator omitted the default value ''.",
-    oldLabel: "Generator omitted the default value ''.",
-    variant: "Generator omitted the default value 'primary'.",
   },
   'vanilla-basic': {
     'legacy-label': 'Generator split the inline @deprecated text out of the attribute description.',

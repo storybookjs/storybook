@@ -6,7 +6,7 @@ import {
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
-import type * as ts from '@typescript/typescript6';
+import type * as ts from 'typescript';
 import { dirname, join, normalize } from 'pathe';
 
 import type { ManifestPackage } from '../manifest/types.ts';
@@ -91,9 +91,9 @@ export class GeneratorProject implements ComponentMetaProjectBase {
       this.debug(`none of ${rootPaths.join(', ')} could be read`);
       return undefined;
     }
-    // TODO: pass a warm program once the generator accepts one; today it builds its own from
-    // tsConfigPath on every call. Without a tsconfig it scans this directory, and the program
-    // follows imports from there, so the roots' directory is enough.
+    // TODO: reuse parsed files across calls once the generator accepts a compiler host; its
+    // `previousProgram` re-parses every file through the default host. Without a tsconfig it
+    // scans this directory, and the program follows imports from there.
     const tsConfigPath = this.configFileName ?? join(commonDirectory(roots), 'tsconfig.json');
     return this.generator.generate(tsConfigPath, closure);
   }

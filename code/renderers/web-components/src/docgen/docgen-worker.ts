@@ -29,10 +29,7 @@ export const createDocgenProvider = ({
 /** A failed load must not take manifest docgen down with it. */
 async function loadSourceManager(previewFilePath?: string): Promise<SourceManager | undefined> {
   try {
-    const [typescript, generator] = await Promise.all([
-      import('@typescript/typescript6'),
-      loadGenerator(),
-    ]);
+    const [typescript, generator] = await Promise.all([import('typescript'), loadGenerator()]);
     return new SourceManager(typescript.default ?? typescript, generator, previewFilePath);
   } catch (error) {
     logger.warn(

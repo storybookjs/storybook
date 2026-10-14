@@ -4,7 +4,7 @@ import {
   parseTsconfigCommandLine,
 } from 'storybook/internal/component-meta';
 
-import type * as ts from '@typescript/typescript6';
+import type * as ts from 'typescript';
 
 import type { GeneratorAdapter } from './generator.ts';
 import { GeneratorProject } from './generator-project.ts';

@@ -3,7 +3,7 @@ import type { DocgenError } from 'storybook/internal/types';
 import { mkdirSync, statSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import typescript from '@typescript/typescript6';
+import typescript from 'typescript';
 import { join } from 'pathe';
 import { dirSync, type DirResult } from 'tmp';
 

@@ -5,7 +5,12 @@ import MagicString from 'magic-string';
 import type { JSDocType, SvelteComponentDoc, SvelteDataItem } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
 
-import { type Docgen, type Type, createDocgenCache, generateDocgen } from './generateDocgen.ts';
+import {
+  type Docgen,
+  type Type,
+  createDocgenCache,
+  generateDocgen,
+} from '@storybook/svelte/internal/docgen-engine';
 
 /**
  * It access the AST output of _compiled_ Svelte component file. To read the name of the default

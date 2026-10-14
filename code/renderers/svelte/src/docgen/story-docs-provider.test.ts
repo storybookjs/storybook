@@ -54,7 +54,8 @@ describe('experimental_storyDocsProvider', () => {
   it.each([
     { importPath: './Button.stories.svelte', builds: true },
     { importPath: './Button.svelte', builds: false },
-    { importPath: './Button.stories.ts', builds: false },
+    { importPath: './Button.stories.ts', builds: true },
+    { importPath: './Button.stories.js', builds: true },
   ])('$importPath is built: $builds', async ({ importPath, builds }) => {
     const provider = await experimental_storyDocsProvider(
       async () => DOWNSTREAM,
@@ -65,28 +66,31 @@ describe('experimental_storyDocsProvider', () => {
     expect(buildStoryDocsPayload).toHaveBeenCalledTimes(builds ? 1 : 0);
   });
 
-  it('merges its payload over downstream', async () => {
-    vi.mocked(buildStoryDocsPayload).mockResolvedValueOnce({
-      id: 'button',
-      name: 'Button',
-      path: './Button.stories.svelte',
-      stories: {
-        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
-      },
-    });
-    const provider = await experimental_storyDocsProvider(
-      async () => DOWNSTREAM,
-      svelteWorkerOptions
-    );
+  it.each(['./Button.stories.svelte', './Button.stories.ts', './Button.stories.js'])(
+    'merges its payload over downstream for %s',
+    async (importPath) => {
+      vi.mocked(buildStoryDocsPayload).mockResolvedValueOnce({
+        id: 'button',
+        name: 'Button',
+        path: importPath,
+        stories: {
+          'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        },
+      });
+      const provider = await experimental_storyDocsProvider(
+        async () => DOWNSTREAM,
+        svelteWorkerOptions
+      );
 
-    await expect(provider({ entry: entryFor('./Button.stories.svelte') })).resolves.toEqual({
-      id: 'button',
-      name: 'Button',
-      path: './Button.stories.svelte',
-      import: "import Button from './Button.svelte';",
-      stories: {
-        'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
-      },
-    });
-  });
+      await expect(provider({ entry: entryFor(importPath) })).resolves.toEqual({
+        id: 'button',
+        name: 'Button',
+        path: importPath,
+        import: "import Button from './Button.svelte';",
+        stories: {
+          'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
+        },
+      });
+    }
+  );
 });

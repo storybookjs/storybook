@@ -1,1 +1,9 @@
-undefined
+{
+  "description": undefined,
+  "id": "sveltefixtures-callbacks",
+  "jsDocTags": {},
+  "name": "Callbacks",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

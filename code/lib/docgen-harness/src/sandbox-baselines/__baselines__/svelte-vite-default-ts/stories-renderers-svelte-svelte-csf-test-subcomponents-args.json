@@ -1,0 +1,94 @@
+{
+  "argTypes": {
+    "children": {
+      "control": false,
+      "name": "children",
+      "table": {
+        "category": "slots",
+        "defaultValue": {},
+        "type": {
+          "summary": "Snippet<[]>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Snippet<[]>"
+      }
+    },
+    "emphasizeHeader": {
+      "control": {
+        "type": "boolean"
+      },
+      "name": "emphasizeHeader",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "footer": {
+      "control": false,
+      "name": "footer",
+      "table": {
+        "category": "slots",
+        "defaultValue": {},
+        "type": {
+          "summary": "Snippet<[]>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Snippet<[]>"
+      }
+    },
+    "header": {
+      "control": false,
+      "name": "header",
+      "table": {
+        "category": "slots",
+        "defaultValue": {},
+        "type": {
+          "summary": "Snippet<[]>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Snippet<[]>"
+      }
+    },
+    "mainFontSize": {
+      "control": {
+        "type": "radio"
+      },
+      "name": "mainFontSize",
+      "options": ["small", "medium", "large"],
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "\"small\" | \"medium\" | \"large\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": true,
+        "value": ["small", "medium", "large"]
+      }
+    }
+  },
+  "id": "stories-renderers-svelte-svelte-csf-test-subcomponents-args",
+  "jsDocTags": {},
+  "name": "Layout",
+  "path": "./src/stories/renderers/svelte/svelte-csf/test/subcomponents-args.stories.svelte"
+}

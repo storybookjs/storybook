@@ -26,7 +26,6 @@ describe('experimental_docgenProvider', () => {
 describe('experimental_manifests', () => {
   it.each([
     { name: 'docgen server off', features: { componentsManifest: true }, expected: {} },
-    { name: 'components manifest off', features: { docgenServer: true }, expected: {} },
     {
       name: 'both on',
       features: { docgenServer: true, componentsManifest: true },

@@ -1,1 +1,9 @@
-undefined
+{
+  "description": undefined,
+  "id": "sveltefixtures-radiogroup",
+  "jsDocTags": {},
+  "name": "RadioGroup",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

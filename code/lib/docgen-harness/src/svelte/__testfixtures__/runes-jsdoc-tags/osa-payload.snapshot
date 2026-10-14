@@ -1,1 +1,13 @@
-undefined
+{
+  "description": "JSDoc tag component.",
+  "id": "sveltefixtures-jsdoctags",
+  "jsDocTags": {
+    "deprecated": [
+      "Use another fixture.",
+    ],
+  },
+  "name": "JsdocTags",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

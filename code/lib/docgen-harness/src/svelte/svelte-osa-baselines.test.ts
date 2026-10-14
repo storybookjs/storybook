@@ -58,7 +58,7 @@ const entries = new Map(
   )
 );
 
-const LEGACY_PARITY = new Set<string>();
+const LEGACY_PARITY = new Set(fixtureCases);
 
 const provider = createDocgenProvider()(async () => undefined);
 
@@ -86,6 +86,30 @@ describe('svelte server-side docgen baselines', () => {
 
     const payload = await provider({ entry: entries.get(fixtureCase)! });
 
+    if (fixtureCase === 'runes-basic-props') {
+      expect(payload?.description).toContain('Panel with string, number and boolean props.');
+    }
+    if (fixtureCase === 'runes-union-literal') {
+      expect(payload?.argTypes?.size).toMatchObject({
+        type: { name: 'enum', value: ['small', 'medium', 'large'] },
+        control: { type: 'radio' },
+      });
+    }
+    if (fixtureCase === 'runes-snippets') {
+      expect(payload?.argTypes?.header).toMatchObject({
+        control: false,
+        table: { category: 'slots', type: { summary: 'Snippet<[title: string]>' } },
+      });
+    }
+    if (fixtureCase === 'runes-jsdoc-tags') {
+      expect(payload?.jsDocTags).toMatchObject({ deprecated: ['Use another fixture.'] });
+      expect(payload?.argTypes?.label?.table?.jsDocTags).toMatchObject({
+        default: ['Current label'],
+      });
+      expect(payload?.argTypes?.oldLabel?.table?.jsDocTags).toMatchObject({
+        deprecated: ['Use label instead.'],
+      });
+    }
     expect(JSON.stringify(payload ?? null)).not.toContain(testDir);
     await recordArgTypesSnapshot({
       path: join(testDir, 'osa-argtypes.snapshot'),
@@ -110,6 +134,21 @@ describe('svelte server-side docgen baselines', () => {
   });
 });
 
+it.each(['runes-basic-props', 'runes-callbacks', 'runes-component-props-indexed'])(
+  '%s resolves the same component from plain CSF and Svelte CSF',
+  async (fixtureCase) => {
+    vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, fixtureCase));
+    const entry = entries.get(fixtureCase)!;
+    const sveltePayload = await provider({ entry });
+    const plainPayload = await provider({
+      entry: { ...entry, importPath: './input.stories.ts' },
+    });
+    expect(plainPayload?.argTypes).toEqual(sveltePayload?.argTypes);
+    expect(plainPayload?.name).toEqual(sveltePayload?.name);
+    expect(plainPayload?.error).toBeUndefined();
+  }
+);
+
 it('every parity marker has its legacy and server argTypes baselines', () => {
   for (const fixtureCase of fixtureCases) {
     for (const fileName of ['argtypes.snapshot', 'osa-argtypes.snapshot']) {
@@ -121,7 +160,7 @@ it('every parity marker has its legacy and server argTypes baselines', () => {
   }
 });
 
-describe('svelte server-side argTypes hold the legacy baseline (red until LEGACY_PARITY lists the fixture)', () => {
+describe('svelte server-side argTypes hold the legacy baseline', () => {
   for (const fixtureCase of fixtureCases) {
     (LEGACY_PARITY.has(fixtureCase) ? it : it.fails)(fixtureCase, () => {
       expectCurrentOrBetter({
@@ -138,4 +177,17 @@ describe('svelte server-side argTypes hold the legacy baseline (red until LEGACY
       });
     });
   }
+});
+
+it('preserves component argTypes and description through a plain CSF barrel import', async () => {
+  vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, 'runes-basic-props'));
+  const entry = entries.get('runes-basic-props')!;
+  const direct = await provider({ entry });
+  const barrel = await provider({ entry: { ...entry, importPath: './barrel.stories.ts' } });
+
+  expect(Object.keys(direct?.argTypes ?? {})).not.toHaveLength(0);
+  expect(barrel?.argTypes).toEqual(direct?.argTypes);
+  expect(barrel?.description).toEqual(direct?.description);
+  expect(barrel?.name).toEqual(direct?.name);
+  expect(barrel?.error).toBeUndefined();
 });

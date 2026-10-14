@@ -1,0 +1,74 @@
+{
+  "argTypes": {
+    "onCreateAccount": {
+      "control": false,
+      "name": "onCreateAccount",
+      "table": {
+        "category": "events",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "onLogin": {
+      "control": false,
+      "name": "onLogin",
+      "table": {
+        "category": "events",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "onLogout": {
+      "control": false,
+      "name": "onLogout",
+      "table": {
+        "category": "events",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "user": {
+      "control": {
+        "type": "object"
+      },
+      "name": "user",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "{ name: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "{ name: string; }"
+      }
+    }
+  },
+  "id": "example-header",
+  "jsDocTags": {},
+  "name": "Header",
+  "path": "./src/stories/Header.stories.svelte"
+}

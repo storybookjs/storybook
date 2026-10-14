@@ -9,7 +9,7 @@ Javascript compilers are essential in optimizing and transforming code, enhancin
 
 ## SWC
 
-SWC is a fast, highly extensible tool for compiling and bundling modern JavaScript applications. Powered by [Rust](https://www.rust-lang.org/), it improves performance and reduces build times. Storybook includes a built-in integration with SWC, allowing zero-configuration setup and built-in types for APIs. If you've initialized Storybook in a Webpack-based project with any of the supported [frameworks](./frameworks.mdx), except Angular, Create React App, Ember.js and Next.js, it will automatically use SWC as its default, providing you with faster loading time.
+SWC is a fast, highly extensible tool for compiling and bundling modern JavaScript applications. Powered by [Rust](https://www.rust-lang.org/), it improves performance and reduces build times. Storybook includes a built-in integration with SWC, allowing zero-configuration setup and built-in types for APIs. If you've initialized Storybook in a Webpack-based project with any of the supported [frameworks](./frameworks.mdx), except Angular, Ember.js and Next.js, it will automatically use SWC as its default, providing you with faster loading time.
 
 <Callout variant="info">
 
@@ -41,10 +41,6 @@ Storybook relies on an agnostic approach to configuring Babel, enabling you to p
 For custom project configurations such as monorepos, where you have multiple Storybook configurations, creating a `.babelrc.json` file in your project's current working directory may not be sufficient. In those cases, you can create a `babel.config.js` file to override Babel's configuration, and Storybook will automatically detect and use it. See the Babel [documentation](https://babeljs.io/docs/config-files) for more information.
 
 </Callout>
-
-### Working with Create React App
-
-If you're working with a project that was initialized with [Create React App](https://create-react-app.dev/), Storybook will automatically detect and use the Babel configuration provided by the tool enabled via the `@storybook/preset-create-react-app` preset, allowing to use Storybook without any additional configuration.
 
 ## Troubleshooting
 

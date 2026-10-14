@@ -5,6 +5,19 @@
  * actually read rather than those packages' own types.
  */
 
+export type ParsedDocgen = {
+  tags?: Record<string, string[]>;
+  props: Record<
+    string,
+    {
+      description?: string;
+      type?: string;
+      defaultValue?: string;
+      required?: boolean;
+    }
+  >;
+};
+
 /** Structural subset of react-docgen's `tsType` / `type` prop descriptor field. */
 type TsType = {
   name?: string;
@@ -37,6 +50,7 @@ type PropDescriptor = NonNullable<Documentation['props']>[string];
 
 /** Structural subset of react-docgen-typescript's `ComponentDoc` output. */
 type ComponentDoc = {
+  tags?: Record<string, unknown>;
   props?: Record<
     string,
     {
@@ -48,21 +62,9 @@ type ComponentDoc = {
   >;
 };
 
-export type ParsedDocgen = {
-  props: Record<
-    string,
-    {
-      description?: string;
-      type?: string;
-      defaultValue?: string;
-      required?: boolean;
-    }
-  >;
-};
-
 // Storybook's `reactComponentMeta` payload is not the same full schema as
 // `react-docgen-typescript`'s `ComponentDoc`, but `props` has the same type shape.
-type ComponentDocLike = Pick<ComponentDoc, 'props'>;
+type ComponentDocLike = Pick<ComponentDoc, 'props' | 'tags'>;
 
 // Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
 function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
@@ -144,9 +146,22 @@ export const parseReactDocgen = (reactDocgen: Documentation): ParsedDocgen => {
  * RDT uses flat type strings (prop.type.name / prop.type.raw) instead of react-docgen's
  * nested tsType structure, so no serialization is needed.
  */
+const tagValues = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap(tagValues);
+  }
+  if (value === null || value === undefined) {
+    return [''];
+  }
+  return [typeof value === 'object' ? JSON.stringify(value) : String(value)];
+};
+
 const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
   const props = componentDoc.props ?? {};
-  return {
+  const tags = Object.fromEntries(
+    Object.entries(componentDoc.tags ?? {}).map(([tagName, value]) => [tagName, tagValues(value)])
+  );
+  const parsedDocgen: ParsedDocgen = {
     props: Object.fromEntries(
       Object.entries(props).map(([propName, prop]) => [
         propName,
@@ -161,6 +176,12 @@ const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => 
       ])
     ),
   };
+
+  if (Object.keys(tags).length > 0) {
+    parsedDocgen.tags = tags;
+  }
+
+  return parsedDocgen;
 };
 
 export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc): ParsedDocgen =>

@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { detectAgent } from '../../telemetry/detect-agent.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
 import { readRegistry } from './instances/registry.ts';
-import { resolveInstance } from './instances/resolve.ts';
+import { selectInstances } from './instances/resolve.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 
 export type ToolsTarget = {
@@ -11,6 +11,8 @@ export type ToolsTarget = {
   cwd?: string;
   /** Directory where to load Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
+  /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
+  port?: number;
 };
 
 export type InstanceDiscovery = {
@@ -36,15 +38,15 @@ export async function discoverRunningInstance(
   const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
 
   const records = await readRegistry(deps.registryDir);
-  const resolution = resolveInstance(records, {
+  const selection = selectInstances(records, {
     cwd,
     configDir,
     configDirExplicit: target.configDir != null,
+    port: target.port,
     agent: detectAgent()?.name,
   });
 
-  // `resolveInstance` dispatches on the record's MCP status; a status intercept still carries the
-  // matched records (most recent first), which is all this consumer needs.
-  const currentRecord = resolution.kind === 'instance' ? resolution.record : resolution.matches[0];
+  // MCP-status-blind selection, so the instance this names is always the one attach would pick.
+  const currentRecord = selection.kind === 'match' ? selection.matches[0] : undefined;
   return { currentRecord, records };
 }

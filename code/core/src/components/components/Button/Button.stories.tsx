@@ -436,6 +436,15 @@ export const Tooltip = meta.story({
   },
 });
 
+export const CustomTooltipPlacement = meta.story({
+  args: {
+    ariaLabel: false,
+    children: 'Button',
+    tooltip: 'A button can be pressed to perform an action',
+    tooltipPlacement: 'bottom-end',
+  },
+});
+
 export const AriaDescription = meta.story({
   args: {
     ariaLabel: 'Button',

@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 const requireResolveMock = vi.hoisted(() => vi.fn());
+const resolveMock = vi.hoisted(() => vi.fn());
 
 vi.mock('node:module', () => ({
   createRequire: () => ({
@@ -17,71 +18,126 @@ vi.mock('node:module', () => ({
 
 vi.mock('node:fs', { spy: true });
 
-import { encodeBase64Url } from '../../utils/base64-url.ts';
 import { vitePluginNextImage } from './plugin.ts';
 
-const virtualImageId = (imagePath: string) => `\0virtual:next-image:${encodeBase64Url(imagePath)}`;
+const VIRTUAL_IMAGE_PREFIX = '\0virtual:next-image:';
+const SHORT_ID_MAX_LENGTH = VIRTUAL_IMAGE_PREFIX.length + 8;
+
+const createContext = () => ({ resolve: resolveMock }) as PluginContext;
+
+const passthroughConfig = {
+  promise: Promise.resolve({ images: { disableStaticImages: true } } as NextConfigComplete),
+  resolve: vi.fn(),
+  reject: vi.fn(),
+} as PromiseWithResolvers<NextConfigComplete>;
 
 describe('vitePluginNextImage resolveId', () => {
-  const nextConfigResolver = {
-    promise: Promise.resolve({} as NextConfigComplete),
-    resolve: vi.fn(),
-    reject: vi.fn(),
-  } as PromiseWithResolvers<NextConfigComplete>;
-
-  const createContext = (resolve: PluginContext['resolve']) => ({ resolve }) as PluginContext;
+  beforeEach(() => {
+    vi.mocked(resolveMock).mockReset();
+    vi.mocked(resolveMock).mockResolvedValue(null);
+    vi.mocked(requireResolveMock).mockReset();
+  });
 
   it('resolves relative image imports against importer', async () => {
-    const plugin = vitePluginNextImage(nextConfigResolver);
-    const resolve = vi.fn();
+    const plugin = vitePluginNextImage(passthroughConfig);
     const importer = '/project/src/Component.tsx';
+    const expectedPath = join(dirname(importer), './images/avatar.png');
 
-    const result = await plugin.resolveId!.call(
-      createContext(resolve),
-      './images/avatar.png',
-      importer
-    );
+    const id = await plugin.resolveId!.call(createContext(), './images/avatar.png', importer);
+    const loaded = await plugin.load!.call({} as PluginContext, id as string);
 
-    expect(resolve).not.toHaveBeenCalled();
-    expect(result).toBe(virtualImageId(join(dirname(importer), './images/avatar.png')));
+    expect(resolveMock).not.toHaveBeenCalled();
+    expect(loaded).toContain(expectedPath);
   });
 
   it('uses Vite resolver for package image imports', async () => {
-    const plugin = vitePluginNextImage(nextConfigResolver);
+    const plugin = vitePluginNextImage(passthroughConfig);
     const resolvedPath = '/project/packages/assets/src/images/avatar.png';
-    const resolve = vi.fn().mockResolvedValue({ id: resolvedPath });
-    const result = await plugin.resolveId!.call(
-      createContext(resolve),
+    vi.mocked(resolveMock).mockResolvedValue({ id: resolvedPath });
+    const id = await plugin.resolveId!.call(
+      createContext(),
       '@myorg/assets/images/avatar.png',
       '/project/src/Component.tsx'
     );
+    const loaded = await plugin.load!.call({} as PluginContext, id as string);
 
-    expect(resolve).toHaveBeenCalledWith(
+    expect(resolveMock).toHaveBeenCalledWith(
       '@myorg/assets/images/avatar.png',
       '/project/src/Component.tsx',
       { skipSelf: true }
     );
-    expect(result).toBe(virtualImageId(resolvedPath));
+    expect(loaded).toContain(resolvedPath);
   });
 
   it('falls back to require.resolve when Vite resolution fails', async () => {
-    const plugin = vitePluginNextImage(nextConfigResolver);
+    const plugin = vitePluginNextImage(passthroughConfig);
     const importer = '/project/src/Component.tsx?import';
     const resolvedPath = '/project/packages/assets/src/images/avatar.png';
-    const resolve = vi.fn().mockResolvedValue(null);
 
-    requireResolveMock.mockReturnValueOnce(resolvedPath);
-    const result = await plugin.resolveId!.call(
-      createContext(resolve),
+    vi.mocked(requireResolveMock).mockReturnValueOnce(resolvedPath);
+    const id = await plugin.resolveId!.call(
+      createContext(),
       '@myorg/assets/images/avatar.png',
       importer
     );
+    const loaded = await plugin.load!.call({} as PluginContext, id as string);
 
-    expect(resolve).toHaveBeenCalled();
+    expect(resolveMock).toHaveBeenCalled();
     expect(requireResolveMock).toHaveBeenCalledWith('@myorg/assets/images/avatar.png', {
       paths: [dirname(importer.split('?')[0])],
     });
-    expect(result).toBe(virtualImageId(resolvedPath));
+    expect(loaded).toContain(resolvedPath);
+  });
+
+  it('does not claim bare image imports that cannot be resolved', async () => {
+    const plugin = vitePluginNextImage(passthroughConfig);
+    const importer = '/project/src/Component.tsx';
+    vi.mocked(requireResolveMock).mockImplementationOnce(() => {
+      throw new Error('Cannot find module');
+    });
+
+    const id = await plugin.resolveId!.call(createContext(), '@/assets/avatar.png', importer);
+
+    expect(resolveMock).toHaveBeenCalledWith('@/assets/avatar.png', importer, { skipSelf: true });
+    expect(requireResolveMock).toHaveBeenCalledWith('@/assets/avatar.png', {
+      paths: [dirname(importer)],
+    });
+    expect(id).toBeNull();
+  });
+
+  it('keeps virtual IDs short and stable for deeply nested monorepo paths', async () => {
+    const plugin = vitePluginNextImage(passthroughConfig);
+    const deepDir = `/Users/x/dev/${'nested-'.repeat(30)}leaf`;
+    const importer = `${deepDir}/Component.tsx`;
+
+    const first = await plugin.resolveId!.call(createContext(), './images/avatar.png', importer);
+    const second = await plugin.resolveId!.call(createContext(), './images/avatar.png', importer);
+
+    expect(first).toMatch(/^\0virtual:next-image:[0-9a-f]+$/);
+    expect((first as string).length).toBeLessThanOrEqual(SHORT_ID_MAX_LENGTH);
+    expect(second).toBe(first);
+  });
+
+  it('keeps the ID safe for paths with characters Vite decodeURI would mangle', async () => {
+    const plugin = vitePluginNextImage(passthroughConfig);
+    const importer = '/project/src/[locale]/[slug]/Component.tsx';
+    const expectedPath = join(dirname(importer), './images/avatar.png');
+
+    const id = await plugin.resolveId!.call(createContext(), './images/avatar.png', importer);
+    const loaded = await plugin.load!.call({} as PluginContext, id as string);
+
+    expect(id as string).toMatch(/^\0virtual:next-image:[0-9a-f]+$/);
+    expect(loaded).toContain(expectedPath);
+  });
+
+  it('returns distinct IDs for distinct image paths', async () => {
+    const plugin = vitePluginNextImage(passthroughConfig);
+    const importer = '/project/src/Component.tsx';
+
+    const a = await plugin.resolveId!.call(createContext(), './images/a.png', importer);
+    const b = await plugin.resolveId!.call(createContext(), './images/b.png', importer);
+
+    expect(a).not.toBe(b);
   });
 });
 
@@ -120,8 +176,13 @@ describe('vitePluginNextImage load', () => {
 
   it('reads dimensions from the image buffer', async () => {
     const plugin = vitePluginNextImage(nextConfigResolver);
+    const id = await plugin.resolveId!.call(
+      createContext(),
+      avatarPath,
+      '/project/src/Component.tsx'
+    );
 
-    const result = await plugin.load!.call({} as PluginContext, virtualImageId(avatarPath));
+    const result = await plugin.load!.call({} as PluginContext, id as string);
 
     expect(result).toContain('width: 1');
     expect(result).toContain('height: 1');
@@ -129,9 +190,14 @@ describe('vitePluginNextImage load', () => {
 
   it('does not hang on malformed image data', async () => {
     const plugin = vitePluginNextImage(nextConfigResolver);
+    const id = await plugin.resolveId!.call(
+      createContext(),
+      brokenPath,
+      '/project/src/Component.tsx'
+    );
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const result = await plugin.load!.call({} as PluginContext, virtualImageId(brokenPath));
+    const result = await plugin.load!.call({} as PluginContext, id as string);
 
     expect(result).toBeUndefined();
     expect(errorSpy).toHaveBeenCalled();

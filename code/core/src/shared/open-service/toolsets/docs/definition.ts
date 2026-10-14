@@ -1,11 +1,6 @@
 import * as v from 'valibot';
 
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName, type ToolsetMethodId } from '../../toolset-names.ts';
 import type { DocsAccess, ResolvedDocsEntry } from './access.ts';
 import {
@@ -18,7 +13,7 @@ import {
 } from './manifest-formatter/markdown.ts';
 import type { AllManifests } from './manifest-formatter/manifest-types.ts';
 import { listSources, type DocsSource } from './multi-source.ts';
-import type { SourceListing } from './sources.ts';
+import { RequiresOwnMcpError, type SourceListing } from './sources.ts';
 import { estimateTokens } from '../estimate-tokens.ts';
 
 const DOCS_TOOLSET_ID = 'docs';
@@ -66,14 +61,18 @@ export type DocsShowOutput = {
   storybookId?: string;
   /** Set when the request named no source, or one that does not exist. */
   sourceError?: string;
+  /** Set when the named source can only be read through its own MCP endpoint. */
+  notice?: string;
 };
 
 export type DocsShowStoryOutput = {
-  componentId: string;
-  storyName: string;
+  componentId?: string;
+  storyName?: string;
+  storyId?: string;
   entry?: ResolvedDocsEntry;
   storybookId?: string;
   sourceError?: string;
+  notice?: string;
 };
 
 /**
@@ -96,12 +95,16 @@ export function selectReportedManifests({
  */
 type ShowResolution =
   | { kind: 'source-error'; message: string }
+  | { kind: 'notice'; message: string }
   | { kind: 'entry-missing' }
   | { kind: 'found'; entry: ResolvedDocsEntry };
 
-function resolveShow({ entry, sourceError }: DocsShowOutput): ShowResolution {
+function resolveShow({ entry, sourceError, notice }: DocsShowOutput): ShowResolution {
   if (sourceError !== undefined) {
     return { kind: 'source-error', message: sourceError };
+  }
+  if (notice !== undefined) {
+    return { kind: 'notice', message: notice };
   }
   if (entry === undefined) {
     return { kind: 'entry-missing' };
@@ -110,29 +113,52 @@ function resolveShow({ entry, sourceError }: DocsShowOutput): ShowResolution {
 }
 
 type ComponentEntry = Extract<ResolvedDocsEntry, { kind: 'component' }>;
+type ComponentStory = NonNullable<ComponentEntry['component']['stories']>[number];
 
 /** The `showStory` counterpart of {@link ShowResolution}. */
 type ShowStoryResolution =
+  | { kind: 'input-invalid' }
   | { kind: 'source-error'; message: string }
+  | { kind: 'notice'; message: string }
   | { kind: 'component-missing' }
   | { kind: 'story-missing'; component: ComponentEntry['component'] }
-  | { kind: 'found'; component: ComponentEntry['component'] };
+  | { kind: 'found'; component: ComponentEntry['component']; story: ComponentStory };
 
-function resolveShowStory({
-  entry,
-  storyName,
-  sourceError,
-}: DocsShowStoryOutput): ShowStoryResolution {
+/** Whether a `showStory` input names a story at all: a story id, or a complete name pair. */
+function isShowStorySelector({ storyId, componentId, storyName }: DocsShowStoryOutput): boolean {
+  return storyId !== undefined || (componentId !== undefined && storyName !== undefined);
+}
+
+/**
+ * The component id a story id starts with (`button--primary` → `button`). Only a routing hint for
+ * which manifest entry to resolve — a match is reported solely when a story's `id` equals the
+ * input.
+ */
+function componentIdOfStoryId(storyId: string): string {
+  const separator = storyId.indexOf('--');
+  return separator === -1 ? storyId : storyId.slice(0, separator);
+}
+
+function resolveShowStory(data: DocsShowStoryOutput): ShowStoryResolution {
+  const { entry, storyId, storyName, sourceError, notice } = data;
+  if (!isShowStorySelector(data)) {
+    return { kind: 'input-invalid' };
+  }
   if (sourceError !== undefined) {
     return { kind: 'source-error', message: sourceError };
+  }
+  if (notice !== undefined) {
+    return { kind: 'notice', message: notice };
   }
   if (entry === undefined || entry.kind !== 'component') {
     return { kind: 'component-missing' };
   }
   const { component } = entry;
-  return component.stories?.some((story) => story.name === storyName)
-    ? { kind: 'found', component }
-    : { kind: 'story-missing', component };
+  const story =
+    storyId !== undefined
+      ? component.stories?.find((candidate) => candidate.id === storyId)
+      : component.stories?.find((candidate) => candidate.name === storyName);
+  return story ? { kind: 'found', component, story } : { kind: 'story-missing', component };
 }
 
 /**
@@ -142,22 +168,24 @@ function resolveShowStory({
  * the frozen `@storybook/mcp` API.
  */
 export function isDocsShowError(output: DocsShowOutput): boolean {
-  return resolveShow(output).kind !== 'found';
+  const { kind } = resolveShow(output);
+  return kind !== 'found' && kind !== 'notice';
 }
 
 /** Whether `docs.showStory` failed: an unusable source, a missing component, or a missing story. */
 export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
-  return resolveShowStory(output).kind !== 'found';
+  const { kind } = resolveShowStory(output);
+  return kind !== 'found' && kind !== 'notice';
 }
 
 function describeList(ctx: ToolsetCtx): string {
-  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.`;
+  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.`;
 }
 
 function describeShow(ctx: ToolsetCtx): string {
   return `Get documentation for a UI component or docs entry.
 
-Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need.
+Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as storyId.
 
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
@@ -173,6 +201,7 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
   const resolution = resolveShow(data);
   switch (resolution.kind) {
     case 'source-error':
+    case 'notice':
       return resolution.message;
     case 'entry-missing':
       return formatEntryNotFound(data.id, data.storybookId, ctx);
@@ -187,20 +216,38 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
   }
 }
 
+/** The stories a miss can be corrected to, with ids where the manifest carries them. */
+function formatAvailableStories(stories: ComponentEntry['component']['stories']): string {
+  const listed = stories
+    ?.map((story) => (story.id ? `${story.name} (${story.id})` : story.name))
+    .join(', ');
+  return listed || 'none';
+}
+
 /** Pure renderer for `showStory`. */
-function renderShowStory(data: DocsShowStoryOutput, ctx: ToolsetCtx): string {
-  const resolution = resolveShowStory(data);
+function renderShowStory(
+  resolution: ShowStoryResolution,
+  data: DocsShowStoryOutput,
+  ctx: ToolsetCtx
+): string {
   switch (resolution.kind) {
+    case 'input-invalid':
+      return `Provide either \`storyId\`, or both \`componentId\` and \`storyName\`. Story ids are listed by the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool with \`withStoryIds: true\` and in ${getToolName(ctx)(DOCS_METHOD_REFS.show)} output.`;
     case 'source-error':
+    case 'notice':
       return resolution.message;
     case 'component-missing':
-      return `Component not found: "${data.componentId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components.`;
+      return data.storyId !== undefined
+        ? `Story not found: "${data.storyId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool with \`withStoryIds: true\` to see available stories and their ids.`
+        : `Component not found: "${data.componentId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components.`;
     case 'story-missing': {
-      const availableStories = resolution.component.stories?.map((story) => story.name).join(', ');
-      return `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories || 'none'}`;
+      const availableStories = formatAvailableStories(resolution.component.stories);
+      return data.storyId !== undefined
+        ? `Story not found: "${data.storyId}" for component "${resolution.component.id}". Available stories: ${availableStories}`
+        : `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories}`;
     }
     case 'found':
-      return formatStoryDocumentation(resolution.component, data.storyName);
+      return formatStoryDocumentation(resolution.component, resolution.story.name);
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -209,17 +256,37 @@ function renderShowStory(data: DocsShowStoryOutput, ctx: ToolsetCtx): string {
 }
 
 const storybookIdField = {
-  storybookId: v.pipe(
-    v.string(),
-    v.description('The ID of the Storybook source to query (e.g., "local", "design-system")')
+  storybookId: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        'The ID of the Storybook source to query (e.g., "local", "design-system"). Defaults to "local", this Storybook.'
+      )
+    ),
+    'local'
   ),
 };
+
+// A source that needs its own MCP is an answer to route the agent, not a failed lookup.
+async function resolveFromSource(
+  access: DocsAccess,
+  id: string
+): Promise<Pick<DocsShowOutput, 'entry' | 'notice'>> {
+  try {
+    return { entry: await access.resolve(id) };
+  } catch (error) {
+    if (error instanceof RequiresOwnMcpError) {
+      return { notice: error.message };
+    }
+    throw error;
+  }
+}
 
 /**
  * Picks the access for a lookup, or explains which source the caller should have named.
  *
- * In a composition the id alone is ambiguous, so a missing or unknown `storybookId` is a result the
- * agent can act on — the available ids and where to find them — rather than a thrown error.
+ * In a composition the id alone is ambiguous, so an unknown `storybookId` is a result the agent can
+ * act on — the available ids and where to find them — rather than a thrown error.
  */
 function selectSource(
   sources: DocsSource[] | undefined,
@@ -232,10 +299,6 @@ function selectSource(
 
   const available = sources.map(({ source }) => source.id).join(', ');
   const listRef = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`;
-
-  if (!storybookId) {
-    return { sourceError: `storybookId is required. Available sources: ${available}. ${listRef}` };
-  }
 
   const match = sources.find(({ source }) => source.id === storybookId);
   if (!match) {
@@ -264,19 +327,44 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     throw new Error('createDocsToolset requires a docsAccess or at least one source.');
   }
 
-  // A composition needs the caller to say which Storybook they mean; a single one must not ask.
+  // A composition lets the caller name the Storybook, defaulting to this one; a single one must
+  // not ask.
   const showSchema = multiSource
-    ? v.object({
+    ? v.strictObject({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
         ...storybookIdField,
       })
-    : v.object({
+    : v.strictObject({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
       });
 
+  // Two selector shapes in one flat object: MCP requires an `inputSchema` whose root is
+  // `type: "object"`, so this cannot be a top-level union (it would convert to a bare `anyOf`),
+  // and valibot refinements don't survive JSON Schema conversion, so the either-shape rule is
+  // enforced by the handler, which renders actionable guidance instead of a validation error.
+  const showStoryFields = {
+    storyId: v.pipe(
+      v.optional(v.string()),
+      v.description(
+        'The story ID, as listed by the docs list tool with withStoryIds: true and shown next to each story in the component documentation (e.g., "button--primary"). Prefer this over componentId + storyName whenever you have a story ID.'
+      )
+    ),
+    componentId: v.pipe(
+      v.optional(v.string()),
+      v.description(
+        'The component ID (e.g., "button"). Use together with storyName, and only when you have no story ID.'
+      )
+    ),
+    storyName: v.pipe(
+      v.optional(v.string()),
+      v.description(
+        'The human-readable story name (e.g., "Primary"). Use together with componentId.'
+      )
+    ),
+  };
   const showStorySchema = multiSource
-    ? v.object({ componentId: v.string(), storyName: v.string(), ...storybookIdField })
-    : v.object({ componentId: v.string(), storyName: v.string() });
+    ? v.strictObject({ ...showStoryFields, ...storybookIdField })
+    : v.strictObject(showStoryFields);
 
   /** The access for a lookup, plus the id it was scoped to. */
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
@@ -287,7 +375,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     description: 'Storybook component and docs documentation.',
     methods: {
       [DOCS_METHOD_NAMES.list]: {
-        input: v.object({
+        input: v.strictObject({
           withStoryIds: v.optional(
             v.pipe(
               v.boolean(),
@@ -300,7 +388,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
         }),
         title: 'List All Documentation',
         description: describeList,
-        handler: async (input, ctx): Promise<ToolsetOutcome<DocsListOutput, never>> => {
+        handler: async (input): Promise<ToolsetOutcome<DocsListOutput, never>> => {
           const { withStoryIds } = input;
           const data: DocsListOutput = multiSource
             ? { withStoryIds, sources: await listSources(sources!, { withStoryIds }) }
@@ -312,17 +400,23 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           // A listing of nothing but errors is not a usage signal, so nothing is counted then.
           const counted = selectReportedManifests(data);
-          if (counted) {
-            await reportToolsetTelemetry(ctx, 'tool:listAllDocumentation', {
-              toolset: 'docs',
-              componentCount: Object.keys(counted.componentManifest.components).length,
-              docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
-              resultTokenCount: estimateTokens(markdown),
-              sourceCount: data.sources?.length,
-            });
-          }
-
-          return { ok: true, data, markdown };
+          return {
+            ok: true,
+            data,
+            markdown,
+            ...(counted
+              ? {
+                  telemetry: {
+                    payload: {
+                      componentCount: Object.keys(counted.componentManifest.components).length,
+                      docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
+                      resultTokenCount: estimateTokens(markdown),
+                      sourceCount: data.sources?.length,
+                    },
+                  },
+                }
+              : {}),
+          };
         },
       },
       [DOCS_METHOD_NAMES.show]: {
@@ -334,48 +428,64 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
           const selected = access(storybookId, ctx);
           const data: DocsShowOutput = selected.sourceError
             ? { id, storybookId, sourceError: selected.sourceError }
-            : { id, storybookId, entry: await selected.access!.resolve(id) };
+            : { id, storybookId, ...(await resolveFromSource(selected.access!, id)) };
 
           const markdown = renderShow(data, ctx);
 
-          await reportToolsetTelemetry(ctx, 'tool:getDocumentation', {
-            toolset: 'docs',
-            componentId: id,
-            found: data.entry !== undefined,
-            resultTokenCount: estimateTokens(markdown),
-          });
-
+          const telemetry = {
+            payload: {
+              componentId: id,
+              found: data.entry !== undefined,
+              resultTokenCount: estimateTokens(markdown),
+            },
+          };
           return isDocsShowError(data)
-            ? { ok: false, data, markdown }
-            : { ok: true, data, markdown };
+            ? { ok: false, data, markdown, telemetry }
+            : { ok: true, data, markdown, telemetry };
         },
       },
       [DOCS_METHOD_NAMES.showStory]: {
         input: showStorySchema,
         title: 'Get Documentation for Story',
         description:
-          'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.',
+          'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it. Identify the story by its story ID (preferred), or by componentId plus storyName.',
         handler: async (input, ctx): Promise<ToolsetOutcome<DocsShowStoryOutput>> => {
-          const { componentId, storyName, storybookId } = input as {
-            componentId: string;
-            storyName: string;
+          const { storyId, componentId, storyName, storybookId } = input as {
+            storyId?: string;
+            componentId?: string;
+            storyName?: string;
             storybookId?: string;
           };
-          const selected = access(storybookId, ctx);
-          const data: DocsShowStoryOutput = selected.sourceError
-            ? { componentId, storyName, storybookId, sourceError: selected.sourceError }
-            : {
-                componentId,
-                storyName,
-                storybookId,
-                entry: await selected.access!.resolve(componentId),
-              };
+          const request: DocsShowStoryOutput = { storyId, componentId, storyName, storybookId };
 
-          const markdown = renderShowStory(data, ctx);
+          // The id shape wins when both are passed, mirroring its listed preference.
+          const resolveId =
+            storyId !== undefined
+              ? componentIdOfStoryId(storyId)
+              : componentId !== undefined && storyName !== undefined
+                ? componentId
+                : undefined;
 
+          const selected = resolveId !== undefined ? access(storybookId, ctx) : {};
+          const data: DocsShowStoryOutput =
+            selected.access && resolveId !== undefined
+              ? { ...request, ...(await resolveFromSource(selected.access, resolveId)) }
+              : { ...request, sourceError: selected.sourceError };
+
+          const resolution = resolveShowStory(data);
+          const markdown = renderShowStory(resolution, data, ctx);
+
+          const telemetry = {
+            payload: {
+              found: resolution.kind === 'found',
+              storyId: resolution.kind === 'found' ? resolution.story.id : storyId,
+              lookup: storyId !== undefined ? 'storyId' : 'name',
+              resultTokenCount: estimateTokens(markdown),
+            },
+          };
           return isDocsShowStoryError(data)
-            ? { ok: false, data, markdown }
-            : { ok: true, data, markdown };
+            ? { ok: false, data, markdown, telemetry }
+            : { ok: true, data, markdown, telemetry };
         },
       },
     },

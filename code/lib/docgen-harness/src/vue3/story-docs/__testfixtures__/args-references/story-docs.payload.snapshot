@@ -39,6 +39,7 @@ const options = {
       "id": "forms-args-references--unreadable-spread-arg",
       "name": "Unreadable Spread Arg",
       "summary": undefined,
+      "warning": "No static snippet: `options: { ...buildOptions(), tone: 'neutral' }`, `...buildOptions()` could not be resolved statically.",
     },
   },
 }

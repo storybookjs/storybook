@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  parseReactComponentMeta as parseComponentMeta,
   parseReactDocgen as parseDocgen,
   parseReactDocgenTypescript as parseDocgenTypescript,
 } from './parse-react-docgen.ts';
@@ -14,6 +15,8 @@ const parseReactDocgen = (input: unknown) =>
   parseDocgen(input as Parameters<typeof parseDocgen>[0]);
 const parseReactDocgenTypescript = (input: unknown) =>
   parseDocgenTypescript(input as Parameters<typeof parseDocgenTypescript>[0]);
+const parseReactComponentMeta = (input: unknown) =>
+  parseComponentMeta(input as Parameters<typeof parseComponentMeta>[0]);
 
 describe('parseReactDocgen', () => {
   test('prefers raw over computed for unions (and copies default/required)', () => {
@@ -454,9 +457,103 @@ describe('parseReactDocgenTypescript', () => {
       props: {},
     });
     expect(result).toMatchInlineSnapshot(`
-			{
-			  "props": {},
-			}
-		`);
+      {
+        "props": {},
+      }
+    `);
+  });
+});
+
+describe.each([
+  ['parseReactDocgenTypescript', parseReactDocgenTypescript],
+  ['parseReactComponentMeta', parseReactComponentMeta],
+])('%s component tags', (_parserName, parseComponentDocLike) => {
+  test('normalizes flat tag values into arrays', () => {
+    const result = parseComponentDocLike({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      tags: {
+        deprecated: 'Use NewButton instead.',
+        since: '1.2.3',
+      },
+      props: {},
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "props": {},
+        "tags": {
+          "deprecated": [
+            "Use NewButton instead.",
+          ],
+          "since": [
+            "1.2.3",
+          ],
+        },
+      }
+    `);
+  });
+
+  test('omits tags when the component has no tags', () => {
+    const result = parseComponentDocLike({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      props: {},
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "props": {},
+      }
+    `);
+  });
+
+  test('renders non-string tag values instead of dropping them', () => {
+    const result = parseComponentDocLike({
+      displayName: 'Button',
+      filePath: 'src/Button.tsx',
+      description: '',
+      methods: [],
+      tags: {
+        deprecated: 'Use NewButton instead.',
+        since: 123,
+        see: null,
+        author: ['Ada', 'Grace'],
+        meta: { owner: 'design-system' },
+        experimental: true,
+      },
+      props: {},
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "props": {},
+        "tags": {
+          "author": [
+            "Ada",
+            "Grace",
+          ],
+          "deprecated": [
+            "Use NewButton instead.",
+          ],
+          "experimental": [
+            "true",
+          ],
+          "meta": [
+            "{"owner":"design-system"}",
+          ],
+          "see": [
+            "",
+          ],
+          "since": [
+            "123",
+          ],
+        },
+      }
+    `);
   });
 });

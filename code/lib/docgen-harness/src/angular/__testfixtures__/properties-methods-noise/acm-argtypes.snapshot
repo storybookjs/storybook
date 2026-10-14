@@ -8,7 +8,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "() => void",
       },
     },
@@ -26,7 +25,6 @@
         "summary": 1,
       },
       "type": {
-        "required": false,
         "summary": "number",
       },
     },
@@ -43,7 +41,6 @@
         "summary": "compact",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },
@@ -61,7 +58,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "EventEmitter",
       },
     },
@@ -79,7 +75,6 @@
         "summary": "Next page",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },
@@ -96,7 +91,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "ElementRef",
       },
     },
@@ -114,7 +108,6 @@
         "summary": false,
       },
       "type": {
-        "required": false,
         "summary": "boolean",
       },
     },
@@ -131,7 +124,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "WritableSignal<boolean>",
       },
     },
@@ -149,7 +141,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "() => void",
       },
     },
@@ -167,7 +158,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "string",
       },
     },
@@ -184,7 +174,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "ElementRef<HTMLDivElement>",
       },
     },
@@ -202,7 +191,6 @@
         "summary": "",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },

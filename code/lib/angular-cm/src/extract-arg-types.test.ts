@@ -9,7 +9,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 
-import { componentIn } from './analyzer/__testutils__/inline-source.ts';
+import { analyzeForExtraction, componentIn } from './analyzer/__testutils__/inline-source.ts';
 import { extractArgTypesFromData } from './extract-arg-types.ts';
 
 const inputTyped = (type: string) => {
@@ -26,7 +26,9 @@ const inputTyped = (type: string) => {
   return extractArgTypesFromData(component, { metadataJson: undefined, propsTable: 'all' }).value;
 };
 
-const FUNCTION_CONTROL = { name: 'function' };
+// `inputTyped` declares an input with no default, so every control it produces is also a required
+// one.
+const FUNCTION_CONTROL = { name: 'function', required: true };
 
 describe('function-typed inputs', () => {
   it('keeps the signature and the function control for a plain arrow type', () => {
@@ -122,13 +124,13 @@ describe('primitive-union inputs', () => {
 
   it('prefers number over string for a declared primitive union', () => {
     const arg = inputTyped('string | number');
-    expect(arg.type).toEqual({ name: 'number' });
+    expect(arg.type).toEqual({ name: 'number', required: true });
     expect(arg.table?.type?.summary).toBe('string | number');
   });
 
   it('leaves a union that mixes a primitive with a named type on the catch-all', () => {
     const arg = inputTyped('string | Thing');
-    expect(arg.type).toEqual({ name: 'other', value: 'empty-enum' });
+    expect(arg.type).toEqual({ name: 'other', value: 'empty-enum', required: true });
   });
 });
 
@@ -368,5 +370,326 @@ describe('authored default tags', () => {
         @Input() value = 'vertical';
       `)
     ).toBe('horizontal');
+  });
+});
+
+const argTypesOf = (classBody: string) => {
+  const component = componentIn(`
+    import { Component, Input, input, output } from '@angular/core';
+
+    @Component({ selector: 'sb-probe', template: '' })
+    export class ProbeComponent {
+      ${classBody}
+    }
+  `);
+  return extractArgTypesFromData(component, { metadataJson: undefined, propsTable: 'all' });
+};
+
+/**
+ * Where the required flag lives, which is the whole of this defect.
+ *
+ * Every consumer - the props table badge and its sort order, the generated dummy args, the
+ * `apiDescription` an agent reads - takes it from `type.required`, the field `SBBaseType` declares.
+ * Recording it anywhere else documents nothing, so `table.type` must stay free of it.
+ */
+describe('the required flag', () => {
+  it('marks a signal input declared with `input.required`', () => {
+    expect(argTypesOf(`value = input.required<string>();`).value.type).toEqual({
+      name: 'string',
+      required: true,
+    });
+  });
+
+  it('marks a decorator input with no initializer', () => {
+    expect(argTypesOf(`@Input() value!: string;`).value.type).toEqual({
+      name: 'string',
+      required: true,
+    });
+  });
+
+  it('says nothing about a defaulted signal input', () => {
+    expect(argTypesOf(`value = input('');`).value.type).toEqual({ name: 'string' });
+  });
+
+  it('says nothing about a defaulted decorator input', () => {
+    expect(argTypesOf(`@Input() value = 'primary';`).value.type).toEqual({ name: 'string' });
+  });
+
+  it('says nothing about an optional input', () => {
+    expect(argTypesOf(`@Input() value?: string;`).value.type).toEqual({ name: 'string' });
+  });
+
+  it('says nothing about an output, which a parent is never obliged to bind', () => {
+    expect(argTypesOf(`toggled = output<boolean>();`).toggled.type).toEqual({
+      name: 'other',
+      value: 'void',
+    });
+  });
+
+  it('says nothing about a plain property, which a parent cannot bind at all', () => {
+    expect(argTypesOf(`value!: string;`).value.type).toEqual({ name: 'string' });
+  });
+
+  it('leaves `table.type` carrying the summary alone', () => {
+    const table = argTypesOf(`value = input.required<string>();`).value.table;
+    expect(table?.type).toEqual({ summary: 'string' });
+  });
+});
+
+/**
+ * The `table.type.detail` text a live analyzer context produces for named types, and its absence —
+ * absent, never empty — everywhere else. The sources go through the real analyzer so the detail and
+ * the summary it rides beside cannot drift apart.
+ */
+
+/**
+ * The `table.type.detail` text a live analyzer context produces for named types, and its absence —
+ * absent, never empty — everywhere else. The sources go through the real analyzer so the detail and
+ * the summary it rides beside cannot drift apart.
+ */
+describe('named-type table detail', () => {
+  const TYPES_FILE = `
+    /** A user of the probe. */
+    export interface User {
+      /** The display name. */
+      name: string;
+      age: number;
+    }
+
+    export enum Color {
+      Red = 'red',
+      Green = 'green',
+    }
+
+    export type ScalarId = string;
+
+    export interface TreeNode {
+      parent?: TreeNode;
+      label: string;
+    }
+
+    export interface WithAddress {
+      home: Address;
+    }
+
+    export interface Address {
+      street: string;
+    }
+
+    export type ColorAlias = Color;
+
+    export type CycleA = CycleB;
+    export type CycleB = CycleA;
+  `;
+
+  // The names `types.ts` exports, imported the way a compiling component imports them; a bare type
+  // name only resolves inside the scope that can see it.
+  const TYPES_IMPORT = `import { User, Color, ColorAlias, TreeNode, WithAddress, ScalarId, CycleA } from './types.ts';`;
+
+  const argTypesWithDetail = (
+    classBody: string,
+    extraFiles: Record<string, string> = { 'types.ts': TYPES_FILE },
+    imports: string = TYPES_IMPORT
+  ) => {
+    const { meta, context } = analyzeForExtraction(
+      `
+        import { Component, Input } from '@angular/core';
+
+        ${imports}
+
+        @Component({ selector: 'sb-probe', template: '' })
+        export class ProbeComponent {
+          ${classBody}
+        }
+      `,
+      extraFiles
+    );
+    const component = meta.components[0];
+    if (!component) {
+      throw new Error('expected exactly one component');
+    }
+    return extractArgTypesFromData(component, {
+      metadataJson: meta,
+      propsTable: 'all',
+      context,
+    });
+  };
+
+  it('expands a cross-file interface to its property lines', () => {
+    expect(argTypesWithDetail(`@Input() user!: User;`).user.table?.type).toEqual({
+      summary: 'User',
+      detail: 'User {\n  name: string — The display name.\n  age: number\n}',
+    });
+  });
+
+  it('expands an enum to its member lines with their values', () => {
+    const arg = argTypesWithDetail(`@Input() status!: Color;`).status;
+    expect(arg.table?.type).toEqual({
+      summary: 'Color',
+      detail: "Color {\n  Red = 'red'\n  Green = 'green'\n}",
+    });
+    // The detail rides beside a moved-on sbType, never instead of it.
+    expect(arg.type).toEqual({ name: 'enum', value: ['red', 'green'], required: true });
+  });
+
+  it('expands a same-file object-shape alias', () => {
+    const { meta, context } = analyzeForExtraction(`
+      import { Component, Input } from '@angular/core';
+
+      type Config = { debug: boolean };
+
+      @Component({ selector: 'sb-probe', template: '' })
+      export class ProbeComponent {
+        @Input() config!: Config;
+      }
+    `);
+    const component = meta.components[0];
+    if (!component) {
+      throw new Error('expected exactly one component');
+    }
+    expect(
+      extractArgTypesFromData(component, { metadataJson: meta, propsTable: 'all', context }).config
+        .table?.type
+    ).toEqual({
+      summary: 'Config',
+      detail: 'Config {\n  debug: boolean\n}',
+    });
+  });
+
+  it('walks an alias chain to the object or enum it names', () => {
+    expect(argTypesWithDetail(`@Input() status!: ColorAlias;`).status.table?.type).toEqual({
+      summary: 'ColorAlias',
+      detail: "ColorAlias {\n  Red = 'red'\n  Green = 'green'\n}",
+    });
+  });
+
+  it('expands a self-referential interface one hop, not recursively', () => {
+    expect(argTypesWithDetail(`@Input() tree!: TreeNode;`).tree.table?.type).toEqual({
+      summary: 'TreeNode',
+      detail: 'TreeNode {\n  parent?: TreeNode\n  label: string\n}',
+    });
+  });
+
+  it('renders a member reference as its text form, never expanding the second hop', () => {
+    expect(argTypesWithDetail(`@Input() contact!: WithAddress;`).contact.table?.type).toEqual({
+      summary: 'WithAddress',
+      detail: 'WithAddress {\n  home: Address\n}',
+    });
+  });
+
+  it('renders an optional property with its question mark', () => {
+    const { meta, context } = analyzeForExtraction(`
+      import { Component, Input } from '@angular/core';
+
+      interface Loose {
+        name?: string;
+      }
+
+      @Component({ selector: 'sb-probe', template: '' })
+      export class ProbeComponent {
+        @Input() loose!: Loose;
+      }
+    `);
+    const component = meta.components[0];
+    if (!component) {
+      throw new Error('expected exactly one component');
+    }
+    expect(
+      extractArgTypesFromData(component, { metadataJson: meta, propsTable: 'all', context }).loose
+        .table?.type
+    ).toEqual({
+      summary: 'Loose',
+      detail: 'Loose {\n  name?: string\n}',
+    });
+  });
+
+  it('gives up on a cyclic alias chain instead of hanging', () => {
+    const arg = argTypesWithDetail(`@Input() value!: CycleA;`).value;
+    expect(arg.table?.type).toEqual({ summary: 'CycleA' });
+    expect(arg.type).toEqual({ name: 'other', value: 'empty-enum', required: true });
+  });
+
+  it('caps at twenty lines and counts the rest', () => {
+    const members = Array.from({ length: 25 }, (_, index) => `field${index + 1}: string;`).join(
+      '\n'
+    );
+    const typeTable = argTypesWithDetail(
+      `@Input() wide!: Wide;`,
+      {
+        'types.ts': `export interface Wide {\n${members}\n}`,
+      },
+      `import { Wide } from './types.ts';`
+    ).wide.table?.type;
+    const detail = typeTable?.detail;
+    expect(detail).toBeDefined();
+    // Header + 20 member lines + the count line + the closing brace.
+    const lines = detail!.split('\n');
+    expect(lines).toHaveLength(23);
+    expect(lines[0]).toBe('Wide {');
+    expect(lines.at(-1)).toBe('}');
+    expect(lines.at(-2)).toBe('… 5 more');
+    expect(lines.at(-3)).toBe('  field20: string');
+  });
+
+  it('keeps scalar aliases, unions, and functions flat', () => {
+    for (const [body, name, summary, sbType] of [
+      [`@Input() id!: ScalarId;`, 'id', 'ScalarId', { name: 'other', value: 'empty-enum' }],
+      [
+        `@Input() tone!: 'info' | 'warn';`,
+        'tone',
+        `"info" | "warn"`,
+        { name: 'enum', value: ['info', 'warn'] },
+      ],
+      [`@Input() pick!: (a: string) => void;`, 'pick', '(a: string) => void', { name: 'function' }],
+    ] as const) {
+      const arg = argTypesWithDetail(body)[name];
+      expect(arg.table?.type).toEqual({ summary });
+      // Every case declares its input with `!`, so requiredness rides along untouched.
+      expect(arg.type).toEqual({ ...sbType, required: true });
+    }
+  });
+
+  it('keeps lib and node_modules declarations flat', () => {
+    const args = argTypesWithDetail(
+      `
+        @Input() when!: Date;
+        @Input() zone!: NgZone;
+      `,
+      {},
+      `import { NgZone } from '@angular/core';`
+    );
+    expect(args.when.table?.type).toEqual({ summary: 'Date' });
+    expect(args.zone.table?.type).toEqual({ summary: 'NgZone' });
+    expect(args.when.type).toEqual({ name: 'other', value: 'empty-enum', required: true });
+  });
+
+  it('omits the detail key entirely when no expansion applies', () => {
+    const table = argTypesWithDetail(`@Input() id!: ScalarId;`).id.table?.type;
+    expect(table).toEqual({ summary: 'ScalarId' });
+    expect('detail' in (table ?? {})).toBe(false);
+  });
+
+  it('produces no detail without a live analyzer context', () => {
+    const { meta } = analyzeForExtraction(
+      `
+        import { Component, Input } from '@angular/core';
+
+        ${TYPES_IMPORT}
+
+        @Component({ selector: 'sb-probe', template: '' })
+        export class ProbeComponent {
+          @Input() user!: User;
+        }
+      `,
+      { 'types.ts': TYPES_FILE }
+    );
+    const component = meta.components[0];
+    if (!component) {
+      throw new Error('expected exactly one component');
+    }
+    // The same metadata without the context — a stubbed analyzer's call — stays flat.
+    expect(
+      extractArgTypesFromData(component, { metadataJson: meta, propsTable: 'all' }).user.table?.type
+    ).toEqual({ summary: 'User' });
   });
 });

@@ -3,6 +3,7 @@ import React from 'react';
 
 import { codeCommon } from 'storybook/internal/components';
 
+import Markdown from 'markdown-to-jsx';
 import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
@@ -33,6 +34,16 @@ export const Table = styled.table(({ theme }) => ({
 
     marginTop: 0,
     marginBottom: 0,
+
+    p: {
+      margin: '0 0 10px',
+      '&:last-child': {
+        marginBottom: 0,
+      },
+    },
+    a: {
+      color: theme.color.secondary,
+    },
 
     'th:first-of-type, td:first-of-type': {
       paddingLeft: 0,
@@ -101,7 +112,7 @@ export const ArgJsDoc: FC<ArgJsDocArgs> = ({ tags }) => {
                   <td>
                     <code>{x.name}</code>
                   </td>
-                  <td>{x.description}</td>
+                  <td>{x.description && <Markdown>{x.description}</Markdown>}</td>
                 </tr>
               );
             })}
@@ -110,7 +121,9 @@ export const ArgJsDoc: FC<ArgJsDocArgs> = ({ tags }) => {
               <td>
                 <code>Returns</code>
               </td>
-              <td>{tags.returns?.description}</td>
+              <td>
+                {tags.returns?.description && <Markdown>{tags.returns.description}</Markdown>}
+              </td>
             </tr>
           )}
         </tbody>

@@ -41,6 +41,8 @@ export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string |
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
+export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
+
 // recast reprints a node it parsed straight from the file's own text, comments and indentation
 // included. A clone drops the bookkeeping that path relies on and is formatted from the AST
 // instead, which is what leaves a binding holding the expression and nothing else.

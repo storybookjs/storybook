@@ -142,7 +142,7 @@ export function getOptions<TOptions extends OptionSpecifier>(
       };
 
       if (option.type === 'string') {
-        return acc.option(flags, option.description, (raw) => {
+        return acc.option(flags, option.description ?? '', (raw) => {
           return checkStringValue(raw);
         });
       }
@@ -150,8 +150,8 @@ export function getOptions<TOptions extends OptionSpecifier>(
       if (option.type === 'string[]') {
         return acc.option(
           flags,
-          option.description,
-          (raw, values) => [...values, checkStringValue(raw)],
+          option.description ?? '',
+          (raw, values: string[]) => [...values, checkStringValue(raw)],
           []
         );
       }

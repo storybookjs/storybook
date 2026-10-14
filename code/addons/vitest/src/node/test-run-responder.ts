@@ -1,15 +1,10 @@
 import type { Channel } from 'storybook/internal/channels';
+import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
 import {
-  createFileSystemCache,
-  loadPreviewOrConfigFile,
-  resolvePathInStorybookCache,
-} from 'storybook/internal/common';
-import {
-  type StoryIndexGenerator,
-  experimental_UniversalStore,
+  internal_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
-import type { Options, PreviewAnnotation } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
@@ -42,8 +37,8 @@ export const resolvePreviewBuilderName = (
 let storePromise: Promise<Store> | undefined;
 
 /**
- * The machinery that answers a test-run request: the leader UniversalStore seeded with the story
- * index and cached config, and the subscriptions that boot the vitest child process and record
+ * The machinery that answers a test-run request: the leader UniversalStore seeded with the cached
+ * config, and the subscriptions that boot the vitest child process and record
  * fatal errors. Memoized so the request listener (which runs it on first request) and the dev
  * server (which additionally runs it eagerly, because the manager UI needs the store immediately)
  * share one store.
@@ -63,15 +58,6 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
       (core?.builder?.options?.configLoader as BuilderOptions['configLoader'])) ||
     undefined;
 
-  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
-  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
-    'previewAnnotations',
-    [],
-    options
-  );
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-
   const fsCache = createFileSystemCache({
     basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
     ns: 'storybook',
@@ -84,15 +70,15 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
   const selectCachedState = (s: Partial<StoreState>): Partial<CachedState> => ({
     config: s.config,
   });
-  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+  const store = internal_UniversalStore.create<StoreState, StoreEvent>({
     ...storeOptions,
     initialState: {
       ...storeOptions.initialState,
-      previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
-      index: await storyIndexGenerator.getIndex(),
       ...selectCachedState(cachedState),
     },
-    leader: true,
+    leader:
+      process.env.VITEST_CHILD_PROCESS !== 'true' &&
+      process.env.STORYBOOK_ATTACHED_TOOLS !== 'true',
   });
   store.onStateChange((state, previousState) => {
     if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
@@ -182,6 +168,11 @@ export const wireTestRunResponder = async ({
   // The vitest child process loads this same Storybook configuration in-process; answering
   // requests from inside it could recursively boot another child.
   if (process.env.VITEST_CHILD_PROCESS === 'true') {
+    return;
+  }
+  // An attached tools host shares the instance's channel. Answering here would create a second
+  // UniversalStore leader for `storybook/test` and crash the running Storybook.
+  if (process.env.STORYBOOK_ATTACHED_TOOLS === 'true') {
     return;
   }
   // Without a channel there is no bus to answer on. In practice every configuration loader

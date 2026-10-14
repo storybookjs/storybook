@@ -1,0 +1,9 @@
+<Card title="Snippet card">
+  {#snippet header(t)}
+    <h2>{t}</h2>
+  {/snippet}
+  <p>Body</p>
+  {#snippet footer()}
+    <small>Footer</small>
+  {/snippet}
+</Card>

@@ -4,7 +4,7 @@ You can use Storybook's plugin in Claude Code or Claude Desktop to connect agent
 
 ## Requirements
 
-- Storybook 10.5 or later
+- Storybook 11.0 or later, an 11.0 prerelease (`11.0.0-alpha.x`), or a canary build
 - [Claude Code](https://claude.ai/code) or [Claude Desktop](https://claude.ai/desktop)
 
 ## Installation
@@ -98,7 +98,7 @@ To remove a plugin:
 
 The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions.
 
-If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/10.5/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -106,7 +106,7 @@ These skills are available to agents that have the Storybook plugin installed. T
 
 ### `init`
 
-Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](../../addons/mcp), then runs the [setup](#setup) skill.
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), then runs the [setup](#setup) skill.
 
 ### `setup`
 
@@ -122,4 +122,4 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 ## Tools
 
-All of [Storybook MCP server's tools](https://storybook.js.org/docs/ai/mcp/overview#toolsets) are available to agents that have the plugin installed.
+Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/mcp/overview#toolsets), through the `storybook tools` CLI.

@@ -1,0 +1,56 @@
+import { print } from 'esrap';
+import type MagicString from 'magic-string';
+
+import { replaceDefineMetaArgument } from './replace-argument.ts';
+import { insertDefineMetaParameters } from './insert-parameters.ts';
+
+import { STORYBOOK_META_IDENTIFIER } from '../../../constants.ts';
+import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
+import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+
+interface Params {
+  code: MagicString;
+  nodes: {
+    compiled: CompiledASTNodes;
+    svelte: SvelteASTNodes;
+  };
+  filename?: string;
+}
+
+/**
+ * Attempt to transform compiled `defineMeta()` when necessary.
+ * And in the end, update the compiled code using {@link MagicString}.
+ */
+export function transformDefineMeta(params: Params): void {
+  const { code, nodes, filename } = params;
+
+  insertDefineMetaParameters({ nodes, filename });
+  const metaObjectExpression = replaceDefineMetaArgument({ nodes, filename });
+  const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
+
+  const { compiled } = nodes;
+  const { defineMetaVariableDeclaration } = compiled;
+  const { start, end } = defineMetaVariableDeclaration;
+
+  code.update(start as number, end as number, print(defineMetaVariableDeclaration).code);
+  code.appendLeft(start as number, print(metaVariableDeclaration).code + '\n');
+}
+
+export function createMetaVariableDeclaration({
+  init,
+}: {
+  init: ESTreeAST.ObjectExpression;
+}): ESTreeAST.VariableDeclaration {
+  return {
+    type: 'VariableDeclaration',
+    kind: 'const',
+    declarations: [
+      {
+        type: 'VariableDeclarator',
+        id: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
+        init,
+      },
+    ],
+  };
+}

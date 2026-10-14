@@ -5,11 +5,14 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { parseTemplate } from '@angular/compiler';
+
 import { dedent } from 'ts-dedent';
 
 import { vol } from 'memfs';
 
 import type { AngularDocgenPayload } from './build-docgen.ts';
+import type { BuildStoryDocsContext } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 import { extractHostComponentTemplate } from './story-docs-snippet.ts';
 
@@ -58,6 +61,21 @@ const buttonDocgen =
       enums: [],
     },
   });
+
+const compiledButtonDocgen = async (): Promise<AngularDocgenPayload> => ({
+  id: 'example-button',
+  name: 'ButtonComponent',
+  path: STORY_PATH,
+  jsDocTags: {},
+  angularComponentMeta: {
+    name: 'ButtonComponent',
+    selector: undefined,
+    standalone: undefined,
+    inputs: ['label'],
+    outputs: ['pressed'],
+    enums: [],
+  },
+});
 
 /** The docgen stub the story-shape file below is written against. */
 const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
@@ -205,7 +223,10 @@ const warningsOf = async (storyFile: string, extraFiles: Record<string, string> 
     [...(await storiesOf(storyFile, extraFiles))].map(([name, story]) => [name, story.warning])
   );
 
-const soleStory = async (source: string, getDocgenPayload = buttonDocgen()) => {
+const soleStory = async (
+  source: string,
+  getDocgenPayload: BuildStoryDocsContext['getDocgenPayload'] = buttonDocgen()
+) => {
   givenStoryFile(source);
   const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
   const stories = Object.values(payload?.stories ?? {});
@@ -260,7 +281,7 @@ describe('buildStoryDocsPayload', () => {
 
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
 
-    expect(Object.values(payload!.stories)[0].snippet).toContain(`[label]="(value) => value"`);
+    expect(Object.values(payload!.stories)[0].snippet).toContain(`label = (value) => value;`);
   });
 
   it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
@@ -304,7 +325,7 @@ describe('buildStoryDocsPayload', () => {
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
 
     const story = Object.values(payload!.stories)[0];
-    expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
+    expect(story.snippet).toContain(`label = (value) => value.trim();`);
   });
 
   it('attaches the snippet builder warning for a non-standalone component', async () => {
@@ -324,6 +345,39 @@ describe('buildStoryDocsPayload', () => {
     expect(story.snippet).not.toContain('./button.component');
     expect(story.warning).toContain('standalone: false');
     expect(story.warning).toContain('NgModule');
+  });
+
+  it('uses a literal render template when compiled metadata has no selector or standalone value', async () => {
+    givenStoryFile(`
+      import { CommonModule } from '@angular/common';
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ declarations: [ButtonComponent], imports: [CommonModule] })],
+      };
+      const Template = (args) => ({
+        component: ButtonComponent,
+        template: '<sb-button></sb-button>',
+        props: args,
+      });
+      export const Default = { render: Template, args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: compiledButtonDocgen }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('<sb-button></sb-button>');
+    expect(story.snippet).not.toContain('NgComponentOutlet');
+    expect(story.snippet).not.toMatch(/imports: \[[^\]]*ButtonComponent/);
+    expect(story.snippet).not.toContain("import { ButtonComponent } from './button.component';");
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.snippet).not.toContain("import { CommonModule } from '@angular/common';");
+    expect(story.warning).toContain('could not be determined');
   });
 
   it("mirrors the story's moduleMetadata modules for a non-standalone component", async () => {
@@ -1450,7 +1504,7 @@ describe('buildStoryDocsPayload', () => {
       const tabs = await soleStory(storyFile('\n', '\t'));
 
       expect(lf.snippet).toContain(
-        `[label]="(value) => {\n      return value.replace('a', 'b');\n    }"`
+        `  label = (value) => {\n    return value.replace('a', 'b');\n  };`
       );
       expect(crlf.snippet).toBe(lf.snippet);
       expect(tabs.snippet).toBe(lf.snippet);
@@ -1467,7 +1521,216 @@ describe('buildStoryDocsPayload', () => {
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Default = { args: { ${property} } };
       `);
-      expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
+      expect(story.snippet).toContain(`label = (value) => value.trim();`);
+    });
+  });
+
+  describe('args a template expression cannot carry', () => {
+    /** Every arg below binds to one of these inputs; the enum is what `kind` resolves through. */
+    const hoistDocgen = async (): Promise<AngularDocgenPayload> => ({
+      id: 'example-button',
+      name: 'ButtonComponent',
+      path: STORY_PATH,
+      jsDocTags: {},
+      angularComponentMeta: {
+        name: 'ButtonComponent',
+        selector: 'sb-button',
+        standalone: true,
+        inputs: [
+          'label',
+          'count',
+          'disabled',
+          'tags',
+          'data',
+          'kind',
+          'value',
+          'constructed',
+          'arrow',
+          'globalCall',
+          'globalRead',
+          'interpolated',
+        ],
+        outputs: [],
+        enums: [{ name: 'ButtonKind', members: [{ name: 'Secondary', value: 'secondary' }] }],
+      },
+    });
+
+    const storyWithArgs = (args: string, prelude = '') =>
+      soleStory(
+        [
+          `import { ButtonComponent } from './button.component';`,
+          prelude,
+          `export default { title: 'Example/Button', component: ButtonComponent };`,
+          `export const Default = { args: { ${args} } };`,
+        ].join('\n'),
+        hoistDocgen
+      );
+
+    // One story per behaviour rather than one per input shape: the point of these snapshots is to
+    // read the whole generated component, and five near-identical copies of it would obscure that.
+    it('hoists every arg a template expression cannot carry', async () => {
+      const story = await storyWithArgs(
+        [
+          `constructed: new Error('Failed to load cards.')`,
+          `arrow: () => {}`,
+          `globalCall: Array.from([1, 2], (index) => index)`,
+          `globalRead: Date.now()`,
+          'interpolated: `${1 + 1} items`',
+        ].join(', ')
+      );
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`
+            <sb-button
+                [constructed]="constructed"
+                [arrow]="arrow"
+                [globalCall]="globalCall"
+                [globalRead]="globalRead"
+                [interpolated]="interpolated"
+            />\`,
+        })
+        export class DemoComponent {
+          constructed = new Error('Failed to load cards.');
+          arrow = () => {};
+          globalCall = Array.from([1, 2], (index) => index);
+          globalRead = Date.now();
+          interpolated = \`\${1 + 1} items\`;
+        }",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('inlines every arg that reduces to a literal', async () => {
+      const story = await storyWithArgs(
+        [
+          `label: 'Save'`,
+          `count: 3`,
+          `disabled: true`,
+          `tags: ['a', 'b']`,
+          `data: { id: 7, deep: { ok: true } }`,
+          `kind: ButtonKind.Secondary`,
+        ].join(', '),
+        `import { ButtonKind } from './kinds';`
+      );
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`
+            <sb-button
+                [label]="'Save'"
+                [count]="3"
+                [disabled]="true"
+                [tags]="['a', 'b']"
+                [data]="{id: 7, deep: {ok: true}}"
+                [kind]="'secondary'"
+            />\`,
+        })
+        export class DemoComponent {}",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('indents a hoisted value that prints over several lines', async () => {
+      const story = await storyWithArgs(`value: (item) => { return item.id; }`);
+
+      expect(story.snippet).toMatchInlineSnapshot(`
+        "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [value]="value" />\`,
+        })
+        export class DemoComponent {
+          value = (item) => {
+            return item.id;
+          };
+        }"
+      `);
+    });
+
+    it('leaves an arg naming what the snippet cannot provide as written, and still warns', async () => {
+      const story = await storyWithArgs(
+        `value: buildValue(seed)`,
+        [`let seed = 1;`, `const buildValue = (n: number) => String(n);`].join('\n')
+      );
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [value]="buildValue(seed)" />\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`buildValue\`, \`seed\`, \`buildValue(seed)\` could not be resolved statically.",
+        }
+      `);
+    });
+
+    it('keeps a hoisted value as TypeScript rather than escaping it for an attribute', async () => {
+      const story = await storyWithArgs(`value: (text) => text.replace('"', "'")`);
+
+      expect(story.snippet).toMatchInlineSnapshot(`
+        "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [value]="value" />\`,
+        })
+        export class DemoComponent {
+          value = (text) => text.replace('"', '\\'');
+        }"
+      `);
+      expect(story.snippet).not.toContain('&quot;');
+    });
+
+    const parseErrorsOf = (snippet: string | undefined) =>
+      parseTemplate(extractHostComponentTemplate(snippet ?? '') ?? '', 'story-docs.html').errors;
+
+    // Pinned deliberately: `parseTemplate` reports a clean parse as `errors === null` rather than as
+    // an empty array, so an Angular release that started returning `[]` would turn the assertions
+    // below - and `analyzeStoryTemplate`, which tests the same value for truthiness - vacuous.
+    it('rejects inlined values and accepts the field binding that replaces them', () => {
+      expect(parseTemplate(`<sb-button [value]="value" />`, 'story-docs.html').errors).toBeNull();
+      expect(
+        parseTemplate(`<sb-button [value]="new Error('x')" />`, 'story-docs.html').errors
+      ).not.toBeNull();
+      expect(
+        parseTemplate(`<sb-button [value]="() => {}" />`, 'story-docs.html').errors
+      ).not.toBeNull();
+    });
+
+    it.each([
+      `new Error('Failed to load cards.')`,
+      `() => {}`,
+      `Array.from([1, 2], (index) => index)`,
+      `Date.now()`,
+    ])('emits a template Angular parses for %s', async (source) => {
+      const story = await storyWithArgs(`value: ${source}`);
+
+      expect(parseErrorsOf(story.snippet)).toBeNull();
     });
   });
 

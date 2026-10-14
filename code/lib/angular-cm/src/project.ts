@@ -1,5 +1,7 @@
 import { isInNodeModules, slash } from 'storybook/internal/common';
 import {
+  type ComponentJsDocInfo,
+  extractComponentJsDocInfo,
   type FileSnapshotCache,
   ProgramBackedProject,
   ProjectFileTracker,
@@ -10,7 +12,8 @@ import * as path from 'node:path';
 
 import type * as ts from 'typescript';
 
-import { analyzeSourceFile } from './analyzer/analyze-file.ts';
+import { analyzeSourceFile, analyzerContext } from './analyzer/analyze-file.ts';
+import type { AnalyzerContext } from './analyzer/context.ts';
 import type { AngularClassMeta, AngularComponentMetaResult, AngularFileMeta } from './types.ts';
 
 export type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
@@ -104,13 +107,23 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
     }
 
     const checker = program.getTypeChecker();
-    const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker);
+    const context = analyzerContext(this.typescript, sourceFile, checker);
+    const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker, context);
     const entry = this.pickEntry(fileMeta, sourceFile, names);
     if (entry) {
       this.debug(`${describe(entry)} from ${fileName}`);
-      return { entry, json: fileMeta };
+      return {
+        entry,
+        json: fileMeta,
+        context,
+        ...jsDocInfoField(
+          this.typescript,
+          checker,
+          findClassDeclaration(this.typescript, sourceFile, entry.name)
+        ),
+      };
     }
-    const viaExports = this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
+    const viaExports = this.extractViaModuleExports(checker, sourceFile, fileMeta, context, names);
     if (viaExports) {
       this.debug(`${describe(viaExports.entry)} from ${fileName}, reached through its exports`);
       return viaExports;
@@ -155,6 +168,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
     checker: ts.TypeChecker,
     sourceFile: ts.SourceFile,
     fileMeta: AngularFileMeta,
+    context: AnalyzerContext,
     { exportName, localName }: { exportName: string; localName?: string }
   ): AngularComponentMetaResult | undefined {
     const { SymbolFlags, isClassDeclaration } = this.typescript;
@@ -177,13 +191,24 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
         continue;
       }
       const declarationFile = declaration.getSourceFile();
+      // A fresh context per analyzed file: the TypeIndex files what each analysis rendered, and the
+      // name-resolution scope must be the file the argTypes' type text came from.
+      const targetContext =
+        declarationFile === sourceFile
+          ? context
+          : analyzerContext(this.typescript, declarationFile, checker);
       const targetMeta =
         declarationFile === sourceFile
           ? fileMeta
-          : analyzeSourceFile(this.typescript, declarationFile, checker);
+          : analyzeSourceFile(this.typescript, declarationFile, checker, targetContext);
       const entry = findRecord(targetMeta, declaration.name.text);
       if (entry) {
-        return { entry, json: targetMeta };
+        return {
+          entry,
+          json: targetMeta,
+          context: targetContext,
+          ...jsDocInfoField(this.typescript, checker, declaration),
+        };
       }
     }
     return undefined;
@@ -234,7 +259,7 @@ const allRecords = (fileMeta: AngularFileMeta): AngularClassMeta[] => [
 const declaredNames = (fileMeta: AngularFileMeta): string[] =>
   allRecords(fileMeta).map((record) => `${record.name} (${record.type})`);
 
-/** Enough of a record's shape to tell "found nothing" apart from "found it, and it was empty". */
+// Enough of a record's shape to tell "found nothing" apart from "found it, and it was empty".
 const describe = (entry: AngularClassMeta): string => {
   const counts =
     'inputsClass' in entry
@@ -249,6 +274,26 @@ const findRecord = (
   name: string | undefined
 ): AngularClassMeta | undefined =>
   name ? allRecords(fileMeta).find((record) => record.name === name) : undefined;
+
+function findClassDeclaration(
+  typescript: typeof ts,
+  sourceFile: ts.SourceFile,
+  name: string
+): ts.ClassDeclaration | undefined {
+  return sourceFile.statements.find(
+    (statement): statement is ts.ClassDeclaration =>
+      typescript.isClassDeclaration(statement) && statement.name?.text === name
+  );
+}
+
+function jsDocInfoField(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  declaration: ts.ClassDeclaration | undefined
+): { jsDocInfo?: ComponentJsDocInfo } {
+  const symbol = declaration?.name && checker.getSymbolAtLocation(declaration.name);
+  return symbol ? { jsDocInfo: extractComponentJsDocInfo(typescript, checker, symbol) } : {};
+}
 
 function findDefaultExportedClassName(
   typescript: typeof ts,

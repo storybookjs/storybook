@@ -1,6 +1,6 @@
 <script>
-	import { assets, base } from "$app/paths";
+  import { asset, resolve } from '$app/paths';
 </script>
 
-<div data-testid="assets">{assets}</div>
-<div data-testid="base">{base}</div>
+<div data-testid="asset">{asset('robots.txt')}</div>
+<div data-testid="resolve">{resolve('/')}</div>

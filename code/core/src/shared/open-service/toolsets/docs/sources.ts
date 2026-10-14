@@ -76,7 +76,7 @@ export class RequiresOwnMcpError extends Error {
 
   constructor(source: SourceWithUrl) {
     const endpoint = getSourceMcpEndpoint(source);
-    super(`Composed Storybook "${source.title}" requires its own MCP endpoint: ${endpoint}`);
+    super(formatRequiresOwnMcpNotice(source, endpoint));
     this.name = 'RequiresOwnMcpError';
     this.source = source;
     this.endpoint = endpoint;

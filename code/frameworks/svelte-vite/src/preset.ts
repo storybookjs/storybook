@@ -19,8 +19,8 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   assertSvelteCsfAddonNotInstalled({ presetsList: options.presetsList, framework });
 
-  const { docgen, docgenServerActive } = await resolveDocgenContext(options);
-  if (docgen && !docgenServerActive) {
+  const { docgen } = await resolveDocgenContext(options);
+  if (docgen) {
     plugins.push(await svelteDocgen());
   }
 

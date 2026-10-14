@@ -48,7 +48,7 @@ describe('createDocgenProvider', () => {
         name: 'Button',
         path: importPath,
         jsDocTags: {},
-        argTypes: { label: { type: { name: 'string' } } },
+        argTypes: { label: { name: 'label', type: { name: 'string' } } },
       };
       vi.mocked(buildDocgenPayload).mockResolvedValueOnce(extracted);
       const provider = createDocgenProvider()(async () => DOWNSTREAM);

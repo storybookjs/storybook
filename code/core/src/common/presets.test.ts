@@ -1,5 +1,6 @@
 import path, { dirname, join, normalize, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
+import { stripVTControlCharacters } from 'node:util';
 
 import { join as patheJoin } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -237,7 +238,9 @@ describe('presets', () => {
         .then(() => undefined)
         .catch((e: unknown) => e as Error);
       expect(error).toBeInstanceOf(CommonJsGlobalInEsmError);
-      expect((error as Error).message).toMatch(/viteFinal hook of .*\.storybook\/main\.ts/);
+      expect(stripVTControlCharacters((error as Error).message)).toMatch(
+        /viteFinal hook of .*\.storybook\/main\.ts/
+      );
     });
   });
 

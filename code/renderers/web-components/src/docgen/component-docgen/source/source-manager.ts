@@ -1,18 +1,18 @@
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenError } from 'storybook/internal/types';
 
-import type * as ts from 'typescript';
 import { isAbsolute, normalize, relative } from 'pathe';
+import type ts from 'typescript';
 
-import type { CemTag } from '../manifest/cem-manager.ts';
 import { buildTagIndex } from '../manifest/build-tag-index.ts';
+import type { CemTag } from '../manifest/cem-manager.ts';
 import { flattenInheritance } from '../manifest/flatten-inheritance.ts';
 import type { ManifestDeclaration, ManifestPackage } from '../manifest/types.ts';
 import type { TagLookup, TagResolver } from '../tag-resolver.ts';
 import { errorMessage } from '../utils.ts';
-import type { GeneratorAdapter } from './generator.ts';
 import { GeneratorManager } from './generator-manager.ts';
 import type { GeneratorProject } from './generator-project.ts';
+import type { GeneratorAdapter } from './generator.ts';
 
 type Probe = () => CemTag | undefined;
 

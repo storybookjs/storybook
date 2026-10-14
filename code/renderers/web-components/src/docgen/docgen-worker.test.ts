@@ -163,7 +163,6 @@ describe('createDocgenProvider', () => {
     });
     const provider = createDocgenProvider({
       manifestPaths: ['/workspace/custom-elements.json'],
-      typeProperty: 'parsedType',
     })(async () => undefined);
 
     await expect(provider({ entry })).resolves.toMatchObject({ name: 'x-card' });
@@ -175,9 +174,7 @@ describe('createDocgenProvider', () => {
   it('passes through when the source tools fail to load and no manifest is configured', async () => {
     vi.mocked(loadGenerator).mockRejectedValue(new Error('broken install'));
     const next = vi.fn(async () => ({ id: 'downstream' }));
-    const provider = createDocgenProvider({ manifestPaths: [], typeProperty: 'parsedType' })(
-      next as never
-    );
+    const provider = createDocgenProvider({ manifestPaths: [] })(next as never);
 
     await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
   });

@@ -91,9 +91,7 @@ export class GeneratorProject implements ComponentMetaProjectBase {
       this.debug(`none of ${rootPaths.join(', ')} could be read`);
       return undefined;
     }
-    // TODO: reuse parsed files across calls once the generator accepts a compiler host; its
-    // `previousProgram` re-parses every file through the default host. Without a tsconfig it
-    // scans this directory, and the program follows imports from there.
+    // Without a tsconfig the generator scans this directory, and the program follows imports from there.
     const tsConfigPath = this.configFileName ?? join(commonDirectory(roots), 'tsconfig.json');
     return this.generator.generate(tsConfigPath, closure);
   }

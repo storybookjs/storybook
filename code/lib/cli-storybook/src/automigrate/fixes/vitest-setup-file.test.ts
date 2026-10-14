@@ -74,6 +74,39 @@ const STANDARD_VITEST_CONFIG = dedent`
   });
 `;
 
+// A root-level config whose unit/ui projects have no Storybook plugin (ixartz/Next-js-Boilerplate)
+const UNIT_UI_VITEST_CONFIG = dedent`
+  import { defineConfig } from 'vitest/config';
+
+  export default defineConfig({
+    test: {
+      projects: [
+        { extends: true, test: { name: 'unit', include: ['src/**/*.test.{js,ts}'] } },
+        { extends: true, test: { name: 'ui', include: ['**/*.test.tsx'] } },
+      ],
+    },
+  });
+`;
+
+// A config inside the Storybook config dir, loaded via `vitest run --config .storybook/vitest.config.ts`;
+// its relative entry resolves against the invocation cwd, not the config file's directory
+const CONFIG_DIR_VITEST_CONFIG = dedent`
+  import { defineConfig } from 'vitest/config';
+  import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+  export default defineConfig({
+    plugins: [storybookTest()],
+    test: {
+      projects: [
+        {
+          extends: true,
+          test: { name: 'storybook', setupFiles: ['.storybook/vitest.setup.ts'] },
+        },
+      ],
+    },
+  });
+`;
+
 // A project that relies on the `extends` default to pick up the root's Storybook plugin
 const ROOT_PLUGIN_PROJECT_CONFIG = dedent`
   import { defineConfig } from 'vitest/config';
@@ -169,6 +202,24 @@ describe('vitestSetupFile', () => {
         inheritsRootByDefault: false,
       });
     });
+
+    it('detects the setup file referenced by a vitest config inside the Storybook config dir', async () => {
+      const { result, setupFilePath, configDir } = await check(
+        {
+          'vitest.config.ts': UNIT_UI_VITEST_CONFIG,
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG,
+          '.storybook/vitest.setup.ts': A11Y_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      expect(result).toEqual({
+        setupFiles: [{ path: setupFilePath, transform: { kind: 'empty' } }],
+        configFiles: [path.join(configDir, 'vitest.config.ts')],
+        unresolvedEntries: [],
+        inheritsRootByDefault: false,
+      });
+    });
   });
 
   describe('run', () => {
@@ -191,6 +242,23 @@ describe('vitestSetupFile', () => {
         });"
       `);
       loadConfig(updatedConfig, configPath);
+    });
+
+    it('migrates a setup file referenced from a vitest config inside the Storybook config dir', async () => {
+      const { configDir } = await migrate(
+        {
+          'vitest.config.ts': UNIT_UI_VITEST_CONFIG,
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG,
+          '.storybook/vitest.setup.ts': A11Y_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
+
+      const updatedConfig = readFixture('.storybook/vitest.config.ts');
+      expect(updatedConfig).not.toContain('vitest.setup.ts');
+      loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
     });
 
     it('keeps the setup file when its config entry cannot be rewritten', async () => {

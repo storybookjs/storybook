@@ -87,8 +87,12 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     const addons = getAddonNames(mainConfig);
 
     // Globs come back with forward slashes on every platform; the setup file paths are native
-    const candidateConfigFiles = findFilesUp(CONFIG_FILE_PATTERNS, packageManager.instanceDir).map(
-      (file) => path.resolve(file)
+    // The addon's postinstall looks for a vitest config in the Storybook config dir first, so a
+    // config can live there (e.g. `.storybook/vitest.config.ts`) and never be found by a walk that
+    // starts at the package manager's instance dir; walk from the config dir instead, which covers
+    // it and everything above it.
+    const candidateConfigFiles = findFilesUp(CONFIG_FILE_PATTERNS, configDir).map((file) =>
+      path.resolve(file)
     );
     const configSources = new Map<string, string>();
 
@@ -621,7 +625,11 @@ function extractSetupFileEntries(
           collect(
             resolved === null
               ? { kind: 'unresolved', expression: j(node).toSource(), project }
-              : { kind: 'resolved', path: path.resolve(base.baseDir, resolved), project }
+              : {
+                  kind: 'resolved',
+                  path: resolveSetupFileEntry(base.baseDir, resolved, configFile),
+                  project,
+                }
           );
         }
       }
@@ -816,6 +824,26 @@ function getSetupFilesBaseDir(
   return root === null ? { unresolvedRoot: rootNode } : { baseDir: path.resolve(configDir, root) };
 }
 
+/**
+ * Resolve a `setupFiles` entry to the file it references. `getSetupFilesBaseDir` models Vitest's
+ * root statically as the config file's directory, which a config inside the Storybook config dir
+ * can contradict: that config is only loaded explicitly (`vitest run --config
+ * .storybook/vitest.config.ts`), so its relative entries resolve against the invocation cwd —
+ * normally the project root, the config dir's parent in the standard and Nx layouts. Detection
+ * and the rewrite both resolve through this while the file is still on disk, so they always
+ * agree on which file an entry references.
+ */
+function resolveSetupFileEntry(baseDir: string, resolved: string, configFile: string): string {
+  const primary = path.resolve(baseDir, resolved);
+  const fromProjectRoot = path.resolve(path.dirname(path.dirname(configFile)), resolved);
+
+  if (primary === fromProjectRoot || existsSync(primary)) {
+    return primary;
+  }
+
+  return existsSync(fromProjectRoot) ? fromProjectRoot : primary;
+}
+
 function findProperty(objectNode: jscodeshift.ObjectExpression, name: string) {
   return objectNode.properties.find(
     (property): property is jscodeshift.ObjectProperty =>
@@ -965,7 +993,9 @@ function removeSetupFileEntries(
         const resolved = resolveStaticPath(node, configFile);
         return (
           resolved !== null &&
-          baseDirs.some((baseDir) => targets.has(path.resolve(baseDir, resolved)))
+          baseDirs.some((baseDir) =>
+            targets.has(resolveSetupFileEntry(baseDir, resolved, configFile))
+          )
         );
       };
       const value = propertyPath.value.value;

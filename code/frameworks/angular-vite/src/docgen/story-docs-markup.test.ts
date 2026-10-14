@@ -347,7 +347,7 @@ describe('renderedProps', () => {
     const computedOf = (source: string, name: string) => {
       const props = renderedProps(shapeOf(source, 'Default'));
       const computed = props?.(name)?.computed;
-      return computed && { code: computed.print((arg) => `«${arg}»`), imports: computed.imports };
+      return computed && { code: computed.template, imports: computed.imports };
     };
     const story = (render: string, header = '') => dedent`
       ${header}
@@ -356,22 +356,26 @@ describe('renderedProps', () => {
     `;
 
     it.each([
-      [`(args) => ({ props: { x: args.label + '!' } })`, "«label» + '!'"],
+      [`(args) => ({ props: { x: args.label + '!' } })`, "⟦value label⟧ + '!'"],
       [
-        `({ count }) => ({ props: { x: count > 3 ? 'many' : 'few' } })`,
-        "«count» > 3 ? 'many' : 'few'",
+        `({ count }) => ({ props: { x: count > 3 ? "many" : 'few' } })`,
+        `⟦value count⟧ > 3 ? "many" : 'few'`,
       ],
       [
-        `(args) => ({ props: { x: { title: 'Hi', label: args.label } } })`,
-        "{\n  title: 'Hi',\n  label: «label»,\n}",
+        `(args) => ({ props: { x: { title: 'Hi', /* shown */ label: args.label } } })`,
+        "{ title: 'Hi', /* shown */ label: ⟦value label⟧ }",
       ],
-      [`({ label }) => ({ props: { x: { label } } })`, '{\n  label: «label»,\n}'],
-      [`(args) => ({ props: { x: args.count.toFixed(1) } })`, '(«count»).toFixed(1)'],
-      [`(args) => ({ props: { x: -args.count } })`, '-(«count»)'],
-      [`(args) => ({ props: { x: (v) => v + args.label } })`, '(v) => v + «label»'],
-      [`(args) => ({ props: { x: () => args.config || {} } })`, '() => («config») || {}'],
-      [`(args) => ({ props: { x: () => args.on ? 1 : 2 } })`, '() => («on») ? 1 : 2'],
-      [`(args) => ({ props: { x: () => [args.label] } })`, '() => [«label»]'],
+      [`({ label }) => ({ props: { x: { label } } })`, '{ label: ⟦value label⟧ }'],
+      [`(args) => ({ props: { x: args.count.toFixed(1) } })`, '⟦operand count⟧.toFixed(1)'],
+      [`(args) => ({ props: { x: -args.count } })`, '-⟦operand count⟧'],
+      [`(args) => ({ props: { x: (v) => v + args.label } })`, '(v) => v + ⟦value label⟧'],
+      [`(args) => ({ props: { x: () => args.config || {} } })`, '() => ⟦operand config⟧ || {}'],
+      [`(args) => ({ props: { x: () => args.on ? 1 : 2 } })`, '() => ⟦operand on⟧ ? 1 : 2'],
+      [`(args) => ({ props: { x: () => [args.label] } })`, '() => [⟦value label⟧]'],
+      [
+        `(args) => ({\n  props: {\n    x: [\n      args.label,\n    ],\n  },\n})`,
+        '[\n  ⟦value label⟧,\n]',
+      ],
     ])('writes each arg read in place in %s', (render, code) => {
       expect(computedOf(story(render), 'x')).toEqual({ code, imports: [] });
     });
@@ -383,7 +387,7 @@ describe('renderedProps', () => {
         import { Shape } from './shape';
       `;
       expect(computedOf(story(render, header), 'x')).toEqual({
-        code: 'new FormControl<Shape>(«value»)',
+        code: 'new FormControl<Shape>(⟦value value⟧)',
         imports: ['FormControl', 'Shape'],
       });
     });

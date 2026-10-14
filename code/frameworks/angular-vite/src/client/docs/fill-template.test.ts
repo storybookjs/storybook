@@ -35,8 +35,6 @@ describe('fillTemplate', () => {
     expect(fillTemplate('<a\n    ⟦props data⟧\n/>', { data })).toBe(
       '<a\n    [data]="{\n      a: 1,\n    }"\n/>'
     );
-    const text = writtenArg('`a\nb`');
-    expect(fillTemplate('  text = ⟦value text⟧;', { text })).toBe('  text = `a\nb`;');
   });
 
   it('throws for a function arg, so the static snippet shows', () => {

@@ -1,6 +1,6 @@
 // Turns a resolved arg node into the Angular template expression a binding carries. Reading the args
 // themselves - following spreads and names - is the shared CSF pass in `story-shape`.
-import { babelPrint, types as t } from 'storybook/internal/babel';
+import { babelParse, babelPrint, types as t } from 'storybook/internal/babel';
 import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
@@ -42,6 +42,46 @@ export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string |
 };
 
 export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
+
+/**
+ * The arg as the story writes it, but each enum member and template literal without expressions in
+ * it, at any depth, as its value: the host component has no enum in scope, and an Angular binding
+ * reads no template literal before Angular 19.2.
+ */
+export const writtenValue = (node: t.Node, enums: SnippetEnum[]): t.Node => {
+  const unwrapped = unwrapExpression(node);
+  const literal =
+    t.isMemberExpression(unwrapped) || t.isTemplateLiteral(unwrapped)
+      ? evaluateArgLiteral(unwrapped, enums)
+      : undefined;
+  if (literal !== undefined) {
+    // Parsed, so recast prints the literal as it is written here.
+    const statement = babelParse(`[${literal}]`).program.body[0] as t.ExpressionStatement;
+    return (statement.expression as t.ArrayExpression).elements[0]!;
+  }
+  let copy: Record<string, unknown> | undefined;
+  // A tag reads its template literal, which is no value.
+  const keys = (t.VISITOR_KEYS[node.type] ?? []).filter(
+    (key) => !(t.isTaggedTemplateExpression(node) && key === 'quasi')
+  );
+  for (const key of keys) {
+    const child = (node as unknown as Record<string, unknown>)[key];
+    const written = Array.isArray(child)
+      ? child.map((item: t.Node | null) => item && writtenValue(item, enums))
+      : child && writtenValue(child as t.Node, enums);
+    const changed = Array.isArray(child)
+      ? (written as unknown[]).some((item, index) => item !== child[index])
+      : written !== child;
+    if (changed) {
+      // A copy keeps the node recast parsed it from, so recast reprints only what changed.
+      copy ??= Object.defineProperty({ ...node }, 'original', {
+        value: (node as { original?: unknown }).original,
+      });
+      copy[key] = written;
+    }
+  }
+  return (copy as unknown as t.Node | undefined) ?? node;
+};
 
 // recast reprints a node it parsed straight from the file's own text, comments and indentation
 // included. A clone drops the bookkeeping that path relies on and is formatted from the AST

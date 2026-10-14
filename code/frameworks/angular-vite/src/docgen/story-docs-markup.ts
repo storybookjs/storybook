@@ -641,7 +641,12 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
     fnPath ??= functionPath(shape.csf._file.path, fn);
     const computed =
       fnPath && t.isObjectProperty(property)
-        ? propCode(fnPath, unwrapExpression(property.value as t.Expression), scope)
+        ? propCode(
+            fnPath,
+            unwrapExpression(property.value as t.Expression),
+            scope,
+            shape.csf._file.code
+          )
         : undefined;
     named.set(name, computed ? { code, computed } : { code });
   }

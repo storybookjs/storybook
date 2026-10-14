@@ -10,7 +10,6 @@ import {
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   fillStoryTemplate,
-  fillWithStoryArgs,
   isSelfContained,
   parseReferenceModule,
   resolveComponentImport,
@@ -36,9 +35,10 @@ import {
   createArgExternalizer,
   evaluateArgExpression,
   evaluateArgLiteral,
+  writtenValue,
 } from './story-docs-args.ts';
 import type { Bindings, RenderedProps, StoryShape } from './story-docs-markup.ts';
-import { keyNameOf, renderedProps, sourceOf, userTemplate } from './story-docs-markup.ts';
+import { renderedProps, sourceOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { PropCode } from './story-docs-prop-code.ts';
@@ -329,15 +329,12 @@ const renderStorySnippet = async (
     ]);
     const read = [...referencedNames].filter((name) => !notRead.has(name));
     const declared = new Set(hostArgs.fields.map(({ name }) => name));
-    // An arg the story leaves unset is one a control can set: one it declares an arg type for, or an
-    // input of the component. Any other name is one the story may never provide, and is warned about.
-    const known = new Set([...snippetMeta.inputs, ...argTypeNames(shape)]);
+    // A name the props hold an arg under that no field declares reads that arg, which the story
+    // leaves unset.
     const unset = read.flatMap((name): HostField[] => {
       const arg = declared.has(name) || !props ? undefined : heldArg(props, name);
       const written = arg === undefined ? undefined : shape.args[arg];
-      return arg === undefined ||
-        (written && isFunctionValue(written)) ||
-        (!(arg in shape.args) && !known.has(arg))
+      return arg === undefined || (written && isFunctionValue(written))
         ? []
         : [{ name, value: 'undefined', arg }];
     });
@@ -382,40 +379,23 @@ const renderStorySnippet = async (
     if (analysis.kind !== 'resolved' || !onlyExpanded || !props) {
       return unfilled();
     }
-    // A prop an arg replaces only while it is set holds the code it is written with until then,
-    // which the hole prints while the arg is unset; other code shows neither value for certain.
-    const fallbacks = new Map<string, { arg: string; code?: string }>();
-    for (const name of read) {
-      const { arg, code } = props(name) ?? {};
-      if (code && arg !== undefined) {
-        const literal = evaluateArgLiteral(code, snippetMeta.enums);
-        const written = shape.args[arg];
-        const prints =
-          literal !== undefined &&
-          !hasHoleBracket(literal) &&
-          declared.has(name) &&
-          !(written && isFunctionValue(written));
-        fallbacks.set(name, { arg, code: prints ? literal : undefined });
-      }
-    }
     const heldArgs: string[] = [];
     const holeFields = [...hostArgs.fields, ...unset].map((field) => {
-      const fallback = fallbacks.get(field.name);
-      if (fallback?.code !== undefined) {
-        heldArgs.push(fallback.arg);
-        return { ...field, value: hole('value', fallback.arg, defaultWord(fallback.code)) };
-      }
       if (field.computed) {
         heldArgs.push(...field.computed.args);
         return { ...field, value: field.computed.template };
       }
-      if (field.arg === undefined || notRead.has(field.name)) {
+      // A prop the arg replaces while it is set, as a spread of the args or a parameter default
+      // does, holds the code it is written with until then.
+      const { arg: propArg, code } = props(field.name) ?? {};
+      const arg = code ? propArg : field.arg;
+      if (arg === undefined || notRead.has(field.name)) {
         return field;
       }
-      heldArgs.push(field.arg);
-      return { ...field, value: hole('value', field.arg) };
+      heldArgs.push(arg);
+      const written = code && (evaluateArgLiteral(code, snippetMeta.enums) ?? argFieldValue(code));
+      return { ...field, value: hole('value', arg, ...(written ? [defaultWord(written)] : [])) };
     });
-    const eitherWay = [...fallbacks.values()].some(({ code }) => code === undefined);
     // `argsToTemplate` binds every arg that holds no function to the prop of its name, which has
     // to be that arg. The snippet binds the inputs among them, as `argsExpansion` does.
     const bindable = [
@@ -434,7 +414,6 @@ const renderStorySnippet = async (
     if (
       (expansions.length === 0 && heldArgs.length === 0) ||
       !followsControls ||
-      eitherWay ||
       !heldArgs.every(isHoleWord)
     ) {
       return unfilled();
@@ -558,18 +537,11 @@ const withTemplate = (
   };
 };
 
-// The args as the story writes them, but one written as a single value, such as an enum member or
-// a template literal without expressions, as that value: a binding has no enum in scope, and no
-// template literal before Angular 19.2.
+// The args as the story writes them, those that evaluate to a value as that value; see
+// `writtenValue`.
 const writtenArgs = (shape: StoryShape, enums: AngularComponentSnippetMeta['enums']) =>
   Object.fromEntries(
-    Object.entries(shape.args).map(([name, node]) => {
-      const value = createArgExternalizer(enums)(node);
-      return [
-        name,
-        value && !t.isArrayExpression(value) && !t.isObjectExpression(value) ? value : node,
-      ];
-    })
+    Object.entries(shape.args).map(([name, node]) => [name, writtenValue(node, enums)])
   );
 
 // The args the holes of a template print, or `undefined` where its own code holds a hole bracket.
@@ -577,8 +549,9 @@ const holeArgs = (template: string): Set<string> | undefined => {
   const args = new Set<string>();
   let ownBracket = false;
   const code = fillHoles(template, (kind, words) => {
-    ownBracket ||= kind !== 'value' && kind !== 'props';
-    for (const word of kind === 'value' ? words.slice(0, 1) : words) {
+    const field = kind === 'value' || kind === 'operand';
+    ownBracket ||= !field && kind !== 'props';
+    for (const word of field ? words.slice(0, 1) : words) {
       if (word !== BINDS_UNDEFINED) {
         args.add(word);
       }
@@ -629,13 +602,9 @@ const computedField = (
   if (!writable) {
     return undefined;
   }
-  const template = code.print((arg) => hole('value', arg));
-  try {
-    const value = fillWithStoryArgs(template, writtenArgs(shape, enums), fillTemplate);
-    return { value, template, args: code.args, imports: code.imports };
-  } catch {
-    return undefined;
-  }
+  const { template } = code;
+  const filled = fillStoryTemplate(template, writtenArgs(shape, enums), fillTemplate);
+  return filled && { value: filled.snippet, template, args: code.args, imports: code.imports };
 };
 
 // The host fields of the names the markup reads, each holding what the story's props hold under
@@ -768,20 +737,6 @@ const inArgsOrder = (names: readonly string[], shape: StoryShape) => {
   };
   return [...names].sort((left, right) => position(left) - position(right));
 };
-
-// The args the story and its meta declare an arg type for, as far as their `argTypes` are written
-// out as object literals.
-const argTypeNames = (shape: StoryShape): string[] =>
-  [shape.members, shape.metaMembers].flatMap(({ properties }) => {
-    const argTypes = properties.argTypes && unwrapExpression(properties.argTypes);
-    return t.isObjectExpression(argTypes)
-      ? argTypes.properties.flatMap((property) =>
-          (t.isObjectProperty(property) || t.isObjectMethod(property)) && !property.computed
-            ? (keyNameOf(property) ?? [])
-            : []
-        )
-      : [];
-  });
 
 // The arg a prop holds whatever the args are, so a hole can print it.
 const heldArg = (props: RenderedProps, name: string): string | undefined => {

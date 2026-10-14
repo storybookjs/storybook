@@ -1,5 +1,6 @@
 import {
   type FillSnippetTemplate,
+  asOperand,
   defaultCode,
   fillHoles,
   printValue,
@@ -10,9 +11,10 @@ import { BINDS_UNDEFINED, escapeTemplateLiteral } from '../../template-grammar.t
 // Fills a template from the story-docs build. `⟦props label size⟧` is the inputs the story's args
 // may bind, which lands in the host component's `template` literal; on a line of its own, it puts
 // each binding on a line of its own, as the build lays out a long element. Led by `=`, it binds an
-// arg set to `undefined` too. `⟦value label⟧` is the value of a host field, for an arg the markup
-// reads by name; its default word is printed while unset. Code over several lines continues at the
-// indentation of the hole's line.
+// arg set to `undefined` too. `⟦value label⟧` is an arg in a host field's code, such as the field's
+// value for an arg the markup reads by name, and `⟦operand label⟧` one the code reads on; a default
+// word is printed while the arg is unset. Code over several lines continues at the indentation of
+// the hole's line.
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const lines = [...template.matchAll(/⟦[^⟧]*⟧/g)].map(({ index }) =>
     template.slice(template.lastIndexOf('\n', index) + 1, index)
@@ -20,12 +22,12 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
   let holeIndex = 0;
   return fillHoles(template, (kind, words) => {
     const line = lines[holeIndex++]!;
-    if (kind === 'value') {
-      return continued(
-        (args[words[0]!] === undefined && defaultCode(words[1])) ||
-          printValue(args[words[0]!], words[0]!, { quote: "'" }),
-        line
-      );
+    if (kind === 'value' || kind === 'operand') {
+      const [arg, word] = words as [string, string?];
+      const printed =
+        (args[arg] === undefined && defaultCode(word)) ||
+        printValue(args[arg], arg, { quote: "'" });
+      return continued(kind === 'operand' ? asOperand(printed) : printed, line);
     }
     const separator = line.trim() === '' ? `\n${line}` : ' ';
     const bindsUndefined = words[0] === BINDS_UNDEFINED;
@@ -36,9 +38,8 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
   });
 };
 
-// A template literal's own lines are part of its value, so code holding one keeps its lines.
 const continued = (code: string, line: string) =>
-  code.includes('`') ? code : code.replaceAll('\n', `\n${line.match(/^\s*/)![0]}`);
+  code.replaceAll('\n', `\n${line.match(/^\s*/)![0]}`);
 
 // A string is bound too, as the story binds it: a plain attribute would also land on the element,
 // where `title`, `hidden` or a native host's `disabled` act on their own.

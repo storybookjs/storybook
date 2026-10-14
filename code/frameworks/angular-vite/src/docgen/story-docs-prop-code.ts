@@ -1,6 +1,8 @@
 // Reads the code a story's render computes a prop with, so the snippet can declare it as a host
 // field that follows the args it reads.
-import { type NodePath, babelPrint, types as t } from 'storybook/internal/babel';
+import { type NodePath, types as t } from 'storybook/internal/babel';
+import { isOperand } from 'storybook/internal/csf-tools';
+import { dedentStoryCode, hole } from 'storybook/internal/docs-tools';
 
 /** The names a render function binds its args under; see `functionScope`. */
 export interface ArgNames {
@@ -15,8 +17,8 @@ export interface PropCode {
   args: string[];
   /** The names the code needs imported, as the story file imports them. */
   imports: string[];
-  /** The code, with each arg it reads written as `write` returns it. */
-  print: (write: (arg: string) => string) => string;
+  /** The code as the story writes it, with a `⟦value⟧` or `⟦operand⟧` hole at each arg read. */
+  template: string;
 }
 
 const STORYBOOK_MODULE = /^(storybook|@storybook)(\/|$)/;
@@ -39,12 +41,13 @@ export const functionPath = (
 
 /**
  * The code a prop holds, or `undefined` when it reads no arg or names something only the story
- * file or the running render has.
+ * file or the running render has. `code` is the source text of the story file.
  */
 export const propCode = (
   fn: NodePath<t.Function>,
   value: t.Node,
-  names: ArgNames
+  names: ArgNames,
+  code: string
 ): PropCode | undefined => {
   const root = findPath(fn, value);
   if (!root) {
@@ -52,7 +55,7 @@ export const propCode = (
   }
   const program = fn.scope.getProgramParent().path.node as t.Program;
 
-  const reads = new Map<t.Node, { arg: string; alone: boolean }>();
+  const reads: { node: t.Node; arg: string; kind: string; key?: string }[] = [];
   const imports = new Set<string>();
   let carried = true;
   const read = (path: NodePath, arg: string) => {
@@ -68,7 +71,19 @@ export const propCode = (
     ) {
       carried = false;
     }
-    reads.set(path.node, { arg, alone: path === root || standsAlone(path) });
+    // Code around the read is only what the prop holds, so a literal in its place is read as it is
+    // there.
+    const around = path.getAncestry().map(({ node }) => node);
+    const within = around.slice(1, around.indexOf(root.node) + 1);
+    // `{ value }` reads the arg and names the property at once.
+    const shorthand =
+      parentPath?.isObjectProperty({ value: path.node }) && parentPath.node.shorthand;
+    reads.push({
+      node: shorthand ? parentPath.node : path.node,
+      arg,
+      kind: isOperand(path.node, within) ? 'operand' : 'value',
+      ...(shorthand ? { key: code.slice(path.node.start!, path.node.end!) } : {}),
+    });
   };
   const visit = (path: NodePath<t.Identifier | t.JSXIdentifier>) => {
     const { name } = path.node;
@@ -123,24 +138,20 @@ export const propCode = (
     },
   });
 
-  const args = [...new Set([...reads.values()].map(({ arg }) => arg))];
+  const args = [...new Set(reads.map(({ arg }) => arg))];
   if (!carried || args.length === 0) {
     return undefined;
+  }
+  const { start, end, loc } = root.node;
+  let text = code.slice(start!, end!);
+  for (const { node, arg, kind, key } of reads.sort((a, b) => b.node.start! - a.node.start!)) {
+    const written = key === undefined ? hole(kind, arg) : `${key}: ${hole(kind, arg)}`;
+    text = text.slice(0, node.start! - start!) + written + text.slice(node.end! - start!);
   }
   return {
     args,
     imports: [...imports],
-    print: (write) => {
-      const replace = (node: t.Node): t.Node | undefined => {
-        const found = reads.get(node);
-        if (!found) {
-          return undefined;
-        }
-        const written = t.identifier(write(found.arg));
-        return found.alone ? written : t.parenthesizedExpression(written);
-      };
-      return babelPrint(rewritten(root.node, replace));
-    },
+    template: dedentStoryCode(text, loc!.start.column),
   };
 };
 
@@ -171,74 +182,4 @@ const memberName = (member: t.MemberExpression): string | undefined => {
     return member.property.name;
   }
   return t.isStringLiteral(member.property) ? member.property.value : undefined;
-};
-
-// Whether a literal printed in place of the read is read the same: `5.toFixed()`, `--1` and
-// `() => { a: 1 } || {}` are not, so a read elsewhere is parenthesised.
-const standsAlone = (path: NodePath): boolean => {
-  const { parent, listKey, key } = path;
-  const operand =
-    (t.isObjectProperty(parent) && key === 'value') ||
-    t.isArrayExpression(parent) ||
-    ((t.isCallExpression(parent) || t.isNewExpression(parent)) && listKey === 'arguments') ||
-    t.isLogicalExpression(parent) ||
-    t.isConditionalExpression(parent) ||
-    t.isTemplateLiteral(parent) ||
-    t.isSpreadElement(parent) ||
-    (t.isBinaryExpression(parent) && parent.operator !== '**');
-  return operand && !opensBody(path);
-};
-
-// Whether code printed in place of the node would open an arrow body or a statement, where `{`
-// reads as a block.
-const opensBody = (path: NodePath): boolean => {
-  for (let current = path; current.parentPath; current = current.parentPath) {
-    const { parentPath, parent, key } = current;
-    if (
-      parentPath.isExpressionStatement() ||
-      (parentPath.isArrowFunctionExpression() && key === 'body')
-    ) {
-      return true;
-    }
-    const leads =
-      (key === 'left' && (t.isBinary(parent) || t.isAssignmentExpression(parent))) ||
-      (key === 'test' && t.isConditionalExpression(parent)) ||
-      (key === 'object' &&
-        (t.isMemberExpression(parent) || t.isOptionalMemberExpression(parent))) ||
-      (key === 'callee' && (t.isCallExpression(parent) || t.isOptionalCallExpression(parent))) ||
-      (key === 'tag' && t.isTaggedTemplateExpression(parent)) ||
-      (key === 0 && t.isSequenceExpression(parent)) ||
-      (key === 'expression' &&
-        (t.isTSAsExpression(parent) ||
-          t.isTSSatisfiesExpression(parent) ||
-          t.isTSNonNullExpression(parent)));
-    if (!leads) {
-      return false;
-    }
-  }
-  return false;
-};
-
-// A copy of the code with the nodes `replace` answers for swapped out.
-const rewritten = (node: t.Node, replace: (node: t.Node) => t.Node | undefined): t.Node => {
-  const replaced = replace(node);
-  if (replaced) {
-    return replaced;
-  }
-  // A clone drops what recast keeps of the file, so the copy prints from the tree.
-  const copy = t.cloneNode(node, false) as unknown as Record<string, unknown>;
-  for (const key of t.VISITOR_KEYS[node.type] ?? []) {
-    const child = (node as unknown as Record<string, unknown>)[key];
-    const isKey = key === 'key' && t.isObjectProperty(node) && !node.computed;
-    if (Array.isArray(child)) {
-      copy[key] = child.map((item: t.Node | null) => item && rewritten(item, replace));
-    } else if (child && !isKey) {
-      copy[key] = rewritten(child as t.Node, replace);
-    }
-  }
-  // `{ value }` reads the arg and names the property at once.
-  if (t.isObjectProperty(node) && node.shorthand && copy.value !== node.value) {
-    copy.shorthand = false;
-  }
-  return copy as unknown as t.Node;
 };

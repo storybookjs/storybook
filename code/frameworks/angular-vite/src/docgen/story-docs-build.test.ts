@@ -1632,7 +1632,7 @@ describe('buildStoryDocsPayload', () => {
           `label: 'Save'`,
           `count: 3`,
           `disabled: true`,
-          `tags: ['a', 'b']`,
+          `tags: ['a', ButtonKind.Secondary]`,
           `data: { id: 7, deep: { ok: true } }`,
           `kind: ButtonKind.Secondary`,
         ].join(', '),
@@ -1652,7 +1652,7 @@ describe('buildStoryDocsPayload', () => {
                 [label]="'Save'"
                 [count]="3"
                 [disabled]="true"
-                [tags]="['a', 'b']"
+                [tags]="['a', 'secondary']"
                 [data]="{ id: 7, deep: { ok: true } }"
                 [kind]="'secondary'"
             />\`,
@@ -2394,6 +2394,7 @@ describe('buildStoryDocsPayload', () => {
         ", argTypes: { tone: { control: 'text' } }",
         'tone',
       ],
+      ['a name the story never declares, as the story reads it', '', 'other'],
     ])('declares an unset arg the markup reads where it is %s', async (_, meta, name) => {
       const story = await storyOf(
         `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args, template: '<sb-button [label]="label" [count]="${name}" />' }) };`,
@@ -2402,18 +2403,6 @@ describe('buildStoryDocsPayload', () => {
       expect(story.snippet).toContain(`  label = 'Go';\n  ${name} = undefined;\n}`);
       expect(story.warning).toBeUndefined();
       expect(fillTemplate(story.template!, { label: 'Go', [name]: 3 })).toContain(`  ${name} = 3;`);
-    });
-
-    it('warns about a name the markup reads that the story never declares, and declares none', async () => {
-      const story = await storyOf(
-        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args, template: '<sb-button [label]="label" [count]="other" />' }) };`
-      );
-      const warning =
-        'Incomplete snippet: `other` could not be provided, since the story declares no such arg.';
-      expect(story.snippet).toContain("export class DemoComponent {\n  label = 'Go';\n}");
-      expect(story.warning).toBe(warning);
-      expect(story.templateWarning).toBe(warning);
-      expect(fillTemplate(story.template!, { label: 'Go' })).toBe(story.snippet);
     });
 
     it('binds no arg the props pass on under another name', async () => {
@@ -2638,16 +2627,13 @@ describe('buildStoryDocsPayload', () => {
           '  template: `<sb-button [label]="control.value" />`,',
           '})',
           'export class DemoComponent {',
-          '  control = new FormControl({',
-          '    value: ⟦value value⟧,',
-          '    disabled: ⟦value disabled⟧,',
-          '  }, ⟦value required⟧ ? Validators.required : null);',
+          '  control = new FormControl({ value: ⟦value value⟧, disabled: ⟦value disabled⟧ }, ⟦value required⟧ ? Validators.required : null);',
           '}',
         ].join('\n')
       );
       expect(snippet).toBe(fillTemplate(template!, { value: 'Go', required: true }));
       expect(fillTemplate(template!, { value: "It's", disabled: true })).toContain(
-        "    value: 'It\\'s',\n    disabled: true,\n  }, undefined ? Validators.required : null);"
+        "  control = new FormControl({ value: 'It\\'s', disabled: true }, undefined ? Validators.required : null);"
       );
       expect(warning).toBeUndefined();
     });

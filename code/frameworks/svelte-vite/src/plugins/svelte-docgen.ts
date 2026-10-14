@@ -117,6 +117,11 @@ export async function svelteDocgen(): Promise<PluginOption> {
   return {
     name: 'storybook:svelte-docgen-plugin',
     transform: {
+      // This plugin reads the default export of the module, which only exists after
+      // `@sveltejs/vite-plugin-svelte` has compiled the file. Without `order: 'post'`,
+      // plugin registration order can put us before that compilation, handing us the
+      // raw `.svelte` source whose template markup a JS parser rejects as JSX.
+      order: 'post',
       filter: { id: { include, exclude } },
       async handler(src: string, id: string) {
         if (id.startsWith('\0') || !filter(id)) {
@@ -125,24 +130,37 @@ export async function svelteDocgen(): Promise<PluginOption> {
 
         const resource = relative(cwd, id);
 
-        // Get props information
-        const docgen = generateDocgen(resource, sourceFileCache);
-        const data = transformToSvelteDocParserDataItems(docgen);
+        try {
+          // Get props information
+          const docgen = generateDocgen(resource, sourceFileCache);
+          const data = transformToSvelteDocParserDataItems(docgen);
 
-        const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
-          data: data,
-          name: basename(resource),
-        };
+          const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
+            data: data,
+            name: basename(resource),
+          };
 
-        const s = new MagicString(src);
-        const outputAst = this.parse(src);
-        const componentName = getComponentName(outputAst as unknown as AST.Program);
-        s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
+          const s = new MagicString(src);
+          const outputAst = this.parse(src);
+          const componentName = getComponentName(outputAst as unknown as AST.Program);
+          s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
 
-        return {
-          code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }).toString(),
-        };
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: true, source: id }).toString(),
+          };
+        } catch (error) {
+          // Degrade per file: a file that fails docgen (e.g. legacy syntax the docgen
+          // pipeline cannot handle) must not break compilation of the module itself,
+          // which would take down docgen for the whole project.
+          this.warn(
+            `Failed to generate docgen for ${resource}, skipping docgen for this file: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+
+          return undefined;
+        }
       },
     },
   };

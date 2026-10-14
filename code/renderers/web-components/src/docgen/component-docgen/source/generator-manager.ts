@@ -20,12 +20,10 @@ function createGeneratorProjectFactory(
   generator: GeneratorAdapter
 ): ComponentMetaProjectFactory<GeneratorProject, ts.ParsedCommandLine> {
   return {
-    // Web components are often plain JavaScript, so JS stories must match their tsconfig even
-    // when it does not set `allowJs`.
+    // A JS story outside a tsconfig's files falls to the inferred project, whose generator run
+    // scans the story's folder with `allowJs`; matching it to the tsconfig would hide it instead.
     parseCommandLine: (tsconfig) =>
-      parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig, undefined, {
-        allowJs: true,
-      }),
+      parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig),
     createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
       new GeneratorProject(typescript, generator, commandLine, tsconfig, getCommandLine),
     createInferredProject: () =>

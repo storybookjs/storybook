@@ -9,7 +9,6 @@ import { dirSync, type DirResult } from 'tmp';
 
 import type { CemTag } from '../manifest/cem-manager.ts';
 import { loadGenerator, type GeneratorAdapter } from './generator.ts';
-import { GeneratorManager } from './generator-manager.ts';
 import { GeneratorProject } from './generator-project.ts';
 import { SourceManager } from './source-manager.ts';
 
@@ -437,19 +436,30 @@ describe('SourceManager', () => {
     expect(GeneratorProject.prototype.createManifestForRoots).toHaveBeenCalledWith([elementPath]);
   });
 
-  it('matches a JavaScript story to a tsconfig that does not set allowJs', () => {
-    const configPath = file(
+  it('generates a JavaScript element for a JavaScript story under a tsconfig without allowJs', async () => {
+    file(
       'tsconfig.json',
-      JSON.stringify({ compilerOptions: { module: 'ESNext', moduleResolution: 'Bundler' } })
+      JSON.stringify({
+        compilerOptions: { module: 'ESNext', moduleResolution: 'Bundler' },
+        include: ['src'],
+      })
     );
-    const storyPath = file('input.stories.js', "export default { component: 'js-story-card' };");
-    const manager = new GeneratorManager(typescript, generator);
+    const elementPath = file(
+      'src/elements/js-story-card.js',
+      `
+        export class JsStoryCard extends HTMLElement {}
+        customElements.define('js-story-card', JsStoryCard);
+      `
+    );
+    const storyPath = file(
+      'src/stories/js-story-card.stories.js',
+      `import '../elements/js-story-card.js';
+       export default { component: 'js-story-card' };`
+    );
 
-    try {
-      expect(manager.getProjectForFile(storyPath).configFileName).toBe(configPath);
-    } finally {
-      manager.dispose();
-    }
+    await expect(
+      createManager().find('js-story-card', { storyFilePath: storyPath })
+    ).resolves.toMatchObject({ manifestPath: elementPath.slice(temp.name.length + 1) });
   });
 
   it('does not regenerate when a story asks again for a tag that missed', async () => {

@@ -6,6 +6,7 @@
     "forms-args-formatting--primary": {
       "argCode": {
         "items": "['one', 'two']",
+        "onSubmit": "() => undefined",
         "options": "{ tone: 'neutral', compact: true }",
       },
       "description": undefined,
@@ -22,7 +23,7 @@ const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>
-  <ArgsFormattingButton :count="3" :disabled="false" enabled label="Formatted" :items="items" :options="options" :quotationLabel="quotationLabel" />
+  <ArgsFormattingButton :count="3" :disabled="false" emptyLabel="" enabled label="Formatted" :onSubmit="() => undefined" :items="items" :options="options" :quotationLabel="quotationLabel" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>

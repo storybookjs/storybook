@@ -439,6 +439,14 @@ describe('argsTemplate', () => {
     expect(template).not.toContain('event');
   });
 
+  it('binds a declared attribute whose name ends like a slot as an attribute', () => {
+    const slotted = argsTemplate('x-card', ['has-slot'], argTypes, {
+      ...declaration,
+      attributes: [...(declaration.attributes ?? []), { name: 'has-slot' }],
+    })!;
+    expect(fillTemplate(slotted, { 'has-slot': true })).toBe('<x-card has-slot></x-card>');
+  });
+
   it('has no template for an arg whose name lit cannot bind', () => {
     expect(argsTemplate('x-card', ['a b'], argTypes, declaration)).toBeUndefined();
   });

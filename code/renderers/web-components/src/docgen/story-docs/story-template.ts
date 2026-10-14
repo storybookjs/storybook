@@ -72,7 +72,8 @@ export function argsTemplate(
     if (!NAME.test(arg)) {
       return undefined;
     }
-    const parsed = parseArgKey(arg);
+    // A declared attribute, such as `has-slot`, is no slot, event or style.
+    const parsed = attributes.has(arg) ? undefined : parseArgKey(arg);
     const word = holeWord(arg);
     if (parsed?.category === 'cssProperties') {
       css.push(holeWord(`${arg}=${arg}`));

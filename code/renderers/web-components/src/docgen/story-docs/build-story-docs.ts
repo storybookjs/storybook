@@ -313,9 +313,7 @@ const renderedArgsSnippet = (
 
 /**
  * The story's template, if any, and as its static snippet the template filled with the args the
- * story is written with. Where the filler cannot print an arg, the story has no template. Where it
- * spreads args the file cannot read, the static snippet is the one the story has without a
- * template, with its warning.
+ * story is written with. Where the filler cannot print an arg, the story has no template.
  */
 const withTemplate = (
   own: SnippetResult,
@@ -345,10 +343,7 @@ const withTemplate = (
   }
   const code = filled.argCode;
   // The args it prints as their code, whose names the story file binds the snippet has to declare.
-  const written = [...printed].filter((name) => name in code);
-  // A spread of args the file cannot read may set an arg the snippet prints.
-  const unknown =
-    resolved.unresolved.length > 0 && [...printed].some((name) => !(name in resolved.args));
+  const written = [...printed].filter((name) => Object.hasOwn(code, name));
   const free = new Set([
     ...live.free,
     ...written.flatMap((name) =>
@@ -365,7 +360,8 @@ const withTemplate = (
   const unread = unresolvedWarning(resolved.unresolved.filter((source) => !free.has(source)));
   // The warning hangs on the args the fill printed, so it is known only after it.
   return {
-    ...(unknown ? own : { snippet: filled.snippet, ...joinWarnings([unread, warning]) }),
+    snippet: filled.snippet,
+    ...joinWarnings([unread, warning]),
     template: filled.template,
     argCode: code,
     ...(warning === undefined ? {} : { templateWarning: warning }),

@@ -427,18 +427,18 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
     );
   });
 
-  it('keeps the static snippet of next while a spread of args that is not known may set an arg it reads', async () => {
+  it('fills the template with the args it can read while a spread it cannot read may set an arg it reads', async () => {
     const doc = await firstStoryWithTemplate(
       `import { html } from 'lit';
       import { baseArgs } from 'some-package';
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = {
         args: { ...baseArgs, label: 'Hi' },
-        render: (args) => html\`\${args.items.map((item) => html\`<li>\${item}</li>\`)}\`,
+        render: (args) => html\`<p>\${args.variant} \${args.label}</p>\`,
       };`
     );
-    expect(doc.snippet ?? '').not.toContain('undefined');
-    expect(doc.snippet).not.toBe('');
+    expect(doc.snippet).toBe('<p> Hi</p>');
+    expect(doc.snippet).toBe(fillTemplate(doc.template!, { label: 'Hi' }));
     expect(doc.warning).toContain('`...baseArgs`');
   });
 

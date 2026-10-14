@@ -294,9 +294,13 @@ const renderedArgsSnippet = (
       ctx.resolveModule
     );
     const template = resolveHtmlTemplate(render.path, deps.csf, litBindings(module));
-    if (template) {
-      const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
-      const unresolved = [...resolved.unresolved, ...printed.unresolved];
+    const printed = template && printHtmlTemplate(template, resolved.args, deps.declaration);
+    const unresolved = printed ? [...resolved.unresolved, ...printed.unresolved] : [];
+    // Html whose holes all fail prints nothing; the element the args set stands in for it.
+    if (
+      printed &&
+      (printed.snippet !== '' || unresolved.length + printed.properties.length === 0)
+    ) {
       warnings.push(unresolvedWarning(unresolved));
       warnings.push(incompleteList(printed.properties, 'properties without an attribute'));
       warnings.push(
@@ -304,16 +308,14 @@ const renderedArgsSnippet = (
       );
       warnings.push(incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'));
       warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
-      const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
-      const hasSnippet = printed.snippet !== '' || !hasFailedHole;
       const filled = unresolved.length > 0 ? filledSnippet(live, resolved, guessed) : undefined;
       if (filled) {
         return filled;
       }
       return {
-        ...(hasSnippet ? { snippet: printed.snippet } : {}),
+        snippet: printed.snippet,
         ...(live === undefined ? {} : { template: live.template, ...liveWarning }),
-        ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
+        ...joinWarnings(warnings),
       };
     }
     const filled = filledSnippet(live, resolved, guessed);

@@ -843,6 +843,24 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
     expect(doc.snippet).toBe('<test-element .items=${items} label="Hi"></test-element>');
   });
 
+  it('is the element the args set where the html the render returns prints nothing', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from './base.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      const sizes = ['s', 'm'];
+      export const Primary = () => {
+        return html\`\${sizes.map((size) => html\`<test-element label=\${size}></test-element>\`)}\`;
+      };`,
+      { files: { 'base.ts': `export { html } from 'lit';` } }
+    );
+    expect({ snippet: doc.snippet, warning: doc.warning }).toMatchInlineSnapshot(`
+      {
+        "snippet": "<test-element></test-element>",
+        "warning": "Incomplete snippet: \`() => { return html\`\${sizes.map(size => html\`<test-element label=\${size}></test-element>\`)}\`; }\` could not be resolved statically.",
+      }
+    `);
+  });
+
   it('is the render alone for a story without meta.component', async () => {
     const doc = await firstStoryWithTemplate(`
       import { html } from 'lit';

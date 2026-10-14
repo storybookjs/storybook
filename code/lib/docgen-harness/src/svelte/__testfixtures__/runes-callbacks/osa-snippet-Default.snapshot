@@ -1,1 +1,5 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Callbacks from './Callbacks.svelte';
+</script>
+
+<Callbacks format={(n) => `#${n}`} />

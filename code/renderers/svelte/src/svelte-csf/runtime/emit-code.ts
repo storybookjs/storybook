@@ -1,7 +1,8 @@
 import { SourceType, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
 import { addons } from 'storybook/internal/preview-api';
-import type { StoryObj } from '@storybook/svelte';
-import { get } from 'es-toolkit/compat';
+import { generateCodeToEmit } from '../../docgen/story-docs/print/svelte-props.ts';
+
+export { generateCodeToEmit } from '../../docgen/story-docs/print/svelte-props.ts';
 
 import type { StoryContext } from '../types.ts';
 
@@ -21,6 +22,7 @@ const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.ge
  * So that it can be shown in source code viewer
  */
 export const emitCode = (params: Params) => {
+  if (globalThis.FEATURES?.docgenServer) return;
   const { storyContext } = params;
 
   if (skipSourceRender(storyContext)) {
@@ -61,108 +63,4 @@ const skipSourceRender = (context: Params['storyContext']) => {
   // never render if the user is forcing the block to render code, or
   // if the user provides code, or if it's not an args story.
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
-};
-
-export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryObj['args'] }) => {
-  // check if children is used in the template (e.g., {args.children})
-  // if so, we should exclude it from the props to avoid it appearing twice
-  const childrenUsedInTemplate = /\bargs\??\.children\b/.test(code);
-
-  const allPropsArray = Object.entries(args ?? {})
-    .map(([argKey, argValue]) => {
-      // skip children if it's used in the template content (slot)
-      if (childrenUsedInTemplate && argKey === 'children') {
-        return null;
-      }
-      return argsToProps(argKey, argValue);
-    })
-    .filter((p) => p);
-
-  let allPropsString = allPropsArray.join(' ');
-  // make the props multiline if the string is longer than 50 chars
-  // TODO: do this at the final stage instead, taking into account the singular args replacements
-  if (allPropsString.length > 50) {
-    // TODO: the indentation only works if it's in the root-level component. In a nested component, the indentation will be too shallow
-    allPropsString = `\n  ${allPropsArray.join('\n  ')}\n`;
-  }
-
-  const codeToEmit = code
-    .replaceAll('{...args}', allPropsString)
-    // replace text expressions that reference a string arg with the plain text,
-    // eg. <Button>{args.children}</Button> => <Button>Click me</Button>
-    // attribute values like prop={args.something} are skipped
-    .replace(/(?<!=)\{\s*(args(?:[\w\d_$.?[\]"'])+)\s*\}/g, (match, argPath: string) => {
-      const value = get({ args }, argPath.replaceAll('?', ''));
-      return isPlainText(value) ? value : match;
-    })
-    // replace single arg references with their actual value,
-    // eg. myProp={args.something} => myProp={"actual"}
-    // or <h1>{args.something}</h1> => <h1>"actual"</h1>
-    .replace(/args(?:[\w\d_$.?[\]"'])+/g, (argPath) => {
-      const path = argPath.replaceAll('?', ''); // remove optional chaining character
-      const value = get({ args }, path);
-      return valueToString(value);
-    });
-
-  return codeToEmit;
-};
-
-/**
- * A string can be shown as plain text if it has content and
- * no characters that Svelte would read as markup, an expression or an entity
- */
-const isPlainText = (value: unknown): value is string =>
-  typeof value === 'string' && value.trim() !== '' && !/[{}<>"\\&]/.test(value);
-
-type MockableFunction = ((...args: any[]) => any) & {
-  getMockName?: () => string;
-};
-
-const getFunctionName = (fn: MockableFunction) => {
-  const name = fn.getMockName?.() ?? fn.name;
-  if (name && name !== 'spy') {
-    return name;
-  }
-  return '() => {}';
-};
-
-/**
- * convert a value to a stringified version
- */
-const valueToString = (value: any): string => {
-  if (typeof value === 'object' && value[Symbol.for('svelte.snippet')]) {
-    return 'snippet';
-  }
-
-  if (typeof value === 'function') {
-    return getFunctionName(value);
-  }
-
-  return (
-    JSON.stringify(value, null, 1)
-      ?.replace(/\n/g, '')
-      // Find "}" or "]" at the end of the string, not preceded by a space, and add a space
-      .replace(/(?<!\s)([}\]])$/, ' $1')
-  );
-};
-
-/**
- * convert a {key: value} pair into Svelte attributes, eg. {someKey: "some string"} => someKey="some string"
- */
-const argsToProps = (key: string, value: any): string | null => {
-  if (value === undefined || value === null) {
-    return null;
-  }
-
-  if (value === true) {
-    return key;
-  }
-
-  const stringValue = valueToString(value);
-
-  if (typeof value === 'string') {
-    return `${key}=${stringValue}`;
-  }
-
-  return `${key}={${stringValue}}`;
 };

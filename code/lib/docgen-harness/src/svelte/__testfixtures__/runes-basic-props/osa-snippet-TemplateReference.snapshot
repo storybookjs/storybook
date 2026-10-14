@@ -1,1 +1,8 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Panel from './Panel.svelte';
+</script>
+
+<Panel title={"Reference title"}>
+  <h1>Reference title</h1>
+  Reference label
+</Panel>

@@ -1,1 +1,12 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal id="modal-snippets" open>
+  {#snippet content()}
+    <p>Body</p>
+  {/snippet}
+  {#snippet footer()}
+    <small>Footer</small>
+  {/snippet}
+</Modal>

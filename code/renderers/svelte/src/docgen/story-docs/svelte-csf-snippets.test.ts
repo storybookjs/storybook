@@ -57,3 +57,9 @@ describe('server snippet printing', () => {
     });
   });
 });
+
+it('prints one space when all spread props are omitted', () => {
+  expect(printSvelteCsfSnippet({ code: '<Button {...args} />', args: {}, argTypes: {} })).toBe(
+    '<Button />'
+  );
+});

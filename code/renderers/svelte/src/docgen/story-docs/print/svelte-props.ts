@@ -1,4 +1,4 @@
-import type { StoryObj } from '../../../index.ts';
+import type { StoryObj } from '../../../public-types.ts';
 import { get, isEqual } from 'es-toolkit/compat';
 
 const generateLegacyCode = ({ code, args }: { code: string; args: StoryObj['args'] }) => {
@@ -119,7 +119,7 @@ function generateServerCode({
     `\\{\\.\\.\\.args\\}|="[^"\\n]*"|='[^'\\n]*'|=\\{\\s*(${path})\\s*\\}|\\{\\s*(${path})\\s*\\}|${path}`,
     'g'
   );
-  return code
+  return (spread ? code : code.replace(/[ \t]*\{\.\.\.args\}[ \t]*/g, ' '))
     .replace(pattern, (match, attributePath?: string, textPath?: string) => {
       if (match === '{...args}') return spread;
       if (match.startsWith('="') || match.startsWith("='")) {

@@ -1,5 +1,8 @@
-<script>
+<script lang="ts">
   import Input from './Input.svelte';
+
+  let el = $state<HTMLInputElement | undefined>();
+  let value = $state('');
 </script>
 
 <Input

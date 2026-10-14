@@ -78,3 +78,20 @@ export const Default = { args: { label: 'Save' } };`,
     expect(payload?.import).toBeUndefined();
   });
 });
+
+it('warns about an unknown identifier in the final markup', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+      import { defineMeta } from '@storybook/svelte';
+      import Button from './Button.svelte';
+      const { Story } = defineMeta({ title: 'Example', component: Button });
+    </script>
+    <Story name="Default" asChild><Button value={missing} /></Story>`,
+  });
+  const payload = await buildStoryDocsPayload(
+    { entry: svelteEntry },
+    { readDocgen: async () => undefined }
+  );
+  expect(payload?.stories['example--default']?.warning).toBe('Identifier not resolved: `missing`.');
+});

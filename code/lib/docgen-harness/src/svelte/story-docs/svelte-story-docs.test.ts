@@ -112,7 +112,7 @@ describe('svelte story-docs server snippets', () => {
         );
         const storyDoc = payload?.stories[story.id];
         expect(payload?.import).toBeUndefined();
-        expect(storyDoc?.snippet).toMatch(/^<script>\n/);
+        expect(storyDoc?.snippet).toMatch(/^<script(?: lang="ts")?>\n/);
         if (payload !== undefined) {
           expect(storyDoc, `${story.exportName} missing from payload`).toBeDefined();
         }

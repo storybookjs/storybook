@@ -80,3 +80,67 @@ describe('snippet imports', () => {
     });
   });
 });
+
+it('copies referenced TypeScript state and transitive dependencies in source order', () => {
+  expect(
+    buildSnippetImportBlock('<Button bind:value={value} />', {
+      bindings: bindings("import Button from './Button.svelte';"),
+      instanceScript: {
+        typescript: true,
+        code: "const initial: string = ''; let value = $state(initial); const unused = 1;",
+      },
+    })
+  ).toEqual({
+    block: `<script lang="ts">\n  import Button from './Button.svelte';\n\n  const initial: string = '';\n  let value = $state(initial);\n</script>`,
+    unresolved: [],
+  });
+});
+
+it('reports unknown references without treating property names or callback parameters as free', () => {
+  expect(
+    buildSnippetImportBlock(
+      '<Button value={missing.label} onclick={(event) => event.preventDefault()} />',
+      {
+        bindings: bindings("import Button from './Button.svelte';"),
+      }
+    )
+  ).toEqual({
+    block: "<script>\n  import Button from './Button.svelte';\n</script>",
+    unresolved: [],
+    unresolvedIdentifiers: ['missing'],
+  });
+});
+
+it('keeps snippet and each parameters local', () => {
+  expect(
+    buildSnippetImportBlock(
+      '{#each items as item, index}{#snippet child(label)}{label}{item.name}{index}{/snippet}{/each}',
+      {
+        bindings: bindings(''),
+      }
+    )
+  ).toEqual({ unresolved: [], unresolvedIdentifiers: ['items'] });
+});
+
+it('copies type declarations used by copied state', () => {
+  expect(
+    buildSnippetImportBlock('{value}', {
+      bindings: bindings(''),
+      instanceScript: { typescript: true, code: 'type Value = string; let value: Value = "";' },
+    })
+  ).toEqual({
+    block: '<script lang="ts">\n  type Value = string;\n  let value: Value = "";\n</script>',
+    unresolved: [],
+  });
+});
+
+it('keeps await results and const declarations local', () => {
+  expect(
+    buildSnippetImportBlock(
+      '{#await promise then result}{@const label = result.name}{label}{:catch error}{error.message}{/await}',
+      {
+        bindings: bindings(''),
+      }
+    )
+  ).toEqual({ unresolved: [], unresolvedIdentifiers: ['promise'] });
+});

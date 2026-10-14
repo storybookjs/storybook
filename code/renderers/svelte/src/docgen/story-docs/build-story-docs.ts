@@ -53,17 +53,32 @@ export async function buildStoryDocsPayload(
   const templates = new Map<string, { code: string; description?: string }>();
   const snippets = new Map<string, string>();
   let csfSource = source;
+  let instanceScript: { code: string; typescript: boolean } | undefined;
   if (filename.endsWith('.svelte')) {
     const ast = getSvelteAST({ code: source, filename });
+    if (ast.instance) {
+      instanceScript = {
+        code: source.slice(
+          position(ast.instance.content).start,
+          position(ast.instance.content).end
+        ),
+        typescript: ast.instance.attributes.some(
+          (attribute) =>
+            attribute.name === 'lang' &&
+            Array.isArray(attribute.value) &&
+            attribute.value.some((value) => value.type === 'Text' && value.data === 'ts')
+        ),
+      };
+    }
     const nodes = await extractSvelteASTNodes({ ast, filename });
     const meta = getDefineMetaFirstArgumentObjectExpression({ nodes, filename });
     const declaration = nodes.defineMetaVariableDeclaration;
     if (!ast.module) return undefined;
-    const moduleStart = ast.module.content.start;
+    const moduleStart = position(ast.module.content).start;
     csfSource =
-      source.slice(moduleStart, declaration.start) +
-      `export default ${source.slice(meta.start, meta.end)};` +
-      source.slice(declaration.end, ast.module.content.end);
+      source.slice(moduleStart, position(declaration).start) +
+      `export default ${source.slice(position(meta).start, position(meta).end)};` +
+      source.slice(position(declaration).end, position(ast.module.content).end);
     const identifiers = getStoriesIdentifiers({ nodes, filename });
     for (const [index, story] of nodes.storyComponents.entries()) {
       const identifier = identifiers[index];
@@ -75,7 +90,7 @@ export async function buildStoryDocsPayload(
       const chunk = Array.isArray(value) ? value[0] : value;
       const expression =
         chunk && chunk !== true && chunk.type === 'ExpressionTag' ? chunk.expression : undefined;
-      csfSource += `\nexport const ${identifier.exportName} = { name: ${JSON.stringify(identifier.name)}, args: ${expression ? source.slice(expression.start, expression.end) : '{}'} };`;
+      csfSource += `\nexport const ${identifier.exportName} = { name: ${JSON.stringify(identifier.name)}, args: ${expression ? source.slice(position(expression).start, position(expression).end) : '{}'} };`;
       const code = getStoryContentRawCode({
         nodes: { component: story.component, svelte: nodes },
         originalCode: source,
@@ -156,10 +171,13 @@ export async function buildStoryDocsPayload(
       }
     }
     const imported = markup
-      ? buildSnippetImportBlock(markup, { bindings, importOverride })
+      ? buildSnippetImportBlock(markup, { bindings, importOverride, instanceScript })
       : undefined;
     const warnings = [
       imported?.unresolved.map((name) => `Import not resolved: \`${name}\`.`).join(' '),
+      imported?.unresolvedIdentifiers
+        ?.map((name) => `Identifier not resolved: \`${name}\`.`)
+        .join(' '),
       unresolvedWarning([...resolved.unresolved, ...staticArgs.unresolved]),
       !template &&
       (resolved.storyMembers.properties.render || resolved.metaMembers.properties.render)
@@ -179,4 +197,16 @@ export async function buildStoryDocsPayload(
     };
   }
   return { id, name: csf.meta.component ?? docgen?.name ?? input.entry.title, path, stories };
+}
+
+function position(node: object): { start: number; end: number } {
+  if (
+    'start' in node &&
+    typeof node.start === 'number' &&
+    'end' in node &&
+    typeof node.end === 'number'
+  ) {
+    return { start: node.start, end: node.end };
+  }
+  throw new TypeError('Svelte AST node has no source positions');
 }

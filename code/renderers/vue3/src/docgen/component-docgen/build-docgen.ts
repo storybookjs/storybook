@@ -312,18 +312,27 @@ export async function buildDocgenPayload(
   });
 
   // Composite components declare the auxiliary parts they are documented with in CSF meta; each
-  // gets the same extraction chain as the primary component. The key is omitted entirely when
-  // nothing is declared, so payloads for story files without subcomponents stay byte-identical.
-  const subcomponentEntries: Record<string, DocgenSubcomponent> = {};
-  for (const declaredSubcomponent of extractDeclaredSubcomponents(csf)) {
-    subcomponentEntries[declaredSubcomponent.name] = await buildSubcomponentDocgen(
-      csf,
-      storyPath,
-      storyFilePath,
-      declaredSubcomponent,
-      context
-    );
-  }
+  // gets the same extraction chain as the primary component, fanned out in parallel — the children
+  // are independent and every failure is isolated to its own entry. Promise.all keeps the CSF
+  // declaration order in the record. The key is omitted entirely when nothing is declared, so
+  // payloads for story files without subcomponents stay byte-identical.
+  const subcomponentEntries: Record<string, DocgenSubcomponent> = Object.fromEntries(
+    await Promise.all(
+      extractDeclaredSubcomponents(csf).map(
+        async (declaredSubcomponent) =>
+          [
+            declaredSubcomponent.name,
+            await buildSubcomponentDocgen(
+              csf,
+              storyPath,
+              storyFilePath,
+              declaredSubcomponent,
+              context
+            ),
+          ] as const
+      )
+    )
+  );
 
   return {
     ...baseFor((authoredComponentName ?? componentMeta.displayName) || fallbackName),

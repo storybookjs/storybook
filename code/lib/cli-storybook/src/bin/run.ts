@@ -129,7 +129,7 @@ command('add <addon>')
 
       await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
-    }).catch(handleCommandFailure);
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('remove <addon>')
@@ -317,4 +317,10 @@ program.on('command:*', ([invalidCmd]) => {
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(String(version)).parse(process.argv);
+program.usage('<command> [options]').version(String(version));
+
+/**
+ * Entry point for the CLI: parses the given argv against the registered commands. Exported so the
+ * bin entry can invoke it and tests can drive the CLI without executing at import time.
+ */
+export const run = (argv: string[] = process.argv) => program.parse(argv);

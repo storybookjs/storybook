@@ -34,9 +34,9 @@ const TEMPLATE_TAG_SOURCES = ['lit', 'lit-html', 'lit-element'];
 
 export function resolveHtmlTemplate(
   renderFunction: RenderFunctionPath,
-  csf: CsfFile
+  csf: CsfFile,
+  bindings = collectImportBindings(csf._file.path)
 ): HtmlTemplate | undefined {
-  const bindings = collectImportBindings(csf._file.path);
   const returned = returnedTemplateExpression(renderFunction, bindings);
   return returned
     ? templateFromExpression(unwrapExpression(returned.node), bindings, returned.scope)

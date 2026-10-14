@@ -1,0 +1,74 @@
+{
+  "id": "webcomponentsstorydocs-lit-helper-shapes",
+  "name": "lit-template-shapes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-lit-helper-shapes--branching-helper": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--branching-helper",
+      "name": "Branching Helper",
+      "snippet": "<lit-template-shapes label="Alpha" disabled></lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => { if (args.disabled) { return html`<lit-template-shapes disabled></lit-template-shapes>`; } return Card(args); }` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper",
+      "name": "Csf 2 Helper",
+      "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label ?label%3D%22Untitled%22⟧ ⟦attr count count ?count%3D%221%22⟧ disabled ⟦prop heading heading⟧
+  ></lit-template-shapes
+>",
+      "warning": "Incomplete snippet: `(args: CardArgs) => Card({ ...args, disabled: true })` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--helper-call",
+      "name": "Helper Call",
+      "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label ?label%3D%22Untitled%22⟧ ⟦attr count count ?count%3D%221%22⟧ ⟦bool disabled disabled⟧ ⟦prop heading heading⟧
+  ></lit-template-shapes
+>",
+      "warning": "Incomplete snippet: `args => Card(args)` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
+      "name": "Helper Defaults",
+      "snippet": "<lit-template-shapes heading="Head"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label ?label%3D%22Untitled%22⟧ count="5" ⟦bool disabled disabled⟧ ⟦prop heading heading⟧
+  ><b>⟦text heading⟧</b></lit-template-shapes
+>",
+      "warning": "Incomplete snippet: `args => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
+      "name": "Helper In Html",
+      "snippet": "<section></section>",
+      "template": "<section><ul>
+  <li>⟦text label⟧: ⟦text count⟧</li><li>Fixed: ⟦text count⟧</li>
+</ul></section>",
+      "warning": "Incomplete snippet: `List(args)` could not be resolved statically.
+Incomplete snippet: args not bound by the render template: `label`, `count`.",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
+      "name": "Re Exported Html",
+      "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label⟧></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
+      "name": "Spread Directive",
+      "snippet": "<lit-template-shapes></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦props label=label count=count disabled=disabled .items=items heading=heading open=open⟧></lit-template-shapes>",
+      "warning": "Incomplete snippet: `spreadProps(args)` could not be resolved statically.
+Incomplete snippet: args not bound by the render template: `label`, `count`, `disabled`.",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
+      "name": "Spread Next To Attribute",
+      "snippet": "<lit-template-shapes label="Written"></lit-template-shapes>",
+      "template": "<lit-template-shapes label="Written" ⟦props count=count .items=items ^label disabled=disabled open=open⟧
+  >⟦text heading⟧</lit-template-shapes
+>",
+      "warning": "Incomplete snippet: `spreadProps(rest)`, `heading` could not be resolved statically.
+Incomplete snippet: args not bound by the render template: `count`.",
+    },
+  },
+}

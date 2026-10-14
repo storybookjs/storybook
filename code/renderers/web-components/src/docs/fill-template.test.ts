@@ -49,6 +49,25 @@ describe('fillTemplate', () => {
     expect(fillTemplate('${⟦value on⟧ ? a : b}', { on: true })).toBe('${true ? a : b}');
   });
 
+  it('prints the `?` word of a hole while its arg is undefined', () => {
+    const template =
+      '<p ⟦attr title t ?title%3D%22Place%20Dog%22⟧ ⟦bool hidden h ?hidden⟧ ⟦prop data d ?.data%3D%24%7Brows%7D⟧>⟦text t ?%24%7Bname%7D⟧ ${⟦value n ?(a%20%2B%20b)⟧}</p>';
+    expect(fillTemplate(template, {})).toBe(
+      '<p title="Place Dog" hidden .data=${rows}>${name} ${(a + b)}</p>'
+    );
+    expect(fillTemplate(template, { t: 'Hi', h: false, d: null, n: 0 })).toBe(
+      '<p title="Hi" .data=${null}>Hi ${0}</p>'
+    );
+  });
+
+  it('throws for a set arg whose `^` word says the element writes it too', () => {
+    const template = '<x-card ⟦props size=size ^label⟧ label="Written"></x-card>';
+    expect(fillTemplate(template, { size: 'm' })).toBe(
+      '<x-card size="m" label="Written"></x-card>'
+    );
+    expect(() => fillTemplate(template, { label: 'Set' })).toThrow(UnprintableArgError);
+  });
+
   it('throws for a value it cannot print', () => {
     expect(() => fillTemplate('${⟦value onClick⟧}', { onClick: () => {} })).toThrow(
       UnprintableArgError

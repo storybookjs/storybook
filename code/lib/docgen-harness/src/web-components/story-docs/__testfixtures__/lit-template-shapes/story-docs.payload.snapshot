@@ -9,6 +9,9 @@
       "snippet": "<lit-template-shapes label="Aliased" count="7" heading="Head">
   <b>Aliased</b>
 </lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label⟧ ⟦attr count count⟧ ⟦prop heading heading⟧
+  ><b>⟦text label⟧</b></lit-template-shapes
+>",
     },
     "webcomponentsstorydocs-lit-template-shapes--attributes": {
       "id": "webcomponentsstorydocs-lit-template-shapes--attributes",

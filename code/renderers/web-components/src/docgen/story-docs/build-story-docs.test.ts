@@ -6,6 +6,8 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
+
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
 import type {
@@ -140,6 +142,14 @@ const story = (body: string) => `
 
 const template = async (body: string) => (await firstStoryWithTemplate(story(body))).template;
 
+const templateOf = async (stories: string, files: Record<string, string> = {}) => {
+  const source = `
+    import { html, nothing } from 'lit';
+    export default { title: 'Example/TestElement', component: 'test-element' };
+    ${stories}`;
+  return (await firstStoryWithTemplate(source, { files })).template;
+};
+
 describe('buildStoryDocsPayload template', () => {
   it('is the element with a props hole for a story without a render function', async () => {
     const written = (await template(`{ args: { label: 'Hi', isOpen: true } }`))!;
@@ -220,11 +230,184 @@ describe('buildStoryDocsPayload template', () => {
     ['a string template', '{ render: (args) => `<test-element label="${args.label}">` }'],
     ['a render that reads no args', '{ render: () => html`<test-element></test-element>` }'],
     ['args passed along whole', '{ render: (args) => html`<p>${String(args)}</p>` }'],
-    ['a rest param', '{ render: ({ a, ...rest }) => html`<p>${rest.b}</p>` }'],
     ['an arg name bound again', '{ render: ({ a }) => html`${[1].map((a) => a)}` }'],
     ['an arg in a shorthand property', '{ render: ({ a }) => html`${JSON.stringify({ a })}` }'],
   ])('is not there for %s', async (_, body) => {
     expect(await template(body)).toBeUndefined();
+  });
+
+  it('reads the args a rest param holds, without the ones named before it', async () => {
+    expect(
+      await template('{ render: ({ label, ...rest }) => html`<p>${rest.count} ${rest.label}</p>` }')
+    ).toBe('<p>⟦text count⟧ </p>');
+  });
+
+  it('writes a constant of the render body where it is read', async () => {
+    const written = await template(`{
+      render: (args) => {
+        const title = args.label.toUpperCase();
+        const icon = html\`<i>\${args.count}</i>\`;
+        const size = 2;
+        return html\`<test-element label=\${title} count=\${size}>\${icon}</test-element>\`;
+      },
+    }`);
+    expect(written).toBe(
+      '<test-element label=${⟦operand label⟧.toUpperCase()} count="2"><i>⟦text count⟧</i></test-element>'
+    );
+  });
+
+  it('reads a function the render calls for its html as if written in place', async () => {
+    const written = await templateOf(`
+      const Card = (props) => html\`<test-element label=\${props.label}></test-element>\`;
+      export const Primary = { render: (args) => Card(args) };
+    `);
+    expect(written).toBe('<test-element ⟦attr label label⟧></test-element>');
+  });
+
+  it('binds the parameters of a function to what the call passes, with their defaults', async () => {
+    const written = (await templateOf(`
+      const Card = ({ label = 'Place Dog', count = 1, heading = fallbackHeading, disabled = true }) => html\`
+        <test-element label=\${label} count=\${count} ?disabled=\${disabled}>
+          \${heading} \${count > 1 ? 'many' : 'one'}
+        </test-element>
+      \`;
+      export const Primary = (args) => Card({ ...args, count: 5 });
+    `))!;
+    expect(written).toMatchInlineSnapshot(`
+      "<test-element ⟦attr label label ?label%3D%22Place%20Dog%22⟧ count="5" ⟦bool disabled disabled ?disabled⟧>
+        ⟦text heading ?%24%7BfallbackHeading%7D⟧ \${5 > 1 ? 'many' : 'one'}
+      </test-element>"
+    `);
+    expect(fillTemplate(written, {})).toMatchInlineSnapshot(`
+      "<test-element label="Place Dog" count="5" disabled>
+        \${fallbackHeading} \${5 > 1 ? 'many' : 'one'}
+      </test-element>"
+    `);
+    expect(fillTemplate(written, { label: 'Hi', heading: 'H', disabled: false }))
+      .toMatchInlineSnapshot(`
+        "<test-element label="Hi" count="5">
+          H \${5 > 1 ? 'many' : 'one'}
+        </test-element>"
+      `);
+  });
+
+  it('reads a function another file exports, and one the html calls with the args', async () => {
+    const written = await templateOf(
+      `
+        import { Item, Row as Line } from './markup.js';
+        export const Primary = {
+          render: (args) => html\`<ul>\${Item(args)}\${Line({ ...args, label: args.heading }, html\`<b>!</b>\`)}</ul>\`,
+        };
+      `,
+      {
+        'markup.ts': `
+          import { html } from 'lit';
+          export const Item = ({ label }) => html\`<li>\${label}</li>\`;
+          function Row(props, content) {
+            return html\`<li title=\${props.label}>\${props.count}\${content}</li>\`;
+          }
+          export { Row };
+        `,
+      }
+    );
+    expect(written).toBe(
+      '<ul><li>⟦text label⟧</li><li ⟦attr title heading⟧>⟦text count⟧<b>!</b></li></ul>'
+    );
+  });
+
+  it('keeps a call that reads single args as written, and writes one inside code as html', async () => {
+    const written = await templateOf(`
+      const Badge = (label) => html\`<b>\${label}</b>\`;
+      const Card = (props) => html\`<i>\${props.label}</i>\`;
+      export const Primary = {
+        render: (args) => html\`\${Badge(args.label)}\${args.active ? Card(args) : nothing}\`,
+      };
+    `);
+    expect(written).toBe(
+      '${Badge(⟦value label⟧)}${⟦value active⟧ ? html`<i>⟦text label⟧</i>` : nothing}'
+    );
+  });
+
+  it('writes what a spread of the args passes to the element as a props hole', async () => {
+    const written = (await templateOf(`
+      import { spread, spreadProps, spreadEvents } from '@open-wc/lit-helpers';
+      const Card = (props) => html\`<test-element \${spreadProps(props)}></test-element>\`;
+      export const Primary = {
+        render: ({ count, ...rest }) => html\`
+          <test-element \${spread(rest)} \${spreadEvents(rest)}></test-element>
+          <test-element heading="Fixed" \${spread(rest, ['label', 'variant'])}></test-element>
+          \${Card({ ...rest, label: 'Written', heading: rest.variant })}
+        \`,
+      };
+    `))!;
+    expect(written).toMatchInlineSnapshot(`
+      "<test-element ⟦props --accent=--accent is-open=isOpen .items=items label=label disabled=disabled active=active variant=variant heading=heading⟧></test-element>
+      <test-element heading="Fixed" ⟦props --accent=--accent is-open=isOpen .items=items disabled=disabled active=active ^heading⟧></test-element>
+      <test-element ⟦props --accent=--accent is-open=isOpen .items=items disabled=disabled active=active variant=variant heading=variant⟧ label="Written"></test-element>"
+    `);
+    expect(fillTemplate(written, { label: 'Hi', variant: 'a', count: 2 })).toMatchInlineSnapshot(`
+      "<test-element label="Hi" variant="a"></test-element>
+      <test-element heading="Fixed"></test-element>
+      <test-element variant="a" heading="a" label="Written"></test-element>"
+    `);
+    expect(() => fillTemplate(written, { heading: 'Set' })).toThrow(UnprintableArgError);
+  });
+
+  it('leaves out a listener that takes the args whole', async () => {
+    expect(
+      await template(
+        '{ render: (args) => html`<test-element @change=${track(args)} label=${args.label}></test-element>` }'
+      )
+    ).toBe('<test-element ⟦attr label label⟧></test-element>');
+  });
+
+  it.each([
+    ['lit/html.js', `import { html } from 'lit/html.js';`, {}],
+    [
+      'a module that exports lit again',
+      `import { html } from './base.js';`,
+      { 'base.ts': `export * from './directives.js';\nexport * from 'lit';`, 'directives.ts': '' },
+    ],
+    [
+      'a module that exports the html it imports',
+      `import { html } from './base.js';`,
+      { 'base.ts': `import { html as h } from 'lit-html';\nexport { h as html };` },
+    ],
+  ])('reads the html tag of %s', async (_, imports, files) => {
+    const source = `${imports}
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { render: (args) => html\`<p>\${args.label}</p>\` };`;
+    expect((await firstStoryWithTemplate(source, { files })).template).toBe('<p>⟦text label⟧</p>');
+  });
+
+  it.each([
+    [
+      'a html tag that is not lit',
+      `import { html as own } from './own.js';`,
+      'own`<p>${args.label}</p>`',
+    ],
+    ['a function that branches', '', 'Branch(args)'],
+    ['a function that is not in reach', `import { Far } from 'far';`, 'Far(args)'],
+    ['args written over an entry', '', 'Card({ label: 1, ...args })'],
+    ['a spread on another element', '', 'html`<p ${spread(args)}></p>`'],
+    ['a call read twice', '', 'Twice(args, next())'],
+    ['code that names what the html binds', '', 'html`${Each(args, (item) => item)}`'],
+  ])('is not there for %s', async (_, imports, returned) => {
+    const written = await templateOf(
+      `${imports}
+      const Card = (props) => html\`<p>\${props.label}</p>\`;
+      const Branch = (props) => {
+        if (props.active) {
+          return html\`<b>\${props.label}</b>\`;
+        }
+        return html\`<i>\${props.label}</i>\`;
+      };
+      const Twice = (props, id) => html\`<p id=\${id} title=\${id}>\${props.label}</p>\`;
+      const Each = (props, render) => html\`\${props.items.map((item) => render)}\`;
+      export const Primary = { render: (args) => ${returned} };`,
+      { 'own.ts': 'export const html = (strings) => strings.join("");' }
+    );
+    expect(written).toBeUndefined();
   });
 });
 

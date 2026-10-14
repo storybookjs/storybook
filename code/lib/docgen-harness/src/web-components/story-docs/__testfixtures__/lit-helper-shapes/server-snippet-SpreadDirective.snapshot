@@ -1,0 +1,4 @@
+<lit-template-shapes></lit-template-shapes>
+
+warning: Incomplete snippet: `spreadProps(args)` could not be resolved statically.
+Incomplete snippet: args not bound by the render template: `label`, `count`, `disabled`.

@@ -1,7 +1,13 @@
+import type { NodePath } from 'storybook/internal/babel';
 import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  RenderFunctionPath,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
 import {
   authoredSource,
   createStoryArgsResolver,
@@ -27,7 +33,8 @@ import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet, printListenerScript } from './print-element.ts';
-import { argsTemplate, litTemplate } from './story-template.ts';
+import { argsTemplate, argsWords, litTemplate } from './story-template.ts';
+import { litBindings, templateModule } from './template-calls.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
@@ -221,8 +228,14 @@ const renderedArgsSnippet = (
 ): SnippetResult => {
   const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
+  const live = render.kind === 'resolved' ? liveTemplate(render.path, resolved, deps) : undefined;
   if (render.kind === 'resolved') {
-    const template = resolveHtmlTemplate(render.path, deps.csf);
+    const { ctx } = deps.resolveStoryArgs;
+    const module = templateModule(
+      { program: deps.csf._file.path, filePath: ctx.filePath },
+      ctx.resolveModule
+    );
+    const template = resolveHtmlTemplate(render.path, deps.csf, litBindings(module));
     if (template) {
       const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
       const unresolved = [...resolved.unresolved, ...printed.unresolved];
@@ -235,12 +248,6 @@ const renderedArgsSnippet = (
       warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
       const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
-      // A render function from another file has no source in this one to keep as written.
-      const inOtherFile =
-        render.path.findParent((path) => path.isProgram())?.node !== deps.csf._ast.program;
-      const live = inOtherFile
-        ? undefined
-        : litTemplate(template, render.path.node.params[0], deps.csf._file.code);
       return {
         ...(hasSnippet ? { snippet: printed.snippet } : {}),
         ...(live === undefined ? {} : { template: live }),
@@ -264,8 +271,31 @@ const renderedArgsSnippet = (
   return {
     ...(args.snippet ? { snippet: args.snippet } : {}),
     ...(render.kind === 'missing' && args.template ? { template: args.template } : {}),
+    ...(live === undefined ? {} : { template: live }),
     ...joinWarnings(warnings),
   };
+};
+
+const liveTemplate = (
+  render: RenderFunctionPath,
+  resolved: ResolvedStoryArgs,
+  deps: StoryDocDeps
+): string | undefined => {
+  const { ctx } = deps.resolveStoryArgs;
+  const program = render.findParent((path) => path.isProgram()) as NodePath<t.Program>;
+  // A render function from another file is read in the code of that file.
+  const filePath =
+    program.node === deps.csf._ast.program
+      ? ctx.filePath
+      : (program.hub as unknown as { file: { opts: { filename: string } } }).file.opts.filename;
+  return litTemplate(render.node, templateModule({ program, filePath }, ctx.resolveModule), {
+    tag: deps.tag,
+    words: argsWords(
+      Object.keys(resolved.args),
+      deps.docgenPayload.argTypes ?? {},
+      deps.declaration
+    ),
+  });
 };
 
 const unboundTemplateArgs = (
@@ -362,7 +392,7 @@ const argsSnippet = (
   // Slot content and part or state styles are left to the static snippet.
   const element =
     snippet.slots.length + snippet.styleRules.length === 0
-      ? argsTemplate(tag, Object.keys(args), argTypes ?? {}, declaration)
+      ? argsTemplate(tag, argsWords(Object.keys(args), argTypes ?? {}, declaration))
       : undefined;
   const script = printListenerScript(tag, snippet.listeners);
   const template =

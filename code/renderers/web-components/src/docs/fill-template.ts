@@ -10,10 +10,17 @@ import type { Args } from 'storybook/internal/types';
 // Fills a template from `story-template.ts`, which is lit source. Besides the shared holes,
 // `⟦bool name arg⟧` is lit's `?name=${…}` and `⟦prop name arg⟧` its `.name=${…}`. Each word of
 // `⟦props label=label .items=items --gap=--gap⟧` names the attribute, `.property` or CSS custom
-// property an arg sets; an arg no word names, such as a listener, is left out.
+// property an arg sets; an arg no word names, such as a listener, is left out. A `^arg` word names
+// an arg the element writes itself as well, which the snippet cannot show while set. A hole for one arg
+// may end with a `?text` word: the code to print, URI-encoded, while the arg is `undefined`, which
+// is what a parameter default of the story's code gives it.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', second = ''] = words;
+    const [arg, fallback = ''] = NAMED.includes(kind) ? [second, words[2]] : [first, second];
+    if (kind !== 'props' && args[arg] === undefined && fallback.startsWith('?')) {
+      return decodeURIComponent(fallback.slice(1));
+    }
     switch (kind) {
       case 'props':
         return props(words, args);
@@ -36,12 +43,19 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
     }
   });
 
+// The holes whose first word names the attribute or property the arg in the second is bound to.
+const NAMED = ['attr', 'bool', 'prop'];
+
 function props(words: string[], args: Args): string {
   const attributes: string[] = [];
   const style: string[] = [];
   for (const word of words) {
     const [binding = '', name = ''] = word.split(/=(.*)/);
-    if (binding.startsWith('--') && !isUnset(args[name])) {
+    if (word.startsWith('^')) {
+      if (args[word.slice(1)] !== undefined) {
+        throw new UnprintableArgError(word.slice(1));
+      }
+    } else if (binding.startsWith('--') && !isUnset(args[name])) {
       style.push(`${binding}: ${cssValue(name, args[name])};`);
     } else if (binding.startsWith('.')) {
       attributes.push(property(binding.slice(1), name, args));

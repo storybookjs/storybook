@@ -1,11 +1,5 @@
 {
-  "Listener": "<csf-shapes label="Meta"></csf-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', () => {});
-  }
-</script>",
+  "Listener": "UnprintableArgError: The snippet cannot show the value of the `onShapeChange` arg.",
   "PartsAndCss": "<style>
   csf-shapes::part(panel) { color: red; }
   csf-shapes:state(active) { outline: 1px solid; }

@@ -1,1 +1,1 @@
-<lit-template-shapes heading="Closed"></lit-template-shapes>
+<lit-template-shapes .heading=${"Closed"} .open=${false}></lit-template-shapes>

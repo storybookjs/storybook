@@ -6,22 +6,24 @@
     "webcomponentsfixtures-vanilla-multi-definition--args-default-render": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<multi-beta></multi-beta>",
-      "template": "<multi-beta ⟦props .betaLabel=betaLabel beta-label=beta-label⟧></multi-beta>",
-      "warning": "Incomplete snippet: properties without an attribute: `betaLabel`.",
+      "snippet": "<multi-beta .betaLabel=${"Default beta"}></multi-beta>",
+      "template": "<multi-beta ⟦props .betaLabel=betaLabel beta-label=beta-label *⟧></multi-beta>",
     },
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
       "name": "Dom Node",
-      "snippet": "<multi-beta></multi-beta>",
-      "warning": "Incomplete snippet: `args => { const el = document.createElement('multi-beta'); el.setAttribute('beta-label', String(args.betaLabel)); return el; }` could not be resolved statically.
-Incomplete snippet: properties without an attribute: `betaLabel`.",
+      "snippet": "const el = document.createElement('multi-beta');
+el.setAttribute('beta-label', String("Beta"));
+return el;",
+      "template": "const el = document.createElement('multi-beta');
+el.setAttribute('beta-label', String(⟦value betaLabel⟧));
+return el;",
     },
     "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
       "snippet": "<multi-beta beta-label="Beta"></multi-beta>",
-      "template": "<multi-beta ⟦attr beta-label betaLabel⟧></multi-beta>",
+      "template": "<multi-beta beta-label="⟦quoted betaLabel⟧"></multi-beta>",
     },
   },
 }

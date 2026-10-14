@@ -1,3 +1,10 @@
-<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>
-
-warning: Incomplete snippet: `args => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.
+const el = document.createElement('lit-basic-attributes');
+el.setAttribute('label', String("Open panel"));
+el.setAttribute('count', String(7));
+if (false) {
+  el.setAttribute('disabled', '');
+}
+if (true) {
+  el.setAttribute('is-open', '');
+}
+return el;

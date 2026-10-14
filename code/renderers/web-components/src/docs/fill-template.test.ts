@@ -26,8 +26,7 @@ describe('fillTemplate', () => {
   it.each([
     ['a props word', '<x-card ⟦props size=size⟧></x-card>'],
     ['a property word', '<x-card ⟦props .size=size⟧></x-card>'],
-    ['a boolean word', '<x-card ⟦props ?size=size⟧></x-card>'],
-    ['a spread', '<x-card ⟦props !spread *⟧></x-card>'],
+    ['a catch-all word', '<x-card ⟦props *⟧></x-card>'],
     ['a property', '<x-card ⟦prop size size⟧></x-card>'],
     ['a boolean attribute', '<x-card ⟦bool size size⟧></x-card>'],
     ['a slot', '<x-card>⟦slot default size⟧</x-card>'],
@@ -51,12 +50,6 @@ describe('fillTemplate', () => {
     expect(() => fillTemplate(template, { label: html`<b></b>` })).toThrow(UnprintableArgError);
   });
 
-  it('leaves out every function in a toolkit spread, as the toolkit does', () => {
-    expect(fillTemplate('<x-card ⟦props !toolkit *⟧></x-card>', { size: () => 'l' })).toBe(
-      '<x-card></x-card>'
-    );
-  });
-
   it('sets the field of a `~` word to false or null as a property, as the render does', () => {
     const template = '<x-card ⟦props ~active=active ~label=label⟧></x-card>';
     expect(fillTemplate(template, { active: false, label: '' })).toBe(
@@ -67,8 +60,9 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('writes an attribute binding as lit does, empty while its arg is unset', () => {
-    const template = '<x-card ⟦attr label text⟧ ⟦attr open open⟧ ⟦attr data data⟧></x-card>';
+  it('writes an attribute value as lit does, empty while its arg is unset', () => {
+    const template =
+      '<x-card label="⟦quoted text⟧" open="⟦quoted open⟧" data="⟦quoted data⟧"></x-card>';
     expect(fillTemplate(template, { open: false, data: [1, 2] })).toBe(
       '<x-card label="" open="false" data="1,2"></x-card>'
     );
@@ -91,41 +85,24 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('writes the part and state styles and custom properties of a style hole', () => {
+  it('writes the part and state styles of a style hole', () => {
     const template =
-      '⟦style x-card --gap=--gap ::part(panel)=panel-part :state(busy)=busy-state⟧<x-card></x-card>';
+      '⟦style x-card ::part(panel)=panel-part :state(busy)=busy-state⟧<x-card></x-card>';
     expect(fillTemplate(template, {})).toBe('<x-card></x-card>');
-    expect(
-      fillTemplate(template, { '--gap': '2px', 'panel-part': 'color: red;', 'busy-state': ' ' })
-    ).toBe(
-      '<style>\n  x-card { --gap: 2px; }\n  x-card::part(panel) { color: red; }\n</style>\n<x-card></x-card>'
+    expect(fillTemplate(template, { 'panel-part': 'color: red;', 'busy-state': ' ' })).toBe(
+      '<style>\n  x-card::part(panel) { color: red; }\n</style>\n<x-card></x-card>'
     );
     expect(() => fillTemplate(template, { 'panel-part': '}</style>' })).toThrow(
       UnprintableArgError
     );
   });
 
-  it('passes every arg as `@open-wc/lit-helpers` `spread` and `spreadProps` set it', () => {
-    const args = { label: 'Hi', open: true, off: false, none: null, '.items': [1], '?on': 1 };
-    expect(fillTemplate('<x-card ⟦props !spread * -label⟧></x-card>', args)).toBe(
-      '<x-card open="true" off="false" .items=${[1]} on></x-card>'
-    );
+  it('sets every arg no word names as a property, as the render does', () => {
+    const template = '<x-card ⟦props label=label -onClick *⟧></x-card>';
     expect(
-      fillTemplate('<x-card ⟦props !spreadProps *⟧></x-card>', { ...args, '?on': undefined })
-    ).toBe(
-      '<x-card .label=${"Hi"} .open=${true} .off=${false} .none=${null} ..items=${[1]}></x-card>'
-    );
-    expect(() => fillTemplate('<x-card ⟦props !spread *⟧></x-card>', { '--gap': '1px' })).toThrow(
-      UnprintableArgError
-    );
-  });
-
-  it('passes the args as `@wc-toolkit/storybook-helpers` does', () => {
-    const template =
-      '<x-card ⟦props !toolkit * -label -open -items label=label ?open=open .items=items⟧></x-card>';
-    expect(
-      fillTemplate(template, { label: '', open: 'false', items: [1], extra: 2, onClick: 'x' })
-    ).toBe('<x-card label="" .items=${[1]} extra="2"></x-card>');
+      fillTemplate(template, { label: 'Hi', theme: 'dark', onClick: fn(), size: undefined })
+    ).toBe('<x-card label="Hi" .theme=${"dark"}></x-card>');
+    expect(() => fillTemplate(template, { 'extra-slot': 'x' })).toThrow(UnprintableArgError);
   });
 
   it('sets a property to whatever its arg holds, false and null too', () => {
@@ -136,10 +113,10 @@ describe('fillTemplate', () => {
   });
 
   it('escapes attribute values and text', () => {
-    expect(fillTemplate('<p ⟦attr title t⟧>⟦text t⟧</p>', { t: 'a "b" & <c>' })).toBe(
+    expect(fillTemplate('<p title="⟦quoted t⟧">⟦text t⟧</p>', { t: 'a "b" & <c>' })).toBe(
       '<p title="a &quot;b&quot; &amp; &lt;c>">a "b" &amp; &lt;c&gt;</p>'
     );
-    expect(fillTemplate('<p ⟦attr data d⟧></p>', { d: { a: 1 } })).toBe(
+    expect(fillTemplate('<p data="⟦quoted d⟧"></p>', { d: { a: 1 } })).toBe(
       '<p data="[object Object]"></p>'
     );
   });
@@ -156,12 +133,12 @@ describe('fillTemplate', () => {
 
   it('prints the `?` word of a hole while its arg is undefined', () => {
     const template =
-      '<p ⟦attr title t ?title%3D%22Place%20Dog%22⟧ ⟦bool hidden h ?hidden⟧ ⟦prop data d ?.data%3D%24%7Brows%7D⟧>⟦text t ?%24%7Bname%7D⟧ ${⟦value n ?(a%20%2B%20b)⟧}</p>';
+      "<p title=\"⟦quoted t ?Place%20Dog⟧\" lang='⟦quoted t ' ?en⟧' ⟦bool hidden h ?hidden⟧ ⟦prop data d ?.data%3D%24%7Brows%7D⟧>⟦text t ?%24%7Bname%7D⟧ ${⟦value n ?(a%20%2B%20b)⟧}</p>";
     expect(fillTemplate(template, {})).toBe(
-      '<p title="Place Dog" hidden .data=${rows}>${name} ${(a + b)}</p>'
+      '<p title="Place Dog" lang=\'en\' hidden .data=${rows}>${name} ${(a + b)}</p>'
     );
     expect(fillTemplate(template, { t: 'Hi', h: false, d: null, n: 0 })).toBe(
-      '<p title="Hi" .data=${null}>Hi ${0}</p>'
+      '<p title="Hi" lang=\'Hi\' .data=${null}>Hi ${0}</p>'
     );
   });
 

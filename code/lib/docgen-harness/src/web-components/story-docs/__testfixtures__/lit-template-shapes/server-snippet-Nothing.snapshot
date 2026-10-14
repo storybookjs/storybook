@@ -1,1 +1,3 @@
-<lit-template-shapes label="Set"></lit-template-shapes>
+<lit-template-shapes label=${"Set" ? "Set" : nothing}
+  >${false ? html`<b>shown</b>` : nothing}</lit-template-shapes
+>

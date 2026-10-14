@@ -7,7 +7,7 @@
       "id": "webcomponentsstorydocs-meta-render--csf-2-function",
       "name": "Csf 2 Function",
       "snippet": "<meta-render label="csf2"></meta-render>",
-      "template": "<meta-render ⟦attr label label⟧></meta-render>",
+      "template": "<meta-render label="⟦quoted label⟧"></meta-render>",
     },
     "webcomponentsstorydocs-meta-render--dom-override": {
       "id": "webcomponentsstorydocs-meta-render--dom-override",
@@ -19,13 +19,13 @@
       "id": "webcomponentsstorydocs-meta-render--from-meta",
       "name": "From Meta",
       "snippet": "<meta-render label="from-meta"></meta-render>",
-      "template": "<meta-render ⟦attr label label⟧></meta-render>",
+      "template": "<meta-render label="⟦quoted label⟧"></meta-render>",
     },
     "webcomponentsstorydocs-meta-render--override": {
       "id": "webcomponentsstorydocs-meta-render--override",
       "name": "Override",
       "snippet": "<meta-render label="override" class="override"></meta-render>",
-      "template": "<meta-render ⟦attr label label⟧ class="override"></meta-render>",
+      "template": "<meta-render label="⟦quoted label⟧" class="override"></meta-render>",
     },
   },
 }

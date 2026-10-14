@@ -1,1 +1,3 @@
-<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>
+<demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
+  ><span slot="prefix"></span>A simple card</demo-wc-card
+>

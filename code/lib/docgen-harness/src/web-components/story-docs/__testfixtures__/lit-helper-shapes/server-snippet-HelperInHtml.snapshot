@@ -1,3 +1,3 @@
-<section><ul>
-  <li>Alpha: 2</li><li>Fixed: 2</li>
-</ul></section>
+<section>${List({ label: "Alpha", count: 2 })}</section>
+
+warning: Incomplete snippet: names the snippet does not import or declare: `List`.

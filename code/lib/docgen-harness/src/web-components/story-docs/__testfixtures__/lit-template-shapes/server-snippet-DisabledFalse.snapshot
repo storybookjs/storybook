@@ -1,1 +1,4 @@
-<lit-template-shapes label="Beta" count="3"></lit-template-shapes>
+<lit-template-shapes
+  label="Beta"
+  count="3"
+></lit-template-shapes>

@@ -1,5 +1,14 @@
 {
   "ArgsDefaultRender": "UnprintableArgError: The snippet cannot show the value of the `actions-slot` arg.",
+  "DomNode": "const el = document.createElement('lit-slots-and-css');
+el.setAttribute('heading', String("Projected"));
+const body = document.createElement('p');
+body.textContent = 'Default slot content';
+const action = document.createElement('button');
+action.slot = 'actions';
+action.textContent = 'Confirm';
+el.append(body, action);
+return el;",
   "LitTemplate": "<lit-slots-and-css heading="Projected">
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>

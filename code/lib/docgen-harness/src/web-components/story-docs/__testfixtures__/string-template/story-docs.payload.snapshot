@@ -7,7 +7,7 @@
       "id": "webcomponentsstorydocs-string-template--default",
       "name": "Default",
       "snippet": "<string-template label="Default"></string-template>",
-      "template": "<string-template ⟦props ~label=label⟧></string-template>",
+      "template": "<string-template ⟦props ~label=label *⟧></string-template>",
     },
     "webcomponentsstorydocs-string-template--plain-string": {
       "id": "webcomponentsstorydocs-string-template--plain-string",
@@ -17,7 +17,8 @@
     "webcomponentsstorydocs-string-template--untagged": {
       "id": "webcomponentsstorydocs-string-template--untagged",
       "name": "Untagged",
-      "snippet": "<string-template label="Untagged" ?fake="true"></string-template>",
+      "snippet": "`<string-template label="${"Untagged"}" ?fake=${true}></string-template>`",
+      "template": "`<string-template label="${⟦value label⟧}" ?fake=${⟦value flag⟧}></string-template>`",
     },
   },
 }

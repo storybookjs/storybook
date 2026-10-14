@@ -138,6 +138,7 @@ describe('web-components story-docs server snippets', () => {
         recorded,
         legacyParity,
         declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${exportName}`],
+        ownCode: storyDoc?.snippet !== undefined && storyDoc.snippet === filled[exportName],
       });
     }
 

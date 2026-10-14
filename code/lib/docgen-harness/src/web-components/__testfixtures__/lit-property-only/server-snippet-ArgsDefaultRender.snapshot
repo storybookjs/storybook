@@ -1,3 +1,1 @@
-<lit-property-only label="Default render"></lit-property-only>
-
-warning: Incomplete snippet: properties without an attribute: `items`, `config`.
+<lit-property-only label="Default render" .items=${[{ name: "Alpha" }, { name: "Beta" }]} .config=${{ dense: true, theme: "dark" }}></lit-property-only>

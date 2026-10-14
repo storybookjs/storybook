@@ -1,3 +1,6 @@
-<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>
-
-warning: Incomplete snippet: properties without an attribute: `items`.
+<fast-attributes
+  label="Count"
+  size="large"
+  max-count="5"
+  .items=${["a"]}
+></fast-attributes>

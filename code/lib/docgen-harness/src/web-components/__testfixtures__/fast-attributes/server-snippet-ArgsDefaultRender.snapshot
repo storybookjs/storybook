@@ -1,3 +1,1 @@
-<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>
-
-warning: Incomplete snippet: properties without an attribute: `items`.
+<fast-attributes label="Default count" size="large" .disabled=${false} max-count="2" .items=${["a"]}></fast-attributes>

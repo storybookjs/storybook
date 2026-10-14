@@ -6,9 +6,8 @@
     "webcomponentsfixtures-fast-attributes--args-default-render": {
       "id": "webcomponentsfixtures-fast-attributes--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
-      "template": "<fast-attributes ⟦props ~label=label ~size=size ~disabled=disabled ~max-count=maxCount .items=items .count=count max-count=max-count⟧></fast-attributes>",
-      "warning": "Incomplete snippet: properties without an attribute: `items`.",
+      "snippet": "<fast-attributes label="Default count" size="large" .disabled=${false} max-count="2" .items=${["a"]}></fast-attributes>",
+      "template": "<fast-attributes ⟦props ~label=label ~size=size ~disabled=disabled ~max-count=maxCount .items=items -fast-count-change-event -increment-method .count=count ^max-count *⟧></fast-attributes>",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {
       "id": "webcomponentsfixtures-fast-attributes--dom-node",
@@ -20,15 +19,19 @@ Incomplete snippet: properties without an attribute: `items`.",
     "webcomponentsfixtures-fast-attributes--lit-template": {
       "id": "webcomponentsfixtures-fast-attributes--lit-template",
       "name": "Lit Template",
-      "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+      "snippet": "<fast-attributes
+  label="Count"
+  size="large"
+  max-count="5"
+  .items=${["a"]}
+></fast-attributes>",
       "template": "<fast-attributes
-  ⟦attr label label⟧
-  ⟦attr size size⟧
+  label="⟦quoted label⟧"
+  size="⟦quoted size⟧"
   ⟦bool disabled disabled⟧
-  ⟦attr max-count maxCount⟧
+  max-count="⟦quoted maxCount⟧"
   ⟦prop items items ?.items%3D%24%7Bundefined%7D⟧
 ></fast-attributes>",
-      "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
   },
 }

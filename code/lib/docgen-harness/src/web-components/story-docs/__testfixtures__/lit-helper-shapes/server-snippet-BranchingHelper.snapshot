@@ -1,6 +1,6 @@
 if (true) {
   return html`<lit-template-shapes disabled></lit-template-shapes>`;
 }
-return html`<lit-template-shapes label="Alpha" count="1" disabled
-  ></lit-template-shapes
->`;
+return Card({ label: "Alpha", disabled: true });
+
+warning: Incomplete snippet: names the snippet does not import or declare: `Card`.

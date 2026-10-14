@@ -18,7 +18,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦style lit-toolkit-shapes ::part(base)=base-part :state(active)=active-state⟧<lit-toolkit-shapes ⟦props ~size=size ~level=level ~tags=tags ~label=label --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap .computed=computed .version=version .pressed=pressed ~old-size=oldSize .onSelect=onSelect ~target=target ~when=when old-size=old-size⟧>⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>
+      "template": "⟦style lit-toolkit-shapes ::part(base)=base-part :state(active)=active-state⟧<lit-toolkit-shapes ⟦props ~size=size ~level=level ~tags=tags ~label=label -toolkit-resize-event -click-event -focusItem-method -default-slot -label-slot -base-part -active-state --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap .computed=computed .version=version .pressed=pressed ~old-size=oldSize .onSelect=onSelect ~target=target ~when=when ^old-size *⟧>⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -49,22 +49,17 @@
       "snippet": "<lit-toolkit-shapes
   size="large"
   level="2"
-  tags="[&quot;b&quot;]"
+  .tags=${["b"]}
   label="Shaped"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
+></lit-toolkit-shapes>",
       "template": "<lit-toolkit-shapes
-  ⟦attr size size⟧
-  ⟦attr level level⟧
+  size="⟦quoted size⟧"
+  level="⟦quoted level⟧"
   ⟦prop tags tags ?.tags%3D%24%7Bundefined%7D⟧
-  ⟦attr label label⟧
+  label="⟦quoted label⟧"
 ></lit-toolkit-shapes>",
       "templateWarning": "Incomplete snippet: listeners not shown: `toolkit-resize`.",
+      "warning": "Incomplete snippet: listeners not shown: `toolkit-resize`.",
     },
   },
 }

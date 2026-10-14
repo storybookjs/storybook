@@ -1,3 +1,7 @@
-<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>
-
-warning: Incomplete snippet: `args => { const el = document.createElement('lit-inheritance-mixin'); el.setAttribute('base-label', String(args.baseLabel)); if (args.mixedActive) { el.setAttribute('mixed-active', ''); } el.setAttribute('count', String(args.count)); return el; }` could not be resolved statically.
+const el = document.createElement('lit-inheritance-mixin');
+el.setAttribute('base-label', String("Inherited"));
+if (true) {
+  el.setAttribute('mixed-active', '');
+}
+el.setAttribute('count', String(5));
+return el;

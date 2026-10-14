@@ -1,3 +1,1 @@
-<csf-shapes label="Meta"></csf-shapes>
-
-warning: Incomplete snippet: args not declared by `csf-shapes`: `nope`.
+<csf-shapes label="Meta" .nope=${1}></csf-shapes>

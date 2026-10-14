@@ -7,22 +7,38 @@
       "id": "webcomponentsfixtures-lit-inheritance-mixin--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
-      "template": "<lit-inheritance-mixin ⟦props ~base-label=baseLabel ~mixed-active=mixedActive ~count=count base-label=base-label mixed-active=mixed-active⟧></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin ⟦props ~base-label=baseLabel ~mixed-active=mixedActive ~count=count ^base-label ^mixed-active *⟧></lit-inheritance-mixin>",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--dom-node": {
       "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",
       "name": "Dom Node",
-      "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
-      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-inheritance-mixin'); el.setAttribute('base-label', String(args.baseLabel)); if (args.mixedActive) { el.setAttribute('mixed-active', ''); } el.setAttribute('count', String(args.count)); return el; }` could not be resolved statically.",
+      "snippet": "const el = document.createElement('lit-inheritance-mixin');
+el.setAttribute('base-label', String("Inherited"));
+if (true) {
+  el.setAttribute('mixed-active', '');
+}
+el.setAttribute('count', String(5));
+return el;",
+      "template": "const el = document.createElement('lit-inheritance-mixin');
+el.setAttribute('base-label', String(⟦value baseLabel⟧));
+if (⟦value mixedActive⟧) {
+  el.setAttribute('mixed-active', '');
+}
+el.setAttribute('count', String(⟦value count⟧));
+return el;",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--lit-template": {
       "id": "webcomponentsfixtures-lit-inheritance-mixin--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
+      "snippet": "<lit-inheritance-mixin
+  base-label="Inherited"
+  mixed-active
+  count="5"
+></lit-inheritance-mixin>",
       "template": "<lit-inheritance-mixin
-  ⟦attr base-label baseLabel⟧
+  base-label="⟦quoted baseLabel⟧"
   ⟦bool mixed-active mixedActive⟧
-  ⟦attr count count⟧
+  count="⟦quoted count⟧"
 ></lit-inheritance-mixin>",
     },
   },

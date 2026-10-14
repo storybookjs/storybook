@@ -120,52 +120,51 @@ const spreadProps = directive(SpreadPropsDirective);
 const HOSTILE = 'a"b\'c`d${e}&g';
 const HOSTILE_TEXT = `${HOSTILE}<f>`;
 
-// `set` names the args the story sets, so a branch an unset one takes is known; `unprintable` are
-// args the template has no snippet for.
-const stories: [
-  name: string,
-  source: string,
-  args: Args[],
-  options?: { set?: string[]; unprintable?: Args[] },
-][] = [
+// `unprintable` are args the template has no snippet for.
+const stories: [name: string, source: string, args: Args[], options?: { unprintable?: Args[] }][] =
   [
-    'a function called with the args',
-    `const Card = (props) => html\`<x-card title=\${props.label} ?open=\${props.open}>\${props.label}</x-card>\`;
+    [
+      'a function called with the args',
+      `const Card = (props) => html\`<x-card title=\${props.label} ?open=\${props.open}>\${props.label}</x-card>\`;
      export const Primary = (args) => Card(args);`,
-    [{ label: 'Hi' }, { label: 'Bye', open: true }, { label: HOSTILE, open: false }],
-  ],
-  [
-    'parameter defaults and an entry written over the args',
-    `const Card = ({ label = 'Place Dog', size = 100, open = true, note = Card.name } = {}) =>
+      [{ label: 'Hi' }, { label: 'Bye', open: true }, { label: HOSTILE, open: false }],
+    ],
+    [
+      'parameter defaults and an entry written over the args',
+      `const Card = ({ label = 'Place Dog', size = 100, open = true, note = Card.name } = {}) =>
        html\`<x-card title=\${label} size=\${size} ?open=\${open}>\${note}: \${size > 60 ? label : 'small'}</x-card>\`;
      export const Primary = (args) => Card({ ...args, size: 50 });`,
-    [{}, { label: 'Hi', open: false, note: 'N', size: 70 }, { label: HOSTILE, note: HOSTILE_TEXT }],
-  ],
-  [
-    'functions called in the html, with html passed along',
-    `const Item = ({ label }, content) => html\`<li>\${label}\${content}</li>\`;
+      [
+        {},
+        { label: 'Hi', open: false, note: 'N', size: 70 },
+        { label: HOSTILE, note: HOSTILE_TEXT },
+      ],
+    ],
+    [
+      'functions called in the html, with html passed along',
+      `const Item = ({ label }, content) => html\`<li>\${label}\${content}</li>\`;
      const Row = (props) => html\`<li title=\${ifDefined(props.label)}>\${props.count}</li>\`;
      export const Primary = (args) => {
        const mark = html\`<b>\${args.count}</b>\`;
        return html\`<ul>\${Item(args, mark)}\${args.open ? Row({ ...args, label: args.title }) : nothing}</ul>\`;
      };`,
-    [{}, { label: 'Hi', count: 2, open: true, title: 'T' }, { label: HOSTILE, title: HOSTILE }],
-  ],
-  [
-    'a rest param and a constant of the body',
-    `export const Primary = ({ label, ...rest }) => {
-       const title = \`\${label}!\`;
-       return html\`<p title=\${title} lang=\${rest.lang}>\${rest.label}\${rest.count}</p>\`;
-     };`,
-    [
-      { label: 'Hi', lang: 'en' },
-      { lang: 'nl', count: 3 },
-      { label: HOSTILE_TEXT, lang: HOSTILE },
+      [{}, { label: 'Hi', count: 2, open: true, title: 'T' }, { label: HOSTILE, title: HOSTILE }],
     ],
-  ],
-  [
-    'a function that returns from each if',
-    `const Card = (props) => {
+    [
+      'a rest param and a constant of the body',
+      `export const Primary = ({ label, ...rest }) => {
+       const title = \`\${label}!\`;
+       return html\`<p title=\${title} lang=\${rest.lang}>\${label}\${rest.count}</p>\`;
+     };`,
+      [
+        { label: 'Hi', lang: 'en' },
+        { lang: 'nl', count: 3 },
+        { label: HOSTILE_TEXT, lang: HOSTILE },
+      ],
+    ],
+    [
+      'a function that returns from each if',
+      `const Card = (props) => {
        if (props.open) {
          return html\`<b title=\${props.label}>open</b>\`;
        } else if (props.size === 'l') {
@@ -174,23 +173,22 @@ const stories: [
        return html\`<p>\${props.label}</p>\`;
      };
      export const Primary = (args) => Card(args);`,
-    [{ open: true, label: 'Hi' }, { size: 'l', label: HOSTILE_TEXT }, { size: 'm' }, {}],
-  ],
-  [
-    'an if that an arg the story leaves unset decides',
-    `const Card = ({ href, label }) => {
+      [{ open: true, label: 'Hi' }, { size: 'l', label: HOSTILE_TEXT }, { size: 'm' }, {}],
+    ],
+    [
+      'an if that an arg the story leaves unset decides',
+      `const Card = ({ href, label }) => {
        if (href) {
          return html\`<a href=\${href}>\${label}</a>\`;
        }
        return html\`<button>\${label}</button>\`;
      };
      export const Primary = (args) => Card(args);`,
-    [{ label: 'Hi' }, { label: HOSTILE_TEXT }],
-    { set: ['label'], unprintable: [{ href: '/', label: 'Hi' }] },
-  ],
-  [
-    'a body that branches, switches, assigns and maps over an arg',
-    `export const Primary = (args) => {
+      [{ label: 'Hi' }, { label: HOSTILE_TEXT }, { href: '/', label: 'Hi' }],
+    ],
+    [
+      'a body that branches, switches, assigns and maps over an arg',
+      `export const Primary = (args) => {
        // The icon follows the size.
        let icon = 'dot';
        switch (args.size) {
@@ -213,63 +211,69 @@ const stories: [
          </ul>
        \`;
      };`,
-    [
-      {},
-      { size: 'l' },
-      { items: ['a', HOSTILE_TEXT], color: 'red', label: HOSTILE, open: true, size: 'l' },
-      { items: [], size: 'm', label: 'Hi' },
+      [
+        {},
+        { size: 'l' },
+        { items: ['a', HOSTILE_TEXT], color: 'red', label: HOSTILE, open: true, size: 'l' },
+        { items: [], size: 'm', label: 'Hi' },
+      ],
     ],
-  ],
-  [
-    'a property binding of an arg, set or not',
-    `export const Primary = (args) => html\`<x-card .items=\${args.items} .count=\${args.count}>\${args.label}</x-card>\`;`,
-    [{}, { items: [1, 'a'], count: 0 }, { items: null, label: HOSTILE_TEXT }],
-  ],
-  [
-    'an arg inside a larger attribute value, quoted or not',
-    `export const Primary = (args) =>
+    [
+      'a property binding of an arg, set or not',
+      `export const Primary = (args) => html\`<x-card .items=\${args.items} .count=\${args.count}>\${args.label}</x-card>\`;`,
+      [{}, { items: [1, 'a'], count: 0 }, { items: null, label: HOSTILE_TEXT }],
+    ],
+    [
+      'an arg inside a larger attribute value, quoted or not',
+      `export const Primary = (args) =>
        html\`<x-card title="\${args.label}!" size=\${args.size}-x lang='\${args.lang} \${args.size}'></x-card>\`;`,
-    [{}, { label: 'Hi', size: 'l', lang: 'en' }, { label: HOSTILE, size: 7, lang: false }],
-  ],
-  [
-    'an arg as the text of a style',
-    `export const Primary = (args) => html\`<style>\${args.css}</style><x-card>\${args.label}</x-card>\`;`,
-    [{}, { css: 'x-card > b { color: red }', label: 'a < b' }],
-  ],
-  [
-    'a spread of the args',
-    `import { spread } from '@open-wc/lit-helpers';
-     export const Primary = (args) => html\`<x-card \${spread(args)}></x-card>\`;`,
-    [
-      { label: 'Hi', open: true },
-      { label: HOSTILE, count: 0, active: false, items: [1, 2] },
-      { '.items': ['a'], '?open': 1, label: null },
+      [{}, { label: 'Hi', size: 'l', lang: 'en' }, { label: HOSTILE, size: 7, lang: false }],
     ],
-  ],
-  [
-    'a spread of the args as properties, with an entry written over them',
-    `import { spreadProps } from '@open-wc/lit-helpers';
+    [
+      'an arg as the text of a style',
+      `export const Primary = (args) => html\`<style>\${args.css}</style><x-card>\${args.label}</x-card>\`;`,
+      [{}, { css: 'x-card > b { color: red }', label: 'a < b' }],
+    ],
+    [
+      'a spread of the args',
+      `import { spread } from '@open-wc/lit-helpers';
+     export const Primary = (args) => html\`<x-card \${spread(args)}></x-card>\`;`,
+      [
+        { label: 'Hi', open: true },
+        { label: HOSTILE, count: 0, active: false, items: [1, 2] },
+        { '.items': ['a'], '?open': 1, label: null },
+      ],
+    ],
+    [
+      'a spread of the args as properties, with an entry written over them',
+      `import { spreadProps } from '@open-wc/lit-helpers';
      export const Primary = (args) => {
        const props = { ...args, size: 'l' };
        return html\`<x-card label="Written" \${spreadProps(props)}></x-card>\`;
      };`,
-    [
-      { open: true, active: false },
-      { items: [1], isOpen: true, size: 's', count: 2 },
+      [
+        { open: true, active: false },
+        { items: [1], isOpen: true, size: 's', count: 2, label: 'Set' },
+      ],
     ],
-    { unprintable: [{ label: 'Set' }] },
-  ],
-  [
-    'a copy of the args with an entry deleted and others assigned',
-    `const Card = (props) => html\`<x-card title=\${ifDefined(props.label)} size=\${ifDefined(props.size)} ?open=\${!!props.open}></x-card>\`;
+    [
+      'a helper of the project that takes the args',
+      `const renderSlots = (args) => args.label ? html\`<b slot="title">\${args.label}</b>\` : nothing;
+     export const Primary = (args) => html\`<x-card \${spread(args)}>\${renderSlots(args)}</x-card>\`;`,
+      [{ label: 'Hi', count: 1 }, {}],
+      { unprintable: [{ label: () => 'Hi' }] },
+    ],
+    [
+      'a copy of the args with an entry deleted and others assigned',
+      `const Card = (props) => html\`<x-card title=\${ifDefined(props.label)} size=\${ifDefined(props.size)} ?open=\${!!props.open}></x-card>\`;
      export const Primary = (args) => {
        const copy = { ...args };
        delete copy.size;
        return Card(Object.assign({}, copy, { label: args.title }));
      };`,
-    [{}, { title: 'T', size: 'l', open: 1 }, { title: HOSTILE, open: 0 }],
-  ],
-];
+      [{}, { title: 'T', size: 'l', open: 1 }, { title: HOSTILE, open: 0 }],
+    ],
+  ];
 
 // The elements with their attributes in name order, as lit sets a bound one after the written ones,
 // and the properties of an `x-card`, and the text between them as one, as lit renders each binding
@@ -317,15 +321,17 @@ describe('litTemplate', () => {
     const template =
       path.kind === 'resolved'
         ? litTemplate(
-            path.path.node,
+            path.path,
             templateModule({ program: csf._file.path, filePath: '' }, undefined),
-            { tag: 'x-card', declaration, args: options?.set }
+            { tag: 'x-card', declaration }
           )?.template
         : undefined;
     expect(template).toBeDefined();
 
-    // A body that does more than return html is the snippet as a function body.
+    // A body that does more than return html is the snippet as a function body, and a render that
+    // returns no lit template as written the code it returns.
     const body = /^\s*return\b/m.test(template!);
+    const returnsCode = !body && !/^(<|\$\{)/.test(template!);
     const scope = {
       html,
       nothing,
@@ -340,7 +346,11 @@ describe('litTemplate', () => {
     };
     for (const args of argsList) {
       const filled = fillTemplate(template!, args);
-      const snippet = body ? `(() => {\n${filled}\n})()` : `html\`${filled}\``;
+      const snippet = body
+        ? `(() => {\n${filled}\n})()`
+        : returnsCode
+          ? filled
+          : `html\`${filled}\``;
       // The filled template names what the story file declares, so it is run in the same scope.
       const run = new Function(
         ...Object.keys(scope),
@@ -353,6 +363,27 @@ describe('litTemplate', () => {
     for (const args of options?.unprintable ?? []) {
       expect(() => fillTemplate(template!, args)).toThrow(UnprintableArgError);
     }
+  });
+});
+
+describe('litTemplate of a story that writes to its args', () => {
+  it.each([
+    `(args) => { args.label = 'X'; return html\`<b>\${args.label}</b>\`; }`,
+    `(args) => { const _ = (args.label = 'X'); return html\`<b>\${args.label}</b>\`; }`,
+    `(args) => { const a = args; a.label = 'X'; return html\`<b>\${args.label}</b>\`; }`,
+    `(args) => { const a = args; Object.assign(a, { label: 'X' }); return html\`<b>\${args.label}</b>\`; }`,
+    `(args) => { const list = args.items; list.push('x'); return html\`<b>\${args.items}</b>\`; }`,
+    `(args) => html\`<b>\${args.items.sort()}</b>\``,
+    `({ label, ...rest }) => { rest.count = 9; return html\`<b>\${label}</b>\`; }`,
+  ])('has none for %s', (render) => {
+    const code = `import { html } from 'lit';\nexport default { title: 'T' };\nexport const Primary = ${render};`;
+    const csf = loadCsf(code, { makeTitle: () => 'T' });
+    const path = resolveEffectiveRender(csf.parse(), 'Primary');
+    expect(path.kind).toBe('resolved');
+    const module = templateModule({ program: csf._file.path, filePath: '' }, undefined);
+    expect(
+      path.kind === 'resolved' && litTemplate(path.path, module, { tag: 'x-card' })
+    ).toBeUndefined();
   });
 });
 
@@ -371,11 +402,10 @@ describe('argsTemplate', () => {
   it.each<Args>([
     { label: 'Hi', count: 0, active: false },
     { isOpen: true },
-    { 'is-open': true },
     { items: [1, 'a'], '--gap': '2px' },
     { 'default-slot': '<b>Body</b>', 'title-slot': 'Title' },
     { 'panel-part': 'color: red;', 'busy-state': 'outline: none;' },
-    { other: 'x', label: HOSTILE },
+    { other: 'x', label: HOSTILE, theme: 'dark' },
   ])('fills to an element set as the story sets it with %j', (args) => {
     const filled = fillTemplate(template, args);
     const container = document.createElement('div');
@@ -385,20 +415,24 @@ describe('argsTemplate', () => {
     // The render sets a field as a property, which the snippet sets with its attribute.
     expect(properties(written), filled).toEqual(properties(element as XCard));
     expect(written.innerHTML.replace(/<!--.*?-->/g, ''), filled).toEqual(element.innerHTML);
-    expect((written as unknown as Record<string, unknown>).other, filled).toEqual(
-      (element as unknown as Record<string, unknown>).other
-    );
+    for (const key of ['other', 'theme']) {
+      expect((written as unknown as Record<string, unknown>)[key], filled).toEqual(
+        (element as unknown as Record<string, unknown>)[key]
+      );
+    }
     for (const rule of rules) {
       expect(container.querySelector('style')?.textContent).toContain(rule.replace(/ }$/, ''));
     }
   });
 
-  it('prints a field and its attribute once, and throws while they set different values', () => {
-    expect(fillTemplate(template, { isOpen: true, 'is-open': true })).toBe(
-      '<x-card is-open></x-card>'
-    );
-    expect(() => fillTemplate(template, { isOpen: false, 'is-open': true })).toThrow(
+  it('prints the attribute of a field once, and has no snippet while a second arg sets it too', () => {
+    expect(fillTemplate(template, { isOpen: true })).toBe('<x-card is-open></x-card>');
+    expect(() => fillTemplate(template, { isOpen: true, 'is-open': true })).toThrow(
       UnprintableArgError
     );
+  });
+
+  it('sets an arg only the runtime has, such as one of the story argTypes, as a property', () => {
+    expect(fillTemplate(template, { theme: 'dark' })).toBe('<x-card .theme=${"dark"}></x-card>');
   });
 });

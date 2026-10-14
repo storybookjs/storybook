@@ -100,6 +100,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 })
 export class DemoComponent {
   label = 'Save';
+  formatter = (value) => value.trim();
 }",
       "template": "import { Component } from '@angular/core';
 import { LiveArgsComponent } from './live-args.component.ts';
@@ -111,9 +112,8 @@ import { LiveArgsComponent } from './live-args.component.ts';
 })
 export class DemoComponent {
   label = ⟦value label⟧;
+  formatter = (value) => value.trim();
 }",
-      "templateWarning": "Incomplete snippet: `value => value.trim()` could not be resolved statically.",
-      "warning": "Incomplete snippet: `value => value.trim()` could not be resolved statically.",
     },
   },
 }

@@ -2153,15 +2153,16 @@ describe('buildStoryDocsPayload', () => {
   });
 
   describe('template', () => {
-    const templateOf = async (story: string) => {
+    const storyOf = async (story: string, meta = '') => {
       const stories = await storiesOf(dedent`
         import { argsToTemplate } from '@storybook/angular-vite';
         import { ButtonComponent } from './button.component';
-        export default { title: 'Example/Button', component: ButtonComponent };
+        export default { title: 'Example/Button', component: ButtonComponent${meta} };
         ${story}
       `);
-      return [...stories.values()][0]!.template;
+      return [...stories.values()][0]!;
     };
+    const templateOf = async (story: string) => (await storyOf(story)).template;
     const fill = (template: string | undefined, args: Record<string, unknown>) =>
       extractHostComponentTemplate(fillTemplate(template!, args));
 
@@ -2332,6 +2333,47 @@ describe('buildStoryDocsPayload', () => {
       expect(template).toContain('  text = ⟦value label⟧;\n  size = 2;');
     });
 
+    it.each([
+      ['an input of the component', '', 'count'],
+      [
+        'an arg the meta declares an arg type for',
+        ", argTypes: { tone: { control: 'text' } }",
+        'tone',
+      ],
+    ])('declares an unset arg the markup reads where it is %s', async (_, meta, name) => {
+      const story = await storyOf(
+        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args, template: '<sb-button [label]="label" [count]="${name}" />' }) };`,
+        meta
+      );
+      expect(story.snippet).toContain(`  label = 'Go';\n  ${name} = undefined;\n}`);
+      expect(story.warning).toBeUndefined();
+      expect(fillTemplate(story.template!, { label: 'Go', [name]: 3 })).toContain(`  ${name} = 3;`);
+    });
+
+    it('warns about a name the markup reads that the story never declares, and declares none', async () => {
+      const story = await storyOf(
+        `export const S = { args: { label: 'Go' }, render: (args) => ({ props: args, template: '<sb-button [label]="label" [count]="other" />' }) };`
+      );
+      const warning =
+        'Incomplete snippet: `other` could not be provided, since the story declares no such arg.';
+      expect(story.snippet).toContain("export class DemoComponent {\n  label = 'Go';\n}");
+      expect(story.warning).toBe(warning);
+      expect(story.templateWarning).toBe(warning);
+      expect(fillTemplate(story.template!, { label: 'Go' })).toBe(story.snippet);
+    });
+
+    it('shares one object two props hold between their fields', async () => {
+      const story = await storyOf(
+        `export const S = { args: { config: { a: 1 }, label: 'Go' }, render: (args) => ({ props: { a: args.config, b: args.config, c: args.label, d: args.label }, template: '<sb-button [label]="a === b" [count]="c + d" />' }) };`
+      );
+      expect(story.snippet).toContain(
+        "export class DemoComponent {\n  a = { a: 1 };\n  b = this.a;\n  c = 'Go';\n  d = 'Go';\n}"
+      );
+      expect(fillTemplate(story.template!, { config: { a: 2 }, label: 'Go' })).toContain(
+        '  a = { a: 2 };\n  b = this.a;'
+      );
+    });
+
     it('declares a field for an arg the story leaves unset', async () => {
       const template = await templateOf(
         `export const S = { template: '<sb-button [label]="label" />' };`
@@ -2340,7 +2382,7 @@ describe('buildStoryDocsPayload', () => {
       expect(fillTemplate(template!, { label: 'Go' })).toContain("  label = 'Go';");
     });
 
-    it('leaves a function to the snippet, as no control sets one', async () => {
+    it('declares a function the story writes inline as a fixed field, as no control sets one', async () => {
       const template = await templateOf(dedent`
         export const S = {
           args: { label: 'Go', format: (value) => value.trim() },
@@ -2350,7 +2392,22 @@ describe('buildStoryDocsPayload', () => {
           }),
         };
       `);
-      expect(template).toContain('export class DemoComponent {\n  label = ⟦value label⟧;\n}');
+      expect(template).toContain(
+        'export class DemoComponent {\n  label = ⟦value label⟧;\n  format = (value) => value.trim();\n}'
+      );
+    });
+
+    it('declares neither a function that reads `this` nor an imported one, and warns', async () => {
+      const story = await storyOf(dedent`
+        import { shout } from './helpers';
+        export const S = {
+          args: { label: 'Go', a: function () { return this.x; }, b: shout },
+          render: (args) => ({ props: args, template: '<sb-button [label]="a(label)" [count]="b" />' }),
+        };
+      `);
+      expect(story.snippet).toContain("export class DemoComponent {\n  label = 'Go';\n}");
+      expect(story.warning).toContain('`shout` could not be resolved');
+      expect(story.warning).toContain('this.x');
     });
 
     it('declares an arg the story writes as code with that code, and fills it with the value', async () => {
@@ -2637,6 +2694,30 @@ describe('buildStoryDocsPayload', () => {
         `export const S = { args: { items: [1] }, render: ({ items, ...rest }) => { if (items) items.push(2); return { props: { items, ...rest } }; } };`,
       ],
       [
+        'markup next to an Object.assign onto an alias of the args',
+        `export const S = { args: { label: 'Go' }, render: (args) => { const a = args; Object.assign(a, { label: 'X' }); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
+      ],
+      [
+        'markup next to a call that declares a local from an alias of the args',
+        `export const S = { args: { label: 'Go' }, render: (args) => { const a = args; const x = mutate(a); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
+      ],
+      [
+        'markup next to a push onto an alias of an arg',
+        `export const S = { args: { items: [1] }, render: (args) => { const list = args.items; const n = list.push(2); return { props: args, template: '<sb-button [count]="items.length" />' }; } };`,
+      ],
+      [
+        'markup next to a push onto an arg the body destructures',
+        `export const S = { args: { items: [1] }, render: (args) => { const { items } = args; const n = items.push(2); return { props: args, template: '<sb-button [count]="items.length" />' }; } };`,
+      ],
+      [
+        'markup next to a call a rest of the args is handed to',
+        `export const S = { args: { label: 'Go' }, render: (args) => { const { label, ...rest } = args; const x = mutate(rest); return { props: args, template: '<sb-button [label]="label" />' }; } };`,
+      ],
+      [
+        'markup next to a callback that writes to the elements of an arg',
+        `export const S = { args: { items: [{ a: 1 }] }, render: (args) => { const x = args.items.forEach((item) => { item.a = 2; }); return { props: args, template: '<sb-button [count]="items[0].a" />' }; } };`,
+      ],
+      [
         'a render that changes the object a prop holds',
         `export const S = { args: { label: 'Go' }, render: (args) => { const control = new FormControl(args.label); control.disable(); return { props: { control }, template: '<sb-button [label]="control.value" />' }; } };`,
       ],
@@ -2656,6 +2737,11 @@ describe('buildStoryDocsPayload', () => {
       ['reads them', `const x = JSON.stringify(args);`],
       ['copies them', `const x = Object.assign({}, args);`],
       ['passes an arg of them on', `const x = new Wrapper(args.label);`],
+      ['reads an alias of them', `const a = args; const n = a.label.length + format(a.label);`],
+      [
+        'changes a copy of an arg',
+        `const list = args.items.map((i) => i); const n = list.push(1);`,
+      ],
     ])('is kept for a render that hands its args to a call that only %s', async (_, statement) => {
       expect(
         await templateOf(

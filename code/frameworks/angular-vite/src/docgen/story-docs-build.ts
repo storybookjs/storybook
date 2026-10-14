@@ -29,7 +29,7 @@ import {
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, RenderedProps, StoryShape } from './story-docs-markup.ts';
-import { renderedProps, sourceOf, userTemplate } from './story-docs-markup.ts';
+import { keyNameOf, renderedProps, sourceOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { PropCode } from './story-docs-prop-code.ts';
@@ -315,10 +315,15 @@ const renderStorySnippet = async (
     ]);
     const read = [...referencedNames].filter((name) => !notRead.has(name));
     const declared = new Set(hostArgs.fields.map(({ name }) => name));
+    // An arg the story leaves unset is one a control can set: one it declares an arg type for, or an
+    // input of the component. Any other name is one the story may never provide, and is warned about.
+    const known = new Set([...snippetMeta.inputs, ...argTypeNames(shape)]);
     const unset = read.flatMap((name): HostField[] => {
       const arg = declared.has(name) || !props ? undefined : heldArg(props, name);
       const written = arg === undefined ? undefined : shape.args[arg];
-      return arg === undefined || (written && isFunctionValue(written))
+      return arg === undefined ||
+        (written && isFunctionValue(written)) ||
+        (!(arg in shape.args) && !known.has(arg))
         ? []
         : [{ name, value: 'undefined', arg }];
     });
@@ -339,10 +344,12 @@ const renderStorySnippet = async (
       computedArgs(hostArgs.fields)
     );
     const rendered = withWarnings(
-      host(formatTemplateMarkup(analysis.markup), false, boundOutputs, [
-        ...hostArgs.fields,
-        ...unsetArgs,
-      ]),
+      host(
+        formatTemplateMarkup(analysis.markup),
+        false,
+        boundOutputs,
+        sharingArgs([...hostArgs.fields, ...unsetArgs], shape, props)
+      ),
       unresolvedWarning([...configUnresolved, ...hostArgs.unresolved.map(({ source }) => source)]),
       templateAnalysisWarning(analysis),
       unprovided,
@@ -372,7 +379,7 @@ const renderStorySnippet = async (
       }
     }
     const heldArgs: string[] = [];
-    const holeFields = [...hostArgs.fields, ...unset].map((field) => {
+    const holeFields = sharingArgs([...hostArgs.fields, ...unset], shape, props).map((field) => {
       const fallback = fallbacks.get(field.name);
       if (fallback?.code !== undefined) {
         heldArgs.push(fallback.arg);
@@ -623,6 +630,10 @@ const referencedArgFields = (
       // A host field is TypeScript, which can hold what the story writes, such as a `Date`.
       provided.push(name);
       fields.push({ name, value: argFieldValue(node), ...(arg === undefined ? {} : { arg }) });
+    } else if (fromArg && isSelfContained(node) && !readsThis(node)) {
+      // A function the story writes inline is code no control sets, so the field holds it as is.
+      provided.push(name);
+      fields.push({ name, value: argFieldValue(node) });
     } else if (fromArg) {
       unresolved.push({ name, source: sourceOf(node) });
     }
@@ -701,6 +712,52 @@ const inArgsOrder = (names: readonly string[], shape: StoryShape) => {
   };
   return [...names].sort((left, right) => position(left) - position(right));
 };
+
+// Names the props hold one arg under hold one object, so a field after the first shares the
+// first's value. An arg the story sets to a primitive is copied instead, which reads the same.
+const sharingArgs = (
+  fields: readonly HostField[],
+  shape: StoryShape,
+  props: RenderedProps | undefined
+): HostField[] => {
+  const first = new Map<string, string>();
+  return fields.map((field) => {
+    const prop = props ? props(field.name) : { arg: field.name };
+    const arg = field.computed ? undefined : (field.arg ?? prop?.arg);
+    const value = arg === undefined ? undefined : (shape.args[arg] ?? prop?.code);
+    if (arg === undefined || (value && isPrimitiveValue(value))) {
+      return field;
+    }
+    const owner = first.get(arg);
+    if (owner === undefined) {
+      first.set(arg, field.name);
+      return field;
+    }
+    return { name: field.name, value: `this.${owner}` };
+  });
+};
+
+const isPrimitiveValue = (node: t.Node): boolean => {
+  const unwrapped = unwrapExpression(node);
+  return (
+    (t.isLiteral(unwrapped) && !t.isRegExpLiteral(unwrapped)) ||
+    (t.isUnaryExpression(unwrapped) && t.isNumericLiteral(unwrapped.argument))
+  );
+};
+
+// The args the story and its meta declare an arg type for, as far as their `argTypes` are written
+// out as object literals.
+const argTypeNames = (shape: StoryShape): string[] =>
+  [shape.members, shape.metaMembers].flatMap(({ properties }) => {
+    const argTypes = properties.argTypes && unwrapExpression(properties.argTypes);
+    return t.isObjectExpression(argTypes)
+      ? argTypes.properties.flatMap((property) =>
+          (t.isObjectProperty(property) || t.isObjectMethod(property)) && !property.computed
+            ? (keyNameOf(property) ?? [])
+            : []
+        )
+      : [];
+  });
 
 // The arg a prop holds whatever the args are, so a hole can print it.
 const heldArg = (props: RenderedProps, name: string): string | undefined => {
@@ -813,6 +870,15 @@ const mayHoldFunction = (node: t.Node, enums: AngularComponentSnippetMeta['enums
 const isFunctionValue = (node: t.Node): boolean => {
   const unwrapped = unwrapExpression(node);
   return t.isFunction(unwrapped);
+};
+
+// A host field's `this` is the host component, where the story's code had its own.
+const readsThis = (node: t.Node): boolean => {
+  let found = false;
+  t.traverse(node, (child) => {
+    found ||= t.isThisExpression(child);
+  });
+  return found;
 };
 
 const isUndefinedValue = (node: t.Node): boolean => {

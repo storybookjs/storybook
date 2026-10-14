@@ -706,26 +706,113 @@ const handsArgsOn = (fn: t.Function, scope: FunctionScope): boolean =>
       readsAny(statement, new Set([...scope.parameterNames, ...scope.argBindings.keys()]))
   );
 
-// Whether the body may change an arg wherever it reads one: it passes the args object to a call
-// not known to only read it, or writes to an arg through a call, a property or an array method.
+// Whether the body may change an arg wherever it reads one, directly or through a local that holds
+// it: it passes the args object to a call not known to only read it, or writes to an arg through
+// a call, a property or an array method.
 const writesArgs = (fn: t.Function, scope: FunctionScope): boolean => {
+  const holders = argHolders(fn, scope);
   let found = false;
   t.traverse(fn.body, (node, ancestors) => {
     const parent = ancestors.at(-1);
     if (
       !found &&
       t.isIdentifier(node) &&
-      scope.parameterNames.has(node.name) &&
+      holders.has(node.name) &&
       parent !== undefined &&
       t.isReferenced(node, parent.node, ancestors.at(-2)?.node)
     ) {
       found = mayChange(
         [...ancestors.map((ancestor) => ancestor.node), node],
-        scope.argsExpansions.has(node.name)
+        holders.get(node.name)!
       );
     }
   });
   return found;
+};
+
+/**
+ * The names that hold the args or an arg's value, each mapped to whether it holds the whole args
+ * object: the parameters, and the locals and callback parameters taken from them, such as
+ * `const a = args`, `const list = args.items`, `const { items } = args` or the `item` of
+ * `args.items.forEach((item) => …)`. Names are matched without scoping, which can only add holders.
+ */
+const argHolders = (fn: t.Function, scope: FunctionScope): ReadonlyMap<string, boolean> => {
+  const holders = new Map<string, boolean>();
+  scope.parameterNames.forEach((name) => holders.set(name, scope.argsExpansions.has(name)));
+  const add = (name: string, whole: boolean) => {
+    if (!holders.has(name) || (whole && !holders.get(name))) {
+      holders.set(name, whole);
+      grew = true;
+    }
+  };
+  const hold = (pattern: t.Node, whole: boolean) => {
+    if (t.isIdentifier(pattern)) {
+      add(pattern.name, whole);
+      return;
+    }
+    const names = new Set<string>();
+    collectPatternNames(pattern, names);
+    // A rest element of the args object is a copy of it, whose values are the args' own.
+    const rest =
+      whole && t.isObjectPattern(pattern)
+        ? pattern.properties.find((property) => t.isRestElement(property))
+        : undefined;
+    names.forEach((name) =>
+      add(name, t.isRestElement(rest) && t.isIdentifier(rest.argument, { name }))
+    );
+  };
+  let grew = true;
+  while (grew) {
+    grew = false;
+    t.traverse(fn.body, (node) => {
+      if (t.isVariableDeclarator(node) && node.init) {
+        const whole = heldValue(node.init, holders);
+        if (whole !== undefined) {
+          hold(node.id, whole);
+        }
+      } else if (t.isAssignmentExpression(node) && node.operator === '=') {
+        const whole = heldValue(node.right, holders);
+        if (whole !== undefined) {
+          hold(node.left, whole);
+        }
+      } else if (
+        (t.isCallExpression(node) || t.isOptionalCallExpression(node)) &&
+        (t.isMemberExpression(node.callee) || t.isOptionalMemberExpression(node.callee)) &&
+        heldValue(node.callee.object, holders) !== undefined
+      ) {
+        // A callback a held value calls back with its own elements, such as `forEach` or `map`.
+        for (const argument of node.arguments) {
+          if (t.isFunction(argument)) {
+            argument.params.forEach((param) => hold(param, false));
+          }
+        }
+      }
+    });
+  }
+  return holders;
+};
+
+// Whether an expression evaluates to a value a holder holds, and if so whether that value is the
+// whole args object; `undefined` when it holds none.
+const heldValue = (node: t.Node, holders: ReadonlyMap<string, boolean>): boolean | undefined => {
+  const unwrapped = unwrapExpression(node as t.Expression);
+  if (t.isIdentifier(unwrapped)) {
+    return holders.get(unwrapped.name);
+  }
+  if (t.isMemberExpression(unwrapped) || t.isOptionalMemberExpression(unwrapped)) {
+    return heldValue(unwrapped.object, holders) === undefined ? undefined : false;
+  }
+  const options = t.isLogicalExpression(unwrapped)
+    ? [unwrapped.left, unwrapped.right]
+    : t.isConditionalExpression(unwrapped)
+      ? [unwrapped.consequent, unwrapped.alternate]
+      : t.isSequenceExpression(unwrapped)
+        ? [unwrapped.expressions.at(-1)!]
+        : t.isAssignmentExpression(unwrapped)
+          ? [unwrapped.right]
+          : [];
+  const held = options.map((option) => heldValue(option, holders));
+  return held.includes(true) ? true : held.includes(false) ? false : undefined;
 };
 
 // Whether the code around the last node of `chain` may change the object it is. A `whole` args

@@ -49,6 +49,10 @@ export const resolvePackageDir = (
 let typescriptLoaderRegistration: Promise<void> | null = null;
 
 function registerTypescriptLoader() {
+  // Jest forbids module hook registration inside its sandbox (it compiles TS itself).
+  if (process.env.JEST_WORKER_ID) {
+    return Promise.resolve();
+  }
   if (!typescriptLoaderRegistration) {
     typescriptLoaderRegistration = (async () => {
       if (semver.gte(process.versions.node, '26.0.0')) {

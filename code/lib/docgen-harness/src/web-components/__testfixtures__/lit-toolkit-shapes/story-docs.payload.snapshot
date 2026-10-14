@@ -10,8 +10,20 @@
       },
       "id": "webcomponentsfixtures-lit-toolkit-shapes--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<lit-toolkit-shapes .size=${"small"} .level=${3} .tags=${['b']} .label=${"Default render"} .onToolkitResize=${() => {}}></lit-toolkit-shapes>",
-      "template": "⟦style lit-toolkit-shapes ::part(base)=base-part :state(active)=active-state⟧<lit-toolkit-shapes⟦css --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap⟧ ⟦prop size size ?⟧ ⟦prop level level ?⟧ ⟦prop tags tags ?⟧ ⟦prop label label ?⟧ ⟦prop onToolkitResize onToolkitResize ?⟧ ⟦prop computed computed ?⟧ ⟦prop version version ?⟧ ⟦prop pressed pressed ?⟧ ⟦prop oldSize oldSize ?⟧ ⟦prop onSelect onSelect ?⟧ ⟦prop target target ?⟧ ⟦prop when when ?⟧ ⟦attr old-size old-size⟧>⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>",
+      "snippet": "<lit-toolkit-shapes size="small" level="3" tags=${['b']} label="Default render"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+      "template": "⟦style lit-toolkit-shapes ::part(base)=base-part :state(active)=active-state⟧<lit-toolkit-shapes ⟦attr size size field⟧ ⟦attr level level field⟧ ⟦attr tags tags field⟧ ⟦attr label label field⟧ ⟦attr old-size oldSize field⟧ ⟦attr target target field⟧ ⟦attr when when field⟧⟦css --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap⟧>⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
       "argCode": {

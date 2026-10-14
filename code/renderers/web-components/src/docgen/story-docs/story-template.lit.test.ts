@@ -16,11 +16,8 @@ import { when } from 'lit/directives/when.js';
 
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
-import { bindArgs } from '../../bind-args.ts';
 import { fillTemplate } from '../../docs/fill-template.ts';
-import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
-import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
-import { argsTemplate, litTemplate } from './story-template.ts';
+import { litTemplate } from './story-template.ts';
 
 class XCard extends LitElement {
   static override properties = {
@@ -50,30 +47,6 @@ class XCard extends LitElement {
   }
 }
 customElements.define('x-card', XCard);
-
-const declaration: ManifestDeclaration = {
-  kind: 'class',
-  name: 'XCard',
-  customElement: true,
-  tagName: 'x-card',
-  attributes: [
-    { name: 'label', fieldName: 'label' },
-    { name: 'count', fieldName: 'count' },
-    { name: 'is-open', fieldName: 'isOpen' },
-    { name: 'active', fieldName: 'active' },
-  ],
-  members: [
-    { kind: 'field', name: 'label', attribute: 'label' },
-    { kind: 'field', name: 'count', attribute: 'count' },
-    { kind: 'field', name: 'isOpen', attribute: 'is-open' },
-    { kind: 'field', name: 'active', attribute: 'active', default: 'true' },
-    { kind: 'field', name: 'items', default: '[]' },
-  ],
-  slots: [{ name: '' }, { name: 'title' }],
-  cssParts: [{ name: 'panel' }],
-  cssStates: [{ name: 'busy' }],
-  cssProperties: [{ name: '--gap' }],
-} as ManifestDeclaration;
 
 // `@open-wc/lit-helpers`, which this package does not depend on, as it sets an object on its first
 // render: `spreadProps` each key as a property, and `spread` each key as an attribute, a `.key` as a
@@ -386,68 +359,5 @@ describe('litTemplate of a story that writes to its args', () => {
         ["a"].push('x');
         return html\`<x-card title="Go" .items=\${["a"]}>1</x-card>\`;"
       `);
-  });
-});
-
-describe('argsTemplate', () => {
-  const argTypes = mapArgTypes(declaration);
-  const template = argsTemplate('x-card', ['other'], argTypes, declaration)!;
-
-  // Storybook's render sets the args on the element; a part or state style, which it scopes to the
-  // element, is a rule of the snippet's `<style>`.
-  const story = (args: Args) => {
-    const element = document.createElement('x-card');
-    const rules = bindArgs(element, args);
-    return { element, rules };
-  };
-
-  it.each<Args>([
-    { label: 'Hi', count: 0, active: false },
-    { isOpen: true },
-    { items: [1, 'a'], '--gap': '2px' },
-    { 'default-slot': '<b>Body</b>', 'title-slot': 'Title' },
-    { 'panel-part': 'color: red;', 'busy-state': 'outline: none;' },
-    { other: 'x', label: HOSTILE, 'is-open': true },
-    { 'title-slot': "b'c`d${e}\\f", '--gap': 'a`b\\c$d', 'busy-state': 'content: "`${a}`"' },
-  ])('fills to an element set as the story sets it with %j', (args) => {
-    const filled = fillTemplate(template, args);
-    const container = document.createElement('div');
-    render(new Function('html', `return html\`${filled}\`;`)(html), container);
-    const written = container.querySelector('x-card') as XCard;
-    const { element, rules } = story(args);
-    expect(outline(written), filled).toEqual(outline(element));
-    expect((written as unknown as Args).other, filled).toEqual((element as unknown as Args).other);
-    for (const rule of rules) {
-      expect(container.querySelector('style')?.textContent).toContain(rule.replace(/ }$/, ''));
-    }
-  });
-
-  it('sets a field as its property, an attribute as that attribute, and leaves an unset one out', () => {
-    expect(fillTemplate(template, { isOpen: true, 'is-open': false, other: 1 })).toBe(
-      '<x-card .other=${1} .isOpen=${true}></x-card>'
-    );
-    expect(fillTemplate(template, { 'is-open': true, isOpen: undefined })).toBe(
-      '<x-card is-open></x-card>'
-    );
-  });
-
-  it('writes a listener the story writes, and leaves out one only argTypes name', () => {
-    const listened = argsTemplate('x-card', ['close-event'], argTypes, declaration, [
-      'close-event',
-    ]);
-    expect(listened).toContain('@close=${⟦value close-event⟧}');
-    expect(template).not.toContain('event');
-  });
-
-  it('binds a declared attribute whose name ends like a slot as an attribute', () => {
-    const slotted = argsTemplate('x-card', ['has-slot'], argTypes, {
-      ...declaration,
-      attributes: [...(declaration.attributes ?? []), { name: 'has-slot' }],
-    })!;
-    expect(fillTemplate(slotted, { 'has-slot': true })).toBe('<x-card has-slot></x-card>');
-  });
-
-  it('has no template for an arg whose name lit cannot bind', () => {
-    expect(argsTemplate('x-card', ['a b'], argTypes, declaration)).toBeUndefined();
   });
 });

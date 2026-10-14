@@ -11,9 +11,11 @@
       "template": "<meta-render label="⟦quoted label⟧"></meta-render>",
     },
     "webcomponentsstorydocs-meta-render--dom-override": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-meta-render--dom-override",
       "name": "Dom Override",
       "snippet": "<meta-render label="dom"></meta-render>",
+      "template": "<meta-render ⟦attr label label field⟧></meta-render>",
       "warning": "Incomplete snippet: `() => document.createElement('meta-render')` could not be resolved statically.",
     },
     "webcomponentsstorydocs-meta-render--from-meta": {

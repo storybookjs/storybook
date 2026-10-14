@@ -10,15 +10,17 @@ import {
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
-// Fills a template from `story-template.ts`; the server writes each binding, and this prints the
-// value in it. Every Web Components snippet is lit code, the html of a lit template or code with
-// lit templates in it, so any text a hole prints is also escaped for a template literal.
+// Fills a template from `story-template.ts` or `build-story-docs.ts`; the server writes each
+// binding, and this prints the value in it. Every Web Components snippet is lit code, the html of a
+// lit template or code with lit templates in it, so any text a hole prints is also escaped for a
+// template literal.
 //
-// Besides the shared holes, `⟦attr name arg⟧` is an attribute as Storybook's render sets it, left
-// out while unset or `false`; `⟦bool name arg⟧` and `⟦prop name arg⟧` are lit's `?name` and `.name`
-// bindings; `⟦text arg⟧` is html text, `⟦quoted arg⟧` text in a double-quoted attribute value
-// (`⟦quoted arg '⟧` single-quoted) and `⟦raw arg⟧` the text of a `<style>` or `<script>`. A value
-// that is no text, such as the code the story writes an arg with, is a binding there instead.
+// Besides the shared holes, `⟦attr name arg⟧` is an attribute, left out while unset, `false` or
+// empty, but for an empty one a field reflects (`⟦attr name arg field⟧`); `⟦bool name arg⟧` and
+// `⟦prop name arg⟧` are lit's `?name` and `.name` bindings; `⟦text arg⟧` is html text,
+// `⟦quoted arg⟧` text in a double-quoted attribute value (`⟦quoted arg '⟧` single-quoted) and
+// `⟦raw arg⟧` the text of a `<style>` or `<script>`. A value that is no text, such as the code the
+// story writes an arg with, is a binding there instead.
 // `⟦slot name arg⟧` is the html of a slot, `⟦css name=arg…⟧` the custom properties of a `style`
 // attribute, with the space before it, and `⟦style tag selector=arg…⟧` the `<style>` of part and
 // state args. `⟦args -name…⟧` is the args as an object, without those its `-name` words name.
@@ -49,22 +51,27 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
         if (!primitive) {
           return binding(`${name}=`);
         }
-        return isEmpty(value) || value === false
-          ? ''
-          : value === true
-            ? name
-            : `${name}="${text(arg, value, ESCAPES.quoted)}"`;
+        // An attribute a field reflects, `⟦attr name arg field⟧`, keeps an empty string.
+        return value === '' && quote === 'field'
+          ? `${name}=""`
+          : isEmpty(value) || value === false
+            ? ''
+            : value === true
+              ? name
+              : `${name}="${text(arg, value, ESCAPES.quoted)}"`;
       case 'bool':
         return !primitive ? binding(`?${name}=`) : value ? name : '';
       case 'prop':
         return binding(`.${name}=`);
-      case 'slot':
-        // Storybook's render parses html for a named slot to set `slot` on each element.
+      case 'slot': {
+        // The html of a named slot is the content of a span in it.
+        const html = text(arg, value, ESCAPES.raw);
         return isEmpty(value)
           ? ''
           : name === 'default'
-            ? text(arg, value, ESCAPES.raw)
-            : `<span slot="${name}">${/[<&]/.test(String(value)) ? fail(arg) : text(arg, value, ESCAPES.raw)}</span>`;
+            ? html
+            : `<span slot="${name}">${html}</span>`;
+      }
       default:
         return kind === 'operand' ? asOperand(literal(arg, value)) : literal(arg, value);
     }

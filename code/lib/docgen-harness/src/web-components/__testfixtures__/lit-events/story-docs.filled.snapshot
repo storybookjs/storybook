@@ -1,5 +1,12 @@
 {
-  "ArgsDefaultRender": "<lit-events .value=${"default event"} @my-change=${() => {}} @my-close=${() => {}}></lit-events>",
+  "ArgsDefaultRender": "<lit-events value="default event"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
   "DomNode": "const el = document.createElement('lit-events');
 el.setAttribute('value', String("changed"));
 el.addEventListener('my-change', (() => {}) as EventListener);

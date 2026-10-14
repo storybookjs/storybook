@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<stencil-props .value=${1} .max=${5} .variant=${"full"} .labelText=${"Default rating"}></stencil-props>",
+  "ArgsDefaultRender": "<stencil-props value="1" max="5" variant="full" aria-label-text="Default rating"></stencil-props>",
   "DomNode": "const el = document.createElement('stencil-props');
 el.setAttribute('value', String(3));
 el.setAttribute('max', String(5));

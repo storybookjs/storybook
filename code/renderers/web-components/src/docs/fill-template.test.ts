@@ -149,14 +149,14 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('prints a slot arg as html, and as text in a span for a named slot', () => {
+  it('prints a slot arg as html, in a span for a named slot', () => {
     const template = '<x-card>\n  ⟦slot default body⟧\n  ⟦slot title title⟧\n</x-card>';
     expect(fillTemplate(template, { body: '<b>`${a}`</b>', title: 'Hi' })).toBe(
       '<x-card>\n  <b>\\`\\${a}\\`</b>\n  <span slot="title">Hi</span>\n</x-card>'
     );
     expect(fillTemplate(template, { body: '', title: null })).toBe('<x-card>\n</x-card>');
-    expect(() => fillTemplate(template, { title: '<h3 slot="title">Hi</h3>' })).toThrow(
-      UnprintableArgError
+    expect(fillTemplate(template, { title: '<b>Hi</b> there' })).toBe(
+      '<x-card>\n  <span slot="title"><b>Hi</b> there</span>\n</x-card>'
     );
     expect(() => fillTemplate(template, { body: { a: 1 } })).toThrow(UnprintableArgError);
   });

@@ -1,4 +1,4 @@
 {
-  "Default": "<string-template .label=${"Default"}></string-template>",
+  "Default": "<string-template label="Default"></string-template>",
   "Untagged": "`<string-template label="${"Untagged"}" ?fake=${true}></string-template>`",
 }

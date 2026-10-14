@@ -18,21 +18,14 @@
       },
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
-      "snippet": "<csf-shapes .label=${"Meta"} .items=${itemsFixture}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `itemsFixture`.",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
-      "argCode": {
-        "label": "importedLabel",
-      },
       "id": "webcomponentsstorydocs-csf-shapes--imported-label",
       "name": "Imported Label",
-      "snippet": "<csf-shapes .label=${importedLabel}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
-      "templateWarning": "Incomplete snippet: names the snippet does not import or declare: `importedLabel`.",
-      "warning": "Incomplete snippet: names the snippet does not import or declare: `importedLabel`.",
+      "warning": "No static snippet: `importedLabel` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--listener": {
       "argCode": {
@@ -41,8 +34,20 @@
       },
       "id": "webcomponentsstorydocs-csf-shapes--listener",
       "name": "Listener",
-      "snippet": "<csf-shapes .label=${"Meta"} @shape-change=${() => {}} .onShapeChange=${() => {}}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ @shape-change=${⟦value shape-change-event⟧} ⟦prop onShapeChange onShapeChange ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
     },
     "webcomponentsstorydocs-csf-shapes--parts-and-css": {
       "argCode": {},
@@ -52,43 +57,45 @@
   csf-shapes::part(panel) { color: red; }
   csf-shapes:state(active) { outline: 1px solid; }
 </style>
-<csf-shapes style="--csf-shapes-accent: teal;" .label=${"Meta"}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+<csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--render-fallback": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--render-fallback",
       "name": "Render Fallback",
       "snippet": "<csf-shapes label="Fallback"></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--slots": {
+      "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--slots",
       "name": "Slots",
-      "snippet": "<csf-shapes label="Meta">
-  Body <b>text</b>
-  <button slot="actions">Go</button>
-</csf-shapes>",
+      "snippet": "<csf-shapes label="Meta">Body <b>text</b><span slot="actions"><button>Go</button></span></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--spread-args": {
       "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--spread-args",
       "name": "Spread Args",
-      "snippet": "<csf-shapes .label=${"Shared"} .count=${2}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ ⟦prop count count ?⟧ ⟦prop items items ?⟧ ⟦prop disabled disabled ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "snippet": "<csf-shapes label="Shared" count="2"></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--unknown-arg": {
       "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
       "name": "Unknown Arg",
-      "snippet": "<csf-shapes .label=${"Meta"} .nope=${1}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ ⟦prop nope nope ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧ ⟦prop disabled disabled ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
     },
     "webcomponentsstorydocs-csf-shapes--unset": {
       "argCode": {},
       "id": "webcomponentsstorydocs-csf-shapes--unset",
       "name": "Unset",
-      "snippet": "<csf-shapes .disabled=${true}></csf-shapes>",
-      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes⟦css --csf-shapes-accent=--csf-shapes-accent⟧ ⟦prop label label ?⟧ ⟦prop disabled disabled ?⟧ ⟦prop items items ?⟧ ⟦prop count count ?⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "snippet": "<csf-shapes disabled></csf-shapes>",
+      "template": "⟦style csf-shapes ::part(panel)=panel-part :state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr disabled disabled field⟧ ⟦attr count count field⟧⟦css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
   },
 }

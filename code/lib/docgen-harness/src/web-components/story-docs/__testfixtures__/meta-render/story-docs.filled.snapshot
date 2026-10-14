@@ -1,5 +1,6 @@
 {
   "Csf2Function": "<meta-render label="csf2"></meta-render>",
+  "DomOverride": "<meta-render label="dom"></meta-render>",
   "FromMeta": "<meta-render label="from-meta"></meta-render>",
   "Override": "<meta-render label="override" class="override"></meta-render>",
 }

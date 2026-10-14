@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<multi-beta .betaLabel=${"Default beta"}></multi-beta>",
+  "ArgsDefaultRender": "<multi-beta></multi-beta>",
   "DomNode": "const el = document.createElement('multi-beta');
 el.setAttribute('beta-label', String("Beta"));
 return el;",

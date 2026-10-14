@@ -8,11 +8,7 @@ import {
   hole,
   holeWord,
 } from 'storybook/internal/docs-tools';
-import type { StrictArgTypes } from 'storybook/internal/types';
 
-import { parseArgKey } from '../../arg-keys.ts';
-import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
-import { classifyArg } from './classify-args.ts';
 import { TEMPLATE_TAG_SOURCES } from './template-scope.ts';
 
 /**
@@ -43,59 +39,6 @@ interface Slot {
   end: number;
 }
 
-/**
- * The element of a story without a render, with each arg as Storybook's render (`bindArgs`) sets
- * it: a custom property in its `style`, a field as its property, an attribute the manifest declares
- * as that attribute, a slot as content, a part or state in a `<style>` before it, a listener the
- * story writes as a lit listener, and any other arg as a property. An unset property is left out,
- * as the render leaves out an arg that is not there. A listener or method the story does not write
- * gets no binding, as no control sets it. A story with an arg whose name lit cannot bind has no
- * template.
- */
-export function argsTemplate(
-  tag: string,
-  storyArgs: string[],
-  argTypes: StrictArgTypes,
-  declaration: ManifestDeclaration,
-  functions: string[] = []
-): string | undefined {
-  const fields = new Set(
-    declaration.members?.flatMap((member) => (member.kind === 'field' ? [member.name] : []))
-  );
-  const attributes = new Set(declaration.attributes?.map(({ name }) => name));
-  const [css, bindings, slots, styles]: string[][] = [[], [], [], []];
-  for (const arg of new Set([...storyArgs, ...Object.keys(argTypes)])) {
-    const { kind } = classifyArg(arg, functions.includes(arg), argTypes, declaration);
-    if (!storyArgs.includes(arg) && (kind === 'listener' || kind === 'method')) {
-      continue;
-    }
-    if (!NAME.test(arg)) {
-      return undefined;
-    }
-    // A declared attribute, such as `has-slot`, is no slot, event or style.
-    const parsed = attributes.has(arg) ? undefined : parseArgKey(arg);
-    const word = holeWord(arg);
-    if (parsed?.category === 'cssProperties') {
-      css.push(holeWord(`${arg}=${arg}`));
-    } else if (fields.has(arg) || (!parsed && !attributes.has(arg))) {
-      bindings.push(hole('prop', word, word, defaultWord('')));
-    } else if (!parsed) {
-      bindings.push(hole('attr', word, word));
-    } else if (parsed.category === 'slots') {
-      slots.push(hole('slot', holeWord(parsed.name), word));
-    } else if (parsed.category === 'events') {
-      bindings.push(`@${parsed.name}=\${${hole('value', word)}}`);
-    } else if (parsed.category !== 'methods') {
-      const selector = parsed.category === 'cssParts' ? '::part' : ':state';
-      styles.push(holeWord(`${selector}(${parsed.name})=${arg}`));
-    }
-  }
-  const style = styles.length > 0 ? hole('style', holeWord(tag), ...styles) : '';
-  const custom = css.length > 0 ? hole('css', ...css) : '';
-  const opened = [`<${tag}${custom}`, ...bindings].join(' ');
-  return `${style}${opened}>${slots.join('')}</${tag}>`;
-}
-
 /** Whether a name is declared by an import from lit, which a lit snippet has. */
 export const isLitImport = (declared: NodePath | undefined) =>
   !!declared?.parentPath?.isImportDeclaration() &&
@@ -106,8 +49,8 @@ const NAME = /^[^\s"'<>/=`$\\{}⟦⟧]+$/;
 
 /**
  * The story's render as written, with a hole wherever it reads an arg: the html when it returns a
- * lit template, else its code. It is `undefined` when the story reads its args in a way no hole
- * stands for, such as reading the story context.
+ * lit template, else its code. The story context is no arg, so a read of it stays as written. It
+ * is `undefined` when the story reads its args in a way no hole stands for.
  */
 export function litTemplate(
   render: RenderPath,
@@ -116,8 +59,8 @@ export function litTemplate(
   const program = render.findParent((path) => path.isProgram()) as NodePath<t.Program>;
   const { code } = (program.hub as unknown as { file: { code: string } }).file;
   const bindings = collectImportBindings(program);
-  const [param, context] = render.get('params');
-  if (!param || hasHoleBracket(code) || (context && readsAny(context))) {
+  const [param] = render.get('params');
+  if (!param || hasHoleBracket(code)) {
     return undefined;
   }
   const isLit = (tag: t.Node, scope: Scope) =>
@@ -216,11 +159,6 @@ function htmlSlots(quasi: t.TemplateLiteral, slots: Map<t.Node, Slot>): void {
     readHtml(state, after);
   }
 }
-
-const readsAny = (param: NodePath) =>
-  Object.keys(param.getBindingIdentifiers()).some(
-    (name) => param.scope.getBinding(name)?.referenced
-  );
 
 interface Found {
   edits: Edit[];

@@ -1,1 +1,8 @@
-<lit-events .value=${"default event"} @my-change=${() => {}} @my-close=${() => {}}></lit-events>
+<lit-events value="default event"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>

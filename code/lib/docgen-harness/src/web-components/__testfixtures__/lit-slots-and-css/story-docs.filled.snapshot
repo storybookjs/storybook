@@ -1,4 +1,8 @@
 {
+  "ArgsDefaultRender": "<style>
+  lit-slots-and-css::part(panel) { color: rebeccapurple; }
+</style>
+<lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">Body <b>text</b><span slot="actions"><button>Confirm</button></span></lit-slots-and-css>",
   "DomNode": "const el = document.createElement('lit-slots-and-css');
 el.setAttribute('heading', String("Projected"));
 const body = document.createElement('p');

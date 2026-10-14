@@ -1,1 +1,1 @@
-<lit-union-jsdoc .variant=${"ghost"} .oldLabel=${"Legacy"} .label=${"Default render"}></lit-union-jsdoc>
+<lit-union-jsdoc variant="ghost" old-label="Legacy" label="Default render"></lit-union-jsdoc>

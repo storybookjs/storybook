@@ -82,6 +82,15 @@ describe('pluginWebpackStats', () => {
     expect(stats.modules).toEqual([{ id: './iframe.html', name: './iframe.html', reasons: [] }]);
   });
 
+  it('lists an importer once when two ids normalize to the same name', () => {
+    const importers = getImporters(
+      { '/project/src/Button.stories.tsx': ['\0virtual:X', 'virtual:X'] },
+      '/virtual:X'
+    );
+
+    expect(importers).toEqual(['./src/Button.stories.tsx']);
+  });
+
   it('keeps the importers of a module that is parsed after its importer', () => {
     const importers = getImporters(
       {

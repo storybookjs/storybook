@@ -27,8 +27,6 @@ type WebpackStatsPluginOptions = {
 
 const ROLLUP_VIRTUAL_PREFIX = '\0';
 
-type StatsModule = Module & { reasons: Reason[] };
-
 function splitQuery(id: string): [path: string, query: string] {
   const queryIndex = id.indexOf('?');
   return queryIndex === -1 ? [id, ''] : [id.slice(0, queryIndex), id.slice(queryIndex)];
@@ -92,21 +90,24 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
 
     storybookGetStats() {
       const normalize = createNormalizer(workingDir, importersById.keys());
-      const modulesByName = new Map<string, StatsModule>();
+      const importerNamesByName = new Map<string, Set<string>>();
 
       for (const [id, importers] of importersById) {
         const name = normalize(id);
-        const module = modulesByName.get(name) ?? { id: name, name, reasons: [] };
+        const importerNames = importerNamesByName.get(name) ?? new Set<string>();
         for (const importer of importers) {
-          const moduleName = normalize(importer);
-          if (moduleName !== name) {
-            module.reasons.push({ moduleName });
-          }
+          importerNames.add(normalize(importer));
         }
-        modulesByName.set(name, module);
+        importerNames.delete(name);
+        importerNamesByName.set(name, importerNames);
       }
 
-      const stats = { modules: Array.from(modulesByName.values()) };
+      const modules: Module[] = Array.from(importerNamesByName, ([name, importerNames]) => ({
+        id: name,
+        name,
+        reasons: Array.from(importerNames, (moduleName) => ({ moduleName })),
+      }));
+      const stats = { modules };
       return { ...stats, toJson: () => stats };
     },
   };

@@ -796,3 +796,39 @@ describe('loadPreset', () => {
     `);
   });
 });
+
+describe('getPresets sequential module loading', () => {
+  it('does not import the next preset until the previous preset has fully resolved', async () => {
+    // Preset files may be CommonJS and synchronously `require()` Storybook's ESM
+    // entries (e.g. a CJS manager addon calling `require('storybook/manager-api')`).
+    // Node's require(esm) path cannot resolve a dependency that is still being
+    // loaded by a concurrent dynamic `import()` of the same graph, so preset
+    // modules must be imported strictly sequentially. If preset loading is ever
+    // parallelized again, CJS presets intermittently crash `storybook build` with
+    // `ERR_INTERNAL_ASSERTION: Cannot require() ES Module ... because it is not yet fully loaded`.
+    const importOrder: string[] = [];
+    let resolveFirstPreset: (value: Record<string, never>) => void;
+    const firstPresetLoaded = new Promise<Record<string, never>>((resolve) => {
+      resolveFirstPreset = resolve;
+    });
+
+    mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) => specifier);
+    mockedResolveUtils.importModule.mockImplementation((path: string) => {
+      importOrder.push(path);
+      return path === 'preset-first' ? firstPresetLoaded : Promise.resolve({});
+    });
+
+    const presetsPromise = getPresets(['preset-first', 'preset-second'], {
+      configDir: '/project/.storybook',
+    } as any);
+
+    // Flush pending microtasks: while the first preset's import is unresolved,
+    // the second preset must not even start importing.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(importOrder).toEqual(['preset-first']);
+
+    resolveFirstPreset!({});
+    await presetsPromise;
+    expect(importOrder).toEqual(['preset-first', 'preset-second']);
+  });
+});

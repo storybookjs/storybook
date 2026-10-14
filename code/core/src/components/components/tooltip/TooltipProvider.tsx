@@ -6,7 +6,11 @@ import { deprecate } from 'storybook/internal/client-logger';
 import { Focusable } from 'react-aria-components/Focusable';
 import { TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components/Tooltip';
 
-import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
+import {
+  type PopperPlacement,
+  convertToReactAriaPlacement,
+  usePopoverDismissal,
+} from '../shared/overlayHelpers.tsx';
 
 export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
@@ -62,6 +66,7 @@ const TooltipProvider = ({
 }: TooltipProviderProps) => {
   const placement = convertToReactAriaPlacement(placementProp);
   const child = React.Children.only(children);
+  const dismissalState = usePopoverDismissal();
 
   if (startOpen !== undefined) {
     deprecate('The `startOpen` prop is deprecated. Please use `defaultVisible` instead.');
@@ -70,10 +75,17 @@ const TooltipProvider = ({
   const [isOpen, setIsOpen] = useState(defaultVisible ?? startOpen ?? false);
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
+      if (isOpen && dismissalState?.suppressTooltipOnFocusRestore) {
+        // This open was triggered by React Aria restoring focus to the trigger right after an
+        // ancestor popover was dismissed with Escape. Opening the tooltip here would make the
+        // next Escape press dismiss the tooltip instead of reaching the shortcut layer.
+        dismissalState.suppressTooltipOnFocusRestore = false;
+        return;
+      }
       setIsOpen(isOpen);
       onVisibleChange?.(isOpen);
     },
-    [onVisibleChange]
+    [onVisibleChange, dismissalState]
   );
 
   return (

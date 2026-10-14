@@ -1,4 +1,11 @@
-import React, { type ButtonHTMLAttributes, type ReactNode, forwardRef, useState } from 'react';
+import React, {
+  type ButtonHTMLAttributes,
+  type ReactNode,
+  createContext,
+  forwardRef,
+  useContext,
+  useState,
+} from 'react';
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
@@ -23,6 +30,22 @@ export const POPPER_PLACEMENTS = [
 ] as const;
 
 export type PopperPlacement = (typeof POPPER_PLACEMENTS)[number];
+
+/**
+ * Communicates from PopoverProvider to the TooltipProviders nested under it. When a popover is
+ * dismissed with Escape, React Aria restores focus to the trigger element; without suppression
+ * that focus restore immediately re-opens the trigger's tooltip, and the tooltip then consumes
+ * the next Escape press before the shortcut layer sees it (an extra press to reach any shortcut
+ * behind the trigger).
+ */
+export interface PopoverDismissalState {
+  suppressTooltipOnFocusRestore: boolean;
+}
+
+export const PopoverDismissalContext = createContext<PopoverDismissalState | null>(null);
+
+export const usePopoverDismissal = (): PopoverDismissalState | null =>
+  useContext(PopoverDismissalContext);
 
 export const convertToReactAriaPlacement = memoize(1000)((
   p: PopperPlacement

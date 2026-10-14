@@ -9,14 +9,10 @@ import {
 } from 'storybook/internal/types';
 
 import type { PreviewWeb } from 'storybook/preview-api';
-import type { App, ComponentPropsOptions, Plugin } from 'vue';
-import * as Vue from 'vue';
+import type { App, ComponentPropsOptions } from 'vue';
 import { camelize, createApp, h, isReactive, isVNode, reactive } from 'vue';
 
 import type { StoryFnVueReturnType, StoryID, VueRenderer } from './types.ts';
-
-// Only Vue 3.6+ exports it, and without it every Vapor component fails to mount in our VDOM app.
-const { vaporInteropPlugin } = Vue as { vaporInteropPlugin?: Plugin };
 
 export const render: ArgsStoryFn<VueRenderer> = (props, context) => {
   const { id, component: Component } = context;
@@ -116,9 +112,6 @@ export async function renderToCanvas(
       showException(e as Error);
     }
   };
-  if (vaporInteropPlugin) {
-    vueApp.use(vaporInteropPlugin);
-  }
   await runSetupFunctions(vueApp, storyContext);
   vueApp.mount(canvasElement);
 

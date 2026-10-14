@@ -69,7 +69,20 @@ setup((app) => {
 
 ### Vapor mode
 
-Storybook supports components that use [Vapor mode](https://github.com/vuejs/core/releases/tag/v3.6.0-rc.1), which is available from Vue 3.6. Storybook installs Vue's `vaporInteropPlugin` on the application it creates, so you can mix Vapor and regular components in stories, decorators and slots without extra configuration. Use the latest version of `@vitejs/plugin-vue`, because recent releases still fix how it compiles Vapor components.
+Storybook supports components that use [Vapor mode](https://github.com/vuejs/core/releases/tag/v3.6.0-rc.1), which is available from Vue 3.6. Storybook renders your stories in a regular Vue application, so you need to install Vue's `vaporInteropPlugin` on it with the [`setup` function](#extending-the-vue-application):
+
+```ts title=".storybook/preview.ts"
+import { setup } from '@storybook/vue3-vite';
+import { vaporInteropPlugin } from 'vue';
+
+setup((app) => {
+  app.use(vaporInteropPlugin);
+});
+```
+
+Then you can mix Vapor and regular components in stories, decorators and slots. Only add this setup call if your project uses Vapor mode.
+
+Use the latest version of `@vitejs/plugin-vue`, because recent releases still fix how it compiles Vapor components.
 
 <Callout variant="info">
 

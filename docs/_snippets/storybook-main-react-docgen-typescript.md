@@ -5,6 +5,9 @@ import type { StorybookConfig } from '@storybook/your-framework';
 const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     // Provide your own options if necessary.
@@ -23,6 +26,9 @@ import { defineMain } from '@storybook/your-framework/node';
 export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     // Provide your own options if necessary.

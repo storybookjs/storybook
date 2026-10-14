@@ -1,3 +1,4 @@
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
@@ -173,9 +174,10 @@ function getUpgradeResults(
       }
     );
 
-    const hasFailures = automigrationResults.some(
-      (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
-    );
+    const hasFailures =
+      automigrationResults.some(
+        (fix) => fix.status === FixStatus.FAILED || fix.status === FixStatus.CHECK_FAILED
+      ) || resultData.fileFailures.length > 0;
     const hasSuccessfulFixes = automigrationResults.some(
       (fix) => fix.status === FixStatus.SUCCEEDED || fix.status === FixStatus.MANUAL_SUCCEEDED
     );
@@ -250,7 +252,7 @@ function logUpgradeResults(
 
     const failedProjectsList = failedProjects.map((dir) => `  • ${shortenPath(dir)}`).join('\n');
     logger.log(
-      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed, please check the logs in the log file for more details.\n${failedProjectsList}`
+      `${CLI_COLORS.error('Failed to upgrade:')}\nSome automigrations failed or skipped files. Review the upgrade output for details.\n${failedProjectsList}`
     );
 
     if (projectsWithNoFixes.length > 0) {
@@ -466,6 +468,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Read before the automigrations, so skills that the skills automigration installs are not
+    // installed a second time below.
+    const hadSkills = await hasStorybookSkills();
+
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
     let detectedAutomigrations: AutomigrationCheckResult[] = [];
@@ -520,8 +526,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
-    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
+    // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
     if (!options.dryRun && !options.skipInstall) {
       for (const project of storybookProjects) {
@@ -547,6 +553,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
       }
     }
+
+    const skills =
+      !options.dryRun && hadSkills
+        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
+        : undefined;
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
@@ -605,6 +616,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 
@@ -614,6 +626,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       projectResults: automigrationResults,
       doctorResults,
     });
+
+    if (getUpgradeResults(automigrationResults, doctorResults).failedProjects.length > 0) {
+      throw new HandledError(
+        'Some automigrations failed or skipped files. Review the upgrade output.'
+      );
+    }
   } finally {
     // Clean up signal handlers
     process.removeListener('SIGINT', handleInterruption);

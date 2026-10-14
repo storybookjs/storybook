@@ -82,7 +82,7 @@ When you set the `component` annotation of the meta (or default export) of your 
 
 <If renderer="react">
 
-By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`react-docgen`](https://github.com/reactjs/react-docgen), a documentation generator for React components that also includes first-class support for TypeScript.
+By default, Storybook will choose a control for each arg based on its initial value. This works well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file. Storybook's server-side docgen then infers the controls and generates the matching [`argTypes`](../api/arg-types.mdx) from your React component and its TypeScript types.
 
 <CodeSnippets path="button-story-default-export-with-component.md" />
 
@@ -90,7 +90,7 @@ By default, Storybook will choose a control for each arg based on its initial va
 
 <If renderer="vue">
 
-By default, Storybook will choose a control for each arg based on its initial value. This will work well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file, and it will be used to infer the controls and auto-generate the matching [`argTypes`](../api/arg-types.mdx) for your component using [`vue-docgen-api`](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api), including first-class support for Vue's `props`, `events`, and `slots`.
+By default, Storybook will choose a control for each arg based on its initial value. This works well with specific arg types (e.g., `boolean` or `string`). To enable them, add the `component` annotation to the meta (or default export) of your story file. Storybook's server-side docgen uses [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) to infer controls and generate the matching [`argTypes`](../api/arg-types.mdx), including first-class support for Vue's `props`, `events`, and `slots`.
 
 <CodeSnippets path="button-story-default-export-with-component.md" />
 
@@ -132,7 +132,7 @@ By default, Storybook will render a free text input for the `variant` arg:
 
 It works as long as you type a valid string into the auto-generated text control. Still, it's not the best UI for our scenario, given that the component only accepts `primary` or `secondary` as variants. Let’s replace it with Storybook’s radio component.
 
-We can specify which controls get used by declaring a custom [argType](../api/arg-types.mdx) for the `variant` property. ArgTypes encode basic metadata for args, such as name, description, and defaultValue for an arg. These get automatically filled in by Storybook Docs.
+We can specify which controls get used by declaring a custom [argType](../api/arg-types.mdx) for the `variant` property. ArgTypes encode basic metadata for args, such as name and description. These get automatically filled in by Storybook Docs.
 
 <If renderer="svelte">
 
@@ -218,14 +218,6 @@ You can create or edit stories, directly from the Controls panel.
 Open the Controls panel for a story and adjust the value of a control. Then save those changes as a new story.
 
 <Video src="../_assets/get-started/new-story-from-controls-optimized.mp4" />
-
-<If renderer="react">
-
-If you're working on a component that does not yet have any stories, you can click the ➕ button in the sidebar to search for your component and have a basic story created for you.
-
-<Video src="../_assets/get-started/new-component-story-from-plus-button-optimized.mp4" />
-
-</If>
 
 ### Edit a story
 

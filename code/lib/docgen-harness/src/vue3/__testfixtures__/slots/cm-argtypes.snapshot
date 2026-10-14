@@ -28,7 +28,6 @@
     },
   },
   "heading": {
-    "defaultValue": undefined,
     "description": "Heading shown above the content.",
     "name": "heading",
     "table": {

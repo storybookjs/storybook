@@ -28,8 +28,8 @@ type Transformed = TransformComponentType<C>;
 
 describe('TransformComponentType — model() signal outputs', () => {
   it('maps a model() field to its value type and synthesizes ${prop}Change', () => {
-    expectTypeOf<Transformed['color']>().toEqualTypeOf<string>();
-    expectTypeOf<Transformed['colorChange']>().toEqualTypeOf<(e: string) => void>();
+    expectTypeOf<Transformed['color']>().toEqualTypeOf<string | undefined>();
+    expectTypeOf<Transformed['colorChange']>().toEqualTypeOf<(e: string | undefined) => void>();
   });
 
   it('covers model.required() identically to model()', () => {
@@ -38,7 +38,7 @@ describe('TransformComponentType — model() signal outputs', () => {
   });
 
   it('does not regress input() signal inputs', () => {
-    expectTypeOf<Transformed['plain']>().toEqualTypeOf<string>();
+    expectTypeOf<Transformed['plain']>().toEqualTypeOf<string | undefined>();
   });
 
   it('does not regress transform input() signal inputs', () => {

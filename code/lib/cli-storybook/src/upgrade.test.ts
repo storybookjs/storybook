@@ -23,6 +23,7 @@ const { getStorybookDataMock } = vi.hoisted(() => ({
 const spawnSyncMock = vi.hoisted(() => vi.fn());
 // Mutable holder so tests can control the mocked manager's detected type (defaults to undefined).
 const managerTypeHolder = vi.hoisted(() => ({ type: undefined as string | undefined }));
+const getPackageManagerMock = vi.hoisted(() => vi.fn());
 vi.mock('cross-spawn', () => ({ sync: spawnSyncMock }));
 
 // Mirrors every logger.warn call (deduped emissions included) so tests can assert on emissions
@@ -51,14 +52,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...originalModule,
     JsPackageManagerFactory: Object.assign(originalModule.JsPackageManagerFactory, {
-      getPackageManager: () => ({
-        type: managerTypeHolder.type,
-        findInstallations: findInstallationsMock,
-        getInstalledVersion: getInstalledVersionMock,
-        latestVersion: async () => '8.0.0',
-        getAllDependencies: () => ({ storybook: '8.0.0' }),
-        getModulePackageJSON: async () => ({ version: '9.0.0' }),
-      }),
+      getPackageManager: getPackageManagerMock,
     }),
     versions: Object.keys(originalModule.versions).reduce(
       (acc, key) => {
@@ -68,6 +62,17 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
       {} as Record<string, string>
     ) as typeof originalModule.versions,
   };
+});
+
+beforeEach(() => {
+  getPackageManagerMock.mockImplementation(({ force }: { force?: PackageManagerName } = {}) => ({
+    type: force ?? managerTypeHolder.type,
+    findInstallations: findInstallationsMock,
+    getInstalledVersion: getInstalledVersionMock,
+    latestVersion: async () => '8.0.0',
+    getAllDependencies: () => ({ storybook: '8.0.0' }),
+    getModulePackageJSON: async () => ({ version: '9.0.0' }),
+  }));
 });
 
 describe.each([
@@ -279,7 +284,6 @@ describe('toUpgradedDependencies', () => {
         storiesPaths: [],
         versionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
         versionInstalled: '10.0.0',
-        hasCsfFactoryPreview: false,
       });
 
       const results = await collectProjects({ force: true } as any, ['.storybook'], () => {});
@@ -295,11 +299,32 @@ describe('toUpgradedDependencies', () => {
   });
 
   describe('satellite packages', () => {
+    it('preserves local workspace satellite dependencies during a prerelease upgrade', async () => {
+      const result = await generateUpgradeSpecs(
+        {
+          '@storybook/addon-designs': 'workspace:*',
+          '@storybook/react-vite': '^10.0.0',
+        },
+        {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIPrerelease: true,
+          isCLIExactPrerelease: true,
+          isCLIExactLatest: false,
+        }
+      );
+
+      expect(result).toEqual(['@storybook/react-vite@^9.0.0']);
+      expect(mockPackageManager.latestVersion).not.toHaveBeenCalledWith(
+        '@storybook/addon-designs@next'
+      );
+    });
+
     it('should include satellite dependencies for latest stable version', async () => {
       const deps = {
         '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
-        '@storybook/test-runner': '^8.0.0',
         '@chromatic-com/storybook': '~3.0.0',
       };
 
@@ -315,7 +340,6 @@ describe('toUpgradedDependencies', () => {
       expect(result).toEqual([
         '@storybook/react@9.0.0',
         '@storybook/addon-designs@8.0.0',
-        '@storybook/test-runner@^9.0.0',
         '@chromatic-com/storybook@~3.0.0',
       ]);
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
@@ -341,6 +365,26 @@ describe('toUpgradedDependencies', () => {
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith(
         '@storybook/addon-designs@next'
       );
+    });
+
+    it('keeps the latest version of a satellite whose next tag is older', async () => {
+      vi.mocked(mockPackageManager.latestVersion).mockImplementation(async (packageName: string) =>
+        packageName === '@storybook/addon-designs@next' ? '5.0.0-next.30' : '5.1.4'
+      );
+
+      const result = await generateUpgradeSpecs(
+        { '@storybook/addon-designs': '^5.1.2' },
+        {
+          packageManager: mockPackageManager,
+          isCanary: false,
+          isCLIOutdated: false,
+          isCLIExactLatest: false,
+          isCLIExactPrerelease: true,
+          isCLIPrerelease: true,
+        }
+      );
+
+      expect(result).toEqual(['@storybook/addon-designs@^5.1.4']);
     });
 
     it('should handle errors when fetching satellite dependencies', async () => {
@@ -404,7 +448,6 @@ describe('collectProjects', () => {
       packageManager,
       storiesPaths: [],
       versionInstalled: '8.0.0',
-      hasCsfFactoryPreview: false,
     } as unknown as Awaited<ReturnType<typeof getStorybookData>>);
 
     const results = await collectProjects(
@@ -424,7 +467,7 @@ describe('collectProjects', () => {
   });
 });
 
-describe('Yarn 1 best-effort warning', () => {
+describe('Project collection', () => {
   const projectDirs: string[] = [];
 
   const createProjectFixture = async (): Promise<string> => {
@@ -498,5 +541,23 @@ describe('Yarn 1 best-effort warning', () => {
     expect(bestEffortWarningCount()).toBe(0);
     expect(results).toHaveLength(1);
     expect(results.every((r) => isSuccessResult(r))).toBe(true);
+  });
+
+  it('uses the requested package manager for project collection', async () => {
+    const dir = await createProjectFixture();
+    projectDirs.push(dir);
+    managerTypeHolder.type = PackageManagerName.NPM;
+    useRealProjectDataCollection();
+
+    const results = await collectProjects(
+      { force: true, packageManager: PackageManagerName.PNPM } as UpgradeOptions,
+      [join(dir, '.storybook')],
+      () => {}
+    );
+
+    expect(results).toHaveLength(1);
+    expect(isSuccessResult(results[0]) && results[0].packageManager.type).toBe(
+      PackageManagerName.PNPM
+    );
   });
 });

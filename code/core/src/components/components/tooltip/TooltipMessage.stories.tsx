@@ -41,7 +41,7 @@ const WithPopoverDecorator: DecoratorFunction = (storyFn) => (
 
 export default {
   component: TooltipMessage,
-} as Meta;
+} satisfies Meta;
 
 export const Default = {
   args: {

@@ -196,9 +196,12 @@ export async function collectComponentMetaSources(
         displayName: name === 'default' ? getFilenameWithoutExtension(id) : name,
         typeParams,
         ...meta,
+        props: meta.props.filter(isDocumented),
+        events: meta.events.filter(isDocumented),
+        slots: meta.slots.filter(isDocumented),
         description: jsDocInfo?.description,
         jsDocTags: jsDocInfo?.jsDocTags,
-        exposed,
+        exposed: exposed.filter(isDocumented),
         sourceFiles: id,
       })
     );
@@ -206,6 +209,10 @@ export async function collectComponentMetaSources(
 
   return metaSources;
 }
+
+/** Members tagged `@ignore` stay out of every docs surface, as they did with builder docgen. */
+const isDocumented = (member: { tags?: { name: string }[] }) =>
+  !member.tags?.some((tag) => tag.name === 'ignore');
 
 async function extractVueSfcTypeParams(id: string): Promise<string | undefined> {
   if (!id.endsWith('.vue')) {
@@ -352,9 +359,16 @@ function mergeEventDescriptions(meta: ComponentMeta, events: ComponentDoc['event
   }
 
   for (const event of meta.events) {
-    const description = events.find((i) => i.name === event.name)?.description;
-    if (description) {
-      (event as typeof event & { description: string }).description = description;
+    const parsed = events.find((i) => i.name === event.name);
+    if (parsed?.description) {
+      (event as typeof event & { description: string }).description = parsed.description;
+    }
+    // Volar drops event JSDoc tags along with the description, which hides `@ignore`.
+    if (!event.tags.length && parsed?.tags?.length) {
+      event.tags = parsed.tags.map((tag) => ({
+        name: tag.title,
+        text: 'content' in tag && typeof tag.content === 'string' ? tag.content : undefined,
+      }));
     }
   }
 }
@@ -396,6 +410,14 @@ function removeLeakedEventHandlerProp(meta: ComponentMeta, eventName: string): v
 /**
  * Whether the SFC template declares slots that the extracted meta misses, entirely or by
  * description. Reading the source keeps `parseMulti` away from the common slot-less component.
+ *
+ * The vue-docgen-api fallback cannot parse script blocks, so this template-text repair is
+ * .vue-only. TSX/JSX components are covered by the type-driven extraction itself:
+ * vue-component-meta reads the explicit `slots: Object as SlotsType<...>` option on
+ * `defineComponent` (Vue 3.3+), including JSDoc descriptions on its members — the same channel
+ * the checker uses for props. Runtime slot consumption (`useSlots()`, context slots) is
+ * invisible to every static extractor, so untyped TSX slots correctly stay out of the docgen;
+ * typing the slots is the only way to declare them there.
  */
 function hasTemplateSlotGap(
   filename: string,

@@ -26,7 +26,10 @@ import type {
 import type { JsonObject } from '@angular-devkit/core';
 import * as pkg from 'empathic/package';
 
-import { mergeBrowserTargetOptions } from '../utils/browser-target-options.ts';
+import {
+  mergeBrowserTargetOptions,
+  requireBuilderTarget,
+} from '../utils/browser-target-options.ts';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
 import { Channel } from 'storybook/internal/channels';
@@ -37,6 +40,8 @@ addToGlobalContext('cliVersion', versions.storybook);
 export type StorybookBuilderOptions = JsonObject & {
   browserTarget?: string | null;
   tsConfig?: string;
+  configDir: string;
+  outputDir: string;
   test: boolean;
   docs: boolean;
   enableProdMode?: boolean;
@@ -57,7 +62,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'statsJson'
     | 'disableTelemetry'
     | 'logfile'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & { [key: string]: any };
@@ -110,7 +114,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     enableProdMode = true,
     statsJson,
     disableTelemetry,
-    previewUrl,
     sourceMap = false,
     preserveSymlinks = false,
     zoneless = true,
@@ -126,7 +129,7 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
   // values, so container options are read from what the target actually declares. Targets
   // without a browserTarget keep the schema-validated options for unchanged behavior.
   const declaredOptions = (
-    resolvedTarget ? await context.getTargetOptions(context.target) : options
+    resolvedTarget ? await context.getTargetOptions(requireBuilderTarget(context)) : options
   ) as StorybookBuilderOptions;
 
   const angularBuilderOptions = mergeBrowserTargetOptions(
@@ -156,7 +159,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     angularBuilderOptions,
     tsConfig,
     statsJson,
-    previewUrl,
   };
 
   // Bridge angularBuilderOptions to the addon-vitest child process

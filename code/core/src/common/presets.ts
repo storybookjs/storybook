@@ -282,16 +282,7 @@ async function loadPresets(
     return [];
   }
 
-  // Presets must be imported strictly sequentially, never in parallel.
-  // Preset files may be CommonJS and synchronously `require()` Storybook's ESM
-  // entries (e.g. a CJS manager addon calling `require('storybook/manager-api')`).
-  // Node's require(esm) path cannot resolve a dependency that is still being
-  // loaded by a concurrent dynamic `import()` of the same graph — it fails with
-  // `ERR_INTERNAL_ASSERTION: Cannot require() ES Module ... because it is not
-  // yet fully loaded` (or `module not been linked`, depending on the phase).
-  // Parallel preset loading therefore intermittently kills `storybook build`
-  // and `storybook dev` during preset load. Importing one preset at a time
-  // guarantees each preset's module job sees a fully-loaded graph.
+  // Sequential on purpose: a CJS preset that require()s an ESM module still being import()ed in parallel crashes with ERR_INTERNAL_ASSERTION.
   const loaded: LoadedPreset[] = [];
   for (const preset of presets) {
     loaded.push(...(await loadPreset(preset, level, storybookOptions)));

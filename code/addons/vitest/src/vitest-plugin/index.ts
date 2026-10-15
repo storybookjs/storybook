@@ -21,6 +21,7 @@ import {
   mapStaticDir,
 } from 'storybook/internal/core-server';
 import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
+import { MissingProjectAnnotationsProviderError } from 'storybook/internal/preview-errors';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import {
   detectAgent,
@@ -40,8 +41,8 @@ import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
-// Shared plugins from builder-vite (relative import to prebundle without adding a package dependency)
-import { storybookProjectAnnotationsPlugin } from '../../../../builders/builder-vite/src/plugins/storybook-project-annotations-plugin.ts';
+// Shared utilities from builder-vite (relative import to prebundle without adding a package dependency)
+import { hasVitePlugins } from '../../../../builders/builder-vite/src/utils/has-vite-plugins.ts';
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins.ts';
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
@@ -232,11 +233,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     workingDir: WORKING_DIR,
   };
 
-  const storybookOptions = await experimental_loadStorybook({
+  const { presets } = await experimental_loadStorybook({
     configDir: finalOptions.configDir,
     packageJson: {},
   });
-  const { presets } = storybookOptions;
 
   const stories = await presets.apply('stories', []);
 
@@ -282,17 +282,13 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   ];
 
   // The injected `setup-file-with-project-annotations` setup file imports the project-annotations
-  // virtual module, which only `storybookProjectAnnotationsPlugin` serves. That plugin normally
-  // reaches this list through the builder's `viteCorePlugins` preset, but a builder preset that
-  // fails to load is silently dropped by the preset loader (non-critical passes return []),
-  // which left every suite dead at setup with an unresolved import. Register the provider
-  // directly when the preset chain did not deliver it.
-  const hasProjectAnnotationsProvider = plugins
-    .flat(Infinity)
-    .some((plugin) => plugin?.name === 'storybook:project-annotations-plugin');
-
-  if (!hasProjectAnnotationsProvider) {
-    plugins.unshift(storybookProjectAnnotationsPlugin(storybookOptions));
+  // virtual module, which only the builder's `storybookProjectAnnotationsPlugin` serves. That
+  // plugin normally reaches this list through the builder's `viteCorePlugins` preset. If it is
+  // missing here, the builder preset failed to load and was silently dropped by the preset
+  // loader (non-critical passes return []) — running with a partial plugin list would produce
+  // wrong results without any hint why, so fail loudly instead of substituting one plugin.
+  if (!(await hasVitePlugins(plugins, ['storybook:project-annotations-plugin']))) {
+    throw new MissingProjectAnnotationsProviderError();
   }
 
   if (finalOptions.disableAddonDocs) {

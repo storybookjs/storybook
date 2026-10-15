@@ -446,6 +446,23 @@ export class ProjectAnnotationsAlreadyAppliedError extends StorybookError {
   }
 }
 
+export class MissingProjectAnnotationsProviderError extends StorybookError {
+  constructor() {
+    super({
+      name: 'MissingProjectAnnotationsProviderError',
+      category: Category.ADDON_VITEST,
+      code: 3,
+      message: dedent`
+        @storybook/addon-vitest found no project annotations provider in the plugin list it composed: the "storybook:project-annotations-plugin" Vite plugin is missing, and the "setup-file-with-project-annotations" setup file imports its virtual module.
+
+        This happens when the @storybook/builder-vite preset fails to load — Storybook prints a "Failed to load preset" warning above this error with the underlying cause.
+
+        To resolve, make sure all Storybook packages (including @storybook/builder-vite) are aligned to the same version and reinstall your dependencies. If the problem persists, please open an issue on GitHub.
+      `,
+    });
+  }
+}
+
 export class ElementA11yParameterError extends StorybookError {
   constructor() {
     super({

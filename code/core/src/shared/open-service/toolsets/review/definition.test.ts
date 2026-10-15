@@ -249,7 +249,7 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
       );
 
       expect(description).toContain(
-        'Right before you call it, get your in-app browser ready if you have one:'
+        "Right before, get your in-app browser ready if you have one (load its tool or run its skill's setup code)"
       );
     });
 

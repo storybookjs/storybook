@@ -515,14 +515,14 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
 				## When to call
-				- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
-				- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step. Right before you call it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives, so the page opens with one call afterwards.
+				- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
+				- Last: publish it after your tests and other checks (type check, lint); opening the page it returns is your final step. Right before, get your in-app browser ready if you have one (load its tool or run its skill's setup code).
 				- Browse request ("show me the Badge component"): resolve via stories-find-by-component / docs-list. Show exactly what was asked. Pass changedFiles: [].
 
 				## Hard rules
 				1. Every storyId MUST come from those tools, never from file paths, story names or memory.
-				2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
-				3. Prefer 2-5 collections when the change reaches that many layers; a new component that nothing imports yet needs only one. Avoid one-story collections unless truly isolated, and never add stories of components the change cannot reach.
+				2. Every story you CREATED MUST appear, play-function stories too. Curate by grouping, never by omission.
+				3. Prefer 2-5 collections when the change reaches that many layers (one for a new, unused component). Avoid one-story collections unless truly isolated; never add stories the change cannot reach.
 				4. In follow-up reviews, keep collection and story order stable.
 				5. Follow each field's formatting rules; no em-dashes in field values.
 				6. Don't tell the user what to do unless they ask for guidance.

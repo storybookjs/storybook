@@ -281,7 +281,9 @@ describe('getUIBuildingInstructionsTool', () => {
     const instructions = response.result?.content[0].text as string;
 
     expect(instructions).toContain('show one set of links — never both');
-    expect(instructions).toContain('## 👀 Review your changes');
+    expect(instructions).toContain(
+      'end your reply with the three lines its result gives you, unchanged'
+    );
     expect(instructions).toContain('Never also list the individual story or preview URLs');
     // The old contradictory instruction must be gone.
     expect(instructions).not.toContain('present links in this order');

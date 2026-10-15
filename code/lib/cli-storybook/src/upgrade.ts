@@ -6,6 +6,7 @@ import {
   JsPackageManagerFactory,
   isCI,
   isCorePackage,
+  isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
   getProcessAncestry,
 } from 'storybook/internal/common';
@@ -491,7 +492,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    await installUpgradeDependencies(rootPackageManager);
+    await withNpmForceFallback(rootPackageManager, (options) =>
+      rootPackageManager.installDependencies(options)
+    );
 
     if (
       rootPackageManager.type !== PackageManagerName.YARN1 &&
@@ -509,12 +512,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }));
 
       if (dedupe) {
-        if (rootPackageManager.type === 'npm') {
-          // see https://github.com/npm/cli/issues/8059 for more details
-          await rootPackageManager.dedupeDependencies({ force: true });
-        } else {
-          await rootPackageManager.dedupeDependencies();
-        }
+        await withNpmForceFallback(rootPackageManager, (options) =>
+          rootPackageManager.dedupeDependencies(options)
+        );
       } else {
         logger.log(
           `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
@@ -635,19 +635,18 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
   }
 }
 
-export const installUpgradeDependencies = async (packageManager: JsPackageManager) => {
-  if (packageManager.type === 'npm') {
-    try {
-      await packageManager.installDependencies();
-    } catch {
-      // A plain install fails cleanly (ERESOLVE) when peer ranges conflict after the manifest
-      // edits — see https://github.com/npm/cli/issues/8059 for more details. Passing --force
-      // unconditionally instead makes npm's resolution spin CPU-bound with zero file writes on
-      // large trees and never finish, so only pay the --force cost after a real failure.
-      logger.warn('npm install failed; retrying with --force (npm/cli#8059 workaround)');
-      await packageManager.installDependencies({ force: true });
+export const withNpmForceFallback = async (
+  packageManager: JsPackageManager,
+  operation: (options?: { force?: boolean }) => Promise<void>
+) => {
+  try {
+    await operation();
+  } catch (error) {
+    if (packageManager.type !== PackageManagerName.NPM || !isNpmPeerResolutionError(error)) {
+      throw error;
     }
-  } else {
-    await packageManager.installDependencies();
+    // npm/cli#8059: forcing resolves the conflict but can spin on large trees, so it is only a fallback.
+    logger.warn('Peer dependency conflict detected; retrying with --force');
+    await operation({ force: true });
   }
 };

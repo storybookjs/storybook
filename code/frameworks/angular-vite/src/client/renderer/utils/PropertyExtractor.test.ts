@@ -1,7 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, Directive, Injectable, InjectionToken, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { provideAnimations, provideNoopAnimations } from '@angular/platform-browser/animations';
+import {
+  BrowserAnimationsModule,
+  NoopAnimationsModule,
+  provideAnimations,
+  provideNoopAnimations,
+} from '@angular/platform-browser/animations';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NgModuleMetadata } from '../../types.ts';
@@ -23,8 +28,6 @@ const TestModuleWithImportsAndProviders = NgModule({
   imports: [TestModuleWithDeclarations],
   providers: [TestTokenProvider],
 })(class {});
-class BrowserAnimationsModule {}
-class NoopAnimationsModule {}
 
 const analyzeMetadata = async (metadata: NgModuleMetadata, component?: any) => {
   const propertyExtractor = new PropertyExtractor(metadata, component);
@@ -103,6 +106,46 @@ describe('PropertyExtractor', () => {
       expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
       expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
       expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
+    });
+
+    it('should detect BrowserAnimationsModule by identity even when the class name is mangled', async () => {
+      // Bundlers can rename the exported binding; the identity check must not depend on the name.
+      const nameDescriptor = Object.getOwnPropertyDescriptor(BrowserAnimationsModule, 'name');
+      Object.defineProperty(BrowserAnimationsModule, 'name', {
+        ...nameDescriptor,
+        value: 'MangledName',
+      });
+      try {
+        const metadata = {
+          imports: [BrowserAnimationsModule],
+        };
+        const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+        expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
+        expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+        expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('BrowserAnimationsModule')
+        );
+      } finally {
+        if (nameDescriptor) {
+          Object.defineProperty(BrowserAnimationsModule, 'name', nameDescriptor);
+        }
+      }
+    });
+
+    it('should detect a renamed BrowserAnimationsModule class by its normalized name', async () => {
+      class _BrowserAnimationsModule {}
+
+      const metadata = {
+        imports: [_BrowserAnimationsModule],
+      };
+      const { imports, providers, applicationProviders } = await analyzeMetadata(metadata);
+      expect(imports.flat(Number.MAX_VALUE)).toEqual([CommonModule]);
+      expect(providers.flat(Number.MAX_VALUE)).toEqual([]);
+      expect(applicationProviders.flat(Number.MAX_VALUE)).toEqual(provideAnimations());
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('BrowserAnimationsModule')
+      );
     });
 
     it('should not destructure Angular official module', async () => {

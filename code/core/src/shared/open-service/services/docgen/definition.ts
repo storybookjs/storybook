@@ -15,6 +15,25 @@ const argTypesSchema = v.custom<StrictArgTypes>(
   (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 );
 
+export type ManifestEntries = {
+  components: Array<{
+    id: string;
+    // False when only attached docs represent the component.
+    storyBased: boolean;
+    attachedDocIds: string[];
+  }>;
+  docs: Array<{ id: string; name: string }>;
+};
+
+// Annotated so the service's declaration carries the named type instead of the expanded schema,
+// which the bundled `.d.ts` would otherwise repeat for every reference to the service.
+const manifestEntriesSchema: v.GenericSchema<ManifestEntries> = v.object({
+  components: v.array(
+    v.object({ id: v.string(), storyBased: v.boolean(), attachedDocIds: v.array(v.string()) })
+  ),
+  docs: v.array(v.object({ id: v.string(), name: v.string() })),
+});
+
 type DocgenServiceState = {
   /** Extracted docgen keyed by component id. Populated by the `extractDocgen` command. */
   components: Record<string, DocgenPayload>;
@@ -124,6 +143,13 @@ export const docgenServiceDef = defineService({
         'Extracts docgen for every component id in the story index by invoking `extractDocgen` for each.',
       input: v.undefined(),
       output: v.void(),
+      // Handler is supplied at registration time so it can close over the story index.
+    },
+    resolveManifestEntries: {
+      description:
+        'Returns the components and standalone docs the story index publishes to manifests, in index order. Stores nothing: the story index is the only copy.',
+      input: v.undefined(),
+      output: manifestEntriesSchema,
       // Handler is supplied at registration time so it can close over the story index.
     },
   },

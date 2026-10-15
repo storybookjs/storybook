@@ -1,5 +1,3 @@
-import type { DocsClassification } from './classify-services.ts';
-
 export type MdxDoc = {
   id: string;
   name: string;
@@ -22,17 +20,15 @@ export type MdxPayload = {
  * callers omit the key entirely.
  */
 export function selectAttachedDocs(
-  classification: DocsClassification,
-  id: string,
+  attachedDocIds: string[],
   mdx: MdxPayload | undefined
 ): Record<string, MdxDoc> | undefined {
-  const attached = classification.attachedDocsByComponent.get(id) ?? [];
-  if (attached.length === 0 || !mdx?.docs) {
+  if (attachedDocIds.length === 0 || !mdx?.docs) {
     return undefined;
   }
 
   const docs: Record<string, MdxDoc> = {};
-  for (const docsId of attached) {
+  for (const docsId of attachedDocIds) {
     const doc = mdx.docs[docsId];
     if (doc) {
       docs[docsId] = doc;

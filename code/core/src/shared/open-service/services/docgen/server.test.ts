@@ -218,6 +218,80 @@ describe('docgen open service', () => {
     });
   });
 
+  describe('resolveManifestEntries command', () => {
+    const attachedDocs = (id: string, title: string, tags: string[]): DocsIndexEntry => ({
+      id,
+      name: 'Docs',
+      title,
+      type: 'docs',
+      importPath: `./${title.toLowerCase()}.mdx`,
+      storiesImports: [`./${title.toLowerCase()}.stories.tsx`],
+      tags: [Tag.ATTACHED_MDX, ...tags],
+    });
+    const tagged = (entry: IndexEntry): IndexEntry => ({ ...entry, tags: [Tag.MANIFEST] });
+
+    it('returns the manifest-tagged components and standalone docs in index order', async () => {
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([
+          tagged(makeStoryEntry('zebra--primary', 'Zebra')),
+          tagged(makeStoryEntry('alpha--primary', 'Alpha')),
+          makeStoryEntry('untagged--primary', 'Untagged'),
+          attachedDocs('alpha--docs', 'Alpha', [Tag.MANIFEST]),
+          attachedDocs('alpha--private', 'Alpha', []),
+          attachedDocs('only-docs--docs', 'Only-Docs', [Tag.MANIFEST]),
+          {
+            id: 'guide--docs',
+            name: 'Guide',
+            title: 'Guide',
+            type: 'docs',
+            importPath: './guide.mdx',
+            storiesImports: [],
+            tags: [Tag.UNATTACHED_MDX, Tag.MANIFEST],
+          },
+        ]),
+        docgenProvider: async () => undefined,
+      });
+
+      await expect(service.commands.resolveManifestEntries(undefined)).resolves.toEqual({
+        components: [
+          { id: 'zebra', storyBased: true, attachedDocIds: [] },
+          { id: 'alpha', storyBased: true, attachedDocIds: ['alpha--docs'] },
+          { id: 'only-docs', storyBased: false, attachedDocIds: ['only-docs--docs'] },
+        ],
+        docs: [{ id: 'guide--docs', name: 'Guide' }],
+      });
+    });
+
+    it('reads the index again on every call', async () => {
+      const entries = [tagged(makeStoryEntry('button--primary', 'Button'))];
+      const service = registerDocgenService({
+        getIndex: () => makeGetIndex(entries)(),
+        docgenProvider: async () => undefined,
+      });
+
+      await service.commands.resolveManifestEntries(undefined);
+      entries.push(tagged(makeStoryEntry('card--primary', 'Card')));
+      const { components } = await service.commands.resolveManifestEntries(undefined);
+
+      expect(components.map(({ id }) => id)).toEqual(['button', 'card']);
+    });
+
+    it('lists a docs entry tagged both attached and unattached as a standalone doc only', async () => {
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([
+          tagged(makeStoryEntry('button--primary', 'Button')),
+          attachedDocs('button--docs', 'Button', [Tag.UNATTACHED_MDX, Tag.MANIFEST]),
+        ]),
+        docgenProvider: async () => undefined,
+      });
+
+      await expect(service.commands.resolveManifestEntries(undefined)).resolves.toEqual({
+        components: [{ id: 'button', storyBased: true, attachedDocIds: [] }],
+        docs: [{ id: 'button--docs', name: 'Docs' }],
+      });
+    });
+  });
+
   describe('module graph hot refresh', () => {
     beforeEach(() => {
       registerTestModuleGraphService();

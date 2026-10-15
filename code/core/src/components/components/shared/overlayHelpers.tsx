@@ -31,21 +31,15 @@ export const POPPER_PLACEMENTS = [
 
 export type PopperPlacement = (typeof POPPER_PLACEMENTS)[number];
 
-/**
- * Communicates from PopoverProvider to the TooltipProviders nested under it. When a popover is
- * dismissed with Escape, React Aria restores focus to the trigger element; without suppression
- * that focus restore immediately re-opens the trigger's tooltip, and the tooltip then consumes
- * the next Escape press before the shortcut layer sees it (an extra press to reach any shortcut
- * behind the trigger).
- */
-export interface PopoverDismissalState {
-  suppressTooltipOnFocusRestore: boolean;
-}
+// Keyboard focus restore after a popover closes must not open the trigger's tooltip, or it
+// swallows the next Escape.
+const PopoverDismissalContext = createContext<{
+  consumeFocusRestoreSuppression: () => boolean;
+} | null>(null);
 
-export const PopoverDismissalContext = createContext<PopoverDismissalState | null>(null);
+export const PopoverDismissalProvider = PopoverDismissalContext.Provider;
 
-export const usePopoverDismissal = (): PopoverDismissalState | null =>
-  useContext(PopoverDismissalContext);
+export const usePopoverDismissal = () => useContext(PopoverDismissalContext);
 
 export const convertToReactAriaPlacement = memoize(1000)((
   p: PopperPlacement

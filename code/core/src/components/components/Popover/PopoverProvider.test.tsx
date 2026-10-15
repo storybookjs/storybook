@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
@@ -16,6 +16,7 @@ function ThemedApp() {
       <PopoverProvider ariaLabel="Test popover" popover={<div>Popover content</div>}>
         <Button ariaLabel="Trigger button">Trigger</Button>
       </PopoverProvider>
+      <Button ariaLabel="Other button">Other</Button>
     </ThemeProvider>
   );
 }
@@ -37,10 +38,17 @@ describe('PopoverProvider', () => {
       expect(screen.queryByText('Popover content')).toBeNull();
     });
 
-    // The tooltip delay (400ms by default) is longer than the dismissal restore, so give the
-    // focus-restore tooltip time to appear before asserting it did not.
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    await act(async () => {});
     expect(screen.queryByTestId('tooltip')).toBeNull();
+
+    const shortcutListener = vi.fn();
+    document.addEventListener('keydown', shortcutListener);
+    try {
+      await user.keyboard('{Escape}');
+      expect(shortcutListener).toHaveBeenCalledTimes(1);
+    } finally {
+      document.removeEventListener('keydown', shortcutListener);
+    }
   });
 
   it('still opens the tooltip on keyboard focus when no popover was dismissed', async () => {
@@ -50,11 +58,31 @@ describe('PopoverProvider', () => {
     await user.tab();
     expect(screen.getByRole('button', { name: 'Trigger button' })).toHaveFocus();
 
-    await waitFor(
-      () => {
-        expect(screen.queryByTestId('tooltip')).toBeTruthy();
-      },
-      { timeout: 2000 }
-    );
+    await waitFor(() => {
+      expect(screen.queryByTestId('tooltip')).toBeTruthy();
+    });
+  });
+
+  it('suppresses the focus-restore tooltip only once, so a later keyboard refocus opens it', async () => {
+    const user = userEvent.setup();
+    render(<ThemedApp />);
+
+    await user.click(screen.getByRole('button', { name: 'Trigger button' }));
+    expect(await screen.findByText('Popover content')).toBeTruthy();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => {
+      expect(screen.queryByText('Popover content')).toBeNull();
+    });
+    await act(async () => {});
+    expect(screen.queryByTestId('tooltip')).toBeNull();
+
+    await user.tab();
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Trigger button' })).toHaveFocus();
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('tooltip')).toBeTruthy();
+    });
   });
 });

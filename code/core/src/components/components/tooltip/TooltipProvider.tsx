@@ -75,11 +75,7 @@ const TooltipProvider = ({
   const [isOpen, setIsOpen] = useState(defaultVisible ?? startOpen ?? false);
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (isOpen && dismissalState?.suppressTooltipOnFocusRestore) {
-        // This open was triggered by React Aria restoring focus to the trigger right after an
-        // ancestor popover was dismissed with Escape. Opening the tooltip here would make the
-        // next Escape press dismiss the tooltip instead of reaching the shortcut layer.
-        dismissalState.suppressTooltipOnFocusRestore = false;
+      if (isOpen && dismissalState?.consumeFocusRestoreSuppression()) {
         return;
       }
       setIsOpen(isOpen);

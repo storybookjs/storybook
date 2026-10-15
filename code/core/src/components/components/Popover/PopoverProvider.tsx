@@ -1,8 +1,9 @@
-import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { cloneElement, useCallback, useEffect, useRef, useState } from 'react';
+import type { DOMAttributes, FocusEvent, ReactElement, ReactNode } from 'react';
+import React, { cloneElement, useCallback, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
+import { getInteractionModality } from 'react-aria/private/interactions/useFocusVisible';
 import { Pressable } from 'react-aria-components/Pressable';
 import { DialogTrigger } from 'react-aria-components/Dialog';
 import { Popover as PopoverUpstream } from 'react-aria-components/Popover';
@@ -10,8 +11,7 @@ import { Popover as PopoverUpstream } from 'react-aria-components/Popover';
 import {
   type PopperPlacement,
   convertToReactAriaPlacement,
-  PopoverDismissalContext,
-  type PopoverDismissalState,
+  PopoverDismissalProvider,
 } from '../shared/overlayHelpers.tsx';
 import { Popover } from './Popover.tsx';
 
@@ -90,84 +90,68 @@ export const PopoverProvider = ({
   const placement = convertToReactAriaPlacement(placementProp);
 
   const [isOpen, setIsOpen] = useState(defaultVisible ?? false);
-  const escapeSeenAtRef = useRef(0);
-  // Stable per-provider instance; mutated in place (not state) so the suppression veto never
-  // re-renders consumers.
-  const [dismissalState] = useState<PopoverDismissalState>(() => ({
-    suppressTooltipOnFocusRestore: false,
-  }));
-
-  // Track Escape presses while the popover is open, so a dismissal can be told apart from a
-  // pointer dismissal in onOpenChange below.
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        escapeSeenAtRef.current = Date.now();
-      }
-    };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown, true);
-    };
-  }, [isOpen]);
+  const suppressFocusRestoreRef = useRef(false);
 
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
-      if (!isOpen && escapeSeenAtRef.current && Date.now() - escapeSeenAtRef.current < 100) {
-        // Dismissed with Escape. React Aria restores focus to the trigger, which would
-        // immediately open the trigger's tooltip; that tooltip would then consume the next
-        // Escape press before the shortcut layer sees it. Suppress that one tooltip open.
-        dismissalState.suppressTooltipOnFocusRestore = true;
-        // The focus restore and the delayed tooltip open both happen within about a second,
-        // so expire the flag to keep keyboard-focus tooltips working afterwards.
-        setTimeout(() => {
-          dismissalState.suppressTooltipOnFocusRestore = false;
-        }, 1000);
+      if (!isOpen && getInteractionModality() === 'keyboard') {
+        suppressFocusRestoreRef.current = true;
       }
       setIsOpen(isOpen);
       onVisibleChange?.(isOpen);
     },
-    [onVisibleChange, dismissalState]
+    [onVisibleChange]
   );
+
+  const consumeFocusRestoreSuppression = () => {
+    const suppressed = suppressFocusRestoreRef.current;
+    suppressFocusRestoreRef.current = false;
+    return suppressed;
+  };
+  const handleTriggerBlur = (event: FocusEvent<Element>) => {
+    children.props.onBlur?.(event);
+    suppressFocusRestoreRef.current = false;
+  };
   const onHide = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
-    <PopoverDismissalContext.Provider value={dismissalState}>
-      <DialogTrigger
-        defaultOpen={defaultVisible}
-        isOpen={visible ?? isOpen}
-        onOpenChange={onOpenChange}
-        {...props}
-      >
-        <Pressable>
+    <DialogTrigger
+      defaultOpen={defaultVisible}
+      isOpen={visible ?? isOpen}
+      onOpenChange={onOpenChange}
+      {...props}
+    >
+      <PopoverDismissalProvider value={{ consumeFocusRestoreSuppression }}>
+        <Pressable
+          onPressStart={() => {
+            suppressFocusRestoreRef.current = false;
+          }}
+        >
           {
             /* React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves. */
             cloneElement(
               children,
               // @ts-expect-error aria-haspopup is a valid ARIA attribute but cloneElement types are too strict
-              { 'aria-haspopup': 'dialog' }
+              { 'aria-haspopup': 'dialog', onBlur: handleTriggerBlur }
             )
           }
         </Pressable>
-        <PopoverUpstream
-          aria-label={ariaLabel}
-          placement={placement}
-          offset={offset}
-          style={{ outline: 'none' }}
+      </PopoverDismissalProvider>
+      <PopoverUpstream
+        aria-label={ariaLabel}
+        placement={placement}
+        offset={offset}
+        style={{ outline: 'none' }}
+      >
+        <Popover
+          hasChrome={hasChrome}
+          hideLabel={closeLabel}
+          onHide={hasCloseButton ? onHide : undefined}
+          padding={padding}
         >
-          <Popover
-            hasChrome={hasChrome}
-            hideLabel={closeLabel}
-            onHide={hasCloseButton ? onHide : undefined}
-            padding={padding}
-          >
-            {typeof popover === 'function' ? popover({ onHide }) : popover}
-          </Popover>
-        </PopoverUpstream>
-      </DialogTrigger>
-    </PopoverDismissalContext.Provider>
+          {typeof popover === 'function' ? popover({ onHide }) : popover}
+        </Popover>
+      </PopoverUpstream>
+    </DialogTrigger>
   );
 };

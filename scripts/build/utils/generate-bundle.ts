@@ -73,16 +73,27 @@ function rolldownGlobalExternalsPlugin(): RolldownPlugin {
  * This keeps the fix from PR #21335 (user's `manager.js` ignored when `sideEffects: false` in
  * `package.json`) working, for which `ignoreAnnotations: true` was originally a blanket workaround.
  */
+
+/*
+ * Entry paths and import specifiers can disagree on separators on Windows: configured entries may
+ * hold native `C:\addon\manager.js` paths while `wrapManagerEntries`-style imports (and esbuild's
+ * resolve callbacks) use forward slashes. Compare with normalized separators on both sides.
+ */
+const normalizeSeparators = (p: string) => p.replace(/\\/g, '/');
+
 export function preserveEntrySideEffectsPlugin(
   dirCwd: string,
   entryPoints: string[]
 ): esbuild.Plugin {
-  const entries = new Set(entryPoints);
+  const entries = new Set(entryPoints.flatMap((p) => [p, normalizeSeparators(p)]));
   return {
     name: 'preserve-entry-side-effects',
     setup(build) {
       build.onResolve({ filter: /.*/ }, (args) => {
-        if (args.kind === 'entry-point' && entries.has(args.path)) {
+        if (
+          args.kind === 'entry-point' &&
+          (entries.has(args.path) || entries.has(normalizeSeparators(args.path)))
+        ) {
           return { path: join(dirCwd, args.path), sideEffects: true };
         }
         return undefined;

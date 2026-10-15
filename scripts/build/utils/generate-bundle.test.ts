@@ -39,4 +39,22 @@ describe('preserveEntrySideEffectsPlugin', () => {
     expect(resolve({ kind: 'import-statement', path: './src/index.ts' })).toBeUndefined();
     expect(resolve({ kind: 'import-statement', path: 'react' })).toBeUndefined();
   });
+
+  it('matches entries and imports whose separators disagree (Windows)', () => {
+    // Configured entries can hold native Windows separators while the import specifier esbuild
+    // resolves uses forward slashes, and the other way around.
+    const windowsEntryPoints = ['.\\src\\index.ts', '.\\src\\manager\\runtime.tsx'];
+    const resolve = captureEntryResolve(preserveEntrySideEffectsPlugin(dirCwd, windowsEntryPoints));
+
+    expect(resolve({ kind: 'entry-point', path: './src/index.ts' })).toEqual({
+      path: join(dirCwd, './src/index.ts'),
+      sideEffects: true,
+    });
+
+    const posixResolve = captureEntryResolve(preserveEntrySideEffectsPlugin(dirCwd, entryPoints));
+    expect(posixResolve({ kind: 'entry-point', path: '.\\src\\manager\\runtime.tsx' })).toEqual({
+      path: join(dirCwd, './src/manager/runtime.tsx'),
+      sideEffects: true,
+    });
+  });
 });

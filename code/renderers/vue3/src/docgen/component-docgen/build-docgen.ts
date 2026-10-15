@@ -56,52 +56,31 @@ export interface BuildDocgenContext {
   typescript: typeof ts;
 }
 
-const UNRESOLVED_COMPONENT_ERRORS: Record<
+/**
+ * One message factory per resolver reason, parameterized by the declaration the story file names —
+ * `meta.component` for the primary component, the failed `meta.subcomponents.<Key>` entry for a
+ * child. The error names stay stable because consumers match on them.
+ */
+const UNRESOLVED_COMPONENT_MESSAGES: Record<
   UnresolvedComponentReason,
-  { name: string; message: string }
+  (subject: string) => DocgenError
 > = {
-  'no-meta-component': {
+  'no-meta-component': (subject) => ({
     name: 'No component found',
-    message: 'We could not detect the component from your story file. Specify meta.component.',
-  },
-  'no-component-import': {
+    message: `We could not detect the component from ${subject}. Specify meta.component.`,
+  }),
+  'no-component-import': (subject) => ({
     name: 'No component import found',
-    message: 'No component file found for the component declared in meta.component.',
-  },
-  'unreadable-component-expression': {
+    message: `No component file found for the component declared in ${subject}. Import it into the story file.`,
+  }),
+  'unreadable-component-expression': (subject) => ({
     name: 'No component found',
-    message:
-      'We could not follow meta.component to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.',
-  },
+    message: `We could not follow ${subject} to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.`,
+  }),
 };
 
-/**
- * The subcomponent variant of {@link UNRESOLVED_COMPONENT_ERRORS}: same error names, but the
- * messages point at the `meta.subcomponents.<Key>` entry that failed instead of the primary
- * `meta.component` declaration the user never broke.
- */
-function unresolvedSubcomponentError(
-  reason: UnresolvedComponentReason,
-  entryName: string
-): DocgenError {
-  const entry = `meta.subcomponents.${entryName}`;
-  switch (reason) {
-    case 'no-meta-component':
-      return {
-        name: 'No component found',
-        message: `We could not detect the component for the ${entry} entry in your story file.`,
-      };
-    case 'no-component-import':
-      return {
-        name: 'No component import found',
-        message: `No component file found for the component declared in ${entry}. Import it into the story file.`,
-      };
-    case 'unreadable-component-expression':
-      return {
-        name: 'No component found',
-        message: `We could not follow ${entry} to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.`,
-      };
-  }
+function unresolvedComponentError(reason: UnresolvedComponentReason, subject: string): DocgenError {
+  return UNRESOLVED_COMPONENT_MESSAGES[reason](subject);
 }
 
 /**
@@ -120,8 +99,85 @@ function getUsableComponentName(component: string | undefined): string | undefin
 }
 
 /**
- * Builds one declared subcomponent's docgen entry through the same extraction chain as the primary
- * component: resolve to a file, follow re-exports, then run the shared metadata extraction.
+ * Either the extraction failed with a {@link DocgenError}, or it produced the fields both the
+ * primary payload and a subcomponent entry need — the followed module `path` plus the
+ * `vue-component-meta` source they render from.
+ */
+type ExtractedVueComponentDocgen =
+  | { error: DocgenError }
+  | (Pick<
+      DocgenSubcomponent,
+      'description' | 'summary' | 'jsDocTags' | 'argTypes' | 'apiDescription'
+    > & {
+      path: string;
+      componentMeta: MetaSource;
+    });
+
+/**
+ * The one extraction chain behind the primary component and each declared subcomponent: follow
+ * re-exports, collect `vue-component-meta` sources for the declaring module, then derive the
+ * description, argTypes, and API description in that module's scope. Returns a {@link DocgenError}
+ * instead of throwing when the module has no metadata for the export, so each caller decides how
+ * the failure surfaces.
+ */
+async function extractVueComponentDocgen(
+  context: BuildDocgenContext,
+  resolvedComponent: { path: string; exportName: string },
+  { metaJsDoc, errorContext = '' }: { metaJsDoc?: string; errorContext?: string } = {}
+): Promise<ExtractedVueComponentDocgen> {
+  const checker = context.getChecker(resolvedComponent.path);
+  // Resolving the barrel first also means the description pass reads the declaring SFC rather than
+  // the index file, which has no component in it to read descriptions from.
+  const declaredExport = followReExport(
+    checker,
+    resolvedComponent.path,
+    resolvedComponent.exportName
+  ) ?? {
+    path: resolvedComponent.path,
+    exportName: resolvedComponent.exportName,
+  };
+  const metaSources = await collectComponentMetaSources(
+    checker,
+    declaredExport.path,
+    context.typescript
+  );
+  const componentMeta = metaSources.find((meta) => meta.exportName === declaredExport.exportName);
+  if (!componentMeta) {
+    return {
+      error: {
+        name: 'No docgen found',
+        message: `vue-component-meta extracted no component metadata for the "${declaredExport.exportName}" export of ${declaredExport.path}${errorContext}.`,
+      } satisfies DocgenError,
+    };
+  }
+
+  const { description, summary, jsDocTags } = extractComponentDescription(
+    metaJsDoc,
+    componentMeta.description,
+    componentMeta.jsDocTags
+  );
+
+  // Server-only named-type expansion for `table.type.detail`; the legacy Vite-plugin path never
+  // constructs one, keeping its output byte-identical. No-op when the checker has no program.
+  const resolveNamedTypeDetail = createNamedTypeDetailResolver({
+    checker,
+    typescript: context.typescript,
+    componentPath: declaredExport.path,
+  });
+
+  return {
+    path: declaredExport.path,
+    componentMeta,
+    description,
+    summary,
+    jsDocTags,
+    argTypes: extractArgTypes({ __docgenInfo: componentMeta }, resolveNamedTypeDetail) ?? undefined,
+    apiDescription: buildApiDescription(componentMeta),
+  };
+}
+
+/**
+ * Builds one declared subcomponent's docgen entry through the shared extraction chain.
  *
  * Every failure — resolution, extraction, anything thrown — is isolated to the entry's `error`, so
  * one broken child cannot fail the payload that documents the primary component.
@@ -143,55 +199,26 @@ async function buildSubcomponentDocgen(
   try {
     const resolved = resolveMetaComponent(csf, storyPath, declared.node);
     if ('reason' in resolved) {
-      return failure(unresolvedSubcomponentError(resolved.reason, declared.name));
+      return failure(
+        unresolvedComponentError(resolved.reason, `meta.subcomponents.${declared.name}`)
+      );
     }
 
-    const checker = context.getChecker(resolved.component.path);
-    // A design system declares subcomponents through its barrel as often as not, so the re-export
-    // is followed exactly like the primary component's.
-    const declaredExport = followReExport(
-      checker,
-      resolved.component.path,
-      resolved.component.exportName
-    ) ?? {
-      path: resolved.component.path,
-      exportName: resolved.component.exportName,
-    };
-    const metaSources = await collectComponentMetaSources(
-      checker,
-      declaredExport.path,
-      context.typescript
-    );
-    const componentMeta = metaSources.find((meta) => meta.exportName === declaredExport.exportName);
-    if (!componentMeta) {
-      return failure({
-        name: 'No docgen found',
-        message: `vue-component-meta extracted no component metadata for the "${declaredExport.exportName}" export of ${declaredExport.path} (subcomponent "${declared.name}").`,
-      });
-    }
-
-    const { description, summary, jsDocTags } = extractComponentDescription(
-      undefined,
-      componentMeta.description,
-      componentMeta.jsDocTags
-    );
-
-    // Named-type detail resolves in the declaring module's scope, so each child builds its own.
-    const resolveNamedTypeDetail = createNamedTypeDetailResolver({
-      checker,
-      typescript: context.typescript,
-      componentPath: declaredExport.path,
+    const extracted = await extractVueComponentDocgen(context, resolved.component, {
+      errorContext: ` (subcomponent "${declared.name}")`,
     });
+    if ('error' in extracted) {
+      return failure(extracted.error);
+    }
 
     return {
       name: declared.componentName,
-      path: declaredExport.path,
-      description,
-      summary,
-      jsDocTags,
-      argTypes:
-        extractArgTypes({ __docgenInfo: componentMeta }, resolveNamedTypeDetail) ?? undefined,
-      apiDescription: buildApiDescription(componentMeta),
+      path: extracted.path,
+      description: extracted.description,
+      summary: extracted.summary,
+      jsDocTags: extracted.jsDocTags,
+      argTypes: extracted.argTypes,
+      apiDescription: extracted.apiDescription,
       renderer: 'vue3',
     };
   } catch (error) {
@@ -263,7 +290,12 @@ export async function buildDocgenPayload(
 
   const resolved = resolveMetaComponent(csf, storyPath);
   if ('reason' in resolved) {
-    const error = UNRESOLVED_COMPONENT_ERRORS[resolved.reason];
+    // Without meta.component there is no declaration to name — the story file itself is what is
+    // missing; every other reason points at the meta.component reference it could not follow.
+    const error = unresolvedComponentError(
+      resolved.reason,
+      resolved.reason === 'no-meta-component' ? 'your story file' : 'meta.component'
+    );
     return {
       ...base,
       error: {
@@ -276,48 +308,15 @@ export async function buildDocgenPayload(
   }
 
   const { component } = resolved;
-  const checker = context.getChecker(component.path);
-  // Resolving the barrel first also means the event-description pass reads the declaring SFC rather
-  // than the index file, which has no component in it to read descriptions from.
-  const declared = followReExport(checker, component.path, component.exportName) ?? {
-    path: component.path,
-    exportName: component.exportName,
-  };
-  const metaSources = await collectComponentMetaSources(checker, declared.path, context.typescript);
-  const componentMeta = metaSources.find((meta) => meta.exportName === declared.exportName);
-
-  if (!componentMeta) {
-    return {
-      ...base,
-      error: {
-        name: 'No docgen found',
-        message: `vue-component-meta extracted no component metadata for the "${declared.exportName}" export of ${declared.path}.`,
-      },
-    };
-  }
-
   const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
-  const { description, summary, jsDocTags } = extractComponentDescription(
-    metaJsDoc,
-    componentMeta.description,
-    componentMeta.jsDocTags
-  );
 
-  // Server-only named-type expansion for `table.type.detail`; the legacy Vite-plugin path never
-  // constructs one, keeping its output byte-identical. No-op when the checker has no program.
-  const resolveNamedTypeDetail = createNamedTypeDetailResolver({
-    checker,
-    typescript: context.typescript,
-    componentPath: declared.path,
-  });
-
-  // Composite components declare the auxiliary parts they are documented with in CSF meta; each
-  // gets the same extraction chain as the primary component, fanned out in parallel — the children
-  // are independent and every failure is isolated to its own entry. Promise.all keeps the CSF
-  // declaration order in the record. The key is omitted entirely when nothing is declared, so
-  // payloads for story files without subcomponents stay byte-identical.
-  const subcomponentEntries: Record<string, DocgenSubcomponent> = Object.fromEntries(
-    await Promise.all(
+  // The primary and its declared subcomponents share one extraction chain and run concurrently:
+  // the children are independent and every failure stays isolated to its own entry, while
+  // Promise.all keeps the CSF declaration order in the record. The key is omitted entirely when
+  // nothing is declared, so payloads for story files without subcomponents stay byte-identical.
+  const [primaryDocgen, subcomponentEntries] = await Promise.all([
+    extractVueComponentDocgen(context, component, { metaJsDoc }),
+    Promise.all(
       extractDeclaredSubcomponents(csf).map(
         async (declaredSubcomponent) =>
           [
@@ -331,17 +330,21 @@ export async function buildDocgenPayload(
             ),
           ] as const
       )
-    )
-  );
+    ).then((entries) => Object.fromEntries(entries)),
+  ]);
+
+  if ('error' in primaryDocgen) {
+    return { ...base, error: primaryDocgen.error };
+  }
 
   return {
-    ...baseFor((authoredComponentName ?? componentMeta.displayName) || fallbackName),
-    description,
-    summary,
-    jsDocTags,
-    vueComponentMeta: componentMeta,
-    argTypes: extractArgTypes({ __docgenInfo: componentMeta }, resolveNamedTypeDetail) ?? undefined,
-    apiDescription: buildApiDescription(componentMeta),
+    ...baseFor((authoredComponentName ?? primaryDocgen.componentMeta.displayName) || fallbackName),
+    description: primaryDocgen.description,
+    summary: primaryDocgen.summary,
+    jsDocTags: primaryDocgen.jsDocTags,
+    vueComponentMeta: primaryDocgen.componentMeta,
+    argTypes: primaryDocgen.argTypes,
+    apiDescription: primaryDocgen.apiDescription,
     renderer: 'vue3',
     ...(Object.keys(subcomponentEntries).length > 0 ? { subcomponents: subcomponentEntries } : {}),
   };

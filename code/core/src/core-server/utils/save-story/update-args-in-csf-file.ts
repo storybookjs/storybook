@@ -48,9 +48,17 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
         if (!t.isSpreadElement(property)) {
           return false;
         }
+        const skippedNodes = new Set<t.Node>();
         return t.traverseFast(property.argument, (node) => {
+          if (skippedNodes.has(node)) {
+            return t.traverseFast.skip;
+          }
           if (t.isCallExpression(node) || t.isOptionalCallExpression(node)) {
             return t.traverseFast.stop;
+          }
+          if (t.isFunction(node) && !(t.isObjectMethod(node) && node.kind === 'get')) {
+            skippedNodes.add(node.body);
+            node.params.forEach((param) => skippedNodes.add(param));
           }
         });
       })

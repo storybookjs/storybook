@@ -467,6 +467,8 @@ describe.each([
     '...makeBase?.().input',
     '...Base[makeKey()]',
     '...(useFactory ? makeBase() : Base)',
+    '...{ [makeKey()]() {} }',
+    '...{ get args() { return makeBase().args; } }',
   ])('rejects saving through a function-call spread: %s', async (properties) => {
     const node = parser.parseExpression(story(`{ ${properties} }`), { plugins: ['typescript'] });
     const before = generate(node).code;
@@ -474,6 +476,28 @@ describe.each([
     await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(SaveStoryError);
 
     expect(generate(node).code).toBe(before);
+  });
+
+  test.each([
+    'render: () => makeBase()',
+    'render: function () { return makeBase(); }',
+    'render() { return makeBase(); }',
+    '["render"]() { return makeBase(); }',
+    'render: (value = makeBase()) => value',
+  ])('preserves deferred calls in spread callbacks: %s', async (render) => {
+    const node = parser.parseExpression(story(`{ ...{ args: { size: "large" }, ${render} } }`), {
+      plugins: ['typescript'],
+    });
+
+    await updateArgsInCsfFile(node, { label: 'saved' });
+
+    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    const result = runInNewContext(code, { makeBase, meta: { story: (input: unknown) => input } });
+    expect(result.args).toEqual({ size: 'large', label: 'saved' });
+    expect(makeBase).not.toHaveBeenCalled();
+
+    expect(result.render()).toEqual({ args: { label: 'base' } });
+    expect(makeBase).toHaveBeenCalledOnce();
   });
 
   test('updates args after a function-call spread without repeating the call', async () => {

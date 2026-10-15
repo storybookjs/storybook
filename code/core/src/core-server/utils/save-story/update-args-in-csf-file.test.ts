@@ -523,6 +523,23 @@ describe.each([
     ],
     ['inherits args from a single spread', '...Base', { size: 'large', baseOnly: true }],
     [
+      'preserves prototype-named args before a spread',
+      'args: { constructor: "keep", toString: "keep", valueOf: "keep", hasOwnProperty: "keep" }, ...Base',
+      {
+        constructor: 'keep',
+        toString: 'keep',
+        valueOf: 'keep',
+        hasOwnProperty: 'keep',
+        size: 'large',
+        baseOnly: true,
+      },
+    ],
+    [
+      'preserves prototype-named args without a spread',
+      'args: { constructor: "keep", toString: "keep", valueOf: "keep", hasOwnProperty: "keep" }',
+      { constructor: 'keep', toString: 'keep', valueOf: 'keep', hasOwnProperty: 'keep' },
+    ],
+    [
       'preserves args when the last spread has none',
       '...Base, ...WithoutArgs',
       { size: 'large', baseOnly: true },

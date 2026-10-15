@@ -70,7 +70,11 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
 
     const existingArgs = argsObject.properties.filter(
       (property) =>
-        !(t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name in args)
+        !(
+          t.isObjectProperty(property) &&
+          t.isIdentifier(property.key) &&
+          Object.hasOwn(args, property.key.name)
+        )
     );
     argsObject.properties = properties.slice(0, lastSpreadIndex + 1).flatMap((property) => {
       if (t.isSpreadElement(property)) {
@@ -90,7 +94,11 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
   }
 
   argsObject.properties.forEach((property) => {
-    if (t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name in args) {
+    if (
+      t.isObjectProperty(property) &&
+      t.isIdentifier(property.key) &&
+      Object.hasOwn(args, property.key.name)
+    ) {
       property.value = args[property.key.name];
       delete args[property.key.name];
     }

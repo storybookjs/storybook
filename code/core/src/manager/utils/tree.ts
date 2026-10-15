@@ -33,25 +33,6 @@ export const getParents = memoize(1000)((id: string, dataset: Dataset): Item[] =
 export const getAncestorIds = memoize(1000)((data: IndexHash, id: string): string[] =>
   getParents(id, data).map((item) => item.id)
 );
-
-/**
- * The first story or docs page under an entry, resolved the way `api.selectStory` resolves a
- * component or group: the first child present in the index, down to a leaf.
- */
-export const findFirstLeafId = (
-  data: Record<string, HashEntry>,
-  id: string
-): string | undefined => {
-  const entry = data[id];
-  if (!entry) {
-    return undefined;
-  }
-  if (entry.type === 'docs' || entry.type === 'story') {
-    return entry.id;
-  }
-  const childId = entry.children.find((child) => data[child]);
-  return childId ? findFirstLeafId(data, childId) : undefined;
-};
 export function getPath(item: Item, ref: Pick<RefType, 'id' | 'title' | 'index'>): string[] {
   // @ts-expect-error (non strict)
   const parent = item.type !== 'root' && item.parent ? ref.index[item.parent] : null;

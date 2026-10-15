@@ -989,10 +989,9 @@ export const StickyAncestors: Story = {
       ).toBe('false');
     });
 
-    // Keyboard entry falls back to the selected story when no row is focused. Opening the
-    // component above selected its first story, and the sticky collapse then folded that
-    // component, so the menu first has to open it again. (The scroll-into-view half of this
-    // behavior is not observable here: under NODE_ENV=test react-aria sizes the scroll view as
+    // Keyboard entry falls back to the selected story when no row is focused, even though
+    // its row sits far outside the viewport. (The scroll-into-view half of this behavior
+    // is not observable here: under NODE_ENV=test react-aria sizes the scroll view as
     // Infinity and clamps its internal scroll offset to 0 on every render.)
     (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur?.();
     const firstRowAfterCollapse = canvasElement.querySelector<HTMLElement>(
@@ -1185,9 +1184,6 @@ export const StoryWithTests: Story = {
  * Rapid clicks toggle a branch once per press and nothing more. React-aria raises an action for a
  * mouse double-click on top of the two presses, which have each toggled the branch through the
  * selection already; acting on it too made two rapid clicks toggle three times.
- *
- * The branch is a root, which only folds: opening a component also shows its first story, whose
- * selection keeps the component open.
  */
 export const DoubleClickTogglesOncePerPress: Story = {
   args: { refId: DEFAULT_REF_ID },
@@ -1201,22 +1197,60 @@ export const DoubleClickTogglesOncePerPress: Story = {
     const canvas = within(canvasElement);
     const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
     await canvas.findByText('Introduction');
-    const branch = row('emails')!;
-    expect(branch).toHaveAttribute('aria-expanded', 'true');
+    const branch = row('emails-buildnotification')!;
+    expect(branch).toHaveAttribute('aria-expanded', 'false');
 
-    // Two presses: collapsed, then expanded again. The double-click action adds nothing.
+    // Two presses: expanded, then collapsed again. The double-click action adds nothing.
+    await userEvent.dblClick(branch);
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
+
+    // A single press still toggles, and a double-click from the expanded state lands expanded.
+    await userEvent.click(branch);
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
     await userEvent.dblClick(branch);
     await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
-
-    // A single press still toggles, and a double-click from the collapsed state lands collapsed.
-    await userEvent.click(branch);
-    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
-    await userEvent.dblClick(branch);
-    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
 
     // Enter still toggles through the action.
     await userEvent.keyboard('{Enter}');
-    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
+  },
+};
+
+/**
+ * The context-menu shortcut falls back to the selected story when no row holds focus, and opens
+ * its branch again when the user folded it since: a folded row has no DOM node to anchor the
+ * menu to.
+ */
+export const ShortcutOpensMenuUnderFoldedBranch: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('marketing hero');
+    // The selected story is the first one of the `images` component. Folding the component
+    // unmounts its row.
+    const component = canvasElement.querySelector<HTMLElement>('[data-item-id="images"]')!;
+    await userEvent.click(component);
+    await waitFor(() =>
+      expect(canvasElement.querySelector(`[data-item-id="${storyId}"]`)).toBeNull()
+    );
+    (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur?.();
+    await userEvent.unhover(component);
+    await waitFor(() => expect(canvasElement.querySelector('[data-focused="true"]')).toBeNull());
+
+    const openMenuHandler = managerContext.api.on.mock.calls
+      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
+      .at(-1)?.[1];
+    openMenuHandler();
+    const popover = await screen.findByRole('dialog');
+    expect(within(popover).getByText('Go to story')).toBeVisible();
+    expect(component).toHaveAttribute('aria-expanded', 'true');
+    await userEvent.keyboard('{Escape}');
   },
 };
 

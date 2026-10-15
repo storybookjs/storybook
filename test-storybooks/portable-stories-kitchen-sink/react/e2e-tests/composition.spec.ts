@@ -28,7 +28,9 @@ test.describe('composition', () => {
       await sbPage.revealSidebarRow('components-badge--default', 'storybook@8.0.0')
     ).toBeVisible();
 
+    // Opening a component only expands it; the story is chosen from its rows.
     await (await sbPage.revealSidebarRow('components-badge', 'storybook@7.6.18')).click();
+    await (await sbPage.revealSidebarRow('components-badge--default', 'storybook@7.6.18')).click();
     await expect(
       page
         .locator('iframe[title="storybook-ref-storybook\\@7\\.6\\.18"]')

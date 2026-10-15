@@ -17,7 +17,6 @@ import { Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
   addStoryRows,
-  findFirstLeafId,
   getAncestorIds,
   hoistSingleStoryComponents,
   indexToTree,
@@ -350,23 +349,15 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
 
-  // A branch toggles its own expansion. Opening a collapsed component also shows its first story
-  // or docs page, as the sidebar always has, except on mobile where that would close the drawer
-  // before the user sees the stories. A leaf navigates to its story or docs page; the "Story" row
-  // of a story with tests navigates to that story. On mobile the tree lives in the menu drawer,
-  // which closes once a story is chosen.
+  // A branch toggles its own expansion and nothing more: by design, opening a component no longer
+  // navigates to its first story, as the previous sidebar did. A leaf navigates to its story or
+  // docs page; the "Story" row of a story with tests navigates to that story. On mobile the tree
+  // lives in the menu drawer, which closes once a story is chosen.
   const activateRow = useCallback(
     (itemId: string) => {
       const item = hoistedDataRef.current[itemId];
       if (item && isBranch(item)) {
-        const expand = !expandedRef.current.has(itemId);
-        if (expand && item.type === 'component' && !isMobile) {
-          const firstLeafId = findFirstLeafId(hoistedDataRef.current, itemId);
-          if (firstLeafId) {
-            onSelectStoryId(firstLeafId);
-          }
-        }
-        setExpanded({ ids: [itemId], append: true, value: expand });
+        setExpanded({ ids: [itemId], append: true, value: !expandedRef.current.has(itemId) });
       } else {
         onSelectStoryId(isStoryRow(item) ? item.storyRowOf : itemId);
         if (isMobile) {

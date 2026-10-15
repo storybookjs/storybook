@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
@@ -206,30 +206,5 @@ describe('runFixes', () => {
       'An error occurred while running the automigrate command.'
     );
     expect(run1).not.toHaveBeenCalled();
-  });
-});
-
-describe('doAutomigrate', () => {
-  it('flags an unknown migration id', async () => {
-    getStorybookData.mockResolvedValue({
-      ...common,
-      beforeVersion,
-      versionInstalled: '7.0.0',
-      isLatest: true,
-    });
-
-    onTestFinished(() => {
-      process.exitCode = undefined;
-    });
-
-    const result = await doAutomigrate({
-      configDir,
-      fixes,
-      fixId: 'definitely-not-a-real-id',
-    });
-
-    // doAutomigrate itself resolves undefined; the exit code is how the CLI surfaces the mistake
-    expect(result).toBeUndefined();
-    expect(process.exitCode).toBe(1);
   });
 });

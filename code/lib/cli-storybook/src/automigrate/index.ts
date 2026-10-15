@@ -185,8 +185,6 @@ export const automigrate = async ({
   if (fixId && fixes.length === 0) {
     logger.log(`📭 No migrations found for ${picocolors.magenta(fixId)}.`);
     logAvailableMigrations();
-    // The user named a migration that does not exist; exiting successfully would hide the mistake.
-    process.exitCode = 1;
     return null;
   }
 

@@ -126,7 +126,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     for (const [configFile, source] of configSources) {
       let entries: SetupFileEntry[];
       try {
-        entries = extractSetupFileEntries(source, configFile, inheritsRootByDefault);
+        entries = extractSetupFileEntries(source, configFile, inheritsRootByDefault, configDir);
       } catch {
         continue;
       }
@@ -221,7 +221,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     return `We'll remove "setProjectAnnotations" calls from your Vitest setup files, as ${VITEST_ADDON_NAME} now applies project annotations itself`;
   },
 
-  async run({ result, files }) {
+  async run({ result, files, configDir: rawConfigDir }) {
     const { setupFiles, configFiles, unresolvedEntries, inheritsRootByDefault } = result;
 
     const deletedPaths = new Set(
@@ -285,12 +285,15 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     }
 
     if (deletedPaths.size > 0) {
+      // The CLI passes the config dir as given on the command line, which may be relative
+      const storybookConfigDir = path.resolve(rawConfigDir);
       await files.edit(configFiles, (source, configFile) => {
         const code = removeSetupFileEntries(
           source,
           configFile,
           deletedPaths,
-          inheritsRootByDefault
+          inheritsRootByDefault,
+          storybookConfigDir
         );
         return code === null ? null : formatExistingFile(configFile, code);
       });
@@ -578,7 +581,8 @@ type SetupFileEntry =
 function extractSetupFileEntries(
   source: string,
   configFile: string,
-  inheritsRootByDefault: ExtendsDefault
+  inheritsRootByDefault: ExtendsDefault,
+  storybookConfigDir: string
 ): SetupFileEntry[] {
   const j = jscodeshift.withParser('ts');
   const root = j(source);
@@ -608,7 +612,7 @@ function extractSetupFileEntries(
         const project = owner
           ? classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault)
           : 'unknown';
-        const base = getSetupFilesBaseDir(propertyPath, owner, configFile);
+        const base = getSetupFilesBaseDir(propertyPath, owner, configFile, storybookConfigDir);
         if ('unresolvedRoot' in base) {
           collect({
             kind: 'unresolved',
@@ -625,11 +629,7 @@ function extractSetupFileEntries(
           collect(
             resolved === null
               ? { kind: 'unresolved', expression: j(node).toSource(), project }
-              : {
-                  kind: 'resolved',
-                  path: resolveSetupFileEntry(base.baseDir, resolved, configFile),
-                  project,
-                }
+              : { kind: 'resolved', path: path.resolve(base.baseDir, resolved), project }
           );
         }
       }
@@ -794,12 +794,16 @@ function calleeName(callee: jscodeshift.ASTNode) {
  * project's `test.root`, then its `root`, then the same two fields of each config it inherits from,
  * and finally the config file's directory. An inherited root-level entry therefore resolves against
  * the inheriting project, not the root config. A root that can't be read statically makes every
- * entry unresolvable.
+ * entry unresolvable. That final default has one exception: a config inside the Storybook config
+ * dir is only loaded explicitly (`vitest run --config .storybook/vitest.config.ts`), so its
+ * relative entries resolve against the invocation cwd, the config dir's parent in the standard
+ * and Nx layouts; any other config file's directory is the project root itself.
  */
 function getSetupFilesBaseDir(
   setupFilesPath: ObjectPropertyPath,
   owner: ObjectExpressionPath | null,
-  configFile: string
+  configFile: string,
+  storybookConfigDir: string
 ): { baseDir: string } | { unresolvedRoot: jscodeshift.ASTNode } {
   const configDir = path.dirname(configFile);
   const candidates: (jscodeshift.ASTNode | undefined)[] = [];
@@ -818,30 +822,17 @@ function getSetupFilesBaseDir(
 
   const rootNode = candidates.find((candidate) => candidate !== undefined);
   if (!rootNode) {
-    return { baseDir: configDir };
+    // Without an explicit root, Vitest resolves relative entries against the project root that
+    // runs them. A config inside the Storybook config dir runs from the invocation cwd, so that
+    // root is the config dir's parent; every other config file's directory is the project root.
+    const isInsideConfigDir =
+      configDir === storybookConfigDir || configDir.startsWith(`${storybookConfigDir}${path.sep}`);
+    return {
+      baseDir: isInsideConfigDir ? path.dirname(storybookConfigDir) : configDir,
+    };
   }
   const root = resolveStaticPath(rootNode, configFile);
   return root === null ? { unresolvedRoot: rootNode } : { baseDir: path.resolve(configDir, root) };
-}
-
-/**
- * Resolve a `setupFiles` entry to the file it references. `getSetupFilesBaseDir` models Vitest's
- * root statically as the config file's directory, which a config inside the Storybook config dir
- * can contradict: that config is only loaded explicitly (`vitest run --config
- * .storybook/vitest.config.ts`), so its relative entries resolve against the invocation cwd —
- * normally the project root, the config dir's parent in the standard and Nx layouts. Detection
- * and the rewrite both resolve through this while the file is still on disk, so they always
- * agree on which file an entry references.
- */
-function resolveSetupFileEntry(baseDir: string, resolved: string, configFile: string): string {
-  const primary = path.resolve(baseDir, resolved);
-  const fromProjectRoot = path.resolve(path.dirname(path.dirname(configFile)), resolved);
-
-  if (primary === fromProjectRoot || existsSync(primary)) {
-    return primary;
-  }
-
-  return existsSync(fromProjectRoot) ? fromProjectRoot : primary;
 }
 
 function findProperty(objectNode: jscodeshift.ObjectExpression, name: string) {
@@ -970,7 +961,8 @@ function removeSetupFileEntries(
   source: string,
   configFile: string,
   targets: Set<string>,
-  inheritsRootByDefault: ExtendsDefault
+  inheritsRootByDefault: ExtendsDefault,
+  storybookConfigDir: string
 ) {
   const j = jscodeshift.withParser('ts');
   const root = j(source);
@@ -987,15 +979,13 @@ function removeSetupFileEntries(
           (owner) =>
             classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault) === 'storybook'
         )
-        .map((owner) => getSetupFilesBaseDir(propertyPath, owner, configFile))
+        .map((owner) => getSetupFilesBaseDir(propertyPath, owner, configFile, storybookConfigDir))
         .flatMap((base) => ('baseDir' in base ? [base.baseDir] : []));
       const isTarget = (node: jscodeshift.ASTNode | null) => {
         const resolved = resolveStaticPath(node, configFile);
         return (
           resolved !== null &&
-          baseDirs.some((baseDir) =>
-            targets.has(resolveSetupFileEntry(baseDir, resolved, configFile))
-          )
+          baseDirs.some((baseDir) => targets.has(path.resolve(baseDir, resolved)))
         );
       };
       const value = propertyPath.value.value;

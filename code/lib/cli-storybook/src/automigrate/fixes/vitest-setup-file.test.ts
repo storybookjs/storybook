@@ -38,6 +38,13 @@ const A11Y_SETUP_FILE = dedent`
   setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
 `;
 
+const A11Y_ONLY_SETUP_FILE = dedent`
+  import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+  import { setProjectAnnotations } from '@storybook/react-vite';
+
+  setProjectAnnotations([a11yAddonAnnotations]);
+`;
+
 const SB_8_6_0_SETUP_FILE = dedent`
   import { beforeAll } from 'vitest';
   import { setProjectAnnotations } from '@storybook/react';
@@ -261,14 +268,61 @@ describe('vitestSetupFile', () => {
       loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
     });
 
+    it('migrates the project-root setup file when both setup files exist', async () => {
+      const { configDir } = await migrate(
+        {
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG.replace(
+            "setupFiles: ['.storybook/vitest.setup.ts'] },",
+            "setupFiles: ['vitest.setup.ts'] },"
+          ),
+          '.storybook/vitest.setup.ts': "import '@testing-library/jest-dom/vitest';",
+          'vitest.setup.ts': A11Y_ONLY_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      // Vitest resolves the entry against the invocation cwd, so it loads the project-root file
+      expect(existsSync(path.join(fixtureRoot, 'vitest.setup.ts'))).toBe(false);
+      expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(true);
+
+      const updatedConfig = readFixture('.storybook/vitest.config.ts');
+      expect(updatedConfig).not.toContain('vitest.setup.ts');
+      loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
+    });
+
+    it('migrates a config-dir setup file against an explicit test.root', async () => {
+      const { configDir } = await migrate(
+        {
+          '.storybook/vitest.config.ts': CONFIG_DIR_VITEST_CONFIG.replace(
+            "setupFiles: ['.storybook/vitest.setup.ts'] },",
+            "setupFiles: ['vitest.setup.ts'] },"
+          ).replace(
+            "test: { name: 'storybook',",
+            "test: { root: './vitest-root', name: 'storybook',"
+          ),
+          '.storybook/vitest-root/vitest.setup.ts': A11Y_ONLY_SETUP_FILE,
+          // An explicit root wins even though the project root also has a setup file
+          'vitest.setup.ts': A11Y_ONLY_SETUP_FILE,
+        },
+        { addons: ['@storybook/addon-a11y'] }
+      );
+
+      expect(existsSync(path.join(configDir, 'vitest-root/vitest.setup.ts'))).toBe(false);
+      expect(readFixture('vitest.setup.ts')).toBe(A11Y_ONLY_SETUP_FILE);
+
+      const updatedConfig = readFixture('.storybook/vitest.config.ts');
+      expect(updatedConfig).not.toContain('vitest.setup.ts');
+      loadConfig(updatedConfig, path.join(configDir, 'vitest.config.ts'));
+    });
+
     it('keeps the setup file when its config entry cannot be rewritten', async () => {
-      const { result, setupFilePath } = await check({
+      const { result, setupFilePath, configDir } = await check({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
       });
       vi.mocked(formatExistingFile).mockRejectedValueOnce(new Error('formatter crashed'));
 
-      await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
+      await expect(runFix(vitestSetupFile, { result: result!, configDir } as any)).rejects.toThrow(
         'formatter crashed'
       );
 
@@ -304,7 +358,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await runFix(vitestSetupFile, { result } as any);
+      await runFix(vitestSetupFile, { result, configDir } as any);
 
       expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
       const updatedConfig = readFixture('vitest.config.ts');
@@ -342,7 +396,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await runFix(vitestSetupFile, { result } as any);
+      await runFix(vitestSetupFile, { result, configDir } as any);
 
       expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
       const updatedConfig = readFixture('vitest.config.ts');
@@ -377,7 +431,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await expect(runFix(vitestSetupFile, { result } as any)).rejects.toThrow();
+      await expect(runFix(vitestSetupFile, { result, configDir } as any)).rejects.toThrow();
 
       expect(readFixture('app/.storybook/vitest.setup.ts')).toBe(PREVIEW_ONLY_SETUP_FILE);
       expect(readFixture('vitest.config.ts')).toBe(configSource);
@@ -408,7 +462,7 @@ describe('vitestSetupFile', () => {
       } as any);
 
       expect(result).not.toBeNull();
-      await runFix(vitestSetupFile, { result } as any);
+      await runFix(vitestSetupFile, { result, configDir } as any);
 
       expect(existsSync(path.join(configDir, 'vitest.setup.ts'))).toBe(false);
       const updatedConfig = readFixture('vitest.config.ts');
@@ -759,13 +813,13 @@ describe('vitestSetupFile', () => {
           },
         });
       `;
-      const { result } = await check({
+      const { result, configDir } = await check({
         '.storybook/vitest.setup.ts': CUSTOM_CODE_SETUP_FILE,
         'vitest.config.ts': config,
       });
 
       expect(result).not.toBeNull();
-      await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
+      await expect(runFix(vitestSetupFile, { result: result!, configDir } as any)).rejects.toThrow(
         'automigration'
       );
       expect(readFixture('.storybook/vitest.setup.ts')).toBe(CUSTOM_CODE_SETUP_FILE);
@@ -824,13 +878,13 @@ describe('vitestSetupFile', () => {
           },
         });
       `;
-      const { result } = await check({
+      const { result, configDir } = await check({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': config,
       });
 
       expect(result).not.toBeNull();
-      await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
+      await expect(runFix(vitestSetupFile, { result: result!, configDir } as any)).rejects.toThrow(
         'automigration'
       );
       expect(readFixture('.storybook/vitest.setup.ts')).toBe(PREVIEW_ONLY_SETUP_FILE);
@@ -928,16 +982,17 @@ describe('vitestSetupFile', () => {
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
       });
+      const configDir = path.relative(process.cwd(), fixture.configDir);
       const result = await checkFix(vitestSetupFile, {
         mainConfig: MAIN_CONFIG,
-        configDir: path.relative(process.cwd(), fixture.configDir),
+        configDir,
         packageManager: fixture.packageManager,
       } as any);
 
       expect(result?.setupFiles).toEqual([
         { path: fixture.setupFilePath, transform: { kind: 'empty' } },
       ]);
-      await runFix(vitestSetupFile, { result: result! } as any);
+      await runFix(vitestSetupFile, { result: result!, configDir } as any);
 
       expect(existsSync(fixture.setupFilePath)).toBe(false);
       expect(readFixture('vitest.config.ts')).not.toContain('vitest.setup.ts');
@@ -1425,14 +1480,20 @@ async function check(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
 
 async function migrate(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
   const fixture = await check(files, mainConfig);
-  await runFix(vitestSetupFile, { result: fixture.result! } as any);
+  await runFix(vitestSetupFile, {
+    result: fixture.result!,
+    configDir: fixture.configDir,
+  } as any);
   return fixture;
 }
 
 async function migrateAndCaptureError(files: Record<string, string>, mainConfig = MAIN_CONFIG) {
   const fixture = await check(files, mainConfig);
   try {
-    await runFix(vitestSetupFile, { result: fixture.result! } as any);
+    await runFix(vitestSetupFile, {
+      result: fixture.result!,
+      configDir: fixture.configDir,
+    } as any);
   } catch (error) {
     return normalize(String(error instanceof Error ? error.message : error));
   }

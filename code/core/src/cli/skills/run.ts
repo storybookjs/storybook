@@ -3,6 +3,7 @@ import { relative } from 'node:path';
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import { ALL_MCP_TOOLSETS } from './availability.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
 import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
 import type { SkillTextTransport } from './content/skill-vocabulary.ts';
@@ -225,16 +226,23 @@ function renderCatalogHelp(): string {
 }
 
 function assembleUiWorkflow(inputs: SkillInputs, transport: SkillTextTransport): string {
+  // Over MCP, a step only appears when the server registers its tools, with the same gates as
+  // addon-mcp's tool registry: the toolsets `main.ts` turns on, and for the docs tools the
+  // `componentsManifest` opt-in or composed Storybooks. The CLI commands are always there and only
+  // need manifests.
+  const mcp = transport === 'mcp';
+  const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
   return buildUiWorkflowSkill({
     transport,
     framework: inputs.framework,
     csfFactories: inputs.csfFactories,
     previewFile: inputs.previewFile,
     typescript: inputs.typescript,
-    // The MCP docs tools also need the `componentsManifest` opt-in; the CLI commands only need manifests.
-    docsEnabled: transport === 'mcp' ? inputs.docsEnabled : inputs.docsEnabledForCli,
-    testSupported: inputs.testSupported,
+    docsEnabled:
+      toolsets.docs && (mcp ? inputs.docsEnabled || inputs.composed : inputs.docsEnabledForCli),
+    testSupported: toolsets.test && inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
-    moduleGraphSupported: inputs.moduleGraphSupported,
+    moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
+    devEnabled: toolsets.dev,
   });
 }

@@ -1,8 +1,7 @@
 import { type SkillTextTransport, skillVocabulary } from './skill-vocabulary.ts';
 
-// The MCP server's toolsets can be switched off, which the skills CLI cannot see.
-export const MCP_TOOLS_NOTE =
-  'The tools named here are the tools of the Storybook MCP server; skip a step whose tool the server does not list.';
+// Tells the agent to call these names as tools, not to run them as commands.
+export const MCP_TOOLS_NOTE = 'The tools named here are tools of the Storybook MCP server.';
 
 /**
  * How to look up the components to reuse. `ui-workflow` inlines it, so an agent cannot skip the

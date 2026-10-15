@@ -485,11 +485,16 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
 );
 
 WithChangeDetectionAndTestStatus.play = async ({ canvasElement }) => {
-  // Each slot renders its own icon on the leaf row: the change status and the test status.
+  // Each slot renders its own labelled badge on the leaf row: the change status and the test
+  // status. Addons and end-to-end tests look the badges up by these test ids and labels.
   const leafRow = canvasElement.querySelector(`[data-item-id="${dualSlotStoryId}"]`)!;
   await waitFor(() => {
-    expect(leafRow.querySelector('[data-testid="tree-change-status-button"]')).not.toBeNull();
-    expect(leafRow.querySelector('[data-testid="tree-test-status-button"]')).not.toBeNull();
+    expect(
+      leafRow.querySelector('[data-testid="tree-change-status-button"]')?.getAttribute('aria-label')
+    ).toBe('Change status: Modified');
+    expect(
+      leafRow.querySelector('[data-testid="tree-status-button"]')?.getAttribute('aria-label')
+    ).toBe('Test status: Error');
   });
 };
 

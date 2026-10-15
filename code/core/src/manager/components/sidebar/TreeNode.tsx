@@ -184,6 +184,17 @@ const StatusIconContainer = styled.span({
   zIndex: 1,
 });
 
+// One badge per status kind. Each is a box of its own, with the test id and the label that
+// addons and end-to-end tests look up ("Test status: Success", "Change status: New").
+const StatusBadge = styled.span({
+  display: 'inline-flex',
+  alignItems: 'center',
+});
+
+/** "status-value:success" → "Success", the wording the badge labels have always used. */
+const getStatusLabel = (status: StatusValue) =>
+  status.split(':')[1].replace(/^./, (char) => char.toUpperCase());
+
 export interface TreeNodeProps {
   /** The item for this TreeNode. */
   item: TreeEntry;
@@ -485,16 +496,24 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                 </MenuTriggerContainer>
               )}
               {(changeStatusIcon || testStatusIcon) && (
-                <StatusIconContainer role="status" aria-live="off" data-testid="tree-status-button">
+                <StatusIconContainer role="status" aria-live="off">
                   {changeStatusIcon && (
-                    <span style={{ display: 'contents' }} data-testid="tree-change-status-button">
+                    <StatusBadge
+                      role="img"
+                      aria-label={`Change status: ${getStatusLabel(changeStatus)}`}
+                      data-testid="tree-change-status-button"
+                    >
                       {changeStatusIcon}
-                    </span>
+                    </StatusBadge>
                   )}
                   {testStatusIcon && (
-                    <span style={{ display: 'contents' }} data-testid="tree-test-status-button">
+                    <StatusBadge
+                      role="img"
+                      aria-label={`Test status: ${getStatusLabel(testStatus)}`}
+                      data-testid="tree-status-button"
+                    >
                       {testStatusIcon}
-                    </span>
+                    </StatusBadge>
                   )}
                 </StatusIconContainer>
               )}

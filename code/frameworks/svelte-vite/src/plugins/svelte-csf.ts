@@ -30,8 +30,16 @@ export function svelteCsf(): Plugin {
       },
     },
     transform: {
-      filter: { id: /\.stories\.svelte$/ },
+      filter: { id: /\.stories\.svelte(\?svelte&type=style\b.*)?$/ },
       handler(compiledCode, id) {
+        const query = id.indexOf('?');
+        if (query !== -1) {
+          // vite-plugin-svelte keeps the CSS of a component only while its default export is used. A
+          // stories file with `preview.meta()` compiles to stories without a default export, so the
+          // production build would drop its CSS. Keep the CSS while the stories file is used.
+          const cssScopeTo = [id.slice(0, query), undefined] as const;
+          return { code: compiledCode, meta: { vite: { cssScopeTo } } };
+        }
         return transformSvelteCsf({
           filename: id,
           compiledCode,

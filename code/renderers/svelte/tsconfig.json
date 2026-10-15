@@ -3,7 +3,9 @@
   "compilerOptions": {
     "allowJs": true,
     "module": "ESNext",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    // The template stories import the preview of the sandbox they are linked into
+    "paths": { "#.storybook/preview": ["./src/__test__/svelte-csf-factories/preview.ts"] }
   },
   "include": [
     "src/**/*",

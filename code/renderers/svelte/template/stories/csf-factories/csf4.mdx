@@ -1,0 +1,20 @@
+import { Canvas, Meta } from '@storybook/addon-docs/blocks';
+
+import * as SvelteCsfStories from './svelte-csf.stories.svelte';
+import * as Csf4Stories from './csf4.stories';
+
+<Meta of={SvelteCsfStories} />
+
+# CSF factories in MDX
+
+A story from a Svelte CSF file with `preview.meta()`:
+
+<Canvas of={SvelteCsfStories.Primary} />
+
+A story of a `Story` component from `meta.type<>()`:
+
+<Canvas of={SvelteCsfStories.Icon} />
+
+A story from a `.stories.ts` file with `meta.story()`:
+
+<Canvas of={Csf4Stories.Primary} />

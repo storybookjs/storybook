@@ -6,7 +6,7 @@ Writing your stories in [TypeScript](https://www.typescriptlang.org/) makes you 
 
 Storybook has built-in TypeScript support, so you can get started with zero configuration required.
 
-<If renderer={['react', 'vue', 'angular', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'web-components', 'svelte']}>
 
 <Callout variant="info" icon="💡">
 
@@ -149,6 +149,34 @@ Svelte offers excellent TypeScript support for .svelte files. For example, consi
 ```
 
 The same setup works with Svelte stories files too, providing both type safety and autocompletion.
+
+In [CSF Next](../api/csf/csf-next.mdx), `preview.meta` infers the args from the props of the component, in `.stories.svelte` and `.stories.ts` files. A story must set every required prop that the meta doesn't set.
+
+For a [generic component](https://svelte.dev/docs/svelte/typescript#Generic-$props) (using `<script lang="ts" generics="T">`), pass the type argument directly to the component:
+
+```svelte title="GenericList.stories.svelte"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import GenericList from './GenericList.svelte';
+
+  const { Story } = preview.meta({
+    // 👇 Pass the type argument directly
+    component: GenericList<{ id: number; name: string }>,
+  });
+</script>
+
+<Story
+  name="Example"
+  args={{
+    items: [{ id: 1, name: 'John Doe' }],
+    // 👇 item is typed as { id: number; name: string }
+    getLabel: (item) => item.name,
+  }}
+/>
+```
+
+To add args that only some stories use, such as an arg that a story template reads, use [`meta.type`](../api/csf/csf-next.mdx#metatypestory). In a Svelte CSF file, it returns another `Story` component with those args.
 
 </If>
 

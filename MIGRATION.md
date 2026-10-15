@@ -15,6 +15,7 @@
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
+    - [Story snippets are static](#story-snippets-are-static)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
@@ -962,6 +963,20 @@ RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equi
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
 
+#### Story snippets are static
+
+With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
+This covers the Source block in docs and the Code panel. The renderers no longer register their runtime source decorator.
+
+The Source block does not change when you edit Controls; it shows the snippet for the args written in the story file.
+
+When a story's render cannot be read statically, such as a helper function, a render that returns a string, or JSX built with `h()`, the snippet is built from the story's args where possible, with a warning naming what was dropped.
+
+When nothing can be built, the Source block shows the story's own CSF source with that warning.
+Set `features.docgenServer: false` to restore runtime snippets and runtime docgen; Storybook prints a deprecation warning when you do.
+
+Dynamic static story snippets will be brought back in a minor version.
+
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
@@ -1501,6 +1516,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Story source snippets are built on the server too; see [Story snippets are static](#story-snippets-are-static).
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item     | Runtime docgen key | Server docgen key |

@@ -52,13 +52,10 @@ export function buildServerInstructions({
     : '';
   const follow = runsSkills ? 'follow it' : 'follow its result';
   const intro = `For ${tasks.length > 1 ? 'each of these tasks' : 'this task'}, ${first} first, before you edit any file, and ${follow}.${skillRule}`;
-  const review = devEnabled
-    ? `\n\nWhen you publish a review with \`${ref('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
-    : '';
 
   return `## Storybook
 
 ${intro}
 
-${tasks.join('\n')}${review}`;
+${tasks.join('\n')}`;
 }

@@ -873,6 +873,37 @@ describe('layout API', () => {
       vi.useRealTimers();
     });
 
+    it('should stop polling and resolve to false once the signal is aborted', async () => {
+      vi.useFakeTimers();
+      const controller = new AbortController();
+      const element = { id: 'late-element', focus: vi.fn(), select: vi.fn() };
+
+      const result = focusLayoutApi.focusOnUIElement('late-element', {
+        signal: controller.signal,
+      });
+      expect(result).toBeInstanceOf(Promise);
+
+      controller.abort();
+      mockGetElementById.mockImplementation((id: string) =>
+        id === 'late-element' ? element : null
+      );
+      await vi.advanceTimersByTimeAsync(150);
+
+      await expect(result).resolves.toBe(false);
+      expect(element.focus).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('should not start polling with an already aborted signal', () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      expect(focusLayoutApi.focusOnUIElement('late-element', { signal: controller.signal })).toBe(
+        false
+      );
+    });
+
     it('should resolve to false when element never appears during polling', async () => {
       vi.useFakeTimers();
 

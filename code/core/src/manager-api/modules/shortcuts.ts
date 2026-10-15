@@ -191,6 +191,30 @@ function shouldSkipShortcut(event: KeyboardEvent) {
 }
 
 export const init: ModuleFn = ({ store, fullAPI, provider }) => {
+  // A shortcut's focus move may have to wait for its target to mount (a region that was just
+  // toggled on, or a button that replaces one toggled off). Only the latest move may complete:
+  // an older one finishing later would pull focus away from wherever the user has moved it since.
+  let pendingFocus: AbortController | undefined;
+  const focusFromShortcut = (
+    elementId: string,
+    {
+      onUnavailable,
+      ...options
+    }: { forceFocus?: boolean; select?: boolean; onUnavailable?: () => void } = {}
+  ) => {
+    pendingFocus?.abort();
+    const controller = new AbortController();
+    pendingFocus = controller;
+
+    Promise.resolve(
+      fullAPI.focusOnUIElement(elementId, { ...options, poll: true, signal: controller.signal })
+    ).then((success) => {
+      if (!success && !controller.signal.aborted) {
+        onUnavailable?.();
+      }
+    });
+  };
+
   const api: SubAPI = {
     // Getting and setting shortcuts
     getShortcutKeys(): API_Shortcuts {
@@ -319,10 +343,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsNavShown()) {
             fullAPI.toggleNav(true);
           }
-          fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
-            forceFocus: true,
-            poll: true,
-          });
+          focusFromShortcut(focusableUIElements.sidebarRegion, { forceFocus: true });
           break;
         }
 
@@ -335,16 +356,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
 
           setTimeout(() => {
-            fullAPI.focusOnUIElement(focusableUIElements.storySearchField, true);
+            focusFromShortcut(focusableUIElements.storySearchField, { select: true });
           }, 0);
           break;
         }
 
         case 'focusIframe': {
-          fullAPI.focusOnUIElement(focusableUIElements.previewRegion, {
-            forceFocus: true,
-            poll: true,
-          });
+          focusFromShortcut(focusableUIElements.previewRegion, { forceFocus: true });
           break;
         }
 
@@ -355,10 +373,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsPanelShown()) {
             fullAPI.togglePanel(true);
           }
-          fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
-            forceFocus: true,
-            poll: true,
-          });
+          focusFromShortcut(focusableUIElements.addonPanel, { forceFocus: true });
           break;
         }
 
@@ -394,24 +409,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.togglePanel();
 
           if (wasPanelShown && wasFocusInElement(panelElement)) {
-            // poll: true always returns a Promise.
-            (
-              fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
-                poll: true,
-              }) as Promise<boolean>
-            ).then((success) => {
+            focusFromShortcut(focusableUIElements.showAddonPanel, {
               // Fallback to body for predictable behavior.
-              if (success === false) {
-                document.body.focus();
-              }
+              onUnavailable: () => document.body.focus(),
             });
           }
 
           if (!wasPanelShown) {
-            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
-              forceFocus: true,
-              poll: true,
-            });
+            focusFromShortcut(focusableUIElements.addonPanel, { forceFocus: true });
           }
           break;
         }
@@ -427,24 +432,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
           if (isDesktop) {
             if (wasNavShown && wasFocusInElement(sidebarElement)) {
-              // poll: true always returns a Promise.
-              (
-                fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
-                  poll: true,
-                }) as Promise<boolean>
-              ).then((success) => {
+              focusFromShortcut(focusableUIElements.showSidebar, {
                 // Fallback to body for predictable behavior.
-                if (success === false) {
-                  document.body.focus();
-                }
+                onUnavailable: () => document.body.focus(),
               });
             }
 
             if (!wasNavShown) {
-              fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
-                forceFocus: true,
-                poll: true,
-              });
+              focusFromShortcut(focusableUIElements.sidebarRegion, { forceFocus: true });
             }
           }
 

@@ -371,7 +371,40 @@ describe('focus region shortcuts', () => {
     expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(regionId, {
       forceFocus: true,
       poll: true,
+      signal: expect.any(AbortSignal),
     });
+  });
+
+  it('supersedes the pending focus of an earlier shortcut', () => {
+    const { api, fullAPI } = setup();
+
+    api.handleShortcutFeature('focusNav', {});
+    api.handleShortcutFeature('focusIframe', {});
+
+    const [[, first], [, second]] = fullAPI.focusOnUIElement.mock.calls;
+    expect(first.signal.aborted).toBe(true);
+    expect(second.signal.aborted).toBe(false);
+  });
+
+  it('does not fall back to the body when a superseded focus move gives up', async () => {
+    const { api, fullAPI } = setup();
+    document.body.innerHTML = '<div id="storybook-panel-region"><button></button></div>';
+    document.querySelector('button').focus();
+    vi.spyOn(document.body, 'focus');
+    fullAPI.focusOnUIElement.mockImplementation(
+      (_, { signal }) =>
+        new Promise((resolve) => signal.addEventListener('abort', () => resolve(false)))
+    );
+
+    api.handleShortcutFeature('togglePanel', {});
+    api.handleShortcutFeature('focusNav', {});
+    await Promise.resolve();
+
+    expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(
+      'storybook-show-addon-panel',
+      expect.objectContaining({ poll: true })
+    );
+    expect(document.body.focus).not.toHaveBeenCalled();
   });
 
   it('shows hidden regions before focusing them', () => {

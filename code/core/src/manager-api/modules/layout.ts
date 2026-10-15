@@ -137,11 +137,15 @@ export interface SubAPI {
    * @param options.select - Whether to call select() on the element after focusing it.
    * @param options.poll - Whether to poll for the element if it is not immediately available.
    *   Defaults to true. When true, polls every 50ms for up to 500ms.
+   * @param options.signal - Aborting it stops polling, resolving to false without focusing the
+   *   element even if it appears afterwards.
    * @returns Whether the element was successfully focused. Returns a Promise when polling.
    */
   focusOnUIElement: (
     elementId?: string,
-    options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+    options?:
+      | boolean
+      | { forceFocus?: boolean; select?: boolean; poll?: boolean; signal?: AbortSignal }
   ) => boolean | Promise<boolean>;
 }
 
@@ -455,7 +459,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
      */
     focusOnUIElement(
       elementId?: string,
-      options?: boolean | { forceFocus?: boolean; select?: boolean; poll?: boolean }
+      options?:
+        | boolean
+        | { forceFocus?: boolean; select?: boolean; poll?: boolean; signal?: AbortSignal }
     ): boolean | Promise<boolean> {
       // See RFC https://github.com/storybookjs/storybook/discussions/32983 for
       // ways to make this API more robust to focus-trap race conditions.
@@ -464,6 +470,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         forceFocus = false,
         select = false,
         poll = true,
+        signal,
       } = typeof options === 'boolean' ? { select: options } : (options ?? {});
 
       if (!elementId) {
@@ -505,7 +512,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return true;
       }
 
-      if (!poll) {
+      if (!poll || signal?.aborted) {
         return false;
       }
 
@@ -515,20 +522,25 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         const maxDuration = 500;
         const pollInterval = 50;
 
+        const stop = (success: boolean) => {
+          clearInterval(intervalId);
+          resolve(success);
+        };
+
         const intervalId = setInterval(() => {
           const elapsed = Date.now() - startTime;
 
           if (attemptFocus()) {
-            clearInterval(intervalId);
-            resolve(true);
+            stop(true);
             return;
           }
 
           if (elapsed >= maxDuration) {
-            clearInterval(intervalId);
-            resolve(false);
+            stop(false);
           }
         }, pollInterval);
+
+        signal?.addEventListener('abort', () => stop(false), { once: true });
       });
     },
 

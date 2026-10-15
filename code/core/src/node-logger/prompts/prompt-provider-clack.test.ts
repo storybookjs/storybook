@@ -37,6 +37,9 @@ describe("ClackPromptProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(clack.taskLog).mockReturnValue(task as never);
+    // Shared default implementation: the prompt answers "a" unless a test overrides it for its
+    // own scenario (cancel symbol, never-settling EOF prompt).
+    vi.mocked(clack.select).mockResolvedValue("a");
   });
 
   afterEach(() => {
@@ -67,7 +70,7 @@ describe("ClackPromptProvider", () => {
   it("awaits an async onCancel handler before returning", async () => {
     const stepOrder: string[] = [];
     const release = Promise.withResolvers<void>();
-    selectMock.mockResolvedValue(Symbol.for("cancelled"));
+    vi.mocked(clack.select).mockResolvedValue(Symbol.for("cancelled"));
 
     const promptPromise = provider.select(
       {
@@ -98,7 +101,7 @@ describe("ClackPromptProvider", () => {
     // A prompt aborting in a non-interactive run (EOF, Ctrl+C) settles on clack's cancel symbol.
     // The init is incomplete at that point, so the process must exit non-zero — an exit code of 0
     // tells CI the `add`/postinstall flow succeeded.
-    selectMock.mockResolvedValue(Symbol.for("cancelled"));
+    vi.mocked(clack.select).mockResolvedValue(Symbol.for("cancelled"));
     const exitSpy = vi
       .spyOn(process, "exit")
       .mockImplementation(() => undefined as never);
@@ -108,7 +111,7 @@ describe("ClackPromptProvider", () => {
       options: [{ label: "A", value: "a" }],
     });
 
-    expect(cancelMock).toHaveBeenCalledWith("Operation canceled.");
+    expect(vi.mocked(clack.cancel)).toHaveBeenCalledWith("Operation canceled.");
     expect(exitSpy).toHaveBeenCalled();
     const [exitCode] = exitSpy.mock.calls[0];
     expect(exitCode).not.toBe(0);
@@ -119,7 +122,7 @@ describe("ClackPromptProvider", () => {
   it("aborts with a non-zero exit when stdin ends before the prompt settles", async () => {
     // Piped CI runs close stdin before any answer arrives; clack leaves the prompt pending and
     // the process would drain to exit 0 with the init incomplete.
-    selectMock.mockReturnValue(new Promise(() => {}));
+    vi.mocked(clack.select).mockReturnValue(new Promise<never>(() => {}));
     const exitSpy = vi
       .spyOn(process, "exit")
       .mockImplementation(() => undefined as never);
@@ -131,7 +134,7 @@ describe("ClackPromptProvider", () => {
     process.stdin.emit("end");
     await promptPromise;
 
-    expect(cancelMock).toHaveBeenCalledWith(
+    expect(vi.mocked(clack.cancel)).toHaveBeenCalledWith(
       "Prompt aborted: stdin ended before an answer was received.",
     );
     expect(exitSpy).toHaveBeenCalled();
@@ -143,7 +146,7 @@ describe("ClackPromptProvider", () => {
 
   it("ignores stdin ending after the prompt has settled", async () => {
     // `echo a | storybook add` closes stdin right after the answer is read; that must not abort.
-    selectMock.mockResolvedValue("a");
+    // The beforeEach default (select resolving "a") covers the prompt behavior.
     const exitSpy = vi
       .spyOn(process, "exit")
       .mockImplementation(() => undefined as never);
@@ -155,7 +158,7 @@ describe("ClackPromptProvider", () => {
     process.stdin.emit("end");
 
     expect(result).toBe("a");
-    expect(cancelMock).not.toHaveBeenCalled();
+    expect(vi.mocked(clack.cancel)).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
 
     exitSpy.mockRestore();

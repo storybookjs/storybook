@@ -1,10 +1,13 @@
 // @vitest-environment happy-dom
 import { act, cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
 import { STORY_PREPARED } from '../../core-events/index.ts';
+import { ThemeProvider, ensure, themes } from 'storybook/theming';
+import type { Theme } from 'storybook/theming';
+
 import Panel from './Panel.tsx';
 
 const mocks = vi.hoisted(() => {
@@ -31,31 +34,17 @@ vi.mock('storybook/manager-api', () => ({
   useStorybookState: () => ({ layout: { panelPosition: 'bottom' } }),
 }));
 
-// Stands in for the AddonPanel view: renders the panel ids the tab strip is told
-// to show, so tests assert the container's panel selection directly.
-vi.mock('../components/panel/Panel.tsx', () => ({
-  AddonPanel: (props: { panels: Record<string, unknown> }) => {
-    const { panels } = props;
-    return React.createElement(
-      'div',
-      { 'data-testid': 'panel-ids' },
-      Object.keys(panels).sort().join(',')
-    );
-  },
-}));
-
-const OPEN_SERVICE_PANEL_ID = 'storybook/internal/open-service-sync-demo/panel';
-
-// Mirrors the internal demo addon's panel: hidden unless the story parameters
-// enable `openServiceDemo` (see shared/open-service/sync-test/addon/manager.tsx).
-const openServicePanel = {
-  title: 'Open Service',
-  paramKey: 'openServiceDemo',
-  disabled: (parameters: Record<string, unknown> | undefined) => {
-    const config = parameters?.openServiceDemo as { enabled?: boolean } | undefined;
-    return !config?.enabled;
-  },
+// Generic fixtures exercise the container's filtering contract without tying
+// the tests to an internal demo addon.
+const flaggedPanel = {
+  title: 'Flagged',
+  paramKey: 'flag',
+  render: () => null,
+  disabled: (parameters: Record<string, unknown> | undefined) =>
+    !(parameters?.flag as { enabled?: boolean } | undefined)?.enabled,
 };
+const staticallyDisabledPanel = { title: 'Disabled', render: () => null, disabled: true };
+const plainPanel = { title: 'Plain', render: () => null };
 
 const prepareStory = (story: unknown) => {
   mocks.getCurrentStoryData.mockReturnValue(story);
@@ -64,67 +53,69 @@ const prepareStory = (story: unknown) => {
   });
 };
 
+// Tab titles from the real AddonPanel's DOM. Asserted via DOM presence rather
+// than role queries: happy-dom computes StatelessTab as display:none, which
+// excludes it from the accessibility tree that getByRole matches against.
+const tabTitles = () =>
+  Array.from(document.querySelectorAll('[role="tab"]')).map((el) => el.textContent);
+
+const theme: Theme = ensure(themes.light);
+const renderPanel = () =>
+  render(
+    <ThemeProvider theme={theme}>
+      <Panel />
+    </ThemeProvider>
+  );
+
 describe('Panel container', () => {
+  beforeEach(() => {
+    mocks.getCurrentStoryData.mockReturnValue(undefined);
+    mocks.getElements.mockReturnValue({
+      'storybook/internal/flagged': flaggedPanel,
+      'storybook/internal/static': staticallyDisabledPanel,
+      'storybook/internal/plain': plainPanel,
+    });
+  });
+
   afterEach(() => {
     cleanup();
     mocks.channelHandlers = {};
   });
 
-  it('renders no panels before a story is prepared', () => {
-    mocks.getCurrentStoryData.mockReturnValue(undefined);
-    mocks.getElements.mockReturnValue({
-      [OPEN_SERVICE_PANEL_ID]: openServicePanel,
-      'storybook/internal/other': { title: 'Other' },
-    });
+  it('hides panels disabled for undefined parameters before a story is prepared, keeps others', () => {
+    renderPanel();
 
-    render(<Panel />);
-
-    expect(screen.getByTestId('panel-ids').textContent).toBe('');
+    expect(tabTitles()).toEqual(['Plain']);
+    // The "Storybook add-ons" empty state means "no addons installed", not
+    // "story loading": surviving panels must be visible and mounted from boot.
+    expect(screen.queryByText('Storybook add-ons')).toBeNull();
   });
 
-  it('hides the demo panel for a prepared story without openServiceDemo parameters', () => {
-    mocks.getCurrentStoryData.mockReturnValue(undefined);
-    mocks.getElements.mockReturnValue({
-      [OPEN_SERVICE_PANEL_ID]: openServicePanel,
-      'storybook/internal/other': { title: 'Other' },
-    });
-
-    render(<Panel />);
+  it('hides the parameter-gated panel for a prepared story without flag parameters', () => {
+    renderPanel();
 
     prepareStory({ type: 'story', parameters: {} });
 
-    expect(screen.getByTestId('panel-ids').textContent).toBe('storybook/internal/other');
+    expect(tabTitles()).toContain('Plain');
+    expect(tabTitles()).not.toContain('Flagged');
   });
 
-  it('shows the demo panel for a prepared story with openServiceDemo enabled', () => {
-    mocks.getCurrentStoryData.mockReturnValue(undefined);
-    mocks.getElements.mockReturnValue({
-      [OPEN_SERVICE_PANEL_ID]: openServicePanel,
-      'storybook/internal/other': { title: 'Other' },
-    });
+  it('shows the parameter-gated panel for a prepared story with flag enabled', () => {
+    renderPanel();
 
-    render(<Panel />);
+    prepareStory({ type: 'story', parameters: { flag: { enabled: true } } });
 
-    prepareStory({ type: 'story', parameters: { openServiceDemo: { enabled: true } } });
-
-    expect(screen.getByTestId('panel-ids').textContent).toBe(
-      'storybook/internal/open-service-sync-demo/panel,storybook/internal/other'
-    );
+    expect(tabTitles()).toContain('Flagged');
   });
 
-  it('renders no panels before prepare and keeps statically disabled panels hidden after', () => {
-    mocks.getCurrentStoryData.mockReturnValue(undefined);
-    mocks.getElements.mockReturnValue({
-      'storybook/internal/statically-disabled': { title: 'Disabled', disabled: true },
-      'storybook/internal/other': { title: 'Other' },
-    });
+  it('keeps statically disabled panels hidden before and after a story is prepared', () => {
+    renderPanel();
 
-    render(<Panel />);
-
-    expect(screen.getByTestId('panel-ids').textContent).toBe('');
+    expect(tabTitles()).not.toContain('Disabled');
 
     prepareStory({ type: 'story', parameters: {} });
 
-    expect(screen.getByTestId('panel-ids').textContent).toBe('storybook/internal/other');
+    expect(tabTitles()).not.toContain('Disabled');
+    expect(tabTitles()).toContain('Plain');
   });
 });

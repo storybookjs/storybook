@@ -51,14 +51,10 @@ const Panel: FC<any> = (props) => {
       return allPanels;
     }
 
-    // No story prepared yet: no panel content is valid to render. Returning all
-    // panels flashes every registered panel, including ones disabled for the
-    // story about to load (e.g. the internal Open Service demo panel).
-    if (!story) {
-      return {};
-    }
-
-    if (type !== 'story') {
+    // With no story entry yet (index not loaded), the filter still runs with
+    // undefined parameters — the same input disabled callbacks already get
+    // when an entry exists but is not prepared (e.g. switching docs to story).
+    if (story && type !== 'story') {
       return allPanels;
     }
 
@@ -75,7 +71,7 @@ const Panel: FC<any> = (props) => {
     });
 
     return filteredPanels;
-  }, [api, story, type, parameters]);
+  }, [api, story]);
 
   return (
     <AddonPanel

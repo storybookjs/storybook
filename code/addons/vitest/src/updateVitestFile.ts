@@ -99,6 +99,22 @@ const isProjectsArrayProp = (
   p.key.name === 'projects' &&
   p.value.type === 'ArrayExpression';
 
+/** Type guard for a `projects` property with any value, including non-array lists. */
+const isProjectsProp = (
+  p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
+): p is t.ObjectProperty & { value: t.Expression } =>
+  p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'projects';
+
+/**
+ * Wraps a non-array `projects` value into an array that preserves the original list: a string
+ * glob becomes a single entry; anything else must evaluate to the project array Vitest
+ * requires, so it is spread to stay flat.
+ */
+const projectListValueToArray = (value: t.Expression): t.ArrayExpression =>
+  value.type === 'StringLiteral' || value.type === 'TemplateLiteral'
+    ? { type: 'ArrayExpression', elements: [value] }
+    : { type: 'ArrayExpression', elements: [{ type: 'SpreadElement', argument: value }] };
+
 /**
  * Appends storybook project(s) from template into an existing `test.projects` array, then merges
  * any additional test-level options (e.g. coverage) that don't already exist.
@@ -275,6 +291,23 @@ const mergeTemplateIntoConfigObject = (
     if (existingProjectRefsProp) {
       appendToExistingProjectRefs(
         existingProjectRefsProp,
+        resolvedTestValue,
+        templateTestProp,
+        properties,
+        targetConfigObject
+      );
+      return;
+    }
+
+    // `projects` bound to a non-array value (identifier, call, string glob...) — wrap it into
+    // an array at the same level so the original list keeps applying, then append as usual.
+    // Nesting it inside a project entry instead would drop the list, because a `projects` key
+    // inside a project entry is not a project list.
+    const existingProjectsProp = resolvedTestValue.properties.find(isProjectsProp);
+    if (existingProjectsProp) {
+      existingProjectsProp.value = projectListValueToArray(existingProjectsProp.value);
+      appendToExistingProjectRefs(
+        existingProjectsProp,
         resolvedTestValue,
         templateTestProp,
         properties,

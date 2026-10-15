@@ -1203,7 +1203,52 @@ describe('updateConfigFile', () => {
     // project list, so the original list would stop applying.
     expect(after).toContain('projects: [...workspaceProjects, {');
 
-    expect(getDiff(before, after)).toMatchInlineSnapshot();
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { defineConfig } from 'vitest/config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const workspaceProjects = [{
+          extends: true,
+          test: {
+            name: 'client'
+      ...
+        export default defineConfig({
+          test: {
+            globals: true,
+        
+      -     projects: workspaceProjects
+      - 
+      +     projects: [...workspaceProjects, {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });"
+    `);
   });
 
   it('appends storybook project when test.projects is a computed expression', async () => {
@@ -1238,7 +1283,48 @@ describe('updateConfigFile', () => {
     // and the storybook project is a sibling entry in the same array
     expect(after).toContain('projects: [...getWorkspaceProjects(), {');
 
-    expect(getDiff(before, after)).toMatchInlineSnapshot();
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { getWorkspaceProjects } from './vitest.projects';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        export default {
+          test: {
+            globals: true,
+        
+      -     projects: getWorkspaceProjects()
+      - 
+      +     projects: [...getWorkspaceProjects(), {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        };"
+    `);
   });
 
   it('appends storybook project when a mergeConfig export binds test.projects to an identifier', async () => {
@@ -1280,7 +1366,53 @@ describe('updateConfigFile', () => {
     // and the storybook project is a sibling entry in the same array
     expect(after).toContain('projects: [...workspaceProjects, {');
 
-    expect(getDiff(before, after)).toMatchInlineSnapshot();
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { mergeConfig, defineConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const workspaceProjects = [{
+          extends: true,
+          test: {
+            name: 'client'
+          }
+        }];
+        export default mergeConfig(viteConfig, defineConfig({
+          test: {
+        
+      -     projects: workspaceProjects
+      - 
+      +     projects: [...workspaceProjects, {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        }));"
+    `);
   });
 
   it('appends storybook project when test.projects is a single string glob', async () => {
@@ -1315,8 +1447,47 @@ describe('updateConfigFile', () => {
     // entry and the storybook project is a sibling entry in the same array
     expect(after).toContain("projects: ['./packages/*/vitest.config.ts', {");
 
-
-    expect(getDiff(before, after)).toMatchInlineSnapshot();
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { defineConfig } from 'vitest/config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        export default defineConfig({
+          test: {
+            globals: true,
+        
+      -     projects: './packages/*/vitest.config.ts'
+      - 
+      +     projects: ['./packages/*/vitest.config.ts', {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });"
+    `);
   });
 
   it('extracts coverage config and keeps it at top level when using workspace', async () => {

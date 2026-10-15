@@ -112,7 +112,6 @@ const meta = {
     refId: DEFAULT_REF_ID,
     refs: {},
     allStatuses: {},
-    showCreateStoryButton: true,
     isDevelopment: true,
   },
   decorators: [
@@ -226,9 +225,6 @@ export const ArrowKeysCollapseAndExpand: Story = {
 };
 
 export const SimpleInProduction: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const configType = global.CONFIG_TYPE;
     global.CONFIG_TYPE = 'PRODUCTION';
@@ -239,9 +235,6 @@ export const SimpleInProduction: Story = {
 };
 
 export const SimpleNoChecklist: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const features = global.FEATURES;
     global.FEATURES = {
@@ -546,17 +539,11 @@ export const Bottom: Story = {
  *    the bottom
  */
 export const Scrolled: Story = {
-  parameters: {
-    // we need a very short viewport
-    viewport: {
-      defaultViewport: 'mobile1',
-      defaultOrientation: 'landscape',
-    },
-  },
+  // we need a very short viewport
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1', isRotated: true } },
   args: {
     storyId: 'group-1--child-b1',
   },
-  globals: { sb_theme: 'light' },
   decorators: [
     (StoryFn) => (
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>

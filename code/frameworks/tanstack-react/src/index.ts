@@ -6,6 +6,7 @@ import type {
   MetaInput,
   MetaTypes,
   PreviewAddon,
+  PreviewAddonEntry,
 } from 'storybook/internal/csf';
 import type {
   Args,
@@ -45,7 +46,7 @@ export type Preview<TRoute extends AnyRoute | undefined = undefined> = ProjectAn
 export function definePreview<
   TRoute extends AnyRoute | undefined = undefined,
   const TPath extends DefaultStoryPath<TRoute> = DefaultStoryPath<TRoute>,
-  Addons extends PreviewAddon<never>[] = [],
+  Addons extends PreviewAddonEntry[] = [],
 >(
   preview: {
     addons?: Addons;

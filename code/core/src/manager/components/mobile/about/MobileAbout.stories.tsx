@@ -20,12 +20,9 @@ const OpenAboutHelper = ({ children }: { children: any }) => {
 const meta = {
   component: MobileAbout,
   title: 'Mobile/About',
-  globals: { sb_theme: 'light' },
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
   parameters: {
     layout: 'fullscreen',
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
     chromatic: { viewports: [320] },
   },
   decorators: [

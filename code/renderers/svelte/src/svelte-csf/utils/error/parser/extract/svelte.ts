@@ -229,7 +229,9 @@ export class IndexerParseError extends StorybookSvelteCSFError {
 
       ${describeCause(this.cause)}
 
-      If the original error doesn't point to a problem in the stories file or in the Svelte config, please report it on the issue tracker on GitHub at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml.
+      The indexer doesn't run Svelte preprocessors. It ignores the content of <style> blocks, but the rest of a stories file must be standard Svelte syntax.
+
+      If the original error doesn't point to a problem in the stories file, please report it on the issue tracker on GitHub at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml.
     `;
   }
 }

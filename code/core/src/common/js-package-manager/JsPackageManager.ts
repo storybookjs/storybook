@@ -336,6 +336,19 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Write `name@version` upgrade specifiers for dependencies that `declared` references through a
+   * catalog into the catalog file, and return the remaining specifiers for package.json. Only
+   * PNPMProxy supports catalogs, so the base implementation writes nothing and returns every
+   * specifier.
+   */
+  public writeCatalogUpgrades(
+    specifiers: string[],
+    _declared: Partial<Record<string, string>>
+  ): string[] {
+    return specifiers;
+  }
+
+  /**
    * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
    * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
    * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and

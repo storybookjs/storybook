@@ -39,9 +39,7 @@ const entry: IndexEntry = {
 describe('createDocgenProvider', () => {
   it('passes through and warns once when no manifest is configured', async () => {
     const next = vi.fn(async () => ({ id: 'downstream' }));
-    const provider = createDocgenProvider({ manifestPaths: [], typeProperty: 'parsedType' })(
-      next as never
-    );
+    const provider = createDocgenProvider({ manifestPaths: [] })(next as never);
 
     await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
     await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
@@ -68,7 +66,6 @@ describe('createDocgenProvider', () => {
     const next = vi.fn(async () => ({ id: 'downstream' }));
     const provider = createDocgenProvider({
       manifestPaths: ['/workspace/custom-elements.json'],
-      typeProperty: 'parsedType',
     })(next as never);
 
     await expect(provider({ entry })).resolves.toMatchObject({

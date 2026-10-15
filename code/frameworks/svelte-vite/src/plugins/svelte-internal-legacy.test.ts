@@ -1,148 +1,180 @@
-import type { ResolvedConfig } from 'vite';
+import type { Plugin } from 'vite';
 import { parseAst } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
+import { logger } from 'storybook/internal/node-logger';
 
-import { generateVirtualModule, svelteInternalLegacy } from './svelte-internal-legacy.ts';
+import { svelteInternalLegacy } from './svelte-internal-legacy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
-  logger: { info: vi.fn() },
+  logger: { warn: vi.fn() },
 }));
 
-type FilteredHook = {
-  filter: { id: RegExp };
-  handler: (this: unknown, code: string, id: string) => unknown;
+const RESOLVED_VIRTUAL_PREFIX = '\0virtual:svelte-internal-legacy';
+
+type TransformHook = {
+  handler: (
+    this: { parse: typeof parseAst },
+    code: string,
+    id: string
+  ) => { code: string; map: string } | null;
 };
 
-function pluginFor(command: 'serve' | 'build' = 'serve') {
-  const plugin = svelteInternalLegacy();
-  (plugin.configResolved as (config: Partial<ResolvedConfig>) => void)({
-    command,
-    root: '/project',
-  } as ResolvedConfig);
-  return plugin;
+type LoadHook = {
+  handler: (id: string) => string;
+};
+
+function plugin(): Plugin {
+  const instance = svelteInternalLegacy();
+  (instance.configResolved as (config: { root: string }) => void)({ root: '/project' });
+  return instance;
 }
 
-function transform(
-  code: string,
-  id = '/project/src/Thing.svelte',
-  command: 'serve' | 'build' = 'serve'
-) {
-  const { handler } = pluginFor(command).transform as FilteredHook;
-  return handler.call({ parse: parseAst }, code, id) as { code: string; map: string } | null;
+function transform(code: string, id = '/project/src/Thing.svelte') {
+  const { handler } = plugin().transform as unknown as TransformHook;
+  return handler.call({ parse: parseAst }, code, id);
 }
 
-function virtualImportSource(result: { code: string }): URL {
-  const match = result.code.match(/'(virtual:svelte-internal-legacy\?[^']+)'/);
+function virtualQuery(result: { code: string }): URLSearchParams {
+  const match = result.code.match(/'virtual:svelte-internal-legacy\?([^']+)'/);
   expect(match, result.code).toBeTruthy();
-  return new URL(`http://x/${match![1]}`);
+  return new URLSearchParams(match![1]);
+}
+
+function loadGenerated(id: string): string {
+  const { handler } = plugin().load as unknown as LoadHook;
+  return handler(id);
+}
+
+function evaluateModule(code: string): { default: unknown } {
+  const factory = new Function(code.replace('export default', 'return'));
+  return { default: factory() };
 }
 
 describe('svelteInternalLegacy', () => {
-  it('rewrites a named import to a stub module that names the importer', async () => {
-    const result = await transform(
+  it('applies only in serve mode, keeping the native missing-export failure in builds', () => {
+    expect(plugin().apply).toBe('serve');
+  });
+
+  it('keeps svelte/internal out of dep pre-bundling', () => {
+    const config: { optimizeDeps?: { exclude: string[] } } = {};
+    (plugin().config as (config: object) => void)(config);
+    expect(config.optimizeDeps!.exclude).toContain('svelte/internal');
+  });
+
+  it('rewrites a named import to the shared stub module and destructures the binding', () => {
+    const result = transform(
       `import { get_current_component } from 'svelte/internal';\nexport default {};`
     );
-    expect(result).toBeTruthy();
-    expect(result!.code).not.toContain(`from 'svelte/internal'`);
-    const source = virtualImportSource(result!);
-    expect(source.searchParams.get('mode')).toBe('names');
-    expect(source.searchParams.get('apis')).toBe('get_current_component');
-    expect(source.searchParams.get('importer')).toBe('src/Thing.svelte');
+    expect(result!.code).toMatch(
+      /import __sbSvelteInternalLegacy0 from 'virtual:svelte-internal-legacy\?/
+    );
+    expect(result!.code).toContain(
+      `const { "get_current_component": get_current_component } = __sbSvelteInternalLegacy0;`
+    );
+    expect(result!.code).not.toMatch(/from ['"]svelte\/internal/);
+    expect(virtualQuery(result!).get('importer')).toBe('src/Thing.svelte');
   });
 
-  it('rewrites default, namespace, bare and mixed imports to their matching guard modes', async () => {
-    const bare = await transform(`import 'svelte/internal';`);
-    expect(virtualImportSource(bare!).searchParams.get('mode')).toBe('sideeffect');
-
-    const namespace = await transform(`import * as internal from 'svelte/internal';`);
-    expect(virtualImportSource(namespace!).searchParams.get('mode')).toBe('proxy');
-    expect(namespace!.code).toContain(`import { default as internal } from`);
-
-    const mixed = await transform(
-      `import internal, { get_current_component } from 'svelte/internal';`
+  it('rewrites default, namespace, aliased and string-named specifiers as bindings on the stub', () => {
+    const defaultImport = transform(`import internal from 'svelte/internal';`);
+    expect(defaultImport!.code).toContain(
+      `const { "default": internal } = __sbSvelteInternalLegacy0;`
     );
-    expect(virtualImportSource(mixed!).searchParams.get('apis')).toBe(
-      'default,get_current_component'
+
+    const namespace = transform(`import * as internal from 'svelte/internal';`);
+    expect(namespace!.code).toContain(`const internal = __sbSvelteInternalLegacy0;`);
+
+    const aliased = transform(`import { get_current_component as gcc } from 'svelte/internal';`);
+    expect(aliased!.code).toContain(
+      `const { "get_current_component": gcc } = __sbSvelteInternalLegacy0;`
     );
-    expect(mixed!.code).toContain(`import { default as internal, get_current_component } from`);
+
+    const stringNamed = transform(`import { "a-b" as x } from 'svelte/internal';`);
+    expect(stringNamed!.code).toContain(`const { "a-b": x } = __sbSvelteInternalLegacy0;`);
   });
 
-  it('leaves everything that does not import exactly svelte/internal alone', async () => {
+  it('uses one stub binding per import declaration when a file has several legacy imports', () => {
+    const result = transform(
+      `import { a } from 'svelte/internal';\nexport const x = 1;\nimport { b } from 'svelte/internal';`
+    );
+    expect(result!.code).toContain(`import __sbSvelteInternalLegacy0 from`);
+    expect(result!.code).toContain(`import __sbSvelteInternalLegacy1 from`);
+    expect(result!.code).not.toContain(`const { "b": b } = __sbSvelteInternalLegacy0;`);
+  });
+
+  it('leaves modules that do not import exactly svelte/internal untouched', () => {
     const subpath = `import * as $ from 'svelte/internal/client';\nimport { onMount } from 'svelte';`;
-    expect(await transform(subpath)).toBeNull();
+    expect(transform(subpath)).toBeNull();
 
-    // A mention inside a comment must not be rewritten into an import
     const commented = `// import { x } from 'svelte/internal';\nexport const y = 1;`;
-    expect(await transform(commented)).toBeNull();
+    expect(transform(commented)).toBeNull();
   });
 
-  it('stays inert in production builds, keeping the loud missing-export failure', async () => {
-    const result = await transform(
+  it('reaches pre-bundled dependencies and names their file as the importer', () => {
+    const result = transform(
       `import { get_current_component } from 'svelte/internal';`,
-      '/project/src/Thing.svelte',
-      'build'
+      '/project/node_modules/.vite/deps/fake-svelte4-lib.js'
     );
-    expect(result).toBeNull();
+    expect(virtualQuery(result!).get('importer')).toBe(
+      'node_modules/.vite/deps/fake-svelte4-lib.js'
+    );
   });
 
-  it('skips non-JS virtual modules like extracted component CSS, so they load instead of failing', async () => {
-    // Regression: the transform's id filter matches `Thing.svelte?...&type=style&lang.css`, and
-    // parsing that CSS content as JavaScript threw, failing the module load with a 404 and killing
-    // every story that shared the preview graph.
-    const result = await transform(
-      '.thing { color: red; }',
-      '/project/src/Thing.svelte?svelte&type=style&lang.css'
+  it('warns once per importing file', () => {
+    const instance = plugin();
+    const { handler } = instance.transform as unknown as TransformHook;
+    const run = () =>
+      handler.call(
+        { parse: parseAst },
+        `import { a } from 'svelte/internal';`,
+        '/project/src/A.svelte'
+      );
+
+    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+    run();
+    run();
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledTimes(1);
+
+    handler.call(
+      { parse: parseAst },
+      `import { a } from 'svelte/internal';`,
+      '/project/src/B.svelte'
     );
-    expect(result).toBeNull();
-  });
-
-  it('keeps svelte/internal out of dep pre-bundling in dev', () => {
-    const config: { optimizeDeps?: { exclude: string[] } } = {};
-    (pluginFor().config as (config: object, env: { command: string }) => void)(config, {
-      command: 'serve',
-    });
-    expect(config.optimizeDeps!.exclude).toContain('svelte/internal');
-
-    const buildConfig: { optimizeDeps?: { exclude: string[] } } = {};
-    (pluginFor('build').config as (config: object, env: { command: string }) => void)(buildConfig, {
-      command: 'build',
-    });
-    expect(buildConfig.optimizeDeps).toBeUndefined();
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledTimes(2);
   });
 });
 
-describe('generateVirtualModule (graph isolation regression)', () => {
-  it('exports every requested API and never imports the export-less shim, so the preview graph links', () => {
-    const query = new URLSearchParams({ importer: 'src/Box.svelte', mode: 'names' });
-    query.set('apis', 'get_current_component,bad_thing');
-    const module = generateVirtualModule(query, 'src/Box.svelte');
+describe('generated stub module (graph isolation regression)', () => {
+  it('evaluates cleanly and throws naming the importer and the accessed API when a binding is used', () => {
+    const module = evaluateModule(
+      loadGenerated(`${RESOLVED_VIRTUAL_PREFIX}?importer=${encodeURIComponent('src/Box.svelte')}`)
+    );
+    const stub = module.default as Record<string, () => unknown>;
 
-    for (const api of ['get_current_component', 'bad_thing']) {
-      expect(module).toContain(
-        `export { __sbLegacySvelteInternal${api === 'get_current_component' ? 0 : 1} as ${api} };`
-      );
-      expect(module).toContain(api);
-    }
-    // The module must not statically import anything: a link to the real, export-less
-    // svelte/internal shim is what killed the whole preview graph.
-    expect(module).not.toMatch(/^\s*import\s/m);
-    // No top-level throw either: the module must evaluate cleanly, so the failure stays local
-    // to the component that actually calls the removed API.
-    expect(module).not.toMatch(/^\s*throw\s/m);
-    // Every use still throws, with the importing file in the message.
-    expect(module).toContain('src/Box.svelte imports');
-    expect(module).toContain('no longer exists in Svelte 5');
+    expect(() => stub.get_current_component()).toThrowError(/src\/Box\.svelte/);
+    expect(() => stub.get_current_component()).toThrowError(/get_current_component/);
   });
 
-  it('throws on evaluation for bare side-effect imports and on access for namespace imports', () => {
-    const sideeffect = generateVirtualModule(
-      new URLSearchParams({ mode: 'sideeffect' }),
-      'src/X.svelte'
+  it('serves every binding from the one stub, each naming its own API', () => {
+    const module = evaluateModule(
+      loadGenerated(`${RESOLVED_VIRTUAL_PREFIX}?importer=${encodeURIComponent('src/Box.svelte')}`)
     );
-    expect(sideeffect).toMatch(/^throw /m);
+    const stub = module.default as Record<string, () => unknown>;
 
-    const proxy = generateVirtualModule(new URLSearchParams({ mode: 'proxy' }), 'src/X.svelte');
-    expect(proxy).toContain('new Proxy');
-    expect(proxy).toContain('export default');
+    expect(() => stub.onMount()).toThrowError(/onMount/);
+    expect(() => stub.beforeUpdate()).toThrowError(/beforeUpdate/);
+    expect(() => stub.onMount()).not.toThrowError(/beforeUpdate/);
+  });
+
+  it('throws at evaluation naming the importer for a bare side-effect import', () => {
+    const module = loadGenerated(
+      `${RESOLVED_VIRTUAL_PREFIX}?importer=${encodeURIComponent('src/X.svelte')}&evaluate=1`
+    );
+    expect(() => evaluateModule(module)).toThrowError(/src\/X\.svelte/);
+    expect(() => evaluateModule(module)).toThrowError(/the module itself/);
+  });
+
+  it('fails loudly when the importer query parameter is missing', () => {
+    expect(() => loadGenerated(RESOLVED_VIRTUAL_PREFIX)).toThrowError(/importer/);
   });
 });

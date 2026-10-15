@@ -1,6 +1,7 @@
 import * as Icons from '@storybook/icons';
 
 import type { FC } from 'react';
+import React from 'react';
 
 import type { ToolbarIconType } from '../types.ts';
 

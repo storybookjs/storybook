@@ -12,7 +12,7 @@ export { resolveToolsetDescription } from '../../toolset-definition.ts';
 export type { ToolsetCtx, ToolsetOutcome } from '../../toolset-definition.ts';
 export { DOCS_TOOLSET_INSTRUCTIONS } from './instructions.ts';
 export { emptyManifests } from './access.ts';
-export type { DocsAccess, ResolvedDocsEntry } from './access.ts';
+export type { DocsAccess, EntryName, ResolvedDocsEntry } from './access.ts';
 export { selectReportedManifests } from './definition.ts';
 export { createDocsToolset, isDocsShowError, isDocsShowStoryError } from './definition.ts';
 export type {

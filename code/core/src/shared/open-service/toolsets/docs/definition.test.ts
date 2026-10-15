@@ -234,14 +234,24 @@ Use the npx storybook tools docs list tool to see available components and docum
       docsAccess: {
         ...docsAccess,
         list,
-        listNames: async () => [{ id: 'button', name: 'Button' }],
+        listNames: async () => [{ id: 'button', name: 'PrimaryButton' }],
       },
     });
 
     const outcome = await composed.methods.show.handler({ id: 'primary-button' }, cliCtx);
 
-    expect(outcome.data.suggestions).toEqual([{ id: 'button', name: 'Button' }]);
+    expect(outcome.data.suggestions).toEqual([{ id: 'button', name: 'PrimaryButton' }]);
     expect(list).not.toHaveBeenCalled();
+  });
+
+  it('does not suggest the id that just failed in the same source', async () => {
+    const composed = createDocsToolset({
+      docsAccess: { ...docsAccess, resolve: async () => undefined },
+    });
+
+    const outcome = await composed.methods.show.handler({ id: 'button' }, cliCtx);
+
+    expect(outcome.data.suggestions).toBeUndefined();
   });
 });
 

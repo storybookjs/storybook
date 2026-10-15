@@ -192,6 +192,22 @@ describe('createServiceDocsAccess listNames', () => {
     ]);
     expect(docgenForAllComponents).not.toHaveBeenCalled();
   });
+
+  it('names a component by the last segment of its title, without spaces', async () => {
+    index = {
+      v: 5,
+      entries: {
+        'forms-text-field--primary': {
+          ...storyEntry('forms-text-field--primary', 'Primary', ['manifest']),
+          title: 'Forms/Text Field',
+        },
+      },
+    };
+
+    expect(await createAccess().listNames!()).toEqual([
+      { id: 'forms-text-field', name: 'TextField' },
+    ]);
+  });
 });
 
 describe('createServiceDocsAccess list', () => {

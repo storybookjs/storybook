@@ -478,9 +478,12 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     }
 
     const listings = await Promise.all(sourceAccesses.map(readEntries));
+    // A source can list an id it fails to resolve; suggesting it would repeat the failed call.
     const suggestions = suggestEntries(
       id,
-      listings.flatMap(({ entries }) => entries)
+      listings
+        .flatMap(({ entries }) => entries)
+        .filter((entry) => entry.id !== id || entry.storybookId !== requestedStorybookId)
     );
     const unreadableSources = listings.flatMap(({ storybookId, error }) =>
       storybookId !== undefined && error !== undefined ? [{ storybookId, error }] : []

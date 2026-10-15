@@ -126,12 +126,12 @@ export const Full: Story = {
 };
 
 /**
- * The virtualizer must place rows exactly where the geometry model puts them: a 28px pitch, plus
- * the section gap a row carries as top padding when it starts a new top-level section. Estimated
- * heights would let unmeasured rows drift from the model after deep links, misplacing the sticky
- * rows, the indent lines, and scroll targeting.
+ * The virtualizer must place every row exactly where the tree's row geometry puts it: rows are
+ * 28px tall, and a row that starts a new top-level section carries the section gap as top
+ * padding. Estimated heights would let unmeasured rows drift from that geometry after deep links,
+ * misplacing the sticky rows, the indent lines, and scroll targeting.
  */
-export const RowsMatchModelPitch: Story = {
+export const RowHeightsAndSectionGaps: Story = {
   args: {
     refId: DEFAULT_REF_ID,
   },
@@ -160,7 +160,8 @@ export const RowsMatchModelPitch: Story = {
         // step from that row to the next one.
         const gap = parseFloat(getComputedStyle(rows[i - 1].el).paddingBlockStart);
         sawSectionGap ||= gap > 0;
-        expect(rows[i].top - rows[i - 1].top).toBe(TREE_ROW_HEIGHT + gap);
+        // Within a device pixel: a zoomed browser snaps the rows' transforms to device pixels.
+        expect(rows[i].top - rows[i - 1].top).toBeCloseTo(TREE_ROW_HEIGHT + gap, 0);
       }
       expect(sawSectionGap).toBe(true);
 
@@ -1043,9 +1044,6 @@ export const StickyKeyboardReveal: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    const scroller = canvasElement.querySelector<HTMLElement>(
-      '[data-testid="sidebar-scroll-area"]'
-    )!;
     const overlay = () =>
       canvasElement.querySelector<HTMLElement>('[data-testid="sticky-overlay"]');
     const focusedRow = () =>

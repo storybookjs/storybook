@@ -17,13 +17,13 @@ export interface TreeRowLayoutOptions {
 const EMPTY_ROWS: FlatRows = flattenRows([], new Set());
 
 /**
- * Places the tree's rows exactly where the geometry model puts them.
+ * Places the tree's rows exactly where the tree's row geometry puts them.
  *
  * A measuring layout estimates rows it has not materialized, so its reported content height and
- * the absolute position of everything below an unmaterialized section drift from the model by the
- * section gap — the tree then under-reports its height and the next sidebar block overlaps its
+ * the absolute position of everything below an unmaterialized section drift from that geometry by
+ * the section gap — the tree then under-reports its height and the next sidebar block overlaps its
  * rows. This layout derives every position and the content size from `flattenRows`, the same
- * model that drives the sticky rows and scroll targeting, so they cannot disagree.
+ * geometry that drives the sticky rows and scroll targeting, so they cannot disagree.
  */
 export class TreeRowLayout extends Layout<Node<object>, TreeRowLayoutOptions> {
   private rows: FlatRows = EMPTY_ROWS;

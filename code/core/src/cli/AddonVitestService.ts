@@ -27,6 +27,11 @@ type Result = {
 export interface AddonVitestCompatibilityOptions {
   builder?: SupportedBuilder;
   framework?: SupportedFramework | null;
+  /**
+   * Starting directory for the config-file check. Callers pass the narrowest directory that
+   * contains the configs they would touch: the postinstall passes the Storybook config dir,
+   * create-storybook passes the project root.
+   */
   projectRoot?: string;
 }
 

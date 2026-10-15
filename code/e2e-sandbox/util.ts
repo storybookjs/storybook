@@ -57,7 +57,32 @@ export class SbPage {
           if (!row) {
             return false;
           }
-          row.scrollIntoView({ block: 'center' });
+          // Center the row in the band of the scroll area that no overlay covers: the sticky
+          // ancestor rows at the top, and the floating bottom widget, whose height the area
+          // reserves as bottom padding. A plain block: 'center' lands under a tall widget, and a
+          // row under either overlay cannot be hovered or clicked.
+          const centerInFreeBand = () => {
+            const target = find();
+            if (!target) {
+              return;
+            }
+            if (!scroller) {
+              target.scrollIntoView({ block: 'center' });
+              return;
+            }
+            const areaTop = scroller.getBoundingClientRect().top;
+            const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
+            const stack = document.querySelector('[data-testid="sticky-overlay"]');
+            const stackHeight = stack ? stack.getBoundingClientRect().height : 0;
+            const rowRect = target.getBoundingClientRect();
+            const freeHeight = scroller.clientHeight - stackHeight - bottomInset;
+            const wantedTop = areaTop + stackHeight + (freeHeight - rowRect.height) / 2;
+            scroller.scrollTop += rowRect.top - wantedTop;
+          };
+          centerInFreeBand();
+          await settle();
+          // The sticky stack follows the scroll position, so center once more against it.
+          centerInFreeBand();
           await settle();
           return true;
         },

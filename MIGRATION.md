@@ -948,21 +948,25 @@ Decorators and `render` functions keep receiving `argTypes`, because renderers r
 
 ### Deprecated CSF and manager type aliases removed
 
-Six deprecated type aliases from earlier Storybook versions are removed. If your code imports any of them from `storybook` (via `storybook/internal/csf`, `storybook/internal/types`, or `storybook/manager-api`), switch to the supported replacement:
+The following deprecated type aliases and fields are removed. If your code imports any of them from `storybook` (via `storybook/internal/csf`, `storybook/internal/types`, or `storybook/manager-api`), switch to the supported replacement:
 
-| Deprecated              | Replacement             |
-| ----------------------- | ----------------------- |
-| `StoryKind`             | `ComponentTitle`        |
-| `StoryIdentifier.kind`  | `StoryIdentifier.title` |
-| `StoryIdentifier.story` | `StoryIdentifier.name`  |
-| `AnyFramework`          | `Renderer`              |
-| `StoryContextForLoaders`  | `StoryContext`          |
-| `PlayFunctionContext`     | `StoryContext`          |
-| `StoriesHash`             | `IndexHash`             |
+| Deprecated               | Replacement             |
+| ------------------------ | ----------------------- |
+| `StoryKind`              | `ComponentTitle`        |
+| `StoryIdentifier.kind`   | `StoryIdentifier.title` |
+| `StoryIdentifier.story`  | `StoryIdentifier.name`  |
+| `AnyFramework`           | `Renderer`              |
+| `StoryContextForLoaders` | `StoryContext`          |
+| `PlayFunctionContext`    | `StoryContext`          |
+| `StoriesHash`            | `IndexHash`             |
+
+The deprecated `kind` and `story` fields are also gone from `Addon_AddStoryArgs`, `Addon_StoryApi`, and the legacy `setStories` payload type `SetStoriesStory` (the whole interface is removed). The `RenderContext` passed to `renderToCanvas` no longer contains `kind` or `story`; third-party renderers read `title` and `name` instead.
+
+`@storybook/addon-links`' deprecated `LinkTo` `kind` and `story` props are removed; use `title` and `name`. The `data-sb-kind` and `data-sb-story` HTML attributes are unchanged. The provider `StoryMapper` option is removed.
 
 Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`.
 
-The manager no longer accepts the pre-Storybook 3 wire format either: `SELECT_STORY` payloads are resolved from `storyId` or `title`/`name` only, and composed refs must publish a story index (`stories.json`) instead of a legacy `setStories` payload.
+The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name` only — the shape the event has used since Storybook 3. A payload without any of them is ignored with a warning, so cross-story links from composed Storybooks built with Storybook 10.x or earlier no longer navigate. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
 
 ### `docgenServer` is stable and enabled by default
 

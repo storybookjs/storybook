@@ -4,9 +4,7 @@ import type { ControllerStateAndHelpers } from 'downshift';
 import type { IndexHash, State } from 'storybook/manager-api';
 
 export type Refs = State['refs'];
-export type RefType = Refs[keyof Refs] & {
-  allStatuses?: StatusesByStoryIdAndTypeId;
-};
+export type RefType = Refs[keyof Refs] & { allStatuses?: StatusesByStoryIdAndTypeId };
 export type Item = IndexHash[keyof IndexHash];
 export type Dataset = Record<string, Item>;
 
@@ -47,11 +45,7 @@ export interface ExpandType {
   moreCount: number;
 }
 
-export type SearchItem = Item & {
-  refId: string;
-  path: string[];
-  status?: StatusValue;
-};
+export type SearchItem = Item & { refId: string; path: string[]; status?: StatusValue };
 
 export type SearchResult = Fuse.FuseResultWithMatches<SearchItem> &
   Fuse.FuseResultWithScore<SearchItem>;

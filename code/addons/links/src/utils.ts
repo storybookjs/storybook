@@ -1,6 +1,6 @@
 import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
 import { toId } from 'storybook/internal/csf';
-import type { ComponentTitle, StoryId, StoryName } from 'storybook/internal/types';
+import type { ComponentTitle, SelectStoryPayload, StoryName } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -9,16 +9,6 @@ import { addons, makeDecorator } from 'storybook/preview-api';
 import { PARAM_KEY } from './constants.ts';
 
 const { document, HTMLElement } = global;
-
-interface ParamsId {
-  storyId: StoryId;
-}
-interface ParamsCombo {
-  kind?: ComponentTitle;
-  title?: ComponentTitle;
-  story?: StoryName;
-  name?: StoryName;
-}
 
 function parseQuery(queryString: string) {
   const query: Record<string, string> = {};
@@ -33,7 +23,7 @@ function parseQuery(queryString: string) {
   return query;
 }
 
-export const navigate = (params: ParamsId | ParamsCombo) =>
+export const navigate = (params: SelectStoryPayload) =>
   addons.getChannel().emit(SELECT_STORY, params);
 
 const generateStoryUrl = (title: ComponentTitle | undefined, name: StoryName): string => {

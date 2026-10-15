@@ -123,10 +123,7 @@ export interface InputType {
     /** @see https://storybook.js.org/docs/api/arg-types#tablecategory */
     category?: string;
     /** @see https://storybook.js.org/docs/api/arg-types#tabledefaultvalue */
-    defaultValue?: {
-      summary?: string | undefined;
-      detail?: string | undefined;
-    };
+    defaultValue?: { summary?: string | undefined; detail?: string | undefined };
     /** @see https://storybook.js.org/docs/api/arg-types#tabledisable */
     disable?: boolean;
     /** @see https://storybook.js.org/docs/api/arg-types#tablesubcategory */
@@ -159,9 +156,7 @@ export interface StrictArgs {
 
 /** @see https://storybook.js.org/docs/api/arg-types#argtypes */
 export type ArgTypes<TArgs = Args> = { [name in keyof TArgs]: InputType };
-export type StrictArgTypes<TArgs = Args> = {
-  [name in keyof TArgs]: StrictInputType;
-};
+export type StrictArgTypes<TArgs = Args> = { [name in keyof TArgs]: StrictInputType };
 
 export interface Globals {
   [name: string]: any;

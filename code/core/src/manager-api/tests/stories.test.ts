@@ -1423,9 +1423,7 @@ describe('stories API', () => {
         viewMode: 'story',
       });
 
-      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', {
-        viewMode: 'story',
-      });
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', { viewMode: 'story' });
     });
 
     it('resolves the story from storyId when provided', () => {
@@ -1437,9 +1435,7 @@ describe('stories API', () => {
         viewMode: 'story',
       });
 
-      expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, {
-        viewMode: 'story',
-      });
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, { viewMode: 'story' });
     });
 
     it('warns and does not navigate on the legacy kind/story payload', () => {

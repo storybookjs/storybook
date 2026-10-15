@@ -128,16 +128,8 @@ describe('client-api.decorators', () => {
     expect(contexts).toEqual([]);
     decorated(makeContext({ parameters: { a: 'b' } }));
     expect(contexts).toEqual([
-      expect.objectContaining({
-        parameters: { a: 'b' },
-        id: 'id',
-        name: 'name',
-      }),
-      expect.objectContaining({
-        parameters: { a: 'b' },
-        id: 'id',
-        name: 'name',
-      }),
+      expect.objectContaining({ parameters: { a: 'b' }, id: 'id', name: 'name' }),
+      expect.objectContaining({ parameters: { a: 'b' }, id: 'id', name: 'name' }),
     ]);
   });
 });

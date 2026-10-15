@@ -1,4 +1,4 @@
-import type { Icon } from '@storybook/icons';
+import type * as Icons from '@storybook/icons';
 
 import type { InputType } from 'storybook/internal/types';
 
@@ -14,14 +14,19 @@ export interface ToolbarShortcutConfig {
 export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig>;
 
 /**
- * An icon component individually imported from `@storybook/icons`, e.g. `CircleHollowIcon`.
- * Legacy string icon names are no longer supported.
+ * The names of the icon components exported by `@storybook/icons`, e.g. `'CircleHollowIcon'`.
+ *
+ * The name is serialized from the preview to the manager, where the manager-side `ToolbarIcon`
+ * component resolves it to a component. The namespace import is type-only, so the icons package
+ * (and with it React) is never bundled into the preview.
  */
-export type ToolbarIconType = Icon;
+export type ToolbarIconType = {
+  [K in keyof typeof Icons]: K extends `${string}Icon` ? K : never;
+}[keyof typeof Icons];
 
 export interface ToolbarItem {
   value?: string;
-  /** Icon component from `@storybook/icons`, e.g. `import { CircleHollowIcon } from '@storybook/icons'` */
+  /** Name of an icon exported by `@storybook/icons`, e.g. `'CircleHollowIcon'` */
   icon?: ToolbarIconType;
   right?: string;
   title?: string;
@@ -32,7 +37,7 @@ export interface ToolbarItem {
 export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
-  /** Icon component from `@storybook/icons` shown next to the toolbar title */
+  /** Name of an `@storybook/icons` icon shown next to the toolbar title */
   icon?: ToolbarIconType;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;

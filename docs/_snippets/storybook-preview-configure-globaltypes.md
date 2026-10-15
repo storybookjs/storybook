@@ -6,7 +6,7 @@ const preview = {
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value (recommended for consistency with the Storybook UI)
@@ -33,7 +33,7 @@ const preview: Preview = {
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value (recommended for consistency with the Storybook UI)
@@ -60,7 +60,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value (recommended for consistency with the Storybook UI)
@@ -87,7 +87,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value (recommended for consistency with the Storybook UI)
@@ -111,7 +111,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value
@@ -137,7 +137,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value
@@ -161,7 +161,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value
@@ -185,7 +185,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value
@@ -211,7 +211,7 @@ export default definePreview({
       toolbar: {
         // The label to show for this toolbar item
         title: 'Theme',
-        icon: 'circlehollow',
+        icon: 'CircleHollowIcon',
         // Array of plain string values or MenuItem shape (see below)
         items: ['light', 'dark'],
         // Change title based on selected value

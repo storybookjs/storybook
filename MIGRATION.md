@@ -5,7 +5,7 @@
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
-  - [Icons component removed](#icons-component-removed)
+  - [Toolbar icon no longer accepts legacy icon names](#toolbar-icon-no-longer-accepts-legacy-icon-names)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -723,27 +723,17 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
 
-### Icons component removed
+### Toolbar icon no longer accepts legacy icon names
 
-The deprecated `Icons` and `Symbols` components are removed from `@storybook/components`. The exports had already been dropped from `storybook/internal/components` in 9.0 (commit `b681c7d`), so if you are still referencing them you are on 8.x or earlier. Render the icon you need directly from `@storybook/icons` — each icon name maps to a component of the same name (see [#29159](https://github.com/storybookjs/storybook/issues/29159)):
+Toolbar menus in `globalTypes` (and toolbar `argTypes` in stories) configure their `icon` with the name of an icon exported by `@storybook/icons` — e.g. `'CircleHollowIcon'` — instead of a component or a legacy name like `'circlehollow'`. The manager resolves the name where the toolbar renders, so the icon can cross the serialization boundary between the preview and the manager; passing a component is no longer supported. Passing an `icon` on individual items works the same way. For history, the legacy names came from the `Icons` and `Symbols` components that were removed from `@storybook/components` in 9.0 (see [#29159](https://github.com/storybookjs/storybook/issues/29159)).
 
-```diff
--import { Icons } from '@storybook/components';
-+import { HeartIcon } from '@storybook/icons';
-
--<Icons icon="heart" />
-+<HeartIcon />
-```
-
-Toolbar menus in `globalTypes` accept an icon component from `@storybook/icons` instead of a string name. Import the icon individually and pass the component as the `icon`; legacy string names from the removed map are no longer supported. Passing an `icon` on individual items works the same way. A toolbar menu item still falls back to its `value` when it has no `title`, but the toolbar itself does not: a toolbar configured without both a `title` and an `icon` renders without a visible label and logs a `console.warn`. Give every toolbar menu a `title`:
+`storybook automigrate` rewrites legacy names in your `.storybook` config and story files:
 
 ```diff
-+import { CircleHollowIcon } from '@storybook/icons';
-+
  myAddon: {
    toolbar: {
--   icon: 'circle',
-+   icon: CircleHollowIcon,
+-   icon: 'circlehollow',
++   icon: 'CircleHollowIcon',
     title: 'Background',
     items: [{ value: 'light', title: 'Light' }],
   },
@@ -2270,7 +2260,6 @@ The Button component now has an `ariaLabel` prop, to ensure that Storybook UI co
 When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
 
 In every other case (your Button only contains an icon, has a responsive layout that can hide its text, or relies on visual context to make sense), you must pass a label to `ariaLabel`, which screenreaders will read. The label should be short and start with an action verb.
-
 
 ##### Added: shortcut
 

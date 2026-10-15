@@ -9,6 +9,7 @@ import { styled } from 'storybook/theming';
 import type { ToolbarMenuProps } from '../types.ts';
 import { getSelectedItem } from '../utils/get-selected.ts';
 import { registerShortcuts } from '../utils/register-shortcuts.ts';
+import { ToolbarIcon } from './ToolbarIcon.tsx';
 
 const ToolbarMenuItemContainer = styled('div')({
   width: '100%',
@@ -27,7 +28,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   toolbar: {
     icon: toolbarIcon,
     items,
-    title: _title,
+    title: toolbarTitle,
     preventDynamicIcon,
     dynamicTitle = true,
     shortcuts,
@@ -38,16 +39,9 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
 
   const currentValue = globals[id];
   const isOverridden = id in storyGlobals;
-  let icon = toolbarIcon;
-  let title = _title;
-
-  if (!preventDynamicIcon) {
-    icon = getSelectedItem({ currentValue, items })?.icon || icon;
-  }
-
-  if (dynamicTitle) {
-    title = getSelectedItem({ currentValue, items })?.title || title;
-  }
+  const selected = getSelectedItem({ currentValue, items });
+  const icon = preventDynamicIcon ? toolbarIcon : selected?.icon || toolbarIcon;
+  const title = dynamicTitle ? selected?.title || toolbarTitle : toolbarTitle;
 
   if (!title && !icon) {
     console.warn(`Toolbar '${id}' has no title or icon`);
@@ -61,7 +55,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
         .filter((item) => item.type !== 'reset')
         .map((item) => {
           const itemTitle = item.title ?? item.value ?? 'Untitled';
-          const Icon = !item.hideIcon ? item.icon : undefined;
+          const itemIcon = item.hideIcon ? undefined : item.icon;
 
           if (item.right) {
             return {
@@ -69,7 +63,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
               value: item.value,
               children: (
                 <ToolbarMenuItemContainer>
-                  {Icon && <Icon />}
+                  <ToolbarIcon icon={itemIcon} />
                   <ToolbarMenuItemMiddle>{item.title ?? item.value}</ToolbarMenuItemMiddle>
                   {item.right}
                 </ToolbarMenuItemContainer>
@@ -79,7 +73,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
             return {
               title: itemTitle,
               value: item.value,
-              icon: Icon && <Icon />,
+              icon: <ToolbarIcon icon={itemIcon} />,
             };
           }
         }),
@@ -119,8 +113,6 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   // FIXME: for SB 10 we would want description to become an aria-description, and to add an
   // ariaLabel prop to tools with an automigration switching current description to ariaLabel
   const ariaLabel = description || title || name || id;
-  // Capitalized alias so the icon component can render as JSX
-  const ToolbarIcon = icon;
 
   return (
     <Select
@@ -132,7 +124,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       resetLabel={resetLabel}
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
-      icon={ToolbarIcon ? <ToolbarIcon /> : undefined}
+      icon={<ToolbarIcon icon={icon} />}
       showSelectedOptionTitle={dynamicTitle}
     >
       {title}

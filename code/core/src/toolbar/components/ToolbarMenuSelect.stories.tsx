@@ -3,8 +3,6 @@ import React, { useMemo, useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { CircleHollowIcon, GrowIcon } from '@storybook/icons';
-
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, screen, userEvent, waitFor } from 'storybook/test';
 
@@ -12,8 +10,8 @@ import type { ToolbarItem } from '../types.ts';
 import { ToolbarMenuSelect } from './ToolbarMenuSelect.tsx';
 
 const items: ToolbarItem[] = [
-  { type: 'item', value: 'light', title: 'Light', icon: GrowIcon },
-  { type: 'item', value: 'dark', title: 'Dark', icon: CircleHollowIcon },
+  { type: 'item', value: 'light', title: 'Light', icon: 'GrowIcon' },
+  { type: 'item', value: 'dark', title: 'Dark', icon: 'CircleHollowIcon' },
 ];
 
 /**
@@ -61,10 +59,10 @@ type Story = StoryObj<typeof meta>;
 export const ToolbarIcon: Story = {
   tags: ['vitest'],
   args: {
-    toolbar: { title: 'Theme', icon: CircleHollowIcon, items },
+    toolbar: { title: 'Theme', icon: 'CircleHollowIcon', items },
   },
   play: async ({ canvas }) => {
-    // The toolbar icon is an individually imported @storybook/icons component.
+    // The toolbar icon name resolves to an @storybook/icons component in the manager.
     const button = canvas.getByRole('button', { name: 'Change the theme' });
     expect(button.querySelector('svg')).not.toBeNull();
   },

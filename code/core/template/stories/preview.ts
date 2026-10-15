@@ -1,11 +1,3 @@
-import {
-  CircleHollowIcon,
-  GlobeIcon,
-  MoonIcon,
-  SideBySideIcon,
-  StackedIcon,
-  SunIcon,
-} from '@storybook/icons';
 import type { GlobalTypes, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 declare global {
@@ -75,13 +67,13 @@ export const globalTypes = {
     name: 'Theme',
     description: 'Global theme for components',
     toolbar: {
-      icon: CircleHollowIcon,
+      icon: 'CircleHollowIcon',
       title: 'Theme',
       items: [
-        { value: 'light', icon: SunIcon, title: 'light' },
-        { value: 'dark', icon: MoonIcon, title: 'dark' },
-        { value: 'side-by-side', icon: SideBySideIcon, title: 'side by side' },
-        { value: 'stacked', icon: StackedIcon, title: 'stacked' },
+        { value: 'light', icon: 'SunIcon', title: 'light' },
+        { value: 'dark', icon: 'MoonIcon', title: 'dark' },
+        { value: 'side-by-side', icon: 'SideBySideIcon', title: 'side by side' },
+        { value: 'stacked', icon: 'StackedIcon', title: 'stacked' },
       ],
     },
   },
@@ -89,7 +81,7 @@ export const globalTypes = {
     name: 'Locale',
     description: 'Internationalization locale',
     toolbar: {
-      icon: GlobeIcon,
+      icon: 'GlobeIcon',
       shortcuts: {
         next: {
           label: 'Go to next language',

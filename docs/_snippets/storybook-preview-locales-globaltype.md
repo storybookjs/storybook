@@ -4,7 +4,7 @@ const preview = {
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -32,7 +32,7 @@ const preview: Preview = {
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -60,7 +60,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -88,7 +88,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -113,7 +113,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -140,7 +140,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -165,7 +165,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -190,7 +190,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },
@@ -217,7 +217,7 @@ export default definePreview({
     locale: {
       description: 'Internationalization locale',
       toolbar: {
-        icon: 'globe',
+        icon: 'GlobeIcon',
         items: [
           { value: 'en', right: '🇺🇸', title: 'English' },
           { value: 'fr', right: '🇫🇷', title: 'Français' },

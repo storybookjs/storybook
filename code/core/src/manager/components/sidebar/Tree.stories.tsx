@@ -1184,6 +1184,9 @@ export const StoryWithTests: Story = {
  * Rapid clicks toggle a branch once per press and nothing more. React-aria raises an action for a
  * mouse double-click on top of the two presses, which have each toggled the branch through the
  * selection already; acting on it too made two rapid clicks toggle three times.
+ *
+ * The branch is a root, which only folds: opening a component also shows its first story, whose
+ * selection keeps the component open.
  */
 export const DoubleClickTogglesOncePerPress: Story = {
   args: { refId: DEFAULT_REF_ID },
@@ -1197,22 +1200,22 @@ export const DoubleClickTogglesOncePerPress: Story = {
     const canvas = within(canvasElement);
     const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
     await canvas.findByText('Introduction');
-    const branch = row('emails-buildnotification')!;
-    expect(branch).toHaveAttribute('aria-expanded', 'false');
+    const branch = row('emails')!;
+    expect(branch).toHaveAttribute('aria-expanded', 'true');
 
-    // Two presses: expanded, then collapsed again. The double-click action adds nothing.
+    // Two presses: collapsed, then expanded again. The double-click action adds nothing.
+    await userEvent.dblClick(branch);
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
+
+    // A single press still toggles, and a double-click from the collapsed state lands collapsed.
+    await userEvent.click(branch);
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
     await userEvent.dblClick(branch);
     await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
-
-    // A single press still toggles, and a double-click from the expanded state lands expanded.
-    await userEvent.click(branch);
-    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
-    await userEvent.dblClick(branch);
-    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
 
     // Enter still toggles through the action.
     await userEvent.keyboard('{Enter}');
-    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
   },
 };
 

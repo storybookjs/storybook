@@ -198,6 +198,20 @@ export const Collapsed: Story = {
   },
 };
 
+/**
+ * Clicking a collapsed component expands it and also opens its first child, a docs page here, as
+ * the sidebar always has. Addon end-to-end tests rely on it to reach a component's first story.
+ */
+export const ComponentClickShowsFirstStory: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByText('Components'));
+    await userEvent.click(await canvas.findByText('Button'));
+    await expect(await canvas.findByText('Docs')).toBeInTheDocument();
+    await expect(args.onSelectStoryId).toHaveBeenCalledWith(docsItem.id);
+  },
+};
+
 /** Clicking a collapsed branch expands it without navigating. */
 export const ExpandOnClick: Story = {
   play: async ({ canvasElement, args }) => {

@@ -78,9 +78,10 @@ export const LastViewed: StoryFn = () => (
 const escapeAbove = fn().mockName('escapeAbove');
 
 /**
- * Escape in a field with a query only clears the query, and the press goes no further: in the
- * mobile menu drawer, an Escape that reaches the drawer closes it. Escape in an empty field still
- * reaches the ancestors, so the drawer can close.
+ * Escape never leaves the field: with a query it clears the query, with an empty field it hands
+ * focus to the explorer. Only an Escape from the explorer reaches the ancestors, where the mobile
+ * menu drawer closes on it. Without this ladder the drawer closed on the first press, or kept the
+ * focus trapped in the empty field (the drawer's focus scope returns it there after a blur).
  */
 export const EscapeWithQueryStaysInSearch: StoryFn = () => (
   <div
@@ -101,6 +102,11 @@ EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
   await userEvent.click(input);
   await userEvent.keyboard('{Escape}');
   await waitFor(() => expect(input).toHaveValue(''));
+  expect(escapeAbove).not.toHaveBeenCalled();
+
+  const explorer = canvasElement.querySelector('#storybook-explorer-menu');
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(explorer).toHaveFocus());
   expect(escapeAbove).not.toHaveBeenCalled();
 
   await userEvent.keyboard('{Escape}');

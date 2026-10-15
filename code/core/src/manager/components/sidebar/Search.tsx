@@ -185,6 +185,8 @@ export const Search = React.memo<SearchProps>(function Search({
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
+  // The explorer's focus target (also focusableUIElements.storyListMenu).
+  const menuRef = useRef<HTMLDivElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
   const [allComponents, showAllComponents] = useState(false);
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
@@ -486,17 +488,17 @@ export const Search = React.memo<SearchProps>(function Search({
             if (e.key !== 'Escape') {
               return;
             }
+            // Escape never leaves the field. With a query it clears the query (see stateReducer).
+            // With an empty field it hands focus to the explorer: the stateReducer then returns
+            // to the tree view, and the next Escape, from the explorer, reaches the ancestors.
+            // The mobile menu drawer closes on any Escape that reaches it, so a press from the
+            // field would close it on the first press. A plain blur would not do either: the
+            // drawer's focus scope returns the focus to the field, which reopens the results.
+            e.stopPropagation();
             // @ts-expect-error (non strict)
             if (inputValue.length === 0) {
-              // When pressing escape while the input is empty, blur the input
-              // The stateReducer will handle returning to the tree view
-              // @ts-expect-error (non strict)
-              inputRef.current.blur();
-              return;
+              menuRef.current?.focus();
             }
-            // Escape with a query only clears the query (see stateReducer). The mobile menu
-            // drawer closes on any Escape that reaches it, so the press must stop here.
-            e.stopPropagation();
           },
         });
 
@@ -549,7 +551,7 @@ export const Search = React.memo<SearchProps>(function Search({
             </SearchBar>
             {!isOpen && belowSearchContent}
             {/* Programmatically focusable (focusableUIElements.storyListMenu). */}
-            <FocusContainer tabIndex={-1} id="storybook-explorer-menu">
+            <FocusContainer tabIndex={-1} id="storybook-explorer-menu" ref={menuRef}>
               {children({
                 query: input,
                 results,

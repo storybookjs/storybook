@@ -14,9 +14,8 @@ import { styled, useTheme } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getStatus } from '../../utils/status.tsx';
-import { UseSymbol } from './IconSymbols.tsx';
 import { NoResults } from './NoResults.tsx';
-import { TypeIcon } from './TypeIcon.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { DownshiftItem, Match, SearchResult } from './types.ts';
 import { isExpandType } from './types.ts';
 import type { Theme } from '@emotion/react';
@@ -195,21 +194,9 @@ const Result: FC<
   return (
     <ResultRow {...props} onClick={click}>
       <IconWrapper>
-        {item.type === 'component' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="component">
-            <UseSymbol type="component" />
-          </TypeIcon>
-        )}
-        {item.type === 'story' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={item.subtype}>
-            <UseSymbol type={item.subtype} />
-          </TypeIcon>
-        )}
-        {!(item.type === 'component' || item.type === 'story') && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="docs">
-            <UseSymbol type="docs" />
-          </TypeIcon>
-        )}
+        {/* The same icon as the row in the tree. A recently opened story lists its parent, which
+            is a group when the component has nested stories, so every entry type must resolve. */}
+        <TypeIconWithSymbol item={item} />
       </IconWrapper>
       <ResultRowContent className="search-result-item--label">
         <Title>

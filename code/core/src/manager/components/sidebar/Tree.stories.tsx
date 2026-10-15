@@ -670,6 +670,8 @@ export const PointerClickKeepsContextMenuHidden: Story = {
  * Opening the row menu retires the trigger's own tooltip: it is redundant next to the open menu,
  * and a tooltip held open across the menu's focus churn is what lingered at the viewport origin.
  * The menu opens through the shortcut event, so no pointer press closes the tooltip on the way.
+ * The tooltip opens through keyboard focus on the trigger: the test environment's pointer does
+ * not hover.
  */
 export const ContextMenuOpenClosesTooltip: Story = {
   ...makeDualSlotStory({
@@ -686,9 +688,15 @@ export const ContextMenuOpenClosesTooltip: Story = {
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
     await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
-    await userEvent.hover(row);
-    const trigger = await within(row).findByTestId('context-menu');
-    await userEvent.hover(trigger);
+    // Keyboard focus on the row reveals the trigger (ArrowRight on a leaf row moves nothing and
+    // only makes the focus a keyboard one); a Tab then focuses the trigger, which opens its
+    // tooltip.
+    await userEvent.click(row);
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() => expect(row).toHaveAttribute('data-focus-visible', 'true'));
+    await userEvent.tab();
+    const trigger = within(row).getByTestId('context-menu');
+    await waitFor(() => expect(trigger).toHaveFocus());
     await expect(await screen.findByTestId('tooltip')).toBeVisible();
 
     const openMenuHandler = managerContext.api.on.mock.calls

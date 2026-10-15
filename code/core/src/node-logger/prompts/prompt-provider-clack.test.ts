@@ -90,6 +90,9 @@ describe('ClackPromptProvider', () => {
   });
 
   it('falls back to the default cancel behavior when no onCancel is provided', async () => {
+    // A prompt aborting in a non-interactive run (EOF, Ctrl+C) settles on clack's cancel symbol.
+    // The init is incomplete at that point, so the process must exit non-zero — an exit code of 0
+    // tells CI the `add`/postinstall flow succeeded.
     selectMock.mockResolvedValue(Symbol.for('cancelled'));
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 
@@ -99,7 +102,9 @@ describe('ClackPromptProvider', () => {
     });
 
     expect(cancelMock).toHaveBeenCalledWith('Operation canceled.');
-    expect(exitSpy).toHaveBeenCalledWith(0);
+    expect(exitSpy).toHaveBeenCalled();
+    const [exitCode] = exitSpy.mock.calls[0];
+    expect(exitCode).not.toBe(0);
 
     exitSpy.mockRestore();
   });

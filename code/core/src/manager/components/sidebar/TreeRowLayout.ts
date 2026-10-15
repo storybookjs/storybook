@@ -74,14 +74,22 @@ export class TreeRowLayout extends Layout<Node<object>, TreeRowLayoutOptions> {
   }
 
   getVisibleLayoutInfos(rect: Rect) {
-    const { ids, offsets } = this.rows;
+    const { ids, offsets, indexById } = this.rows;
     const infos: LayoutInfo[] = [];
-    for (
-      let index = findFirstRowBelow(this.rows, rect.y);
-      index < ids.length && offsets[index] - SECTION_GAP < rect.maxY;
-      index += 1
-    ) {
-      infos.push(this.layoutInfoAt(index));
+    const first = findFirstRowBelow(this.rows, rect.y);
+    let last = first;
+    for (; last < ids.length && offsets[last] - SECTION_GAP < rect.maxY; last += 1) {
+      infos.push(this.layoutInfoAt(last));
+    }
+    // Keep the persisted rows mounted wherever the viewport is. React-aria persists the row that
+    // holds the roving tabindex, so that a Tab back into the tree can land on it after the scroll
+    // position moved on (a Tab to the next block scrolls the row away). The virtualizer leaves
+    // this to the layout.
+    for (const key of this.virtualizer?.persistedKeys ?? []) {
+      const index = indexById.get(String(key));
+      if (index !== undefined && (index < first || index >= last)) {
+        infos.push(this.layoutInfoAt(index));
+      }
     }
     return infos;
   }

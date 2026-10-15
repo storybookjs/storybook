@@ -36,37 +36,46 @@ test.describe('sidebar scrolling', () => {
 
     // The last row comes to rest above the floating sidebar-bottom widget, which the scroll area
     // reserves room for, rather than behind it.
-    await scrollArea.evaluate((area) => {
-      area.scrollTop = area.scrollHeight;
-    });
-    // The virtualizer mounts rows near the visible area only, so right after the jump the
-    // deepest mounted row is not yet the final row. Poll until the deepest row settles.
-    const deepestRowId = () =>
+    //
+    // The virtualizer mounts rows near the visible area only, so right after a jump to the end
+    // the deepest mounted row is not yet the final row. Content around the scroll area can also
+    // still settle (the onboarding checklist appears once it has loaded, and shrinks the scroll
+    // area), which would leave an earlier jump short of the end. Jump again on every poll until
+    // the deepest row stops changing while the scroll position is at the end.
+    const jumpToEnd = () =>
       scrollArea.evaluate((area) => {
+        area.scrollTop = area.scrollHeight;
         const rows = [...area.querySelectorAll<HTMLElement>('[data-item-id]')];
-        return rows.length === 0
-          ? null
-          : rows.reduce((a, b) =>
-              a.getBoundingClientRect().bottom >= b.getBoundingClientRect().bottom ? a : b
-            ).dataset.itemId!;
+        const deepest =
+          rows.length === 0
+            ? null
+            : rows.reduce((a, b) =>
+                a.getBoundingClientRect().bottom >= b.getBoundingClientRect().bottom ? a : b
+              ).dataset.itemId!;
+        return { deepest, atEnd: area.scrollTop + area.clientHeight >= area.scrollHeight - 1 };
       });
     let lastRowId: string | null = null;
     await expect
       .poll(async () => {
-        const deepest = await deepestRowId();
-        const settled = deepest !== null && deepest === lastRowId;
+        const { deepest, atEnd } = await jumpToEnd();
+        const settled = atEnd && deepest !== null && deepest === lastRowId;
         lastRowId = deepest;
         return settled;
       })
       .toBe(true);
-    const clearance = await page.evaluate((rowId) => {
-      const widget = document.querySelector('#sidebar-bottom-wrapper');
-      const lastRow = document.querySelector(`[data-item-id="${CSS.escape(rowId)}"]`);
-      if (!widget || !lastRow) {
-        return null;
-      }
-      return lastRow.getBoundingClientRect().bottom <= widget.getBoundingClientRect().top;
-    }, lastRowId!);
+    const clearance = await page.evaluate(
+      ([rowId, areaSelector]) => {
+        const area = document.querySelector<HTMLElement>(areaSelector)!;
+        area.scrollTop = area.scrollHeight;
+        const widget = document.querySelector('#sidebar-bottom-wrapper');
+        const lastRow = document.querySelector(`[data-item-id="${CSS.escape(rowId)}"]`);
+        if (!widget || !lastRow) {
+          return null;
+        }
+        return lastRow.getBoundingClientRect().bottom <= widget.getBoundingClientRect().top;
+      },
+      [lastRowId!, SCROLL_AREA]
+    );
     expect(clearance).not.toBeNull();
     expect(clearance).toBe(true);
   });

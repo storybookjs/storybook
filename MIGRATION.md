@@ -631,6 +631,22 @@ A panel stays next to the story. A tab replaced the canvas. For a short-lived ac
 
 See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-type-removed) for the same instructions in the addon-author guide.
 
+### `@storybook/icons` is no longer a manager global
+
+Storybook no longer exposes `@storybook/icons` to the manager through the `__STORYBOOK_ICONS__` global, and the package is no longer listed by `storybook/internal/manager/globals`'s `globalPackages`. If your addon's manager code imports `@storybook/icons`, the package is now bundled into your addon's manager build like any other dependency.
+
+Declare `@storybook/icons` in your addon's runtime `dependencies` so consumers get a resolvable copy:
+
+```json
+{
+  "dependencies": {
+    "@storybook/icons": "^2.0.2"
+  }
+}
+```
+
+Alternatively, bundle the icons your addon uses yourself. `devDependencies` alone do not supply the package to consumers: when the dependency is not declared, your addon's manager dist bundles its own copy of the library.
+
 ### `storybook dev` no longer opens a browser by default
 
 Storybook now starts the development server without automatically opening it in a browser. The CLI

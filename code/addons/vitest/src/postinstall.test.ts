@@ -1,19 +1,44 @@
-import { describe, expect, it, vi } from 'vitest';
+import { readFile, writeFile } from 'node:fs/promises';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { types as t } from 'storybook/internal/babel';
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import type { JsPackageManager } from 'storybook/internal/common';
+import {
+  getStorybookInfo,
+  JsPackageManagerFactory,
+  PackageManagerName,
+} from 'storybook/internal/common';
+import { AddonVitestPostinstallPrerequisiteCheckError } from 'storybook/internal/server-errors';
+import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+
+import * as find from 'empathic/find';
+import { vol } from 'memfs';
+import { resolve } from 'pathe';
+import { dedent } from 'ts-dedent';
 
 import {
   ANGULAR_VITEST_PLUGIN_CALL,
   injectAngularVitestIntoAst,
   injectAngularVitestIntoConfig,
 } from './angular-vitest-postinstall.ts';
-import { getTemplateConfigDir, isConfigAlreadySetup } from './postinstall.ts';
+import postInstall, { getTemplateConfigDir, isConfigAlreadySetup } from './postinstall.ts';
 import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
+import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('empathic/find', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+// The storybook package's export map resolves `storybook/internal/cli` to the built dist bundle,
+// whose inlined copies of `empathic/find` cannot be intercepted by the spy above. Loading the
+// service from source keeps the CommonJS-guard search inside the mocked module graph.
+vi.mock(
+  'storybook/internal/cli',
+  async () =>
+    await vi.importActual<Record<string, unknown>>('../../../core/src/cli/AddonVitestService.ts')
+);
 
 /**
  * Returns the callee names of the plugins array that holds the (possibly aliased) storybookTest
@@ -105,6 +130,98 @@ describe('postinstall helpers', () => {
 
     expect(isConfigAlreadySetup('/project/vitest.config.ts', config)).toBe(false);
   });
+});
+
+describe('CommonJS config guard (storybook add flow)', () => {
+  // A real CommonJS vitest config: `module.exports` gives the merge path no default export to
+  // rewrite, so without the guard the run can only end in the generic manual-setup error.
+  const cjsConfigContent = dedent`
+    const { defineConfig } = require('vitest/config');
+
+    module.exports = defineConfig({
+      test: {
+        environment: 'node',
+      },
+    });
+  `;
+
+  let mockPackageManager: JsPackageManager;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+
+    // Reads and writes stay in memfs; nothing in these flows may touch the real checkout.
+    const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+    vi.mocked(readFile).mockImplementation(
+      memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
+    );
+    vi.mocked(writeFile).mockImplementation(
+      memfs.fs.promises.writeFile as unknown as typeof import('node:fs/promises').writeFile
+    );
+
+    mockPackageManager = {
+      getAllDependencies: vi.fn().mockReturnValue({}),
+      getInstalledVersion: vi.fn().mockResolvedValue(null),
+      getDeclaredVersionSpecifier: vi.fn().mockResolvedValue(null),
+      runPackageCommand: vi.fn(),
+      getPackageCommand: vi.fn(),
+      applyVersionToRelatedPackages: vi.fn((packages: string[], version: string) =>
+        packages.map((pkg) => `${pkg}@${version}`)
+      ),
+    } as Partial<JsPackageManager> as JsPackageManager;
+
+    vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue(mockPackageManager);
+    vi.mocked(getStorybookInfo).mockResolvedValue({
+      framework: SupportedFramework.REACT_VITE,
+      builder: SupportedBuilder.VITE,
+    } as Awaited<ReturnType<typeof getStorybookInfo>>);
+
+    vi.mocked(find.any).mockReturnValue(undefined);
+  });
+
+  afterEach(() => {
+    vol.reset();
+  });
+
+  const runPostinstall = () => {
+    const logger = {
+      debug: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+      log: vi.fn(),
+      step: vi.fn(),
+      warn: vi.fn(),
+    };
+    return postInstall({
+      configDir: '.storybook',
+      packageManager: PackageManagerName.NPM,
+      logger: logger as unknown as PostinstallOptions['logger'],
+      prompt: {} as unknown as PostinstallOptions['prompt'],
+      skipDependencyManagement: true,
+      skipInstall: true,
+    });
+  };
+
+  it.each(['cts', 'cjs'] as const)(
+    'rejects a vitest.config.%s with the CommonJS guard instead of attempting the merge',
+    async (ext) => {
+      const configPath = resolve(process.cwd(), `vitest.config.${ext}`);
+      vi.mocked(find.any).mockImplementation((names: string[]) =>
+        names.includes(`vitest.config.${ext}`) ? configPath : undefined
+      );
+      await vol.fromJSON({ [configPath]: cjsConfigContent });
+
+      const error = await runPostinstall().then(
+        () => null,
+        (e: unknown) => e
+      );
+
+      expect(error).toBeInstanceOf(AddonVitestPostinstallPrerequisiteCheckError);
+      const reasons =
+        error instanceof AddonVitestPostinstallPrerequisiteCheckError ? error.data.reasons : [];
+      expect(reasons.some((r) => r.includes('Cannot auto-update CommonJS config file'))).toBe(true);
+    }
+  );
 });
 
 describe('Angular bridge wiring (postinstall integration)', () => {

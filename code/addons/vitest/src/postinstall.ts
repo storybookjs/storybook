@@ -74,9 +74,12 @@ export default async function postInstall(options: PostinstallOptions) {
   // only install these dependencies if they are not already installed
 
   // Use AddonVitestService for compatibility validation
+  // `projectRoot` starts the config-file search; passing the config dir makes the CommonJS guard
+  // see the same files the config merge below would touch (searching from configDir to root).
   const compatibilityResult = await addonVitestService.validateCompatibility({
     framework: info.framework,
     builder: info.builder,
+    projectRoot: options.configDir,
   });
 
   let result: string | null = null;

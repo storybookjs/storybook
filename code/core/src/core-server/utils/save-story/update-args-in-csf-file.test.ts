@@ -449,7 +449,7 @@ describe.each([
   ['CSF3', (object: string) => object],
   ['CSF3 satisfies', (object: string) => `${object} satisfies Story`],
   ['CSF4', (object: string) => `meta.story(${object})`],
-] as const)('%s spread args', (format, story) => {
+] as const)('%s spread args', (variant, story) => {
   const makeBase = vi.fn();
 
   beforeEach(() => {
@@ -677,7 +677,7 @@ describe.each([
   ])('%s', async (_, properties, expectedArgs) => {
     const csf = loadCsf(
       `${
-        format === 'CSF4'
+        variant === 'CSF4'
           ? `import preview from '#.storybook/preview'; const meta = preview.meta({ title: 'Button' });`
           : `export default { title: 'Button' };`
       }

@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 
 import { createEventWrapper } from './act-compat.ts';
 
 describe('createEventWrapper', () => {
-  let act: ReturnType<typeof vi.fn>;
+  let act: Mock<(cb: () => unknown) => unknown>;
   let shouldReturnThenable = false;
 
   beforeEach(() => {

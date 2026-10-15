@@ -73,13 +73,27 @@ export default async function postInstall(options: PostinstallOptions) {
   const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
 
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const rootConfig = vitestConfigFile || viteConfigFile;
+
+  // An already-wired config takes the skip path below and is never rewritten, so the
+  // unmergeable-shape guard must not run for it: hand-configured projects — including shapes
+  // the merger cannot express, like a callback export that already calls storybookTest —
+  // must keep succeeding on a rerun.
+  let configAlreadySetup = false;
+  if (rootConfig) {
+    configAlreadySetup = isConfigAlreadySetup(rootConfig, await fs.readFile(rootConfig, 'utf8'));
+  }
+
   // Use AddonVitestService for compatibility validation
   // `projectRoot` starts the config-file search; passing the config dir makes the CommonJS guard
   // see the same files the config merge below would touch (searching from configDir to root).
+  // Skipped when the config is already wired, since no rewrite will be attempted.
   const compatibilityResult = await addonVitestService.validateCompatibility({
     framework: info.framework,
     builder: info.builder,
-    projectRoot: options.configDir,
+    projectRoot: configAlreadySetup ? undefined : options.configDir,
   });
 
   let result: string | null = null;
@@ -177,10 +191,7 @@ export default async function postInstall(options: PostinstallOptions) {
   const fileExtension =
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
-  const viteConfigFile = findFile('vite.config');
-  const vitestConfigFile = findFile('vitest.config');
   const vitestShimFile = findFile('vitest.shims.d');
-  const rootConfig = vitestConfigFile || viteConfigFile;
 
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile('vitest.shims.d.ts', '/// <reference types="@vitest/browser-playwright" />');
@@ -227,7 +238,7 @@ export default async function postInstall(options: PostinstallOptions) {
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
+    const alreadyConfigured = configAlreadySetup;
 
     if (!alreadyConfigured) {
       const configTemplate = await loadTemplate('vitest.config.4.template', {

@@ -145,10 +145,34 @@ describe('CommonJS config guard (storybook add flow)', () => {
     });
   `;
 
+  // An already-wired config whose export shape the merger cannot rewrite (a defineConfig
+  // callback with control flow resolves to no config object, so canUpdateVitestConfigFile
+  // rejects it): rerunning the add flow must still succeed via the skip path instead of
+  // failing the shape guard.
+  const wiredCallbackConfigContent = dedent`
+    import { defineConfig } from 'vite';
+    import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+    export default defineConfig(({ mode }) => {
+      if (mode === 'development') {
+        return { plugins: [storybookTest({ configDir: '.storybook' })] };
+      }
+      return { plugins: [storybookTest({ configDir: '.storybook' })] };
+    });
+  `;
+
+  // Nested so the search-window assertion can tell a config-dir search from a cwd search.
+  const configDir = 'config/storybook';
+
+  // Discovery fixture: test cases declare WHAT discovery finds; the find.any implementation
+  // that serves it stays in beforeEach per the repository's spy-mocking rules.
+  let discoveredConfig: { basename: string; path: string; content: string } | undefined;
+
   let mockPackageManager: JsPackageManager;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    discoveredConfig = undefined;
 
     // Reads and writes stay in memfs; nothing in these flows may touch the real checkout.
     const memfs = await vi.importActual<typeof import('memfs')>('memfs');
@@ -176,7 +200,11 @@ describe('CommonJS config guard (storybook add flow)', () => {
       builder: SupportedBuilder.VITE,
     } as Awaited<ReturnType<typeof getStorybookInfo>>);
 
-    vi.mocked(find.any).mockReturnValue(undefined);
+    vi.mocked(find.any).mockImplementation((names: string[]) =>
+      discoveredConfig && names.includes(discoveredConfig.basename)
+        ? discoveredConfig.path
+        : undefined
+    );
   });
 
   afterEach(() => {
@@ -193,7 +221,7 @@ describe('CommonJS config guard (storybook add flow)', () => {
       warn: vi.fn(),
     };
     return postInstall({
-      configDir: '.storybook',
+      configDir,
       packageManager: PackageManagerName.NPM,
       logger: logger as unknown as PostinstallOptions['logger'],
       prompt: {} as unknown as PostinstallOptions['prompt'],
@@ -206,9 +234,11 @@ describe('CommonJS config guard (storybook add flow)', () => {
     'rejects a vitest.config.%s with the CommonJS guard instead of attempting the merge',
     async (ext) => {
       const configPath = resolve(process.cwd(), `vitest.config.${ext}`);
-      vi.mocked(find.any).mockImplementation((names: string[]) =>
-        names.includes(`vitest.config.${ext}`) ? configPath : undefined
-      );
+      discoveredConfig = {
+        basename: `vitest.config.${ext}`,
+        path: configPath,
+        content: cjsConfigContent,
+      };
       await vol.fromJSON({ [configPath]: cjsConfigContent });
 
       const error = await runPostinstall().then(
@@ -220,8 +250,34 @@ describe('CommonJS config guard (storybook add flow)', () => {
       const reasons =
         error instanceof AddonVitestPostinstallPrerequisiteCheckError ? error.data.reasons : [];
       expect(reasons.some((r) => r.includes('Cannot auto-update CommonJS config file'))).toBe(true);
+
+      // The guard must search from the config dir, not the cwd: pin every vitest.config
+      // discovery call to the nested config directory so a wrongly wired projectRoot fails.
+      const guardCalls = vi
+        .mocked(find.any)
+        .mock.calls.filter(([names]) => names.some((name) => name.startsWith('vitest.config.')));
+      expect(guardCalls.length).toBeGreaterThan(0);
+      expect(guardCalls.every(([, options]) => options?.cwd === configDir)).toBe(true);
     }
   );
+
+  it('skips the guard for an already-configured config the merger cannot rewrite', async () => {
+    const configPath = resolve(process.cwd(), 'vitest.config.ts');
+    discoveredConfig = {
+      basename: 'vitest.config.ts',
+      path: configPath,
+      content: wiredCallbackConfigContent,
+    };
+    await vol.fromJSON({ [configPath]: wiredCallbackConfigContent });
+
+    // The already-wired config takes the skip path and is never rewritten, so its unmergeable
+    // callback export must not surface as a prerequisite error.
+    const error = await runPostinstall().then(
+      () => null,
+      (e: unknown) => e
+    );
+    expect(error).toBeNull();
+  });
 });
 
 describe('Angular bridge wiring (postinstall integration)', () => {

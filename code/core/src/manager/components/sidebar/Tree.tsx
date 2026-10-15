@@ -559,9 +559,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
   // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
   // sticky rows cover the top of the viewport, so the target lands below the stack it would
-  // produce (its own ancestors).
+  // produce (its own ancestors). 'center-if-hidden' leaves a visible row alone and centers one
+  // that is not; 'nearest' moves the row just inside the visible band.
   const scrollRowIntoView = useCallback(
-    (itemId: string, block: ScrollLogicalPosition): boolean => {
+    (itemId: string, block: 'center' | 'nearest' | 'center-if-hidden'): boolean => {
       const scroller = scrollerRef?.current;
       const wrapper = treeWrapperRef.current;
       if (!scroller || !wrapper) {
@@ -580,18 +581,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
       // visible only between them.
       const stack = getAncestorIds(hoistedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
       const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
-      if (block === 'center') {
+      const viewTop = scroller.scrollTop + stack;
+      const viewBottom = scroller.scrollTop + scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT;
+      const hidden = offset < viewTop || offset > viewBottom;
+      if (block === 'center' || (block === 'center-if-hidden' && hidden)) {
         const half = Math.max((scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT) / 2, stack);
         scroller.scrollTop = offset - half;
         return true;
       }
-      const viewTop = scroller.scrollTop + stack;
-      const viewBottom = scroller.scrollTop + scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT;
-      if (offset < viewTop) {
-        scroller.scrollTop = offset - stack;
-      } else if (offset > viewBottom) {
-        // Reveal the row just above the widget, rather than jumping it to the top.
-        scroller.scrollTop = offset + TREE_ROW_HEIGHT + bottomInset - scroller.clientHeight;
+      if (block === 'nearest') {
+        if (offset < viewTop) {
+          scroller.scrollTop = offset - stack;
+        } else if (offset > viewBottom) {
+          // Reveal the row just above the widget, rather than jumping it to the top.
+          scroller.scrollTop = offset + TREE_ROW_HEIGHT + bottomInset - scroller.clientHeight;
+        }
       }
       return true;
     },
@@ -670,15 +674,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [api, openContextMenu, scrollRowIntoView, setExpanded]);
 
-  // Scroll the selected story into view when it changes. A newly selected row may not be in the
-  // DOM yet, because its ancestors expand in the same commit but render on the next one. The
-  // effect therefore retries on every expansion change, and stops once the row exists.
+  // Scroll the selected story into view when it changes. A row that is out of view is centered,
+  // as the sidebar always has: a story reached through the URL, the search, or story creation
+  // then shows among its neighbors, and an overlay anchored to its row (the onboarding tour's
+  // tooltip) has room around it. A visible row, such as one the user just clicked, stays put. A
+  // newly selected row may not be in the DOM yet, because its ancestors expand in the same commit
+  // but render on the next one. The effect therefore retries on every expansion change, and
+  // stops once the row exists.
   const lastScrolledIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!selectedRowId || lastScrolledIdRef.current === selectedRowId) {
       return;
     }
-    if (scrollRowIntoView(selectedRowId, 'nearest')) {
+    if (scrollRowIntoView(selectedRowId, 'center-if-hidden')) {
       lastScrolledIdRef.current = selectedRowId;
     }
   }, [selectedRowId, expanded, scrollRowIntoView]);

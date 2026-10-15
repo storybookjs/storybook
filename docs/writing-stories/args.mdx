@@ -20,7 +20,7 @@ The `args` object can be defined at the [story](#story-args), [component](#compo
 
 <If renderer="svelte">
 
-To define the args of a single story, use the `args` property in the `Story` component if you are using Svelte CSF with the native templating syntax, or use the `args` key on a CSF story file:
+To define the args of a single story, use the `args` property in the `Story` component when you write stories with Svelte CSF or Svelte CSF Next:
 
 </If>
 
@@ -30,7 +30,7 @@ To define the args of a single story, use the `args` CSF story key:
 
 </If>
 
-<CodeSnippets path="button-story-with-args.md" />
+<CodeSnippets path="args/button-story-with-args.md" />
 
 These args will only apply to the story for which they are attached, although you can [reuse](./build-pages-with-storybook.mdx#args-composition-for-presentational-screens) them via JavaScript object reuse:
 
@@ -42,7 +42,7 @@ In the above example, we use the [object spread](https://developer.mozilla.org/e
 
 <If renderer="svelte">
 
-You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` property in the `defineMeta` function of a Svelte CSF story file or via the `args` key on the default CSF export:
+You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` property in the `defineMeta` function (Svelte CSF) or `preview.meta` function (Svelte CSF Next):
 
 </If>
 
@@ -86,7 +86,7 @@ Args are useful when writing stories for composite components that are assembled
 
 You can use args in your stories to configure the component's appearance, similar to what you would do in an application. For example, here's how you could use a `footer` arg to populate a child component:
 
-<CodeSnippets path="page-story-slots.md" />
+<CodeSnippets path="args/page-story-slots.md" />
 
 ## Setting args through the URL
 
@@ -126,7 +126,7 @@ If you're using Storybook's hooks API in the story's render function, **do not**
 
 Complex values such as JSX elements cannot be serialized to the manager (e.g., the Controls panel) or synced with the URL. Arg values can be "mapped" from a simple string to a complex type using the `mapping` property in `argTypes` to work around this limitation. It works in any arg but makes the most sense when used with the `select` control type.
 
-<CodeSnippets path="arg-types-mapping.md" />
+<CodeSnippets path="args/arg-types-mapping.md" />
 
 Note that `mapping` does not have to be exhaustive. If the arg value is not a property of `mapping`, the value will be used directly. Keys in `mapping` always correspond to arg _values_, not their index in the `options` array.
 

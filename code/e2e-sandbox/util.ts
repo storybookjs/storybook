@@ -84,6 +84,16 @@ export class SbPage {
           // The sticky stack follows the scroll position, so center once more against it.
           centerInFreeBand();
           await settle();
+          // The virtualizer turns pointer events off on its rows while it scrolls and back on
+          // shortly after. A hover or click that arrives before that is refused, and Playwright
+          // then retries with its own scroll alignments, which move the row under an overlay.
+          for (let attempt = 0; attempt < 40; attempt += 1) {
+            const target = find();
+            if (target && getComputedStyle(target).pointerEvents !== 'none') {
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
           return true;
         },
         [entryId, refId]

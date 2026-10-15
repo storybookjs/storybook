@@ -66,6 +66,7 @@
     - [`<Template>` component](#template-component)
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
+  - [Svelte: `parameters.component` removed from the source decorator](#svelte-parameterscomponent-removed-from-the-source-decorator)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
@@ -1845,6 +1846,22 @@ After:
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
 If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+
+### Svelte: `parameters.component` removed from the source decorator
+
+The Svelte docs source decorator no longer reads or warns about `parameters.component`. That path has been deprecated since Storybook 7: for stories whose render result is a `@wrapper` component, generated source already used the story's `component` from meta (`context.component`).
+
+If you still set `parameters.component`, delete it and keep the component on the default export / `meta` instead:
+
+```diff
+ export default {
+   component: Button,
+   parameters: {
+-    component: Button,
+     docs: { description: { component: '...' } },
+   },
+ };
+```
 
 ### Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`
 

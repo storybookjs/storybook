@@ -15,8 +15,9 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
 vi.mock('storybook/internal/common', { spy: true });
 
 describe('wrapGetAbsolutePath', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
+    vi.mocked((await import('node:fs/promises')).writeFile).mockClear();
   });
 
   describe('check', () => {
@@ -223,32 +224,44 @@ describe('wrapGetAbsolutePath', () => {
     });
 
     it('wraps bare specifiers but leaves relative addon paths untouched', async () => {
-      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
-      writeFile.mockClear();
-
       await runFix(wrapGetAbsolutePath, {
         mainConfigPath: require.resolve('./__test__/main-config-with-relative-and-bare-addons.js'),
         storiesPaths: [],
         result: {},
       } as unknown as Omit<RunOptions<object>, 'files'>);
 
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
       const output = String(writeFile.mock.calls[0]?.[1]);
 
-      // bare specifiers are still wrapped
-      expect(output).toContain("getAbsolutePath('@storybook/addon-vitest')");
-      expect(output).toContain("getAbsolutePath('@storybook/react-vite')");
-      // relative paths resolve natively from the config dir and must stay untouched:
-      // the wrapper resolves `${value}/package.json`, which breaks file targets
-      // (SB_CORE-SERVER_0007 after upgrading)
-      expect(output).toMatch(/['"]\.\/addons\/google-analytics\/register['"]/);
-      expect(output).toMatch(/['"]\.\/addons\/local-manager['"]/);
-      expect(output).not.toContain("getAbsolutePath('./addons");
-      expect(output).not.toContain('getAbsolutePath("./addons');
+      expect(output).toMatchInlineSnapshot(`
+        "import { fileURLToPath } from 'node:url';
+        import { dirname } from 'node:path';
+        const config = {
+          stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+          addons: [
+            './addons/google-analytics/register',
+            {
+              name: './addons/local-manager',
+              options: {},
+            },
+            getAbsolutePath('@storybook/addon-vitest'),
+          ],
+          framework: {
+            name: getAbsolutePath('@storybook/react-vite'),
+            options: {},
+          },
+        };
+        export default config;
+
+        function getAbsolutePath(value) {
+          return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
+        }
+        "
+      `);
     });
 
     it('does not touch configs that only contain relative paths', async () => {
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
-      writeFile.mockClear();
 
       await runFix(wrapGetAbsolutePath, {
         mainConfigPath: require.resolve('./__test__/main-config-with-only-relative-addons.js'),
@@ -261,12 +274,10 @@ describe('wrapGetAbsolutePath', () => {
 
     it('does not re-wrap relative entries in a config that already declares a wrapper', async () => {
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
-      writeFile.mockClear();
 
       await runFix(wrapGetAbsolutePath, {
-        mainConfigPath: require.resolve(
-          './__test__/main-config-with-wrapper-and-relative-addon.js'
-        ),
+        mainConfigPath:
+          require.resolve('./__test__/main-config-with-wrapper-and-relative-addon.js'),
         storiesPaths: [],
         result: {},
       } as unknown as Omit<RunOptions<object>, 'files'>);

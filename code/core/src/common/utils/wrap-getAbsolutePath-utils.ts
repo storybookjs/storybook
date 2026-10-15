@@ -72,12 +72,7 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
   return null;
 }
 
-/**
- * Relative specifiers (e.g. `./addons/my-addon`) resolve natively from the config directory, so
- * they never need the wrapper. Wrapping them is actively harmful: the wrapper resolves
- * `${value}/package.json`, which throws MODULE_NOT_FOUND at main-config evaluation for file
- * targets — and for `require.resolve`-based wrappers earlier upgrades injected into the config.
- */
+// Relative paths resolve from the config dir; the wrapper's `${value}/package.json` lookup breaks them.
 function isRelativePathSpecifier(value: string) {
   return value.startsWith('.');
 }

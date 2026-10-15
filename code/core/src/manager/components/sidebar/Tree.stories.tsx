@@ -13,6 +13,8 @@ import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
+import { storeOptions } from '../../../../../addons/vitest/src/constants.ts';
+import { TestProviderRender } from '../../../../../addons/vitest/src/components/TestProviderRender.tsx';
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
@@ -34,6 +36,13 @@ const managerContext: any = {
     emit: fn().mockName('api::emit'),
     getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
+    getDocsUrl: fn(
+      ({ subpath }: { subpath: string }) => `https://storybook.js.org/docs/${subpath}`
+    ).mockName('api::getDocsUrl'),
+    findAllLeafStoryIds: fn((entryId: string) => [entryId]).mockName('api::findAllLeafStoryIds'),
+    selectStory: fn().mockName('api::selectStory'),
+    setSelectedPanel: fn().mockName('api::setSelectedPanel'),
+    togglePanel: fn().mockName('api::togglePanel'),
     getElements: fn(
       () =>
         ({
@@ -41,7 +50,33 @@ const managerContext: any = {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
             id: 'component-tests',
             render: () => 'Component tests',
-            sidebarContextMenu: () => <div>TEST_PROVIDER_CONTEXT_CONTENT</div>,
+            sidebarContextMenu: ({ context }: { context: any }) => {
+              if (context.type === 'root') return null;
+              return (
+                <TestProviderRender
+                  api={managerContext.api as any}
+                  entry={context}
+                  testProviderState="test-provider-state:pending"
+                  componentTestStatusValueToStoryIds={{
+                    'status-value:error': [],
+                    'status-value:success': [],
+                    'status-value:pending': [],
+                    'status-value:warning': [],
+                    'status-value:unknown': [],
+                  }}
+                  a11yStatusValueToStoryIds={{
+                    'status-value:error': [],
+                    'status-value:success': [],
+                    'status-value:pending': [],
+                    'status-value:warning': [],
+                    'status-value:unknown': [],
+                  }}
+                  storeState={storeOptions.initialState}
+                  setStoreState={fn()}
+                  isSettingsUpdated={false}
+                />
+              );
+            },
           },
           'visual-tests': {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
@@ -111,7 +146,9 @@ export const Full: Story = {
         data={index}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+        highlightedRef={{
+          current: { itemId: selectedId, refId: DEFAULT_REF_ID },
+        }}
       />
     );
   },
@@ -185,7 +222,9 @@ export const SingleStoryComponents: Story = {
             return acc;
           }, {} as IndexHash),
         }}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+        highlightedRef={{
+          current: { itemId: selectedId, refId: DEFAULT_REF_ID },
+        }}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
       />
@@ -247,7 +286,9 @@ export const DocsOnlySingleStoryComponents = {
             return acc;
           }, {} as IndexHash),
         }}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+        highlightedRef={{
+          current: { itemId: selectedId, refId: DEFAULT_REF_ID },
+        }}
         setHighlightedItemId={action('setHighlightedItemId')}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
@@ -317,7 +358,252 @@ export const WithContextContent: Story = {
 
     const popover = screen.getByRole('dialog');
     await expect(popover).toBeVisible();
-    expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+    expect(popover).toHaveTextContent('Run component tests');
+  },
+};
+
+// Minimal tree with one root containing two components, each with one story.
+// Button is the selected component (starts expanded); Input starts collapsed.
+// This lets us verify that "Expand all" reveals Input's child and "Collapse all"
+// hides it again.
+const rootMenuData = {
+  'ui-components': {
+    type: 'root',
+    name: 'UI Components',
+    id: 'ui-components',
+    depth: 0,
+    children: ['ui-components-button', 'ui-components-input'],
+  },
+  'ui-components-button': {
+    type: 'component',
+    name: 'Button',
+    id: 'ui-components-button',
+    title: 'UI Components/Button',
+    depth: 1,
+    parent: 'ui-components',
+    children: ['ui-components-button--primary'],
+    importPath: './button.stories.tsx',
+  },
+  'ui-components-button--primary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'ui-components-button--primary',
+    name: 'Primary',
+    title: 'UI Components/Button',
+    depth: 2,
+    parent: 'ui-components-button',
+    importPath: './button.stories.tsx',
+    tags: [],
+    prepared: true,
+    args: {},
+    argTypes: {},
+    initialArgs: {},
+  },
+  'ui-components-input': {
+    type: 'component',
+    name: 'Input',
+    id: 'ui-components-input',
+    title: 'UI Components/Input',
+    depth: 1,
+    parent: 'ui-components',
+    children: ['ui-components-input--empty'],
+    importPath: './input.stories.tsx',
+  },
+  'ui-components-input--empty': {
+    type: 'story',
+    subtype: 'story',
+    id: 'ui-components-input--empty',
+    name: 'Empty',
+    title: 'UI Components/Input',
+    depth: 2,
+    parent: 'ui-components-input',
+    importPath: './input.stories.tsx',
+    tags: [],
+    prepared: true,
+    args: {},
+    argTypes: {},
+    initialArgs: {},
+  },
+} as unknown as IndexHash;
+
+const rootNodeBase: Story = {
+  // The context menu is gated on CONFIG_TYPE === 'DEVELOPMENT'. In a static
+  // Storybook build (Chromatic URL viewed manually, storybook:ui:build) the
+  // builder injects 'PRODUCTION', so preview.tsx leaves it untouched and the
+  // button never renders. Force it here so the stories work everywhere.
+  beforeEach: () => {
+    const original = (globalThis as any).CONFIG_TYPE;
+    (globalThis as any).CONFIG_TYPE = 'DEVELOPMENT';
+    return () => {
+      (globalThis as any).CONFIG_TYPE = original;
+    };
+  },
+  args: {
+    docsMode: false,
+    isBrowsing: true,
+    isMain: true,
+    refId: DEFAULT_REF_ID,
+    setHighlightedItemId: action('setHighlightedItemId'),
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState('ui-components-button--primary');
+    return (
+      <Tree
+        {...args}
+        data={rootMenuData}
+        selectedStoryId={selectedId}
+        onSelectStoryId={setSelectedId}
+        highlightedRef={{
+          current: { itemId: selectedId, refId: DEFAULT_REF_ID },
+        }}
+      />
+    );
+  },
+};
+
+/**
+ * Hover the root heading to reveal its context menu, then open it.
+ * Verifies the "Expand all" action is shown (Input is collapsed initially).
+ */
+export const RootContextMenuOpen: Story = {
+  ...rootNodeBase,
+  parameters: { chromatic: { viewports: [380] } },
+  play: async ({ canvasElement }) => {
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+    await userEvent.hover(rootEl);
+
+    const contextButton = await within(rootEl).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const dialog = await screen.findByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(within(dialog).getByText('Expand all')).toBeInTheDocument();
+  },
+};
+
+/**
+ * Clicking "Expand all" in the root context menu expands all collapsed
+ * component nodes. Input starts collapsed; after expand all its "Empty"
+ * story should appear.
+ */
+export const RootContextMenuExpandAll: Story = {
+  ...rootNodeBase,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+
+    expect(canvas.queryByText('Empty')).toBeNull();
+
+    await userEvent.hover(rootEl);
+    const contextButton = await within(rootEl).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+    await userEvent.click(await screen.findByText('Expand all'));
+
+    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
+  },
+};
+
+/**
+ * After expanding all, the root context menu switches to "Collapse all".
+ */
+export const RootContextMenuCollapseAll: Story = {
+  ...rootNodeBase,
+  play: async ({ canvasElement }) => {
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+
+    // Expand all first so the tree is fully expanded
+    await userEvent.hover(rootEl);
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+    await userEvent.click(await screen.findByText('Expand all'));
+
+    // Close the popover, then re-open — should now offer "Collapse all"
+    await userEvent.keyboard('{Escape}');
+    await userEvent.hover(rootEl);
+    await userEvent.click(await within(rootEl).findByTestId('context-menu'));
+
+    const dialog = await screen.findByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(within(dialog).getByText('Collapse all')).toBeInTheDocument();
+  },
+};
+
+/**
+ * When the context menu is unavailable — e.g. a production/static build where
+ * CONFIG_TYPE !== 'DEVELOPMENT' — the root still exposes expand/collapse-all via
+ * a direct hover-revealed button in place of the menu. Verifies no context menu
+ * button renders, and that the fallback button expands the collapsed tree.
+ */
+export const RootExpandCollapseFallback: Story = {
+  ...rootNodeBase,
+  beforeEach: () => {
+    const original = (globalThis as any).CONFIG_TYPE;
+    (globalThis as any).CONFIG_TYPE = 'PRODUCTION';
+    return () => {
+      (globalThis as any).CONFIG_TYPE = original;
+    };
+  },
+  parameters: { chromatic: { viewports: [380] } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const rootEl = canvasElement.querySelector('[data-nodetype="root"]') as HTMLElement;
+
+    // No context menu in a production build...
+    expect(within(rootEl).queryByTestId('context-menu')).toBeNull();
+    expect(canvas.queryByText('Empty')).toBeNull();
+
+    // ...but the fallback expand/collapse-all button is still reachable on hover.
+    await userEvent.hover(rootEl);
+    // findByTestId ignores CSS visibility (button is data-displayed="off" until hover).
+    const btn = await within(rootEl).findByTestId('expand-collapse-all');
+    await userEvent.click(btn);
+
+    await expect(await canvas.findByText('Empty')).toBeInTheDocument();
+  },
+};
+
+/**
+ * A story node carrying a Vitest error status where sidebarContextMenu is not
+ * set to false. Opens the context menu and asserts that both the status link
+ * (from allStatuses) and the test provider item (from registered test
+ * providers) appear together. This is the only story that exercises the
+ * combined case; every other status story sets sidebarContextMenu: false,
+ * which suppresses the status from the menu.
+ */
+export const StoryContextMenuWithStatusAndProvider: Story = {
+  ...rootNodeBase,
+  parameters: { chromatic: { disableSnapshot: true } },
+  args: {
+    ...rootNodeBase.args,
+    allStatuses: {
+      'ui-components-button--primary': {
+        'storybook/vitest': {
+          storyId: 'ui-components-button--primary',
+          typeId: 'storybook/vitest',
+          value: 'status-value:error',
+          title: 'Vitest',
+          description: 'Test failed',
+          // sidebarContextMenu intentionally omitted — not false means it
+          // renders as a link in the context menu alongside provider items
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const storyRow = canvasElement.querySelector(
+      '[data-item-id="ui-components-button--primary"]'
+    ) as HTMLElement;
+    await userEvent.hover(storyRow);
+
+    const contextButton = await within(storyRow).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const dialog = await screen.findByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    // Status link — comes from allStatuses (sidebarContextMenu not false)
+    await expect(within(dialog).getByText('Vitest')).toBeInTheDocument();
+    // Provider item — comes from the registered component-tests test provider
+    await expect(within(dialog).getByText('Run component tests')).toBeInTheDocument();
   },
 };
 
@@ -379,7 +665,9 @@ function makeDualSlotStory(
           data={dualSlotData}
           selectedStoryId={selectedId}
           onSelectStoryId={setSelectedId}
-          highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+          highlightedRef={{
+            current: { itemId: selectedId, refId: DEFAULT_REF_ID },
+          }}
         />
       );
     },
@@ -484,7 +772,9 @@ BranchWithChangeDetectionPriority.render = (args) => {
       data={dualSlotData}
       selectedStoryId={selectedId}
       onSelectStoryId={setSelectedId}
-      highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
+      highlightedRef={{
+        current: { itemId: selectedId, refId: DEFAULT_REF_ID },
+      }}
     />
   );
 };

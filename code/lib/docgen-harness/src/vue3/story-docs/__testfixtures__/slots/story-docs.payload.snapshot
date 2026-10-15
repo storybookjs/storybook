@@ -26,7 +26,12 @@ import SlotsPanel from './SlotsPanel.vue';
 </script>
 
 <template>
-  <SlotsPanel ⟦attr footer footer⟧ ⟦props -default -header -footer⟧⟦slots SlotsPanel default header⟧
+  <SlotsPanel ⟦attr footer footer⟧ ⟦props -default -footer -header⟧>
+    ⟦text default⟧
+    <template #header>
+      ⟦text header⟧
+    </template>
+  </SlotsPanel>
 </template>",
     },
   },

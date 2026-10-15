@@ -21,7 +21,7 @@ import RuntimeObjectProps from './RuntimeObjectProps.vue';
 </script>
 
 <template>
-  <RuntimeObjectProps ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧⟦slots RuntimeObjectProps⟧
+  <RuntimeObjectProps ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧ />
 </template>",
     },
   },

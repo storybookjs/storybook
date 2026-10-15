@@ -3,38 +3,6 @@
   "name": "TemplateSharedValues",
   "path": "__PATH__",
   "stories": {
-    "forms-template-shared-values--filter-by-item": {
-      "argCode": {
-        "item": "{ id: 2 }",
-        "items": "[{ id: 1 }, { id: 2 }]",
-      },
-      "description": undefined,
-      "id": "forms-template-shared-values--filter-by-item",
-      "name": "Filter By Item",
-      "snippet": "<script lang="ts" setup>
-import TemplateSharedValues from './TemplateSharedValues.vue';
-
-const items = [{ id: 1 }, { id: 2 }];
-
-const item2 = { id: 2 };
-</script>
-
-<template>
-  <TemplateSharedValues :items="items.filter((item) => item.id !== item2.id)" />
-</template>",
-      "summary": undefined,
-      "template": "<script lang="ts" setup>
-import TemplateSharedValues from './TemplateSharedValues.vue';
-
-const items = ⟦value items script⟧;
-
-const item2 = ⟦value item script⟧;
-</script>
-
-<template>
-  <TemplateSharedValues :items="items.filter((item) => item.id !== item2.id)" />
-</template>",
-    },
     "forms-template-shared-values--for-each-item": {
       "argCode": {
         "items": "[{ id: 1 }, { id: 2 }]",
@@ -107,7 +75,7 @@ import TemplateSharedValues from './TemplateSharedValues.vue';
 </script>
 
 <template>
-  <TemplateSharedValues ⟦attr label label⟧ ⟦props -class -style -label⟧ class="own" style="color: red" />
+  <TemplateSharedValues ⟦attr label label⟧ ⟦props -class -label -style⟧ class="own" style="color: red" />
 </template>",
     },
   },

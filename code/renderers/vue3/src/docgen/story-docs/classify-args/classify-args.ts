@@ -49,6 +49,8 @@ export interface ClassifiedSlotArg {
   value: t.Node;
   role: 'slot';
   plan: RenderableValuePlan | FunctionSlotPlan;
+  /** Whether `value` is what a slot function the story writes returns, which no control changes. */
+  returned?: true;
 }
 
 /** Split by role so `arg.role` checks narrow the plans a renderer has to handle. */
@@ -69,6 +71,11 @@ export type ArgClassification =
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
   args: ClassifiedArg[];
+  /**
+   * Args explicitly set to undefined, rendered as if never written — bindings and collisions
+   * ignore them even where Vue itself would treat a present-but-undefined value differently.
+   */
+  unset: Set<string>;
   /** Source text of args dropped because their values do not resolve statically. */
   unresolved: string[];
 }
@@ -82,8 +89,8 @@ export interface ClassifyArgsResult {
  *   (functions passed as undeclared args, empty strings)
  * - named in `unresolved` — the value references something the snippet cannot declare; the caller
  *   decides whether that reads as a partial snippet or as no snippet at all
- * - forwarded as a `function-slot` plan — a slot receives function content, which the `h()`
- *   printer renders when the tree writes it; an arg prints as the story writes it
+ * - forwarded as a `function-slot` plan — a slot receives function content only a
+ *   render-tree-aware renderer can realize; rendering bails back to runtime source otherwise
  *
  * Function args matching a declared event render as listeners, and declared function props hoist.
  */
@@ -92,6 +99,7 @@ export function classifyArgs(
   docgen: VueDocgenArgInfo
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
+  const unset = new Set<string>();
   const unresolved: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
@@ -99,12 +107,14 @@ export function classifyArgs(
 
     if (result.kind === 'classified') {
       classified.push(result.arg);
+    } else if (result.kind === 'unset') {
+      unset.add(name);
     } else if (result.kind === 'unrepresentable') {
       unresolved.push(`${name}: ${printValue(value)}`);
     }
   }
 
-  return { args: classified, unresolved };
+  return { args: classified, unset, unresolved };
 }
 
 /**
@@ -128,7 +138,7 @@ export function classifyArg(
       if (plan.kind === 'inline' || plan.kind === 'hoist') {
         return {
           kind: 'classified',
-          arg: { name, value: returned, role: 'slot', plan },
+          arg: { name, value: returned, role: 'slot', plan, returned: true },
         };
       }
 

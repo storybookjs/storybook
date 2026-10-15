@@ -8,7 +8,7 @@
       "id": "forms-slots-template-only--scoped-bindings",
       "name": "Scoped Bindings",
       "summary": undefined,
-      "warning": "No static snippet: an arg could not be printed in the snippet.",
+      "warning": "No static snippet: a slot function could not be resolved statically.",
     },
     "forms-slots-template-only--string-child": {
       "argCode": {},
@@ -33,7 +33,12 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 
 <template>
-  <TemplateOnlySlots ⟦props -default -header -item⟧⟦slots TemplateOnlySlots default header item⟧
+  <TemplateOnlySlots ⟦props -default -header -item⟧>
+    ⟦text default⟧
+    <template #header>
+      ⟦text header⟧
+    </template>
+  </TemplateOnlySlots>
 </template>",
     },
   },

@@ -2,7 +2,6 @@ import {
   type FillSnippetTemplate,
   UnprintableArgError,
   defaultCode,
-  asOperand,
   fillHoles,
   isAction,
   printValue,
@@ -12,120 +11,97 @@ import type { Args } from 'storybook/internal/types';
 
 import { isVNode } from 'vue';
 
-// Fills a Vue story template. Besides the shared holes, `⟦slots Card default header⟧` ends the open
-// tag of `Card` with the slots its words name as content, or closes it without any. A `script` word marks a
-// `⟦value⟧` or `⟦operand⟧` hole in the `<script>`, where no entity is decoded, a `;` word one that
-// starts a statement after one without a `;`, a `'` word one in an attribute value written in
-// single quotes, and a `{{` word one in an interpolation.
+// Fills a Vue story template, printing each arg as the static snippet prints the story's own. A
+// `⟦value⟧` hole's words say where it stands: `script` in the `<script>`, where no entity is
+// decoded, `'` in an attribute value written in single quotes, `{{` in an interpolation, and `.`
+// before code that reads on, as in `args.count.toFixed()`. A `"` word prints strings in double
+// quotes, as the story writes them, and a `?code` word is the code it prints while the arg is unset.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', ...rest] = words;
     switch (kind) {
-      case 'slots':
-        return slots(first, rest, args);
       case 'props':
-        return spread(args, words);
+        return spreadArgs(args, words)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([name, arg]) => attribute(name, arg))
+          .filter(Boolean)
+          .join(' ');
       case 'attr':
         return attribute(first, args[rest[0]!]);
       case 'text':
         return text(first, args[first]);
-      case 'operand':
-        return startingStatement(asOperand(value(first, args[first], rest)), rest);
+      case 'value': {
+        const unset = args[first] === undefined ? defaultCode(rest.at(-1)) : undefined;
+        return unset ?? operand(value(first, args[first], rest), rest.includes('.'));
+      }
       default:
-        return (
-          (args[first] === undefined ? defaultCode(rest.at(-1)) : undefined) ??
-          startingStatement(value(first, args[first], rest), rest)
-        );
+        throw new Error(`Unknown hole ⟦${kind}⟧`);
     }
   });
 
-const startingStatement = (printed: string, words: string[]) =>
-  words.includes(';') && /^[[(`+\-/]/.test(printed) ? `;${printed}` : printed;
+// A value next to code that would read it differently, such as `-1` after `-` or `5` before
+// `.toFixed()`, is in parentheses.
+const operand = (printed: string, readOn: boolean) =>
+  printed.startsWith('-') || (readOn && /^\d/.test(printed)) ? `(${printed})` : printed;
 
-// The element is the whole of the snippet's `<template>`, so its slots are indented one further. A
-// slot the story writes as more than a literal comes as the content the provider printed for it;
-// see `componentTemplate`.
-function slots(name: string, slotNames: string[], args: Args): string {
-  const content = slotNames
-    .map((slot) => [slot, writtenCode(args[slot]) ?? text(slot, args[slot])])
-    .filter(([, printed]) => printed)
-    .map(([slot, printed]) =>
-      slot === 'default'
-        ? printed.replaceAll('\n', '\n    ')
-        : `<template #${slot}>\n      ${printed.replaceAll('\n', '\n      ')}\n    </template>`
-    );
-  return content.length === 0
-    ? ' />'
-    : `>\n${content.map((line) => `    ${line}\n`).join('')}  </${name}>`;
-}
-
-// The code of a `writtenArg`.
-const writtenCode = (arg: unknown) =>
-  typeof arg === 'object' && arg !== null && WRITTEN in arg ? printValue(arg, '') : undefined;
-
-const WRITTEN = Symbol.for('storybook/written-arg');
-
-const spread = (args: Args, words: string[]) =>
-  attributesOf(spreadArgs(args, words).sort(([a], [b]) => a.localeCompare(b)));
-
-const attributesOf = (props: [string, unknown][]) =>
-  props
-    .map(([name, arg]) => attribute(name, arg))
-    .filter(Boolean)
-    .join(' ');
-
+// A string the attribute can hold in one of its quotes is written as is. Vue decodes entities in an
+// attribute, so a string with `&` is bound as a literal instead.
 function attribute(name: string, arg: unknown): string {
   if (arg === undefined || isAction(arg)) {
     return '';
   }
+  checkName(name);
   if (arg === true) {
-    return checkedName(name);
+    return name;
   }
-  return typeof arg === 'string'
-    ? `${checkedName(name)}="${arg.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}"`
-    : bound(name, arg);
+  if (typeof arg === 'string' && !arg.includes('&')) {
+    if (!arg.includes('"')) {
+      return `${name}="${arg}"`;
+    }
+    if (!arg.includes("'")) {
+      return `${name}='${arg}'`;
+    }
+  }
+  return `:${name}="${value(name, arg)}"`;
 }
 
-const bound = (name: string, arg: unknown) => `:${checkedName(name)}="${value(name, arg)}"`;
-
-function checkedName(name: string) {
+function checkName(name: string) {
   if (!/^[A-Za-z_][\w:-]*$/.test(name)) {
     throw new UnprintableArgError(name);
   }
-  return name;
 }
 
-// Vue collapses whitespace in text and reads `<`, `{{` and `&` as markup, as well as a `{` that ends
-// the text before an interpolation.
+// Text Vue would read as markup is escaped, and a value that is no text an interpolation.
 function text(name: string, arg: unknown): string {
   if (arg === undefined || arg === null || arg === '') {
     return '';
   }
-  if (typeof arg === 'number' || (typeof arg === 'string' && /^\S+( \S+)*$/.test(arg))) {
+  if (['string', 'number', 'boolean'].includes(typeof arg)) {
     return String(arg)
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
-      .replaceAll('{{', '{&#123;')
-      .replace(/\{$/, '&#123;');
+      .replaceAll('{{', '&#123;&#123;');
   }
   return `{{ ${value(name, arg, ['{{'])} }}`;
 }
 
-// A literal in an attribute value or an interpolation, both of which decode entities, so it is
-// written in the quote the attribute is not, and `<\/` keeps a string in the `<script>` from ending
-// the block. A VNode is a plain object, but no literal renders it. In an interpolation, the `{{`
-// word, `}\}` keeps a string's `}}` from ending it, and a space other code's, such as `{a:{b:1}}` the
-// story wrote.
+// A literal in an attribute value or an interpolation, both of which decode entities, in an
+// attribute in the quote it is not, and `<\/` keeps a string in the `<script>` from ending the
+// block. A VNode is a plain object, but no literal renders it. In an interpolation, `}\}` keeps
+// a string's `}}` from ending it, and a space other code's, such as `{a:{b:1}}` the story wrote.
 function value(name: string, arg: unknown, words: string[] = []) {
   const singleQuoted = words.includes("'");
-  const printed = printValue(arg, name, { quote: singleQuoted ? '"' : "'", opaque: isVNode });
+  const quote = singleQuoted || words.includes('"') ? '"' : "'";
+  const printed = printValue(arg, name, { quote, opaque: isVNode });
   if (words.includes('script')) {
     return printed.replaceAll('</', '<\\/');
   }
-  const closed = words.includes('{{')
-    ? printed.replace(/}(?=})/g, typeof arg === 'string' ? '}\\' : '} ')
-    : printed;
-  const escaped = closed.replaceAll('&', '&amp;');
+  if (words.includes('{{')) {
+    return printed
+      .replace(/}(?=})/g, typeof arg === 'string' ? '}\\' : '} ')
+      .replaceAll('&', '&amp;');
+  }
+  const escaped = printed.replaceAll('&', '&amp;');
   return singleQuoted ? escaped.replaceAll("'", '&#39;') : escaped.replaceAll('"', '&quot;');
 }

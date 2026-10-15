@@ -26,7 +26,12 @@ import SlotsWithEvents from './SlotsWithEvents.vue';
 </script>
 
 <template>
-  <SlotsWithEvents ⟦attr title title⟧ ⟦props -default -leading -title⟧⟦slots SlotsWithEvents default leading⟧
+  <SlotsWithEvents ⟦attr title title⟧ ⟦props -default -leading -title⟧>
+    ⟦text default⟧
+    <template #leading>
+      ⟦text leading⟧
+    </template>
+  </SlotsWithEvents>
 </template>",
     },
   },

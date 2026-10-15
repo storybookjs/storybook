@@ -5,7 +5,7 @@
   "stories": {
     "forms-event-listener--primary": {
       "argCode": {
-        "default": "Submit now",
+        "default": "() => 'Submit now'",
         "formatter": "(value: string) => value.toUpperCase()",
         "onSubmit": "(payload: { value: string }) => console.log(payload)",
       },
@@ -35,7 +35,9 @@ const onSubmit = ⟦value onSubmit script⟧;
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter" ⟦attr label label⟧ ⟦props -default -formatter -label -onSubmit⟧ @submit="onSubmit"⟦slots EventListenerForm default⟧
+  <EventListenerForm :formatter="formatter" ⟦attr label label⟧ @submit="onSubmit" ⟦props -default -formatter -label -onSubmit⟧>
+    Submit now
+  </EventListenerForm>
 </template>",
     },
   },

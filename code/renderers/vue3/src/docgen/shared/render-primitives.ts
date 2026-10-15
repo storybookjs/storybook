@@ -5,7 +5,10 @@ import {
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
+import { defaultWord, hole, holeWord } from 'storybook/internal/docs-tools';
+
 import type {
+  ClassifiedArg,
   ClassifiedPropLikeArg,
   ClassifiedSlotArg,
   RenderableValuePlan,
@@ -38,6 +41,11 @@ export interface RenderContext {
   componentImports: Set<string>;
   /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
   statements: string[];
+  /**
+   * Whether the snippet is the story's template: a hole wherever it fills in an arg's value, for
+   * the preview to fill with the current args; see `fillTemplate`.
+   */
+  holes: boolean;
 }
 
 interface RenderPropValueInput {
@@ -60,8 +68,31 @@ export interface RenderedProp {
 
 const VUE_PACKAGE = 'vue';
 
-/** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(): RenderContext {
+/**
+ * Split classified args by role, each group sorted in stable attribute order.
+ *
+ * Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
+ */
+function partitionArgsByRole(args: ClassifiedArg[]): {
+  props: ClassifiedPropLikeArg[];
+  events: ClassifiedPropLikeArg[];
+  slots: ClassifiedSlotArg[];
+} {
+  return {
+    props: args
+      .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'model' || arg.role === 'prop')
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    events: args
+      .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'event')
+      .sort((a, b) => a.name.localeCompare(b.name)),
+    slots: args
+      .filter((arg): arg is ClassifiedSlotArg => arg.role === 'slot')
+      .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name))),
+  };
+}
+
+/** Create an isolated hoist context for one generated snippet, or with `holes` for its template. */
+export function createRenderContext(holes = false): RenderContext {
   return {
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
@@ -70,7 +101,24 @@ export function createRenderContext(): RenderContext {
     hoistedArgs: new Map(),
     componentImports: new Set(),
     statements: [],
+    holes,
   };
+}
+
+/** An arg's value as code in `<script setup>`, or in a template its hole there. */
+export function scriptValue(name: string, value: t.Node, ctx: RenderContext): string {
+  return ctx.holes
+    ? hole('value', holeWord(name), 'script', ...quoteWords(value))
+    : printValue(unwrapExpression(value));
+}
+
+/**
+ * The words of a value hole for an arg the story writes as a string in double quotes, which the
+ * snippet prints as written, so the preview prints the arg's strings in them too.
+ */
+export function quoteWords(value: t.Node): string[] {
+  const written = unwrapExpression(value);
+  return t.isStringLiteral(written) && printValue(written).startsWith('"') ? ['"'] : [];
 }
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
@@ -98,7 +146,15 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   const value = unwrapExpression(input.value);
 
   if (input.plan.kind === 'hoist') {
-    return hoistedProp(input, ctx, printValue(value));
+    return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
+  }
+
+  if (value.type === 'StringLiteral' && quoteAttributeValue(value.value) === undefined) {
+    return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
+  }
+
+  if (ctx.holes) {
+    return { attrName: hole('attr', holeWord(input.attributeName), holeWord(input.variableName)) };
   }
 
   if (value.type === 'BooleanLiteral') {
@@ -108,10 +164,7 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   }
 
   if (value.type === 'StringLiteral') {
-    const quoted = quoteAttributeValue(value.value);
-    return quoted === undefined
-      ? hoistedProp(input, ctx, printValue(value))
-      : { attrName: input.attributeName, value: value.value };
+    return { attrName: input.attributeName, value: value.value };
   }
 
   return { attrName: `:${input.attributeName}`, value: printValue(value) };
@@ -135,7 +188,7 @@ function hoistedProp(
 }
 
 function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
-  const bindingName = hoistModelRef(arg.name, printValue(unwrapExpression(arg.value)), ctx);
+  const bindingName = hoistModelRef(arg.name, arg.value, ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
 }
@@ -143,7 +196,7 @@ function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendere
 /** Listeners hoist their handler, because inline handlers would bloat the tag. */
 export function renderEventArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, printValue(unwrapExpression(arg.value)));
+  ctx.variables.set(bindingName, scriptValue(arg.name, arg.value, ctx));
   return { attrName: `@${arg.eventName ?? arg.name}`, value: bindingName };
 }
 
@@ -154,20 +207,22 @@ export function renderSlotContent(
   ctx: RenderContext
 ): string {
   const value = unwrapExpression(arg.value);
+  // The content a slot function returns is no arg's value, so it has no hole.
+  const holes = ctx.holes && !arg.returned;
 
   if (plan.kind === 'inline') {
     const source = inlinePrimitiveSource(value);
     if (source === undefined) {
-      return `{{ ${printValue(value)} }}`;
+      return holes ? hole('text', holeWord(arg.name)) : `{{ ${printValue(value)} }}`;
     }
     // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
     if (!/^\s|\s$/.test(source)) {
-      return escapeTextContent(source);
+      return holes ? hole('text', holeWord(arg.name)) : escapeTextContent(source);
     }
   }
 
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, printValue(value));
+  ctx.variables.set(bindingName, scriptValue(arg.name, value, { ...ctx, holes }));
   return `{{ ${bindingName} }}`;
 }
 
@@ -238,7 +293,7 @@ function allocateBindingName(name: string, ctx: RenderContext): string {
 }
 
 /** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
-export function quoteAttributeValue(value: string): string | undefined {
+function quoteAttributeValue(value: string): string | undefined {
   // Attribute values are entity-decoded on re-parse, so an `&` would come back as a different
   // string than the story set. Text content escapes instead; an attribute has to hoist.
   if (value.includes('&')) {
@@ -267,8 +322,78 @@ export function formatRenderedProp(prop: RenderedProp): string {
   return `${prop.attrName}="${prop.value}"`;
 }
 
-/** Hoist `source`, the code of an arg's value, and return the binding name that replaces it. */
-export function hoistArgCode(name: string, source: string, ctx: RenderContext): string {
+export interface ArgsBindingExpansion {
+  /** Formatted attribute text for each expanded prop, model, and event arg. */
+  attributes: string[];
+  /** Wrapped slot children for each expanded slot arg, in stable slot order. */
+  slotChildren: string[];
+}
+
+export interface RenderArgsBindingExpansionOptions {
+  /** Upgrade model args to `v-model` bindings and slot args to slot children (story tag only). */
+  roleAware: boolean;
+  /** Renders one slot arg's children; `undefined` content bails the whole expansion. */
+  renderSlotArg?: (arg: ClassifiedSlotArg) => string | undefined;
+}
+
+/**
+ * Expanded `v-bind="args"` attributes and slot children, or `undefined` when no faithful
+ * expansion exists.
+ *
+ * On the story tag the expansion is role-aware, showing what the args mean to the component:
+ * model args become `v-model` bindings and slot args become slot children. Any other tag spreads
+ * one-way props and listeners only, which is all `v-bind` does for it at runtime, so its slot
+ * args bail.
+ */
+export function renderArgsBindingExpansion(
+  args: ClassifiedArg[],
+  ctx: RenderContext,
+  options: RenderArgsBindingExpansionOptions
+): ArgsBindingExpansion | undefined {
+  const partitioned = partitionArgsByRole(args);
+  if (partitioned.slots.length > 0 && !options.roleAware) {
+    return undefined;
+  }
+
+  const props = partitioned.props.map((arg) =>
+    options.roleAware
+      ? renderPropLikeArg(arg, ctx)
+      : renderPropValue(
+          { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
+          ctx
+        )
+  );
+  const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
+
+  const slotChildren: string[] = [];
+  for (const slot of partitioned.slots) {
+    const content = options.renderSlotArg?.(slot);
+    if (content === undefined) {
+      return undefined;
+    }
+    slotChildren.push(wrapSlotContent(slot.name, content));
+  }
+
+  return { attributes: [...props, ...events].map(formatRenderedProp), slotChildren };
+}
+
+/** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
+export function renderBoundArgAttribute(
+  attributeName: string,
+  arg: ClassifiedPropLikeArg,
+  ctx: RenderContext
+): string {
+  return formatRenderedProp(
+    renderPropValue(
+      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
+      ctx
+    )
+  );
+}
+
+/** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
+export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): string {
+  const source = scriptValue(name, value, ctx);
   const existing = ctx.hoistedArgs.get(name);
   if (existing?.source === source) {
     return existing.binding;
@@ -280,14 +405,13 @@ export function hoistArgCode(name: string, source: string, ctx: RenderContext): 
   return bindingName;
 }
 
-/** Hoist a `ref` for a `v-model` binding that starts as `initial`, the code of the arg's value. */
-export function hoistModelRef(
-  name: string,
-  initial: string | undefined,
-  ctx: RenderContext
-): string {
+/** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
+export function hoistModelRef(name: string, value: t.Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
+  const initial = ctx.holes
+    ? hole('value', holeWord(name), 'script', defaultWord(''))
+    : value && printValue(unwrapExpression(value));
   ctx.variables.set(bindingName, `ref(${initial ?? ''})`);
   return bindingName;
 }
@@ -373,6 +497,10 @@ function normalizeTemplateBlock(source: string): string {
   }
 
   return lines.slice(start, end).join('\n');
+}
+
+function slotSortKey(name: string): string {
+  return name === 'default' ? '' : name;
 }
 
 function isVueExpressionAttribute(name: string): boolean {

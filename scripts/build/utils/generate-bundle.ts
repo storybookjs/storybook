@@ -62,46 +62,12 @@ function rolldownGlobalExternalsPlugin(): RolldownPlugin {
 }
 
 /*
- * Once esbuild honors `"sideEffects": false` in package.json (i.e. `ignoreAnnotations` is not set),
- * it tree-shakes import-time side-effect statements out of modules of packages that declare it.
- * @storybook/core does declare it, and its entry files (e.g. the manager runtime) rely on
- * import-time side effects, which would be dropped as they are never "used" from outside the
- * bundle. Entries are the roots of their bundle, so we force esbuild to consider them
- * side-effectful. Every other module keeps its declared behavior, restoring tree-shaking of
- * side-effect-free dependencies such as @storybook/icons.
- *
- * This keeps the fix from PR #21335 (user's `manager.js` ignored when `sideEffects: false` in
- * `package.json`) working, for which `ignoreAnnotations: true` was originally a blanket workaround.
+ * No side-effect protection is needed for entry points here: esbuild always emits an entry point,
+ * regardless of `"sideEffects"` in package.json. PR #21335 (`manager.js` ignored when
+ * `sideEffects: false` in `package.json`) concerns user manager entries in builder-manager, where
+ * entries are reached through generated `import '<entry>'` wrapper files (see
+ * `preserveManagerEntrySideEffectsPlugin`).
  */
-
-/*
- * Entry paths and import specifiers can disagree on separators on Windows: configured entries may
- * hold native `C:\addon\manager.js` paths while `wrapManagerEntries`-style imports (and esbuild's
- * resolve callbacks) use forward slashes. Compare with normalized separators on both sides.
- */
-const normalizeSeparators = (p: string) => p.replace(/\\/g, '/');
-
-export function preserveEntrySideEffectsPlugin(
-  dirCwd: string,
-  entryPoints: string[]
-): esbuild.Plugin {
-  const entries = new Set(entryPoints.flatMap((p) => [p, normalizeSeparators(p)]));
-  return {
-    name: 'preserve-entry-side-effects',
-    setup(build) {
-      build.onResolve({ filter: /.*/ }, (args) => {
-        if (
-          args.kind === 'entry-point' &&
-          (entries.has(args.path) || entries.has(normalizeSeparators(args.path)))
-        ) {
-          return { path: join(dirCwd, args.path), sideEffects: true };
-        }
-        return undefined;
-      });
-    },
-  };
-}
-
 /*
  * This plugin writes the metafile to a file in the output directory.
  * It is used to analyze the bundle size of the different entry points.
@@ -144,13 +110,6 @@ export async function generateBundle({
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
-  const allEntryPoints = [
-    ...(entries.node ?? []),
-    ...(entries.browser ?? []),
-    ...(entries.runtime ?? []),
-    ...(entries.globalizedRuntime ?? []),
-  ].map((buildEntry) => buildEntry.entryPoint);
-
   const sharedOptions = {
     absWorkingDir: DIR_CWD,
     format: 'esm',
@@ -179,7 +138,6 @@ export async function generateBundle({
     },
     plugins: [
       rawPlugin(),
-      preserveEntrySideEffectsPlugin(DIR_CWD, allEntryPoints),
       {
         name: 'postbuild',
         setup(build) {

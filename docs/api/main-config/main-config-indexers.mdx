@@ -273,25 +273,11 @@ If your files already contain CSF but use a different suffix, such as `Widget.de
 
 This configuration finds the indexer that handles a standard `Widget.stories.tsx` file and copies it with a matcher for `.demo` files. It preserves the existing indexers, so standard stories continue to work. The copied indexer keeps the original `createIndex` implementation, including CSF parsing and title generation.
 
-For example, in a React project, create the following file:
+For example, create the following file. The CSF Next variants use your existing [preview configuration](../csf/csf-next.mdx#definepreview):
 
-```tsx filename="src/Widget.demo.tsx"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+<CodeSnippets path="main-config-indexers-custom-naming-story.md" />
 
-const meta = {
-  title: 'Example/Widget',
-  render: (args) => <button type="button">{args.label}</button>,
-} satisfies Meta<{ label: string }>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: { label: 'Custom filename' },
-};
-```
-
-Start Storybook and open **Example → Widget → Default** to see the button. The story is also included when you build Storybook. Because the file already contains CSF, this example does not need an additional plugin to transpile a custom format to CSF.
+Start Storybook and find **Example → Widget → Default** in the sidebar. The example focuses on indexing; add your component or a framework-specific `render` function to render the story. The story is also included when you build Storybook. Because the file already contains CSF, this example does not need an additional plugin to transpile a custom format to CSF.
 
 ### Other examples
 

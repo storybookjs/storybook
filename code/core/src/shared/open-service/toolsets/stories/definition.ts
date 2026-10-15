@@ -181,8 +181,7 @@ function emptyChangedStories(): ChangedStoriesOutput {
   };
 }
 
-// Change detection rescans on a debounce after the file watcher fires, so a call right after an
-// edit can read the statuses from before it.
+// How long `stories.changed` waits for the latest edit to reach the index and the statuses.
 const PENDING_SCAN_POLL_MS = 250;
 const PENDING_SCAN_MAX_POLLS = 12;
 
@@ -358,27 +357,28 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
 
           // Files outside the story graph are why an empty or partial result can still be wrong,
           // so they are part of the answer rather than a separate lookup.
-          const { reachableFiles, ...filesOutsideStories } = await detectChangedFilesOutsideStories(
-            { git, moduleGraph, storybookDirs }
-          );
-          const readChangedStories = async () =>
-            getChangedStories({
+          const read = async () => {
+            const { reachableFiles, ...filesOutsideStories } =
+              await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs });
+            const changed = getChangedStories({
               statuses: await changeStatuses.getAll(),
               index: await storyIndex.getIndex(),
             });
-          let changed = await readChangedStories();
-          // A changed file that stories render always marks them, so no marked story means the
-          // scan of the latest edit has not finished yet: wait for it rather than answer "none".
-          for (
-            let poll = 0;
-            changed.stories.length === 0 &&
-            reachableFiles.length > 0 &&
-            poll < PENDING_SCAN_MAX_POLLS;
-            poll++
-          ) {
+            return { changed, filesOutsideStories, reachableFiles };
+          };
+          // A new story file reaches the index, and an edit the statuses, only after the file
+          // watcher and a debounced scan. A changed file that stories render always marks them, so
+          // an unindexed story file or no marked story at all means the latest edit is still being
+          // processed: wait for it rather than answer from the state before it.
+          const isPending = ({ changed, filesOutsideStories, reachableFiles }: typeof result) =>
+            filesOutsideStories.unindexedStoryFiles.length > 0 ||
+            (changed.stories.length === 0 && reachableFiles.length > 0);
+          let result = await read();
+          for (let poll = 0; isPending(result) && poll < PENDING_SCAN_MAX_POLLS; poll++) {
             await new Promise((resolve) => setTimeout(resolve, PENDING_SCAN_POLL_MS));
-            changed = await readChangedStories();
+            result = await read();
           }
+          const { changed, filesOutsideStories, reachableFiles } = result;
 
           const data = {
             ...changed,

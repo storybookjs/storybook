@@ -85,6 +85,7 @@ function describeCreate(ctx: ToolsetCtx): string {
 
 ## When to call
 - Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
+- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
@@ -116,7 +117,12 @@ function storyNoun(storyCount: number): string {
   return storyCount === 1 ? 'story' : 'stories';
 }
 
-function reviewInstructions(reviewUrl: string, storyCount: number, origin: string): string {
+function reviewInstructions(
+  reviewUrl: string,
+  storyCount: number,
+  origin: string,
+  browse: boolean
+): string {
   // Agents were observed ending visual work at the tool result, so the result itself has to
   // carry both follow-ups: open the page, and surface the link in the final response.
   // The running instance is named by the same UI root the review link is built from — for a
@@ -124,11 +130,17 @@ function reviewInstructions(reviewUrl: string, storyCount: number, origin: strin
   return `Storybook is already running at ${origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page: follow its steps until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Skip this only when you have no such tool.
+1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
 2. **Show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
 
-## 👀 Review your changes
-The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.
+${
+  // A browse request changed nothing, so "your changes" would contradict the answer above it.
+  browse
+    ? `## 👀 See the stories
+The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`
+    : `## 👀 Review your changes
+The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now.`
+} Because this is AI-curated, results may be inaccurate or incomplete.
 👉 [Open the Storybook review page](${reviewUrl})
 
 The user needs to see this link even after you've opened it yourself.`;
@@ -186,7 +198,12 @@ export const reviewToolset = defineToolset({
           reviewUrl,
           collectionCount,
           storyCount,
-          instructions: reviewInstructions(reviewUrl, storyCount, ctx.origin),
+          instructions: reviewInstructions(
+            reviewUrl,
+            storyCount,
+            ctx.origin,
+            review.changedFiles.length === 0
+          ),
         };
 
         return {

@@ -26,7 +26,7 @@ function writeSection({
   const format = csfFactories
     ? `This project writes stories with CSF Factories, because \`${previewFile}\` uses \`definePreview\`: \`import preview from '../.storybook/preview'\` (the path to that file), then \`const meta = preview.meta({ component: Button })\` and \`export const Primary = meta.story({ args: { ... } })\`. Do not import \`Meta\` or \`StoryObj\`. Import`
     : typescript
-      ? `Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and`
+      ? `Import \`Meta\` and \`StoryObj\` from \`${framework}\` (also when existing stories import them from another package), and`
       : 'Import';
   return `## Write the component and its stories
 
@@ -48,7 +48,7 @@ function testSection(a11yEnabled: boolean): string {
 ${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids from "Find the stories"; leave out --stories to run every story
 \`\`\`
 
-Run this after every change: focused runs with \`--stories\` while you iterate, then one full run without \`--stories\` before the review. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test, change only what the failure needs.${a11y}`;
+Run this after every change: focused runs with \`--stories\` while you iterate, then one full run without \`--stories\` before the review. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test or an accessibility violation, change only what it needs.${a11y}`;
 }
 
 function discoverSection(inputs: UiWorkflowSkillInputs): string {
@@ -70,7 +70,7 @@ This project has no command that lists story ids. Select a story by its file and
       'Run \`stories changed\` or \`find-by-component\` after your last edit and before every review, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects.',
     `Story ids come only from the output of ${several ? 'these commands' : 'this command'}, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory.`,
     inputs.moduleGraphSupported &&
-      'When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file (design token, theme, util, hook), which has no stories of its own, pass the components that use it. When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
+      'When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`, or for a shared file (design token, theme, util, hook), which has no stories of its own, the components that use it. When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
     `When ${several ? 'none of them finds' : 'it does not find'} a story for a component, it has no stories yet: say so, or write them.`,
   ]
     .filter(Boolean)
@@ -104,7 +104,7 @@ ${ref('review.create')} --input '{
 
 Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed and the user did not ask to see anything, and say that instead.
 
-Then do both things the command prints, every time: open the review in the in-app browser with a browser tool (unless you have none), and end your answer with the review section it gives you. Do not list separate story links next to it.`;
+Publish it as your last step, after your other checks such as a type check, lint or \`git status\`. Then do both things the command prints, every time: open the review in the in-app browser with a browser tool (unless you have none), and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }
 
 function previewSection(): string {

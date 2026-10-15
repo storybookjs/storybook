@@ -168,39 +168,51 @@ interface DocgenError {
   message: string;
 }
 
-/** Every resolution except `no-meta-component`, which no declared entry can produce (see below). */
-type DocumentableResolution =
-  | Exclude<MetaComponentResolution, { reason: 'no-meta-component' | 'no-component-import' }>
-  | { reason: 'no-component-import' };
+/** `default` is an export name, not a class name, so the local binding reads better. */
+const displayNameOf = (component: { exportName: string; localName: string }) =>
+  component.exportName === 'default' ? component.localName : component.exportName;
 
-/**
- * `meta.component` may simply be absent, which hands the story to the next provider. A declared
- * subcomponent always carries its node, so core's resolver never reports it for one.
- */
-const isDocumentable = (
-  resolution: MetaComponentResolution
-): resolution is DocumentableResolution =>
-  !('reason' in resolution) || resolution.reason !== 'no-meta-component';
+/** The best name available for a primary component whose documentation failed. */
+const errorNameOf = (resolution: MetaComponentResolution, title: string): string => {
+  if ('component' in resolution) {
+    return displayNameOf(resolution.component);
+  }
+  return resolution.reason === 'unreadable-component-expression'
+    ? resolution.expression
+    : (title.split('/').at(-1) ?? title);
+};
 
 const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** The remediation text for a resolution that did not name a component class. */
 const unresolvedMessage = (
-  resolution: Extract<DocumentableResolution, { reason: string }>,
+  resolution: Extract<MetaComponentResolution, { reason: string }>,
   subject: string,
   storyFilePath: string
-): string =>
-  resolution.reason === 'unreadable-component-expression'
-    ? `${capitalized(subject)} sets \`${resolution.expression}\`, which does not resolve to a class.\n` +
-      `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
-      `property accesses and spreads through modules it can resolve. ` +
-      `Assign the component to a name in ${storyFilePath}.`
-    : // The binding may be reached through another module (e.g. a spread config object), so the
+): string => {
+  switch (resolution.reason) {
+    case 'unreadable-component-expression':
+      return (
+        `${capitalized(subject)} sets \`${resolution.expression}\`, which does not resolve to a class.\n` +
+        `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
+        `property accesses and spreads through modules it can resolve. ` +
+        `Assign the component to a name in ${storyFilePath}.`
+      );
+    case 'no-component-import':
+      // The binding may be reached through another module (e.g. a spread config object), so the
       // type-only or namespace import is not necessarily written in the story file itself - naming
       // it here would send the reader to the wrong file.
-      `Resolving ${subject} from ${storyFilePath} reached a binding that is a type-only ` +
-      `or namespace import, which carries no class to document.\n` +
-      `Import the component as a value in whichever module declares that binding.`;
+      return (
+        `Resolving ${subject} from ${storyFilePath} reached a binding that is a type-only ` +
+        `or namespace import, which carries no class to document.\n` +
+        `Import the component as a value in whichever module declares that binding.`
+      );
+    case 'no-meta-component':
+      // The primary hands this case to the next provider; a declared entry always carries its node.
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(`Storybook found no component expression for ${subject}.`);
+  }
+};
 
 type DocumentedComponent =
   | {
@@ -220,7 +232,7 @@ type DocumentedComponent =
  * against that same live TS context.
  */
 const documentComponent = (
-  resolution: DocumentableResolution,
+  resolution: MetaComponentResolution,
   subject: string,
   storyFilePath: string,
   context: BuildDocgenContext
@@ -238,9 +250,7 @@ const documentComponent = (
   // A component declared in the story file resolves to the story file itself, so no path at all can
   // only mean the import specifier did not resolve.
   if (!component.path) {
-    // `default` is an export name, not a class name, so the local binding reads better.
-    const displayName =
-      component.exportName === 'default' ? component.localName : component.exportName;
+    const displayName = displayNameOf(component);
     return {
       error: {
         name: 'AngularComponentMetaNotFound',
@@ -312,14 +322,6 @@ const buildSubcomponentDocgen = (
   const subject = `the \`subcomponents\` entry "${declared.name}"`;
   try {
     const resolution = resolveMetaComponent(csf, storyFilePath, declared.node);
-    // Narrows the type only: core reports `no-meta-component` when there is no node to resolve, and
-    // a declared entry always carries one.
-    if (!isDocumentable(resolution)) {
-      return subcomponentError(declared.componentName, storyFilePath, {
-        name: 'AngularComponentMetaNotFound',
-        message: `Storybook found no component expression for ${subject}.`,
-      });
-    }
 
     const documented = documentComponent(resolution, subject, storyFilePath, context);
     if ('error' in documented) {
@@ -384,7 +386,7 @@ export const buildDocgenPayload = (
   // A story file with no `component` at all documents no Angular component, so the next provider
   // gets its turn. A `component` that is there but unreadable is this provider's failure to
   // report: staying quiet would be indistinguishable from a story that documents nothing.
-  if (!isDocumentable(resolved)) {
+  if ('reason' in resolved && resolved.reason === 'no-meta-component') {
     logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
     return undefined;
   }
@@ -392,15 +394,7 @@ export const buildDocgenPayload = (
   const id = getComponentIdFromEntry(input.entry);
   const documented = documentComponent(resolved, '`meta.component`', storyFilePath, context);
   if ('error' in documented) {
-    const name =
-      'component' in resolved
-        ? // `default` is an export name, not a class name, so the local binding is the best name so far.
-          resolved.component.exportName === 'default'
-          ? resolved.component.localName
-          : resolved.component.exportName
-        : resolved.reason === 'unreadable-component-expression'
-          ? resolved.expression
-          : (input.entry.title.split('/').at(-1) ?? input.entry.title);
+    const name = errorNameOf(resolved, input.entry.title);
     return errorPayload(
       { id, name, path: storyImportPath },
       documented.error.name,

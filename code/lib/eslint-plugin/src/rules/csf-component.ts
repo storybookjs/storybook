@@ -4,7 +4,7 @@
  */
 import type { TSESTree } from '@typescript-eslint/types';
 
-import { getMetaObjectExpression } from '../utils/index.ts';
+import { getFactoryMetaObjectExpression, getMetaObjectExpression } from '../utils/index.ts';
 import { isSpreadElement } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
@@ -42,26 +42,33 @@ export default createStorybookRule({
     // Public
     //----------------------------------------------------------------------
 
+    const checkComponentProperty = (meta: TSESTree.ObjectExpression, reportNode: TSESTree.Node) => {
+      const componentProperty = meta.properties.find(
+        (property) =>
+          !isSpreadElement(property) && 'name' in property.key && property.key.name === 'component'
+      );
+
+      if (!componentProperty) {
+        context.report({
+          node: reportNode,
+          messageId: 'missingComponentProperty',
+        });
+      }
+    };
+
     return {
       ExportDefaultDeclaration(node: TSESTree.ExportDefaultDeclaration) {
         const meta = getMetaObjectExpression(node, context);
 
-        if (!meta) {
-          return null;
+        if (meta) {
+          checkComponentProperty(meta, node);
         }
+      },
+      CallExpression(node: TSESTree.CallExpression) {
+        const meta = getFactoryMetaObjectExpression(node, context);
 
-        const componentProperty = meta.properties.find(
-          (property) =>
-            !isSpreadElement(property) &&
-            'name' in property.key &&
-            property.key.name === 'component'
-        );
-
-        if (!componentProperty) {
-          context.report({
-            node,
-            messageId: 'missingComponentProperty',
-          });
+        if (meta) {
+          checkComponentProperty(meta, node);
         }
       },
     };

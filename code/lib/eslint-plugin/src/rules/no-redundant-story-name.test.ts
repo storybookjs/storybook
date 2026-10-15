@@ -19,6 +19,7 @@ import rule from './no-redundant-story-name.ts';
 ruleTester.run('no-redundant-story-name', rule, {
   valid: [
     "export const PrimaryButton = { name: 'The Primary Button' }",
+    "export const PrimaryButton = meta.story({ name: 'The Primary Button' })",
     "export const PrimaryButton: Story = { name: 'The Primary Button' }",
     `
       const Default = {}
@@ -43,6 +44,21 @@ ruleTester.run('no-redundant-story-name', rule, {
   ],
 
   invalid: [
+    {
+      code: "export const PrimaryButton = meta.story({ name: 'Primary Button' })",
+      errors: [
+        {
+          messageId: 'storyNameIsRedundant',
+          type: AST_NODE_TYPES.Property,
+          suggestions: [
+            {
+              messageId: 'removeRedundantName',
+              output: 'export const PrimaryButton = meta.story({  })',
+            },
+          ],
+        },
+      ],
+    },
     {
       code: "export const PrimaryButton = { name: 'Primary Button' }",
       errors: [

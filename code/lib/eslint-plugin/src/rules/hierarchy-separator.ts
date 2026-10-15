@@ -4,7 +4,7 @@
  */
 import type { TSESTree } from '@typescript-eslint/types';
 
-import { getMetaObjectExpression } from '../utils/index.ts';
+import { getFactoryMetaObjectExpression, getMetaObjectExpression } from '../utils/index.ts';
 import { isLiteral, isSpreadElement } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
@@ -33,44 +33,49 @@ export default createStorybookRule({
     schema: [],
   },
   create: function (context) {
+    const checkTitle = (meta: TSESTree.ObjectExpression) => {
+      const titleNode = meta.properties.find(
+        (prop) => !isSpreadElement(prop) && 'name' in prop.key && prop.key?.name === 'title'
+      ) as TSESTree.MethodDefinition | TSESTree.Property | undefined;
+
+      if (!titleNode || !isLiteral(titleNode.value)) {
+        return;
+      }
+
+      const metaTitle = titleNode.value.raw || '';
+
+      if (metaTitle.includes('|')) {
+        context.report({
+          node: titleNode,
+          messageId: 'deprecatedHierarchySeparator',
+          data: { metaTitle },
+          // In case we want this to be auto fixed by --fix
+          fix: function (fixer) {
+            return fixer.replaceTextRange(titleNode.value.range, metaTitle.replace(/\|/g, '/'));
+          },
+          suggest: [
+            {
+              messageId: 'useCorrectSeparators',
+              fix: function (fixer) {
+                return fixer.replaceTextRange(titleNode.value.range, metaTitle.replace(/\|/g, '/'));
+              },
+            },
+          ],
+        });
+      }
+    };
+
     return {
       ExportDefaultDeclaration: function (node) {
         const meta = getMetaObjectExpression(node, context);
-        if (!meta) {
-          return null;
+        if (meta) {
+          checkTitle(meta);
         }
-
-        const titleNode = meta.properties.find(
-          (prop) => !isSpreadElement(prop) && 'name' in prop.key && prop.key?.name === 'title'
-        ) as TSESTree.MethodDefinition | TSESTree.Property | undefined;
-
-        if (!titleNode || !isLiteral(titleNode.value)) {
-          return;
-        }
-
-        const metaTitle = titleNode.value.raw || '';
-
-        if (metaTitle.includes('|')) {
-          context.report({
-            node: titleNode,
-            messageId: 'deprecatedHierarchySeparator',
-            data: { metaTitle },
-            // In case we want this to be auto fixed by --fix
-            fix: function (fixer) {
-              return fixer.replaceTextRange(titleNode.value.range, metaTitle.replace(/\|/g, '/'));
-            },
-            suggest: [
-              {
-                messageId: 'useCorrectSeparators',
-                fix: function (fixer) {
-                  return fixer.replaceTextRange(
-                    titleNode.value.range,
-                    metaTitle.replace(/\|/g, '/')
-                  );
-                },
-              },
-            ],
-          });
+      },
+      CallExpression: function (node) {
+        const meta = getFactoryMetaObjectExpression(node, context);
+        if (meta) {
+          checkTitle(meta);
         }
       },
     };

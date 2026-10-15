@@ -28,6 +28,7 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
+import { isValidPreviewPath } from '../csf/preview-path.ts';
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
 import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
@@ -58,8 +59,7 @@ type CsfMutationState = {
 
 const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
 
-const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
-export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
+export { isValidPreviewPath };
 
 function parseIncludeExclude(prop: t.Node) {
   if (t.isArrayExpression(prop)) {

@@ -1,5 +1,5 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
@@ -29,7 +29,10 @@ const ResultsList = styled.ol({
   padding: 0,
 });
 
-const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted }) => ({
+const ResultRow = styled.li<{
+  isHighlighted: boolean;
+  isChild?: boolean;
+}>(({ theme, isHighlighted, isChild }) => ({
   width: '100%',
   border: 'none',
   cursor: 'pointer',
@@ -45,13 +48,56 @@ const ResultRow = styled.li<{ isHighlighted: boolean }>(({ theme, isHighlighted 
   gap: 6,
   paddingTop: 7,
   paddingBottom: 7,
-  paddingLeft: 8,
+  paddingLeft: isChild ? 30 : 8,
   paddingRight: 8,
 
   '&:hover, &:focus': {
     background: transparentize(0.93, theme.color.secondary),
     outline: 'none',
   },
+}));
+
+const ComponentGroupHeading = styled.li(({ theme }) => ({
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  minHeight: 28,
+  paddingTop: 7,
+  paddingBottom: 7,
+  paddingLeft: 8,
+  paddingRight: 8,
+  fontSize: `${theme.typography.size.s2}px`,
+  fontWeight: theme.typography.weight.bold,
+}));
+
+const ChevronButton = styled.button({
+  width: 14,
+  height: 18,
+  padding: 0,
+  margin: 0,
+  border: 0,
+  background: 'transparent',
+  cursor: 'pointer',
+  flexShrink: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+
+  '&:focus-visible': {
+    outline: 'none',
+  },
+});
+
+const Chevron = styled.span<{ isCollapsed: boolean }>(({ theme, isCollapsed }) => ({
+  display: 'block',
+  width: 0,
+  height: 0,
+  borderTop: '4px solid transparent',
+  borderBottom: '4px solid transparent',
+  borderLeft: `5px solid ${theme.textMutedColor}`,
+  transform: isCollapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+  transition: 'transform 100ms ease',
 }));
 
 const IconWrapper = styled.div({
@@ -161,8 +207,23 @@ const Path = styled.div(({ theme }) => ({
 const Result: FC<
   SearchResult & {
     isHighlighted: boolean;
+    hidePath?: boolean;
+    isChild?: boolean;
+    showGroupChevron?: boolean;
+    isCollapsed?: boolean;
+    onToggleGroup?: () => void;
   } & React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>
-> = React.memo(function Result({ item, matches, onClick, ...props }) {
+> = React.memo(function Result({
+  item,
+  matches,
+  onClick,
+  hidePath = false,
+  isChild = false,
+  showGroupChevron = false,
+  isCollapsed = false,
+  onToggleGroup,
+  ...props
+}) {
   const theme = useTheme();
   const click: MouseEventHandler<HTMLLIElement> = useCallback(
     (event) => {
@@ -185,7 +246,22 @@ const Result: FC<
   const icon = item.status ? getStatus(theme, item.status).icon : null;
 
   return (
-    <ResultRow {...props} onClick={click}>
+    <ResultRow {...props} isChild={isChild} onClick={click}>
+      {showGroupChevron && (
+        <ChevronButton
+          type="button"
+          aria-expanded={!isCollapsed}
+          aria-label={isCollapsed ? 'Expand component stories' : 'Collapse component stories'}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onToggleGroup?.();
+          }}
+        >
+          <Chevron isCollapsed={isCollapsed} />
+        </ChevronButton>
+      )}
+
       <IconWrapper>
         {item.type === 'component' && (
           <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="component">
@@ -207,20 +283,211 @@ const Result: FC<
         <Title>
           <Highlight match={nameMatch}>{item.name}</Highlight>
         </Title>
-        <Path>
-          {item.path.map((group, index) => (
-            <span key={index}>
-              <Highlight match={pathMatches.find((match: Match) => match.arrayIndex === index)}>
-                {group}
-              </Highlight>
-            </span>
-          ))}
-        </Path>
+
+        {!hidePath && (
+          <Path>
+            {item.path.map((group, index) => (
+              <span key={index}>
+                <Highlight match={pathMatches.find((match: Match) => match.arrayIndex === index)}>
+                  {group}
+                </Highlight>
+              </span>
+            ))}
+          </Path>
+        )}
       </ResultRowContent>
       {item.status ? <StatusLabel status={item.status}>{icon}</StatusLabel> : null}
     </ResultRow>
   );
 });
+
+type SearchResultGroup = {
+  type: 'group';
+  key: string;
+  component?: SearchResult;
+  componentIndex?: number;
+  componentName: string;
+  stories: Array<{
+    result: SearchResult;
+    index: number;
+  }>;
+};
+
+type StandaloneSearchResult = {
+  type: 'result';
+  result: DownshiftItem;
+  index: number;
+};
+
+type GroupedSearchResult = SearchResultGroup | StandaloneSearchResult;
+
+const groupSearchResults = (results: DownshiftItem[]): GroupedSearchResult[] => {
+  const groupedResults: GroupedSearchResult[] = [];
+  const groups = new Map<string, SearchResultGroup>();
+
+  results.forEach((result, index) => {
+    if (isExpandType(result)) {
+      groupedResults.push({
+        type: 'result',
+        result,
+        index,
+      });
+
+      return;
+    }
+
+    const { item } = result;
+
+    let groupKey: string | null = null;
+
+    if (item.type === 'component') {
+      groupKey = `${item.refId}::${item.id}`;
+    }
+
+    if (item.type === 'story' && item.parent) {
+      groupKey = `${item.refId}::${item.parent}`;
+    }
+
+    if (!groupKey) {
+      groupedResults.push({
+        type: 'result',
+        result,
+        index,
+      });
+
+      return;
+    }
+
+    let group = groups.get(groupKey);
+
+    if (!group) {
+      const componentName =
+        item.type === 'component' ? item.name : (item.path[item.path.length - 1] ?? item.name);
+
+      group = {
+        type: 'group',
+        key: groupKey,
+        component: item.type === 'component' ? result : undefined,
+        componentIndex: item.type === 'component' ? index : undefined,
+        componentName,
+        stories: [],
+      };
+
+      groups.set(groupKey, group);
+      groupedResults.push(group);
+    }
+
+    if (item.type === 'component') {
+      group.component = result;
+      group.componentIndex = index;
+      group.componentName = item.name;
+
+      return;
+    }
+
+    if (item.type === 'story') {
+      const alreadyAdded = group.stories.some(
+        ({ result: existingResult }) =>
+          existingResult.item.refId === item.refId && existingResult.item.id === item.id
+      );
+
+      if (!alreadyAdded) {
+        group.stories.push({
+          result,
+          index,
+        });
+      }
+    }
+  });
+
+  return groupedResults;
+};
+
+const SearchResultGroupView: FC<{
+  group: SearchResultGroup;
+  highlightedIndex: number | null;
+  getItemProps: ControllerStateAndHelpers<DownshiftItem>['getItemProps'];
+  mouseOverHandler: MouseEventHandler;
+}> = ({ group, highlightedIndex, getItemProps, mouseOverHandler }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const { component, componentIndex, componentName, stories } = group;
+
+  const toggleGroup = () => {
+    setIsCollapsed((current) => !current);
+  };
+
+  return (
+    <>
+      {component && componentIndex !== undefined ? (
+        <Result
+          {...component}
+          {...getItemProps({
+            key: `${component.item.refId}::${component.item.id}`,
+            index: componentIndex,
+            item: component,
+          })}
+          hidePath
+          showGroupChevron={stories.length > 0}
+          isCollapsed={isCollapsed}
+          onToggleGroup={toggleGroup}
+          isHighlighted={highlightedIndex === componentIndex}
+          data-id={component.item.id}
+          data-refid={component.item.refId}
+          onMouseOver={mouseOverHandler}
+          className="search-result-item search-result-component-group"
+        />
+      ) : (
+        <ComponentGroupHeading>
+          <ChevronButton
+            type="button"
+            aria-expanded={!isCollapsed}
+            aria-label={isCollapsed ? 'Expand component stories' : 'Collapse component stories'}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleGroup();
+            }}
+          >
+            <Chevron isCollapsed={isCollapsed} />
+          </ChevronButton>
+
+          <IconWrapper>
+            <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="component">
+              <UseSymbol type="component" />
+            </TypeIcon>
+          </IconWrapper>
+
+          <span>{componentName}</span>
+        </ComponentGroupHeading>
+      )}
+
+      {!isCollapsed &&
+        stories.map(({ result, index }) => {
+          const storyKey = `${result.item.refId}::${result.item.id}`;
+
+          return (
+            <Result
+              {...result}
+              {...getItemProps({
+                key: storyKey,
+                index,
+                item: result,
+              })}
+              hidePath
+              isChild
+              isHighlighted={highlightedIndex === index}
+              key={storyKey}
+              data-id={result.item.id}
+              data-refid={result.item.refId}
+              onMouseOver={mouseOverHandler}
+              className="search-result-item search-result-story-child"
+            />
+          );
+        })}
+    </>
+  );
+};
 
 export const SearchResults: FC<{
   query: string;
@@ -289,6 +556,8 @@ export const SearchResults: FC<{
     closeMenu();
   };
 
+  const groupedResults = useMemo(() => groupSearchResults(results), [results]);
+
   return (
     <ResultsList {...getMenuProps()} key="results-list">
       {results.length > 0 && !query && (
@@ -313,10 +582,34 @@ export const SearchResults: FC<{
           </NoResults>
         </li>
       )}
-      {results.map((result: DownshiftItem, index) => {
+
+      {groupedResults.map((entry) => {
+        if (entry.type === 'group') {
+          return (
+            <SearchResultGroupView
+              key={entry.key}
+              group={entry}
+              highlightedIndex={highlightedIndex}
+              getItemProps={getItemProps}
+              mouseOverHandler={mouseOverHandler}
+            />
+          );
+        }
+
+        const { result, index } = entry;
+
         if (isExpandType(result)) {
-          const props = { ...results, ...getItemProps({ key: index, index, item: result }) };
+          const props = {
+            ...results,
+            ...getItemProps({
+              key: index,
+              index,
+              item: result,
+            }),
+          };
+
           const { key, ...rest } = props;
+
           return (
             <MoreWrapper key="search-result-expand">
               <Button key={key} {...rest} size="small">
@@ -334,8 +627,8 @@ export const SearchResults: FC<{
             {...getItemProps({ key, index, item: result })}
             isHighlighted={highlightedIndex === index}
             key={key}
-            data-id={result.item.id}
-            data-refid={result.item.refId}
+            data-id={item.id}
+            data-refid={item.refId}
             onMouseOver={mouseOverHandler}
             className="search-result-item"
           />

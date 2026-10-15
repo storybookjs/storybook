@@ -72,8 +72,10 @@ export interface CoreConfig {
    */
   enableCrashReports?: boolean;
   /**
-   * Enable hostname validation, currently only for WebSocket connections. Set to `[]` to disallow
-   * all hosts except known local/network address, or `true` to allow all hosts.
+   * Configures which hostnames can reach the dev server. Storybook validates the `Host` header of
+   * every request, and the `Origin` header of WebSocket connections and MCP requests, against this
+   * list. Requests that address Storybook as `localhost` or by the `--host` hostname are always
+   * allowed. Set to `true` to disable host validation (insecure and strongly discouraged).
    */
   allowedHosts?: string[] | true;
   /**
@@ -653,26 +655,59 @@ export interface StorybookFeatures {
   experimentalCodeExamples?: boolean;
 
   /**
-   * Enable the experimental docgen open service.
+   * Enable server-side component metadata extraction.
    *
    * When true, Storybook registers the `core/docgen` service in the open-service registry and
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
-   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
-   * back to Compodoc.
-   *
-   * @default false // `true` when the framework is `@storybook/angular-vite`
-   * @experimental This feature is in early development and may change significantly in future releases.
+   * @default true when a preset that ships an `experimental_docgenProvider` exports
+   *   `isDocgenProviderEnabled`
    */
-  experimentalDocgenServer?: boolean;
+  docgenServer?: boolean;
 
   /**
-   * Enable change detection. Agentic review depends on it, so `false` also turns review off.
-   * @default true
+   * Keep Vite from merging the pre-split preview runtime back into one output chunk.
+   *
+   * Webpack always serves the chunked `dist/preview` at `/sb-preview`. This flag only
+   * affects the Vite production build: Rolldown `maxSize` on Vite 8, and on Vite 5–7
+   * Rollup pins each pre-split preview module to its own chunk.
+   *
+   * @default false
+   * @experimental
    */
-  changeDetection?: boolean;
+  experimentalChunkedPreviewRuntime?: boolean;
+}
+
+export interface SecurityConfig {
+  /**
+   * In dev mode, the manager and preview can only be embedded by a website running on localhost.
+   * This prevents attacks that hijack a local Storybook embedded in an iframe from a malicious domain.
+   *
+   * If you need remote Storybooks to compose this Storybook while it is running in dev mode,
+   * you may set `insecureRemoteIframeEmbed` to `true`.
+   *
+   * Built Storybooks can still be embedded and composed without restrictions, and don't need
+   * this flag.
+   *
+   * @default false
+   */
+  insecureRemoteIframeEmbed?: boolean;
+
+  /**
+   * The manager and preview restrict who can communicate with them via `postMessage`. The manager
+   * only accepts messages from its own preview iframes. In dev mode, a preview only accepts
+   * messages from a manager on localhost, and both send messages only to the expected origin.
+   *
+   * If you need remote Storybooks to compose this Storybook while it is running in dev mode,
+   * you may set `insecureIframeMessaging` to `true`.
+   *
+   * Built previews accept messages from any origin, so composing a built Storybook doesn't need
+   * this flag.
+   *
+   * @default false
+   */
+  insecureIframeMessaging?: boolean;
 }
 
 export interface StorybookConfigRaw {
@@ -688,6 +723,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
+  security?: SecurityConfig;
   experimental_manifests?: Manifests;
   experimental_enrichCsf?: CsfEnricher;
   experimental_docgenProvider?: DocgenProviderDescriptor[];
@@ -779,6 +815,7 @@ export interface StorybookConfig {
    */
   addons?: StorybookConfigRaw['addons'];
   core?: PresetValue<StorybookConfigRaw['core']>;
+  security?: PresetValue<StorybookConfigRaw['security']>;
   /**
    * Sets a list of directories of static files to be loaded by Storybook server
    *

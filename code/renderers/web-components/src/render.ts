@@ -13,7 +13,7 @@ import type { WebComponentsRenderer } from './types.ts';
 
 const { Node } = global;
 
-/** With `experimentalDocgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
+/** With `docgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
 export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   const { id, component } = context;
   if (!component) {
@@ -23,7 +23,7 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  if (!global.FEATURES?.experimentalDocgenServer) {
+  if (!global.FEATURES?.docgenServer) {
     return Object.assign(element, args);
   }
 

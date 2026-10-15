@@ -64,27 +64,20 @@ describe('renderer preset exports', () => {
 });
 
 describe('experimental_docgenProvider', () => {
-  it('contributes no descriptor when the docgen server flag is off', async () => {
-    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
-  });
-
   it('contributes the docgen worker descriptor', async () => {
     givenManifestPackage();
 
-    expect(
-      await experimental_docgenProvider([], optionsWith({ experimentalDocgenServer: true }))
-    ).toEqual([
+    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/dist/custom-elements.json')],
-          typeProperty: 'parsedType',
         },
       },
     ]);
   });
 
-  it('passes an explicit docgen type property to the worker', async () => {
+  it('passes an explicit manifest path to the worker', async () => {
     vol.fromNestedJSON({
       '/workspace/.storybook/custom-elements.json': JSON.stringify({ modules: [] }),
     });
@@ -92,20 +85,13 @@ describe('experimental_docgenProvider', () => {
     expect(
       await experimental_docgenProvider(
         [],
-        optionsWith(
-          { experimentalDocgenServer: true },
-          {
-            customElementsManifest: 'custom-elements.json',
-            docgen: { typeProperty: 'resolvedType' },
-          }
-        )
+        optionsWith({}, { customElementsManifest: 'custom-elements.json' })
       )
     ).toEqual([
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/.storybook/custom-elements.json')],
-          typeProperty: 'resolvedType',
         },
       },
     ]);
@@ -115,10 +101,10 @@ describe('experimental_docgenProvider', () => {
 describe('experimental_manifests', () => {
   it.each([
     ['docgen server flag off', { componentsManifest: true }, {}],
-    ['components manifest flag off', { experimentalDocgenServer: true }, {}],
+    ['components manifest flag off', { docgenServer: true }, {}],
     [
       'both flags on',
-      { experimentalDocgenServer: true, componentsManifest: true },
+      { docgenServer: true, componentsManifest: true },
       {
         components: {
           v: 0,

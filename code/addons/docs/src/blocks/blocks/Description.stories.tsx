@@ -52,7 +52,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
     // disabled by default in production builds (e.g. Chromatic). Enable it here so the service-backed
     // story renders the mocked data instead of falling back to the non-service path.
     const previousFeatures = globalThis.FEATURES;
-    globalThis.FEATURES = { ...previousFeatures, experimentalDocgenServer: true };
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
 
     const payload = createStoryDocsPayload(docsContext, of, data);
     unregisterService('core/story-docs');

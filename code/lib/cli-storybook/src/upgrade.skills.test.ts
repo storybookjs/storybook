@@ -6,6 +6,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { runAutomigrations } from './automigrate/multi-project.ts';
+import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { type UpgradeOptions, upgrade } from './upgrade.ts';
 import { type CollectProjectsSuccessResult, getProjects } from './util.ts';
@@ -92,6 +93,48 @@ describe('upgrade: refreshing the skills', () => {
       .mocked(telemetry)
       .mock.calls.filter(([eventType]) => eventType === 'upgrade')
       .map(([, payload]) => (payload as { skills?: unknown }).skills);
+
+  it('fails after reporting an incomplete automigration', async () => {
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: { 'story-sort-to-main': FixStatus.FAILED },
+          automigrationErrors: { 'story-sort-to-main': 'Comparator requires manual migration' },
+          fileFailures: [],
+        },
+      },
+      detectedAutomigrations: [],
+    });
+
+    await expect(upgrade(baseOptions)).rejects.toThrow(
+      'Some automigrations failed or skipped files'
+    );
+    expect(telemetry).toHaveBeenCalled();
+  });
+
+  it('fails after reporting files skipped by an otherwise successful automigration', async () => {
+    vi.mocked(runAutomigrations).mockResolvedValue({
+      automigrationResults: {
+        '/repo/a/.storybook': {
+          automigrationStatuses: { 'argtypes-default-value': FixStatus.SUCCEEDED },
+          automigrationErrors: {},
+          fileFailures: [
+            {
+              fixId: 'argtypes-default-value',
+              file: '/repo/a/src/Stack.stories.tsx',
+              kind: 'story',
+              message: 'Cannot mutate spread field',
+            },
+          ],
+        },
+      },
+      detectedAutomigrations: [],
+    });
+
+    await expect(upgrade(baseOptions)).rejects.toThrow(
+      'Some automigrations failed or skipped files'
+    );
+  });
 
   it('refreshes installed skills once for the whole upgrade, and reports the result', async () => {
     await upgrade(baseOptions);

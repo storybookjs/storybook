@@ -165,6 +165,15 @@ describe('Emit Code', () => {
     );
   });
 
+  it('should not throw on individually referenced null args', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Button icon={args.icon}>{args.icon}</Button>',
+        args: { icon: null },
+      })
+    ).toMatchInlineSnapshot(`"<Button icon={null}>{null}</Button>"`);
+  });
+
   it('should exclude children from props when used in template and unwrap string literals', () => {
     expect(
       generateCodeToEmit({

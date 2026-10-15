@@ -110,7 +110,9 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
 - `title` — required short display label used by client UIs and the tools CLI command list
 - `description` — `string`, or a function of `ctx` when the prose differs per transport
 - `input` — the input schema; a `v.strictObject`, so a mistyped argument is an invalid-input
-  error instead of being dropped and the method running on its defaults
+  error instead of being dropped and the method running on its defaults. `defineToolset` rejects
+  any other valibot schema (`v.object`, `v.looseObject`, …), piped or not, as a type error and
+  at runtime. Only the top-level schema is checked; nested object schemas are not
 - `output` — optional; published as the MCP `outputSchema`, and `structuredContent` is
   narrowed to it. Some clients (Claude Code) hand the model only `structuredContent` when a tool
   publishes it and drop the text, so the declared shape must carry everything the Markdown says,
@@ -307,9 +309,6 @@ be overridden at `registerService()` time. Static snapshot building is unaffecte
 
 Public query names are nouns or noun phrases (`docgen`, `status`, `recordFields`) without a `get`
 prefix — callers already use `.get()`, `.loaded()`, and `.subscribe()` on the query handle.
-
-`core/module-graph` keeps deprecated `getStatus` and `getGraphRevision` aliases that delegate to
-`status` and `graphRevision` for backwards compatibility with external consumers.
 
 ### Internal operation naming
 

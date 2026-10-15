@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "11.0.0-alpha.5",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -423,7 +423,7 @@
     "telejson": "8.0.0",
     "tiny-invariant": "^1.3.1",
     "tinyspy": "^3.0.2",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "tsconfig-paths": "^4.2.0",
     "type-fest": "^5.6.0",
     "type-plus": "^8.0.0-beta.8",

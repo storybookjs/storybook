@@ -97,6 +97,10 @@ describe('readTemplateCheckoutPackages', () => {
         '@storybook/react-vite',
         '@storybook/builder-vite',
         '@storybook/addon-mcp',
+        // Served by the lifecycle evals' checkout registry.
+        'create-storybook',
+        '@storybook/cli',
+        '@storybook/codemod',
       ])
     );
   });

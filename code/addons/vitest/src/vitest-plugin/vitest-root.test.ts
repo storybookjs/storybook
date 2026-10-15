@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
@@ -50,7 +51,7 @@ afterEach(() => {
 });
 
 /** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
-async function getPluginConfig(invokingRoot: string) {
+async function getPluginConfig(invokingRoot: string, inputTestConfig?: InlineConfig) {
   const plugins = await storybookTest({ configDir: CONFIG_DIR });
   const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
 
@@ -67,7 +68,7 @@ async function getPluginConfig(invokingRoot: string) {
         throw new Error(String(message));
       },
     },
-    { root: invokingRoot },
+    { root: invokingRoot, test: inputTestConfig },
     { command: 'serve', mode: 'development' }
   );
 
@@ -98,6 +99,30 @@ describe('story test patterns', () => {
   });
 });
 
+describe('preview html', () => {
+  it('sets the framework options global ahead of the preview head', async () => {
+    const applyPreset = presetApply.getMockImplementation()!;
+    presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+      switch (key) {
+        case 'frameworkOptions':
+          return { strictMode: true };
+        case 'previewHead':
+          return '<meta name="preview-head" />';
+        default:
+          return applyPreset(key, fallback);
+      }
+    });
+
+    const plugins = await storybookTest({ configDir: CONFIG_DIR });
+    const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
+    const transformIndexHtml = plugin.transformIndexHtml as (html: string) => Promise<string>;
+
+    expect(await transformIndexHtml('<html><head></head><body></body></html>')).toBe(
+      '<html><head><script>window.FRAMEWORK_OPTIONS = {"strictMode":true};</script><meta name="preview-head" /></head><body></body></html>'
+    );
+  });
+});
+
 describe('internal setup files', () => {
   it('registers internal setup files', async () => {
     const { test, plugin } = await getPluginConfig(REPO_ROOT);
@@ -117,5 +142,64 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
+  });
+});
+
+describe('browser API permissions', () => {
+  interface ApiPermissions {
+    allowWrite?: boolean;
+    allowExec?: boolean;
+  }
+  interface ProjectConfig {
+    api: ApiPermissions;
+    browser?: { enabled: boolean; api?: ApiPermissions };
+  }
+
+  const configureVitest = async (inputTestConfig: InlineConfig, projectConfig: ProjectConfig) => {
+    const { plugin } = await getPluginConfig(PACKAGE_ROOT, inputTestConfig);
+    const project = { config: { setupFiles: [], ...projectConfig } };
+    await (plugin.configureVitest as (context: unknown) => Promise<void>)({
+      vitest: { config: { coverage: { exclude: [] }, reporters: [] } },
+      project,
+    });
+    return project.config;
+  };
+
+  // What Vitest resolves when the server is bound to loopback.
+  const loopbackDefaults = (): ApiPermissions => ({ allowWrite: true, allowExec: true });
+
+  it('disallows file writes and command execution from the browser by default', async () => {
+    const config = await configureVitest(
+      { browser: { enabled: true } },
+      { api: loopbackDefaults(), browser: { enabled: true, api: loopbackDefaults() } }
+    );
+
+    expect(config.api).toEqual({ allowWrite: false, allowExec: false });
+    expect(config.browser?.api).toEqual({ allowWrite: false, allowExec: false });
+  });
+
+  it('keeps permissions the user set on api', async () => {
+    const config = await configureVitest(
+      { browser: { enabled: true }, api: { allowWrite: true } },
+      { api: loopbackDefaults(), browser: { enabled: true } }
+    );
+
+    expect(config.api).toEqual({ allowWrite: true, allowExec: false });
+  });
+
+  it('keeps permissions the user set on browser.api, as Vitest 4 reads them', async () => {
+    const config = await configureVitest(
+      { browser: { enabled: true, api: { allowExec: true } } } as InlineConfig,
+      { api: loopbackDefaults(), browser: { enabled: true, api: loopbackDefaults() } }
+    );
+
+    expect(config.api).toEqual({ allowWrite: false, allowExec: true });
+    expect(config.browser?.api).toEqual({ allowWrite: false, allowExec: true });
+  });
+
+  it('leaves permissions alone when browser mode is disabled', async () => {
+    const config = await configureVitest({}, { api: loopbackDefaults() });
+
+    expect(config.api).toEqual(loopbackDefaults());
   });
 });

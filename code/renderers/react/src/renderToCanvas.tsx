@@ -130,7 +130,8 @@ export async function renderToCanvas(
   });
 
   return async () => {
-    await act(() => {
+    // An async callback keeps the act environment enabled until React finishes all queued work.
+    await act(async () => {
       unmountElement(canvasElement);
     });
   };

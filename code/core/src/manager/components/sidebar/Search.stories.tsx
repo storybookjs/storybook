@@ -4,6 +4,7 @@ import type { Meta, StoryFn } from '@storybook/react-vite';
 
 import type { API } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { IconSymbols } from './IconSymbols.tsx';
 import { Search } from './Search.tsx';
@@ -73,6 +74,38 @@ export const LastViewed: StoryFn = () => (
     )}
   </Search>
 );
+
+const escapeAbove = fn().mockName('escapeAbove');
+
+/**
+ * Escape in a field with a query only clears the query, and the press goes no further: in the
+ * mobile menu drawer, an Escape that reaches the drawer closes it. Escape in an empty field still
+ * reaches the ancestors, so the drawer can close.
+ */
+export const EscapeWithQueryStaysInSearch: StoryFn = () => (
+  <div
+    onKeyDown={(event) => {
+      if (event.key === 'Escape') {
+        escapeAbove();
+      }
+    }}
+  >
+    <Search {...baseProps} initialQuery="Foo">
+      {() => null}
+    </Search>
+  </div>
+);
+EscapeWithQueryStaysInSearch.play = async ({ canvasElement }) => {
+  escapeAbove.mockClear();
+  const input = within(canvasElement).getByRole('searchbox');
+  await userEvent.click(input);
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(input).toHaveValue(''));
+  expect(escapeAbove).not.toHaveBeenCalled();
+
+  await userEvent.keyboard('{Escape}');
+  await waitFor(() => expect(escapeAbove).toHaveBeenCalledOnce());
+};
 
 export const ShortcutsDisabled: StoryFn = () => (
   <Search {...baseProps} enableShortcuts={false}>

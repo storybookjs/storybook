@@ -483,13 +483,20 @@ export const Search = React.memo<SearchProps>(function Search({
           },
           onBlur: () => setPlaceholder('Find components'),
           onKeyDown: (e) => {
+            if (e.key !== 'Escape') {
+              return;
+            }
             // @ts-expect-error (non strict)
-            if (e.key === 'Escape' && inputValue.length === 0) {
+            if (inputValue.length === 0) {
               // When pressing escape while the input is empty, blur the input
               // The stateReducer will handle returning to the tree view
               // @ts-expect-error (non strict)
               inputRef.current.blur();
+              return;
             }
+            // Escape with a query only clears the query (see stateReducer). The mobile menu
+            // drawer closes on any Escape that reaches it, so the press must stop here.
+            e.stopPropagation();
           },
         });
 

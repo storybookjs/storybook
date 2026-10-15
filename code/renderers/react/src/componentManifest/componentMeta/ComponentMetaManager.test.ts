@@ -74,6 +74,21 @@ describe('sortTSConfigs', () => {
 });
 
 // ---------------------------------------------------------------------------
+// ComponentMetaManager: TypeScript compiler API guard
+// ---------------------------------------------------------------------------
+
+describe('TypeScript compiler API guard', () => {
+  it('throws a clear error when the resolved `typescript` has no compiler API (e.g. TS 7 preview)', () => {
+    // TypeScript 7's `typescript` package ships only version info from its main entry, so
+    // `import('typescript')` can resolve without `ts.sys`. Constructing with that shape must fail
+    // fast with an actionable message instead of crashing deep in project setup.
+    const versionOnlyTs = { version: '7.0.2', versionMajorMinor: '7.0' } as unknown as typeof ts;
+
+    expect(() => new ComponentMetaManager(versionOnlyTs)).toThrow(/compiler API/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ComponentMetaManager: multi-project scenarios
 // ---------------------------------------------------------------------------
 

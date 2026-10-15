@@ -216,7 +216,7 @@ Two things you must do now, both of them:
 The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.
 👉 [Open the Storybook review page](${reviewUrl})
 
-Now do step 1 first: open ${reviewUrl} in your in-app browser before you write your final response. The user still needs the link above in that response.`);
+Now do step 1: open ${reviewUrl} in your in-app browser. Then write your final response and end it with the three lines above, unchanged: the heading, the sentence and the 👉 link.`);
     });
   });
 

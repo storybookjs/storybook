@@ -1,4 +1,4 @@
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { DocumentScreen } from './your-page.component';
@@ -24,7 +24,7 @@ export const Simple: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './your-page.component';
@@ -73,7 +73,7 @@ export const Simple = meta.story({
 />
 ```
 
-```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import DocumentScreen from './YourPage.svelte';
 
 // 👇 Imports the required stories
@@ -94,7 +94,7 @@ export const Simple = {
 };
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="YourPage.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { DocumentScreen } from './YourPage';
 
 // 👇 Imports the required stories
@@ -141,7 +141,7 @@ export const Simple = {
 />
 ```
 
-```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -168,7 +168,7 @@ export const Simple: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -195,7 +195,7 @@ export const Simple: Story = {
 };
 ```
 
-```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 // 👇 Imports the required stories
 import * as PageLayout from './PageLayout.stories';
 import * as DocumentHeader from './DocumentHeader.stories';
@@ -214,7 +214,7 @@ export const Simple = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports the required stories
@@ -238,7 +238,7 @@ export const Simple: Story = {
 };
 ```
 
-```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Imports the required stories
@@ -259,7 +259,7 @@ export const Simple = meta.story({
 });
 ```
 
-```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Imports the required stories
@@ -280,7 +280,7 @@ export const Simple = meta.story({
 });
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
@@ -305,7 +305,7 @@ export const Simple = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
@@ -328,7 +328,7 @@ export const Simple = meta.story({
 });
 ```
 
-```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourPage.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import DocumentScreen from './YourPage.vue';
@@ -353,7 +353,7 @@ export const Simple = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourPage.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import DocumentScreen from './YourPage.vue';

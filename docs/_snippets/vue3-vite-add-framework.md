@@ -1,11 +1,11 @@
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 export default {
   // ...
   framework: '@storybook/vue3-vite', // 👈 Add this
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/vue3-vite';
 
 const config: StorybookConfig = {
@@ -16,7 +16,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
@@ -27,7 +27,7 @@ export default defineMain({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({

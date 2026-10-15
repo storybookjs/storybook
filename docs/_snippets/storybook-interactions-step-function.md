@@ -1,4 +1,4 @@
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 // ...rest of story file
 
 export const Submitted = {
@@ -15,7 +15,7 @@ export const Submitted = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // ...rest of story file
 
 export const Submitted: Story = {
@@ -32,7 +32,7 @@ export const Submitted: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';
@@ -55,7 +55,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent';
@@ -80,7 +80,7 @@ export const Submitted = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent';
@@ -103,7 +103,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
@@ -128,7 +128,7 @@ export const Submitted = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
@@ -151,7 +151,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -172,7 +172,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({

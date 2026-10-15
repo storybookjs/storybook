@@ -1,4 +1,4 @@
-```tsx filename="Page.stories.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="Page.stories.tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g., react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -32,7 +32,7 @@ export const Basic: Story = {
 };
 ```
 
-```jsx filename="Page.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="Page.stories.jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
 import { Page } from './Page';
@@ -60,7 +60,7 @@ export const Basic = {
 };
 ```
 
-```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF 3"
+```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -94,7 +94,7 @@ export const Basic: Story = {
 };
 ```
 
-```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="Page.stories.tsx" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -189,7 +189,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -223,7 +223,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
 import Page from './Page.vue';
@@ -252,7 +252,7 @@ export const Basic = {
 };
 ```
 
-```tsx filename="Page.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="Page.stories.tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -284,7 +284,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="Page.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="Page.stories.jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
 import db from '../lib/db';
@@ -315,7 +315,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'
@@ -348,7 +348,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Automocked module resolves to '../lib/__mocks__/db'

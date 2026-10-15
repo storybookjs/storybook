@@ -33,7 +33,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/angular';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -53,7 +53,7 @@ const meta: Meta<MyComponent> = {
 export default meta;
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';
@@ -71,7 +71,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';
@@ -87,7 +87,7 @@ export default {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -128,7 +128,7 @@ export default meta;
 </script>
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import MyComponent from './MyComponent.svelte';
@@ -164,7 +164,7 @@ export default {
 </script>
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -185,7 +185,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import MyComponent from './MyComponent.vue';
@@ -201,7 +201,7 @@ export default {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/vue3-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -221,7 +221,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';
@@ -241,7 +241,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';
@@ -259,7 +259,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 export default {
@@ -273,7 +273,7 @@ export default {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/web-components-vite';
 
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
@@ -291,7 +291,7 @@ const meta: Meta = {
 export default meta;
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';
@@ -307,7 +307,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';
@@ -323,7 +323,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';
@@ -343,7 +343,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import preview from '../.storybook/preview';

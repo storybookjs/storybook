@@ -1,4 +1,4 @@
-```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular';
 
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
@@ -37,7 +37,7 @@ export const WithCustomApplicationProvider: Story = {
 }
 ```
 
-```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { applicationConfig } from '@storybook/angular';
 
 import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';

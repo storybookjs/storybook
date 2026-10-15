@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
@@ -28,7 +28,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -83,7 +83,7 @@ export const Basic = meta.story({
 />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 import Page from './Page.svelte';
@@ -108,7 +108,7 @@ export const Basic = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 import { Page } from './Page';
@@ -161,7 +161,7 @@ export const Basic = {
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -192,7 +192,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -223,7 +223,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 export default {
@@ -246,7 +246,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import MockDate from 'mockdate';
@@ -274,7 +274,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -299,7 +299,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -324,7 +324,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -353,7 +353,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -380,7 +380,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -409,7 +409,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';

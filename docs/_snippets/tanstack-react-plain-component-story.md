@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 import { Page } from './Page';
@@ -25,7 +25,7 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';

@@ -1,4 +1,4 @@
-```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -53,7 +53,7 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="List.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -106,7 +106,7 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -145,7 +145,7 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -349,7 +349,7 @@ export const OneItem = {
 />
 ```
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import List from './List.vue';
 import ListItem from './ListItem.vue';
 
@@ -391,7 +391,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
@@ -438,7 +438,7 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="List.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import List from './List.vue';
@@ -479,7 +479,7 @@ export const OneItem = Empty.extend({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="List.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import List from './List.vue';
@@ -518,7 +518,7 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -553,7 +553,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -592,7 +592,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="List.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -624,7 +624,7 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="List.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
@@ -656,7 +656,7 @@ export const OneItem = Empty.extend({
 });
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { List } from './List';
@@ -693,7 +693,7 @@ export const OneItem = Empty.extend({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { List } from './List';

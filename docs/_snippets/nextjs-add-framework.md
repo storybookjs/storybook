@@ -1,4 +1,4 @@
-```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF (Legacy)"
 export default {
   // ...
 -  framework: '@storybook/react-webpack5',
@@ -6,7 +6,7 @@ export default {
 };
 ```
 
-```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 - import type { StorybookConfig } from '@storybook/your-previous-framework';
 + import type { StorybookConfig } from '@storybook/nextjs';
 
@@ -19,7 +19,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 - import { defineMain } from '@storybook/your-previous-framework/node';
 + import { defineMain } from '@storybook/nextjs/node';
 
@@ -32,7 +32,7 @@ export default defineMain({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF"
 - import { defineMain } from '@storybook/your-previous-framework/node';
 + import { defineMain } from '@storybook/nextjs/node';
 

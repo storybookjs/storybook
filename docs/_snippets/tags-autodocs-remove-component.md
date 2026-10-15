@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/angular';
 
 import { Page } from './Page.component';
@@ -11,7 +11,7 @@ const meta: Meta<Page> = {
 export default meta;
 ```
 
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page.component';
@@ -37,7 +37,7 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import Page from './Page.svelte';
 
 export default {
@@ -47,7 +47,7 @@ export default {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { Page } from './Page';
 
 export default {
@@ -71,7 +71,7 @@ export default {
 </script>
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -85,7 +85,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -99,7 +99,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   title: 'Page',
   component: 'demo-page',
@@ -108,7 +108,7 @@ export default {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -120,7 +120,7 @@ const meta: Meta = {
 export default meta;
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -130,7 +130,7 @@ const meta = preview.meta({
 });
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -140,7 +140,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';
@@ -154,7 +154,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';
@@ -166,7 +166,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
@@ -180,7 +180,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Page from './Page.vue';

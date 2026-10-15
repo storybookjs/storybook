@@ -18,7 +18,7 @@
 </script>
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import YourComponent from './YourComponent.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -54,7 +54,7 @@ export default {
 </script>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

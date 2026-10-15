@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/angular';
 
 import { MyComponent } from './my-component.component';
@@ -40,7 +40,7 @@ export default meta;
 </script>
 ```
 
-```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.story.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -93,7 +93,7 @@ export default {
 </script>
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts|tsx" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 

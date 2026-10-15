@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs-vite, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
@@ -14,7 +14,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -28,7 +28,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
@@ -41,7 +41,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({

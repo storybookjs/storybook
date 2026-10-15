@@ -1,4 +1,4 @@
-```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 import type { QueryClient } from '@tanstack/react-query';
 
@@ -24,7 +24,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Navbar.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import type { QueryClient } from '@tanstack/react-query';
 
 import preview from '../.storybook/preview';

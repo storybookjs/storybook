@@ -1,4 +1,4 @@
-```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -13,7 +13,7 @@ export const ChristmasUI = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -28,7 +28,7 @@ export const ChristmasUI: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -71,7 +71,7 @@ export const ChristmasUI = meta.story({
 />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -108,7 +108,7 @@ export const ChristmasUI: Story = {
 />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -123,7 +123,7 @@ export const ChristmasUI = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -146,7 +146,7 @@ export const ChristmasUI = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -167,7 +167,7 @@ export const ChristmasUI = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';
@@ -188,7 +188,7 @@ export const ChristmasUI = meta.story({
 });
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
 
 import preview from '../.storybook/preview';

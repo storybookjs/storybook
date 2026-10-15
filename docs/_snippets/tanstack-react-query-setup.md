@@ -1,4 +1,4 @@
-```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 3"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF (Legacy)"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Preview } from '@storybook/tanstack-react';
 
@@ -38,7 +38,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF"
 import { definePreview } from '@storybook/tanstack-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 

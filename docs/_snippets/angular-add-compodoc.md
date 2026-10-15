@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Preview } from '@storybook/angular';
 
 // 👇 Add these
@@ -13,7 +13,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { definePreview } from '@storybook/angular';
 
 // 👇 Add these

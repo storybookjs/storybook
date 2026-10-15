@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { type Meta, type StoryObj, argsToTemplate } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -35,7 +35,7 @@ export const PrimaryInAlert: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { argsToTemplate } from '@storybook/angular';
 
 import preview from '../.storybook/preview';
@@ -69,7 +69,7 @@ export const PrimaryInAlert = meta.story({
 });
 ```
 
-```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { Alert } from './Alert';
 import { Button } from './Button';
 
@@ -97,7 +97,7 @@ export const PrimaryInAlert = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -131,7 +131,7 @@ export const PrimaryInAlert: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import Alert from './Alert.vue';
 import Button from './Button.vue';
 
@@ -160,7 +160,7 @@ export const PrimaryInAlert = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Alert from './Alert.vue';
@@ -194,7 +194,7 @@ export const PrimaryInAlert: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Alert from './Alert.vue';
@@ -227,7 +227,7 @@ export const PrimaryInAlert = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Alert from './Alert.vue';
@@ -258,7 +258,7 @@ export const PrimaryInAlert = meta.story({
 });
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import html from 'lit';
 
 export default {
@@ -285,7 +285,7 @@ export const PrimaryInAlert = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import html from 'lit';
 
@@ -316,7 +316,7 @@ export const PrimaryInAlert: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import html from 'lit';
 
 import preview from '../.storybook/preview';
@@ -345,7 +345,7 @@ export const PrimaryInAlert = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import html from 'lit';
 
 import preview from '../.storybook/preview';
@@ -374,7 +374,7 @@ export const PrimaryInAlert = meta.story({
 });
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Alert } from './Alert';
@@ -406,7 +406,7 @@ export const PrimaryInAlert = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Alert } from './Alert';

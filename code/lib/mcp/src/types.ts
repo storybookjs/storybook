@@ -87,8 +87,13 @@ export type StorybookContext = {
       context: StorybookContext;
       input: { id: string; storybookId?: string };
     } & (
-      | { foundDocumentation: ComponentManifest | Doc; resultText: string }
-      | { foundDocumentation?: never; resultText?: never }
+      | {
+          foundDocumentation: ComponentManifest | Doc;
+          resultText: string;
+          /** The source the documentation came from, set only when it is not `input.storybookId`. */
+          resolvedStorybookId?: string;
+        }
+      | { foundDocumentation?: never; resultText?: never; resolvedStorybookId?: never }
     )
   ) => void | Promise<void>;
   /**

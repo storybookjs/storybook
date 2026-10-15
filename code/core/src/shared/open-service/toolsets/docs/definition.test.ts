@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { invokeToolsetMethod, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocsAccess } from './access.ts';
@@ -131,7 +131,7 @@ describe('docs.show for an id the requested source does not have', () => {
     );
 
     expect(outcome.ok).toBe(true);
-    expect(outcome.data).toMatchObject({ storybookId: 'remote', requestedStorybookId: 'local' });
+    expect(outcome.data).toMatchObject({ storybookId: 'local', resolvedStorybookId: 'remote' });
     expect(outcome.markdown).toBe(
       `> "switch" is not in source "local"; showing it from source "remote". Pass --storybookId remote on follow-up calls for this source.
 
@@ -193,7 +193,55 @@ Use the npx storybook tools docs list tool to see available components and docum
     );
 
     expect(outcome.ok).toBe(true);
-    expect(outcome.data.storybookId).toBe('remote');
+    expect(outcome.data.resolvedStorybookId).toBe('remote');
+  });
+
+  it('names the sources it could not read when the id is found nowhere', async () => {
+    const privateSource = { id: 'private', title: 'Private', url: 'https://private.example.com' };
+    const unreadable = (error: Error): DocsAccess => ({
+      list: () => Promise.reject(error),
+      resolve: () => Promise.reject(error),
+    });
+    const composed = createDocsToolset({
+      sources: [
+        local,
+        {
+          source: { id: 'offline', title: 'Offline' },
+          access: unreadable(new Error('fetch failed')),
+        },
+        { source: privateSource, access: unreadable(new RequiresOwnMcpError(privateSource)) },
+      ],
+    });
+
+    const outcome = await composed.methods.show.handler(
+      { id: 'switch', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(`Component or Docs Entry not found: "switch" in source "local".
+
+Sources that could not be read:
+- offline: fetch failed
+- private: private, read it through its own MCP endpoint: https://private.example.com/mcp
+
+Use the npx storybook tools docs list tool to see available components and documentation entries.`);
+  });
+
+  it('suggests from the cheaper names listing when a source has one', async () => {
+    const list = vi.fn(docsAccess.list);
+    const composed = createDocsToolset({
+      docsAccess: {
+        ...docsAccess,
+        list,
+        listNames: async () => [{ id: 'button', name: 'Button' }],
+      },
+    });
+
+    const outcome = await composed.methods.show.handler({ id: 'primary-button' }, cliCtx);
+
+    expect(outcome.data.suggestions).toEqual([{ id: 'button', name: 'Button' }]);
+    expect(list).not.toHaveBeenCalled();
   });
 });
 

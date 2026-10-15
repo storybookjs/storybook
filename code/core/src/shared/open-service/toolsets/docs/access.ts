@@ -28,7 +28,26 @@ export type DocsAccess = {
   list(options: { withStoryIds: boolean }): Promise<AllManifests>;
   /** One component or standalone docs entry, fully assembled; undefined when the id is unknown. */
   resolve(id: string): Promise<ResolvedDocsEntry | undefined>;
+  /**
+   * The id and name of every listed entry, where that is cheaper than `list`. Read it through
+   * {@link listEntryNames}, which falls back to `list`.
+   */
+  listNames?(): Promise<EntryName[]>;
 };
+
+export type EntryName = { id: string; name: string };
+
+/** The id and name of every entry a source lists, through its cheaper path when it has one. */
+export async function listEntryNames(access: DocsAccess): Promise<EntryName[]> {
+  if (access.listNames) {
+    return access.listNames();
+  }
+  const manifests = await access.list({ withStoryIds: false });
+  return [
+    ...Object.values(manifests.componentManifest.components),
+    ...Object.values(manifests.docsManifest?.docs ?? {}),
+  ].map(({ id, name }) => ({ id, name }));
+}
 
 /** A listing with no components and no standalone docs. */
 export function emptyManifests(): AllManifests {

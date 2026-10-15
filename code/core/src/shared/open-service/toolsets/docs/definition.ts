@@ -2,7 +2,7 @@ import * as v from 'valibot';
 
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName, type ToolsetMethodId } from '../../toolset-names.ts';
-import type { DocsAccess, ResolvedDocsEntry } from './access.ts';
+import { listEntryNames, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
 import {
   formatComponentManifest,
   formatDocsManifest,
@@ -59,12 +59,14 @@ export type DocsListOutput = {
 export type DocsShowOutput = {
   id: string;
   entry?: ResolvedDocsEntry;
-  /** The source the entry was found in. On a miss, the source that was asked. */
+  /** The source that was asked. */
   storybookId?: string;
-  /** The source the caller asked, set only when the entry was found in another one. */
-  requestedStorybookId?: string;
+  /** The source the entry came from, set only when that is not the one that was asked. */
+  resolvedStorybookId?: string;
   /** Listed entries close to an `id` that resolved to nothing. */
   suggestions?: DocsListedEntry[];
+  /** Sources a miss could not search, with the reason: the id may still be in one of them. */
+  unreadableSources?: { storybookId: string; error: string }[];
   /** Set when the request named no source, or one that does not exist. */
   sourceError?: string;
   /** Set when the named source can only be read through its own MCP endpoint. */
@@ -206,32 +208,47 @@ function formatShowCall({ id, storybookId }: DocsListedEntry, ctx: ToolsetCtx) {
 
 /** Not-found message for an unknown component or docs id. */
 function formatEntryNotFound(
-  { id, storybookId, suggestions }: DocsShowOutput,
+  { id, storybookId, suggestions = [], unreadableSources = [] }: DocsShowOutput,
   ctx: ToolsetCtx
 ): string {
   const suffix = storybookId ? ` in source "${storybookId}"` : '';
   const notFound = `Component or Docs Entry not found: "${id}"${suffix}.`;
   const listHint = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components and documentation entries.`;
-  if (!suggestions?.length) {
+  if (suggestions.length === 0 && unreadableSources.length === 0) {
     return `${notFound} ${listHint}`;
   }
   return [
     notFound,
-    '',
-    'Closest matches:',
-    ...suggestions.map((suggestion) => `- ${suggestion.name}: ${formatShowCall(suggestion, ctx)}`),
+    ...(suggestions.length > 0
+      ? [
+          '',
+          'Closest matches:',
+          ...suggestions.map(
+            (suggestion) => `- ${suggestion.name}: ${formatShowCall(suggestion, ctx)}`
+          ),
+        ]
+      : []),
+    ...(unreadableSources.length > 0
+      ? [
+          '',
+          'Sources that could not be read:',
+          ...unreadableSources.map((source) => `- ${source.storybookId}: ${source.error}`),
+        ]
+      : []),
     '',
     listHint,
   ].join('\n');
 }
 
 function formatResolvedElsewhere(
-  { id, storybookId, requestedStorybookId }: DocsShowOutput,
+  { id, storybookId, resolvedStorybookId }: DocsShowOutput,
   ctx: ToolsetCtx
 ): string {
   const scope =
-    ctx.transport === 'cli' ? `--storybookId ${storybookId}` : `storybookId "${storybookId}"`;
-  return `> "${id}" is not in source "${requestedStorybookId}"; showing it from source "${storybookId}". Pass ${scope} on follow-up calls for this source.`;
+    ctx.transport === 'cli'
+      ? `--storybookId ${resolvedStorybookId}`
+      : `storybookId "${resolvedStorybookId}"`;
+  return `> "${id}" is not in source "${storybookId}"; showing it from source "${resolvedStorybookId}". Pass ${scope} on follow-up calls for this source.`;
 }
 
 /** Pure renderer for `show`; the handler attaches it to both outcome branches. */
@@ -248,7 +265,7 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
         resolution.entry.kind === 'doc'
           ? formatDocsManifest(resolution.entry.doc)
           : formatComponentManifest(resolution.entry.component);
-      return data.requestedStorybookId
+      return data.resolvedStorybookId
         ? `${formatResolvedElsewhere(data, ctx)}\n\n${documentation}`
         : documentation;
     }
@@ -312,12 +329,21 @@ const storybookIdField = {
 
 type SourceAccess = { storybookId?: string; access: DocsAccess };
 
-async function listEntries({ storybookId, access }: SourceAccess): Promise<DocsListedEntry[]> {
-  const manifests = await access.list({ withStoryIds: false }).catch(() => undefined);
-  return [
-    ...Object.values(manifests?.componentManifest.components ?? {}),
-    ...Object.values(manifests?.docsManifest?.docs ?? {}),
-  ].map(({ id, name }) => ({ id, name, storybookId }));
+// The entries a source lists, or, in one line, why it could not be read.
+async function readEntries({
+  storybookId,
+  access,
+}: SourceAccess): Promise<{ storybookId?: string; entries: DocsListedEntry[]; error?: string }> {
+  try {
+    const names = await listEntryNames(access);
+    return { storybookId, entries: names.map((name) => ({ ...name, storybookId })) };
+  } catch (error) {
+    const reason =
+      error instanceof RequiresOwnMcpError
+        ? `private, read it through its own MCP endpoint: ${error.endpoint}`
+        : (error instanceof Error ? error.message : String(error)).split('\n')[0];
+    return { storybookId, entries: [], error: reason };
+  }
 }
 
 // A source that needs its own MCP is an answer to route the agent, not a failed lookup.
@@ -431,7 +457,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     : [{ access: docsAccess! }];
 
   // An id the requested source does not have is shown from the one other source that has it.
-  // Otherwise the closest listed entries are suggested.
+  // Otherwise the closest listed entries are suggested, and every source that could not be read is
+  // named.
   const recoverMissedId = async (
     id: string,
     requestedStorybookId: string | undefined
@@ -447,12 +474,21 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     const hits = lookups.filter(({ entry }) => entry !== undefined);
     if (hits.length === 1) {
       const [{ source, entry }] = hits;
-      return { entry, storybookId: source.storybookId, requestedStorybookId };
+      return { entry, resolvedStorybookId: source.storybookId };
     }
 
-    const candidates = (await Promise.all(sourceAccesses.map(listEntries))).flat();
-    const suggestions = suggestEntries(id, candidates);
-    return suggestions.length > 0 ? { suggestions } : {};
+    const listings = await Promise.all(sourceAccesses.map(readEntries));
+    const suggestions = suggestEntries(
+      id,
+      listings.flatMap(({ entries }) => entries)
+    );
+    const unreadableSources = listings.flatMap(({ storybookId, error }) =>
+      storybookId !== undefined && error !== undefined ? [{ storybookId, error }] : []
+    );
+    return {
+      ...(suggestions.length > 0 ? { suggestions } : {}),
+      ...(unreadableSources.length > 0 ? { unreadableSources } : {}),
+    };
   };
 
   return defineToolset({
@@ -524,7 +560,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
             payload: {
               componentId: id,
               found: data.entry !== undefined,
-              resolvedElsewhere: data.requestedStorybookId !== undefined,
+              resolvedElsewhere: data.resolvedStorybookId !== undefined,
               suggestionCount: data.suggestions?.length ?? 0,
               resultTokenCount: estimateTokens(markdown),
             },

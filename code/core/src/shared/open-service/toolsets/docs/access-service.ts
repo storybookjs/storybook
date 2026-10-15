@@ -6,8 +6,8 @@
  * from the story index, so the listing matches what core's manifest generator would emit — same
  * `manifest` tag filter, same component selection, same order — instead of whatever happens to have
  * been extracted so far. And single-entry lookups use the per-id queries, so resolving one
- * component never triggers docgen extraction for every component. A `docs show` miss still lists the
- * source, to suggest close ids.
+ * component never triggers docgen extraction for every component. The names a `docs show` miss
+ * suggests from come from the story index too.
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
@@ -52,6 +52,12 @@ export type ServiceDocsAccessOptions = {
   getService: ToolsetGetService;
 };
 
+function manifestEntries(index: StoryIndex) {
+  return Object.values(index.entries).filter(
+    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
+  );
+}
+
 /**
  * Derives the visible set from the story index using core's manifest rules.
  *
@@ -59,9 +65,7 @@ export type ServiceDocsAccessOptions = {
  * re-sorting here would silently disagree with every other manifest surface.
  */
 function classifyIndex(index: StoryIndex): DocsClassification {
-  const entries = Object.values(index.entries).filter(
-    (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
-  );
+  const entries = manifestEntries(index);
   const selected = selectComponentEntriesByComponentId(entries);
 
   const storyBasedIds = new Set<string>();
@@ -245,6 +249,17 @@ export function createServiceDocsAccess({
         listDocs(classification),
       ]);
       return toShallowManifests(components, docs);
+    },
+
+    // A component is named by the last segment of its title, the name the React manifest falls back
+    // to, so that suggesting close ids never runs docgen for every component.
+    async listNames() {
+      const index = await storyIndex.getIndex();
+      const components = [...selectComponentEntriesByComponentId(manifestEntries(index))].map(
+        ([id, entry]) => ({ id, name: entry.title.split('/').at(-1)!.replace(/\s+/g, '') })
+      );
+      const docs = [...classifyIndex(index).unattachedDocs].map(([id, name]) => ({ id, name }));
+      return [...components, ...docs];
     },
 
     async resolve(id) {

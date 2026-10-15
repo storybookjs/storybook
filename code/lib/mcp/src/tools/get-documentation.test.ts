@@ -899,6 +899,40 @@ http://remote.example.com/mcp`);
         })
       );
     });
+
+    it('should tell onGetDocumentation which source an entry found elsewhere came from', async () => {
+      served.local = { componentManifest: smallManifestFixture };
+      served.remote = { componentManifest: remoteManifest };
+
+      const handler = vi.fn();
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: GET_TOOL_NAME,
+          arguments: { id: 'badge', storybookId: 'local' },
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      await server.receive(request, {
+        custom: {
+          request: mockHttpRequest,
+          manifestProvider,
+          sources,
+          onGetDocumentation: handler,
+        },
+      });
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: { id: 'badge', storybookId: 'local' },
+          foundDocumentation: expect.objectContaining({ id: 'badge' }),
+          resolvedStorybookId: 'remote',
+        })
+      );
+    });
   });
 
   describe('docs manifest entries', () => {

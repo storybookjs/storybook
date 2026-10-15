@@ -1,0 +1,50 @@
+---
+title: Write secure addons
+sidebar:
+  order: 10
+  title: Security
+---
+
+Addons communicate through the [channel](./addons-api.mdx#addonsgetchannel), which connects the manager, the preview, and, while `storybook dev` runs, the dev server in Node. An event handler on the dev server runs with the developer's permissions, and handlers in the browser can change what the developer sees and clicks. If another page can send your addon's events, it can trigger those handlers too.
+
+Storybook limits which pages can embed and message a dev server (see the [`security`](../api/main-config/main-config-security.mdx) options), and it checks that its own events come from the expected sender. It doesn't check the sender of events that addons define. This page explains how to keep your addon's events from becoming a way in. For background, see the [security advisory](https://github.com/storybookjs/storybook/security/advisories/GHSA-f2ph-cmg5-wxc8) that prompted it.
+
+## Avoid events that change files or the page
+
+The safest event is one that only carries data to display. Be careful with any event whose handler does one of the following:
+
+- Writes, moves, or deletes files.
+- Runs a command or loads code.
+- Adds HTML, links, or interactive elements to the preview or the manager.
+
+Before adding such an event, consider whether the work can happen without one. For example, compute a value when Storybook starts and send the result to the browser, rather than letting the browser ask the server to do the work.
+
+## Only send them from the manager
+
+When an event with side effects is necessary, emit it from the manager in response to a user action, and don't emit it from the preview. The preview runs story code and is easier for other pages to reach than the manager.
+
+Storybook ignores its own events when they come from the wrong page. For example, the dev server only accepts a request to save a story from the manager. Addons can't declare a sender for their events yet, so a handler on the dev server can't tell whether the manager or the preview sent an event. Treat every event a handler receives as though any page could have sent it, and validate it as described below.
+
+## Validate and escape all event input
+
+Check every event payload before acting on it:
+
+- Confirm each field has the type and shape you expect, and ignore the event otherwise.
+- Prefer a fixed list of allowed values over accepting arbitrary strings.
+- Resolve file paths and reject any that point outside the project or at files your addon doesn't own.
+- Never pass event data to a shell, `eval`, or a dynamic `import()`.
+
+For example, a dev server handler that saves notes next to a story file checks the payload, only writes files with the addon's own extension, and keeps them inside the project:
+
+<CodeSnippets path="addon-security-server-channel-validation.md" />
+
+In the browser, escape anything from an event before it reaches the page. Insert text with `textContent` or as a JSX child instead of `innerHTML` or `dangerouslySetInnerHTML`, and only use a URL from an event in a link after parsing it with `new URL()` and checking that its `protocol` is `https:` or `http:`.
+
+**Learn more about the Storybook addon ecosystem**
+
+- [Types of addons](./addon-types.mdx) for other types of addons
+- [Writing addons](./writing-addons.mdx) for the basics of addon development
+- [Presets](./writing-presets.mdx) for preset development
+- [Integration catalog](./integration-catalog.mdx) for requirements and available recipes
+- [API reference](./addons-api.mdx) to learn about the available APIs
+- Security to keep your addon's events safe

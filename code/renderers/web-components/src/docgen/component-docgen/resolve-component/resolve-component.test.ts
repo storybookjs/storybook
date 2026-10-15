@@ -74,9 +74,24 @@ describe('resolveStoryComponent', () => {
       { tag: 'x-new' },
     ],
     [
-      'reads a literal component next to an unreadable spread',
-      `import { shared } from './shared.ts'; export default { component: 'x-tabs', ...shared };`,
+      'reads a literal component written after an unreadable spread',
+      `import { shared } from './shared.ts'; export default { ...shared, component: 'x-tabs' };`,
       { tag: 'x-tabs' },
+    ],
+    [
+      'reads a literal component written after an unreadable spread inside a local meta',
+      `import { shared } from './shared.ts'; const meta = { ...shared, component: 'x-tabs' }; export default { ...meta };`,
+      { tag: 'x-tabs' },
+    ],
+    [
+      'reads a literal component written after an unreadable spread through nested local spreads',
+      `import { shared } from './shared.ts'; const base = { ...shared, component: 'x-tabs' }; const meta = { ...base, tags: ['autodocs'] }; export default { ...meta };`,
+      { tag: 'x-tabs' },
+    ],
+    [
+      'lets a later partly unreadable spread that ends in a literal component win',
+      `import { shared } from './shared.ts'; const meta = { ...shared, component: 'x-new' }; export default { component: 'x-old', ...meta };`,
+      { tag: 'x-new' },
     ],
   ])('%s', (_name, source, expected) => {
     expect(resolveStoryComponent(csf(source))).toEqual(expected);
@@ -112,6 +127,16 @@ describe('resolveStoryComponent', () => {
       'reports a spread of an imported meta',
       `import { meta } from './meta.ts'; export default { ...meta, tags: ['autodocs'] };`,
       { reason: 'unresolvable-meta-spread', spread: '...meta' },
+    ],
+    [
+      'reports an imported spread written after a literal component',
+      `import { shared } from './shared.ts'; export default { component: 'x-tabs', ...shared };`,
+      { reason: 'unresolvable-meta-spread', spread: '...shared' },
+    ],
+    [
+      'reports an imported spread written after a literal component inside a local meta',
+      `import { shared } from './shared.ts'; const meta = { component: 'x-tabs', ...shared }; export default { ...meta };`,
+      { reason: 'unresolvable-meta-spread', spread: '...shared' },
     ],
     [
       'reports a spread of a call',

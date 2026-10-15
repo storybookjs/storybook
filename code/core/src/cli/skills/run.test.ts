@@ -98,6 +98,13 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
+  it('component-docs prints the same text for every project, without loading config', async () => {
+    const d = deps();
+    const result = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
+    expect(result.output).toContain('# Storybook component docs');
+    expect(d.loadStorybook).not.toHaveBeenCalled();
+  });
+
   it('ui-workflow prints the workflow with CLI commands', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
@@ -145,6 +152,7 @@ describe('runSkillsCommand', () => {
       { tokens: ['component-docs'], mcp: true, target: {} },
       d
     );
+    expect(componentDocs.output).toContain('skip a step whose tool the server does not list');
     expect(componentDocs.output).toContain('`docs-list`: every component and docs page');
     expect(componentDocs.output).toContain('`npx storybook skills ui-workflow --mcp`');
     expect(componentDocs.output).not.toContain('npx storybook tools');

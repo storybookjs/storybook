@@ -68,7 +68,11 @@ export function registerSkillsCommand(
         await recordSetupRun(result.setupRun);
       }
       if (result.skill) {
-        await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
+        await telemetry(
+          'skills-get',
+          { skill: result.skill, ...(options.mcp ? { mcp: true } : {}) },
+          { configDir: cliOptions.configDir }
+        );
       }
     };
     if (intent.kind === 'catalog') {

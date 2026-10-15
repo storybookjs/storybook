@@ -297,7 +297,7 @@ describe('buildUiWorkflowSkill full text', () => {
     expect(buildUiWorkflowSkill({ ...everything, transport: 'mcp' })).toMatchInlineSnapshot(`
       "# Storybook UI workflow
 
-      Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps, for example without the review, skip those steps, but always look up the components first. The tools named here are the tools of the Storybook MCP server. Some return what to do next; follow that too.
+      Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps, for example without the review, skip those steps, but always look up the components first. The tools named here are the tools of the Storybook MCP server; skip a step whose tool the server does not list. Some tools return what to do next; follow that too.
 
       ## Look up components first
 

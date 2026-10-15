@@ -1,6 +1,6 @@
 Create a new `StatusPill` UI component and Storybook stories.
 
-Before writing stories, run `npx storybook skills ui-workflow --mcp` and follow its output.
+Before writing stories, get Storybook's UI workflow instructions and follow them.
 
 Requirements:
 

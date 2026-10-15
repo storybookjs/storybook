@@ -25,8 +25,8 @@ const withSection = (content: string | undefined, section: string) =>
   content?.trim() ? `${content.trimEnd()}\n\n${section}` : section;
 
 // The new content of each file to write, keyed by its path relative to the project root. `read`
-// resolves to `undefined` for a file that does not exist. `section` is the skills section by
-// default; a project that uses the Storybook MCP server gets the server instructions instead.
+// resolves to `undefined` for a file that does not exist. `section` replaces the skills section,
+// for example with the MCP server instructions in the MCP evals.
 export async function planStorybookAgentInstructions(
   read: (file: string) => Promise<string | undefined>,
   section = STORYBOOK_AGENT_INSTRUCTIONS

@@ -1,4 +1,4 @@
-import { componentLookup } from './build-component-docs-skill.ts';
+import { componentLookup, MCP_TOOLS_NOTE } from './build-component-docs-skill.ts';
 import {
   type SkillTextTransport,
   type SkillVocabulary,
@@ -169,7 +169,7 @@ export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
   const v = skillVocabulary(inputs.transport);
   const nextSteps = v.cli
     ? 'Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.'
-    : 'The tools named here are the tools of the Storybook MCP server. Some return what to do next; follow that too.';
+    : `${MCP_TOOLS_NOTE} Some tools return what to do next; follow that too.`;
   return [
     `# Storybook UI workflow
 

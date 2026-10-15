@@ -100,7 +100,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.result).toHaveProperty('tools');
 			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(9);
+			expect(response.result.tools).toHaveLength(8);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[

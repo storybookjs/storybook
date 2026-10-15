@@ -157,9 +157,12 @@ async function serveSkills(
       const setup = await serveSetup(configDir, deps);
       docs.push(setup.markdown);
       setupRun = setup.run;
+    } else if (id === 'component-docs') {
+      // The same text for every project, so it needs no configuration.
+      docs.push(buildComponentDocsSkill(transport));
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(assemble(id, inputs, transport));
+      docs.push(assembleUiWorkflow(inputs, transport));
     }
   }
   return { docs, setupRun };
@@ -221,21 +224,14 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
-function assemble(
-  id: 'ui-workflow' | 'component-docs',
-  inputs: SkillInputs,
-  transport: SkillTextTransport
-): string {
-  if (id === 'component-docs') {
-    return buildComponentDocsSkill(transport);
-  }
+function assembleUiWorkflow(inputs: SkillInputs, transport: SkillTextTransport): string {
   return buildUiWorkflowSkill({
     transport,
     framework: inputs.framework,
     csfFactories: inputs.csfFactories,
     previewFile: inputs.previewFile,
     typescript: inputs.typescript,
-    // The MCP docs tools also need the `componentsManifest` opt-in; the CLI commands only manifests.
+    // The MCP docs tools also need the `componentsManifest` opt-in; the CLI commands only need manifests.
     docsEnabled: transport === 'mcp' ? inputs.docsEnabled : inputs.docsEnabledForCli,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,

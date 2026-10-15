@@ -170,8 +170,8 @@ These four are the default set: a bare `yarn eval`, which is what CI runs, runs 
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
 - `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
 - `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort). Its Codex system prompt says not to run tests unless asked, so evals do not require it to run the story tests itself.
-- `cc-mcp-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with the Storybook MCP config.
-- `codex-mcp-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with the Storybook MCP config.
+- `cc-mcp-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with the Storybook MCP config and server instructions in `AGENTS.md`.
+- `codex-mcp-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with the Storybook MCP config and server instructions in `AGENTS.md`.
 
 ## Running evals in CI
 

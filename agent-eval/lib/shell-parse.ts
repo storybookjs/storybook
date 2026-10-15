@@ -1,4 +1,4 @@
-// Pure shell-command parsing for plugin-path workflow scoring: no vitest, no
+// Pure shell-command parsing for workflow scoring: no vitest, no
 // filesystem access. This file is copied into eval sandboxes next to
 // test-utils.ts, so it must stay dependency-free.
 
@@ -12,9 +12,14 @@ export type StorybookWorkflowCall = {
 
 // Assertions ask for the workflow document as `ui-workflow`: `storybook skills
 // ui-workflow`, with or without `--mcp`, its earlier name `write-story`, or
-// `--all` serve it.
+// `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
+// it as the get-storybook-story-instructions tool; drop that name once 11 is
+// the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
+    return true;
+  }
+  if (name === 'ui-workflow' && call.name === 'get-storybook-story-instructions') {
     return true;
   }
   return (
@@ -28,6 +33,7 @@ export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
   'docs-list',
   'docs-show',
   'docs-show-story',
+  'get-storybook-story-instructions',
   'review-create',
   'stories-changed',
   'stories-find-by-component',

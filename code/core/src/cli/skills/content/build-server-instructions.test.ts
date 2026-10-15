@@ -39,7 +39,7 @@ describe('buildServerInstructions', () => {
       - \`npx storybook skills ui-workflow --mcp\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
       - \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
 
-      When you publish a review with **review-create**, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
+      When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
   });
 
@@ -57,20 +57,22 @@ describe('buildServerInstructions', () => {
     expect(instructions).not.toContain('component-docs');
   });
 
-  it('names test-run itself when the workflow tool is off', () => {
+  it('names test-run itself when the dev toolset is off', () => {
     const instructions = buildServerInstructions({
       devEnabled: false,
       testSupported: true,
       docsEnabled: false,
     });
 
-    expect(instructions).toContain('For this task, call its Storybook tool first');
-    expect(instructions).toContain('- **test-run**: you run or fix story tests.');
+    expect(instructions).toContain(
+      'For this task, call its Storybook tool first, before you edit any file, and follow its result.'
+    );
+    expect(instructions).toContain('- `test-run`: you run or fix story tests.');
     expect(instructions).not.toContain('npx storybook skills');
     expect(instructions).not.toContain('review-create');
   });
 
-  it('names only the docs tools for docs only', () => {
+  it('names only the component-docs skill for docs only', () => {
     const instructions = buildServerInstructions({
       devEnabled: false,
       testSupported: false,

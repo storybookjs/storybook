@@ -41,6 +41,8 @@ export default {
     'useTransition',
     'version',
   ],
+  'react/jsx-runtime': ['Fragment', 'jsx', 'jsxs'],
+  'react/jsx-dev-runtime': ['Fragment', 'jsxDEV'],
   'react-dom': [
     '__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED',
     'createPortal',
@@ -347,7 +349,6 @@ export default {
     'isShortcutTaken',
     'keyToSymbol',
     'merge',
-    'mockChannel',
     'optionOrAltSymbol',
     'registerService',
     'shortcutMatchesShortcut',

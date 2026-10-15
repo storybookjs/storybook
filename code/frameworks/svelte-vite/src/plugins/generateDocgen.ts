@@ -9,7 +9,7 @@ export type Docgen = {
   props: PropInfo[];
 };
 
-export type PropInfo = {
+type PropInfo = {
   name: string;
   type?: Type;
   optional?: boolean;

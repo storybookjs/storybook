@@ -9,6 +9,7 @@ import {
   getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
@@ -36,7 +37,10 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   test.skipIf(codexMcpGap)(
     'runs story tests after the change and finishes with them passing',
     async () => {
-      await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+      await expectStoryTestsRanAndPassed({
+        requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+        covering: ['badge', 'statuspill'],
+      });
     }
   );
 

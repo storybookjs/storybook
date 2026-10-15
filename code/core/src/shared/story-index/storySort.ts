@@ -44,8 +44,8 @@ const nextOrderList = (order: Addon_StorySortOrder, name: string): Addon_StorySo
   return index !== -1 && Array.isArray(next) ? next : [];
 };
 
-const configureOrAlphabeticalSort =
-  (options: Addon_StorySortObjectParameter): Addon_StorySortComparatorV7 =>
+export const storySort =
+  (options: Addon_StorySortObjectParameter = {}): Addon_StorySortComparatorV7 =>
   (a: IndexEntry, b: IndexEntry): number => {
     // If the two stories have the same story kind, then use the default
     // ordering, which is the order they are defined in the story file.
@@ -56,11 +56,16 @@ const configureOrAlphabeticalSort =
 
     // Get the StorySortParameter options.
     const method = options.method || 'configure';
+    // 'alphabetical-by-kind': at every level of the title tree, folders sort
+    // before files, which sort before story names.
+    const groupsFirst = method === 'alphabetical-by-kind';
     let order = options.order || [];
 
     // Examine each part of the story title in turn.
     const storyTitleA = a.title.trim().split(STORY_KIND_PATH_SEPARATOR);
     const storyTitleB = b.title.trim().split(STORY_KIND_PATH_SEPARATOR);
+    const lastTitleDepthA = storyTitleA.length - 1;
+    const lastTitleDepthB = storyTitleB.length - 1;
     if (options.includeNames) {
       storyTitleA.push(a.name);
       storyTitleB.push(b.name);
@@ -68,6 +73,18 @@ const configureOrAlphabeticalSort =
 
     let depth = 0;
     while (storyTitleA[depth] || storyTitleB[depth]) {
+      // Grouping folders first puts a continuing title ('a / b') before one that
+      // ends here ('a'). This runs before `order` so an appended story name is
+      // never weighed against a title segment: names compare only once both
+      // titles have ended.
+      if (groupsFirst) {
+        const titleEndedA = depth > lastTitleDepthA;
+        const titleEndedB = depth > lastTitleDepthB;
+        if (titleEndedA !== titleEndedB) {
+          return titleEndedA ? 1 : -1;
+        }
+      }
+
       // Stories with a shorter depth should go first.
       if (!storyTitleA[depth]) {
         return -1;
@@ -85,8 +102,16 @@ const configureOrAlphabeticalSort =
           return byOrder;
         }
 
-        // Use the default configure() order.
-        if (method === 'configure') {
+        // Rank the segment by its position in its own entry: folder (-1), the
+        // title's last segment (0), or an appended story name (1). Names only
+        // meet names here, since the title-ended check above already decided.
+        if (groupsFirst) {
+          const byRank = Math.sign(depth - lastTitleDepthA) - Math.sign(depth - lastTitleDepthB);
+          if (byRank !== 0) {
+            return byRank;
+          }
+        } else if (method === 'configure') {
+          // Use the default configure() order.
           return 0;
         }
 
@@ -108,94 +133,3 @@ const configureOrAlphabeticalSort =
     /* istanbul ignore next */
     return 0;
   };
-
-// 'alphabetical-by-kind': at every level of the title tree, folders sort before
-// files and each class sorts alphabetically. Folder-ness comes from the entry's
-// own title — a segment with further segments after it is a folder position.
-const alphabeticalByKindSort = (
-  options: Addon_StorySortObjectParameter
-): Addon_StorySortComparatorV7 => {
-  // Pre-split each title once per sort instead of once per comparison.
-  const segmentsByTitle = new Map<string, string[]>();
-  const titleSegments = (title: string): string[] => {
-    let segments = segmentsByTitle.get(title);
-    if (segments === undefined) {
-      // Skip empty segments like the tree builder does; a trailing slash is
-      // rejected at render time but can still reach the comparator.
-      segments = title.trim().split(STORY_KIND_PATH_SEPARATOR).filter(Boolean);
-      segmentsByTitle.set(title, segments);
-    }
-    return segments;
-  };
-
-  return (a: IndexEntry, b: IndexEntry): number => {
-    if (a.title === b.title && !options.includeNames) {
-      return 0;
-    }
-
-    let order = options.order || [];
-    const storyTitleA = titleSegments(a.title);
-    const storyTitleB = titleSegments(b.title);
-
-    let depth = 0;
-    while (storyTitleA[depth] || storyTitleB[depth]) {
-      // A title ending here holds a file position at the shared segment while
-      // the continuing title holds a folder position there, so the continuing
-      // title sorts first — 'a / b' precedes 'a'.
-      if (!storyTitleA[depth]) {
-        return 1;
-      }
-      if (!storyTitleB[depth]) {
-        return -1;
-      }
-
-      // Compare the next part of the story title.
-      const nameA = storyTitleA[depth];
-      const nameB = storyTitleB[depth];
-      if (nameA !== nameB) {
-        const byOrder = compareByOrder(order, nameA, nameB);
-        if (byOrder !== undefined) {
-          return byOrder;
-        }
-
-        // At the first divergence, a folder segment beats a file segment.
-        const folderA = depth < storyTitleA.length - 1;
-        const folderB = depth < storyTitleB.length - 1;
-        if (folderA !== folderB) {
-          return folderA ? -1 : 1;
-        }
-
-        return nameA.localeCompare(nameB, options.locales ? options.locales : undefined, {
-          numeric: true,
-          sensitivity: 'accent',
-        });
-      }
-
-      order = nextOrderList(order, nameA);
-      depth += 1;
-    }
-
-    // Titles fully match: story names are file positions and compare only now
-    // that both entries reached this depth. Without includeNames, the shortcut
-    // at the top already handled equal titles.
-    if (options.includeNames) {
-      const byOrder = compareByOrder(order, a.name, b.name);
-      if (byOrder !== undefined) {
-        return byOrder;
-      }
-      return a.name.localeCompare(b.name, options.locales ? options.locales : undefined, {
-        numeric: true,
-        sensitivity: 'accent',
-      });
-    }
-
-    return 0;
-  };
-};
-
-export const storySort = (
-  options: Addon_StorySortObjectParameter = {}
-): Addon_StorySortComparatorV7 =>
-  options.method === 'alphabetical-by-kind'
-    ? alphabeticalByKindSort(options)
-    : configureOrAlphabeticalSort(options);

@@ -618,13 +618,8 @@ export const baseTemplates = {
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
-    // TODO: Remove `--min-release-age=0`, `minAgeGateExemptions` and `inDevelopment` once the
-    // published sandbox has SvelteKit 3. SvelteKit 3 and the `sv` release that scaffolds it are
-    // younger than the sandbox age gate, and npx ignores `minAgeGateExemptions`.
     script:
-      'npx --min-release-age=0 sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
-    minAgeGateExemptions: ['@sveltejs/kit', '@sveltejs/adapter-auto'],
-    inDevelopment: true,
+      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
     expected: {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
@@ -730,6 +725,16 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      mainConfig: {
+        framework: {
+          name: '@storybook/web-components-vite',
+          options: {
+            customElementsManifest: [
+              '../src/stories/renderers/web-components/custom-elements.json',
+            ],
+          },
+        },
+      },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
@@ -745,6 +750,22 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      // The renderer turns the docgen server on by default; the components manifest brings this
+      // template into docgen baseline coverage, see `docgenServerTemplates`.
+      mainConfig: {
+        framework: {
+          name: '@storybook/web-components-vite',
+          options: {
+            customElementsManifest: [
+              '../src/stories/renderers/web-components/custom-elements.json',
+              '../src/stories/renderers/web-components_lit-vite-default-ts/custom-elements.json',
+            ],
+          },
+        },
+        features: {
+          componentsManifest: true,
+        },
+      },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
@@ -1094,6 +1115,7 @@ export const enablesDocgenServer = (key: string, template: Template): boolean =>
   const supported =
     template.expected.renderer === '@storybook/react' ||
     template.expected.renderer === '@storybook/vue3' ||
+    template.expected.renderer === '@storybook/web-components' ||
     template.expected.framework === '@storybook/angular-vite';
   return supported && features?.componentsManifest === true && features.docgenServer !== false;
 };

@@ -11,7 +11,11 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script.ts';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script.ts';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel.ts';
 import { transformIframeHtml } from '../transform-iframe-html.ts';
-import { bundlerOptionsKey, ensureRolldownOptions } from '../utils/vite-features.ts';
+import {
+  applyChunkedPreviewRuntime,
+  bundlerOptionsKey,
+  ensureRolldownOptions,
+} from '../utils/vite-features.ts';
 import {
   SB_VIRTUAL_FILES,
   SB_VIRTUAL_FILE_IDS,
@@ -57,6 +61,9 @@ export function codeGeneratorPlugin(options: Options) {
 
         // necessary rolldown specific overrides
         ensureRolldownOptions(config);
+        if (options.features?.experimentalChunkedPreviewRuntime) {
+          applyChunkedPreviewRuntime(config);
+        }
       }
     },
     configResolved(config) {

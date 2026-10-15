@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact",
-  "version": "11.0.0-alpha.5",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook Preact renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -45,7 +45,7 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "preact": "^11.0.0",

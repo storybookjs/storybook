@@ -1,6 +1,6 @@
 {
   "name": "@storybook/code",
-  "version": "11.0.0-alpha.5",
+  "version": "11.0.0-alpha.6",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -117,7 +117,7 @@
     "sort-package-json": "^4.0.0",
     "storybook": "workspace:^",
     "storybook-addon-pseudo-states": "workspace:*",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3",
     "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^11.1.0",

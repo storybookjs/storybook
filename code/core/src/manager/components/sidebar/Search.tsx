@@ -53,7 +53,6 @@ const options = {
 const SearchBar = styled.div({
   display: 'flex',
   flexDirection: 'row',
-  columnGap: 6,
 });
 
 const ScreenReaderLabel = styled.label({

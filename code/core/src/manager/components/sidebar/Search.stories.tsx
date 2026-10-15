@@ -53,8 +53,6 @@ const baseProps: Omit<SearchProps, 'children'> = {
 
 export const Simple: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
 
-export const SimpleWithCreateButton: StoryFn = () => <Search {...baseProps}>{() => null}</Search>;
-
 export const FilledIn: StoryFn = () => (
   <Search {...baseProps} initialQuery="Foo bar">
     {() => <SearchResults {...noResults} />}

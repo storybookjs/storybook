@@ -1,8 +1,46 @@
-import { types as t } from 'storybook/internal/babel';
+import { generate, types as t } from 'storybook/internal/babel';
 import { isCsfFactoryCall, keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import { SaveStoryError } from './utils.ts';
 import { valueToAST } from './valueToAST.ts';
+
+const isCopySafeSpread = (node: t.Node): boolean => {
+  const expression = unwrapExpression(node);
+  if (
+    t.isIdentifier(expression) ||
+    (t.isLiteral(expression) && !t.isTemplateLiteral(expression)) ||
+    t.isArrowFunctionExpression(expression) ||
+    t.isFunctionExpression(expression)
+  ) {
+    return true;
+  }
+  if (t.isMemberExpression(expression) || t.isOptionalMemberExpression(expression)) {
+    return !expression.computed && isCopySafeSpread(expression.object);
+  }
+  if (t.isObjectExpression(expression)) {
+    return expression.properties.every((property) => {
+      if (t.isSpreadElement(property)) {
+        return isCopySafeSpread(property.argument);
+      }
+      if (
+        property.computed &&
+        !t.isStringLiteral(property.key) &&
+        !t.isNumericLiteral(property.key)
+      ) {
+        return false;
+      }
+      return t.isObjectMethod(property)
+        ? property.kind !== 'get'
+        : isCopySafeSpread(property.value);
+    });
+  }
+  if (t.isArrayExpression(expression)) {
+    return expression.elements.every(
+      (element) => !element || (!t.isSpreadElement(element) && isCopySafeSpread(element))
+    );
+  }
+  return false;
+};
 
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
   const args = Object.fromEntries(
@@ -41,25 +79,10 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
     const spreads = properties
       .slice(argsIndex + 1)
       .filter((property) => t.isSpreadElement(property));
-    if (
-      spreads.some((property) => {
-        const skippedNodes = new Set<t.Node>();
-        return t.traverseFast(property.argument, (node) => {
-          if (skippedNodes.has(node)) {
-            return t.traverseFast.skip;
-          }
-          if (t.isCallExpression(node) || t.isOptionalCallExpression(node)) {
-            return t.traverseFast.stop;
-          }
-          if (t.isFunction(node) && !(t.isObjectMethod(node) && node.kind === 'get')) {
-            skippedNodes.add(node.body);
-            node.params.forEach((param) => skippedNodes.add(param));
-          }
-        });
-      })
-    ) {
+    const unsafeSpread = spreads.find((property) => !isCopySafeSpread(property.argument));
+    if (unsafeSpread) {
       throw new SaveStoryError(
-        'Saving args for stories with function-call spreads is not supported'
+        `Cannot save args: the spread \`${generate(unsafeSpread).code}\` cannot be copied safely. Add an \`args\` property after it, or edit args manually.`
       );
     }
 

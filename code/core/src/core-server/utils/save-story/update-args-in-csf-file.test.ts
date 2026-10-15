@@ -506,13 +506,35 @@ describe.each([
     '...(useFactory ? makeBase() : Base)',
     '...{ [makeKey()]() {} }',
     '...{ get args() { return makeBase().args; } }',
-  ])('rejects saving through a function-call spread: %s', async (properties) => {
-    const node = parser.parseExpression(story(`{ ${properties} }`), { plugins: ['typescript'] });
+    '...new Factory()',
+    '...tag`base`',
+    '...(Base = Override)',
+    '...(index++, Base)',
+    '...(await Base)',
+    '...Base[key]',
+    '...{ args: { value: new Factory() } }',
+    '...{ args: { values: [makeBase()] } }',
+    '...{ args: { value: `${makeBase()}` } }',
+  ])('rejects saving through an unsafe spread: %s', async (properties) => {
+    const node = parser.parseExpression(story(`{ ${properties} }`), {
+      plugins: ['typescript'],
+      allowAwaitOutsideFunction: true,
+    });
     const before = generate(node).code;
 
     await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(SaveStoryError);
 
     expect(generate(node).code).toBe(before);
+  });
+
+  test('explains which spread prevents saving and how to proceed', async () => {
+    const node = parser.parseExpression(story('{ ...makeBase().input }'), {
+      plugins: ['typescript'],
+    });
+
+    await expect(updateArgsInCsfFile(node, { label: 'saved' })).rejects.toThrow(
+      'Cannot save args: the spread `...makeBase().input` cannot be copied safely. Add an `args` property after it, or edit args manually.'
+    );
   });
 
   test.each([
@@ -569,6 +591,13 @@ describe.each([
       inheritedArgs,
     ],
     ['inherits args from a single spread', '...Base', { size: 'large', baseOnly: true }],
+    ['inherits args from a typed spread', '...(Base as Story)', { size: 'large', baseOnly: true }],
+    ['inherits args from a nested spread', '...{ ...Base }', { size: 'large', baseOnly: true }],
+    [
+      'preserves arrays in literal args',
+      '...{ args: { options: ["a", "b"] } }',
+      { options: ['a', 'b'] },
+    ],
     [
       'preserves quoted args before a spread',
       '"args": { "size": "small" }, ...WithoutArgs',

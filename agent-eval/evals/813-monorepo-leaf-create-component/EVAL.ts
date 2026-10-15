@@ -3,8 +3,6 @@ import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectPreviewOpenedInBrowser,
-  expectPreviewStoriesWithFinalLinks,
   expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
@@ -12,7 +10,7 @@ import {
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  isReviewEnabled,
+  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('creating a Callout in a monorepo UI package', () => {
@@ -20,8 +18,6 @@ describe('creating a Callout in a monorepo UI package', () => {
   // every Storybook CLI command to the package where Storybook is installed,
   // which avoids the degraded help output at the monorepo root (historical
   // context: storybookjs/storybook#35359).
-
-  const review = isReviewEnabled();
 
   test('creates the component inside the leaf package', () => {
     expect(
@@ -31,37 +27,28 @@ describe('creating a Callout in a monorepo UI package', () => {
   });
 
   test('runs story tests after the change and finishes with them passing', async () => {
-    await expectStoryTestsRanAndPassed({ covering: ['callout'], cwd: 'packages/ui' });
-  });
-
-  describe.runIf(review)('when review is enabled', () => {
-    test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-      expectDisplayReviewForVisualChange();
-    });
-
-    test('opens the review in the in-app browser', () => {
-      expectReviewOpenedInBrowser();
-    });
-
-    test('the review covers the new Callout stories', () => {
-      expectStoryIdsInDisplayReview(['callout']);
-    });
-
-    test('discovers stories through the workflow tools before publishing the review', () => {
-      expectStoryDiscoveryBeforeReview();
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['callout'],
+      cwd: 'packages/ui',
     });
   });
 
-  describe.runIf(!review)('when review is disabled', () => {
-    test('uses Storybook story instructions and previews the new stories', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions']);
-      expectPreviewStoriesWithFinalLinks({ covering: ['callout'] });
-    });
+  test('uses Storybook story instructions and publishes a display review', () => {
+    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectDisplayReviewForVisualChange();
+  });
 
-    test('opens a story preview in the in-app browser', () => {
-      expectPreviewOpenedInBrowser();
-    });
+  test('opens the review in the in-app browser', () => {
+    expectReviewOpenedInBrowser();
+  });
+
+  test('the review covers the new Callout stories', () => {
+    expectStoryIdsInDisplayReview(['callout']);
+  });
+
+  test('discovers stories through the workflow tools before publishing the review', () => {
+    expectStoryDiscoveryBeforeReview();
   });
 
   describe('depending on the current agent and integration', () => {

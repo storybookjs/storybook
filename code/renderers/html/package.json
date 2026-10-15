@@ -1,6 +1,6 @@
 {
   "name": "@storybook/html",
-  "version": "11.0.0-alpha.2",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook HTML renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -45,7 +45,7 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "typescript": "^6.0.3"

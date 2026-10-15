@@ -160,6 +160,13 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 
+// Brackets make a ternary input fail when either branch is not strict.
+type StrictInputContract<TInput> = [TInput] extends [{ '~standard': { vendor: 'valibot' } }]
+  ? [TInput] extends [{ type: 'strict_object' }]
+    ? unknown
+    : 'Declare toolset inputs with v.strictObject so undeclared arguments are rejected'
+  : unknown;
+
 /**
  * Second contextual-typing pass for the methods literal: `handler` input comes from that method's
  * own `input`, and its outcome data from the method's `output` where one is declared — so
@@ -169,6 +176,7 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
  */
 type MethodContracts<TMethods extends ToolsetMethods> = {
   [TKey in keyof TMethods]: {
+    input: StrictInputContract<TMethods[TKey]['input']>;
     handler: (
       input: StandardSchemaV1.InferOutput<TMethods[TKey]['input']>,
       context: ToolsetCtx
@@ -176,14 +184,28 @@ type MethodContracts<TMethods extends ToolsetMethods> = {
   };
 };
 
+/**
+ * Types each method's handler from its own `input` and `output` schemas.
+ *
+ * @throws When a valibot method `input` is not a `v.strictObject`.
+ */
 export function defineToolset<
   const TId extends string,
   const TMethods extends ToolsetMethods,
 >(definition: {
   id: TId;
   description: string;
-  methods: TMethods & MethodContracts<TMethods>;
+  methods: MethodContracts<TMethods> & TMethods;
 }): ToolsetDefinition<TId, TMethods> {
+  for (const [methodName, method] of Object.entries(definition.methods)) {
+    const input: AnySchema & { type?: unknown } = method.input;
+    if (input['~standard'].vendor === 'valibot' && input.type !== 'strict_object') {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable toolsets-docs path
+      throw new Error(
+        `Toolset method "${definition.id}.${methodName}" must declare its input with v.strictObject, got a valibot "${String(input.type)}" schema. Undeclared arguments would otherwise be silently dropped or passed through instead of rejected.`
+      );
+    }
+  }
   return definition;
 }
 

@@ -6,10 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
 
+import type { ProjectInfo } from './project-info.ts';
+import { recordSetupRun } from './record-setup-run.ts';
 import { registerSkillsCommand } from './register.ts';
 import { runSkillsCommand } from './run.ts';
 
 vi.mock('./run.ts', { spy: true });
+vi.mock('./record-setup-run.ts', () => ({ recordSetupRun: vi.fn() }));
 vi.mock('storybook/internal/core-server', () => ({
   withTelemetry: vi.fn(async (_event, _options, run: () => Promise<unknown>) => run()),
   experimental_loadStorybook: vi.fn(),
@@ -97,6 +100,27 @@ describe('registerSkillsCommand', () => {
       all: true,
     });
     expect(telemetry).toHaveBeenCalledWith('skills-get', { skill: 'all' }, expect.anything());
+  });
+
+  it('records the setup run when the setup skill was served', async () => {
+    const setupRun = { projectInfo: { configDir: '.storybook' } as ProjectInfo, prompt: 'setup' };
+    vi.mocked(runSkillsCommand).mockResolvedValue({
+      output: '# Storybook Setup',
+      exitCode: 0,
+      skill: 'setup',
+      setupRun,
+    });
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'setup']);
+
+    expect(recordSetupRun).toHaveBeenCalledWith(setupRun);
+  });
+
+  it('does not record a setup run for other skills', async () => {
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'stories']);
+
+    expect(recordSetupRun).not.toHaveBeenCalled();
   });
 
   it('does not intercept `help` as commander help', async () => {

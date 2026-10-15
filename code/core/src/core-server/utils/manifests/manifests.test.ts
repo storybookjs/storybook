@@ -57,10 +57,7 @@ describe('manifests', () => {
     return registerService(testMdxServiceDef);
   };
 
-  const setupMockPresets = (options?: {
-    componentsManifest?: boolean;
-    experimentalDocgenServer?: boolean;
-  }) => {
+  const setupMockPresets = (options?: { componentsManifest?: boolean; docgenServer?: boolean }) => {
     mockGetIndex = vi.fn<() => Promise<StoryIndex>>().mockResolvedValue({
       entries: {},
     } as StoryIndex);
@@ -77,7 +74,7 @@ describe('manifests', () => {
           case 'features':
             return Promise.resolve({
               componentsManifest: options?.componentsManifest ?? true,
-              experimentalDocgenServer: options?.experimentalDocgenServer ?? false,
+              docgenServer: options?.docgenServer ?? false,
             });
           default:
             return Promise.resolve(undefined);
@@ -139,7 +136,7 @@ describe('manifests', () => {
       );
     });
 
-    it('writes legacy inline components.json with array-shaped stories when experimentalDocgenServer is disabled', async () => {
+    it('writes legacy inline components.json with array-shaped stories when docgenServer is disabled', async () => {
       mockManifests = {
         components: {
           v: 0,
@@ -331,10 +328,10 @@ describe('manifests', () => {
       expect(entryIds).not.toContain('story-without-manifest');
     });
 
-    it('writes ref-based components.json when experimentalDocgenServer is enabled', async () => {
+    it('writes ref-based components.json when docgenServer is enabled', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -461,7 +458,7 @@ describe('manifests', () => {
     it('includes a componentless component in components.html, matching components.json', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -539,7 +536,7 @@ describe('manifests', () => {
     it('writes shallow MDX refs and renders HTML from MDX service snapshots', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -746,10 +743,10 @@ describe('manifests', () => {
         expect(res.end).toHaveBeenCalledWith('Manifest "any" not found');
       });
 
-      it('returns 404 for components.json when experimentalDocgenServer is enabled', async () => {
+      it('returns 404 for components.json when docgenServer is enabled', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
 
         registerManifests({ app: mockApp, presets: mockPresets });
@@ -762,14 +759,14 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
-          'Manifest "components" is not available in dev when experimentalDocgenServer is enabled'
+          'Manifest "components" is not available in dev when docgenServer is enabled'
         );
       });
 
-      it('returns 404 for docs.json when experimentalDocgenServer is enabled', async () => {
+      it('returns 404 for docs.json when docgenServer is enabled', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
 
         registerManifests({ app: mockApp, presets: mockPresets });
@@ -782,7 +779,7 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
-          'Manifest "docs" is not available in dev when experimentalDocgenServer is enabled'
+          'Manifest "docs" is not available in dev when docgenServer is enabled'
         );
       });
 
@@ -947,7 +944,7 @@ describe('manifests', () => {
       it('renders docgen-server HTML with MDX from the live service', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
         mockGetIndex.mockResolvedValue({
           v: 5,

@@ -25,10 +25,10 @@ const meta = {
     },
   },
   beforeEach: () => {
-    beforeLoadCalls.length = 0;
     mockedUser = 'from-beforeEach';
     return () => {
       mockedUser = 'unmocked';
+      beforeLoadCalls.length = 0;
     };
   },
 } satisfies Meta<typeof BeforeLoadViewer>;

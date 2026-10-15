@@ -45,8 +45,11 @@ export const routerMount: BaseAnnotations<ReactRenderer>['mount'] =
   async (...args) => {
     const router = context.tanstackRouter as Router<AnyRootRoute> | undefined;
     if (router && !loadedRouters.has(router)) {
+      if (context.abortSignal?.aborted) {
+        return context.canvas;
+      }
       const load = router.load();
-      if (context.abortSignal && !context.abortSignal.aborted) {
+      if (context.abortSignal) {
         load.catch(() => {});
         await Promise.race([
           load,

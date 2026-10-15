@@ -1,6 +1,7 @@
 import type {
   Addon_StorySortComparatorV7,
   Addon_StorySortObjectParameter,
+  Addon_StorySortOrder,
 } from 'storybook/internal/types';
 import type { IndexEntry } from 'storybook/internal/types';
 
@@ -9,7 +10,11 @@ const STORY_KIND_PATH_SEPARATOR = /\s*\/\s*/;
 // The `order` array outranks any method: look the two names up in the current
 // order list and return their relative positions, or undefined when the list
 // decides nothing for this pair.
-const compareByOrder = (order: unknown[], nameA: string, nameB: string): number | undefined => {
+const compareByOrder = (
+  order: Addon_StorySortOrder,
+  nameA: string,
+  nameB: string
+): number | undefined => {
   let indexA = order.indexOf(nameA);
   let indexB = order.indexOf(nameB);
   if (indexA === -1 && indexB === -1) {
@@ -30,7 +35,7 @@ const compareByOrder = (order: unknown[], nameA: string, nameB: string): number 
 };
 
 // If a nested array is provided for a name, use it for ordering.
-const nextOrderList = (order: unknown[], name: string): unknown[] => {
+const nextOrderList = (order: Addon_StorySortOrder, name: string): Addon_StorySortOrder => {
   let index = order.indexOf(name);
   if (index === -1) {
     index = order.indexOf('*');

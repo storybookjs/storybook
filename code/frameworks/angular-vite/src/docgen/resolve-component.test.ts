@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import { resolveComponentFromCsf } from './resolve-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
 
@@ -166,26 +165,5 @@ describe('resolveMetaComponent', () => {
 
   it.each(unresolvedCases)('reports %s', (_name, source, expected) => {
     expect(resolveMetaComponent(parse(source), storyPath)).toEqual(expected);
-  });
-});
-
-describe('resolveComponentFromCsf', () => {
-  it('resolves from an already-parsed CSF file', () => {
-    expect(
-      resolveComponentFromCsf(
-        parse(`
-          import { ButtonComponent } from './button.component';
-          export default { component: ButtonComponent };
-        `),
-        storyPath
-      )
-    ).toEqual({
-      component: {
-        localName: 'ButtonComponent',
-        importId: './button.component',
-        exportName: 'ButtonComponent',
-        path: join(fixtures, 'button.component.ts'),
-      },
-    });
   });
 });

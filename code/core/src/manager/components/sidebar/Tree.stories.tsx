@@ -567,12 +567,16 @@ export const ContextMenuEnterOnTrigger: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('marketing hero');
 
-    // Focus the row so its ⋯ trigger (revealed on focus-within) becomes focusable, then move
-    // focus to the trigger and activate it with Enter.
+    // Give the row keyboard focus, which reveals its ⋯ trigger, then Tab onto the trigger and
+    // activate it with Enter. A pointer press alone leaves the trigger hidden; ArrowRight on a
+    // leaf row moves nothing and only makes the focus a keyboard one.
     const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
     await userEvent.click(row);
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() => expect(row).toHaveAttribute('data-focus-visible', 'true'));
+    await userEvent.tab();
     const trigger = within(row).getByTestId('context-menu');
-    trigger.focus();
+    await waitFor(() => expect(trigger).toHaveFocus());
     await userEvent.keyboard('{Enter}');
 
     const popover = await screen.findByRole('dialog');
@@ -623,6 +627,42 @@ export const ContextMenuOutsideDismiss: Story = {
 
     await userEvent.unhover(row);
     await waitFor(() => expect(getComputedStyle(trigger).display).toBe('none'));
+  },
+};
+
+/**
+ * A pointer press leaves DOM focus on the row, so the ⋯ button follows the pointer and keyboard
+ * focus only: it must not stay on after every click.
+ */
+export const PointerClickKeepsContextMenuHidden: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
+    const menuButton = (id: string) =>
+      row(id)!.querySelector<HTMLElement>('[data-testid="context-menu"]')!;
+
+    const first = await canvas.findByText('marketing hero');
+    await userEvent.click(first);
+    // Move the pointer onto another row: unhover alone leaves it where the click landed.
+    await userEvent.hover(row('images--brand')!);
+    await waitFor(() =>
+      expect(row('images--marketing-hero')).toHaveAttribute('data-focused', 'true')
+    );
+    await waitFor(() =>
+      expect(getComputedStyle(menuButton('images--marketing-hero')).display).toBe('none')
+    );
+
+    // Keyboard focus shows it.
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(row('images--brand')).toHaveAttribute('data-focus-visible', 'true'));
+    expect(getComputedStyle(menuButton('images--brand')).display).not.toBe('none');
   },
 };
 

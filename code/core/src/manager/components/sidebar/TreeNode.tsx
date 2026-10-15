@@ -113,13 +113,16 @@ const StyledTreeItem = styled(TreeItem)<{
   },
 
   /* ContextMenu and StatusIcon visibility.
-   * ContextMenu button is shown on hover/focus and when already open;
-   * StatusIcon is hidden when ContextMenu button is visible. */
+   * ContextMenu button is shown on hover, on keyboard focus (of the row, through react-aria's
+   * data-focus-visible as above, or of the button itself) and when already open; StatusIcon is
+   * hidden when ContextMenu button is visible. A pointer press leaves DOM focus on the row, so
+   * plain focus (or :focus-within) must not reveal it, or the button would stay after every
+   * click. */
   '& [data-displayed="off"]': {
     display: 'none',
   },
 
-  '&:hover [data-displayed="off"], &:focus-visible [data-displayed="off"], &:focus-within [data-displayed="off"]':
+  '&:hover [data-displayed="off"], &[data-focus-visible] [data-displayed="off"], &:has(:focus-visible) [data-displayed="off"]':
     {
       display: 'inline-flex',
     },
@@ -128,7 +131,7 @@ const StyledTreeItem = styled(TreeItem)<{
     display: 'none',
   },
 
-  '&:hover span:has([data-displayed="off"]) + *, &:focus-visible span:has([data-displayed="off"]) + *, &:focus-within span:has([data-displayed="off"]) + *':
+  '&:hover span:has([data-displayed="off"]) + *, &[data-focus-visible] span:has([data-displayed="off"]) + *, &:has(:focus-visible) span:has([data-displayed="off"]) + *':
     {
       display: 'none',
     },

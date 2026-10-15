@@ -12,11 +12,6 @@ export const storyDependencyDepthSchema = v.pipe(
   )
 );
 
-export const storiesByFileSchema = v.record(
-  storyIndexPathSchema,
-  v.record(storyIndexPathSchema, storyDependencyDepthSchema)
-);
-
 export const storiesForFilesInputSchema = v.object({
   files: v.pipe(
     v.array(

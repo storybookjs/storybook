@@ -9,7 +9,7 @@ import type { Presets } from 'storybook/internal/types';
 import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
 import { getStoryIdsByAbsolutePath } from '../story-files.ts';
-import { reverseIndexToStoriesByFile, toStoryIndexPath } from '../types.ts';
+import { toStoryIndexPath } from '../types.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/types.ts';
 import { DependencyGraphBuilder } from './dependency-graph/dependency-graph-builder.ts';
 import { IncrementalPatcher } from './dependency-graph/incremental-patcher.ts';
@@ -30,10 +30,8 @@ export interface ModuleGraphEngineOptions {
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
-  /** Mirrors the built reverse index into the open services after the initial build. */
-  onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
-  /** Replaces `core/module-graph-index` when a patch moved the reverse index. */
-  onIndex?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void | Promise<void>;
+  /** Reports every story file the initial build walked, as story-index-style paths. */
+  onSnapshot?: (storyFiles: string[]) => void;
   /**
    * Fired after every settled file-change patch. Empty `bumpedStoryFiles` means the path was
    * out of graph: `fileActivityRevision` still advances so change detection can rescan git.
@@ -99,7 +97,7 @@ export class ModuleGraphEngine {
       return;
     }
     this.options.onSnapshot?.(
-      reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+      Array.from(this.storyFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir))
     );
   }
 
@@ -121,7 +119,6 @@ export class ModuleGraphEngine {
   private async mirrorUpdate(
     changedFile: string,
     prePatchBumped: Set<string>,
-    indexChanged: boolean,
     changedAt: number
   ): Promise<void> {
     if (!this.reverseIndex) {
@@ -131,14 +128,6 @@ export class ModuleGraphEngine {
       ...prePatchBumped,
       ...this.collectBumpedStoryFiles(changedFile),
     ]);
-
-    // Index before bump: subscribers must not observe a new revision against a stale reverse index.
-    // Serializing the index is O(files × stories); only pay it when the reverse index moved.
-    if (indexChanged) {
-      await this.options.onIndex?.(
-        reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
-      );
-    }
     await this.options.onBump?.(
       Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir)),
       changedAt
@@ -409,7 +398,6 @@ export class ModuleGraphEngine {
       () => receivedAt
     );
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
-    const revisionBefore = this.reverseIndex.revision;
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {
@@ -417,13 +405,6 @@ export class ModuleGraphEngine {
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    // Partial mutations still bump the reverse-index revision, so a thrown patch is mirrored when
-    // anything actually moved — without guessing from control flow.
-    await this.mirrorUpdate(
-      event.path,
-      prePatchBumped,
-      this.reverseIndex.revision !== revisionBefore,
-      changedAt
-    );
+    await this.mirrorUpdate(event.path, prePatchBumped, changedAt);
   }
 }

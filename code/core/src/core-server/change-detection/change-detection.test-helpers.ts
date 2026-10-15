@@ -40,8 +40,8 @@ export {
 type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
- * Installs `getService` mocks for `core/module-graph` and `core/module-graph-index`, backed by a
- * real {@link ModuleGraphEngine} (for tests that call `graph.start(adapter)`).
+ * Installs a `getService` mock for `core/module-graph`, backed by a real {@link ModuleGraphEngine}
+ * (for tests that call `graph.start(adapter)`).
  */
 export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
   let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
@@ -71,7 +71,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       }));
     });
 
-  const hotService = {
+  const moduleGraphService = {
     queries: {
       status: {
         get: () => status,
@@ -109,30 +109,19 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       },
     },
     commands: {
+      storiesForFiles: async (input: { files: string[] }) => {
+        await engine.whenSettled();
+        return storiesForFiles(input);
+      },
       _waitForSettledEngine: async () => {
         await engine.whenSettled();
       },
     },
   };
 
-  const indexService = {
-    queries: {
-      storiesForFiles: {
-        get: storiesForFiles,
-        loaded: async (input: { files: string[] }) => {
-          await engine.whenSettled();
-          return storiesForFiles(input);
-        },
-      },
-    },
-  };
-
-  vi.mocked(getService).mockImplementation((serviceId: string) => {
-    if (serviceId === 'core/module-graph-index') {
-      return indexService as never;
-    }
-    return hotService as unknown as ModuleGraphService;
-  });
+  vi.mocked(getService).mockImplementation(
+    () => moduleGraphService as unknown as ModuleGraphService
+  );
 
   return {
     applySnapshot: () => {

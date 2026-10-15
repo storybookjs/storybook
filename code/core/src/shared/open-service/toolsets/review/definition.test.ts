@@ -210,7 +210,7 @@ This usually means the IDs were inferred from file paths or naming conventions r
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page, also when you read it earlier: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
-2. **Then write your final response and end it with these three lines.** Copy them unchanged, put nothing after them, and do not describe the review in your own words instead:
+2. **Then write your final response and end it with these three lines.** Copy them unchanged and put nothing after them. Do not describe the review in your own words instead, and do not mention its link anywhere else in your answer:
 
 ## 👀 Review your changes
 The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.

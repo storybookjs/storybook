@@ -10,6 +10,9 @@ export type StoryFormatInputs = {
 export const ERROR_EXPORT_RULE =
   "Never export a story under the name of a global such as `Error`: export `ErrorState` and set `name: 'Error'`.";
 
+export const USER_EVENT_RULE =
+  '`userEvent.click(element)` takes no options; to check a disabled element, assert `toBeDisabled()` instead of clicking it.';
+
 export function networkMockRule({ csfFactories, previewFile }: StoryFormatInputs): string {
   const mswSetup = csfFactories
     ? "`addons: [addonMsw()]` (`import addonMsw from 'msw-storybook-addon'`, without an `initialize()` call)"

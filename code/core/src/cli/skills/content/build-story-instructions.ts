@@ -6,7 +6,12 @@ import a11yInstructionsTemplate from './instructions/a11y-instructions.md';
 import storyTestingInstructionsTemplate from './instructions/story-testing-instructions.md';
 import storyInstructionsTemplate from './instructions/storybook-story-instructions.md';
 import type { SkillTransport } from './skill-refs.ts';
-import { ERROR_EXPORT_RULE, networkMockRule, type StoryFormatInputs } from './story-rules.ts';
+import {
+  ERROR_EXPORT_RULE,
+  networkMockRule,
+  type StoryFormatInputs,
+  USER_EVENT_RULE,
+} from './story-rules.ts';
 
 export type StoryInstructionsInputs = StoryFormatInputs & {
   transport: SkillTransport;
@@ -63,6 +68,7 @@ This Storybook exposes component documentation tools. Before creating or changin
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
     .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport))
     .replace('{{ERROR_EXPORT_RULE}}', ERROR_EXPORT_RULE)
+    .replace('{{USER_EVENT_RULE}}', USER_EVENT_RULE)
     .replace('{{NETWORK_MOCK_RULE}}', networkMockRule({ csfFactories, previewFile }))
     .replace('{{PREVIEW_FILE}}', previewFile)
     .replace('{{PREVIEW_STORIES}}', ref('stories.preview'))

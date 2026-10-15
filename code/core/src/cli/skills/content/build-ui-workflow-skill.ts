@@ -1,6 +1,6 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { componentLookup } from './build-component-docs-skill.ts';
-import { ERROR_EXPORT_RULE, networkMockRule } from './story-rules.ts';
+import { ERROR_EXPORT_RULE, networkMockRule, USER_EVENT_RULE } from './story-rules.ts';
 
 export type UiWorkflowSkillInputs = {
   framework: string;
@@ -33,7 +33,7 @@ function writeSection({
 Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. ${ERROR_EXPORT_RULE} An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
 
 - ${format} \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
-- \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options.
+- \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. ${USER_EVENT_RULE}
 - ${networkMockRule({ csfFactories, previewFile })}
 - Mock a module only for a dependency that is not a network call: register it in \`${previewFile}\` with \`sb.mock(import('../src/api.${typescript ? 'ts' : 'js'}'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`.`;
 }
@@ -56,7 +56,7 @@ function discoverSection(inputs: UiWorkflowSkillInputs): string {
     inputs.moduleGraphSupported &&
       `${ref('stories.changed')}   # stories affected by your uncommitted changes`,
     inputs.moduleGraphSupported &&
-      `${ref('stories.findByComponent')} --componentPaths '["/abs/path/Button.tsx"]'   # stories that render these files`,
+      `${ref('stories.findByComponent')} --componentPaths '["/abs/path/Button.tsx"]'   # only for files stories changed leaves out`,
     inputs.docsEnabled && `${ref('docs.list')} --withStoryIds true   # every story id`,
   ].filter(Boolean);
   if (commands.length === 0) {

@@ -122,6 +122,7 @@ Before doing this ensure you have mocked the import in the preview file.
 - The play function has a `canvas` parameter that can be used directly with testing-library-like query methods.
 - It also has a `canvasElement` which is the actual DOM element.
 - The `within`-function imported from `storybook/test` transforms a DOM element to an object with query methods, similar to `canvas`.
+- {{USER_EVENT_RULE}}
 
 **DO NOT** use `within(canvas)` - it is redundant because `canvas` already has the query methods, `canvas` is not a DOM element.
 

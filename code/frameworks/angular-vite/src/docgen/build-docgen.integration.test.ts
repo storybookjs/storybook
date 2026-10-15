@@ -158,6 +158,15 @@ it('renders a real declared subcomponent under `## Subcomponents` in the compose
     </sb-button>
     \`\`\`
 
+    ## Inputs
+
+    \`\`\`
+    export type ButtonComponentInputs = {
+      /** @default Click me */
+      label?: string;
+    }
+    \`\`\`
+
     ## Subcomponents
 
     ### ColorPickerComponent
@@ -183,15 +192,6 @@ it('renders a real declared subcomponent under `## Subcomponents` in the compose
     export type ColorPickerComponentOutputs = {
       /** The currently selected colour */
       colorChange: (e: string) => void;
-    }
-    \`\`\`
-
-    ## Inputs
-
-    \`\`\`
-    export type ButtonComponentInputs = {
-      /** @default Click me */
-      label?: string;
     }
     \`\`\`"
   `);

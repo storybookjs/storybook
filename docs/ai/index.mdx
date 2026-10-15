@@ -37,9 +37,13 @@ The [Storybook MCP server](./mcp/overview.mdx) gives your agent ongoing access t
 
 </If>
 
+## Give your agent Storybook skills
+
+Storybook's [skills](./skills.mdx) teach coding agents such as Claude Code, Codex, and Cursor to reuse your components, write stories for every component they change, run the story tests, and show you the result in a review. When you set up Storybook with AI features, it installs the skills into your project and adds a section to your `AGENTS.md` that tells agents when to use them. See [Skills and plugins](./skills.mdx) to install them in an existing project or to change when agents use them.
+
 ## Connect your agent to Storybook
 
-Once Storybook is set up, connect your agent to the Storybook MCP server so it can read [manifests](./manifests.mdx) of your components and documentation, generate stories, and run tests against your live Storybook.
+Agents that cannot run shell commands can use the MCP server instead. Once Storybook is set up, connect your agent to the Storybook MCP server so it can read [manifests](./manifests.mdx) of your components and documentation, generate stories, and run tests against your live Storybook.
 
 ### 1. Install the addon
 
@@ -113,6 +117,10 @@ Storybook collects all of the metadata about your components, stories, and docs 
 
 These manifests are automatically generated and updated as you work on your Storybook, ensuring that your agent always has access to the latest information about your project.
 
+### Skills
+
+A [skill](./skills.mdx) is a folder with a `SKILL.md` file: instructions that a coding agent loads when a task calls for them. Storybook's skills run the `storybook skills` and `storybook tools` commands of your project, so their instructions always match your Storybook version and configuration.
+
 ### MCP server
 
 [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) is a standard for communication between AI agents and external tools. Storybook's [MCP server](./mcp/index.mdx) exposes your Storybook's content and functionality as a set of tools that your agent can call to retrieve component information, generate stories, run component tests, and more.
@@ -122,6 +130,7 @@ Which tools your agent gets depends in part on your framework. See [framework su
 **More AI resources**
 
 - [Agentic setup](./setup.mdx)
+- [Skills and plugins](./skills.mdx)
 - [MCP server overview](./mcp/overview.mdx)
 - [MCP server API](./mcp/api.mdx)
 - [Sharing your MCP server](./mcp/sharing.mdx)

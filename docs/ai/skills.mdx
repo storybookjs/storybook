@@ -1,0 +1,110 @@
+---
+title: Skills and plugins
+hideRendererSelector: true
+sidebar:
+  order: 2
+---
+
+<Callout variant="info" icon="🧪">
+
+Storybook's skills are currently in [preview](../releases/features.mdx#preview).
+
+The API may change in future releases. We welcome feedback and contributions to help improve this feature.
+
+</Callout>
+
+Storybook's skills teach coding agents such as Claude Code, Codex, and Cursor how to work with your Storybook. With them, an agent reuses your existing components, writes stories for every component it changes, runs the story tests, and shows you the result in an [agentic review](./agentic-review.mdx).
+
+A skill is a folder with a `SKILL.md` file: instructions that an agent loads when a task calls for them. Storybook's skills are short. Most of them run [`storybook skills`](../api/cli-options.mdx#skills) to get the instructions for the Storybook version and configuration of your project, and then work through `storybook tools` commands, which read your component docs, find stories, run tests, and publish reviews.
+
+## Requirements
+
+- Storybook 11.0 or later
+- A React (not React Native), Vue 3 + Vite, Angular + Vite, Svelte, or Web Components project
+
+## Install the skills
+
+### With Storybook
+
+When you [install Storybook](../get-started/install.mdx), `create storybook` asks whether you want AI features. When you answer yes, it installs the skills into your project for Claude Code and every agent that reads `.agents/skills`, and it adds a section to your `AGENTS.md` that tells agents [when to use them](#choose-when-agents-use-the-skills). When an agent runs `create storybook`, or you run it with `--yes`, you get the AI features without the question.
+
+[Upgrading](../releases/upgrading.mdx) to Storybook 11 offers the same through the `skills` automigration. To install the skills in a project that does not have them, run:
+
+```shell
+npx storybook automigrate skills
+```
+
+Each later `storybook upgrade` updates the skills to the version of Storybook you upgrade to, so the skills always match the `storybook skills` and `storybook tools` commands of your project. It leaves the `AGENTS.md` section alone, so your edits stay, and so does its removal.
+
+### With the skills CLI
+
+Storybook installs its skills from the [`storybookjs/skills`](https://github.com/storybookjs/skills) repository with Vercel's [`skills` CLI](https://skills.sh/). You can also run it yourself, for example to pick other agents. Use the tag of your Storybook version, such as `v11.0.0`, so the skills match your project:
+
+```shell
+npx skills@latest add storybookjs/skills#v11.0.0
+```
+
+Then add the [Storybook section](#choose-when-agents-use-the-skills) to your `AGENTS.md` yourself.
+
+### With the Claude Code or Codex plugin
+
+The Storybook plugins for [Claude Code](https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin#installation) and [Codex](https://github.com/storybookjs/storybook/tree/next/code/lib/codex-plugin#installation) contain the same skills. The plugin installs them once for every project you open, instead of per project. The plugin does not add the `AGENTS.md` section, so add the [Storybook section](#choose-when-agents-use-the-skills) to each project that should use the skills, unless Storybook already added it.
+
+## Choose when agents use the skills
+
+The skills do not take over every UI change on their own. A section in your `AGENTS.md` tells agents when to use them, so you decide when that is:
+
+```md title="AGENTS.md"
+## Storybook
+
+For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
+
+- `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
+- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+```
+
+Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. Edit it to fit how you work. For example, to skip the review, change the end of the `ui-workflow` line:
+
+```md title="AGENTS.md"
+- `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, and runs the tests.
+```
+
+To stop agents from using the skills on their own, remove the section. You can still ask for a skill in a prompt, for example `/ui-workflow` in Claude Code.
+
+<Callout variant="info" icon="💡">
+
+Claude Code reads `AGENTS.md` only when your project has no `CLAUDE.md` or `CLAUDE.local.md`, and only from version 2.1.277. When your project has a `CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, Storybook adds the section to one of them as well, so edit both copies. To keep one copy, import `AGENTS.md` from the file that got the copy, with a line that says `@AGENTS.md` (`@../AGENTS.md` in `.claude/CLAUDE.md`), and remove the section from that file.
+
+</Callout>
+
+## Available skills
+
+| Skill               | What the agent does with it                                                                                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ui-workflow`       | Looks up your components to reuse them instead of building duplicates, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](./agentic-review.mdx) of the result. |
+| `component-docs`    | Looks up your components, with their props and usage examples, so the agent reuses them instead of building duplicates. Also answers questions about a component.                                                              |
+| `storybook-init`    | Adds Storybook to your project, then continues with `storybook-setup`.                                                                                                                                                         |
+| `storybook-setup`   | Follows the [agentic setup](./setup.mdx) instructions: configures the preview and writes stories for your components.                                                                                                          |
+| `storybook-upgrade` | Upgrades Storybook with [`storybook upgrade`](../releases/upgrading.mdx).                                                                                                                                                      |
+
+In the Codex plugin, the last three skills are called `init`, `setup`, and `upgrade`, because Codex already shows them under the plugin's name.
+
+## Skills or the MCP server?
+
+The skills and the [MCP server](./mcp/overview.mdx) give agents the same tools. The skills run them as `storybook tools` commands in your project, so they need no MCP server and no MCP configuration. We recommend them for coding agents that can run shell commands. Use the MCP server for agents that cannot, and to [share your Storybook](./mcp/sharing.mdx) with agents outside your project.
+
+## Remove the skills
+
+To remove the skills, run the following command, select the Storybook skills, and remove the Storybook section from your `AGENTS.md`:
+
+```shell
+npx skills@latest remove
+```
+
+**More AI resources**
+
+- [Agentic setup](./setup.mdx)
+- [Agentic review](./agentic-review.mdx)
+- [MCP server overview](./mcp/overview.mdx)
+- [Best practices for using Storybook with AI](./best-practices.mdx)
+- [Manifests](./manifests.mdx)

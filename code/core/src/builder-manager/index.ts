@@ -1,11 +1,12 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
 
+import type { Plugin } from 'esbuild';
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
-import { join, parse } from 'pathe';
+import { isAbsolute, join, parse } from 'pathe';
 import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
@@ -33,6 +34,33 @@ const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
+/*
+ * Manager entries are self-invoking modules (see `wrapManagerEntries`): their entire behavior is
+ * import-time side effects. Once esbuild honors `"sideEffects": false` in package.json (i.e.
+ * `ignoreAnnotations` is not set), it would tree-shake such entries away entirely when the addon
+ * or user project they belong to declares it. This forces the resolved entry modules to count as
+ * side-effectful, keeping the fix from PR #21335 (`manager.js` ignored when `sideEffects: false`
+ * in `package.json`) working, for which `ignoreAnnotations: true` was a blanket workaround. Every
+ * other module keeps its declared behavior, restoring tree-shaking of side-effect-free
+ * dependencies such as @storybook/icons.
+ */
+export function preserveManagerEntrySideEffectsPlugin(entryPoints: string[]): Plugin {
+  const entries = new Set(entryPoints);
+  return {
+    name: 'preserve-manager-entry-side-effects',
+    setup(build) {
+      build.onResolve({ filter: /.*/ }, (args) => {
+        // Bare-specifier entries fall through to default resolution; all current entry sources
+        // (core presets, addon registration, the configDir manager file) are absolute paths.
+        if (isAbsolute(args.path) && entries.has(args.path)) {
+          return { path: args.path, sideEffects: true };
+        }
+        return undefined;
+      });
+    },
+  };
+}
+
 export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   const [managerEntriesFromPresets, envs] = await Promise.all([
     options.presets.apply('managerEntries', []),
@@ -49,16 +77,15 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     // no manager entry found in config directory, that's fine
   }
 
-  const entryPoints = configDirManagerEntry
+  const managerEntryPoints = configDirManagerEntry
     ? [...managerEntriesFromPresets, configDirManagerEntry]
     : managerEntriesFromPresets;
 
   return {
-    entryPoints: await wrapManagerEntries(entryPoints, options.cacheKey),
+    entryPoints: await wrapManagerEntries(managerEntryPoints, options.cacheKey),
     outdir: join(options.outputDir || './', 'sb-addons'),
     format: 'iife',
     write: false,
-    ignoreAnnotations: true,
     resolveExtensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx'],
     outExtension: { '.js': '.js' },
     loader: {
@@ -102,7 +129,10 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [globalExternals(globalsModuleInfoMap)],
+    plugins: [
+      globalExternals(globalsModuleInfoMap),
+      preserveManagerEntrySideEffectsPlugin(managerEntryPoints),
+    ],
 
     banner: {
       js: 'try{',

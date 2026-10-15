@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -66,15 +66,13 @@ import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
 import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
-import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
 import { initializeSaveStory } from '../utils/save-story/save-story.ts';
-import { parseStaticDir } from '../utils/server-statics.ts';
+import { mapStaticDir, parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
 
@@ -251,6 +249,7 @@ export const features: PresetProperty<'features'> = async (existing, options) =>
   babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
   componentsManifest: false,
+  experimentalChunkedPreviewRuntime: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
   docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),
@@ -319,8 +318,6 @@ export const experimental_serverChannel = async (
   initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
-  initFileSearchChannel(channel, options);
-  initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);
@@ -410,6 +407,19 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getChangedFiles: () => gitDiffProvider.getChangedFiles(),
       },
       changeStatuses: { getAll: getSyncedStatuses },
+      // Real paths, because git reports the repo root as one; on Windows the cwd can differ in case.
+      storybookDirs: {
+        configDir: realpathSync.native(pathe.resolve(options.configDir)),
+        getStaticDirs: async () =>
+          ((await options.presets.apply('staticDirs')) ?? []).flatMap((staticDir) => {
+            try {
+              return [realpathSync.native(mapStaticDir(staticDir, options.configDir).staticPath)];
+            } catch {
+              // A missing directory throws here, and holds no changed files anyway.
+              return [];
+            }
+          }),
+      },
     })
   );
 

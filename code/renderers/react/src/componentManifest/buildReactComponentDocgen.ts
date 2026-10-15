@@ -248,10 +248,15 @@ export function buildStoryDocsFromResolved({
 
   const packageName = getImportablePackageName(component?.path, storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
-  const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds, {
-    filePath: storyPath,
-    ...openStoryReferences(),
-  });
+  const storyEntries = extractStorySnippets(
+    csf,
+    component?.componentName ?? componentName,
+    filterStoryIds,
+    {
+      filePath: storyPath,
+      ...openStoryReferences(),
+    }
+  );
   // An arg value that kept the name another module gave it only compiles once the import block
   // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.
   const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));

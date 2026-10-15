@@ -11,7 +11,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 import {
   createDocgenProvider,
-  DEFAULT_TYPE_PROPERTY,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
 import { eventActionName } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/event-action-name.ts';
@@ -82,7 +81,6 @@ const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: str
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [manifestPath],
-    typeProperty: DEFAULT_TYPE_PROPERTY,
   })(async () => undefined);
   return provider({ entry });
 };

@@ -43,7 +43,7 @@
     "create-storybook": "workspace:*",
     "jscodeshift": "^17.4.0",
     "storybook": "workspace:*",
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",

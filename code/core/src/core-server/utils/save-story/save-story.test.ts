@@ -10,6 +10,7 @@ import {
   SAVE_STORY_RESPONSE,
   STORY_RENDERED,
 } from 'storybook/internal/core-events';
+import { parser, traverse } from 'storybook/internal/babel';
 import type { Options } from 'storybook/internal/types';
 
 import { initializeSaveStory } from './save-story.ts';
@@ -62,17 +63,28 @@ describe('save-story', () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
-  it('rejects a top-level arg name that is not a valid identifier', async () => {
-    const response = await saveStory({
-      args: JSON.stringify({ 'x: globalThis.alert(1), y': true }),
-    });
+  it.each(['x: globalThis.alert(1), y', 'a: 1}); globalThis.pwned = 1; ({b', 'x = alert(1)'])(
+    'writes a top-level arg name that is not a valid identifier as a quoted string: %s',
+    async (key) => {
+      const response = await saveStory({ args: JSON.stringify({ [key]: true }) });
 
-    expect(response).toMatchObject({
-      success: false,
-      error: expect.stringMatching(/^Invalid arg name/),
-    });
-    expect(writeFile).not.toHaveBeenCalled();
-  });
+      expect(response).toMatchObject({ success: true });
+      const written = vi.mocked(writeFile).mock.calls[0][1] as string;
+      expect(written).toContain(`${JSON.stringify(key)}: true`);
+
+      // the output must still parse, and the key must not have become code
+      const ast = parser.parse(written, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
+      const identifiers = new Set<string>();
+      traverse(ast, {
+        Identifier(path) {
+          identifiers.add(path.node.name);
+        },
+      });
+      // the key text must only exist inside a string literal, never as code
+      expect(identifiers.has('alert')).toBe(false);
+      expect(identifiers.has('pwned')).toBe(false);
+    }
+  );
 
   it('saves a new story with identifier names, including reserved words as arg names', async () => {
     const response = await saveStory({

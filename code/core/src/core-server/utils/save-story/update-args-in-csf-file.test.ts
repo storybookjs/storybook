@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
+import { parser, traverse } from 'storybook/internal/babel';
 import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
@@ -432,6 +433,30 @@ describe('success', () => {
         "
     `);
   });
+  test.each(['a: 1}); globalThis.pwned = 1; ({b', 'x = alert(1)'])(
+    'Malicious arg key is emitted as a string literal: %s',
+    async (key) => {
+      const CSF = await readCsf(FILES.kebabCaseArgs, { makeTitle });
+      const parsed = CSF.parse();
+      const node = CSF.getStoryExport(Object.keys(parsed._stories)[0]);
+
+      await updateArgsInCsfFile(node, { [key]: true });
+
+      const code = printCsf(parsed).code;
+      expect(code).toContain(`${JSON.stringify(key)}: true`);
+
+      const ast = parser.parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
+      const identifiers = new Set<string>();
+      traverse(ast, {
+        Identifier(path) {
+          identifiers.add(path.node.name);
+        },
+      });
+      // the key text must only exist inside a string literal, never as code
+      expect(identifiers.has('alert')).toBe(false);
+      expect(identifiers.has('pwned')).toBe(false);
+    }
+  );
   test('Kebab-case args (CSF4)', async () => {
     const newArgs = { 'aria-label': 'button' };
 

@@ -85,7 +85,7 @@ function describeCreate(ctx: ToolsetCtx): string {
 
 ## When to call
 - Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
-- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step.
+- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step. Right before you call it, load your in-app browser tool or skill and run its setup code, so the page opens with one call afterwards.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules

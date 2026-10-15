@@ -65,7 +65,7 @@ describe('buildUiWorkflowSkill', () => {
     const text = buildUiWorkflowSkill(everything);
 
     expect(text).toContain(
-      'Run `stories changed` or `find-by-component` after your last edit and before every review, also when you already know the ids'
+      'Run `stories changed` after your last edit and before every review, also when you already know the ids'
     );
     expect(text).not.toContain('Run one of these');
   });

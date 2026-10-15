@@ -763,10 +763,10 @@ describe('StoryStore', () => {
             name: 'A',
             importPath: './src/ComponentOne.stories.js',
           },
-          'component-one--a--test': {
+          'component-one--a-test': {
             type: 'story',
             subtype: 'test',
-            id: 'component-one--a--test',
+            id: 'component-one--a-test',
             title: 'Component One',
             name: 'A Test',
             parent: 'component-one--a',
@@ -779,8 +779,8 @@ describe('StoryStore', () => {
       await store.cacheAllCSFFiles();
 
       const extracted = store.extract();
-      expect(extracted['component-one--a--test'].story).toBe('A');
-      expect(extracted['component-one--a--test'].kind).toBe('Component One');
+      expect(extracted['component-one--a-test'].story).toBe('A');
+      expect(extracted['component-one--a-test'].kind).toBe('Component One');
     });
 
     it('does not include (legacy) docs only stories by default', async () => {

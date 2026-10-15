@@ -210,6 +210,28 @@ describe('buildDocgenPayload', () => {
       },
     ],
     [
+      'unresolvable-meta-spread',
+      () => {
+        vol.fromNestedJSON({
+          [STORY_PATH]: `import { meta } from './meta.ts'; export default { ...meta, title: 'Fixture' };`,
+        });
+        return context({
+          tags: [tag({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' })],
+        });
+      },
+      {
+        id: 'fixture',
+        name: 'Fixture',
+        path: './input.stories.ts',
+        jsDocTags: {},
+        error: {
+          name: 'unresolvable-meta-spread',
+          message:
+            "`meta.component` could not be read because `...meta` is not a local object literal. Set `component: '<tag-name>'` on the default export.",
+        },
+      },
+    ],
+    [
       'manifest-invalid',
       () => {
         givenStory("'x-card'");

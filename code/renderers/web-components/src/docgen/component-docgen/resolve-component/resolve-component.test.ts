@@ -43,6 +43,41 @@ describe('resolveStoryComponent', () => {
       `,
       { tag: 'x-csf4' },
     ],
+    [
+      'reads a component spread from a local meta object',
+      `const meta = { title: 'Fixture', component: 'x-tabs' }; export default { ...meta };`,
+      { tag: 'x-tabs' },
+    ],
+    [
+      'reads a spread component alongside other literal properties',
+      `const meta = { component: 'x-tabs' }; export default { ...meta, tags: ['autodocs'] };`,
+      { tag: 'x-tabs' },
+    ],
+    [
+      'reads a spread meta object with a satisfies assertion',
+      `const meta = { component: 'x-tabs' } satisfies Meta; export default { ...meta };`,
+      { tag: 'x-tabs' },
+    ],
+    [
+      'reads a spread meta object with an as assertion',
+      `const meta = { component: 'x-tabs' } as Meta; export default { ...meta };`,
+      { tag: 'x-tabs' },
+    ],
+    [
+      'lets a literal component written after the spread win',
+      `const meta = { component: 'x-old' }; export default { ...meta, component: 'x-new' };`,
+      { tag: 'x-new' },
+    ],
+    [
+      'lets a spread written after the literal component win',
+      `const meta = { component: 'x-new' }; export default { component: 'x-old', ...meta };`,
+      { tag: 'x-new' },
+    ],
+    [
+      'reads a literal component next to an unreadable spread',
+      `import { shared } from './shared.ts'; export default { component: 'x-tabs', ...shared };`,
+      { tag: 'x-tabs' },
+    ],
   ])('%s', (_name, source, expected) => {
     expect(resolveStoryComponent(csf(source))).toEqual(expected);
   });
@@ -68,13 +103,37 @@ describe('resolveStoryComponent', () => {
       `const Button = 'x-button'; export default { title: 'Fixture', component: Button as any };`,
       { reason: 'component-not-a-tag', expression: 'Button as any' },
     ],
+    [
+      'reports a non-tag component reached through a spread',
+      `const Button = 'x-button'; const meta = { component: Button }; export default { ...meta };`,
+      { reason: 'component-not-a-tag', expression: 'Button' },
+    ],
+    [
+      'reports a spread of an imported meta',
+      `import { meta } from './meta.ts'; export default { ...meta, tags: ['autodocs'] };`,
+      { reason: 'unresolvable-meta-spread', spread: '...meta' },
+    ],
+    [
+      'reports a spread of a call',
+      `export default { ...makeMeta('x-tabs') };`,
+      { reason: 'unresolvable-meta-spread', spread: "...makeMeta('x-tabs')" },
+    ],
+    [
+      'reports a spread of a local binding that is not an object literal',
+      `const meta = makeMeta(); export default { ...meta };`,
+      { reason: 'unresolvable-meta-spread', spread: '...meta' },
+    ],
   ])('%s', (_name, source, expected) => {
     expect(resolveStoryComponent(csf(source))).toEqual(expected);
   });
 
-  it('reports no component for missing meta.component', () => {
-    expect(resolveStoryComponent(csf(`export default { title: 'Fixture' };`))).toEqual({
-      reason: 'no-meta-component',
-    });
+  it.each([
+    ['a meta without component', `export default { title: 'Fixture' };`],
+    [
+      'a local spread without component',
+      `const meta = { title: 'Fixture' }; export default { ...meta };`,
+    ],
+  ])('reports no component for %s', (_name, source) => {
+    expect(resolveStoryComponent(csf(source))).toEqual({ reason: 'no-meta-component' });
   });
 });

@@ -456,6 +456,43 @@ describe.each([
     makeBase.mockReturnValue({ args: { label: 'base' } });
   });
 
+  test.each(['args', '"args"', '["args"]'])(
+    'updates %s without duplicating fields',
+    async (key) => {
+      const node = parser.parseExpression(story(`{ ${key}: { "label": "old", size: "small" } }`), {
+        plugins: ['typescript'],
+      });
+      const expected = parser.parseExpression(
+        story(`{ ${key}: { "label": "saved", size: "small" } }`),
+        {
+          plugins: ['typescript'],
+        }
+      );
+
+      await updateArgsInCsfFile(node, { label: 'saved' });
+
+      expect(generate(node).code).toBe(generate(expected).code);
+    }
+  );
+
+  test('preserves computed identifier keys', async () => {
+    const node = parser.parseExpression(
+      story('{ [args]: { label: "nested" }, args: { [label]: "keep" } }'),
+      { plugins: ['typescript'] }
+    );
+
+    await updateArgsInCsfFile(node, { label: 'saved' });
+
+    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+    const result = runInNewContext(code, {
+      args: 'parameters',
+      label: 'other',
+      meta: { story: (input: unknown) => input },
+    });
+    expect(result.parameters).toEqual({ label: 'nested' });
+    expect(result.args).toEqual({ other: 'keep', label: 'saved' });
+  });
+
   test.each([
     '...makeBase()',
     'args: { label: "old" }, ...makeBase()',
@@ -522,6 +559,11 @@ describe.each([
       inheritedArgs,
     ],
     ['inherits args from a single spread', '...Base', { size: 'large', baseOnly: true }],
+    [
+      'preserves quoted args before a spread',
+      '"args": { "size": "small" }, ...WithoutArgs',
+      { size: 'small' },
+    ],
     [
       'preserves prototype-named args before a spread',
       'args: { constructor: "keep", toString: "keep", valueOf: "keep", hasOwnProperty: "keep" }, ...Base',

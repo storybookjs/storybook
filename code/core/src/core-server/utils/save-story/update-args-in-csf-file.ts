@@ -1,5 +1,5 @@
 import { types as t } from 'storybook/internal/babel';
-import { isCsfFactoryCall, unwrapExpression } from 'storybook/internal/csf-tools';
+import { isCsfFactoryCall, keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import { SaveStoryError } from './utils.ts';
 import { valueToAST } from './valueToAST.ts';
@@ -28,19 +28,14 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
 
   const properties = object.properties;
   const lastSpreadIndex = properties.findLastIndex((property) => t.isSpreadElement(property));
-  const argsProperty = properties.find(
-    (property): property is t.ObjectProperty =>
-      t.isObjectProperty(property) && t.isIdentifier(property.key, { name: 'args' })
+  const argsIndex = properties.findIndex(
+    (property) => t.isObjectProperty(property) && keyOf(property) === 'args'
   );
-  if (argsProperty && !t.isObjectExpression(argsProperty.value)) {
+  const argsProperty = properties[argsIndex];
+  const argsObject = t.isObjectProperty(argsProperty) ? argsProperty.value : t.objectExpression([]);
+  if (!t.isObjectExpression(argsObject)) {
     return;
   }
-
-  const argsIndex = argsProperty ? properties.indexOf(argsProperty) : -1;
-  const argsObject =
-    argsProperty && t.isObjectExpression(argsProperty.value)
-      ? argsProperty.value
-      : t.objectExpression([]);
 
   if (argsIndex < lastSpreadIndex) {
     if (
@@ -68,14 +63,10 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
       );
     }
 
-    const existingArgs = argsObject.properties.filter(
-      (property) =>
-        !(
-          t.isObjectProperty(property) &&
-          t.isIdentifier(property.key) &&
-          Object.hasOwn(args, property.key.name)
-        )
-    );
+    const existingArgs = argsObject.properties.filter((property) => {
+      const key = t.isObjectProperty(property) ? keyOf(property) : null;
+      return key === null || !Object.hasOwn(args, key);
+    });
     argsObject.properties = properties.slice(0, lastSpreadIndex + 1).flatMap((property) => {
       if (t.isSpreadElement(property)) {
         return [
@@ -94,13 +85,13 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
   }
 
   argsObject.properties.forEach((property) => {
-    if (
-      t.isObjectProperty(property) &&
-      t.isIdentifier(property.key) &&
-      Object.hasOwn(args, property.key.name)
-    ) {
-      property.value = args[property.key.name];
-      delete args[property.key.name];
+    if (!t.isObjectProperty(property)) {
+      return;
+    }
+    const key = keyOf(property);
+    if (key !== null && Object.hasOwn(args, key)) {
+      property.value = args[key];
+      delete args[key];
     }
   });
   Object.entries(args).forEach(([key, value]) => {

@@ -38,11 +38,11 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
   }
 
   if (argsIndex < lastSpreadIndex) {
+    const spreads = properties
+      .slice(argsIndex + 1)
+      .filter((property) => t.isSpreadElement(property));
     if (
-      properties.some((property) => {
-        if (!t.isSpreadElement(property)) {
-          return false;
-        }
+      spreads.some((property) => {
         const skippedNodes = new Set<t.Node>();
         return t.traverseFast(property.argument, (node) => {
           if (skippedNodes.has(node)) {
@@ -67,21 +67,19 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
       const key = t.isObjectProperty(property) ? keyOf(property) : null;
       return key === null || !Object.hasOwn(args, key);
     });
-    argsObject.properties = properties.slice(0, lastSpreadIndex + 1).flatMap((property) => {
-      if (t.isSpreadElement(property)) {
-        return [
-          t.spreadElement(
-            t.optionalMemberExpression(
-              t.cloneNode(property.argument),
-              t.identifier('args'),
-              false,
-              true
-            )
-          ),
-        ];
-      }
-      return property === argsProperty ? existingArgs : [];
-    });
+    argsObject.properties = [
+      ...existingArgs,
+      ...spreads.map((property) =>
+        t.spreadElement(
+          t.optionalMemberExpression(
+            t.cloneNode(property.argument),
+            t.identifier('args'),
+            false,
+            true
+          )
+        )
+      ),
+    ];
   }
 
   argsObject.properties.forEach((property) => {

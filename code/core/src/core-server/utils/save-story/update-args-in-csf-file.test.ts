@@ -537,17 +537,27 @@ describe.each([
     expect(makeBase).toHaveBeenCalledOnce();
   });
 
-  test('updates args after a function-call spread without repeating the call', async () => {
-    const node = parser.parseExpression(story('{ ...makeBase(), args: { label: "old" } }'), {
-      plugins: ['typescript'],
-    });
-    await updateArgsInCsfFile(node, { label: 'saved' });
+  test.each(['', ', ...WithoutArgs'])(
+    'does not repeat a call before local args: %s',
+    async (laterSpread) => {
+      const node = parser.parseExpression(
+        story(`{ ...makeBase(), args: { label: "old" } ${laterSpread} }`),
+        {
+          plugins: ['typescript'],
+        }
+      );
+      await updateArgsInCsfFile(node, { label: 'saved' });
 
-    const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
-    const result = runInNewContext(code, { makeBase, meta: { story: (input: unknown) => input } });
-    expect(result.args).toEqual({ label: 'saved' });
-    expect(makeBase).toHaveBeenCalledOnce();
-  });
+      const { code } = transformSync(`(${generate(node).code})`, { loader: 'ts' });
+      const result = runInNewContext(code, {
+        makeBase,
+        WithoutArgs: {},
+        meta: { story: (input: unknown) => input },
+      });
+      expect(result.args).toEqual({ label: 'saved' });
+      expect(makeBase).toHaveBeenCalledOnce();
+    }
+  );
 
   const onClick = () => {};
   const inheritedArgs = { size: 'small', baseOnly: true, onClick };
@@ -623,7 +633,12 @@ describe.each([
     [
       'merges args between spreads in source order',
       '...Base, args: { label: "old", size: "medium", disabled: true }, ...Override',
-      { ...inheritedArgs, disabled: true },
+      { size: 'small', onClick, disabled: true },
+    ],
+    [
+      'keeps local args from inheriting an overwritten spread',
+      '...Base, args: { label: "old" }, ...WithoutArgs',
+      {},
     ],
     [
       'updates args already after spreads',

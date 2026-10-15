@@ -275,7 +275,8 @@ const legacyIconPattern = new RegExp(
 
 const isLegacyIconName = (value: string): boolean => Object.hasOwn(legacyIconNames, value);
 
-const renameIconProperty = (object: t.ObjectExpression, changed: { value: boolean }) => {
+const renameIconProperty = (object: t.ObjectExpression): boolean => {
+  let changed = false;
   for (const property of object.properties) {
     if (
       t.isObjectProperty(property) &&
@@ -285,10 +286,30 @@ const renameIconProperty = (object: t.ObjectExpression, changed: { value: boolea
       isLegacyIconName(property.value.value)
     ) {
       property.value = t.stringLiteral(legacyIconNames[property.value.value]);
-      changed.value = true;
+      changed = true;
     }
   }
+  return changed;
 };
+
+// `properties.find` predicates as type guards: `ObjectExpression.properties` mixes ObjectMethod,
+// ObjectProperty and SpreadElement, and only a guard narrows the found entry — so `.value` is
+// accessible without a cast, with the object/array shape asserted where it is checked.
+const isToolbarProperty = (
+  property: t.ObjectExpression['properties'][number]
+): property is t.ObjectProperty & { value: t.ObjectExpression } =>
+  t.isObjectProperty(property) &&
+  !property.computed &&
+  t.isIdentifier(property.key, { name: 'toolbar' }) &&
+  t.isObjectExpression(property.value);
+
+const isItemsProperty = (
+  property: t.ObjectExpression['properties'][number]
+): property is t.ObjectProperty & { value: t.ArrayExpression } =>
+  t.isObjectProperty(property) &&
+  !property.computed &&
+  t.isIdentifier(property.key, { name: 'items' }) &&
+  t.isArrayExpression(property.value);
 
 const rewriteLegacyIconNames = (code: string) => {
   let ast;
@@ -297,42 +318,29 @@ const rewriteLegacyIconNames = (code: string) => {
   } catch {
     return undefined;
   }
-  const changed = { value: false };
+  let changed = false;
 
   traverse(ast, {
     ObjectExpression(path) {
       // Toolbar configs live under a `toolbar` key in `globalTypes` (preview) and `argTypes`
       // (stories): `{ toolbar: { icon, items: [{ icon }] } }`
-      const toolbarProperty = path.node.properties.find(
-        (property) =>
-          t.isObjectProperty(property) &&
-          !property.computed &&
-          t.isIdentifier(property.key, { name: 'toolbar' }) &&
-          t.isObjectExpression(property.value)
-      );
+      const toolbarProperty = path.node.properties.find(isToolbarProperty);
       if (!toolbarProperty) {
         return;
       }
-      const toolbar = toolbarProperty.value as t.ObjectExpression;
-      renameIconProperty(toolbar, changed);
-      const itemsProperty = toolbar.properties.find(
-        (property) =>
-          t.isObjectProperty(property) &&
-          !property.computed &&
-          t.isIdentifier(property.key, { name: 'items' }) &&
-          t.isArrayExpression(property.value)
-      );
+      changed = renameIconProperty(toolbarProperty.value) || changed;
+      const itemsProperty = toolbarProperty.value.properties.find(isItemsProperty);
       if (itemsProperty) {
-        for (const element of (itemsProperty.value as t.ArrayExpression).elements) {
+        for (const element of itemsProperty.value.elements) {
           if (t.isObjectExpression(element)) {
-            renameIconProperty(element, changed);
+            changed = renameIconProperty(element) || changed;
           }
         }
       }
     },
   });
 
-  if (!changed.value) {
+  if (!changed) {
     return undefined;
   }
   const printed = babelPrint(ast);

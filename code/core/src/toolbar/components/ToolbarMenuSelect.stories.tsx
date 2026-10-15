@@ -14,6 +14,14 @@ const items: ToolbarItem[] = [
   { type: 'item', value: 'dark', title: 'Dark', icon: 'CircleHollowIcon' },
 ];
 
+// Covers the no-icon-slot behaviors: an item may omit `icon`, and an item with an icon may set
+// `hideIcon` — both must render without the Select's fixed icon slot.
+const iconlessItems: ToolbarItem[] = [
+  { type: 'item', value: 'light', title: 'Light', icon: 'GrowIcon' },
+  { type: 'item', value: 'dark', title: 'Dark' },
+  { type: 'item', value: 'system', title: 'System', icon: 'SunIcon', hideIcon: true },
+];
+
 /**
  * Reactive mock of `ManagerContext`. `ToolbarMenuSelect` reads the selected value via `useGlobals`
  * (i.e. `api.getGlobals`) and writes selections back through `api.updateGlobals`, so the mock owns
@@ -115,5 +123,32 @@ export const PreventDynamicIcon: Story = {
     // An item is selected, but preventDynamicIcon keeps its icon off the toolbar button.
     const button = canvas.getByRole('button', { name: 'Change the theme Light' });
     expect(button.querySelector('svg')).toBeNull();
+  },
+};
+
+export const ItemWithoutIcon: Story = {
+  tags: ['vitest'],
+  args: {
+    toolbar: { title: 'Theme', items: iconlessItems },
+  },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Change the theme' }));
+
+    // An item without an icon renders no icon slot; an item with an icon keeps exactly one.
+    expect(screen.getByRole('option', { name: /dark/i }).querySelector('svg')).toBeNull();
+    expect(screen.getByRole('option', { name: /light/i }).querySelector('svg')).not.toBeNull();
+  },
+};
+
+export const ItemWithHiddenIcon: Story = {
+  tags: ['vitest'],
+  args: {
+    toolbar: { title: 'Theme', items: iconlessItems },
+  },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Change the theme' }));
+
+    // hideIcon: true suppresses the icon slot even though the item declares an icon.
+    expect(screen.getByRole('option', { name: /system/i }).querySelector('svg')).toBeNull();
   },
 };

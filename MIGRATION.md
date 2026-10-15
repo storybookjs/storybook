@@ -725,7 +725,7 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 
 ### Toolbar icon no longer accepts legacy icon names
 
-Toolbar menus in `globalTypes` (and toolbar `argTypes` in stories) configure their `icon` with the name of an icon exported by `@storybook/icons` — e.g. `'CircleHollowIcon'` — instead of a component or a legacy name like `'circlehollow'`. The manager resolves the name where the toolbar renders, so the icon can cross the serialization boundary between the preview and the manager; passing a component is no longer supported. Passing an `icon` on individual items works the same way. For history, the legacy names came from the `Icons` and `Symbols` components that were removed from `@storybook/components` in 9.0 (see [#29159](https://github.com/storybookjs/storybook/issues/29159)).
+Toolbar menus in `globalTypes` (and toolbar `argTypes` in stories) configure their `icon` with the name of an icon exported by `@storybook/icons` — e.g. `'CircleHollowIcon'` — instead of a legacy name like `'circlehollow'`. The manager resolves the name where the toolbar renders, so the icon can cross the serialization boundary between the preview and the manager. Passing an `icon` on individual items works the same way. For history, the legacy names came from the `Icons` and `Symbols` components that were removed from `@storybook/components` in 9.0 (see [#29159](https://github.com/storybookjs/storybook/issues/29159)).
 
 `storybook automigrate` rewrites legacy names in your `.storybook` config and story files:
 

@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, ReactElement } from 'react';
 import React from 'react';
 
 import { Select } from 'storybook/internal/components';
@@ -6,7 +6,7 @@ import { Select } from 'storybook/internal/components';
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { ToolbarMenuProps } from '../types.ts';
+import type { ToolbarIconType, ToolbarMenuProps } from '../types.ts';
 import { getSelectedItem } from '../utils/get-selected.ts';
 import { registerShortcuts } from '../utils/register-shortcuts.ts';
 import { ToolbarIcon } from './ToolbarIcon.tsx';
@@ -20,6 +20,12 @@ const ToolbarMenuItemContainer = styled('div')({
 const ToolbarMenuItemMiddle = styled('div')({
   flex: 1,
 });
+
+// `Select` renders its fixed icon slot for any option that carries an icon node, so an item
+// without an icon — or with `hideIcon: true` — must resolve to `undefined`, not to an element
+// that renders nothing.
+const renderToolbarIcon = (name?: ToolbarIconType): ReactElement | undefined =>
+  name ? <ToolbarIcon icon={name} /> : undefined;
 
 export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   id,
@@ -63,7 +69,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
               value: item.value,
               children: (
                 <ToolbarMenuItemContainer>
-                  <ToolbarIcon icon={itemIcon} />
+                  {renderToolbarIcon(itemIcon)}
                   <ToolbarMenuItemMiddle>{item.title ?? item.value}</ToolbarMenuItemMiddle>
                   {item.right}
                 </ToolbarMenuItemContainer>
@@ -73,7 +79,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
             return {
               title: itemTitle,
               value: item.value,
-              icon: <ToolbarIcon icon={itemIcon} />,
+              icon: renderToolbarIcon(itemIcon),
             };
           }
         }),
@@ -124,7 +130,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       resetLabel={resetLabel}
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
-      icon={<ToolbarIcon icon={icon} />}
+      icon={renderToolbarIcon(icon)}
       showSelectedOptionTitle={dynamicTitle}
     >
       {title}

@@ -1551,7 +1551,7 @@ It never reads argTypes or waits for docgen, so a story renders the same with or
 | `<name>-part`, `<name>-state`                               | `::part(<name>)` / `:state(<name>)` rule scoped to the story |
 | anything else                                               | property                                                     |
 
-Except for properties, `undefined`, `null` and `''` leave an arg unbound.
+`undefined` and `null` leave an arg unbound. `''` reaches a property but never sets an attribute.
 
 An element registered after the story renders, for example by an autoloader or a lazy import, cannot be inspected, so its plain keys fall back to properties; suffixed keys still bind.
 

@@ -16,12 +16,16 @@ const BINDERS: Record<Exclude<ArgKeyCategory, 'cssProperties'>, Binder> = {
   cssStates: (element, name, value) => styleRule(`${element.localName}:state(${name})`, value),
 };
 
-// Element properties win over attributes so booleans that default to `true` and empty strings reach the element; runtime checks run before suffixes so a declared attribute such as `has-slot` wins, as in the mapper.
+// `undefined` and `null` args are skipped so the element keeps its defaults; element properties win over attributes so booleans that default to `true` and empty strings reach the element; runtime checks run before suffixes so a declared attribute such as `has-slot` wins, as in the mapper.
 export function bindArgs(element: HTMLElement, args: Args): string[] {
   const observedAttributes = observedAttributesOf(element);
   const styleRules: string[] = [];
 
   for (const [key, value] of Object.entries(args)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
     const parsedKey = parseArgKey(key);
 
     if (parsedKey?.category === 'cssProperties') {

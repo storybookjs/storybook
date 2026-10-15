@@ -12,7 +12,7 @@ Run the Storybook dev server and every Storybook CLI command from the same worki
 
 If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
 
-Run `npx storybook skills ui-workflow` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
+Run `npx storybook skills ui-workflow` in a command of its own, without `head` or `tail`, and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
 Some commands require a running Storybook dev server:
 

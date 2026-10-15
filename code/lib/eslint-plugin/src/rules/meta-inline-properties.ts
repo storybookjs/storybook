@@ -22,6 +22,11 @@ export default createStorybookRule({
   meta: {
     type: 'problem',
     severity: 'error',
+    deprecated: {
+      message:
+        'Checks a different property set than Storybook statically analyzes; use static-csf-properties instead.',
+      replacedBy: [{ rule: { name: 'storybook/static-csf-properties' } }],
+    },
     docs: {
       description: 'Meta should only have inline properties',
       categories: [CategoryId.CSF, CategoryId.RECOMMENDED],

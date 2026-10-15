@@ -29,6 +29,7 @@ import noStoriesOf from './rules/no-stories-of.ts';
 import noTitlePropertyInMeta from './rules/no-title-property-in-meta.ts';
 import noUninstalledAddons from './rules/no-uninstalled-addons.ts';
 import preferPascalCase from './rules/prefer-pascal-case.ts';
+import staticCsfProperties from './rules/static-csf-properties.ts';
 import storyExports from './rules/story-exports.ts';
 import useStorybookExpect from './rules/use-storybook-expect.ts';
 import useStorybookTestingLibrary from './rules/use-storybook-testing-library.ts';
@@ -61,6 +62,7 @@ export const rules = {
   'no-title-property-in-meta': noTitlePropertyInMeta,
   'no-uninstalled-addons': noUninstalledAddons,
   'prefer-pascal-case': preferPascalCase,
+  'static-csf-properties': staticCsfProperties,
   'story-exports': storyExports,
   'use-storybook-expect': useStorybookExpect,
   'use-storybook-testing-library': useStorybookTestingLibrary,

@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
 
+import { init as initLayout } from '../modules/layout';
 import { init as initShortcuts } from '../modules/shortcuts';
 
 vi.mock('storybook/internal/client-logger');
@@ -415,6 +416,63 @@ describe('focus region shortcuts', () => {
 
     expect(fullAPI.toggleNav).toHaveBeenCalledWith(true);
     expect(fullAPI.togglePanel).toHaveBeenCalledWith(true);
+  });
+
+  describe('with a region that mounts after the shortcut ran', () => {
+    // The real focusOnUIElement, so that forcing focus and polling for the region run against
+    // the DOM instead of a mock.
+    const setupWithLayout = () => {
+      const store = createMockStore();
+      const layoutApi = initLayout({
+        store,
+        provider: { getConfig: () => ({}) },
+        singleStory: false,
+      }).api;
+      const { api, fullAPI } = setup({ panelShown: false });
+      fullAPI.focusOnUIElement.mockImplementation(layoutApi.focusOnUIElement);
+      return api;
+    };
+
+    const mountRegion = (region) => {
+      const element = document.createElement('div');
+      element.id = `storybook-${region}-region`;
+      element.setAttribute('data-sb-landmark', '');
+      document.body.appendChild(element);
+      return element;
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('focuses the region once it appears', async () => {
+      const api = setupWithLayout();
+
+      api.handleShortcutFeature('focusPanel', {});
+      const panel = mountRegion('panel');
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(document.activeElement).toBe(panel);
+    });
+
+    it('leaves focus where a later shortcut put it', async () => {
+      const api = setupWithLayout();
+      const sidebar = mountRegion('sidebar');
+
+      api.handleShortcutFeature('focusPanel', {});
+      api.handleShortcutFeature('focusNav', {});
+      expect(document.activeElement).toBe(sidebar);
+
+      mountRegion('panel');
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(document.activeElement).toBe(sidebar);
+    });
   });
 });
 

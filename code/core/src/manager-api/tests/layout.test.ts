@@ -835,6 +835,29 @@ describe('layout API', () => {
       expect(attributes.tabindex).toBeUndefined();
     });
 
+    it('should remove the forced tabindex again when focus still fails', () => {
+      const attributes: Record<string, string> = {};
+      const element = {
+        id: 'trapped',
+        focus: vi.fn(),
+        getAttribute: (name: string) => attributes[name] ?? null,
+        setAttribute: (name: string, value: string) => {
+          attributes[name] = value;
+        },
+        removeAttribute: (name: string) => {
+          delete attributes[name];
+        },
+        addEventListener: vi.fn(),
+      };
+      mockGetElementById.mockImplementation((id: string) => (id === 'trapped' ? element : null));
+
+      expect(focusLayoutApi.focusOnUIElement('trapped', { forceFocus: true, poll: false })).toBe(
+        false
+      );
+      expect(attributes.tabindex).toBeUndefined();
+      expect(element.addEventListener).not.toHaveBeenCalled();
+    });
+
     it('should return false without polling when element does not exist and poll is false', () => {
       const result = focusLayoutApi.focusOnUIElement('nonexistent-element', { poll: false });
       expect(result).toBe(false);

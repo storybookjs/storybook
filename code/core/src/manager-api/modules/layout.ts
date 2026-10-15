@@ -493,9 +493,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
           element.focus();
           // Only focusable for this one visit, as react-aria does for landmarks. Otherwise a later
           // pointer click on the element's blank space would focus it and draw its focus ring.
-          element.addEventListener('blur', () => element.removeAttribute('tabindex'), {
-            once: true,
-          });
+          if (element === document.activeElement) {
+            element.addEventListener('blur', () => element.removeAttribute('tabindex'), {
+              once: true,
+            });
+          } else {
+            element.removeAttribute('tabindex');
+          }
         }
 
         if (element !== document.activeElement && element.id !== document.activeElement?.id) {

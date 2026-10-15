@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { IndexHash } from 'storybook/manager-api';
+import { expect } from 'storybook/test';
 
 import { searchItem } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
@@ -96,3 +97,22 @@ export const Searching = () => <SearchResults {...searching} />;
 export const NoResults = () => <SearchResults {...noResults} />;
 
 export const LastViewed = () => <SearchResults {...lastViewed} />;
+
+// A recently opened story lists its parent, which is a group when the component has nested
+// stories. Every entry type shows its own icon, as in the tree.
+const recentsOfEveryType = stories
+  .filter((item) => ['group', 'component', 'docs', 'story'].includes(item.type))
+  .map((item) => ({ item, matches: [], score: 0 }));
+
+export const LastViewedIconsPerType = () => (
+  <SearchResults {...lastViewed} results={recentsOfEveryType} />
+);
+LastViewedIconsPerType.play = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+  const icons = [...canvasElement.querySelectorAll('.search-result-item')].map((row) =>
+    row.querySelector('use')?.getAttribute('xlink:href')
+  );
+  expect(icons).toContain('#icon--group');
+  expect(icons).toContain('#icon--component');
+  expect(icons).toContain('#icon--story');
+  expect(icons).not.toContain(undefined);
+};

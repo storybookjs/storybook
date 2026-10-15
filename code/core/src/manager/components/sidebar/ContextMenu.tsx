@@ -89,6 +89,8 @@ export const ContextMenu: FC<{
   openedBy?: ContextMenuTrigger;
   /** Whether a test provider contributes menu entries for this entry. */
   hasProviderMenuEntries?: boolean;
+  /** The current shortcuts, read once by the tree. */
+  shortcutKeys: ReturnType<API['getShortcutKeys']>;
 }> = memo(
   ({
     context,
@@ -98,6 +100,7 @@ export const ContextMenu: FC<{
     api,
     openedBy,
     hasProviderMenuEntries = false,
+    shortcutKeys,
   }) => {
     const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
     const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -107,8 +110,6 @@ export const ContextMenu: FC<{
 
     const topLinks = useMemo<Link[]>(() => {
       const defaultLinks: NormalLink[] = [];
-
-      const shortcutKeys = api.getShortcutKeys();
 
       // Add a navigation link at the top when the menu opens from the keyboard.
       // Keyboard-only users then have a way to open a story that has child tests.
@@ -164,7 +165,16 @@ export const ContextMenu: FC<{
       }
 
       return defaultLinks;
-    }, [api, onSelectStoryId, context, copyText, copyButtonProps, openedBy, setIsOpen]);
+    }, [
+      api,
+      onSelectStoryId,
+      context,
+      copyText,
+      copyButtonProps,
+      openedBy,
+      setIsOpen,
+      shortcutKeys,
+    ]);
 
     const handleOpen = useCallback(
       (event: SyntheticEvent) => {
@@ -201,7 +211,7 @@ export const ContextMenu: FC<{
           ariaLabel="Open context menu"
           type="button"
           onClick={handleOpen}
-          shortcut={api.getShortcutKeys()?.contextMenu}
+          shortcut={shortcutKeys?.contextMenu}
           tooltipPlacement="bottom-end"
           disableAllTooltips={isOpen}
         >

@@ -30,7 +30,7 @@ import { IndentLines, useSelectionLineLevel } from './TreeIndentLines.tsx';
 import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
 import { useRowStatus } from './StatusStore.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
-import type { Item, SidebarLabelContext } from './types.ts';
+import type { SidebarLabelContext } from './types.ts';
 import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 import {
   SECTION_GAP,
@@ -207,6 +207,8 @@ export interface TreeNodeProps {
   closeContextMenu?: () => void;
   /** Whether any test provider addon is registered (enables the menu on group rows). */
   hasTestProviders?: boolean;
+  /** The current shortcuts, read once by the tree for every row. */
+  shortcutKeys: ReturnType<API['getShortcutKeys']>;
   /** Reports this row's focus up to the tree while it holds it. */
   onRowFocus?: ReportRowFocus;
   children?: React.ReactNode;
@@ -265,6 +267,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   openContextMenu,
   closeContextMenu,
   hasTestProviders = false,
+  shortcutKeys,
   onRowFocus,
   children,
 }) {
@@ -385,8 +388,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     () => hasContextMenu(item, hasProviderMenuEntries),
     [item, hasProviderMenuEntries]
   );
-  const shortcutKeys = api.getShortcutKeys();
-
   // Compute final aria-label including test status and keyboard shortcut discovery.
   const ariaLabel = useMemo(() => {
     let label = item.renderAriaLabel?.(item, api, labelContext) || item.name;
@@ -478,6 +479,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                       api={api}
                       openedBy={openedBy}
                       hasProviderMenuEntries={hasProviderMenuEntries}
+                      shortcutKeys={shortcutKeys}
                     />
                   }
                 </MenuTriggerContainer>

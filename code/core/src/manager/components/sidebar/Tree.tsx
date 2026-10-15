@@ -219,14 +219,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
     statusStoreRef.current!.setState(rowStatuses);
   }, [rowStatuses]);
 
-  const contextMenuShortcut = useMemo(() => {
-    const shortcutKeys = api.getShortcutKeys();
-    if (!shortcutKeys?.contextMenu) {
-      return undefined;
-    }
-
-    return shortcutToHumanString(shortcutKeys.contextMenu);
-  }, [api]);
+  // Read once per render and handed down to the rows: each row used to read it for its label and
+  // its ⋯ button, which added up to thousands of calls. The store hands out the same object until
+  // the shortcuts change, so the memoized row renderer stays stable.
+  const shortcutKeys = api.getShortcutKeys();
+  const contextMenuShortcut = useMemo(
+    () => (shortcutKeys?.contextMenu ? shortcutToHumanString(shortcutKeys.contextMenu) : undefined),
+    [shortcutKeys]
+  );
 
   // The note that tells the user which shortcut opens the actions of the focused row. Rows compute
   // the same availability for their own ⋯ button (see TreeNode).
@@ -693,6 +693,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         expanded,
         sectionStartIds: rows.sectionStartIds,
         labelContext,
+        shortcutKeys,
         openContextMenu,
         closeContextMenu,
         hasTestProviders,
@@ -706,6 +707,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       expanded,
       rows.sectionStartIds,
       labelContext,
+      shortcutKeys,
       openContextMenu,
       closeContextMenu,
       hasTestProviders,
@@ -781,7 +783,7 @@ const EMPTY_KEYS: Set<string> = new Set();
 
 interface RenderNodeProps extends Pick<
   TreeNodeProps,
-  'api' | 'refId' | 'onSelectStoryId' | 'labelContext'
+  'api' | 'refId' | 'onSelectStoryId' | 'labelContext' | 'shortcutKeys'
 > {
   expanded: Set<string>;
   /** Section-start rows that carry the inter-section gap as padding. */

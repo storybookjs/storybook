@@ -151,13 +151,15 @@ export const createGlobal = memoize(1)(({
       position: 'relative',
     },
 
-    '[data-sb-landmark]:focus-visible': {
+    // Landmarks cannot be reached with a pointer, only moved to from keyboard-driven flows
+    // (landmark navigation, skip links, shortcuts), so plain `:focus` is the keyboard case.
+    // `:focus-visible` would miss it for a shortcut relayed from the preview iframe, where the
+    // manager document has had no keyboard interaction of its own.
+    '[data-sb-landmark]:focus': {
       outline: 'none',
     },
 
-    // `data-sb-focus-visible` is set by the manager when it moves focus to a landmark from a
-    // keyboard shortcut, since the browser's `:focus-visible` heuristics do not cover that case.
-    '[data-sb-landmark]:focus-visible::after, [data-sb-landmark][data-sb-focus-visible]::after': {
+    '[data-sb-landmark]:focus::after': {
       outline: `2px solid ${color.primary}`,
       outlineOffset: '-2px',
     },

@@ -21,20 +21,6 @@ function wasFocusInElement(element: HTMLElement | null) {
   return document.activeElement && element?.contains(document.activeElement);
 }
 
-/**
- * Marks a focused landmark so the global styles draw its focus ring, until it loses focus.
- *
- * A browser only matches `:focus-visible` on programmatic focus when its heuristics judge the last
- * interaction to be keyboard-driven. A shortcut relayed from the preview iframe leaves the manager
- * document with no keyboard interaction of its own, so the ring has to be requested explicitly.
- */
-function showLandmarkFocusRing(element: HTMLElement) {
-  element.setAttribute('data-sb-focus-visible', '');
-  element.addEventListener('blur', () => element.removeAttribute('data-sb-focus-visible'), {
-    once: true,
-  });
-}
-
 export const isMacLike = () =>
   navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
@@ -205,16 +191,6 @@ function shouldSkipShortcut(event: KeyboardEvent) {
 }
 
 export const init: ModuleFn = ({ store, fullAPI, provider }) => {
-  // Landmarks are only focusable while react-aria navigates them, so focus is forced; polling
-  // covers a region that is still mounting after being toggled on.
-  const focusLandmark = async (elementId: string) => {
-    const focused = await fullAPI.focusOnUIElement(elementId, { forceFocus: true, poll: true });
-    const element = document.getElementById(elementId);
-    if (focused && element) {
-      showLandmarkFocusRing(element);
-    }
-  };
-
   const api: SubAPI = {
     // Getting and setting shortcuts
     getShortcutKeys(): API_Shortcuts {
@@ -343,7 +319,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsNavShown()) {
             fullAPI.toggleNav(true);
           }
-          focusLandmark(focusableUIElements.sidebarRegion);
+          fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
+            forceFocus: true,
+            poll: true,
+          });
           break;
         }
 
@@ -362,7 +341,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'focusIframe': {
-          focusLandmark(focusableUIElements.previewRegion);
+          fullAPI.focusOnUIElement(focusableUIElements.previewRegion, {
+            forceFocus: true,
+            poll: true,
+          });
           break;
         }
 
@@ -373,7 +355,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsPanelShown()) {
             fullAPI.togglePanel(true);
           }
-          focusLandmark(focusableUIElements.addonPanel);
+          fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
+            forceFocus: true,
+            poll: true,
+          });
           break;
         }
 

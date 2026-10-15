@@ -54,17 +54,15 @@ export function useRegionFocusAnimation() {
   return animateLandmark;
 }
 
-// Highlights the landmark that focus lands in during landmark navigation, so users who move
-// between regions with the keyboard can see which region of the UI they landed into. Covers
-// F6/Shift+F6 (handled by react-aria) and any other path that focuses a landmark element itself,
-// such as the focus-region keyboard shortcuts.
+// Global keyboard handler for F6/Shift+F6 landmark navigation that
+// highlights the landmark containing the current element. This helps
+// users who navigate through landmark shortcuts more quickly visualise
+// which region of the UI they landed into.
 // Call this once at the app root.
 export function useLandmarkIndicator() {
   const animateLandmark = useRegionFocusAnimation();
 
   useEffect(() => {
-    // react-aria restores focus to the last focused element inside a landmark when revisiting
-    // it, so the keydown is what identifies landmark navigation in that case.
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'F6') {
         return;
@@ -78,17 +76,9 @@ export function useLandmarkIndicator() {
       animateLandmark(landmarkElement);
     };
 
-    const handleFocusIn = (e: FocusEvent) => {
-      if (e.target instanceof HTMLElement && e.target.hasAttribute('data-sb-landmark')) {
-        animateLandmark(e.target);
-      }
-    };
-
     document.addEventListener('keydown', handleKeyDown, { capture: true });
-    document.addEventListener('focusin', handleFocusIn);
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true });
-      document.removeEventListener('focusin', handleFocusIn);
     };
   }, [animateLandmark]);
 }

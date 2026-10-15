@@ -803,6 +803,38 @@ describe('layout API', () => {
       expect(element.select).not.toHaveBeenCalled();
     });
 
+    it('should force focus with a tabindex that is removed again on blur', () => {
+      const listeners: Record<string, () => void> = {};
+      const attributes: Record<string, string> = {};
+      const element = {
+        id: 'landmark',
+        focus: vi.fn(() => {
+          if ('tabindex' in attributes) {
+            mockActiveElement = element;
+          }
+        }),
+        getAttribute: (name: string) => attributes[name] ?? null,
+        setAttribute: (name: string, value: string) => {
+          attributes[name] = value;
+        },
+        removeAttribute: (name: string) => {
+          delete attributes[name];
+        },
+        addEventListener: vi.fn((type: string, listener: () => void) => {
+          listeners[type] = listener;
+        }),
+      };
+      mockGetElementById.mockImplementation((id: string) => (id === 'landmark' ? element : null));
+
+      expect(focusLayoutApi.focusOnUIElement('landmark', { forceFocus: true, poll: false })).toBe(
+        true
+      );
+      expect(attributes.tabindex).toBe('-1');
+
+      listeners.blur();
+      expect(attributes.tabindex).toBeUndefined();
+    });
+
     it('should return false without polling when element does not exist and poll is false', () => {
       const result = focusLayoutApi.focusOnUIElement('nonexistent-element', { poll: false });
       expect(result).toBe(false);

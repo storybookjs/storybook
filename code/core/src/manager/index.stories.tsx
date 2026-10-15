@@ -208,16 +208,18 @@ export const FocusRegionShortcuts = meta.story({
         await userEvent.keyboard(key);
         const region = canvasElement.querySelector(`#${id}`) as HTMLElement;
         await waitFor(() => expect(region).toHaveFocus());
-        expect(region).toHaveAttribute('data-sb-landmark');
-        expect(region).toHaveAttribute('data-sb-focus-visible');
+        // The landmark focus ring, in the theme's primary colour.
+        expect(getComputedStyle(region, '::after').outline).toBe('rgb(255, 71, 133) solid 2px');
       });
     }
 
     await step('The focus ring goes away once focus moves on', async () => {
+      const panel = canvasElement.querySelector(
+        `#${focusableUIElements.addonPanel}`
+      ) as HTMLElement;
       await userEvent.tab();
-      expect(canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)).not.toHaveAttribute(
-        'data-sb-focus-visible'
-      );
+      expect(panel).not.toHaveFocus();
+      expect(getComputedStyle(panel, '::after').outlineStyle).toBe('none');
     });
   },
 });

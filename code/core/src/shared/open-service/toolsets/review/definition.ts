@@ -130,8 +130,8 @@ function reviewInstructions(
   return `Storybook is already running at ${origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
-2. **Show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
+1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page, also when you read it earlier: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
+2. **Once the page is open, show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
 
 ${
   // A browse request changed nothing, so "your changes" would contradict the answer above it.

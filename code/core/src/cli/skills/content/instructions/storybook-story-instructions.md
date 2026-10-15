@@ -4,7 +4,7 @@ Use the configured framework (`{{FRAMEWORK}}`) and renderer (`{{RENDERER}}`). Fo
 
 When writing UI, prefer breaking larger components up into smaller parts.
 
-ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component. The rules below are for the stories you write; do not rewrite existing stories only to match them.
+ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component. The rules below are for the stories you write; do not rewrite existing stories only to match them. When you fix a failing test or an accessibility violation, change only what it needs, and never change the accessibility test level (`parameters.a11y.test`).
 {{DOCS_WORKFLOW_GUIDANCE}}
 
 ## How to write good stories
@@ -31,7 +31,7 @@ Imports/format: Import Meta/StoryObj from the framework package; import test hel
 
 #### `Meta` and `StoryObj` imports
 
-In the stories you write, import them from the framework package, also when existing stories import them from `{{RENDERER}}`:
+In a new story file, import them from the framework package, also when other stories import them from `{{RENDERER}}`. A file you only edit keeps its imports:
 
 ```diff
 - import { Meta, StoryObj } from '{{RENDERER}}';

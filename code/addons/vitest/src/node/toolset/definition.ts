@@ -1,10 +1,16 @@
 import * as v from 'valibot';
 
-import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
+import {
+  storyInputArraySchema,
+  type StoryIndexAccess,
+  type StoryInput,
+} from 'storybook/internal/core-server';
 import {
   defineToolset,
-  type ToolsetTelemetryReport,
+  type ToolsetDefinition,
+  type ToolsetMethod,
   type ToolsetOutcome,
+  type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
 import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
@@ -135,7 +141,19 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
 });
 
-type RunInput = v.InferOutput<typeof runInputSchema>;
+// Inferring this from the schema would make the exported toolset type unnameable in declaration
+// output, because core's valibot types live in a private declaration chunk.
+type RunInput = { stories?: StoryInput[]; a11y: boolean };
+
+export type TestToolset = ToolsetDefinition<
+  'test',
+  {
+    run: ToolsetMethod<
+      v.GenericSchema<{ stories?: StoryInput[]; a11y?: boolean }, RunInput>,
+      ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
+    >;
+  }
+>;
 
 /**
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
@@ -220,7 +238,11 @@ export type CreateTestToolsetOptions = {
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTestToolsetOptions) {
+export function createTestToolset({
+  channel,
+  storyIndex,
+  a11yEnabled,
+}: CreateTestToolsetOptions): TestToolset {
   const queue = createAsyncQueue();
 
   return defineToolset({
@@ -257,5 +279,3 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
     },
   });
 }
-
-export type TestToolset = ReturnType<typeof createTestToolset>;

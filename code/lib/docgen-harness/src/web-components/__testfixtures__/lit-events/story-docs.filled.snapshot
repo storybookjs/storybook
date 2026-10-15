@@ -15,9 +15,12 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-  "LitTemplate": "<lit-events
-  value="changed"
-  @my-change=${args['my-change-event']}
-  @my-close=${args['my-close-event']}
-></lit-events>",
+  "LitTemplate": "<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
 }

@@ -22,17 +22,8 @@
       "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-basic-attributes
-  label="Open panel"
-  count="7"
-  is-open
-></lit-basic-attributes>",
-      "template": "<lit-basic-attributes
-  label="⟦quoted label⟧"
-  count="⟦quoted count⟧"
-  ⟦bool disabled disabled⟧
-  ⟦bool is-open isOpen⟧
-></lit-basic-attributes>",
+      "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
+      "template": "<lit-basic-attributes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧ ⟦bool is-open isOpen⟧></lit-basic-attributes>",
     },
   },
 }

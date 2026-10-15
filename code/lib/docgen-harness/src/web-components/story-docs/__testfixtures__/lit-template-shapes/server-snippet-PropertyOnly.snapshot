@@ -1,1 +1,3 @@
-<lit-template-shapes .items=${[{ name: 'Alpha' }]}></lit-template-shapes>
+<lit-template-shapes></lit-template-shapes>
+
+warning: Incomplete snippet: properties without an attribute: `items`.

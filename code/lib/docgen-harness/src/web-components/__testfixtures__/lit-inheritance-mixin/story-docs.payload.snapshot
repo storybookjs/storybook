@@ -22,16 +22,8 @@
       "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-inheritance-mixin
-  base-label="Inherited"
-  mixed-active
-  count="5"
-></lit-inheritance-mixin>",
-      "template": "<lit-inheritance-mixin
-  base-label="⟦quoted baseLabel⟧"
-  ⟦bool mixed-active mixedActive⟧
-  count="⟦quoted count⟧"
-></lit-inheritance-mixin>",
+      "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin base-label="⟦quoted baseLabel⟧" ⟦bool mixed-active mixedActive⟧ count="⟦quoted count⟧"></lit-inheritance-mixin>",
     },
   },
 }

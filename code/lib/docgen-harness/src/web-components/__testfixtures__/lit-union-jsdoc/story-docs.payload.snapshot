@@ -22,16 +22,8 @@
       "argCode": {},
       "id": "webcomponentsfixtures-lit-union-jsdoc--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-union-jsdoc
-  variant="secondary"
-  old-label="Old"
-  label="Current"
-></lit-union-jsdoc>",
-      "template": "<lit-union-jsdoc
-  variant="⟦quoted variant⟧"
-  old-label="⟦quoted oldLabel⟧"
-  label="⟦quoted label⟧"
-></lit-union-jsdoc>",
+      "snippet": "<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>",
+      "template": "<lit-union-jsdoc variant="⟦quoted variant⟧" old-label="⟦quoted oldLabel⟧" label="⟦quoted label⟧"></lit-union-jsdoc>",
     },
   },
 }

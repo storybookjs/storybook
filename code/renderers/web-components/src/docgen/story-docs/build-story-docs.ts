@@ -1,4 +1,4 @@
-import { traverse, types as t } from 'storybook/internal/babel';
+import { type NodePath, traverse, types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
@@ -33,10 +33,9 @@ import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg } from './classify-args.ts';
 import { printRootListenerScript } from './print-element.ts';
 import { fillTemplate } from '../../docs/fill-template.ts';
-import type { LiveTemplate } from './story-template.ts';
-import { isLitImport, litTemplate } from './story-template.ts';
-import { printHtmlTemplate } from './template-print.ts';
-import { resolveHtmlTemplate } from './template-scope.ts';
+import { printHtml } from './html-tree.ts';
+import { ownFill, printHtmlTemplate } from './template-print.ts';
+import { TEMPLATE_TAG_SOURCES, resolveHtmlTemplate } from './template-scope.ts';
 import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
@@ -242,29 +241,25 @@ const renderedArgsSnippet = (
   if (render.kind === 'resolved') {
     const template = resolveHtmlTemplate(render.path, deps.csf);
     if (template) {
-      const warnings: (string | undefined)[] = [];
+      // Next prints the html the render returns, with a hole wherever it prints an arg.
       const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
       const unresolved = [...resolved.unresolved, ...printed.unresolved];
-      warnings.push(unresolvedWarning(unresolved));
-      warnings.push(incompleteList(printed.properties, 'properties without an attribute'));
-      warnings.push(
-        incompleteList(printed.falseDefaults ?? [], 'false values that HTML cannot express')
-      );
-      warnings.push(incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'));
-      warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
-      const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
-      const hasSnippet = printed.snippet !== '' || !hasFailedHole;
-      if (!hasSnippet) {
-        return joinWarnings([...warnings, noSnippetWarning(unresolved)]);
+      const incomplete = [
+        incompleteList(printed.properties, 'properties without an attribute'),
+        incompleteList(printed.falseDefaults ?? [], 'false values that HTML cannot express'),
+        incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'),
+        unboundTemplateArgs(resolved.args, printed.referenced),
+      ];
+      // As next, no snippet when it prints nothing and leaves out code it cannot read.
+      if (printed.template === '' && (unresolved.length > 0 || printed.properties.length > 0)) {
+        return joinWarnings([
+          unresolvedWarning(unresolved),
+          ...incomplete,
+          noSnippetWarning(unresolved),
+        ]);
       }
-      // Next prints the html the render returns, so its lit template is the template.
-      const live = litTemplate(render.path, resolved.args);
-      return withTemplate(
-        { snippet: printed.snippet, ...joinWarnings(warnings) },
-        live,
-        resolved,
-        ctx
-      );
+      const { warning } = joinWarnings([unresolvedWarning(printed.unresolved), ...incomplete]);
+      return withTemplate({ warning }, printed.template, resolved, ctx, warning);
     }
   }
 
@@ -289,24 +284,21 @@ const renderedArgsSnippet = (
   const unread = [...resolved.unresolved, ...element.unread];
   return !element.printed && unread.length > 0
     ? joinWarnings([warning, noSnippetWarning(unread)])
-    : withTemplate({ warning }, element, resolved, ctx, warning);
+    : withTemplate({ warning }, element.template, resolved, ctx, warning);
 };
 
 /**
- * The story's template, if any, and as its static snippet the template filled with the args the
- * story is written with, with the `incomplete` warning of code the template leaves out. Where the
- * filler cannot print an arg, the story has no template.
+ * The story's template, and as its static snippet the template filled with the args the story is
+ * written with, with the `incomplete` warning of code the template leaves out. Where the filler
+ * cannot print an arg, the story has neither.
  */
 const withTemplate = (
   own: SnippetResult,
-  live: LiveTemplate | undefined,
+  template: string,
   resolved: ResolvedStoryArgs,
   ctx: StoryArgsResolver['ctx'],
   incomplete?: string
 ): SnippetResult => {
-  if (!live) {
-    return own;
-  }
   // The args the filler reads.
   const printed = new Set<string>();
   const reads = (args: Args) =>
@@ -318,8 +310,8 @@ const withTemplate = (
         return Reflect.get(target, name);
       },
     });
-  const filled = fillStoryTemplate(live.template, resolved.args, (template, args) =>
-    fillTemplate(template, reads(args))
+  const filled = fillStoryTemplate(template, resolved.args, (text, args) =>
+    fillTemplate(text, reads(args))
   );
   if (!filled) {
     return own;
@@ -327,15 +319,14 @@ const withTemplate = (
   const code = filled.argCode;
   // The args it prints as their code, whose names the story file binds the snippet has to declare.
   const written = [...printed].filter((name) => Object.hasOwn(code, name));
-  const free = new Set([
-    ...live.free,
-    ...written.flatMap((name) =>
+  const free = new Set(
+    written.flatMap((name) =>
       freeNames(resolved.args[name]!).filter((free) => {
         const declared = ctx.program.scope.getBinding(free)?.path;
         return declared && !isLitImport(declared);
       })
-    ),
-  ]);
+    )
+  );
   const { warning } = joinWarnings([
     incompleteList([...free], 'names the snippet does not import or declare'),
   ]);
@@ -350,6 +341,11 @@ const withTemplate = (
     ...(warning === undefined ? {} : { templateWarning: warning }),
   };
 };
+
+/** Whether a name is declared by an import from lit, which a lit snippet has. */
+const isLitImport = (declared: NodePath) =>
+  !!declared.parentPath?.isImportDeclaration() &&
+  TEMPLATE_TAG_SOURCES.includes(declared.parentPath.node.source.value);
 
 // The names code reads from outside itself, such as `ITEMS` or `fn`, but for ES globals.
 const freeNames = (node: t.Node): string[] => {
@@ -403,7 +399,7 @@ const argsElement = (
   declaration: ManifestDeclaration,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   tag: string
-): LiveTemplate & { printed: boolean; unread: string[]; warning?: string } => {
+): { template: string; printed: boolean; unread: string[]; warning?: string } => {
   const attributes = new Map<string, string>();
   const [css, slots, styles]: string[][] = [[], [], []];
   const listeners: { event: string; handler: string }[] = [];
@@ -468,16 +464,28 @@ const argsElement = (
     unread.push(...(shown && value.kind === 'unresolved' ? [value.source] : []));
   }
   const style = styles.length > 0 ? hole('style', holeWord(tag), ...styles) : '';
-  const custom = css.length > 0 ? hole('css', ...css) : '';
-  const element = `${style}${[`<${tag}`, ...attributes.values()].join(' ')}${custom}>${slots.join('')}</${tag}>`;
-  // The template is the html of a lit template, so the code of a listener is escaped for one.
-  const script = printRootListenerScript(listeners)
-    ?.replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\$\{/g, '\\${');
+  const custom = css.length > 0 ? [['style', hole('css', ...css)] as const] : [];
+  // Laid out as next lays out the element with the story's own args.
+  const element = printHtml(
+    [
+      {
+        attributes: [...attributes, ...custom].map(([name, hole]) => ({
+          hole,
+          name,
+          value: undefined,
+        })),
+        children: slots.map((text) => ({ kind: 'text', text })),
+        closed: true,
+        kind: 'element',
+        name: tag,
+        selfClosing: false,
+      },
+    ],
+    ownFill(args)
+  );
+  const script = printRootListenerScript(listeners);
   return {
-    template: script ? `${element}\n${script}` : element,
-    free: [],
+    template: `${style}${element}${script ? `\n${script}` : ''}`,
     printed,
     unread,
     ...joinWarnings([

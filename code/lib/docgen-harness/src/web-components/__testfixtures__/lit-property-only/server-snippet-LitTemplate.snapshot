@@ -1,5 +1,3 @@
-<lit-property-only
-  label="Configured"
-  .items=${[{ name: 'Alpha' }, { name: 'Beta' }]}
-  .config=${{ dense: true, theme: 'dark' }}
-></lit-property-only>
+<lit-property-only label="Configured"></lit-property-only>
+
+warning: Incomplete snippet: properties without an attribute: `items`, `config`.

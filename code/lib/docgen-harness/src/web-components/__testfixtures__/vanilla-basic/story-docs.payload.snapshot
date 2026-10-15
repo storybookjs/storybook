@@ -22,16 +22,8 @@
       "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--lit-template",
       "name": "Lit Template",
-      "snippet": "<vanilla-basic
-  label="Vanilla"
-  count="4"
-  disabled
-></vanilla-basic>",
-      "template": "<vanilla-basic
-  label="⟦quoted label⟧"
-  count="⟦quoted count⟧"
-  ⟦bool disabled disabled⟧
-></vanilla-basic>",
+      "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
+      "template": "<vanilla-basic label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧></vanilla-basic>",
     },
   },
 }

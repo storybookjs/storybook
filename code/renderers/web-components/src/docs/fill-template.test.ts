@@ -19,42 +19,15 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('prints a property as lit sets it, `undefined` too, but for its `?` word while unset', () => {
-    const template = '<x-card ⟦prop open open⟧ ⟦prop data data ?⟧></x-card>';
-    expect(fillTemplate(template, { open: false, data: null })).toBe(
-      '<x-card .open=${false} .data=${null}></x-card>'
-    );
-    expect(fillTemplate(template, {})).toBe('<x-card .open=${undefined}></x-card>');
-  });
-
   it('has no snippet for a function that is no code the story writes, an action too', () => {
     for (const template of [
-      '<x-card ⟦prop size size⟧></x-card>',
       '<x-card ⟦bool size size⟧></x-card>',
       '<x-card ⟦attr size size⟧></x-card>',
-      '<p>${⟦value size⟧}</p>',
+      '<p>⟦text size⟧</p>',
     ]) {
       expect(() => fillTemplate(template, { size: fn() })).toThrow(UnprintableArgError);
       expect(() => fillTemplate(template, { size: () => 'l' })).toThrow(UnprintableArgError);
     }
-  });
-
-  it('writes the args as an object without the names its words leave out, and actions', () => {
-    const template = '<p ${spread(⟦args -count⟧)}></p>';
-    expect(
-      fillTemplate(template, {
-        label: 'Hi',
-        'is-open': true,
-        count: 2,
-        onClick: fn(),
-        x: undefined,
-      })
-    ).toBe('<p ${spread({ label: "Hi", "is-open": true })}></p>');
-    expect(fillTemplate(template, { icon: writtenArg('ICON') })).toBe(
-      '<p ${spread({ icon: ICON })}></p>'
-    );
-    expect(() => fillTemplate(template, { label: () => 'Hi' })).toThrow(UnprintableArgError);
-    expect(() => fillTemplate(template, { label: html`<b></b>` })).toThrow(UnprintableArgError);
   });
 
   it('writes an attribute value as lit does, empty while its arg is unset', () => {
@@ -67,19 +40,10 @@ describe('fillTemplate', () => {
   });
 
   it('writes an arg inside a larger attribute value as text in its quotes', () => {
-    expect(fillTemplate("<p title=\"⟦quoted t⟧!\" lang='⟦quoted t '⟧'>", { t: `"a'&` })).toBe(
-      `<p title="&quot;a'&amp;!" lang='"a&#39;&amp;'>`
+    expect(fillTemplate('<p title="⟦quoted t⟧!">', { t: `"a'&` })).toBe(
+      `<p title="&quot;a'&amp;!">`
     );
     expect(fillTemplate('<p title="⟦quoted t⟧!">', {})).toBe('<p title="!">');
-  });
-
-  it('writes the text of a style or script as it is, but for its end tag', () => {
-    expect(fillTemplate('<style>⟦raw css⟧</style>', { css: 'a > b { content: "&" }' })).toBe(
-      '<style>a > b { content: "&" }</style>'
-    );
-    expect(() => fillTemplate('<style>⟦raw css⟧</style>', { css: '</style><b>' })).toThrow(
-      UnprintableArgError
-    );
   });
 
   it('writes the part and state styles of a style hole', () => {
@@ -114,7 +78,6 @@ describe('fillTemplate', () => {
       ['<p ⟦attr title t⟧>', `<p title="${escaped}">`],
       ['<p title="⟦quoted t⟧">', `<p title="${escaped}">`],
       ['<p>⟦text t⟧</p>', `<p>${escaped}</p>`],
-      ['<style>⟦raw t⟧</style>', `<style>${escaped}</style>`],
       ['<p>⟦slot default t⟧</p>', `<p>${escaped}</p>`],
       ['<p>⟦slot title t⟧</p>', `<p><span slot="title">${escaped}</span></p>`],
     ]) {
@@ -128,25 +91,50 @@ describe('fillTemplate', () => {
     );
   });
 
+  it("prints an attribute lit's `ifDefined` sets while its arg is neither `null` nor `undefined`", () => {
+    const template = '<p ⟦attr title t defined⟧></p>';
+    expect(fillTemplate(template, { t: '' })).toBe('<p title=""></p>');
+    expect(fillTemplate(template, { t: false })).toBe('<p title="false"></p>');
+    expect(fillTemplate(template, { t: null })).toBe('<p></p>');
+    expect(fillTemplate(template, {})).toBe('<p></p>');
+    expect(fillTemplate(template, { t: writtenArg('TITLE') })).toBe('<p title=${TITLE}></p>');
+  });
+
+  it('writes the code of a css or style arg as a binding, as any other hole does', () => {
+    expect(fillTemplate('<p⟦css --gap=gap⟧></p>', { gap: writtenArg('GAP') })).toBe(
+      '<p style="--gap: ${GAP};"></p>'
+    );
+    expect(fillTemplate('⟦style p ::part(x)=x⟧<p></p>', { x: writtenArg('CSS') })).toBe(
+      '<style>\n  p::part(x) { ${CSS} }\n</style>\n<p></p>'
+    );
+  });
+
+  it('writes a start tag with a hole on one line while it fits in 80 columns', () => {
+    const template =
+      '<div>\n  <x-card ⟦attr label l⟧ variant="primary" ⟦bool open o⟧⟦css --gap=g⟧>\n  </x-card>\n</div>';
+    expect(fillTemplate(template, { l: 'Hi', o: true })).toBe(
+      '<div>\n  <x-card label="Hi" variant="primary" open>\n  </x-card>\n</div>'
+    );
+    expect(fillTemplate(template, { l: 'A label that is long enough to wrap', g: '1px' })).toBe(
+      [
+        '<div>',
+        '  <x-card',
+        '    label="A label that is long enough to wrap"',
+        '    variant="primary"',
+        '    style="--gap: 1px;"',
+        '  >',
+        '  </x-card>',
+        '</div>',
+      ].join('\n')
+    );
+    expect(
+      fillTemplate('<x-card\n  ⟦attr label l⟧\n  ⟦bool open o⟧\n></x-card>', { l: 'Hi' })
+    ).toBe('<x-card label="Hi"></x-card>');
+  });
+
   it('prints a boolean attribute only while its arg is truthy', () => {
     expect(fillTemplate('<button ⟦bool disabled off⟧>', { off: true })).toBe('<button disabled>');
     expect(fillTemplate('<button ⟦bool disabled off⟧>', { off: false })).toBe('<button>');
-  });
-
-  it('prints a value hole as a literal in the code around it', () => {
-    expect(fillTemplate('.items=${⟦value items⟧}', { items: ['a'] })).toBe('.items=${["a"]}');
-    expect(fillTemplate('${⟦value on⟧ ? a : b}', { on: true })).toBe('${true ? a : b}');
-  });
-
-  it('prints the `?` word of a hole while its arg is undefined', () => {
-    const template =
-      "<p title=\"⟦quoted t ?Place%20Dog⟧\" lang='⟦quoted t ' ?en⟧' ⟦bool hidden h ?hidden⟧ ⟦prop data d ?.data%3D%24%7Brows%7D⟧>⟦text t ?%24%7Bname%7D⟧ ${⟦value n ?(a%20%2B%20b)⟧}</p>";
-    expect(fillTemplate(template, {})).toBe(
-      '<p title="Place Dog" lang=\'en\' hidden .data=${rows}>${name} ${(a + b)}</p>'
-    );
-    expect(fillTemplate(template, { t: 'Hi', h: false, d: null, n: 0 })).toBe(
-      '<p title="Hi" lang=\'Hi\' .data=${null}>Hi ${0}</p>'
-    );
   });
 
   it('prints a slot arg as html, in a span for a named slot, and the code of one that is no text', () => {
@@ -164,16 +152,10 @@ describe('fillTemplate', () => {
   });
 
   it('throws for a value it cannot print', () => {
-    expect(() => fillTemplate('${⟦value onClick⟧}', { onClick: () => {} })).toThrow(
-      UnprintableArgError
-    );
     expect(() => fillTemplate('<p>⟦text icon⟧</p>', { icon: html`<b></b>` })).toThrow(
       UnprintableArgError
     );
-    expect(() => fillTemplate('<p ⟦prop icon icon⟧></p>', { icon: html`<b></b>` })).toThrow(
-      UnprintableArgError
-    );
-    expect(() => fillTemplate('${⟦value icons⟧}', { icons: [html`<b></b>`] })).toThrow(
+    expect(() => fillTemplate('<p ⟦attr icons icons⟧></p>', { icons: [html`<b></b>`] })).toThrow(
       UnprintableArgError
     );
     expect(() => fillTemplate('<p⟦css --gap=gap⟧></p>', { gap: 'red; color: blue' })).toThrow(

@@ -33,16 +33,9 @@ Incomplete snippet: properties without an attribute: `items`, `config`.",
       },
       "id": "webcomponentsfixtures-lit-property-only--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-property-only
-  label="Configured"
-  .items=${[{ name: 'Alpha' }, { name: 'Beta' }]}
-  .config=${{ dense: true, theme: 'dark' }}
-></lit-property-only>",
-      "template": "<lit-property-only
-  label="⟦quoted label⟧"
-  ⟦prop items items⟧
-  ⟦prop config config⟧
-></lit-property-only>",
+      "snippet": "<lit-property-only label="Configured"></lit-property-only>",
+      "template": "<lit-property-only label="⟦quoted label⟧"></lit-property-only>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
   },
 }

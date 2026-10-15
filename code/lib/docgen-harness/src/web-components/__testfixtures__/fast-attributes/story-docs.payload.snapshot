@@ -30,19 +30,9 @@ Incomplete snippet: properties without an attribute: `items`.",
       },
       "id": "webcomponentsfixtures-fast-attributes--lit-template",
       "name": "Lit Template",
-      "snippet": "<fast-attributes
-  label="Count"
-  size="large"
-  max-count="5"
-  .items=${['a']}
-></fast-attributes>",
-      "template": "<fast-attributes
-  label="⟦quoted label⟧"
-  size="⟦quoted size⟧"
-  ⟦bool disabled disabled⟧
-  max-count="⟦quoted maxCount⟧"
-  ⟦prop items items⟧
-></fast-attributes>",
+      "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+      "template": "<fast-attributes label="⟦quoted label⟧" size="⟦quoted size⟧" ⟦bool disabled disabled⟧ max-count="⟦quoted maxCount⟧"></fast-attributes>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
   },
 }

@@ -13,11 +13,11 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-  "LitTemplate": "<lit-toolkit-shapes
-  size="large"
-  level="2"
-  .tags=${['b']}
-  label="Shaped"
-  @toolkit-resize=${args.onToolkitResize}
-></lit-toolkit-shapes>",
+  "LitTemplate": "<lit-toolkit-shapes size="large" level="2" tags=${['b']} label="Shaped"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
 }

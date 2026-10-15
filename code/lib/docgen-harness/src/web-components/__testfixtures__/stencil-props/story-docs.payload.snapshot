@@ -7,8 +7,19 @@
       "argCode": {},
       "id": "webcomponentsfixtures-stencil-props--args-default-render",
       "name": "Args Default Render",
-      "snippet": "<stencil-props value="1" max="5" variant="full" aria-label-text="Default rating"></stencil-props>",
-      "template": "<stencil-props ⟦attr value value field⟧ ⟦attr max max field⟧ ⟦attr variant variant field⟧ ⟦attr aria-label-text labelText field⟧ ⟦attr labels labels field⟧></stencil-props>",
+      "snippet": "<stencil-props
+  value="1"
+  max="5"
+  variant="full"
+  aria-label-text="Default rating"
+></stencil-props>",
+      "template": "<stencil-props
+  ⟦attr value value field⟧
+  ⟦attr max max field⟧
+  ⟦attr variant variant field⟧
+  ⟦attr aria-label-text labelText field⟧
+  ⟦attr labels labels field⟧
+></stencil-props>",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
       "argCode": {},
@@ -22,18 +33,8 @@
       "argCode": {},
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
-      "snippet": "<stencil-props
-  value="3"
-  max="5"
-  variant="compact"
-  aria-label-text="Rating"
-></stencil-props>",
-      "template": "<stencil-props
-  value="⟦quoted value⟧"
-  max="⟦quoted max⟧"
-  variant="⟦quoted variant⟧"
-  aria-label-text="⟦quoted labelText⟧"
-></stencil-props>",
+      "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+      "template": "<stencil-props value="⟦quoted value⟧" max="⟦quoted max⟧" variant="⟦quoted variant⟧" aria-label-text="⟦quoted labelText⟧"></stencil-props>",
     },
   },
 }

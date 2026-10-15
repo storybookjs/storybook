@@ -13,7 +13,9 @@
 </style>
 <csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
   "RenderFallback": "<csf-shapes label="Fallback"></csf-shapes>",
-  "Slots": "<csf-shapes label="Meta">Body <b>text</b><span slot="actions"><button>Go</button></span></csf-shapes>",
+  "Slots": "<csf-shapes label="Meta">
+  Body <b>text</b><span slot="actions"><button>Go</button></span>
+</csf-shapes>",
   "SpreadArgs": "<csf-shapes label="Shared" count="2"></csf-shapes>",
   "UnknownArg": "<csf-shapes label="Meta"></csf-shapes>",
   "Unset": "<csf-shapes disabled></csf-shapes>",

@@ -1,5 +1,1 @@
-<vanilla-basic
-  label="Vanilla"
-  count="4"
-  disabled
-></vanilla-basic>
+<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>

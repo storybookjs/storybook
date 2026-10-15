@@ -1,87 +1,109 @@
 import {
   type FillSnippetTemplate,
   UnprintableArgError,
-  asOperand,
-  defaultCode,
   fillHoles,
-  isAction,
   printValue,
-  spreadArgs,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
-// Fills a template from `story-template.ts` or `build-story-docs.ts`; the server writes each
-// binding, and this prints the value in it. Every Web Components snippet is lit code, the html of a
-// lit template or code with lit templates in it, so any text a hole prints is also escaped for a
-// template literal.
+// Fills a template from `build-story-docs.ts`, the html the static snippet prints with a hole
+// wherever it prints an arg; this prints the value in each. Every Web Components snippet is the
+// html of a lit template, so any text a hole prints is also escaped for a template literal.
 //
-// Besides the shared holes, `⟦attr name arg⟧` is an attribute, left out while unset, `false` or
-// empty, but for an empty one a field reflects (`⟦attr name arg field⟧`); `⟦bool name arg⟧` and
-// `⟦prop name arg⟧` are lit's `?name` and `.name` bindings; `⟦text arg⟧` is html text,
-// `⟦quoted arg⟧` text in a double-quoted attribute value (`⟦quoted arg '⟧` single-quoted) and
-// `⟦raw arg⟧` the text of a `<style>` or `<script>`, and `⟦slot name arg⟧` the html of a slot. A
-// value that is no text, such as the code the story writes an arg with, is a binding there instead.
-// `⟦css name=arg…⟧` is the custom properties of a `style` attribute, with the space before it, and
-// `⟦style tag selector=arg…⟧` the `<style>` of part and state args. `⟦args -name…⟧` is the args as
-// an object, without those its `-name` words name.
-export const fillTemplate: FillSnippetTemplate = (template, args) =>
-  fillHoles(template, (kind, words) => {
-    if (kind === 'css' || kind === 'style' || kind === 'args') {
-      return { css, style, args: object }[kind](words, args);
+// `⟦attr name arg⟧` is an attribute, left out while unset, `false` or empty, but for an empty one
+// a field reflects (`⟦attr name arg field⟧`); `⟦attr name arg defined⟧` is lit's
+// `name=${ifDefined(arg)}`, left out only while `null` or `undefined`; `⟦bool name arg⟧` is lit's
+// `?name` binding; `⟦text arg⟧` is html text and `⟦quoted arg⟧` text in a double-quoted attribute
+// value, and `⟦slot name arg⟧` the html of a slot. A value that is no text, such as the code the
+// story writes an arg with, is a binding there instead. `⟦css name=arg…⟧` is the custom properties
+// of a `style` attribute, with the space before it, and `⟦style tag selector=arg…⟧` the `<style>`
+// of part and state args.
+//
+// A start tag with a hole is one line while it fits in 80 columns, else one attribute a line, as
+// the static snippet lays it out.
+export const fillTemplate: FillSnippetTemplate = (template, args) => {
+  let filled = '';
+  let end = 0;
+  for (const tag of template.matchAll(START_TAG)) {
+    if (!tag[0].includes('⟦')) {
+      continue;
     }
-    const [name = '', arg = '', quote] = ['attr', 'bool', 'prop', 'slot'].includes(kind)
-      ? words
-      : ['', ...words];
-    const value = args[arg];
-    // A hole for one arg may end with a `?code` word, the code to print while it is `undefined`.
-    const unset = value === undefined ? defaultCode(words.at(-1)) : undefined;
-    if (unset !== undefined) {
-      return unset;
-    }
-    const binding = (prefix: string) => `${prefix}\${${literal(arg, value)}}`;
-    const primitive = isPrimitive(value);
-    switch (kind) {
-      case 'quoted':
-      case 'text':
-      case 'raw': {
-        const escape = kind === 'quoted' && quote === "'" ? /[&<']/g : ESCAPES[kind];
-        return primitive ? text(arg, value, escape) : binding('');
+    filled += fillHoles(template.slice(end, tag.index), (kind, words) => fill(kind, words, args));
+    const attributes = [...tag[2]!.matchAll(ATTRIBUTE)]
+      .map(([attribute]) => fillHoles(attribute, (kind, words) => fill(kind, words, args)).trim())
+      .filter(Boolean);
+    const line = filled.slice(filled.lastIndexOf('\n') + 1);
+    const compact = [`<${tag[1]}`, ...attributes].join(' ');
+    filled +=
+      line.trim() || line.length + compact.length + 1 <= 80 || attributes.length === 0
+        ? `${compact}>`
+        : [
+            `<${tag[1]}`,
+            ...attributes.map((attribute) => `${line}  ${attribute}`),
+            `${line}>`,
+          ].join('\n');
+    end = tag.index + tag[0].length;
+  }
+  return filled + fillHoles(template.slice(end), (kind, words) => fill(kind, words, args));
+};
+
+// A start tag: its name, then its attributes, each a hole or a name with a double-quoted value.
+const START_TAG = /<([A-Za-z][^\s/>⟦]*)((?:\s*⟦[^⟧]*⟧|\s+[^\s/>⟦"=]+(?:="[^"]*")?)*)\s*>/g;
+const ATTRIBUTE = /⟦[^⟧]*⟧|[^\s⟦"=]+(?:="[^"]*")?/g;
+
+function fill(kind: string, words: string[], args: Args): string {
+  if (kind === 'css' || kind === 'style') {
+    return { css, style }[kind](words, args);
+  }
+  const [name = '', arg = '', mode] = ['attr', 'bool', 'slot'].includes(kind)
+    ? words
+    : ['', ...words];
+  const value = args[arg];
+  const binding = (prefix: string) => `${prefix}\${${literal(arg, value)}}`;
+  const primitive = isPrimitive(value);
+  switch (kind) {
+    case 'quoted':
+    case 'text':
+      return primitive ? text(arg, value, ESCAPES[kind]) : binding('');
+    case 'attr':
+      if (!primitive) {
+        return binding(`${name}=`);
       }
-      case 'attr':
-        if (!primitive) {
-          return binding(`${name}=`);
-        }
-        // An attribute a field reflects, `⟦attr name arg field⟧`, keeps an empty string.
-        return value === '' && quote === 'field'
-          ? `${name}=""`
-          : isEmpty(value) || value === false
-            ? ''
-            : value === true
-              ? name
-              : `${name}="${text(arg, value, ESCAPES.quoted)}"`;
-      case 'bool':
-        return !primitive ? binding(`?${name}=`) : value ? name : '';
-      case 'prop':
-        return binding(`.${name}=`);
-      case 'slot': {
-        // The html of a named slot is the content of a span in it.
-        const html = primitive ? text(arg, value, ESCAPES.raw) : binding('');
-        return isEmpty(value)
+      if (mode === 'defined') {
+        return value === undefined || value === null
           ? ''
-          : name === 'default'
-            ? html
-            : `<span slot="${name}">${html}</span>`;
+          : `${name}="${text(arg, value, ESCAPES.quoted)}"`;
       }
-      default:
-        return kind === 'operand' ? asOperand(literal(arg, value)) : literal(arg, value);
+      // An attribute a field reflects, `⟦attr name arg field⟧`, keeps an empty string.
+      return value === '' && mode === 'field'
+        ? `${name}=""`
+        : isEmpty(value) || value === false
+          ? ''
+          : value === true
+            ? name
+            : `${name}="${text(arg, value, ESCAPES.quoted)}"`;
+    case 'bool':
+      return !primitive ? binding(`?${name}=`) : value ? name : '';
+    case 'slot': {
+      // The html of a named slot is the content of a span in it.
+      const html = primitive ? text(arg, value, ESCAPES.raw) : binding('');
+      return isEmpty(value)
+        ? ''
+        : name === 'default'
+          ? html
+          : `<span slot="${name}">${html}</span>`;
     }
-  });
+    default:
+      // A hole of another renderer's template, which this one cannot print.
+      return fail(arg);
+  }
+}
 
 // The custom properties Storybook's render sets in the element's `style`.
 function css(words: string[], args: Args): string {
   const declarations = words.flatMap((word) => {
     const [name = '', arg = ''] = word.split(/=(.*)/);
-    return isEmpty(args[arg]) ? [] : [`${name}: ${text(arg, args[arg], /[&<";{}]/g)};`];
+    return isEmpty(args[arg]) ? [] : [`${name}: ${styleText(arg, args[arg], /[&<";{}]/g)};`];
   });
   return declarations.length === 0 ? '' : ` style="${declarations.join(' ')}"`;
 }
@@ -92,31 +114,18 @@ function style([tag = '', ...words]: string[], args: Args): string {
     const [selector = '', arg = ''] = word.split(/=(.*)/);
     return isEmpty(args[arg])
       ? []
-      : [`  ${tag}${selector} { ${text(arg, args[arg], ESCAPES.raw)} }`];
+      : [`  ${tag}${selector} { ${styleText(arg, args[arg], ESCAPES.raw)} }`];
   });
   return rules.length === 0 ? '' : `<style>\n${rules.join('\n')}\n</style>\n`;
 }
 
-// As a spread of the args leaves out an action, which no control sets, so does the object.
-function object(words: string[], args: Args): string {
-  const properties = spreadArgs(args, words)
-    .filter(([, value]) => value !== undefined && !isAction(value))
-    .map(
-      ([key, value]) =>
-        `${/^[A-Za-z_$][\w$]*$/.test(key) ? key : literal(key, key)}: ${literal(key, value)}`
-    );
-  return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
-}
+// A value in css, and the code the story writes it with as a binding, as any other hole prints it.
+const styleText = (name: string, value: unknown, escape: RegExp) =>
+  isPrimitive(value) ? text(name, value, escape) : `\${${literal(name, value)}}`;
 
 // What html reads as markup in each place; the text of a `<style>` or `<script>` only its end tag.
 const ESCAPES = { quoted: /[&<"]/g, text: /[&<>]/g, raw: /<\/(?=style|script)/gi };
-const ENTITIES: Record<string, string> = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#39;',
-};
+const ENTITIES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 
 /**
  * A value as html text in a lit template literal, where a backtick would end it and `${` bind in
@@ -124,7 +133,7 @@ const ENTITIES: Record<string, string> = {
  * the value unprintable.
  */
 function text(name: string, value: unknown, escape: RegExp): string {
-  return String(isPrimitive(value) ? (value ?? '') : fail(name))
+  return String(value ?? '')
     .replace(escape, (char) => ENTITIES[char] ?? fail(name))
     .replace(/\\/g, '\\\\')
     .replace(/`/g, '\\`')

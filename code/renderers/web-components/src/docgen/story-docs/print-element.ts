@@ -9,6 +9,10 @@ export function escapeAttribute(value: string, quote: '"' | "'" = '"'): string {
   return quote === "'" ? escaped.replace(/'/g, '&#39;') : escaped.replace(/"/g, '&quot;');
 }
 
+/**
+ * A script after the element that adds each listener to it, as the html of a lit template, so its
+ * code is escaped for one.
+ */
 export function printRootListenerScript(
   listeners: { event: string; handler: string }[]
 ): string | undefined {
@@ -25,7 +29,10 @@ export function printRootListenerScript(
     const host = document.currentScript.previousElementSibling;
 ${lines.join('\n')}
   }
-</script>`;
+</script>`
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${');
 }
 
 const uniqueListenersByEvent = (

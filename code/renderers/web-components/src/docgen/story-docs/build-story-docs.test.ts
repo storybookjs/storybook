@@ -6,8 +6,6 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { writtenArg } from 'storybook/internal/docs-tools';
-
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
 import type {
@@ -148,7 +146,7 @@ describe('buildStoryDocsPayload template', () => {
       story(`{ args: { label: 'Hi', isOpen: true, items: [1] } }`)
     );
     expect(written).toMatchInlineSnapshot(
-      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr label label field⟧ ⟦attr is-open isOpen field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
+      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr label label field⟧ ⟦attr is-open isOpen field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
     );
     expect(snippet).toBe(fillTemplate(written!, { label: 'Hi', isOpen: true, items: [1] }));
     expect(fillTemplate(written!, { label: '', '--accent': 'red', variant: 'a' })).toBe(
@@ -161,7 +159,7 @@ describe('buildStoryDocsPayload template', () => {
       story(`{ args: { 'shape-change-event': (event) => event.preventDefault() } }`)
     );
     expect(written).toMatchInlineSnapshot(`
-      "⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr is-open isOpen field⟧ ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>
+      "⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr is-open isOpen field⟧ ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>
       <script>
         {
           const host = document.currentScript.previousElementSibling;
@@ -186,7 +184,7 @@ describe('buildStoryDocsPayload template', () => {
     });
     expect(doc).toMatchObject({ snippet: '<test-element label="Hi"></test-element>' });
     expect(doc.template).toMatchInlineSnapshot(
-      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr label label field⟧ ⟦attr is-open isOpen field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
+      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr label label field⟧ ⟦attr is-open isOpen field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
     );
   });
 
@@ -208,50 +206,65 @@ describe('buildStoryDocsPayload template', () => {
     `);
   });
 
-  it('is the html of a render function as written, with a hole for each arg it reads', async () => {
-    const written = await template(`{
-      render: ({ label, disabled, heading, items }) => {
-        return html\`
-          <test-element
-            label="\${label}"
-            ?disabled=\${disabled}
-            .heading=\${heading}
-            @shape-change=\${() => console.log(label)}
-          >
-            <span>\${label} \\u2014 \${items.map((item) => html\`<i>\${item}</i>\`)}</span>
-          </test-element>
-        \`;
-      },
-    }`);
+  it('is the html next prints of a render, with a hole wherever it prints an arg', async () => {
+    const { template: written, snippet } = await firstStoryWithTemplate(
+      story(`{
+        args: { label: 'a < b', disabled: true, heading: 'H', items: [1] },
+        render: ({ label, disabled, heading, items }) => {
+          return html\`
+            <test-element
+              label="\${label}"
+              ?disabled=\${disabled}
+              .heading=\${heading}
+              @shape-change=\${() => console.log(label)}
+            >
+              <span>\${label} \\u2014 \${items.map((item) => html\`<i>\${item}</i>\`)}</span>
+            </test-element>
+          \`;
+        },
+      }`)
+    );
     expect(written).toMatchInlineSnapshot(`
-      "<test-element
-        label="⟦quoted label⟧"
-        ⟦bool disabled disabled⟧
-        ⟦prop heading heading⟧
-        @shape-change=\${() => console.log(label)}
-      >
-        <span>⟦text label⟧ \\u2014 \${⟦operand items⟧.map((item) => html\`<i>\${item}</i>\`)}</span>
-      </test-element>"
+      "<test-element label="⟦quoted label⟧" ⟦bool disabled disabled⟧ ⟦attr heading heading field⟧>
+        <span>⟦text label⟧ \\u2014</span>
+      </test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', () => console.log(label));
+        }
+      </script>"
     `);
-    expect(fillTemplate(written!, { label: 'a < b', disabled: true, heading: 'H', items: [1] }))
-      .toMatchInlineSnapshot(`
-      "<test-element
-        label="a &lt; b"
-        disabled
-        .heading=\${"H"}
-        @shape-change=\${() => console.log(label)}
-      >
-        <span>a &lt; b \\u2014 \${[1].map((item) => html\`<i>\${item}</i>\`)}</span>
-      </test-element>"
+    expect(snippet).toMatchInlineSnapshot(`
+      "<test-element label="a &lt; b" disabled heading="H">
+        <span>a &lt; b \\u2014</span>
+      </test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', () => console.log(label));
+        }
+      </script>"
+    `);
+    expect(fillTemplate(written!, { label: 'Hi', disabled: false })).toMatchInlineSnapshot(`
+      "<test-element label="Hi">
+        <span>Hi \\u2014</span>
+      </test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', () => console.log(label));
+        }
+      </script>"
     `);
   });
 
   it('emits the code the story writes each arg with that a hole prints as code', async () => {
-    const { template, argCode } = await firstStoryWithTemplate(
+    const { template, argCode, snippet } = await firstStoryWithTemplate(
       story(`{
         args: { label: 'Hi', count: 2, items: [new Date(0)], heading: shout, onShapeChange: () => {} },
         render: ({ label, count, items, heading }) =>
-          html\`<test-element label=\${label} .count=\${count} .items=\${items}>\${heading}</test-element>\`,
+          html\`<test-element label=\${label} .count=\${count}>\${items} \${heading}</test-element>\`,
       }`)
     );
     expect(argCode).toEqual({
@@ -259,63 +272,90 @@ describe('buildStoryDocsPayload template', () => {
       heading: 'shout',
       onShapeChange: '() => {}',
     });
-    expect(
-      fillTemplate(template!, { label: 'Bye', count: 3, items: writtenArg(argCode!.items!) })
-    ).toBe('<test-element label="Bye" .count=${3} .items=${[new Date(0)]}></test-element>');
+    expect(template).toMatchInlineSnapshot(`
+      "<test-element label="⟦quoted label⟧" ⟦attr count count field⟧>
+        ⟦text items⟧
+        ⟦text heading⟧
+      </test-element>"
+    `);
+    expect(snippet).toMatchInlineSnapshot(`
+      "<test-element label="Hi" count="2">
+        \${[new Date(0)]}
+        \${shout}
+      </test-element>"
+    `);
   });
 
-  it('keeps the indentation of the lines after the first', async () => {
+  it("lays the html out as next does with the story's own args", async () => {
     const written = await template(`{
-      render: (args) => html\`
-        <test-element
-          label=\${args.label}
-          variant="a"></test-element>
-      \`,
+      args: { label: 'A label long enough that the start tag wraps', variant: 'primary' },
+      render: (args) => html\`<div><test-element label=\${args.label} variant=\${args.variant}>\${args.heading}</test-element></div>\`,
     }`);
-    expect(written).toBe('<test-element\n  label="⟦quoted label⟧"\n  variant="a"></test-element>');
+    expect(written).toMatchInlineSnapshot(`
+      "<div>
+        <test-element
+          label="⟦quoted label⟧"
+          variant="⟦quoted variant⟧"
+        >⟦text heading⟧</test-element>
+      </div>"
+    `);
+    expect(fillTemplate(written!, { label: 'Hi', variant: 'a', heading: 'Go' }))
+      .toMatchInlineSnapshot(`
+      "<div>
+        <test-element label="Hi" variant="a">Go</test-element>
+      </div>"
+    `);
+  });
+
+  it('is the snippet, without a hole, for a render that reads no args', async () => {
+    const doc = await firstStoryWithTemplate(
+      story('{ args: { label: "Hi" }, render: () => html`<test-element></test-element>` }')
+    );
+    expect(doc).toMatchObject({
+      snippet: '<test-element></test-element>',
+      template: '<test-element></test-element>',
+    });
   });
 
   it.each([
-    ['a render that reads no args', '{ render: () => html`<test-element></test-element>` }'],
-    ['an arg name bound again', '{ render: ({ a }) => html`${[1].map((a) => a)}` }'],
-  ])('is not there for %s', async (_, body) => {
-    expect(await template(body)).toBeUndefined();
-  });
-
-  it.each([
     [
-      'a string template',
-      '(args) => `<test-element label="${args.label}">`',
-      '`<test-element label="${⟦value label⟧}">`',
+      'a string template, whose arg text is html',
+      '(args) => `<test-element label="${args.label}">${args.heading}</test-element>`',
+      '<test-element label="⟦quoted label⟧">⟦slot default heading⟧</test-element>',
+      '<test-element label="Hi"></test-element>',
     ],
     [
-      'a rest param',
-      '({ label, ...rest }) => html`<p>${rest.count} ${label}</p>`',
-      '<p>⟦text count⟧ ⟦text label⟧</p>',
-    ],
-    ['a spread directive', '(args) => html`<p ${spread(args)}></p>`', '<p ${spread(⟦args⟧)}></p>'],
-    [
-      'a rest param passed whole',
-      '({ label, ...rest }) => html`<p ${spread(rest)}>${label}</p>`',
-      '<p ${spread(⟦args -label⟧)}>⟦text label⟧</p>',
+      'an ifDefined attribute',
+      '(args) => html`<p title=${ifDefined(args.label)}></p>`',
+      '<p ⟦attr title label defined⟧></p>',
+      '<p title="Hi"></p>',
     ],
     [
-      'a default of a parameter',
-      "({ size = 'm' }) => html`<p size=${size}></p>`",
-      '<p size="⟦quoted size ?%24%7B\'m\'%7D⟧"></p>',
+      'a conditional, whose branch the story args choose',
+      '(args) => html`<p>${args.open ? html`<b>${args.label}</b>` : nothing}</p>`',
+      '<p>\n  <b>⟦text label⟧</b>\n</p>',
+      '<p>\n  <b>Hi</b>\n</p>',
     ],
     [
-      'a read of the story context',
-      '(args, { id }) => html`<p id=${id}>${args.a}</p>`',
-      '<p id=${id}>⟦text a⟧</p>',
+      'an arg read on, which next does not print',
+      "(args) => html`<p title=${args.label.toUpperCase()} lang=${args.heading ?? 'en'}></p>`",
+      '<p></p>',
+      '<p></p>',
     ],
     [
       'an arg whose name is no hole word',
       "(args) => html`<p>${args['my label']}</p>`",
       '<p>⟦text %my%20label⟧</p>',
+      '<p></p>',
     ],
-  ])('keeps %s as written', async (_, render, expected) => {
-    expect(await template(`{ render: ${render} }`)).toBe(expected);
+  ])('prints %s as next does', async (_, render, written, snippet) => {
+    const source = `
+      import { html, nothing } from 'lit';
+      import { ifDefined } from 'lit/directives/if-defined.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Hi', open: true }, render: ${render} };
+    `;
+    expect(await firstStoryWithTemplate(source)).toMatchObject({ template: written, snippet });
   });
 
   it.each([
@@ -342,12 +382,27 @@ describe('buildStoryDocsPayload template', () => {
     expect(doc.template).toBeUndefined();
   });
 
-  it('keeps a listener that reads the args as written', async () => {
+  it('has no hole for args a helper takes whole, which next does not print', async () => {
+    const doc = await firstStoryWithTemplate(
+      story('{ args: { label: "Hi" }, render: (args) => html`<div>${card(args)}</div>` }')
+    );
+    expect(doc).toMatchObject({ snippet: '<div></div>', template: '<div></div>' });
+  });
+
+  it('writes a listener as next does, also one that reads the args', async () => {
     expect(
       await template(
         '{ render: (args) => html`<test-element @change=${track(args)} label=${args.label}></test-element>` }'
       )
-    ).toBe('<test-element @change=${track(args)} label="⟦quoted label⟧"></test-element>');
+    ).toMatchInlineSnapshot(`
+      "<test-element label="⟦quoted label⟧"></test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('change', () => {});
+        }
+      </script>"
+    `);
   });
 
   it('reads the html tag of lit-html', async () => {
@@ -370,39 +425,19 @@ describe('buildStoryDocsPayload template', () => {
 });
 
 describe('buildStoryDocsPayload static snippet from the template', () => {
-  it('fills the template with the args the story sets, and does not name what the story file imports', async () => {
+  it('names what the code of an arg it prints reads', async () => {
     const doc = await firstStoryWithTemplate(
       `import { html } from 'lit';
-      import { spread } from '@open-wc/lit-helpers';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { label: 'Hi', disabled: false },
-        render: (args) => html\`<test-element \${spread(args)}></test-element>\`,
-      };`
-    );
-    expect(doc).toMatchObject({
-      snippet: '<test-element ${spread({ label: "Hi", disabled: false })}></test-element>',
-      template: '<test-element ${spread(⟦args⟧)}></test-element>',
-    });
-    expect(doc.warning).toBeUndefined();
-    expect(doc.templateWarning).toBeUndefined();
-  });
-
-  it('names what the code of an arg it prints reads, and the args a listener it keeps reads', async () => {
-    const doc = await firstStoryWithTemplate(
-      `import { html } from 'lit';
-      import { fn } from 'storybook/test';
       const ITEMS = ['a'];
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = {
-        args: { items: [ITEMS[0], new Date(0)], onClick: fn() },
-        render: (args) => html\`<test-element .items=\${args.items} @click=\${args.onClick}></test-element>\`,
+        args: { items: [ITEMS[0], new Date(0)] },
+        render: (args) => html\`<test-element>\${args.items}</test-element>\`,
       };`
     );
     expect(doc).toMatchObject({
-      snippet:
-        '<test-element .items=${[ITEMS[0], new Date(0)]} @click=${args.onClick}></test-element>',
-      warning: 'Incomplete snippet: names the snippet does not import or declare: `args`, `ITEMS`.',
+      snippet: '<test-element>${[ITEMS[0], new Date(0)]}</test-element>',
+      warning: 'Incomplete snippet: names the snippet does not import or declare: `ITEMS`.',
     });
   });
 
@@ -417,21 +452,6 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
     );
     expect(doc.snippet).toBe('<p>${html`<b>Go</b>`}</p>');
     expect(doc.warning).toBeUndefined();
-  });
-
-  it('names a module name that a parameter default reads', async () => {
-    const doc = await firstStoryWithTemplate(
-      `import { html } from 'lit';
-      const SIZES = { md: 'medium' };
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        render: ({ heading = SIZES.md }) => html\`<p>\${heading}</p>\`,
-      };`
-    );
-    expect(doc.snippet).toBe('<p>${SIZES.md}</p>');
-    expect(doc.templateWarning).toBe(
-      'Incomplete snippet: names the snippet does not import or declare: `SIZES`.'
-    );
   });
 
   it('prints the code of an arg it cannot read, and names what the snippet does not declare', async () => {
@@ -459,22 +479,8 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
         render: (args) => html\`<p>\${args.variant} \${args.label}</p>\`,
       };`
     );
-    expect(doc.snippet).toBe('<p> Hi</p>');
+    expect(doc.snippet).toBe('<p>\n  Hi\n</p>');
     expect(doc.snippet).toBe(fillTemplate(doc.template!, { label: 'Hi' }));
-    expect(doc.warning).toContain('`...baseArgs`');
-  });
-
-  it('passes the args it can read whole, and names the spread it cannot read', async () => {
-    const doc = await firstStoryWithTemplate(
-      `import { html } from 'lit';
-      import { baseArgs } from 'some-package';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { ...baseArgs, label: 'Hi' },
-        render: (args) => html\`<p \${spread(args)}></p>\`,
-      };`
-    );
-    expect(doc.snippet).toBe('<p ${spread({ label: "Hi" })}></p>');
     expect(doc.warning).toContain('`...baseArgs`');
   });
 
@@ -586,9 +592,9 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: `const heading = "Head";
-const tag = html\`<b>Aliased</b>\`;
-return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag}</test-element>\`;`,
+        snippet: `<test-element label="Aliased" count="7" heading="Head">
+  <b>Aliased</b>
+</test-element>`,
       },
     },
     {
@@ -643,7 +649,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       },
     },
     {
-      name: 'template expression the template fills with the static args',
+      name: 'unresolved template expression arg is not unbound',
       source: `
         import { html } from 'lit';
         import { classMap } from 'lit/directives/class-map.js';
@@ -656,7 +662,9 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element class=${classMap({ active: Boolean(true) })}></test-element>',
+        snippet: '<test-element></test-element>',
+        warning:
+          'Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.',
       },
     },
     {

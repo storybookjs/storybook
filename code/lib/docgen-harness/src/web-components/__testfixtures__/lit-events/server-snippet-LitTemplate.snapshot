@@ -1,7 +1,8 @@
-<lit-events
-  value="changed"
-  @my-change=${args['my-change-event']}
-  @my-close=${args['my-close-event']}
-></lit-events>
-
-warning: Incomplete snippet: names the snippet does not import or declare: `args`.
+<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>

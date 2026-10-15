@@ -1,41 +1,37 @@
 {
-  "Aliased": "const heading = "Head";
-const tag = html`<b>Aliased</b>`;
-return html`<lit-template-shapes label="Aliased" count="7" .heading=${heading}
-  >${tag}</lit-template-shapes
->`;",
-  "Attributes": "<lit-template-shapes
-  label="Alpha"
-  count="2"
-  disabled
-></lit-template-shapes>",
-  "ClassMap": "<lit-template-shapes
-  class=${classMap({ active: Boolean(true) })}
-></lit-template-shapes>",
+  "Aliased": "<lit-template-shapes label="Aliased" count="7" heading="Head">
+  <b>Aliased</b>
+</lit-template-shapes>",
+  "Attributes": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
+  "ClassMap": "<lit-template-shapes></lit-template-shapes>",
   "Destructured": "<lit-template-shapes label="Destructured" count="6"></lit-template-shapes>",
-  "DisabledFalse": "<lit-template-shapes
-  label="Beta"
-  count="3"
-></lit-template-shapes>",
-  "IfDefined": "<lit-template-shapes
-  label=${ifDefined(undefined)}
-  count=${ifDefined(4)}
-></lit-template-shapes>",
-  "MemberPath": "const user = { name: 'Bob', admin: false } as { name: string; admin: boolean };
-return html`<lit-template-shapes label=${user.name}
-  >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
->`;",
-  "Nested": "<lit-template-shapes>${html`<span>Nested</span>`}</lit-template-shapes>",
-  "Nothing": "<lit-template-shapes label=${"Set" ? "Set" : nothing}
-  >${false ? html`<b>shown</b>` : nothing}</lit-template-shapes
->",
+  "DisabledFalse": "<lit-template-shapes label="Beta" count="3"></lit-template-shapes>",
+  "IfDefined": "<lit-template-shapes count="4"></lit-template-shapes>",
+  "Listener": "<lit-template-shapes></lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+  "MemberPath": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
+  "Nested": "<lit-template-shapes>
+  <span>Nested</span>
+</lit-template-shapes>",
+  "NestedListener": "<lit-template-shapes>
+  <button>Go</button>
+</lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+  "Nothing": "<lit-template-shapes label="Set"></lit-template-shapes>",
   "PrefixedClass": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
-  "PropertyOnly": "<lit-template-shapes .items=${[{ name: 'Alpha' }]}></lit-template-shapes>",
-  "PropertyPaired": "<lit-template-shapes .heading=${"Heading"} .open=${true}></lit-template-shapes>",
-  "PropertyPairedFalse": "<lit-template-shapes .heading=${"Closed"} .open=${false}></lit-template-shapes>",
-  "QuotedAndMultiHole": "<lit-template-shapes
-  class="card warm large"
-  label="Quoted"
-></lit-template-shapes>",
+  "PropertyOnly": "<lit-template-shapes></lit-template-shapes>",
+  "PropertyPaired": "<lit-template-shapes heading="Heading" open></lit-template-shapes>",
+  "PropertyPairedFalse": "<lit-template-shapes heading="Closed"></lit-template-shapes>",
+  "QuotedAndMultiHole": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
   "UnboundArg": "<lit-template-shapes label="Bound"></lit-template-shapes>",
 }

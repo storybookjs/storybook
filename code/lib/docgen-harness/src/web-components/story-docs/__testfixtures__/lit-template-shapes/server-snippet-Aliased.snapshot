@@ -1,5 +1,3 @@
-const heading = "Head";
-const tag = html`<b>Aliased</b>`;
-return html`<lit-template-shapes label="Aliased" count="7" .heading=${heading}
-  >${tag}</lit-template-shapes
->`;
+<lit-template-shapes label="Aliased" count="7" heading="Head">
+  <b>Aliased</b>
+</lit-template-shapes>

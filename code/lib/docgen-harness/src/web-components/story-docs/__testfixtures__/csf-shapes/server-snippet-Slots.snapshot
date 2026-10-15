@@ -1,1 +1,3 @@
-<csf-shapes label="Meta">Body <b>text</b><span slot="actions"><button>Go</button></span></csf-shapes>
+<csf-shapes label="Meta">
+  Body <b>text</b><span slot="actions"><button>Go</button></span>
+</csf-shapes>

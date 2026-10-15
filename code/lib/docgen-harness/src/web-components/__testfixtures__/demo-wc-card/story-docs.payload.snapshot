@@ -9,12 +9,12 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--back",
       "name": "Back",
-      "snippet": "<demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
-  ><span slot="prefix"></span>A simple card</demo-wc-card
->",
-      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
-  ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
->",
+      "snippet": "<demo-wc-card back-side rows=${[]}>
+  <span slot="prefix"></span>A simple card
+</demo-wc-card>",
+      "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧>
+  <span slot="prefix">⟦text prefix⟧</span>A simple card
+</demo-wc-card>",
     },
     "webcomponentsfixtures-demo-wc-card--front": {
       "argCode": {
@@ -22,12 +22,8 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
-      "snippet": "<demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
-  ><span slot="prefix"></span>A simple card</demo-wc-card
->",
-      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
-  ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
->",
+      "snippet": "<demo-wc-card rows=${[]}><span slot="prefix"></span>A simple card</demo-wc-card>",
+      "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card>",
     },
     "webcomponentsfixtures-demo-wc-card--prefix": {
       "argCode": {
@@ -35,12 +31,12 @@
       },
       "id": "webcomponentsfixtures-demo-wc-card--prefix",
       "name": "Prefix",
-      "snippet": "<demo-wc-card .backSide=${false} .header=${"my header"} .rows=${[]}
-  ><span slot="prefix">prefix:</span>A simple card</demo-wc-card
->",
-      "template": "<demo-wc-card ⟦prop backSide backSide⟧ ⟦prop header header⟧ ⟦prop rows rows⟧
-  ><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card
->",
+      "snippet": "<demo-wc-card header="my header" rows=${[]}>
+  <span slot="prefix">prefix:</span>A simple card
+</demo-wc-card>",
+      "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧>
+  <span slot="prefix">⟦text prefix⟧</span>A simple card
+</demo-wc-card>",
     },
   },
 }

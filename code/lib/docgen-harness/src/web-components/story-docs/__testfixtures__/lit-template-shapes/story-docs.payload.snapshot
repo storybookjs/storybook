@@ -7,42 +7,27 @@
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--aliased",
       "name": "Aliased",
-      "snippet": "const heading = "Head";
-const tag = html`<b>Aliased</b>`;
-return html`<lit-template-shapes label="Aliased" count="7" .heading=${heading}
-  >${tag}</lit-template-shapes
->`;",
-      "template": "const heading = ⟦value heading⟧;
-const tag = html`<b>⟦text label⟧</b>`;
-return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" .heading=${heading}
-  >${tag}</lit-template-shapes
->`;",
+      "snippet": "<lit-template-shapes label="Aliased" count="7" heading="Head">
+  <b>Aliased</b>
+</lit-template-shapes>",
+      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦attr heading heading field⟧>
+  <b>⟦text label⟧</b>
+</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--attributes": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--attributes",
       "name": "Attributes",
-      "snippet": "<lit-template-shapes
-  label="Alpha"
-  count="2"
-  disabled
-></lit-template-shapes>",
-      "template": "<lit-template-shapes
-  label="⟦quoted label⟧"
-  count="⟦quoted count⟧"
-  ⟦bool disabled disabled⟧
-></lit-template-shapes>",
+      "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
+      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--class-map": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--class-map",
       "name": "Class Map",
-      "snippet": "<lit-template-shapes
-  class=${classMap({ active: Boolean(true) })}
-></lit-template-shapes>",
-      "template": "<lit-template-shapes
-  class=${classMap({ active: Boolean(⟦value active⟧) })}
-></lit-template-shapes>",
+      "snippet": "<lit-template-shapes></lit-template-shapes>",
+      "template": "<lit-template-shapes></lit-template-shapes>",
+      "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
       "argCode": {},
@@ -55,33 +40,30 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--disabled-false",
       "name": "Disabled False",
-      "snippet": "<lit-template-shapes
-  label="Beta"
-  count="3"
-></lit-template-shapes>",
-      "template": "<lit-template-shapes
-  label="⟦quoted label⟧"
-  count="⟦quoted count⟧"
-  ⟦bool disabled disabled⟧
-></lit-template-shapes>",
+      "snippet": "<lit-template-shapes label="Beta" count="3"></lit-template-shapes>",
+      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--if-defined": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--if-defined",
       "name": "If Defined",
-      "snippet": "<lit-template-shapes
-  label=${ifDefined(undefined)}
-  count=${ifDefined(4)}
-></lit-template-shapes>",
-      "template": "<lit-template-shapes
-  label=${ifDefined(⟦value label⟧)}
-  count=${ifDefined(⟦value count⟧)}
-></lit-template-shapes>",
+      "snippet": "<lit-template-shapes count="4"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label defined⟧ ⟦attr count count defined⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--listener": {
+      "argCode": {
+        "onShapeChange": "() => {}",
+      },
       "id": "webcomponentsstorydocs-lit-template-shapes--listener",
       "name": "Listener",
       "snippet": "<lit-template-shapes></lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+      "template": "<lit-template-shapes></lit-template-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -95,26 +77,37 @@ return html`<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted cou
       },
       "id": "webcomponentsstorydocs-lit-template-shapes--member-path",
       "name": "Member Path",
-      "snippet": "const user = { name: 'Bob', admin: false } as { name: string; admin: boolean };
-return html`<lit-template-shapes label=${user.name}
-  >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
->`;",
-      "template": "const user = ⟦value user⟧ as { name: string; admin: boolean };
-return html`<lit-template-shapes label=${user.name}
-  >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
->`;",
+      "snippet": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
+      "template": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--nested",
       "name": "Nested",
-      "snippet": "<lit-template-shapes>${html`<span>Nested</span>`}</lit-template-shapes>",
-      "template": "<lit-template-shapes>${html`<span>⟦text label⟧</span>`}</lit-template-shapes>",
+      "snippet": "<lit-template-shapes>
+  <span>Nested</span>
+</lit-template-shapes>",
+      "template": "<lit-template-shapes>
+  <span>⟦text label⟧</span>
+</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested-listener": {
+      "argCode": {
+        "onInnerClick": "() => {}",
+        "onShapeChange": "() => {}",
+      },
       "id": "webcomponentsstorydocs-lit-template-shapes--nested-listener",
       "name": "Nested Listener",
       "snippet": "<lit-template-shapes>
+  <button>Go</button>
+</lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+      "template": "<lit-template-shapes>
   <button>Go</button>
 </lit-template-shapes>
 <script>
@@ -129,12 +122,8 @@ return html`<lit-template-shapes label=${user.name}
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--nothing",
       "name": "Nothing",
-      "snippet": "<lit-template-shapes label=${"Set" ? "Set" : nothing}
-  >${false ? html`<b>shown</b>` : nothing}</lit-template-shapes
->",
-      "template": "<lit-template-shapes label=${⟦value label⟧ ? ⟦value label⟧ : nothing}
-  >${⟦value show⟧ ? html`<b>shown</b>` : nothing}</lit-template-shapes
->",
+      "snippet": "<lit-template-shapes label="Set"></lit-template-shapes>",
+      "template": "<lit-template-shapes label="Set"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--prefixed-class": {
       "argCode": {},
@@ -149,35 +138,30 @@ return html`<lit-template-shapes label=${user.name}
       },
       "id": "webcomponentsstorydocs-lit-template-shapes--property-only",
       "name": "Property Only",
-      "snippet": "<lit-template-shapes .items=${[{ name: 'Alpha' }]}></lit-template-shapes>",
-      "template": "<lit-template-shapes ⟦prop items items⟧></lit-template-shapes>",
+      "snippet": "<lit-template-shapes></lit-template-shapes>",
+      "template": "<lit-template-shapes></lit-template-shapes>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--property-paired",
       "name": "Property Paired",
-      "snippet": "<lit-template-shapes .heading=${"Heading"} .open=${true}></lit-template-shapes>",
-      "template": "<lit-template-shapes ⟦prop heading heading⟧ ⟦prop open open⟧></lit-template-shapes>",
+      "snippet": "<lit-template-shapes heading="Heading" open></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr heading heading field⟧ ⟦attr open open field⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired-false": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--property-paired-false",
       "name": "Property Paired False",
-      "snippet": "<lit-template-shapes .heading=${"Closed"} .open=${false}></lit-template-shapes>",
-      "template": "<lit-template-shapes ⟦prop heading heading⟧ ⟦prop open open⟧></lit-template-shapes>",
+      "snippet": "<lit-template-shapes heading="Closed"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr heading heading field⟧ ⟦attr open open field⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole",
       "name": "Quoted And Multi Hole",
-      "snippet": "<lit-template-shapes
-  class="card warm large"
-  label="Quoted"
-></lit-template-shapes>",
-      "template": "<lit-template-shapes
-  class="card ⟦quoted tone⟧ ⟦quoted size⟧"
-  label="⟦quoted label⟧"
-></lit-template-shapes>",
+      "snippet": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
+      "template": "<lit-template-shapes class="card ⟦quoted tone⟧ ⟦quoted size⟧" label="⟦quoted label⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--unbound-arg": {
       "argCode": {},
@@ -185,6 +169,7 @@ return html`<lit-template-shapes label=${user.name}
       "name": "Unbound Arg",
       "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",
       "template": "<lit-template-shapes label="⟦quoted label⟧"></lit-template-shapes>",
+      "warning": "Incomplete snippet: args not bound by the render template: `count`.",
     },
   },
 }

@@ -6,13 +6,13 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-  "DomNode": "const el = document.createElement('lit-toolkit-shapes');
-el.setAttribute('size', String("large"));
-el.setAttribute('level', String(2));
-el.setAttribute('label', String("Shaped"));
-(el as HTMLElement & { tags: string[] }).tags = ['b'] as string[];
-el.addEventListener('toolkit-resize', (() => {}) as EventListener);
-return el;",
+  "DomNode": "<lit-toolkit-shapes size="large" level="2" tags=${['b']} label="Shaped"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
   "LitTemplate": "<lit-toolkit-shapes
   size="large"
   level="2"

@@ -1,15 +1,10 @@
 {
-  "BranchingHelper": "if (true) {
-  return html`<lit-template-shapes disabled></lit-template-shapes>`;
-}
-return Card({ label: "Alpha", disabled: true });",
-  "Csf2Helper": "Card({ ...{ label: "Alpha" }, disabled: true })",
-  "HelperCall": "Card({ label: "Alpha", count: 2 })",
-  "HelperDefaults": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>${"Head"}</b>`)",
-  "HelperInHtml": "html`<section>${List({ label: "Alpha", count: 2 })}</section>`",
-  "ReExportedHtml": "html`<lit-template-shapes label=${"Alpha"}></lit-template-shapes>`",
-  "SpreadDirective": "html`<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>`",
-  "SpreadNextToAttribute": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  >${undefined}</lit-template-shapes
->`",
+  "BranchingHelper": "<lit-template-shapes label="Alpha" disabled></lit-template-shapes>",
+  "Csf2Helper": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+  "HelperCall": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+  "HelperDefaults": "<lit-template-shapes heading="Head"></lit-template-shapes>",
+  "HelperInHtml": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+  "ReExportedHtml": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+  "SpreadDirective": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
+  "SpreadNextToAttribute": "<lit-template-shapes count="2"></lit-template-shapes>",
 }

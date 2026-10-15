@@ -21,22 +21,10 @@
       },
       "id": "webcomponentsfixtures-lit-property-only--dom-node",
       "name": "Dom Node",
-      "snippet": "const el = document.createElement('lit-property-only') as HTMLElement & {
-  config?: unknown;
-  items?: unknown;
-};
-el.setAttribute('label', String("Configured"));
-el.items = [{ name: 'Alpha' }, { name: 'Beta' }];
-el.config = { dense: true, theme: 'dark' };
-return el;",
-      "template": "const el = document.createElement('lit-property-only') as HTMLElement & {
-  config?: unknown;
-  items?: unknown;
-};
-el.setAttribute('label', String(⟦value label⟧));
-el.items = ⟦value items⟧;
-el.config = ⟦value config⟧;
-return el;",
+      "snippet": "<lit-property-only label="Configured"></lit-property-only>",
+      "template": "<lit-property-only ⟦attr label label field⟧></lit-property-only>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
     "webcomponentsfixtures-lit-property-only--lit-template": {
       "argCode": {

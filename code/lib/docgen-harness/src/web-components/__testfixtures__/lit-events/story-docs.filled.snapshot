@@ -7,11 +7,14 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-  "DomNode": "const el = document.createElement('lit-events');
-el.setAttribute('value', String("changed"));
-el.addEventListener('my-change', (() => {}) as EventListener);
-el.addEventListener('my-close', (() => {}) as EventListener);
-return el;",
+  "DomNode": "<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
   "LitTemplate": "<lit-events
   value="changed"
   @my-change=${args['my-change-event']}

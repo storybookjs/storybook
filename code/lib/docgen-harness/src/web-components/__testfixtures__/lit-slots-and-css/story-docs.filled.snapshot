@@ -3,15 +3,7 @@
   lit-slots-and-css::part(panel) { color: rebeccapurple; }
 </style>
 <lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">Body <b>text</b><span slot="actions"><button>Confirm</button></span></lit-slots-and-css>",
-  "DomNode": "const el = document.createElement('lit-slots-and-css');
-el.setAttribute('heading', String("Projected"));
-const body = document.createElement('p');
-body.textContent = 'Default slot content';
-const action = document.createElement('button');
-action.slot = 'actions';
-action.textContent = 'Confirm';
-el.append(body, action);
-return el;",
+  "DomNode": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
   "LitTemplate": "<lit-slots-and-css heading="Projected">
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>

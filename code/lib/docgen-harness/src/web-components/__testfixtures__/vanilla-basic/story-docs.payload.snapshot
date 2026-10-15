@@ -14,20 +14,9 @@
       "argCode": {},
       "id": "webcomponentsfixtures-vanilla-basic--dom-node",
       "name": "Dom Node",
-      "snippet": "const el = document.createElement('vanilla-basic');
-el.setAttribute('label', String("Vanilla"));
-el.setAttribute('count', String(4));
-if (true) {
-  el.setAttribute('disabled', '');
-}
-return el;",
-      "template": "const el = document.createElement('vanilla-basic');
-el.setAttribute('label', String(⟦value label⟧));
-el.setAttribute('count', String(⟦value count⟧));
-if (⟦value disabled⟧) {
-  el.setAttribute('disabled', '');
-}
-return el;",
+      "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
+      "template": "<vanilla-basic ⟦attr label label⟧ ⟦attr count count⟧ ⟦attr disabled disabled⟧ ⟦attr legacy-label legacy-label⟧></vanilla-basic>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('vanilla-basic'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-vanilla-basic--lit-template": {
       "argCode": {},

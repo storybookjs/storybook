@@ -1,1 +1,3 @@
-Card({ ...{ label: "Alpha" }, disabled: true })
+<lit-template-shapes label="Alpha"></lit-template-shapes>
+
+warning: Incomplete snippet: `(args: CardArgs) => Card({ ...args, disabled: true })` could not be resolved statically.

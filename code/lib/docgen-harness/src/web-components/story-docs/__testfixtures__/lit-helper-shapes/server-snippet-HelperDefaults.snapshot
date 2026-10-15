@@ -1,1 +1,3 @@
-Card({ ...{ heading: "Head" }, count: 5 }, html`<b>${"Head"}</b>`)
+<lit-template-shapes heading="Head"></lit-template-shapes>
+
+warning: Incomplete snippet: `args => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.

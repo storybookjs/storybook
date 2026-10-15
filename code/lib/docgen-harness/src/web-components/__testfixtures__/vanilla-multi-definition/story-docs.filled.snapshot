@@ -1,7 +1,5 @@
 {
   "ArgsDefaultRender": "<multi-beta></multi-beta>",
-  "DomNode": "const el = document.createElement('multi-beta');
-el.setAttribute('beta-label', String("Beta"));
-return el;",
+  "DomNode": "<multi-beta></multi-beta>",
   "LitTemplate": "<multi-beta beta-label="Beta"></multi-beta>",
 }

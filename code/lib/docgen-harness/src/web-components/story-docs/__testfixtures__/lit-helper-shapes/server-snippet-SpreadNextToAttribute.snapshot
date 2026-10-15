@@ -1,3 +1,5 @@
-html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  >${undefined}</lit-template-shapes
->`
+<lit-template-shapes count="2"></lit-template-shapes>
+
+warning: Incomplete snippet: `({ heading, ...rest }) => html`<lit-template-shapes label="Written" ${spreadProps(rest)}
+      >${heading}</lit-template-shapes
+    >`` could not be resolved statically.

@@ -14,20 +14,9 @@
       "argCode": {},
       "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",
       "name": "Dom Node",
-      "snippet": "const el = document.createElement('lit-inheritance-mixin');
-el.setAttribute('base-label', String("Inherited"));
-if (true) {
-  el.setAttribute('mixed-active', '');
-}
-el.setAttribute('count', String(5));
-return el;",
-      "template": "const el = document.createElement('lit-inheritance-mixin');
-el.setAttribute('base-label', String(⟦value baseLabel⟧));
-if (⟦value mixedActive⟧) {
-  el.setAttribute('mixed-active', '');
-}
-el.setAttribute('count', String(⟦value count⟧));
-return el;",
+      "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin ⟦attr base-label baseLabel field⟧ ⟦attr mixed-active mixedActive field⟧ ⟦attr count count field⟧></lit-inheritance-mixin>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-inheritance-mixin'); el.setAttribute('base-label', String(args.baseLabel)); if (args.mixedActive) { el.setAttribute('mixed-active', ''); } el.setAttribute('count', String(args.count)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--lit-template": {
       "argCode": {},

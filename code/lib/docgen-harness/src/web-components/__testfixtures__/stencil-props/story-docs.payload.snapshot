@@ -14,18 +14,9 @@
       "argCode": {},
       "id": "webcomponentsfixtures-stencil-props--dom-node",
       "name": "Dom Node",
-      "snippet": "const el = document.createElement('stencil-props');
-el.setAttribute('value', String(3));
-el.setAttribute('max', String(5));
-el.setAttribute('variant', String("compact"));
-el.setAttribute('aria-label-text', String("Rating"));
-return el;",
-      "template": "const el = document.createElement('stencil-props');
-el.setAttribute('value', String(⟦value value⟧));
-el.setAttribute('max', String(⟦value max⟧));
-el.setAttribute('variant', String(⟦value variant⟧));
-el.setAttribute('aria-label-text', String(⟦value labelText⟧));
-return el;",
+      "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+      "template": "<stencil-props ⟦attr value value field⟧ ⟦attr max max field⟧ ⟦attr variant variant field⟧ ⟦attr aria-label-text labelText field⟧ ⟦attr labels labels field⟧></stencil-props>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('stencil-props'); el.setAttribute('value', String(args.value)); el.setAttribute('max', String(args.max)); el.setAttribute('variant', String(args.variant)); el.setAttribute('aria-label-text', String(args.labelText)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-stencil-props--lit-template": {
       "argCode": {},

@@ -1,1 +1,3 @@
-html`<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>`
+<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>
+
+warning: Incomplete snippet: `args => html`<lit-template-shapes ${spreadProps(args)}></lit-template-shapes>`` could not be resolved statically.

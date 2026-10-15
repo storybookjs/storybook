@@ -19,11 +19,11 @@ import type { Args } from 'storybook/internal/types';
 // empty, but for an empty one a field reflects (`⟦attr name arg field⟧`); `⟦bool name arg⟧` and
 // `⟦prop name arg⟧` are lit's `?name` and `.name` bindings; `⟦text arg⟧` is html text,
 // `⟦quoted arg⟧` text in a double-quoted attribute value (`⟦quoted arg '⟧` single-quoted) and
-// `⟦raw arg⟧` the text of a `<style>` or `<script>`. A value that is no text, such as the code the
-// story writes an arg with, is a binding there instead.
-// `⟦slot name arg⟧` is the html of a slot, `⟦css name=arg…⟧` the custom properties of a `style`
-// attribute, with the space before it, and `⟦style tag selector=arg…⟧` the `<style>` of part and
-// state args. `⟦args -name…⟧` is the args as an object, without those its `-name` words name.
+// `⟦raw arg⟧` the text of a `<style>` or `<script>`, and `⟦slot name arg⟧` the html of a slot. A
+// value that is no text, such as the code the story writes an arg with, is a binding there instead.
+// `⟦css name=arg…⟧` is the custom properties of a `style` attribute, with the space before it, and
+// `⟦style tag selector=arg…⟧` the `<style>` of part and state args. `⟦args -name…⟧` is the args as
+// an object, without those its `-name` words name.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     if (kind === 'css' || kind === 'style' || kind === 'args') {
@@ -65,7 +65,7 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
         return binding(`.${name}=`);
       case 'slot': {
         // The html of a named slot is the content of a span in it.
-        const html = text(arg, value, ESCAPES.raw);
+        const html = primitive ? text(arg, value, ESCAPES.raw) : binding('');
         return isEmpty(value)
           ? ''
           : name === 'default'

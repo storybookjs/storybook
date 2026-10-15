@@ -289,20 +289,9 @@ describe('buildStoryDocsPayload template', () => {
       '`<test-element label="${⟦value label⟧}">`',
     ],
     [
-      'an arg in a shorthand property',
-      '({ a }) => html`${JSON.stringify({ a })}`',
-      '${JSON.stringify({ a: ⟦value a⟧ })}',
-    ],
-    [
       'a rest param',
       '({ label, ...rest }) => html`<p>${rest.count} ${label}</p>`',
       '<p>⟦text count⟧ ⟦text label⟧</p>',
-    ],
-    ['a call of a function with the args', '(args) => Card(args)', 'Card(⟦args⟧)'],
-    [
-      'a copy of the args with an entry',
-      "(args) => Card({ ...args, size: 's' })",
-      "Card({ ...⟦args⟧, size: 's' })",
     ],
     ['a spread directive', '(args) => html`<p ${spread(args)}></p>`', '<p ${spread(⟦args⟧)}></p>'],
     [
@@ -310,7 +299,6 @@ describe('buildStoryDocsPayload template', () => {
       '({ label, ...rest }) => html`<p ${spread(rest)}>${label}</p>`',
       '<p ${spread(⟦args -label⟧)}>⟦text label⟧</p>',
     ],
-    ['a toolkit template', '(args) => template(args)', 'template(⟦args⟧)'],
     [
       'a default of a parameter',
       "({ size = 'm' }) => html`<p size=${size}></p>`",
@@ -330,17 +318,28 @@ describe('buildStoryDocsPayload template', () => {
     expect(await template(`{ render: ${render} }`)).toBe(expected);
   });
 
-  it('writes a render with statements as its body, without the constant that takes the args apart', async () => {
-    const written = await template(`{
-      render: (args) => {
-        const { label } = args;
-        const upper = label.toUpperCase();
-        return html\`<p>\${upper}</p>\`;
-      },
-    }`);
-    expect(written).toBe(
-      'const upper = ⟦operand label⟧.toUpperCase();\nreturn html`<p>${upper}</p>`;'
+  it.each([
+    ['a call of a function with the args', '(args) => Card(args)'],
+    ['a copy of the args with an entry', "(args) => Card({ ...args, size: 's' })"],
+    ['a toolkit template', '(args) => template(args)'],
+    [
+      'a render with statements',
+      '(args) => { const upper = args.label.toUpperCase(); return html`<p>${upper}</p>`; }',
+    ],
+  ])('is the element next prints for %s, not the render as written', async (_, render) => {
+    const { template: written, snippet } = await firstStoryWithTemplate(
+      story(`{ args: { label: 'Hi' }, render: ${render} }`)
     );
+    expect(written).toMatch(/^⟦style test-element .*⟧<test-element ⟦attr label label field⟧ /);
+    expect(snippet).toBe('<test-element label="Hi"></test-element>');
+  });
+
+  it('is not there where next shows no snippet', async () => {
+    const doc = await firstStoryWithTemplate(
+      story(`{ args: { a: 1 }, render: ({ a }) => html\`\${JSON.stringify({ a })}\` }`)
+    );
+    expect(doc.snippet).toBeUndefined();
+    expect(doc.template).toBeUndefined();
   });
 
   it('keeps a listener that reads the args as written', async () => {
@@ -358,14 +357,15 @@ describe('buildStoryDocsPayload template', () => {
     expect((await firstStoryWithTemplate(source)).template).toBe('<p>⟦text label⟧</p>');
   });
 
-  it('is the code as written for a html tag that is not lit', async () => {
+  it('is the element next prints for a html tag that is not lit', async () => {
     const source = `import { html } from './own.js';
       export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = { render: (args) => html\`<p>\${args.label}</p>\` };`;
-    const { template: written } = await firstStoryWithTemplate(source, {
+      export const Primary = { args: { label: 'Hi' }, render: (args) => html\`<p>\${args.label}</p>\` };`;
+    const doc = await firstStoryWithTemplate(source, {
       files: { 'own.ts': 'export const html = (strings) => strings.join("");' },
     });
-    expect(written).toBe('html`<p>${⟦value label⟧}</p>`');
+    expect(doc.template).toMatch(/^⟦style test-element .*⟧<test-element ⟦attr label label field⟧ /);
+    expect(doc.snippet).toBe('<test-element label="Hi"></test-element>');
   });
 });
 
@@ -489,16 +489,6 @@ describe('buildStoryDocsPayload static snippet from the template', () => {
     );
     expect(doc.snippet).toBeUndefined();
     expect(doc.template).toBeUndefined();
-  });
-
-  it('is the render alone for a story without meta.component', async () => {
-    const doc = await firstStoryWithTemplate(`
-      import { html } from 'lit';
-      export default { title: 'Example/TestElement' };
-      export const Primary = { args: { label: 'Hi' }, render: (args) => html\`<p>\${args.label}</p>\` };
-    `);
-    expect(doc).toMatchObject({ snippet: '<p>Hi</p>', template: '<p>⟦text label⟧</p>' });
-    expect(doc.warning).toBeUndefined();
   });
 });
 
@@ -911,7 +901,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     `);
   });
 
-  it('fills the render of a story without meta.component', async () => {
+  it('warns when meta.component is missing', async () => {
     await expect(
       firstStory(
         `
@@ -923,7 +913,7 @@ return html\`<test-element label="Aliased" count="7" .heading=\${heading}>\${tag
     ).resolves.toEqual({
       id: 'example-testelement--primary',
       name: 'Primary',
-      snippet: '`<p>${"Page"}</p>`',
+      warning: 'No static snippet: `meta.component` is not set.',
     });
   });
 

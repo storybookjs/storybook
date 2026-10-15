@@ -1,5 +1,3 @@
-const el = document.createElement('lit-union-jsdoc');
-el.setAttribute('variant', String("secondary"));
-el.setAttribute('old-label', String("Old"));
-el.setAttribute('label', String("Current"));
-return el;
+<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>
+
+warning: Incomplete snippet: `args => { const el = document.createElement('lit-union-jsdoc'); el.setAttribute('variant', String(args.variant)); el.setAttribute('old-label', String(args.oldLabel)); el.setAttribute('label', String(args.label)); return el; }` could not be resolved statically.

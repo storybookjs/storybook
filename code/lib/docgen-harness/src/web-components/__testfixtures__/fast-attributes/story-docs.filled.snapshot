@@ -1,14 +1,6 @@
 {
   "ArgsDefaultRender": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
-  "DomNode": "const el = document.createElement('fast-attributes');
-el.setAttribute('label', String("Count"));
-el.setAttribute('size', String("large"));
-if (false) {
-  el.setAttribute('disabled', '');
-}
-el.setAttribute('max-count', String(5));
-(el as HTMLElement & { items: string[] }).items = ['a'] as string[];
-return el;",
+  "DomNode": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
   "LitTemplate": "<fast-attributes
   label="Count"
   size="large"

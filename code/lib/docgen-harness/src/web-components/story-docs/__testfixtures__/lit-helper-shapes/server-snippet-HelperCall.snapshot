@@ -1,1 +1,3 @@
-Card({ label: "Alpha", count: 2 })
+<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>
+
+warning: Incomplete snippet: `args => Card(args)` could not be resolved statically.

@@ -1,12 +1,6 @@
 {
   "ArgsDefaultRender": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
-  "DomNode": "const el = document.createElement('lit-inheritance-mixin');
-el.setAttribute('base-label', String("Inherited"));
-if (true) {
-  el.setAttribute('mixed-active', '');
-}
-el.setAttribute('count', String(5));
-return el;",
+  "DomNode": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
   "LitTemplate": "<lit-inheritance-mixin
   base-label="Inherited"
   mixed-active

@@ -7,67 +7,67 @@
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--branching-helper",
       "name": "Branching Helper",
-      "snippet": "if (true) {
-  return html`<lit-template-shapes disabled></lit-template-shapes>`;
-}
-return Card({ label: "Alpha", disabled: true });",
-      "template": "if (⟦value disabled⟧) {
-  return html`<lit-template-shapes disabled></lit-template-shapes>`;
-}
-return Card(⟦args⟧);",
+      "snippet": "<lit-template-shapes label="Alpha" disabled></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr disabled disabled field⟧ ⟦attr count count field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => { if (args.disabled) { return html`<lit-template-shapes disabled></lit-template-shapes>`; } return Card(args); }` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper",
       "name": "Csf 2 Helper",
-      "snippet": "Card({ ...{ label: "Alpha" }, disabled: true })",
-      "template": "Card({ ...⟦args⟧, disabled: true })",
+      "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `(args: CardArgs) => Card({ ...args, disabled: true })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-call",
       "name": "Helper Call",
-      "snippet": "Card({ label: "Alpha", count: 2 })",
-      "template": "Card(⟦args⟧)",
+      "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => Card(args)` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
       "name": "Helper Defaults",
-      "snippet": "Card({ ...{ heading: "Head" }, count: 5 }, html`<b>${"Head"}</b>`)",
-      "template": "Card({ ...⟦args⟧, count: 5 }, html`<b>${⟦value heading⟧}</b>`)",
+      "snippet": "<lit-template-shapes heading="Head"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr heading heading field⟧ ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
       "name": "Helper In Html",
-      "snippet": "html`<section>${List({ label: "Alpha", count: 2 })}</section>`",
-      "template": "html`<section>${List(⟦args⟧)}</section>`",
+      "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => html`<section>${List(args)}</section>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
       "name": "Re Exported Html",
-      "snippet": "html`<lit-template-shapes label=${"Alpha"}></lit-template-shapes>`",
-      "template": "html`<lit-template-shapes label=${⟦value label⟧}></lit-template-shapes>`",
+      "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => html`<lit-template-shapes label=${args.label}></lit-template-shapes>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
       "name": "Spread Directive",
-      "snippet": "html`<lit-template-shapes ${spreadProps({ label: "Alpha", count: 2, disabled: true })}></lit-template-shapes>`",
-      "template": "html`<lit-template-shapes ${spreadProps(⟦args⟧)}></lit-template-shapes>`",
+      "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `args => html`<lit-template-shapes ${spreadProps(args)}></lit-template-shapes>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
       "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
       "name": "Spread Next To Attribute",
-      "snippet": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  >${undefined}</lit-template-shapes
->`",
-      "template": "html`<lit-template-shapes label="Written" ${spreadProps(⟦args -heading⟧)}
-  >${⟦value heading⟧}</lit-template-shapes
->`",
+      "snippet": "<lit-template-shapes count="2"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr count count field⟧ ⟦attr label label field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
+      "warning": "Incomplete snippet: `({ heading, ...rest }) => html`<lit-template-shapes label="Written" ${spreadProps(rest)}
+      >${heading}</lit-template-shapes
+    >`` could not be resolved statically.",
     },
   },
 }

@@ -89,7 +89,7 @@ export async function buildStoryDocsPayload(
       input,
       storyImportPath,
       csf,
-      authoredSnippetFactory(csf, storyFilePath, elementlessSnippet(csf, NO_COMPONENT_WARNING)),
+      authoredSnippetFactory(csf, storyFilePath, () => ({ warning: NO_COMPONENT_WARNING })),
       titleName
     );
   }
@@ -101,17 +101,12 @@ export async function buildStoryDocsPayload(
   const declaration = docgenPayload?.customElementsManifest?.declaration;
   const snippetFor: (exportName: string) => SnippetResult = declaration
     ? renderedSnippetFactory(csf, declaration, docgenPayload, storyFilePath)
-    : authoredSnippetFactory(
-        csf,
-        storyFilePath,
-        elementlessSnippet(
-          csf,
-          `No static snippet: ${
-            docgenPayload.error?.message ??
-            'no Custom Elements Manifest declaration for this component.'
-          }`
-        )
-      );
+    : authoredSnippetFactory(csf, storyFilePath, () => ({
+        warning: `No static snippet: ${
+          docgenPayload.error?.message ??
+          'no Custom Elements Manifest declaration for this component.'
+        }`,
+      }));
 
   return buildPayload(input, storyImportPath, csf, snippetFor, docgenPayload.name);
 }
@@ -210,26 +205,11 @@ const renderedSnippet = (exportName: string, deps: StoryDocDeps): SnippetResult 
 const authoredSnippetFactory = (
   csf: CsfFile,
   storyFilePath: string,
-  fallback: (exportName: string, resolveStoryArgs: StoryArgsResolver) => AuthoredFallback
+  fallback: AuthoredFallback
 ): ((exportName: string) => SnippetResult) => {
   const resolveStoryArgs = createStoryArgsResolver(csf, storyReferences(storyFilePath));
-  return (exportName) =>
-    authoredOrFallback(exportName, resolveStoryArgs, fallback(exportName, resolveStoryArgs));
+  return (exportName) => authoredOrFallback(exportName, resolveStoryArgs, fallback);
 };
-
-/**
- * A story without `meta.component`, or whose component the manifest does not declare, has no
- * element to write its args on, but a render reads them where it writes them, so its template and
- * the static snippet it fills to need no manifest.
- */
-const elementlessSnippet =
-  (csf: CsfFile, warning: string) =>
-  (exportName: string, resolveStoryArgs: StoryArgsResolver): AuthoredFallback =>
-  (resolved) => {
-    const render = resolveEffectiveRender(csf, exportName, resolveStoryArgs.ctx);
-    const live = render.kind === 'resolved' ? litTemplate(render.path, resolved.args) : undefined;
-    return withTemplate({ warning }, live, resolved, resolveStoryArgs.ctx);
-  };
 
 const authoredOrFallback = (
   exportName: string,
@@ -258,7 +238,7 @@ const renderedArgsSnippet = (
   deps: StoryDocDeps
 ): SnippetResult => {
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
-  const live = render.kind === 'resolved' ? litTemplate(render.path, resolved.args) : undefined;
+  const ctx = deps.resolveStoryArgs.ctx;
   if (render.kind === 'resolved') {
     const template = resolveHtmlTemplate(render.path, deps.csf);
     if (template) {
@@ -274,11 +254,17 @@ const renderedArgsSnippet = (
       warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
       const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
-      const own = {
-        ...(hasSnippet ? { snippet: printed.snippet } : {}),
-        ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
-      };
-      return withTemplate(own, live, resolved, deps.resolveStoryArgs.ctx);
+      if (!hasSnippet) {
+        return joinWarnings([...warnings, noSnippetWarning(unresolved)]);
+      }
+      // Next prints the html the render returns, so its lit template is the template.
+      const live = litTemplate(render.path, resolved.args);
+      return withTemplate(
+        { snippet: printed.snippet, ...joinWarnings(warnings) },
+        live,
+        resolved,
+        ctx
+      );
     }
   }
 
@@ -299,23 +285,11 @@ const renderedArgsSnippet = (
     ),
     element.warning,
   ]);
-  const ctx = deps.resolveStoryArgs.ctx;
   // As next, no snippet when it shows none of the args and the story has args it cannot read.
   const unread = [...resolved.unresolved, ...element.unread];
-  const own =
-    !element.printed && unread.length > 0
-      ? joinWarnings([warning, noSnippetWarning(unread)])
-      : withTemplate({ warning }, element, resolved, ctx, warning);
-  // Next prints the element. Where the render's own code is the template already, it stays so, but a
-  // render that reads the story context gets the element next prints (SB-2250).
-  return readsContext(render) ? own : withTemplate(own, live, resolved, ctx);
-};
-
-const readsContext = (render: ReturnType<typeof resolveEffectiveRender>) => {
-  const context = render.kind === 'resolved' ? render.path.get('params')[1] : undefined;
-  return Object.keys(context?.getBindingIdentifiers() ?? {}).some(
-    (name) => context!.scope.getBinding(name)?.referenced
-  );
+  return !element.printed && unread.length > 0
+    ? joinWarnings([warning, noSnippetWarning(unread)])
+    : withTemplate({ warning }, element, resolved, ctx, warning);
 };
 
 /**
@@ -496,7 +470,11 @@ const argsElement = (
   const style = styles.length > 0 ? hole('style', holeWord(tag), ...styles) : '';
   const custom = css.length > 0 ? hole('css', ...css) : '';
   const element = `${style}${[`<${tag}`, ...attributes.values()].join(' ')}${custom}>${slots.join('')}</${tag}>`;
-  const script = printRootListenerScript(listeners);
+  // The template is the html of a lit template, so the code of a listener is escaped for one.
+  const script = printRootListenerScript(listeners)
+    ?.replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${');
   return {
     template: script ? `${element}\n${script}` : element,
     free: [],

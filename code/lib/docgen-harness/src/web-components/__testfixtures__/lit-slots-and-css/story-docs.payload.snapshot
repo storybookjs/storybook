@@ -17,24 +17,9 @@
       "argCode": {},
       "id": "webcomponentsfixtures-lit-slots-and-css--dom-node",
       "name": "Dom Node",
-      "snippet": "const el = document.createElement('lit-slots-and-css');
-el.setAttribute('heading', String("Projected"));
-const body = document.createElement('p');
-body.textContent = 'Default slot content';
-const action = document.createElement('button');
-action.slot = 'actions';
-action.textContent = 'Confirm';
-el.append(body, action);
-return el;",
-      "template": "const el = document.createElement('lit-slots-and-css');
-el.setAttribute('heading', String(⟦value heading⟧));
-const body = document.createElement('p');
-body.textContent = 'Default slot content';
-const action = document.createElement('button');
-action.slot = 'actions';
-action.textContent = 'Confirm';
-el.append(body, action);
-return el;",
+      "snippet": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
+      "template": "⟦style lit-slots-and-css ::part(panel)=panel-part⟧<lit-slots-and-css ⟦attr heading heading field⟧⟦css --slot-panel-color=--slot-panel-color⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</lit-slots-and-css>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-slots-and-css'); el.setAttribute('heading', String(args.heading)); const body = document.createElement('p'); body.textContent = 'Default slot content'; const action = document.createElement('button'); action.slot = 'actions'; action.textContent = 'Confirm'; el.append(body, action); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-slots-and-css--lit-template": {
       "argCode": {},

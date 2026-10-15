@@ -149,7 +149,7 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('prints a slot arg as html, in a span for a named slot', () => {
+  it('prints a slot arg as html, in a span for a named slot, and the code of one that is no text', () => {
     const template = '<x-card>\n  ⟦slot default body⟧\n  ⟦slot title title⟧\n</x-card>';
     expect(fillTemplate(template, { body: '<b>`${a}`</b>', title: 'Hi' })).toBe(
       '<x-card>\n  <b>\\`\\${a}\\`</b>\n  <span slot="title">Hi</span>\n</x-card>'
@@ -158,7 +158,9 @@ describe('fillTemplate', () => {
     expect(fillTemplate(template, { title: '<b>Hi</b> there' })).toBe(
       '<x-card>\n  <span slot="title"><b>Hi</b> there</span>\n</x-card>'
     );
-    expect(() => fillTemplate(template, { body: { a: 1 } })).toThrow(UnprintableArgError);
+    expect(fillTemplate(template, { body: writtenArg('html`<img>`'), title: { a: 1 } })).toBe(
+      '<x-card>\n  ${html`<img>`}\n  <span slot="title">${{ a: 1 }}</span>\n</x-card>'
+    );
   });
 
   it('throws for a value it cannot print', () => {

@@ -1,13 +1,6 @@
 {
   "ArgsDefaultRender": "<lit-property-only label="Default render"></lit-property-only>",
-  "DomNode": "const el = document.createElement('lit-property-only') as HTMLElement & {
-  config?: unknown;
-  items?: unknown;
-};
-el.setAttribute('label', String("Configured"));
-el.items = [{ name: 'Alpha' }, { name: 'Beta' }];
-el.config = { dense: true, theme: 'dark' };
-return el;",
+  "DomNode": "<lit-property-only label="Configured"></lit-property-only>",
   "LitTemplate": "<lit-property-only
   label="Configured"
   .items=${[{ name: 'Alpha' }, { name: 'Beta' }]}

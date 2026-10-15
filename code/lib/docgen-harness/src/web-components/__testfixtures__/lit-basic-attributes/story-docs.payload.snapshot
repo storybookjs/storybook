@@ -14,26 +14,9 @@
       "argCode": {},
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
       "name": "Dom Node",
-      "snippet": "const el = document.createElement('lit-basic-attributes');
-el.setAttribute('label', String("Open panel"));
-el.setAttribute('count', String(7));
-if (false) {
-  el.setAttribute('disabled', '');
-}
-if (true) {
-  el.setAttribute('is-open', '');
-}
-return el;",
-      "template": "const el = document.createElement('lit-basic-attributes');
-el.setAttribute('label', String(⟦value label⟧));
-el.setAttribute('count', String(⟦value count⟧));
-if (⟦value disabled⟧) {
-  el.setAttribute('disabled', '');
-}
-if (⟦value isOpen⟧) {
-  el.setAttribute('is-open', '');
-}
-return el;",
+      "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
+      "template": "<lit-basic-attributes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr is-open isOpen field⟧></lit-basic-attributes>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
       "argCode": {},

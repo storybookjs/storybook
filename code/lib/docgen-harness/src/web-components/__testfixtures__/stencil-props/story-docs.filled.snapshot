@@ -1,11 +1,6 @@
 {
   "ArgsDefaultRender": "<stencil-props value="1" max="5" variant="full" aria-label-text="Default rating"></stencil-props>",
-  "DomNode": "const el = document.createElement('stencil-props');
-el.setAttribute('value', String(3));
-el.setAttribute('max', String(5));
-el.setAttribute('variant', String("compact"));
-el.setAttribute('aria-label-text', String("Rating"));
-return el;",
+  "DomNode": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
   "LitTemplate": "<stencil-props
   value="3"
   max="5"

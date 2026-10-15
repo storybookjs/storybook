@@ -2,7 +2,7 @@
 
 This document is a list of known errors that Svelte CSF throws.
 
-The examples import `defineMeta` from `@storybook/svelte-vite`. In a SvelteKit project, import it from `@storybook/sveltekit`.
+The examples import `defineMeta` from `@storybook/svelte-vite`. In a SvelteKit project, import it from `@storybook/sveltekit`. With CSF factories, a stories file calls `preview.meta()` in place of `defineMeta()`, and the same errors apply.
 
 ## `PARSER_EXTRACT_SVELTE`
 
@@ -127,6 +127,48 @@ The message names the stories file and includes the original error. Run Storyboo
 The indexer doesn't run Svelte preprocessors. It ignores the content of `<style>` blocks, so styles in SCSS or another preprocessed language are fine. The rest of a stories file must be standard Svelte syntax, such as TypeScript that only uses types. Preprocessors still apply when Storybook renders the stories.
 
 Read the original error first. It often points to a problem in the stories file. If it doesn't, [please report it on the issue tracker on GitHub](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml), and include the full message.
+
+### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010`
+
+The stories file calls both `defineMeta()` and `preview.meta()`. A stories file has one meta. Use `preview.meta()` with CSF factories, and `defineMeta()` otherwise:
+
+```diff
+<script module>
+- import { defineMeta } from '@storybook/svelte-vite';
+  import preview from '#.storybook/preview';
+
+- const { Story } = defineMeta({});
+  const { Story } = preview.meta({});
+</script>
+```
+
+### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011`
+
+The stories file calls `preview.meta()`, but `preview` isn't imported from the preview file of Storybook. Storybook finds a CSF factories meta through this import. The import path must end with `/preview`, with or without a file extension:
+
+```diff
+<script module>
+- import preview from '../storybook-config';
++ import preview from '#.storybook/preview';
+
+  const { Story } = preview.meta({});
+</script>
+```
+
+### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012`
+
+The stories file calls `preview.meta()` more than once. A stories file has one meta. Move the stories of each meta to their own stories file:
+
+```diff
+<script module>
+  import preview from '#.storybook/preview';
+  import Button from './Button.svelte';
+- import Layout from './Layout.svelte';
+
+  const { Story } = preview.meta({ component: Button });
+- const { Story: LayoutStory } = preview.meta({ component: Layout });
+</script>
+```
 
 ## `PARSER_EXTRACT_COMPILED`
 

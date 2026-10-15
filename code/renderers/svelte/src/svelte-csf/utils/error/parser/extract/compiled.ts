@@ -14,7 +14,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Could not find the import statement of 'defineMeta' from ${StorybookSvelteCSFError.importSourcesText} in the compiled output of: ${this.filepathURL}
+      Could not find the import statement of 'defineMeta' from ${StorybookSvelteCSFError.importSourcesText}, or of the preview from .storybook/preview, in the compiled output of: ${this.filepathURL}
     `;
   }
 }
@@ -30,7 +30,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
 
   template() {
     return dedent`
-			Could not find variable declaration from 'defineMeta' call in the compiled output of the stories file: ${this.filepathURL}
+			Could not find variable declaration from 'defineMeta' or 'preview.meta' call in the compiled output of the stories file: ${this.filepathURL}
     `;
   }
 }

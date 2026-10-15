@@ -16,6 +16,7 @@ const BASE_INITIAL_SNIPPET = dedent`
 </script>
 
 In a SvelteKit project, import defineMeta from "${StorybookSvelteCSFError.sveltekitImportSource}".
+With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 `;
 
 export class MissingModuleTagError extends StorybookSvelteCSFError {
@@ -32,7 +33,7 @@ export class MissingModuleTagError extends StorybookSvelteCSFError {
       The file '${this.filepathURL}'
       does not have a module context (<script module> ... </script>).
 
-      defineMeta(...) should be called inside a module script tag, like so:
+      defineMeta(...) or preview.meta(...) should be called inside a module script tag, like so:
 
       ${BASE_INITIAL_SNIPPET}
     `;
@@ -73,7 +74,7 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      does not import defineMeta from ${StorybookSvelteCSFError.importSourcesText} inside the module context.
+      does not import defineMeta from ${StorybookSvelteCSFError.importSourcesText}, or the preview from .storybook/preview, inside the module context.
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 
@@ -94,7 +95,7 @@ export class MissingDefineMetaVariableDeclarationError extends StorybookSvelteCS
   template() {
     return dedent`
     The file '${this.filepathURL}'
-    does not store the result of calling defineMeta(). While defineMeta() might have been called,
+    does not store the result of calling defineMeta() or preview.meta(). While it might have been called,
     it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
     ${BASE_INITIAL_SNIPPET}
@@ -107,23 +108,24 @@ export class NoStoryComponentDestructuredError extends StorybookSvelteCSFError {
   readonly code = 5;
   public documentation = true;
 
-  public defineMetaImport: SvelteASTNodes['defineMetaImport'];
+  // The meta function, such as `defineMeta` or `preview.meta`
+  public metaFunctionName: string;
 
   constructor({
     filename,
-    defineMetaImport,
+    metaFunctionName,
   }: {
     filename?: StorybookSvelteCSFError['filename'];
-    defineMetaImport: NoStoryComponentDestructuredError['defineMetaImport'];
+    metaFunctionName: NoStoryComponentDestructuredError['metaFunctionName'];
   }) {
     super({ filename });
-    this.defineMetaImport = defineMetaImport;
+    this.metaFunctionName = metaFunctionName;
   }
 
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      does not destructure the Story component from the '${this.defineMetaImport.local.name}({ ... })' function call.
+      does not destructure the Story component from the '${this.metaFunctionName}({ ... })' function call.
       eg.:
 
       ${BASE_INITIAL_SNIPPET}
@@ -152,7 +154,7 @@ export class GetDefineMetaFirstArgumentError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      passes an invalid first argument to the 'defineMeta' call.
+      passes an invalid first argument to the 'defineMeta' or 'preview.meta' call.
 
       The first argument must be an object expression with the meta properties set.
     `;
@@ -232,6 +234,67 @@ export class IndexerParseError extends StorybookSvelteCSFError {
       The indexer doesn't run Svelte preprocessors. It ignores the content of <style> blocks, but the rest of a stories file must be standard Svelte syntax.
 
       If the original error doesn't point to a problem in the stories file, please report it on the issue tracker on GitHub at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml.
+    `;
+  }
+}
+
+export class MixedMetaError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
+  readonly code = 10;
+  public documentation = true;
+
+  constructor(filename?: StorybookSvelteCSFError['filename']) {
+    super({ filename });
+  }
+
+  template() {
+    return dedent`
+      The file '${this.filepathURL}'
+      calls both defineMeta() and preview.meta(). A stories file can only have one meta.
+      Use preview.meta() for CSF factories, or defineMeta() otherwise.
+    `;
+  }
+}
+
+export class MultipleMetaError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
+  readonly code = 12;
+  public documentation = true;
+
+  constructor(filename?: StorybookSvelteCSFError['filename']) {
+    super({ filename });
+  }
+
+  template() {
+    return dedent`
+      The file '${this.filepathURL}'
+      calls preview.meta() more than once. A stories file can only have one meta.
+      Move the stories of each meta to their own stories file.
+    `;
+  }
+}
+
+export class PreviewNotImportedError extends StorybookSvelteCSFError {
+  readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractSvelte;
+  readonly code = 11;
+  public documentation = true;
+
+  constructor(filename?: StorybookSvelteCSFError['filename']) {
+    super({ filename });
+  }
+
+  template() {
+    return dedent`
+      The file '${this.filepathURL}'
+      calls preview.meta(), but it doesn't import preview from the preview file of Storybook. Import it like so:
+
+      <script module>
+        import preview from '#.storybook/preview';
+
+        const { Story } = preview.meta({});
+      </script>
+
+      The import path must end with '/preview', with or without a file extension.
     `;
   }
 }

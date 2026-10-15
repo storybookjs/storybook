@@ -175,4 +175,170 @@ describe('parseForIndexer', () => {
       );
     });
   });
+  describe('CSF factories', () => {
+    const writeFactoryStoriesFile = (moduleScript: string) =>
+      writeStoriesFile(`<script module lang="ts">
+          ${moduleScript}
+        </script>
+
+        <Story name="Primary" tags={['autodocs']} />
+
+        <Story exportName="Secondary" play={async () => {}} />
+        `);
+
+    it.for([
+      [
+        'preview.meta() from #.storybook/preview',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview.meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'preview.meta() from a relative path',
+        `import preview from '../.storybook/preview';
+        const { Story } = preview.meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'a renamed preview import',
+        `import config from '../.storybook/preview.ts';
+        const { Story } = config.meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+      [
+        'a meta variable',
+        `import preview from '#.storybook/preview';
+        const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
+        const { Story } = meta;`,
+      ],
+      [
+        'preview.type<>().meta()',
+        `import preview from '#.storybook/preview';
+        const { Story } = preview
+          .type<{ args: { theme: string } }>()
+          .meta({ title: 'Example', tags: ['meta-tag'] });`,
+      ],
+    ])('indexes %s', async ([, moduleScript], { expect }) => {
+      const file = await writeFactoryStoriesFile(moduleScript);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "autodocs",
+              ],
+            },
+            {
+              "exportName": "Secondary",
+              "name": undefined,
+              "tags": [
+                "play-fn",
+              ],
+            },
+          ],
+        }
+      `);
+    });
+
+    it('indexes the stories of the Story components from meta.type<>()', async ({ expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+          import preview from '#.storybook/preview';
+          const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
+          const { Story } = meta;
+          const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+        </script>
+
+        <Story name="Primary" tags={['autodocs']} />
+
+        <IconStory name="Icon" args={{ icon: 'star' }} tags={['icon-tag']} />
+      `);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "autodocs",
+              ],
+            },
+            {
+              "exportName": "Icon",
+              "name": "Icon",
+              "tags": [
+                "icon-tag",
+              ],
+            },
+          ],
+        }
+      `);
+    });
+
+    it('indexes the Story components declared together with Story', async ({ expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+          import preview from '#.storybook/preview';
+          const meta = preview.meta({ title: 'Example' });
+          const { Story } = meta,
+            { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+        </script>
+
+        <Story name="Primary" />
+
+        <IconStory name="Icon" args={{ icon: 'star' }} />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories.map((story) => story.exportName)).toEqual(['Primary', 'Icon']);
+    });
+
+    it('fails when a file calls defineMeta() and preview.meta()', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import { defineMeta } from '@storybook/svelte';
+        import preview from '#.storybook/preview';
+        const { Story } = defineMeta({});
+        const { Story: FactoryStory } = preview.meta({});
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0010'
+      );
+    });
+
+    it('fails when a file calls preview.meta() twice', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '#.storybook/preview';
+        const { Story: OtherStory } = preview.meta({});
+        const { Story } = preview.meta({});
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0012'
+      );
+    });
+
+    it('fails when preview is not imported from a preview file', async ({ expect }) => {
+      const file = await writeFactoryStoriesFile(`
+        import preview from '../storybook-config';
+        const { Story } = preview.meta({});
+      `);
+
+      await expect(parseForIndexer(file)).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0011'
+      );
+    });
+  });
 });

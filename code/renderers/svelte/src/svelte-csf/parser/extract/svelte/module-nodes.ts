@@ -21,10 +21,10 @@ interface Result {
   /** `meta` in `const meta = preview.meta({ })`. */
   metaIdentifier?: ESTreeAST.Identifier;
   /**
-   * An identifier for the `<Story />` component.
+   * The names of the `<Story />` components.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
-  storyIdentifier: ESTreeAST.Identifier;
+  storyNames: string[];
 }
 
 interface Params {
@@ -59,7 +59,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     throw new MissingDefineMetaVariableDeclarationError(filename);
   }
 
-  if (!meta.storyIdentifier) {
+  if (meta.storyNames.length === 0) {
     throw new NoStoryComponentDestructuredError({
       filename,
       metaFunctionName: meta.functionName,
@@ -70,6 +70,6 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     isFactory: meta.isFactory,
     defineMetaVariableDeclaration: meta.declaration,
     metaIdentifier: meta.metaIdentifier,
-    storyIdentifier: meta.storyIdentifier,
+    storyNames: meta.storyNames,
   };
 }

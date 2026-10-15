@@ -58,7 +58,8 @@ export function hasMetaImport(imports: MetaImports): boolean {
 }
 
 // `const { Story } = defineMeta({ … })`, `const { Story } = preview.meta({ … })`, or
-// `const meta = preview.meta({ … })` followed by `const { Story } = meta`
+// `const meta = preview.meta({ … })` followed by `const { Story } = meta` and
+// `const { Story: IconStory } = meta.type<…>()`
 export interface MetaNodes {
   // `preview.meta()` creates a CSF factories meta
   isFactory: boolean;
@@ -68,8 +69,8 @@ export interface MetaNodes {
   functionName: string;
   // `meta` in `const meta = preview.meta({ … })`
   metaIdentifier?: ESTreeAST.Identifier;
-  // It can be renamed: `const { Story: S } = …`
-  storyIdentifier?: ESTreeAST.Identifier;
+  // The names of the `Story` components. They can be renamed: `const { Story: S } = …`
+  storyNames: string[];
 }
 
 export function findMeta(
@@ -106,14 +107,19 @@ export function findMeta(
         call: init,
         functionName,
         metaIdentifier: isFactory && id.type === 'Identifier' ? id : undefined,
-        storyIdentifier: findStoryIdentifier(id),
+        storyNames: findStoryNames(id),
       };
-    } else if (
-      meta?.metaIdentifier &&
-      init?.type === 'Identifier' &&
-      init.name === meta.metaIdentifier.name
-    ) {
-      meta.storyIdentifier ??= findStoryIdentifier(id);
+    } else if (meta?.metaIdentifier) {
+      for (const declarator of statement.declarations) {
+        const metaReference = declarator.init && skipTypeCalls(declarator.init);
+
+        if (
+          metaReference?.type === 'Identifier' &&
+          metaReference.name === meta.metaIdentifier.name
+        ) {
+          meta.storyNames.push(...findStoryNames(declarator.id));
+        }
+      }
     }
   }
 
@@ -141,19 +147,7 @@ function getMetaFunctionName(
     return undefined;
   }
 
-  let { object } = callee;
-
-  // `preview.type<…>()` returns the preview with more types, so its `.meta()` is a meta of `preview`
-  if (
-    object.type === 'CallExpression' &&
-    object.arguments.length === 0 &&
-    object.callee.type === 'MemberExpression' &&
-    !object.callee.computed &&
-    object.callee.property.type === 'Identifier' &&
-    object.callee.property.name === 'type'
-  ) {
-    object = object.callee.object;
-  }
+  const object = skipTypeCalls(callee.object);
 
   if (object.type !== 'Identifier') {
     return undefined;
@@ -172,21 +166,36 @@ function getMetaFunctionName(
   return undefined;
 }
 
-function findStoryIdentifier(id: ESTreeAST.Pattern): ESTreeAST.Identifier | undefined {
+// `preview.type<…>()` and `meta.type<…>()` return the same preview or meta with more types, so
+// `preview.type<…>().meta()` is a meta of `preview`, and `meta.type<…>()` is `meta`
+function skipTypeCalls(expression: ESTreeAST.Expression | ESTreeAST.Super) {
+  let current = expression;
+
+  while (
+    current.type === 'CallExpression' &&
+    current.arguments.length === 0 &&
+    current.callee.type === 'MemberExpression' &&
+    !current.callee.computed &&
+    current.callee.property.type === 'Identifier' &&
+    current.callee.property.name === 'type'
+  ) {
+    current = current.callee.object;
+  }
+
+  return current;
+}
+
+function findStoryNames(id: ESTreeAST.Pattern): string[] {
   if (id.type !== 'ObjectPattern') {
-    return undefined;
+    return [];
   }
 
-  for (const property of id.properties) {
-    if (
-      property.type === 'Property' &&
-      property.key.type === 'Identifier' &&
-      property.key.name === 'Story' &&
-      property.value.type === 'Identifier'
-    ) {
-      return property.value;
-    }
-  }
-
-  return undefined;
+  return id.properties.flatMap((property) =>
+    property.type === 'Property' &&
+    property.key.type === 'Identifier' &&
+    property.key.name === 'Story' &&
+    property.value.type === 'Identifier'
+      ? [property.value.name]
+      : []
+  );
 }

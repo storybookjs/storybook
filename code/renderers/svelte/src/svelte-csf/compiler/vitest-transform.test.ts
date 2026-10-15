@@ -93,4 +93,67 @@ describe('vitestTransform of a CSF factories stories file', () => {
       }"
     `);
   });
+
+  it('tests the stories of the Story components from meta.type<>()', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module lang="ts">
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const meta = preview.meta({ component: Button });
+        const { Story } = meta;
+        const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+      </script>
+
+      <Story name="Primary" args={{ label: 'Primary' }} />
+
+      <IconStory name="Icon" args={{ label: 'Icon', icon: 'star' }} />
+    `);
+
+    expect(output.slice(output.indexOf('const _isRunningFromThisFile'))).toMatchInlineSnapshot(`
+      "const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+      if (_isRunningFromThisFile) {
+        _test("Primary", _testStory({
+          exportName: "Primary",
+          story: $__Primary,
+          meta: meta,
+          skipTags: [],
+          storyId: "button--primary",
+          componentPath: "./Button.svelte",
+          componentName: "Button"
+        }));
+        _test("Icon", _testStory({
+          exportName: "Icon",
+          story: $__Icon,
+          meta: meta,
+          skipTags: [],
+          storyId: "button--icon",
+          componentPath: "./Button.svelte",
+          componentName: "Button"
+        }));
+      }"
+    `);
+  });
+
+  it('tests the Story components declared together with Story', async ({ expect }) => {
+    const output = await transform(dedent`
+      <script module lang="ts">
+        import preview from '#.storybook/preview';
+        import Button from './Button.svelte';
+
+        const meta = preview.meta({ component: Button });
+        const { Story } = meta,
+          { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+      </script>
+
+      <Story name="Primary" />
+
+      <IconStory name="Icon" args={{ icon: 'star' }} />
+    `);
+
+    expect([...output.matchAll(/_test\("(\w+)"/g)].map(([, name]) => name)).toEqual([
+      'Primary',
+      'Icon',
+    ]);
+  });
 });

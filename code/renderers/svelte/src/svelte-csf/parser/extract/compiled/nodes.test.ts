@@ -81,7 +81,7 @@ describe(extractCompiledASTNodes.name, () => {
 
     expect(nodes.isFactory).toBe(true);
     expect(nodes.metaIdentifier).toBeUndefined();
-    expect(nodes.storyIdentifier.name).toBe('Story');
+    expect(nodes.storyNames).toEqual(['Story']);
   });
 
   it('finds the meta variable of preview.meta()', async ({ expect }) => {
@@ -95,6 +95,20 @@ describe(extractCompiledASTNodes.name, () => {
 
     expect(nodes.isFactory).toBe(true);
     expect(nodes.metaIdentifier?.name).toBe('meta');
-    expect(nodes.storyIdentifier.name).toBe('S');
+    expect(nodes.storyNames).toEqual(['S']);
+  });
+
+  it('finds the Story components of meta.type()', async ({ expect }) => {
+    const ast = getCompiledAST(`
+      import preview from '#.storybook/preview';
+      const meta = preview.type().meta({});
+      const { Story } = meta;
+      const { Story: IconStory } = meta.type();
+      const { Story: SizeStory } = meta.type().type();
+    `);
+
+    const nodes = await extractCompiledASTNodes({ ast });
+
+    expect(nodes.storyNames).toEqual(['Story', 'IconStory', 'SizeStory']);
   });
 });

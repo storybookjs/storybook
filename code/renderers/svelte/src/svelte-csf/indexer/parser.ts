@@ -57,10 +57,11 @@ export async function parseForIndexer(filename: string): Promise<Results> {
   const svelteAST = getIndexableAST(code, filename);
   const results: Results & {
     hasMetaImport?: boolean;
-    defineMetaStory?: ESTreeAST.Identifier;
+    storyNames: string[];
   } = {
     meta: {},
     stories: [],
+    storyNames: [],
   };
 
   let hasDefaultOrNamespaceImport = false;
@@ -112,14 +113,14 @@ export async function parseForIndexer(filename: string): Promise<Results> {
         });
       }
 
-      if (!meta.storyIdentifier) {
+      if (meta.storyNames.length === 0) {
         throw new NoStoryComponentDestructuredError({
           filename,
           metaFunctionName: meta.functionName,
         });
       }
 
-      state.defineMetaStory = meta.storyIdentifier;
+      state.storyNames = meta.storyNames;
 
       if (meta.call.arguments[0]?.type !== 'ObjectExpression') {
         throw new GetDefineMetaFirstArgumentError({
@@ -181,7 +182,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const { name } = node;
       const { state } = context;
 
-      if (state.defineMetaStory?.name === name) {
+      if (state.storyNames.includes(name)) {
         const storyAttributes = extractStoryAttributesNodes({
           component: node,
           attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children', 'play'],

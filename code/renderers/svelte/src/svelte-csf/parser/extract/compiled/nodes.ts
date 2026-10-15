@@ -34,10 +34,10 @@ export interface CompiledASTNodes {
    */
   exportDefault: ESTreeAST.ExportDefaultDeclaration;
   /**
-   * An identifier for the `<Story />` component.
+   * The names of the `<Story />` components.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
-  storyIdentifier: ESTreeAST.Identifier;
+  storyNames: string[];
   /**
    * A function declaration for the main Svelte component which is the `*.stories.svelte` file.
    */
@@ -113,7 +113,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     throw new NoExportDefaultError(filename);
   }
 
-  if (!meta.storyIdentifier) {
+  if (meta.storyNames.length === 0) {
     throw new NoStoryIdentifierFoundError(filename);
   }
 
@@ -126,7 +126,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     defineMetaVariableDeclaration: meta.declaration,
     metaIdentifier: meta.metaIdentifier,
     exportDefault,
-    storyIdentifier: meta.storyIdentifier,
+    storyNames: meta.storyNames,
     storiesFunctionDeclaration,
   };
 }

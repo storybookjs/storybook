@@ -246,6 +246,65 @@ describe('parseForIndexer', () => {
       `);
     });
 
+    it('indexes the stories of the Story components from meta.type<>()', async ({ expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+          import preview from '#.storybook/preview';
+          const meta = preview.meta({ title: 'Example', tags: ['meta-tag'] });
+          const { Story } = meta;
+          const { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+        </script>
+
+        <Story name="Primary" tags={['autodocs']} />
+
+        <IconStory name="Icon" args={{ icon: 'star' }} tags={['icon-tag']} />
+      `);
+
+      expect(await parseForIndexer(file)).toMatchInlineSnapshot(`
+        {
+          "meta": {
+            "tags": [
+              "meta-tag",
+            ],
+            "title": "Example",
+          },
+          "stories": [
+            {
+              "exportName": "Primary",
+              "name": "Primary",
+              "tags": [
+                "autodocs",
+              ],
+            },
+            {
+              "exportName": "Icon",
+              "name": "Icon",
+              "tags": [
+                "icon-tag",
+              ],
+            },
+          ],
+        }
+      `);
+    });
+
+    it('indexes the Story components declared together with Story', async ({ expect }) => {
+      const file = await writeStoriesFile(`<script module lang="ts">
+          import preview from '#.storybook/preview';
+          const meta = preview.meta({ title: 'Example' });
+          const { Story } = meta,
+            { Story: IconStory } = meta.type<{ args: { icon: string } }>();
+        </script>
+
+        <Story name="Primary" />
+
+        <IconStory name="Icon" args={{ icon: 'star' }} />
+      `);
+
+      const { stories } = await parseForIndexer(file);
+
+      expect(stories.map((story) => story.exportName)).toEqual(['Primary', 'Icon']);
+    });
+
     it('fails when a file calls defineMeta() and preview.meta()', async ({ expect }) => {
       const file = await writeFactoryStoriesFile(`
         import { defineMeta } from '@storybook/svelte';

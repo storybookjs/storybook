@@ -989,9 +989,10 @@ export const StickyAncestors: Story = {
       ).toBe('false');
     });
 
-    // Keyboard entry falls back to the selected story when no row is focused, even though
-    // its row sits far outside the viewport. (The scroll-into-view half of this behavior
-    // is not observable here: under NODE_ENV=test react-aria sizes the scroll view as
+    // Keyboard entry falls back to the selected story when no row is focused. Opening the
+    // component above selected its first story, and the sticky collapse then folded that
+    // component, so the menu first has to open it again. (The scroll-into-view half of this
+    // behavior is not observable here: under NODE_ENV=test react-aria sizes the scroll view as
     // Infinity and clamps its internal scroll offset to 0 on every render.)
     (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur?.();
     const firstRowAfterCollapse = canvasElement.querySelector<HTMLElement>(

@@ -626,23 +626,39 @@ export const Tree = React.memo<TreeProps>(function Tree({
       // The popover anchors to the ⋯ button of the row and takes its position once, when it
       // opens. A row outside the viewport is therefore scrolled into view first, because a
       // virtualized row mounts only near the viewport, and the menu opens on the next frame.
-      const scroller = containerRef.current;
-      const row = scroller?.querySelector(`[data-item-id="${CSS.escape(itemId)}"]`);
-      const rowRect = row?.getBoundingClientRect();
-      const scrollerRect = scroller?.getBoundingClientRect();
-      if (
-        rowRect &&
-        scrollerRect &&
-        rowRect.top >= scrollerRect.top &&
-        rowRect.bottom <= scrollerRect.bottom
-      ) {
-        openContextMenu(itemId, 'keyboard');
+      const openWhenVisible = () => {
+        const scroller = containerRef.current;
+        const row = scroller?.querySelector(`[data-item-id="${CSS.escape(itemId)}"]`);
+        const rowRect = row?.getBoundingClientRect();
+        const scrollerRect = scroller?.getBoundingClientRect();
+        if (
+          rowRect &&
+          scrollerRect &&
+          rowRect.top >= scrollerRect.top &&
+          rowRect.bottom <= scrollerRect.bottom
+        ) {
+          openContextMenu(itemId, 'keyboard');
+          return;
+        }
+        scrollRowIntoView(itemId, 'center');
+        frame = requestAnimationFrame(() => {
+          frame = null;
+          openContextMenu(itemId, 'keyboard');
+        });
+      };
+      // The selected story can sit under a branch the user folded since, in which case its row
+      // does not exist. Open the branches first, and go on once the rows have rendered.
+      const folded = getAncestorIds(hoistedDataRef.current, itemId).filter(
+        (id) => !expandedRef.current.has(id)
+      );
+      if (folded.length === 0) {
+        openWhenVisible();
         return;
       }
-      scrollRowIntoView(itemId, 'center');
+      setExpanded({ ids: folded, value: true, append: true });
       frame = requestAnimationFrame(() => {
         frame = null;
-        openContextMenu(itemId, 'keyboard');
+        openWhenVisible();
       });
     };
     api.on(SIDEBAR_OPEN_CONTEXT_MENU, handler);
@@ -652,7 +668,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         cancelAnimationFrame(frame);
       }
     };
-  }, [api, openContextMenu, scrollRowIntoView]);
+  }, [api, openContextMenu, scrollRowIntoView, setExpanded]);
 
   // Scroll the selected story into view when it changes. A newly selected row may not be in the
   // DOM yet, because its ancestors expand in the same commit but render on the next one. The

@@ -3919,6 +3919,7 @@ describe('PreviewWeb', () => {
               "foo": "a",
               "one": 1,
             },
+            "kind": "Component One",
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
@@ -3938,6 +3939,7 @@ describe('PreviewWeb', () => {
               "fileName": "./src/ComponentOne.stories.js",
               "throwPlayFunctionExceptions": false,
             },
+            "story": "A",
             "storyGlobals": {},
             "storyId": "component-one--a",
             "subcomponents": undefined,
@@ -3991,6 +3993,7 @@ describe('PreviewWeb', () => {
               "foo": "b",
               "one": 1,
             },
+            "kind": "Component One",
             "name": "B",
             "parameters": {
               "__isArgsStory": false,
@@ -4010,6 +4013,7 @@ describe('PreviewWeb', () => {
               "fileName": "./src/ComponentOne.stories.js",
               "throwPlayFunctionExceptions": false,
             },
+            "story": "B",
             "storyGlobals": {},
             "storyId": "component-one--b",
             "subcomponents": undefined,
@@ -4041,6 +4045,7 @@ describe('PreviewWeb', () => {
             },
             "id": "component-one--e",
             "initialArgs": {},
+            "kind": "Component One",
             "name": "E",
             "parameters": {
               "__isArgsStory": false,
@@ -4060,6 +4065,7 @@ describe('PreviewWeb', () => {
               "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
+            "story": "E",
             "storyGlobals": {},
             "storyId": "component-one--e",
             "subcomponents": undefined,
@@ -4102,6 +4108,7 @@ describe('PreviewWeb', () => {
             "initialArgs": {
               "foo": "c",
             },
+            "kind": "Component Two",
             "name": "C",
             "parameters": {
               "__isArgsStory": false,
@@ -4120,6 +4127,7 @@ describe('PreviewWeb', () => {
               "throwPlayFunctionExceptions": false,
             },
             "playFunction": undefined,
+            "story": "C",
             "storyGlobals": {},
             "storyId": "component-two--c",
             "subcomponents": undefined,

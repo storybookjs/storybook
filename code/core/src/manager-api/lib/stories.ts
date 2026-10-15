@@ -100,6 +100,11 @@ export const transformStoryIndexToStoriesHash = (
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
   }
+  if (input.v < 3) {
+    throw new Error(
+      `Unsupported story index version: v${input.v}. Storybook 11 requires index version 3 or later.`
+    );
+  }
 
   let index = input;
   index = index.v === 3 ? transformStoryIndexV3toV4(index as any) : index;

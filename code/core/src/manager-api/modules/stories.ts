@@ -35,11 +35,13 @@ import type {
   API_TestEntry,
   API_ViewMode,
   Args,
+  ComponentTitle,
   DocsPreparedPayload,
   SelectStoryPayload,
   StatusValue,
   StoryId,
   StoryIndex,
+  StoryName,
   StoryPreparedPayload,
   Tag,
   TagsOptions,
@@ -70,6 +72,34 @@ import {
   parseTagsParam,
   serializeTagsParam,
 } from './tags.ts';
+
+/** Sent by composed Storybooks built with 10.x or earlier (their addon-links). */
+type LegacySelectStoryPayload = {
+  /** @deprecated Use `title`. */
+  kind?: ComponentTitle;
+  /** @deprecated Use `name`. */
+  story?: StoryName;
+  viewMode?: API_ViewMode;
+  scrollTo?: string;
+};
+
+/**
+ * Accepts the deprecated `kind`/`story` keys so cross-story links inside composed
+ * Storybooks built with 10.x or earlier keep navigating; everything downstream is modern-only.
+ */
+type SelectStoryEvent = SelectStoryPayload | LegacySelectStoryPayload;
+
+const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayload => {
+  if ('storyId' in payload) {
+    return payload;
+  }
+  const { viewMode, scrollTo } = payload;
+  const title =
+    ('title' in payload && payload.title) || ('kind' in payload ? payload.kind : undefined);
+  const name =
+    ('name' in payload && payload.name) || ('story' in payload ? payload.story : undefined);
+  return { title, name, viewMode, scrollTo };
+};
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -765,13 +795,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
         const storyIndex = (await result.json()) as StoryIndex;
 
-        // We can only do this if the stories.json is a proper storyIndex
-        if (storyIndex.v < 3) {
-          throw new Error(
-            `Unsupported story index version: v${storyIndex.v}. Storybook 11 requires index version 3 or later.`
-          );
-        }
-
         await api.setIndex(storyIndex);
       } catch (err: any) {
         await store.setState({ indexError: err });
@@ -1242,8 +1265,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
-  provider.channel?.on(SELECT_STORY, function handler(this: any, payload: SelectStoryPayload) {
+  provider.channel?.on(SELECT_STORY, function handler(this: any, rawPayload: SelectStoryEvent) {
     const { ref } = getEventMetadata(this, fullAPI)!;
+    const payload = normalizeSelectStoryPayload(rawPayload);
 
     if ('storyId' in payload) {
       const { storyId, viewMode, scrollTo } = payload;
@@ -1252,9 +1276,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const { title, name, viewMode, scrollTo } = payload;
       fullAPI.selectStory(title, name, { viewMode, scrollTo, ref: ref?.id });
     } else {
-      logger.warn(
-        'Received a SELECT_STORY event without storyId or title; ignoring it. This can happen when a composed Storybook built with Storybook 10.x or earlier sends the legacy kind/story payload — see the 11.0.0 migration guide.'
-      );
+      logger.warn('Received a SELECT_STORY event without storyId or title; ignoring it.');
     }
   });
 

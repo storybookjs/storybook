@@ -379,6 +379,7 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "a",
             },
+            "kind": "Component One",
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
@@ -395,6 +396,7 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
+            "story": "A",
             "storyGlobals": {},
             "storyId": "component-one--a",
             "subcomponents": undefined,
@@ -575,6 +577,7 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "a",
             },
+            "kind": "Component One",
             "name": "A",
             "parameters": {
               "__isArgsStory": false,
@@ -591,6 +594,7 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
+            "story": "A",
             "storyGlobals": {},
             "storyId": "component-one--a",
             "subcomponents": undefined,
@@ -640,6 +644,7 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "b",
             },
+            "kind": "Component One",
             "name": "B",
             "parameters": {
               "__isArgsStory": false,
@@ -656,6 +661,7 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
+            "story": "B",
             "storyGlobals": {},
             "storyId": "component-one--b",
             "subcomponents": undefined,
@@ -704,6 +710,7 @@ describe('StoryStore', () => {
             "initialArgs": {
               "foo": "c",
             },
+            "kind": "Component Two",
             "name": "C",
             "parameters": {
               "__isArgsStory": false,
@@ -720,6 +727,7 @@ describe('StoryStore', () => {
             },
             "playFunction": undefined,
             "renderToCanvas": undefined,
+            "story": "C",
             "storyGlobals": {},
             "storyId": "component-two--c",
             "subcomponents": undefined,
@@ -733,6 +741,46 @@ describe('StoryStore', () => {
           },
         }
       `);
+    });
+
+    it('sets story to the parent story name for test entries and keeps the deprecated kind field', async () => {
+      const testExports = {
+        default: { title: 'Component One' },
+        a: { args: { foo: 'a' } },
+        'a--test': { args: { foo: 'a' } },
+      };
+      const testImportFn = vi.fn(async (path) =>
+        path === './src/ComponentOne.stories.js' ? testExports : componentTwoExports
+      );
+      const testIndex: StoryIndex = {
+        v: 5,
+        entries: {
+          'component-one--a': {
+            type: 'story',
+            subtype: 'story',
+            id: 'component-one--a',
+            title: 'Component One',
+            name: 'A',
+            importPath: './src/ComponentOne.stories.js',
+          },
+          'component-one--a--test': {
+            type: 'story',
+            subtype: 'test',
+            id: 'component-one--a--test',
+            title: 'Component One',
+            name: 'A Test',
+            parent: 'component-one--a',
+            parentName: 'A',
+            importPath: './src/ComponentOne.stories.js',
+          },
+        },
+      };
+      const store = new StoryStore(testIndex, testImportFn, projectAnnotations);
+      await store.cacheAllCSFFiles();
+
+      const extracted = store.extract();
+      expect(extracted['component-one--a--test'].story).toBe('A');
+      expect(extracted['component-one--a--test'].kind).toBe('Component One');
     });
 
     it('does not include (legacy) docs only stories by default', async () => {

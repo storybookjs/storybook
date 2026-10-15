@@ -964,9 +964,9 @@ The deprecated `kind` and `story` fields are also gone from `Addon_AddStoryArgs`
 
 `@storybook/addon-links`' deprecated `LinkTo` `kind` and `story` props are removed; use `title` and `name`. The `data-sb-kind` and `data-sb-story` HTML attributes are unchanged. The provider `StoryMapper` option is removed.
 
-Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`.
+Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`. The `extract()` output — the serialized stories that external tools such as the Chromatic CLI read — still includes the deprecated `kind` and `story` fields for compatibility, so tools reading the serialized output keep working.
 
-The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name` only — the shape the event has used since Storybook 3. A payload without any of them is ignored with a warning, so cross-story links from composed Storybooks built with Storybook 10.x or earlier no longer navigate. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
+The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, and still accepts the deprecated `kind`/`story` payload that composed Storybooks built with Storybook 10.x or earlier send, so cross-story links inside those refs keep navigating. A payload without any of those keys is ignored with a warning. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
 
 ### `docgenServer` is stable and enabled by default
 

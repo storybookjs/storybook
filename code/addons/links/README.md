@@ -70,9 +70,9 @@ export const index = () => (
     <option>third</option>
   </select>
 );
-export const first = () => <LinkTo story="index">Go back</LinkTo>;
-export const second = () => <LinkTo story="index">Go back</LinkTo>;
-export const third = () => <LinkTo story="index">Go back</LinkTo>;
+export const first = () => <LinkTo name="index">Go back</LinkTo>;
+export const second = () => <LinkTo name="index">Go back</LinkTo>;
+export const third = () => <LinkTo name="index">Go back</LinkTo>;
 ```
 
 ## hrefTo function
@@ -145,14 +145,13 @@ export const first = () => <LinkTo story="second">Go to Second</LinkTo>;
 export const second = () => <LinkTo story="first">Go to First</LinkTo>;
 ```
 
-It accepts all the props the `a` element does, plus `story` and `kind`. It the `kind` prop is omitted, the current kind will be preserved.
+It accepts all the props the `a` element does, plus `title` and `name`. If the `title` prop is omitted, the current component's title will be used.
 
 ```mdx
 <LinkTo
-  kind="Toggle"
-  story="off"
+  title="Toggle"
+  name="off"
   target="_blank"
-  title="link to second story"
   style={{ color: '#1474f3' }}
 >
   Go to Second

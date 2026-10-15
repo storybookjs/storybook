@@ -1438,16 +1438,31 @@ describe('stories API', () => {
       expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, { viewMode: 'story' });
     });
 
-    it('warns and does not navigate on the legacy kind/story payload', () => {
+    it('resolves the story from the legacy kind/story payload sent by older composed Storybooks', () => {
       const { provider, fullAPI } = setup();
-      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
-      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      getEventMetadata.mockReturnValueOnce({
+        sourceType: 'external',
+        ref: { id: 'ref' },
+      } as any);
       provider.channel.emit(SELECT_STORY, {
         kind: 'a',
         story: '1',
         viewMode: 'story',
       });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', {
+        viewMode: 'story',
+        ref: 'ref',
+      });
+    });
+
+    it('warns and does not navigate on a payload without storyId or title', () => {
+      const { provider, fullAPI } = setup();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {});
 
       expect(fullAPI.selectStory).not.toHaveBeenCalled();
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('without storyId or title'));

@@ -13,34 +13,21 @@ import type {
   DocsOptions,
   IndexEntry,
   Parameters,
-  SetStoriesPayload,
-  SetStoriesStoryData,
   StatusesByStoryIdAndTypeId,
   StoryId,
   StoryIndexV3,
 } from 'storybook/internal/types';
 
 import { countBy } from 'es-toolkit/array';
-import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
 import { Tag } from '../../shared/constants/tags.ts';
-import { type API, type State, combineParameters } from '../root.tsx';
+import { type API, type State } from '../root.tsx';
 import intersect from './intersect.ts';
 import merge from './merge.ts';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
-
-export const denormalizeStoryParameters = ({
-  globalParameters,
-  stories,
-}: SetStoriesPayload): SetStoriesStoryData => {
-  return mapValues(stories, (storyData) => ({
-    ...storyData,
-    parameters: combineParameters(globalParameters, storyData.parameters as unknown as Parameters),
-  })) as SetStoriesStoryData;
-};
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
   const countByTitle = countBy(Object.values(index.stories), (item) => item.title);

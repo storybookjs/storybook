@@ -2,52 +2,18 @@ import type { API_ViewMode } from './api.ts';
 import type {
   ArgTypes,
   Args,
-  ComponentId,
+  ComponentTitle,
   GlobalTypes,
   Globals,
   Parameters,
   StoryId,
+  StoryName,
 } from './csf.ts';
 
-// The data received on the (legacy) `setStories` event
-export interface SetStoriesStory {
-  id: StoryId;
-  name: string;
-  refId?: string;
-  componentId?: ComponentId;
-  parameters: {
-    fileName: string;
-    options: {
-      [optionName: string]: any;
-    };
-    docsOnly?: boolean;
-    viewMode?: API_ViewMode;
-    [parameterName: string]: any;
-  };
-  argTypes?: ArgTypes;
-  args?: Args;
-  initialArgs?: Args;
-}
-
-export interface SetStoriesStoryData {
-  [id: string]: SetStoriesStory;
-}
-
-export type SetStoriesPayload =
-  | {
-      v: 2;
-      error?: Error;
-      globals: Args;
-      globalParameters: Parameters;
-      stories: SetStoriesStoryData;
-      kindParameters: {
-        [kind: string]: Parameters;
-      };
-    }
-  | ({
-      v?: number;
-      stories: SetStoriesStoryData;
-    } & Record<string, never>);
+export type SelectStoryPayload =
+  | { storyId: StoryId; viewMode?: API_ViewMode; scrollTo?: string }
+  // `title` is optional so a bare `name` can target the current component's story.
+  | { title?: ComponentTitle; name?: StoryName; viewMode?: API_ViewMode; scrollTo?: string };
 
 export interface SetGlobalsPayload {
   // userGlobals

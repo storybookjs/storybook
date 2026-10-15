@@ -322,7 +322,7 @@ export const init: ModuleFn<SubAPI, SubState> = (
       return refs;
     },
 
-    setRef: async (id, { storyIndex, setStoriesData, ...rest }, ready = false) => {
+    setRef: async (id, { storyIndex, ...rest }, ready = false) => {
       if (singleStory) {
         return;
       }
@@ -332,17 +332,15 @@ export const init: ModuleFn<SubAPI, SubState> = (
       const { filters } = store.getState();
       const ref = api.getRefs()[id];
 
-      if (storyIndex || setStoriesData) {
+      if (storyIndex) {
         internal_index = storyIndex;
 
-        // @ts-expect-error (could be undefined)
         filteredIndex = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
           filters,
           allStatuses: {},
         });
-        // @ts-expect-error (could be undefined)
         index = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,

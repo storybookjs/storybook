@@ -10,7 +10,6 @@ import {
   SET_CURRENT_STORY,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
@@ -36,13 +35,11 @@ import type {
   API_TestEntry,
   API_ViewMode,
   Args,
-  ComponentTitle,
   DocsPreparedPayload,
-  SetStoriesPayload,
+  SelectStoryPayload,
   StatusValue,
   StoryId,
   StoryIndex,
-  StoryName,
   StoryPreparedPayload,
   Tag,
   TagsOptions,
@@ -57,7 +54,6 @@ import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
-  denormalizeStoryParameters,
   getComponentLookupList,
   getStoriesLookupList,
   transformStoryIndexToStoriesHash,
@@ -771,8 +767,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
         // We can only do this if the stories.json is a proper storyIndex
         if (storyIndex.v < 3) {
-          logger.warn(`Skipping story index with version v${storyIndex.v}, awaiting SET_STORIES.`);
-          return;
+          throw new Error(
+            `Unsupported story index version: v${storyIndex.v}. Storybook 11 requires index version 3 or later.`
+          );
         }
 
         await api.setIndex(storyIndex);
@@ -1245,50 +1242,21 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
-  // For composition back-compatibilty
-  provider.channel?.on(SET_STORIES, function handler(this: any, data: SetStoriesPayload) {
+  provider.channel?.on(SELECT_STORY, function handler(this: any, payload: SelectStoryPayload) {
     const { ref } = getEventMetadata(this, fullAPI)!;
-    const setStoriesData = data.v ? denormalizeStoryParameters(data) : data.stories;
 
-    if (!ref) {
-      throw new Error('Cannot call SET_STORIES for local frame');
+    if ('storyId' in payload) {
+      const { storyId, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(storyId, undefined, { viewMode, scrollTo, ref: ref?.id });
+    } else if (payload.title || payload.name) {
+      const { title, name, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(title, name, { viewMode, scrollTo, ref: ref?.id });
     } else {
-      fullAPI.setRef(ref.id, { ...ref, setStoriesData }, true);
+      logger.warn(
+        'Received a SELECT_STORY event without storyId or title; ignoring it. This can happen when a composed Storybook built with Storybook 10.x or earlier sends the legacy kind/story payload — see the 11.0.0 migration guide.'
+      );
     }
   });
-
-  provider.channel?.on(
-    SELECT_STORY,
-    function handler(
-      this: any,
-      {
-        title,
-        name,
-        storyId,
-        kind,
-        story,
-        ...rest
-      }: {
-        title?: ComponentTitle;
-        name?: StoryName;
-        storyId: string;
-        viewMode: API_ViewMode;
-        // Legacy pre-CSF3 spellings: dropped so they neither resolve nor leak into options.
-        /** @deprecated */
-        kind?: unknown;
-        /** @deprecated */
-        story?: unknown;
-      }
-    ) {
-      const { ref } = getEventMetadata(this, fullAPI)!;
-
-      if (!ref) {
-        fullAPI.selectStory(storyId || title, name, rest);
-      } else {
-        fullAPI.selectStory(storyId || title, name, { ...rest, ref: ref.id });
-      }
-    }
-  );
 
   provider.channel?.on(
     STORY_ARGS_UPDATED,

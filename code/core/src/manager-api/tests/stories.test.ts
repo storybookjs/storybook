@@ -10,7 +10,6 @@ import {
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   STORY_ARGS_UPDATED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
@@ -1402,76 +1401,8 @@ describe('stories API', () => {
       });
     });
   });
-  describe('v2 SET_STORIES event', () => {
-    it('normalizes parameters and calls setRef for external stories', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
-
-      getEventMetadata.mockReturnValueOnce({
-        sourceType: 'external',
-        ref: { id: 'ref' },
-      } as any);
-      const setStoriesPayload = {
-        v: 2,
-        globalParameters: { global: 'global' },
-        kindParameters: { a: { kind: 'kind' } },
-        stories: { 'a--1': { kind: 'a', parameters: { story: 'story' } } },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': {
-              kind: 'a',
-              parameters: { global: 'global', story: 'story' },
-            },
-          },
-        },
-        true
-      );
-    });
-  });
-  describe('legacy (v1) SET_STORIES event', () => {
-    it('calls setRef with stories', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
-
-      getEventMetadata.mockReturnValueOnce({
-        sourceType: 'external',
-        ref: { id: 'ref' },
-      } as any);
-      const setStoriesPayload = {
-        stories: { 'a--1': {} },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': {},
-          },
-        },
-        true
-      );
-    });
-  });
   describe('SELECT_STORY event', () => {
-    it('resolves the story from title and name', () => {
+    const setup = () => {
       const fullAPI = {
         findRef: vi.fn(),
         setRef: vi.fn(),
@@ -1479,7 +1410,11 @@ describe('stories API', () => {
       };
       const moduleArgs = createMockModuleArgs({ fullAPI });
       initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider } = moduleArgs;
+      return { provider: moduleArgs.provider, fullAPI };
+    };
+
+    it('resolves the story from title and name', () => {
+      const { provider, fullAPI } = setup();
 
       getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
       provider.channel.emit(SELECT_STORY, {
@@ -1494,14 +1429,7 @@ describe('stories API', () => {
     });
 
     it('resolves the story from storyId when provided', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-        selectStory: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider } = moduleArgs;
+      const { provider, fullAPI } = setup();
 
       getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
       provider.channel.emit(SELECT_STORY, {
@@ -1514,15 +1442,9 @@ describe('stories API', () => {
       });
     });
 
-    it('does not fall back to the legacy kind/story payload fields', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-        selectStory: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider } = moduleArgs;
+    it('warns and does not navigate on the legacy kind/story payload', () => {
+      const { provider, fullAPI } = setup();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
       provider.channel.emit(SELECT_STORY, {
@@ -1531,9 +1453,10 @@ describe('stories API', () => {
         viewMode: 'story',
       });
 
-      expect(fullAPI.selectStory).toHaveBeenCalledWith(undefined, undefined, {
-        viewMode: 'story',
-      });
+      expect(fullAPI.selectStory).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('without storyId or title'));
+
+      warnSpy.mockRestore();
     });
   });
 

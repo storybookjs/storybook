@@ -78,11 +78,11 @@ export const linkTo =
     if (title?.match(/--/) && !name) {
       navigate({ storyId: title });
     } else if (name && title) {
-      navigate({ kind: title, story: name });
+      navigate({ title, name });
     } else if (title) {
-      navigate({ kind: title });
+      navigate({ title });
     } else if (name) {
-      navigate({ story: name });
+      navigate({ name });
     }
   };
 
@@ -92,10 +92,10 @@ const linksListener = (e: Event) => {
     return;
   }
   const element = target as HTMLElement;
-  const { sbKind: kind, sbStory: story } = element.dataset;
-  if (kind || story) {
+  const { sbKind, sbStory } = element.dataset;
+  if (sbKind || sbStory) {
     e.preventDefault();
-    navigate({ kind, story });
+    navigate({ title: sbKind, name: sbStory });
   }
 };
 

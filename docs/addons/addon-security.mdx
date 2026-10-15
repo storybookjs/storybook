@@ -31,10 +31,10 @@ Check every event payload before acting on it:
 
 - Confirm each field has the type and shape you expect, and ignore the event otherwise.
 - Prefer a fixed list of allowed values over accepting arbitrary strings.
-- Resolve file paths and reject any that point outside the project or at files your addon doesn't own.
+- Resolve file paths, following symlinks, and reject any that point outside the project or at files your addon doesn't own.
 - Never pass event data to a shell, `eval`, or a dynamic `import()`.
 
-For example, a dev server handler that saves notes next to a story file checks the payload, only writes files with the addon's own extension, and keeps them inside the project:
+For example, a dev server handler that saves notes next to a story file checks the payload, only writes files with the addon's own extension, keeps them inside the project, and logs a failed save instead of leaving the error unhandled:
 
 <CodeSnippets path="addon-security-server-channel-validation.md" />
 

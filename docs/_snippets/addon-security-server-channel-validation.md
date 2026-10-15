@@ -1,8 +1,9 @@
 ```js filename="my-addon/src/preset.js" renderer="common" language="js"
-import { writeFile } from 'node:fs/promises';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { lstat, realpath, writeFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { EVENTS } from './constants';
 
@@ -16,14 +17,24 @@ export const experimental_serverChannel = async (channel) => {
     if (!file.endsWith('.notes.md')) {
       return;
     }
-    // Reject paths that resolve outside the project
-    const root = getProjectRoot();
-    const target = resolve(root, file);
-    const fromRoot = relative(root, target);
-    if (isAbsolute(fromRoot) || fromRoot.split(sep)[0] === '..') {
-      return;
+    try {
+      // Follow symlinked directories, then reject paths outside the project
+      const root = await realpath(getProjectRoot());
+      const target = resolve(root, file);
+      const realTarget = join(await realpath(dirname(target)), basename(target));
+      const fromRoot = relative(root, realTarget);
+      if (isAbsolute(fromRoot) || fromRoot.split(sep)[0] === '..') {
+        return;
+      }
+      // A symlinked notes file could still point anywhere
+      const stats = await lstat(realTarget).catch(() => null);
+      if (stats?.isSymbolicLink()) {
+        return;
+      }
+      await writeFile(realTarget, notes);
+    } catch (error) {
+      logger.error(`Could not save notes to ${file}: ${error}`);
     }
-    await writeFile(target, notes);
   });
 
   return channel;
@@ -31,11 +42,12 @@ export const experimental_serverChannel = async (channel) => {
 ```
 
 ```ts filename="my-addon/src/preset.ts" renderer="common" language="ts"
-import { writeFile } from 'node:fs/promises';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { lstat, realpath, writeFile } from 'node:fs/promises';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { EVENTS } from './constants';
 
@@ -49,14 +61,24 @@ export const experimental_serverChannel = async (channel: Channel) => {
     if (!file.endsWith('.notes.md')) {
       return;
     }
-    // Reject paths that resolve outside the project
-    const root = getProjectRoot();
-    const target = resolve(root, file);
-    const fromRoot = relative(root, target);
-    if (isAbsolute(fromRoot) || fromRoot.split(sep)[0] === '..') {
-      return;
+    try {
+      // Follow symlinked directories, then reject paths outside the project
+      const root = await realpath(getProjectRoot());
+      const target = resolve(root, file);
+      const realTarget = join(await realpath(dirname(target)), basename(target));
+      const fromRoot = relative(root, realTarget);
+      if (isAbsolute(fromRoot) || fromRoot.split(sep)[0] === '..') {
+        return;
+      }
+      // A symlinked notes file could still point anywhere
+      const stats = await lstat(realTarget).catch(() => null);
+      if (stats?.isSymbolicLink()) {
+        return;
+      }
+      await writeFile(realTarget, notes);
+    } catch (error) {
+      logger.error(`Could not save notes to ${file}: ${error}`);
     }
-    await writeFile(target, notes);
   });
 
   return channel;

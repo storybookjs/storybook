@@ -249,6 +249,7 @@ export const features: PresetProperty<'features'> = async (existing, options) =>
   babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
   componentsManifest: false,
+  experimentalChunkedPreviewRuntime: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
   docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),

@@ -49,12 +49,6 @@ describe('fillTemplate', () => {
     expect(fillTemplate('use(⟦args⟧)', { formatter })).toBe('use({ formatter: shout })');
   });
 
-  it('puts written code in parentheses only where code reads on', () => {
-    const max = writtenArg('MB * 5');
-    expect(fillTemplate('⟦operand max⟧.toFixed(0)', { max })).toBe('(MB * 5).toFixed(0)');
-    expect(fillTemplate('<Chart ⟦attr max max⟧ />', { max })).toBe('<Chart max={MB * 5} />');
-  });
-
   it('leaves out the args a props hole names', () => {
     expect(fillTemplate('<Button ⟦props -children⟧>Hi</Button>', { children: 'x', a: 'b' })).toBe(
       '<Button a="b">Hi</Button>'
@@ -123,24 +117,8 @@ describe('fillTemplate', () => {
     );
   });
 
-  it("prints a default word's code for an unset arg", () => {
-    const template =
-      "<a ⟦attr size size ?'md'⟧>⟦text label ?a%20%3D%20b⟧</a> ⟦value n ?1⟧ ⟦operand n ?(1)⟧";
-    expect(fillTemplate(template, {})).toBe("<a size={'md'}>{a = b}</a> 1 (1)");
-    expect(fillTemplate(template, { size: 'lg', label: 'Go', n: 2 })).toBe(
-      '<a size="lg">Go</a> 2 (2)'
-    );
-    expect(fillTemplate(template, { size: null, label: null, n: null })).toBe(
-      '<a size={null}></a> null null'
-    );
-  });
-
-  it('prints a value hole as a literal in the code around it', () => {
-    expect(fillTemplate('⟦value loading⟧ ? a : b', { loading: true })).toBe('true ? a : b');
-  });
-
   it('throws for an arg it cannot print', () => {
-    expect(() => fillTemplate('⟦value onClick⟧', { onClick: () => {} })).toThrow(
+    expect(() => fillTemplate('⟦element Chart⟧', { onClick: () => {} })).toThrow(
       UnprintableArgError
     );
     expect(() => fillTemplate('<p>⟦text icon⟧</p>', { icon: <span /> })).toThrow(

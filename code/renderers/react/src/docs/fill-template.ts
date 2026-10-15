@@ -1,7 +1,5 @@
 import {
   type FillSnippetTemplate,
-  asOperand,
-  defaultCode,
   fillHoles,
   isAction,
   printValue,
@@ -13,7 +11,6 @@ import type { Args } from 'storybook/internal/types';
 // component with every arg and `⟦args⟧` the args as an object, both without their `-name` words,
 // and `⟦close Button⟧` ends a self-closing element whose children a spread passes, with them as
 // content.
-// A hole for one arg may end in a default word, the code that stands for the arg while it is unset.
 // A hole that prints more than one line is indented as the line it is on.
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const lines = [...template.matchAll(/⟦[^⟧]*⟧/g)].map(({ index }) =>
@@ -30,8 +27,6 @@ const indent = (code: string, prefix: string) => code.replace(/\n(?=.)/g, `\n${p
 
 function fill(kind: string, words: string[], args: Args, ownLine: boolean): string {
   const [first = '', second = ''] = words;
-  const at = kind === 'attr' ? 2 : 1;
-  const unset = args[words[at - 1]!] === undefined && defaultCode(words[at]);
   switch (kind) {
     case 'element': {
       const { children, ...props } = Object.fromEntries(spreadArgs(args, words.slice(1)));
@@ -46,13 +41,11 @@ function fill(kind: string, words: string[], args: Args, ownLine: boolean): stri
     case 'args':
       return object(spreadArgs(args, words));
     case 'attr':
-      return unset ? `${first}={${unset}}` : attribute(first, args[second]);
+      return attribute(first, args[second]);
     case 'text':
-      return unset ? `{${unset}}` : text(first, args[first]);
-    case 'operand':
-      return unset || asOperand(printValue(args[first], first));
+      return text(first, args[first]);
     default:
-      return unset || printValue(args[first], first);
+      throw new Error(`Unknown hole ⟦${kind}⟧`);
   }
 }
 

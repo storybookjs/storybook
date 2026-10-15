@@ -1,9 +1,9 @@
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import {
+  argCode,
   collectImportBindings,
   createStoryArgsResolver,
   type CsfFile,
-  fillStoryTemplate,
   type ImportRef,
   isCanonicalCsf2BindCall,
   metaObjectPath,
@@ -16,9 +16,13 @@ import {
 } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
-import { fillTemplate } from '../docs/fill-template.ts';
-import { type StoryFunction, buildStoryTemplate } from './storyTemplate.ts';
 import { invariant } from './utils.ts';
+
+type StoryFunction =
+  | t.ArrowFunctionExpression
+  | t.FunctionExpression
+  | t.FunctionDeclaration
+  | t.ObjectMethod;
 
 function renderFunctionOf(resolution: RenderResolution) {
   if (resolution.kind === 'resolved') {
@@ -59,22 +63,18 @@ export function getCodeSnippet(
         ? boundStoryNode(storyName, bound.call, args, holes)
         : buildSnippetNode(storyName, fnPath?.node, componentName, args, holes)
     ).code;
+  const snippet = print(false);
   // Holes written in code that already holds a hole bracket could not be found again.
   if (hasHoleBracket(csf._file.code)) {
-    return { snippet: print(false), ...needs };
+    return { snippet, ...needs };
   }
-  // A render function from another file has no source in this one to keep as written.
-  const inOtherFile =
-    fnPath && fnPath.findParent((path) => path.isProgram())?.node !== csf._ast.program;
-  // The story as written where a hole stands for each arg it reads, else as printed.
-  const template =
-    (fnPath && !inOtherFile
-      ? buildStoryTemplate(storyName, fnPath, csf._file.code, args)
-      : undefined) ?? closeHoles(print(true));
-  const filled = fillStoryTemplate(template, args, fillTemplate, unresolvedWarning(unresolved));
-  // Each arg the story writes is a literal or its code as written, which the filler always prints.
-  invariant(filled, `Could not fill the template of ${storyName} with its own args`);
-  return { ...filled, ...needs };
+  return {
+    snippet,
+    template: closeHoles(print(true)),
+    argCode: argCode(args),
+    templateWarning: unresolvedWarning(unresolved),
+    ...needs,
+  };
 }
 
 // A story bound from an imported `Template`, as in `Template.bind({})`.

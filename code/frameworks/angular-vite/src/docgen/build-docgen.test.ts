@@ -728,6 +728,26 @@ describe('buildDocgenPayload', () => {
       expect(payload?.argTypes).toBeUndefined();
     });
 
+    it('converts a field-derivation throw into an error payload, like an analyzer throw', () => {
+      givenStoryFile();
+      // Field derivation reads named-type detail from the analyzer's live TS context, which can
+      // throw just as the query itself can.
+      const meta = metaFor(componentEntry());
+      Object.defineProperty(meta, 'jsDocInfo', {
+        get: () => {
+          throw new TypeError('Debug Failure. Derivation.');
+        },
+      });
+      const manager = managerReturning(meta);
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaExtractionFailed');
+      expect(payload?.error?.message).toContain('Debug Failure. Derivation.');
+      expect(payload).toMatchObject({ id: 'button', name: 'ButtonComponent', jsDocTags: {} });
+      expect(payload?.argTypes).toBeUndefined();
+    });
+
     it('reports a component expression it cannot follow instead of staying silent', () => {
       givenStoryFile(`
         import * as internal from './nowhere';

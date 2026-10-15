@@ -1,8 +1,6 @@
-import type { MetaComponentResolution } from 'storybook/internal/common';
 import {
   createMetaComponentResolver,
   createModuleResolver,
-  extractDeclaredSubcomponents,
   jsTsSourceExtensions,
 } from 'storybook/internal/common';
 import type { CsfFile } from 'storybook/internal/csf-tools';
@@ -12,7 +10,7 @@ import { readFileSync } from 'node:fs';
 
 // Angular has no single-file-component format, so the JS/TS extensions the resolver already tries
 // are enough. One instance per process: the resolver caches its module resolutions.
-const resolveMetaComponent = createMetaComponentResolver();
+export const resolveMetaComponent = createMetaComponentResolver();
 
 const storyImportResolver = createModuleResolver({
   extensions: [...jsTsSourceExtensions],
@@ -36,39 +34,4 @@ export function parseStoryFile(storyFilePath: string, title: string): CsfFile | 
   } catch {
     return undefined;
   }
-}
-
-/** Resolves the primary component from an already-parsed CSF file's `meta.component`. */
-export function resolveComponentFromCsf(
-  csf: CsfFile,
-  storyFilePath: string
-): MetaComponentResolution {
-  return resolveMetaComponent(csf, storyFilePath);
-}
-
-/** One subcomponent a story file's meta declares, resolved to the component it names. */
-export interface ResolvedStorySubcomponent {
-  /** CSF object key the subcomponent is declared under. */
-  name: string;
-  /** Identifier the declaration names, as written (before default-export and alias resolution). */
-  componentName: string;
-  resolution: MetaComponentResolution;
-}
-
-/**
- * An already-parsed CSF file → the subcomponents its meta declares, if any.
- *
- * Each declared `{ key: Component }` entry resolves through the same import, namespace, and
- * reference following as `meta.component` itself. Takes a parsed `CsfFile` so callers that already
- * hold one (e.g. having just resolved the primary component from it) never parse the story file twice.
- */
-export function resolveSubcomponentsFromCsf(
-  csf: CsfFile,
-  storyFilePath: string
-): ResolvedStorySubcomponent[] {
-  return extractDeclaredSubcomponents(csf).map(({ name, componentName, node }) => ({
-    name,
-    componentName,
-    resolution: resolveMetaComponent(csf, storyFilePath, node),
-  }));
 }

@@ -1201,7 +1201,7 @@ describe('updateConfigFile', () => {
     // and the storybook project is a sibling entry in the same array. Wrapping the reference
     // inside a project entry would bury it: a `projects` key inside a project entry is not a
     // project list, so the original list would stop applying.
-    expect(after).toContain('projects: [...workspaceProjects, {');
+    expect(after).toContain('projects: [...(workspaceProjects ?? []), {');
 
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { defineConfig } from 'vitest/config';
@@ -1225,7 +1225,7 @@ describe('updateConfigFile', () => {
         
       -     projects: workspaceProjects
       - 
-      +     projects: [...workspaceProjects, {
+      +     projects: [...(workspaceProjects ?? []), {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
@@ -1281,7 +1281,7 @@ describe('updateConfigFile', () => {
 
     // check if the code was updated correctly — the original list keeps applying via spread
     // and the storybook project is a sibling entry in the same array
-    expect(after).toContain('projects: [...getWorkspaceProjects(), {');
+    expect(after).toContain('projects: [...(getWorkspaceProjects() ?? []), {');
 
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { getWorkspaceProjects } from './vitest.projects';
@@ -1301,7 +1301,7 @@ describe('updateConfigFile', () => {
         
       -     projects: getWorkspaceProjects()
       - 
-      +     projects: [...getWorkspaceProjects(), {
+      +     projects: [...(getWorkspaceProjects() ?? []), {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
@@ -1364,7 +1364,7 @@ describe('updateConfigFile', () => {
 
     // check if the code was updated correctly — the original list keeps applying via spread
     // and the storybook project is a sibling entry in the same array
-    expect(after).toContain('projects: [...workspaceProjects, {');
+    expect(after).toContain('projects: [...(workspaceProjects ?? []), {');
 
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  import { mergeConfig, defineConfig } from 'vitest/config';
@@ -1389,7 +1389,7 @@ describe('updateConfigFile', () => {
         
       -     projects: workspaceProjects
       - 
-      +     projects: [...workspaceProjects, {
+      +     projects: [...(workspaceProjects ?? []), {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
@@ -1465,6 +1465,94 @@ describe('updateConfigFile', () => {
       -     projects: './packages/*/vitest.config.ts'
       - 
       +     projects: ['./packages/*/vitest.config.ts', {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });"
+    `);
+  });
+
+  it('appends storybook project when test.projects is conditionally undefined', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      const workspaceProjects = [
+        { extends: true, test: { name: 'client' } },
+      ]
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: process.env.CI ? workspaceProjects : undefined,
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — an absent project list must not be spread
+    // bare: spreading undefined throws while loading the config, which would break the
+    // user's own tests too. Coalescing keeps the list applying when defined and degrades to
+    // just the storybook project when absent.
+    expect(after).toContain(
+      'projects: [...((process.env.CI ? workspaceProjects : undefined) ?? []), {'
+    );
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { defineConfig } from 'vitest/config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const workspaceProjects = [{
+          extends: true,
+          test: {
+            name: 'client'
+      ...
+        export default defineConfig({
+          test: {
+            globals: true,
+        
+      -     projects: process.env.CI ? workspaceProjects : undefined
+      - 
+      +     projects: [...((process.env.CI ? workspaceProjects : undefined) ?? []), {
       +       extends: true,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config

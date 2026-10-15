@@ -108,12 +108,27 @@ const isProjectsProp = (
 /**
  * Wraps a non-array `projects` value into an array that preserves the original list: a string
  * glob becomes a single entry; anything else must evaluate to the project array Vitest
- * requires, so it is spread to stay flat.
+ * requires, so it is spread to stay flat. The spread coalesces to an empty array because the
+ * expression can legitimately evaluate to undefined (e.g. `process.env.CI ? projects :
+ * undefined`) — spreading undefined would throw while loading the config.
  */
 const projectListValueToArray = (value: t.Expression): t.ArrayExpression =>
   value.type === 'StringLiteral' || value.type === 'TemplateLiteral'
     ? { type: 'ArrayExpression', elements: [value] }
-    : { type: 'ArrayExpression', elements: [{ type: 'SpreadElement', argument: value }] };
+    : {
+        type: 'ArrayExpression',
+        elements: [
+          {
+            type: 'SpreadElement',
+            argument: {
+              type: 'LogicalExpression',
+              operator: '??',
+              left: value,
+              right: { type: 'ArrayExpression', elements: [] },
+            },
+          },
+        ],
+      };
 
 /**
  * Appends storybook project(s) from template into an existing `test.projects` array, then merges

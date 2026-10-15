@@ -523,10 +523,11 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    // Act - Open sidebar context menu, start focused test then close menu
-    await page
-      .locator('[data-item-id="addons-group-test--expected-failure"]')
-      .hover();
+    // Act - Open sidebar context menu, start focused test then close menu. The row is scrolled
+    // to the middle first: at the edges, the sticky rows or the floating bottom widget cover it.
+    await (
+      await sbPage.revealSidebarRow("addons-group-test--expected-failure")
+    ).hover();
     await page
       .locator(
         '[data-item-id="addons-group-test--expected-failure"] button[data-testid="context-menu"]'
@@ -566,8 +567,9 @@ test.describe("component testing", () => {
     const storyElement = sbPage.getCanvasBodyElement().getByText("Hello world");
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    // Act - Open sidebar context menu and start focused test
-    await page.locator('[data-item-id="example-unhandlederrors"]').hover();
+    // Act - Open sidebar context menu and start focused test. The row is scrolled to the middle
+    // first: at the edges, the sticky rows or the floating bottom widget cover it.
+    await (await sbPage.revealSidebarRow("example-unhandlederrors")).hover();
     await page
       .locator(
         '[data-item-id="example-unhandlederrors"] button[data-testid="context-menu"]'
@@ -620,8 +622,9 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    // Act - Open sidebar context menu and start focused test
-    await page.locator('[data-item-id="addons-group-test"]').hover();
+    // Act - Open sidebar context menu and start focused test. The row is scrolled to the middle
+    // first: at the edges, the sticky rows or the floating bottom widget cover it.
+    await (await sbPage.revealSidebarRow("addons-group-test")).hover();
     await page
       .locator(
         '[data-item-id="addons-group-test"] button[data-testid="context-menu"]'
@@ -681,8 +684,9 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    // Act - Open sidebar context menu and start focused test
-    await page.locator('[data-item-id="addons-group"]').hover();
+    // Act - Open sidebar context menu and start focused test. The row is scrolled to the middle
+    // first: at the edges, the sticky rows or the floating bottom widget cover it.
+    await (await sbPage.revealSidebarRow("addons-group")).hover();
     await page
       .locator(
         '[data-item-id="addons-group"] button[data-testid="context-menu"]'
@@ -757,10 +761,9 @@ test.describe("component testing", () => {
     // Wait for Vitest to have (re)started
     await page.waitForTimeout(2000);
 
-    // Act - Open sidebar context menu and start focused test
-    await page
-      .locator('[data-item-id="example-button--csf-3-primary"]')
-      .hover();
+    // Act - Open sidebar context menu and start focused test. The row is scrolled to the middle
+    // first: at the edges, the sticky rows or the floating bottom widget cover it.
+    await (await sbPage.revealSidebarRow("example-button--csf-3-primary")).hover();
     await page
       .locator(
         '[data-item-id="example-button--csf-3-primary"] button[data-testid="context-menu"]'

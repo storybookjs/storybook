@@ -16,6 +16,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 
 import type { Link, NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
+import { isStoryRow } from '../../utils/tree.ts';
 
 import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
@@ -44,7 +45,8 @@ export function hasContextMenu(context: API_HashEntry, hasProviderMenuEntries = 
     return false;
   }
 
-  if (context.refId) {
+  // The "Story" row of a story with tests stands in for a row that has the menu already.
+  if (context.refId || isStoryRow(context)) {
     return false;
   }
 
@@ -68,7 +70,8 @@ export function hasProviderMenuEntriesFor(
   context: API_HashEntry,
   hasTestProviders: boolean
 ): boolean {
-  if (!hasTestProviders || context.type === 'root') {
+  // Test providers never see a "Story" row: its id names no story they could run.
+  if (!hasTestProviders || context.type === 'root' || isStoryRow(context)) {
     return false;
   }
   return (

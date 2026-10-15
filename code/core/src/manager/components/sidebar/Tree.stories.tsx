@@ -16,12 +16,14 @@ import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
+import { storyRowId } from '../../utils/tree.ts';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import { Tree } from './Tree.tsx';
 import { TREE_ROW_HEIGHT } from './treeGeometry.ts';
 import { index } from './mockdata.large.ts';
+import { mockDataset } from './mockdata.ts';
 
 const managerContext: any = {
   state: {
@@ -1067,6 +1069,63 @@ export const ArrowFocusDoesNotToggleBranch: Story = {
     await waitFor(() =>
       expect(row('emails-buildnotification')).toHaveAttribute('aria-expanded', 'true')
     );
+  },
+};
+
+/**
+ * A story with tests is a branch: its own row toggles the tests, as a component's row toggles its
+ * stories. Its "Story" child row opens the story, as a component's "Docs" child opens the docs
+ * page, and stands for the story in the selection, so the branch row toggles freely.
+ */
+export const StoryWithTests: Story = {
+  args: { refId: DEFAULT_REF_ID, onSelectStoryId: fn() },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState('root-1-child-a2--grandchild-a1-1');
+    return (
+      <Tree
+        {...args}
+        data={mockDataset.withRoot as unknown as IndexHash}
+        selectedStoryId={selectedId}
+        onSelectStoryId={(id) => {
+          args.onSelectStoryId(id);
+          setSelectedId(id);
+        }}
+      />
+    );
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
+    const storyId = 'root-1-child-a2--grandchild-a1-1';
+    const testId = 'root-1-child-a2--grandchild-a1-1:test1';
+
+    const storyRow = await canvas.findByRole('row', { name: 'Story' });
+    expect(storyRow).toHaveAttribute('data-item-id', storyRowId(storyId));
+    await waitFor(() => expect(storyRow).toHaveAttribute('aria-selected', 'true'));
+    expect(row(storyId)).toHaveAttribute('aria-selected', 'false');
+
+    // Right after its story, before the tests.
+    const ids = [...canvasElement.querySelectorAll('[data-item-id]')].map((el) =>
+      el.getAttribute('data-item-id')
+    );
+    expect(ids.indexOf(storyRowId(storyId))).toBe(ids.indexOf(storyId) + 1);
+    expect(ids.indexOf(testId)).toBe(ids.indexOf(storyId) + 2);
+
+    // The story's own row carries the actions; the "Story" row has none of its own.
+    expect(row(storyId)!.querySelector('[data-testid="context-menu"]')).not.toBeNull();
+    expect(storyRow.querySelector('[data-testid="context-menu"]')).toBeNull();
+
+    // The story's row toggles the tests, selected story or not.
+    await userEvent.click(row(storyId)!);
+    await waitFor(() => expect(row(storyId)).toHaveAttribute('aria-expanded', 'false'));
+    await userEvent.click(row(storyId)!);
+    await waitFor(() => expect(row(storyId)).toHaveAttribute('aria-expanded', 'true'));
+
+    // A test row opens the test; the "Story" row opens the story.
+    await userEvent.click(row(testId)!);
+    await waitFor(() => expect(args.onSelectStoryId).toHaveBeenLastCalledWith(testId));
+    await userEvent.click(row(storyRowId(storyId))!);
+    await waitFor(() => expect(args.onSelectStoryId).toHaveBeenLastCalledWith(storyId));
   },
 };
 

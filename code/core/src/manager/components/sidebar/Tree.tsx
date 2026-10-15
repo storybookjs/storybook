@@ -16,10 +16,13 @@ import { Tree as AriaTree } from 'react-aria-components/Tree';
 import { Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
+  addStoryRows,
   getAncestorIds,
   hoistSingleStoryComponents,
   indexToTree,
   isBranch,
+  isStoryRow,
+  storyRowId,
   type TreeEntry,
 } from '../../utils/tree.ts';
 import { TreeNode, type ReportRowFocus, type TreeNodeProps } from './TreeNode.tsx';
@@ -166,8 +169,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
     });
   }, []);
 
-  // Rewrite the dataset to place the single child story in place of the component.
-  const hoistedData = useMemo(() => hoistSingleStoryComponents(data), [data]);
+  // Rewrite the dataset: place the single child story in place of its component, and give every
+  // story with tests a "Story" child row that opens it, because its own row toggles the tests.
+  const hoistedData = useMemo(() => addStoryRows(hoistSingleStoryComponents(data)), [data]);
+
+  // The row that stands for the selected story: its "Story" child row when the story has tests.
+  const selectedRowId = useMemo(() => {
+    if (!selectedStoryId) {
+      return null;
+    }
+    const rowId = storyRowId(selectedStoryId);
+    return isStoryRow(hoistedData[rowId]) ? rowId : selectedStoryId;
+  }, [hoistedData, selectedStoryId]);
 
   // Switch to a tree structure from now on.
   const tree = useMemo(() => indexToTree(hoistedData), [hoistedData]);
@@ -175,7 +188,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Track expanded nodes, keep it in sync with props and enable keyboard shortcuts.
   const [expanded, setExpanded] = useExpanded({
     data: hoistedData,
-    selectedStoryId,
+    selectedStoryId: selectedRowId,
   });
 
   const groupDualStatus = useMemo(
@@ -242,15 +255,15 @@ export const Tree = React.memo<TreeProps>(function Tree({
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
-    () => (selectedStoryId ? new Set([selectedStoryId]) : EMPTY_KEYS),
-    [selectedStoryId]
+    () => (selectedRowId ? new Set([selectedRowId]) : EMPTY_KEYS),
+    [selectedRowId]
   );
 
   // The children of this row share the selection line.
   const selectedParentId = useMemo(() => {
-    const entry = selectedStoryId ? hoistedData[selectedStoryId] : undefined;
+    const entry = selectedRowId ? hoistedData[selectedRowId] : undefined;
     return !entry || entry.type === 'root' ? null : (entry.parent ?? null);
-  }, [selectedStoryId, hoistedData]);
+  }, [selectedRowId, hoistedData]);
 
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
   const handleExpandedChange = useCallback(
@@ -314,14 +327,15 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
 
-  // A branch toggles its own expansion. A leaf navigates to its story or docs page.
+  // A branch toggles its own expansion. A leaf navigates to its story or docs page; the "Story"
+  // row of a story with tests navigates to that story.
   const activateRow = useCallback(
     (itemId: string) => {
       const item = hoistedDataRef.current[itemId];
       if (item && isBranch(item)) {
         setExpanded({ ids: [itemId], append: true, value: !expandedRef.current.has(itemId) });
       } else {
-        onSelectStoryId(itemId);
+        onSelectStoryId(isStoryRow(item) ? item.storyRowOf : itemId);
       }
     },
     [onSelectStoryId, setExpanded]
@@ -603,27 +617,27 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // effect therefore retries on every expansion change, and stops once the row exists.
   const lastScrolledIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!selectedStoryId || lastScrolledIdRef.current === selectedStoryId) {
+    if (!selectedRowId || lastScrolledIdRef.current === selectedRowId) {
       return;
     }
-    if (scrollRowIntoView(selectedStoryId, 'nearest')) {
-      lastScrolledIdRef.current = selectedStoryId;
+    if (scrollRowIntoView(selectedRowId, 'nearest')) {
+      lastScrolledIdRef.current = selectedRowId;
     }
-  }, [selectedStoryId, expanded, scrollRowIntoView]);
+  }, [selectedRowId, expanded, scrollRowIntoView]);
 
   // Center the selected story once, when the tree mounts with a selection already made (a deep
   // link). A selection that arrives after a selection-less mount is a click on a visible row,
   // where a center scroll would pull the row out from under the pointer.
-  const needsInitialCenterRef = useRef(selectedStoryId != null);
+  const needsInitialCenterRef = useRef(selectedRowId != null);
   useEffect(() => {
-    if (!needsInitialCenterRef.current || !selectedStoryId) {
+    if (!needsInitialCenterRef.current || !selectedRowId) {
       return;
     }
-    if (scrollRowIntoView(selectedStoryId, 'center')) {
+    if (scrollRowIntoView(selectedRowId, 'center')) {
       needsInitialCenterRef.current = false;
-      lastScrolledIdRef.current = selectedStoryId;
+      lastScrolledIdRef.current = selectedRowId;
     }
-  }, [selectedStoryId, expanded, scrollRowIntoView]);
+  }, [selectedRowId, expanded, scrollRowIntoView]);
 
   // One dependencies array shared by every Collection level, so react-aria's cached nodes are
   // invalidated consistently — a drifted copy at one level renders stale rows. Deliberately

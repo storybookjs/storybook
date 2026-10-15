@@ -166,6 +166,48 @@ export function isBranch<T extends HashEntry>(entry: T): entry is T & { children
   return 'children' in entry && Array.isArray(entry.children) && entry.children.length > 0;
 }
 
+/** The id of the "Story" row of a story with tests (see `addStoryRows`). */
+export const storyRowId = (storyId: string) => `${storyId}--story`;
+
+/** The "Story" row of a story with tests. It opens the story it stands in for. */
+export type StoryRowEntry = StoryEntry & { storyRowOf: string };
+
+export function isStoryRow(entry: HashEntry | undefined): entry is StoryRowEntry {
+  return !!entry && 'storyRowOf' in entry;
+}
+
+/**
+ * Give every story with tests a leaf child named "Story" that opens the story itself. A story with
+ * tests is a branch, so a press on its own row toggles the tests, as a component's row toggles its
+ * stories. The child row keeps the story reachable with the pointer, as the "Docs" child of a
+ * component keeps its docs page reachable.
+ */
+export const addStoryRows = (data: IndexHash): IndexHash => {
+  // Rows render in the order of the hash, so the new row goes in right after its story: before
+  // the tests, which the index lists after the story.
+  const result: IndexHash = {};
+  let added = false;
+  for (const entry of Object.values(data)) {
+    if (entry.type !== 'story' || entry.subtype !== 'story' || !isBranch(entry)) {
+      result[entry.id] = entry;
+      continue;
+    }
+    const { children, ...rest } = entry;
+    const row: StoryRowEntry = {
+      ...rest,
+      id: storyRowId(entry.id),
+      name: 'Story',
+      parent: entry.id,
+      depth: entry.depth + 1,
+      storyRowOf: entry.id,
+    };
+    result[entry.id] = { ...entry, children: [row.id, ...children] };
+    result[row.id] = row;
+    added = true;
+  }
+  return added ? result : data;
+};
+
 export type TreeEntry = HashEntry & { resolvedChildren?: TreeEntry[] };
 
 /**

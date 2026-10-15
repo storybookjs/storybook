@@ -1,6 +1,5 @@
 import React, { useMemo, useRef } from 'react';
 
-import { ScrollArea } from 'storybook/internal/components';
 import type {
   API_LoadedRefData,
   StatusesByStoryIdAndTypeId,
@@ -32,6 +31,14 @@ import { useLastViewed } from './useLastViewed.ts';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
+const SearchResultsContainer = styled.div({
+  overflowY: 'auto',
+  flex: '1 1 auto',
+  minHeight: 0,
+  // Reserve room under sidebar to match the height of the TestProvider.
+  paddingBottom: 'var(--sidebar-bottom-height, 0px)',
+});
+
 const Container = styled.header(({ theme }) => ({
   position: 'absolute',
   zIndex: 1,
@@ -55,6 +62,9 @@ const Stack = styled.div({
   flexDirection: 'column',
   gap: 16,
   padding: '16px 12px 20px 12px',
+  // Fill the sidebar height. The virtualized tree scrolls itself and needs a bounded height.
+  flex: '1 1 auto',
+  minHeight: 0,
 });
 
 const useCombination = (
@@ -153,50 +163,52 @@ export const Sidebar = React.memo(function Sidebar({
         Storybook
       </h1>
       <IconSymbols />
-      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
-        <Stack>
-          <div>
-            <Heading
-              className="sidebar-header"
-              menuHighlighted={menuHighlighted}
-              menu={menu}
-              skipLinkHref={skipLinkHref}
-              isLoading={isLoading}
-              onMenuClick={onMenuClick}
-            />
-            {!showOnboardingChecklist ? null : <ChecklistWidget />}
-          </div>
-          {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
-          <Search
-            dataset={dataset}
-            enableShortcuts={enableShortcuts}
-            searchFieldContent={<Filter />}
-            belowSearchContent={<ShowChangesButton />}
-            {...lastViewedProps}
-          >
-            {({
-              query,
-              results,
-              isNavVisible,
-              isNavReachable,
-              isSearchResultRendered,
-              closeMenu,
-              getMenuProps,
-              getItemProps,
-              highlightedIndex,
-            }) => (
-              <>
-                {
-                  <Explorer
-                    dataset={dataset}
-                    selected={selected}
-                    isLoading={isLoading}
-                    isBrowsing={isNavVisible}
-                    isHidden={!isNavReachable}
-                    hasEntries={hasEntries}
-                  />
-                }
-                {isSearchResultRendered && (
+      <Stack>
+        <div>
+          <Heading
+            className="sidebar-header"
+            menuHighlighted={menuHighlighted}
+            menu={menu}
+            skipLinkHref={skipLinkHref}
+            isLoading={isLoading}
+            onMenuClick={onMenuClick}
+          />
+          {!showOnboardingChecklist ? null : <ChecklistWidget />}
+        </div>
+        {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
+        <Search
+          dataset={dataset}
+          enableShortcuts={enableShortcuts}
+          searchFieldContent={<Filter />}
+          belowSearchContent={<ShowChangesButton />}
+          {...lastViewedProps}
+        >
+          {({
+            query,
+            results,
+            isNavVisible,
+            isNavReachable,
+            isSearchResultRendered,
+            closeMenu,
+            getMenuProps,
+            getItemProps,
+            highlightedIndex,
+          }) => (
+            <>
+              {
+                <Explorer
+                  dataset={dataset}
+                  selected={selected}
+                  isLoading={isLoading}
+                  isBrowsing={isNavVisible}
+                  isHidden={!isNavReachable}
+                  hasEntries={hasEntries}
+                />
+              }
+              {isSearchResultRendered && (
+                // The search results need their own scroll container. The sidebar has no outer
+                // scroller.
+                <SearchResultsContainer>
                   <SearchResults
                     query={query}
                     results={results}
@@ -208,13 +220,13 @@ export const Sidebar = React.memo(function Sidebar({
                     isLoading={isLoading}
                     clearLastViewed={lastViewedProps.clearLastViewed}
                   />
-                )}
-              </>
-            )}
-          </Search>
-        </Stack>
-        {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
-      </ScrollArea>
+                </SearchResultsContainer>
+              )}
+            </>
+          )}
+        </Search>
+      </Stack>
+      {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
     </Container>
   );
 });

@@ -1,6 +1,6 @@
 ---
 name: storybook-init
-description: Use when adding Storybook to a project that does not have Storybook configured yet.
+description: Use when adding Storybook to a project that has no `storybook` dependency yet.
 ---
 
 If Storybook is already installed (a `storybook` dependency in `package.json`, or a `.storybook/` directory), do not install it again: switch to `/storybook-setup`.

@@ -515,8 +515,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
 				## When to call
-				- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; fall back to stories-find-by-component if that is unavailable. Include changedFiles.
-				- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step.
+				- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
+				- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step. Right before you call it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives, so the page opens with one call afterwards.
 				- Browse request ("show me the Badge component"): resolve via stories-find-by-component / docs-list. Show exactly what was asked. Pass changedFiles: [].
 
 				## Hard rules

@@ -13,6 +13,12 @@ describe('buildComponentDocsSkill', () => {
     expect(text).toContain('--storybookId acme');
   });
 
+  it('asks to read each docs show output whole, one id per command', () => {
+    expect(buildComponentDocsSkill()).toContain(
+      'Run `docs show` once per id, each in its own command, and read its whole output without `head` or `tail`'
+    );
+  });
+
   it('sends a UI change to ui-workflow when the agent instructions name it', () => {
     expect(buildComponentDocsSkill()).toContain(
       "For a change to the UI, use the `ui-workflow` skill when the project's agent instructions"

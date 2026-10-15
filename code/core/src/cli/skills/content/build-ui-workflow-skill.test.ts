@@ -61,13 +61,24 @@ describe('buildUiWorkflowSkill', () => {
     expect(text).not.toContain('accessibility');
   });
 
-  it('requires the commands that find affected stories before a review, not the full story list', () => {
+  it('requires `stories changed` after the last edit before a review, not the full story list', () => {
     const text = buildUiWorkflowSkill(everything);
 
     expect(text).toContain(
       'Run `stories changed` after your last edit and before every review, also when you already know the ids'
     );
     expect(text).not.toContain('Run one of these');
+  });
+
+  it('gets an in-app browser ready, if there is one, right before the review', () => {
+    const text = buildUiWorkflowSkill(everything);
+
+    expect(text).toContain(
+      'Right before it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives'
+    );
+    expect(text.indexOf('get your in-app browser ready')).toBeGreaterThan(
+      text.indexOf('## Finish with a review')
+    );
   });
 
   it('takes story ids from the story list when the builder has no module graph', () => {

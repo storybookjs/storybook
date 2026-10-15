@@ -84,8 +84,8 @@ function describeCreate(ctx: ToolsetCtx): string {
   return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
 ## When to call
-- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
-- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step. Right before you call it, load your in-app browser tool or skill and run its setup code, so the page opens with one call afterwards.
+- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
+- Last: publish it after your tests and other checks (type check, lint, git status), because opening the page it returns is your final step. Right before you call it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives, so the page opens with one call afterwards.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
@@ -131,7 +131,7 @@ function reviewInstructions(
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page, also when you read it earlier: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
-2. **Once the page is open, show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
+2. **Then write your final response and end it with these three lines.** Copy them unchanged, put nothing after them, and do not describe the review in your own words instead:
 
 ${
   // A browse request changes no files, so its heading must not speak of changes.
@@ -141,9 +141,7 @@ The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`
     : `## 👀 Review your changes
 The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now.`
 } Because this is AI-curated, results may be inaccurate or incomplete.
-👉 [Open the Storybook review page](${reviewUrl})
-
-Now do step 1: open ${reviewUrl} in your in-app browser. Then write your final response and end it with the three lines above, unchanged: the heading, the sentence and the 👉 link.`;
+👉 [Open the Storybook review page](${reviewUrl})`;
 }
 
 function formatReviewApplied({

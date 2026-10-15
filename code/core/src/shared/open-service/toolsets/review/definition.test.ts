@@ -210,13 +210,11 @@ This usually means the IDs were inferred from file paths or naming conventions r
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page, also when you read it earlier: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
-2. **Once the page is open, show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
+2. **Then write your final response and end it with these three lines.** Copy them unchanged, put nothing after them, and do not describe the review in your own words instead:
 
 ## 👀 Review your changes
 The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.
-👉 [Open the Storybook review page](${reviewUrl})
-
-Now do step 1: open ${reviewUrl} in your in-app browser. Then write your final response and end it with the three lines above, unchanged: the heading, the sentence and the 👉 link.`);
+👉 [Open the Storybook review page](${reviewUrl})`);
     });
   });
 
@@ -239,7 +237,20 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
       );
 
       expect(description).toContain('Start from stories-changed;');
-      expect(description).toContain('fall back to stories-find-by-component if');
+      expect(description).toContain(
+        'use stories-find-by-component only for a file it leaves out, or when it is unavailable.'
+      );
+    });
+
+    it('asks to get an in-app browser ready, if there is one, before publishing', () => {
+      const description = resolveToolsetDescription(
+        reviewToolset.methods.create.description,
+        mcpCtx
+      );
+
+      expect(description).toContain(
+        'Right before you call it, get your in-app browser ready if you have one:'
+      );
     });
 
     it('names the discovery tools as CLI commands', () => {
@@ -250,7 +261,7 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
 
       expect(description).toContain('Start from npx storybook tools stories changed;');
       expect(description).toContain(
-        'fall back to npx storybook tools stories find-by-component if'
+        'use npx storybook tools stories find-by-component only for a file it leaves out'
       );
     });
   });

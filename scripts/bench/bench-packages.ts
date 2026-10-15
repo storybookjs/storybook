@@ -125,8 +125,8 @@ export const benchPackage = async (packageName: PackageName) => {
   );
   const npmInstallResult = await x(
     'npm',
-    // --force to ignore peer dependency warnings, we aren't installing peer dependencies anyway
-    `install --registry http://localhost:6001 --omit peer --json --force`.split(' '),
+    // Peer dependencies are out of scope, and resolving them would tie the result to third-party peer graphs
+    `install --registry http://localhost:6001 --legacy-peer-deps --json`.split(' '),
     {
       nodeOptions: { cwd: tmpBenchPackagePath },
     }

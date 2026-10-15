@@ -35,6 +35,7 @@ export async function addGetUIBuildingInstructionsTool(
         return getStorybookStoryInstructionsDescription({
           testSupported,
           a11yAvailable,
+          docsEnabled: (server.ctx.custom?.toolsets?.docs ?? true) && docsEnabled,
         });
       },
       enabled,
@@ -74,16 +75,18 @@ export async function addGetUIBuildingInstructionsTool(
 export function getStorybookStoryInstructionsDescription({
   testSupported,
   a11yAvailable,
+  docsEnabled,
 }: {
   testSupported: boolean;
   a11yAvailable: boolean;
+  docsEnabled: boolean;
 }) {
   const tests = testSupported
     ? `
 - You run or fix story tests${a11yAvailable ? ' or accessibility violations' : ''}.`
     : '';
 
-  return `Storybook's workflow for UI changes in this project: look up the components to reuse, write and update stories, ${testSupported ? 'run story tests, ' : ''}and publish a review of the result. Also shows existing components or stories in a review. It is the same text as the ui-workflow skill, with the tools of this server.
+  return `Storybook's workflow for UI changes in this project: ${docsEnabled ? 'look up the components to reuse, ' : ''}write and update stories, ${testSupported ? 'run story tests, ' : ''}and publish a review of the result. Also shows existing components or stories in a review.
 
 Call it first, before you edit any file, and follow its result when:
 - You create, change, or delete a component, story (any *.stories.* file), style, theme, or design token, or otherwise change how the UI looks. A shared file with no stories of its own still changes its consumers' stories.${tests}
@@ -95,6 +98,7 @@ Read its result in its entirety: it is the mandatory, ordered workflow, with the
 export function getStorybookStoryInstructionsToolMetadata(options: {
   testSupported: boolean;
   a11yAvailable: boolean;
+  docsEnabled: boolean;
 }) {
   return {
     name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
@@ -107,10 +111,9 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
  * Thin adapter over the shared `buildUiWorkflowSkill` content builder: resolves this Storybook's
  * framework and availability probes through `resolveSkillInputs` (the same path the skills CLI
  * uses), then renders the ui-workflow skill with the MCP tool names, so both paths state one
- * workflow. Optional overrides
- * (toolset gates, `addonVitestAvailable`, `docsEnabled`, `a11yEnabled`) take
- * priority when provided; omitted fields fall back to the probe so callers cannot silently get
- * the wrong prose by leaving a field off.
+ * workflow. Optional overrides (toolset gates, `addonVitestAvailable`, `docsEnabled`,
+ * `a11yEnabled`) take priority when provided; omitted fields fall back to the probe so callers
+ * cannot silently get the wrong prose by leaving a field off.
  */
 export async function buildStorybookStoryInstructions(
   options: Options,

@@ -3,8 +3,6 @@ import { relative } from 'node:path';
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
-import { renderCommandReference } from './command-reference.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
 import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
@@ -52,8 +50,6 @@ export type SkillsRunDeps = {
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
   getSetupMarkdown: typeof getSetupMarkdownOutput;
-  // Reads the toolsets `loadStorybook` registered, so call it after the configuration has loaded.
-  describeToolsets: () => ToolsetCatalogEntry[];
 };
 
 export type SkillsIntent =
@@ -114,9 +110,7 @@ export async function runSkillsCommand(
     return { output: '', errorOutput: intent.message, exitCode: 1 };
   }
   try {
-    // `write-story` prints the same document as `ui-workflow`, so `--all` leaves it out.
-    const ids =
-      intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
+    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
     const { docs, setupRun } = await serveSkills(
       ids,
       resolveStorybookConfigDir(input.target),
@@ -145,18 +139,17 @@ async function serveSkills(
   deps: SkillsRunDeps
 ): Promise<{ docs: string[]; setupRun?: SetupRun }> {
   let inputs: SkillInputs | undefined;
-  let toolsets: ToolsetCatalogEntry[] | undefined;
   let setupRun: SetupRun | undefined;
   const docs: string[] = [];
-  for (const id of ids) {
+  // `write-story` is the earlier name of `ui-workflow`, so `--all` prints that document once.
+  for (const id of new Set(ids.map((id) => (id === 'write-story' ? 'ui-workflow' : id)))) {
     if (id === 'setup') {
       const setup = await serveSetup(configDir, deps);
       docs.push(setup.markdown);
       setupRun = setup.run;
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      toolsets ??= deps.describeToolsets();
-      docs.push(withCommandReference(id, inputs, toolsets));
+      docs.push(assemble(id, inputs));
     }
   }
   return { docs, setupRun };
@@ -218,25 +211,10 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
-function withCommandReference(
-  id: Exclude<SkillId, 'setup'>,
-  inputs: SkillInputs,
-  toolsets: ToolsetCatalogEntry[]
-): string {
-  const text = assemble(id, inputs);
-  // These teach each command inline, so a command reference would only repeat them.
-  if (id === 'ui-workflow' || id === 'write-story' || id === 'component-docs') {
-    return text;
-  }
-  const reference = renderCommandReference(text, toolsets);
-  return reference ? `${text.trimEnd()}\n\n${reference}` : text;
-}
-
-function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
+function assemble(id: 'ui-workflow' | 'component-docs', inputs: SkillInputs): string {
   if (id === 'component-docs') {
     return buildComponentDocsSkill();
   }
-  // `write-story` is the same document, under the id the MCP story-instructions tool serves it as.
   return buildUiWorkflowSkill({
     transport: 'cli',
     framework: inputs.framework,

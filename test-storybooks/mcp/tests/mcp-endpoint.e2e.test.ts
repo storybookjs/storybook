@@ -345,7 +345,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get story preview URLs",
 				  },
 				  {
-				    "description": "Storybook's workflow for UI changes in this project: look up the components to reuse, write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review. It is the same text as the ui-workflow skill, with the tools of this server.
+				    "description": "Storybook's workflow for UI changes in this project: look up the components to reuse, write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review.
 
 				Call it first, before you edit any file, and follow its result when:
 				- You create, change, or delete a component, story (any *.stories.* file), style, theme, or design token, or otherwise change how the UI looks. A shared file with no stories of its own still changes its consumers' stories.

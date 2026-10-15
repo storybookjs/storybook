@@ -53,7 +53,7 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toContain(
-      'It returns the mandatory, ordered workflow, with the tools each step calls: it updates your stories, and publishes a review'
+      'It returns the mandatory, ordered workflow, with the tools each step calls: it updates your stories and publishes a review'
     );
     expect(instructions).not.toContain('story tests');
     expect(instructions).not.toContain('docs-list');

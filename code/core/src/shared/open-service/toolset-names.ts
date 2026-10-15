@@ -44,7 +44,7 @@ export function toCliMethodName(methodName: string): string {
 }
 
 /** `stories.findByComponent` -> `stories find-by-component`. */
-function toCliPath(method: ToolsetMethodId): string {
+export function toCliPath(method: ToolsetMethodId): string {
   const { toolsetId, methodName } = parseToolsetMethodId(method);
   return `${toolsetId} ${toCliMethodName(methodName)}`;
 }

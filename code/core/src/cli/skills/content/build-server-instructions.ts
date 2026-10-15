@@ -25,9 +25,17 @@ export function buildServerInstructions({
   const ref = getToolName({ transport });
   const skillRef = getSkillRef(transport);
 
+  const steps = [
+    docsEnabled && 'looks up the components to reuse',
+    'updates your stories',
+    testSupported && 'runs the tests',
+    'publishes a review of the results',
+  ].filter(Boolean);
+  const workflow = `${steps.slice(0, -1).join(', ')}${steps.length > 2 ? ',' : ''} and ${steps.at(-1)}`;
+
   const tasks = [
     devEnabled &&
-      `- **${skillRef('ui-workflow')}**: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks;${testSupported ? ' you run or fix story tests;' : ''} or the user asks to see components or stories. It returns the mandatory, ordered workflow, with the tools each step calls: it ${docsEnabled ? 'looks up the components to reuse, ' : ''}updates your stories, ${testSupported ? 'runs the tests, ' : ''}and publishes a review of the results. Read it in its entirety.`,
+      `- **${skillRef('ui-workflow')}**: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks;${testSupported ? ' you run or fix story tests;' : ''} or the user asks to see components or stories. It returns the mandatory, ordered workflow, with the tools each step calls: it ${workflow}. Read it in its entirety.`,
     !devEnabled &&
       testSupported &&
       `- **${ref('test.run')}**: you run or fix story tests. It is the only way to run them, never a \`package.json\` test script; finish with one run without \`stories\`, and never finish with failing tests.`,

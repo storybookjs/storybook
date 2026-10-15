@@ -2,33 +2,13 @@ import { relative } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { resolveSkillsIntent, runSkillsCommand } from './run.ts';
-
-const toolset = (id: string, methodNames: string[]): ToolsetCatalogEntry => ({
-  id,
-  description: `${id} tools.`,
-  methods: methodNames.map((methodName) => ({
-    ref: `${id}.${methodName}` as ToolsetMethodId,
-    title: methodName,
-    description: `Describes ${id}.${methodName}.`,
-    requiresDevServer: false,
-    input: { type: 'object', properties: {} },
-  })),
-});
-
-const describedTools = (output: string) =>
-  [...output.matchAll(/^Usage: npx storybook tools (.+) \[--key value \.\.\.\]$/gm)].map(
-    ([, command]) => command
-  );
 
 const deps = () => ({
   loadStorybook: vi.fn().mockResolvedValue({ presets: { apply: vi.fn() } }),
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
-    renderer: '@storybook/react',
     csfFactories: false,
     previewFile: '.storybook/preview.ts',
     typescript: true,
@@ -48,12 +28,6 @@ const deps = () => ({
   getSetupMarkdown: vi
     .fn()
     .mockResolvedValue({ markdown: '# Storybook Setup', prompt: 'optimized-tests' }),
-  describeToolsets: vi.fn(() => [
-    toolset('stories', ['preview', 'changed', 'findByComponent']),
-    toolset('review', ['create']),
-    toolset('docs', ['list', 'show', 'showStory']),
-    toolset('test', ['run']),
-  ]),
 });
 
 describe('resolveSkillsIntent', () => {
@@ -177,8 +151,8 @@ describe('runSkillsCommand', () => {
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
     const componentDocs = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
 
-    expect(describedTools(uiWorkflow.output)).toEqual([]);
-    expect(describedTools(componentDocs.output)).toEqual([]);
+    expect(uiWorkflow.output).not.toContain('Usage: npx storybook tools');
+    expect(componentDocs.output).not.toContain('Usage: npx storybook tools');
     expect(uiWorkflow.output).toContain("npx storybook tools test run --stories '[{");
     expect(uiWorkflow.output).toContain("npx storybook tools review create --input '{");
     expect(uiWorkflow.output.length).toBeLessThan(10000);
@@ -190,6 +164,7 @@ describe('runSkillsCommand', () => {
     expect(result.output.split('# Storybook UI workflow')).toHaveLength(2);
     expect(result.output.split('# Storybook component docs')).toHaveLength(2);
     expect(result.output.split('# Storybook Setup')).toHaveLength(2);
+    expect(result.skill).toBe('all');
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

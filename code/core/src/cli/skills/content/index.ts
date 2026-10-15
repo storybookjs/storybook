@@ -5,4 +5,3 @@ export {
   type ServerInstructionsInputs,
 } from './build-server-instructions.ts';
 export { buildUiWorkflowSkill, type UiWorkflowSkillInputs } from './build-ui-workflow-skill.ts';
-export { frameworkToRendererMap } from './framework-renderer.ts';

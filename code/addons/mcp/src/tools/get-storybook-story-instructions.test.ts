@@ -4,6 +4,7 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import {
   addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
+  getStorybookStoryInstructionsDescription,
 } from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
 import { PREVIEW_STORIES_TOOL_NAME, GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
@@ -116,6 +117,18 @@ describe('getUIBuildingInstructionsTool', () => {
 
     expect(description).not.toContain('story tests');
     expect(description).not.toContain('accessibility');
+  });
+
+  it('promises the component lookup only when the docs tools are available', () => {
+    const description = (docsEnabled: boolean) =>
+      getStorybookStoryInstructionsDescription({
+        testSupported: true,
+        a11yAvailable: false,
+        docsEnabled,
+      });
+
+    expect(description(true)).toContain('look up the components to reuse');
+    expect(description(false)).not.toContain('look up the components');
   });
 
   it('should include testing but exclude a11y description when a11y is disabled', async () => {

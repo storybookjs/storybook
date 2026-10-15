@@ -169,6 +169,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
       return getStorybookStoryInstructionsToolMetadata({
         testSupported,
         a11yAvailable: testSupported && availability.a11yEnabled,
+        docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
       });
     },
     register: (server, { availability, toolsets }, enabled) =>

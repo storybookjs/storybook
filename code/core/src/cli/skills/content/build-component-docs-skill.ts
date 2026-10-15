@@ -1,12 +1,11 @@
-import type { SkillTransport } from './skill-refs.ts';
-import { skillVocabulary } from './skill-vocabulary.ts';
+import { type SkillTextTransport, skillVocabulary } from './skill-vocabulary.ts';
 
 /**
  * How to look up the components to reuse. `ui-workflow` inlines it, so an agent cannot skip the
  * lookup by not invoking `component-docs`. The MCP story instructions render the same text with the
  * MCP tool names.
  */
-export function componentLookup(transport: SkillTransport = 'cli'): string {
+export function componentLookup(transport: SkillTextTransport = 'cli'): string {
   const v = skillVocabulary(transport);
   const list = v.name('docs.list');
   const show = v.name('docs.show');

@@ -6,11 +6,9 @@ import { findConfigFile } from '../../common/utils/get-storybook-info.ts';
 import { isCsfFactoryPreview, readConfig } from '../../csf-tools/ConfigFile.ts';
 
 import { getToolAvailability, type ToolAvailability } from './availability.ts';
-import { frameworkToRendererMap } from './content/framework-renderer.ts';
 
 export type SkillInputs = ToolAvailability & {
   framework: string;
-  renderer?: string;
   /** The preview file imports `definePreview`, the entry point of CSF Factories. */
   csfFactories: boolean;
   /** Path of the preview file relative to the working directory; a default name when there is none. */
@@ -52,5 +50,5 @@ export async function resolveSkillInputs(options: Options): Promise<SkillInputs>
   const framework = extractFrameworkPackageName(
     typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
   );
-  return { ...availability, ...preview, framework, renderer: frameworkToRendererMap[framework] };
+  return { ...availability, ...preview, framework };
 }

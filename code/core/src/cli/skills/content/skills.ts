@@ -18,8 +18,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
       'Look up components, with their props and usage, to reuse them instead of building duplicates or to answer questions about them.',
   },
   'write-story': {
-    blurb:
-      'The same document as ui-workflow, under its earlier name; the MCP tool get-storybook-story-instructions serves it too.',
+    blurb: 'Earlier name of ui-workflow; prints the same document.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

@@ -1,13 +1,17 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
+  - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
+  - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
@@ -41,6 +45,7 @@
   - [Internal toolset inputs must be strict objects](#internal-toolset-inputs-must-be-strict-objects)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
+  - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
@@ -61,6 +66,14 @@
     - [`<Template>` component](#template-component)
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
+  - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
+  - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
+  - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
+  - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+- [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
+  - [Highlight: menu items emit a fixed event and require an `id`](#highlight-menu-items-emit-a-fixed-event-and-require-an-id)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Angular Vite: a new `propsTable` framework option](#angular-vite-a-new-propstable-framework-option)
@@ -117,6 +130,10 @@
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
+- [From version 9.1.20 to 9.1.21](#from-version-9120-to-9121)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-2)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-2)
+  - [Highlight: menu items emit a fixed event and require an `id`](#highlight-menu-items-emit-a-fixed-event-and-require-an-id-1)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -163,6 +180,10 @@
     - [Next.js: Require v14 and up](#nextjs-require-v14-and-up)
     - [Next.js: Vite builder stabilized](#nextjs-vite-builder-stabilized)
     - [Lit = Require v3 and up](#lit--require-v3-and-up)
+- [From version 8.6.18 to 8.6.19](#from-version-8618-to-8619)
+  - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-3)
+  - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-3)
+  - [Highlight: menu items emit a fixed event and require an `id`](#highlight-menu-items-emit-a-fixed-event-and-require-an-id-2)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
   - [Addon-a11y: Replaced experimental `ally-test` tag behavior with `parameters.a11y.test`](#addon-a11y-replaced-experimental-ally-test-tag-behavior-with-parametersa11ytest)
@@ -596,13 +617,79 @@
 
 ## From version 10.x to 11.0.0
 
+### `storybook dev` now blocks remote iframe embedding
+
+`storybook dev` now sends a [`Content-Security-Policy: frame-ancestors`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors) header with every response, for both the manager and the preview. Only Storybook itself and pages served from `localhost` or `127.0.0.1` can embed the dev server in an `<iframe>`. This prevents a malicious website from embedding your local Storybook and interacting with it.
+
+These cases keep working without changes:
+
+- Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
+- Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
+- Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
+
+Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation/
+
+If you are affected, build the Storybook you want to embed with `storybook build`, and use its build output, which has no restriction. To keep embedding live `dev` content, set `security.insecureRemoteIframeEmbed` to `true` in the `.storybook/main` file of the Storybook that is being embedded:
+
+```ts
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  // ...
+  security: {
+    insecureRemoteIframeEmbed: true,
+  },
+};
+
+export default config;
+```
+
+Composing live `dev` content from another origin also requires `security.insecureIframeMessaging`, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+With this option enabled, any website you visit can embed your local Storybook. Avoid leaving it on for longer than strictly necessary.
+
+### Storybook now restricts iframe messaging
+
+The manager and its preview iframes exchange messages with `postMessage`. The manager now only accepts messages from its own preview iframes. In `storybook dev`, the preview also only accepts messages from its own origin and from a manager served from `localhost` or `127.0.0.1`, and both address their messages to the expected origin instead of `*`. This prevents a malicious website from embedding your Storybook and exchanging messages with it.
+
+These cases keep working without changes:
+
+- Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
+- Composing a built and published Storybook
+
+These cases are affected:
+
+- Composing a live `dev` Storybook from a page served from any origin other than `localhost` or `127.0.0.1`
+- In `storybook dev`, composing a Storybook that serves no `index.json` and whose `refs` URL redirects to another origin, for example from `http://` to `https://` (use the final URL in `refs` instead)
+
+If you are affected, build the Storybook you want to compose with `storybook build`, and compose its build output, which accepts messages from any origin. To keep composing live `dev` content, set `security.insecureIframeMessaging` to `true` in the `.storybook/main` file of the Storybook that is being composed:
+
+```ts
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  // ...
+  security: {
+    insecureIframeMessaging: true,
+  },
+};
+
+export default config;
+```
+
+Composing live `dev` content from another origin also requires `security.insecureRemoteIframeEmbed`, see [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+With this option enabled, any website that embeds your Storybook can exchange messages with it. Avoid leaving it on for longer than strictly necessary.
+
 ### Legacy highlight object format removed
 
 The legacy highlight payload `{ elements, color, style }` is no longer accepted by the `HIGHLIGHT` event. Senders must use the current format, which targets elements with `selectors` and controls their appearance with `styles`:
 
-| Removed | Replacement |
-| --- | --- |
-| `elements` | `selectors` |
+| Removed             | Replacement                                                     |
+| ------------------- | --------------------------------------------------------------- |
+| `elements`          | `selectors`                                                     |
 | `color` and `style` | `styles` (CSS properties, e.g. `{ outline: '2px dashed red' }`) |
 
 ```diff
@@ -663,6 +750,17 @@ A panel stays next to the story. A tab replaced the canvas. For a short-lived ac
 `parameters.previewTabs`, `layout.showTabs`, and the `tabs` URL parameter no longer change the manager UI.
 
 See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-type-removed) for the same instructions in the addon-author guide.
+
+### `useThemeParameters` removed
+
+`@storybook/addon-themes` no longer exports `useThemeParameters`. If a custom decorator calls it, read the theme parameters from its story context instead:
+
+```diff
+-const { themeOverride } = useThemeParameters(context);
++const { themeOverride } = context.parameters.themes ?? {};
+```
+
+Keep any existing precedence between the theme parameters and your selected theme global. Rebuild your Storybook and check the decorator in both development and a served static build. See the [addon migration guide](docs/addons/addon-migration-guide.mdx#usethemeparameters-removal) for the replacement.
 
 ### `storybook dev` no longer opens a browser by default
 
@@ -751,9 +849,49 @@ export default {
 };
 ```
 
-`table.defaultValue` and `globalTypes.defaultValue` are unchanged.
+`table.defaultValue` is unchanged. The `defaultValue` property on toolbar `globalTypes` entries is removed, see [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed).
 
 The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When that property cannot be removed, the file is left unchanged and listed in `automigrations-summary.md`.
+
+The automigration covers Storybook config and configured story files, including static CSF2 `Story.argTypes` assignments. It does not scan shared utility modules; remove deprecated fields in those modules manually.
+
+### Toolbar `globalTypes` entries: index signature and `defaultValue` removed
+
+Toolbar entries in `globalTypes` no longer allow extra, undocumented keys. The loose index signature that accepted them existed only for compatibility with `InputType` and is now removed, so an unknown key in a toolbar entry is a type error. Move any extra data out of the toolbar entry:
+
+```diff
+export default {
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+      toolbar: { items: ['en', 'es'] },
+-     myAddonData: { timezone: 'CET' },
+    },
+  },
+};
+```
+
+The `defaultValue` property on a toolbar entry is removed as well. Until 11.0, the preview runtime still read it: `GlobalsStore` seeded starting globals from `globalTypes[].defaultValue`, and portable stories did the same through an internal helper. In 11.0 that seeding stops and globals are seeded from `initialGlobals` only. Set `initialGlobals` instead:
+
+```diff
+// .storybook/preview.js
+export default {
++ initialGlobals: {
++   locale: 'en',
++ },
+  globalTypes: {
+    locale: {
+      description: 'Internationalization locale',
+-     defaultValue: 'en',
+      toolbar: { items: ['en', 'es'] },
+    },
+  },
+};
+```
+
+See [From version 8.x to 9.0.0](#from-version-8x-to-900) for details on the `initialGlobals` change.
+
+This change also removes the internal helper `getValuesFromGlobalTypes` from the preview-api store barrel. It only existed to service the `defaultValue` seeding; if you imported it, derive the values from `initialGlobals` instead.
 
 ### Docs Code panel enabled by default
 
@@ -1182,7 +1320,7 @@ Key changes:
 
 The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
 
-Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook automigrate nextjs-to-nextjs-vite` directly.
 
 ### Create React App support removed
 
@@ -1244,6 +1382,21 @@ Replace calls with the native operator:
 ### Experimental `UniversalStore` API is now internal
 
 `experimental_UniversalStore` and `experimental_useUniversalStore` are no longer exported from `storybook/manager-api` and `storybook/internal/core-server`. The store is internal to Storybook, and `UniversalStore.create()` now throws for store ids that Storybook does not own. We are working on a replacement called Open Services, but it is not ready for third-party addons yet.
+
+### `mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`
+
+The deprecated `mockChannel` helper is no longer exported from `storybook/preview-api` (also available under `storybook/internal/preview-api`) or `storybook/manager-api`. It built a `Channel` with a no-op transport, which spans no runtime boundary — events sent through it never leave the current process.
+
+If you used it to mock the addon channel in tests or in non-browser environments like Jest, construct a transport-less `Channel` directly instead:
+
+```diff
+-import { addons, mockChannel } from 'storybook/preview-api';
++import { addons } from 'storybook/preview-api';
++import { Channel } from 'storybook/internal/channels';
+
+-addons.setChannel(mockChannel());
++addons.setChannel(new Channel({}));
+```
 
 ### React: Require v18 and up
 
@@ -1329,7 +1482,7 @@ The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI
 
 Storybook 11 removes `--preview-url` and `--force-build-preview`. Those options pointed the canvas iframe at a custom URL and skipped compiling Storybook's own preview. The Angular builder `previewUrl` option is removed for the same reason.
 
-Storybook always builds its preview and always loads `iframe.html`. There is no replacement. If you used `--preview-url` so Storybook could be served from a subdirectory or CDN, configure that host's public path or [`staticDirs`](https://storybook.js.org/docs/configure/images-and-assets#serving-static-files-via-storybook) instead.
+Storybook always builds its preview and always loads `iframe.html`. There is no replacement. If you used `--preview-url` so Storybook could be served from a subdirectory or CDN, configure that host's public path or [`staticDirs`](docs/configure/integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) instead.
 
 ### Automigrations for Storybook 10 and earlier removed
 
@@ -1711,6 +1864,97 @@ Storybook used to run the preprocessors from `svelte.config.js` on a stories fil
 
 If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
 
+### Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`
+
+Highlight menu items no longer accept a `clickEvent` property naming an arbitrary channel event to emit when clicked. This allowed malicious websites to inject menu items into a preview that could send security-sensitive events to the dev server.
+
+> [!IMPORTANT]
+> If you use the Visual Tests addon, update it to version 5.5.0 or more recent.
+
+Instead of `clickEvent`, menu items now accept a `clickable` property. When clicked, menu items emit a `HIGHLIGHT_MENU_CLICK` event, which still lets addon authors implement a callback, but not emit arbitrary events. Addon authors must now pass an `id` property to `HIGHLIGHT`, which is passed back to `HIGHLIGHT_MENU_CLICK` so listeners can ignore clicks on other addons' menu items.
+
+```diff
+- import { HIGHLIGHT } from 'storybook/highlight';
++ import { HIGHLIGHT, HIGHLIGHT_MENU_CLICK } from 'storybook/highlight';
+
+  emit(HIGHLIGHT, {
++   id: 'my-highlight',
+    selectors: ['h2'],
+-   menu: [[{ id: 'details', title: 'Show details', clickEvent: 'my-addon/show-details' }]],
++   menu: [[{ id: 'details', title: 'Show details', clickable: true }]],
+  });
+
+- channel.on('my-addon/show-details', (itemId, details) => { ... });
++ channel.on(HIGHLIGHT_MENU_CLICK, (highlightId, itemId, details) => {
++   if (highlightId !== 'my-highlight') return;
++   ...
++ });
+```
+
+The `element` property of the `ClickEventDetails` payload no longer includes the clicked element's `outerHTML` and `attributes`, since they can carry content from the story. It keeps `tagName` and `localName`, and the payload still contains the element's position, dimensions and the matching `selectors`. Every `HIGHLIGHT` payload must now carry a string `id`. Payloads without one are ignored with a warning in the browser console.
+
+### `core/module-graph` query aliases removed
+
+The deprecated `getStatus` and `getGraphRevision` query aliases on the `core/module-graph` open service were removed in 11.0.0. If you implemented toolsets or other external consumers against them, call the canonical queries through the standard query handle (`.get()`, `.loaded()`, `.subscribe()`):
+
+- `getStatus` → `queries.status`
+- `getGraphRevision` → `queries.graphRevision` (same optional `{ storyFiles }` input)
+
+### ExternalDocs and ExternalDocsContainer are removed
+
+The `ExternalDocs` and `ExternalDocsContainer` components have been removed from `@storybook/addon-docs/blocks`, along with their supporting implementation. They rendered docs pages outside of the Storybook UI, an approach that was never stabilized.
+
+To write documentation, use Doc Blocks inside MDX docs entries rendered by Storybook. To build a custom block, use the `useOf` hook. There is no supported standalone docs renderer. To show docs outside of Storybook, embed a built Storybook.
+
+### CSF `.story` annotations removed
+
+Storybook 11 no longer reads annotations nested under `Story.story`. That form was deprecated in Storybook 6.0. Move each field onto the story. When the story is a function, `name` becomes `storyName`.
+
+```diff
+ export const Basic = () => <Button />;
+-Basic.story = {
+-  name: 'foo',
+-  parameters: { layout: 'centered' },
+-  decorators: [withLayout],
+-};
++Basic.storyName = 'foo';
++Basic.parameters = { layout: 'centered' };
++Basic.decorators = [withLayout];
+```
+
+Assignments one property at a time move the same way: `Basic.story.name = 'foo'` becomes `Basic.storyName = 'foo'`, and `Basic.story.parameters = { ... }` becomes `Basic.parameters = { ... }`.
+
+If the value is not a static object, move the fields yourself. This includes a variable, a function call, a spread, or a computed key:
+
+```diff
+ const shared = { parameters: { layout: 'centered' }, decorators: [withLayout] };
+-Basic.story = shared;
++Basic.parameters = shared.parameters;
++Basic.decorators = shared.decorators;
+```
+
+`storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+## From version 10.6.1 to 10.6.2
+
+### `storybook dev` now blocks remote iframe embedding
+
+Storybook 10.6.2 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+
+To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+### Storybook now restricts iframe messaging
+
+Storybook 10.6.2 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+
+To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+### Highlight: menu items emit a fixed event and require an `id`
+
+Storybook 10.6.2 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+
+See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
+
 ## From version 10.5.x to 10.6.0
 
 ### Vue 3: `vue-docgen-api` is deprecated
@@ -1912,7 +2156,7 @@ Direct imports of `@storybook/csf-plugin` in custom builders or standalone Vite/
 
 The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon-docs` are deprecated and will be removed in Storybook 11. These components allowed rendering Storybook docs pages outside of the Storybook UI, but the approach was never stabilized and is redundant with other embedding options.
 
-If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
+If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions. Removed in Storybook 11.0; see the [11.0 section above](#externaldocs-and-externaldocscontainer-are-removed).
 
 ## From version 10.3.0 to 10.4.0
 
@@ -2316,6 +2560,26 @@ export const core = {
 #### Removed x-only builtin tags
 
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+## From version 9.1.20 to 9.1.21
+
+### `storybook dev` now blocks remote iframe embedding
+
+Storybook 9.1.21 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+
+To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+### Storybook now restricts iframe messaging
+
+Storybook 9.1.21 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+
+To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+### Highlight: menu items emit a fixed event and require an `id`
+
+Storybook 9.1.21 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+
+See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
 
 ## From version 8.x to 9.0.0
 
@@ -3056,6 +3320,26 @@ export default {
 #### Lit = Require v3 and up
 
 The minimum supported version is now v3.
+
+## From version 8.6.18 to 8.6.19
+
+### `storybook dev` now blocks remote iframe embedding
+
+Storybook 8.6.19 changes its default iframe embedding behavior. Remote websites are no longer allowed to embed a manager or preview iframe for a live Storybook dev server. Embedding iframes of built Storybooks is still permitted.
+
+To restore the insecure default behavior prior to this patch, see [Storybook dev now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding).
+
+### Storybook now restricts iframe messaging
+
+Storybook 8.6.19 changes how the manager and preview iframes exchange messages. The manager no longer accepts messages from windows other than its own preview iframes, and the preview of a live Storybook dev server no longer accepts messages from remote websites. Built Storybooks can still be composed from any origin.
+
+To restore the insecure default behavior prior to this patch, see [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging).
+
+### Highlight: menu items emit a fixed event and require an `id`
+
+Storybook 8.6.19 changes the Highlight feature's channel API so that a `HIGHLIGHT` payload can no longer make the preview emit arbitrary channel events. Menu items use `clickable: true` and emit `HIGHLIGHT_MENU_CLICK`, every highlight requires an `id`, and the click payload no longer carries the element's `outerHTML`.
+
+See [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id) for the migration steps.
 
 ## From version 8.5.x to 8.6.x
 

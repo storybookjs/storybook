@@ -38,6 +38,8 @@ export { getStoriesPathsFromConfig };
 // ============================================================================
 
 /** Configuration for upgrading Storybook dependencies */
+type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies';
+
 interface UpgradeConfig {
   readonly packageManager: JsPackageManager;
   readonly isCanary: boolean;
@@ -304,7 +306,7 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-    } = await getStorybookData({ configDir });
+    } = await getStorybookData({ configDir, packageManagerName: options.packageManager });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
@@ -441,6 +443,7 @@ export const generateUpgradeSpecs = async (
     isCLIExactPrerelease,
     isCLIExactLatest,
   } = config;
+  const prereleaseModifier = isCLIExactPrerelease && !isCanary ? '^' : '';
 
   // Filter for monorepo dependencies
   const monorepoDependencies = Object.keys(dependencies).filter(
@@ -466,9 +469,11 @@ export const generateUpgradeSpecs = async (
 
     const { modifier } = getVersionModifier(versionSpec);
 
-    // Use fixed version for outdated CLI or canary versions
-    const shouldUseFixed = isCLIOutdated || isCanary;
-    const finalModifier = shouldUseFixed ? '' : modifier;
+    const finalModifier = isCLIPrerelease
+      ? prereleaseModifier
+      : isCLIOutdated || isCanary
+        ? ''
+        : modifier;
 
     return `${dependency}@${finalModifier}${versions[dependency]}`;
   });
@@ -476,7 +481,10 @@ export const generateUpgradeSpecs = async (
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
   if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
+    const satelliteDependencies = Object.keys(dependencies).filter(
+      (dependency) =>
+        isSatelliteAddon(dependency) && !dependencies[dependency]?.startsWith('workspace:')
+    );
 
     if (satelliteDependencies.length > 0) {
       try {
@@ -491,7 +499,9 @@ export const generateUpgradeSpecs = async (
               return null;
             }
             const { modifier } = getVersionModifier(dependencies[dependency] ?? '');
-            return `${dependency}@${modifier}${mostRecentVersion}`;
+            const finalModifier =
+              isCLIPrerelease && prerelease(mostRecentVersion) ? prereleaseModifier : modifier;
+            return `${dependency}@${finalModifier}${mostRecentVersion}`;
           } catch {
             return null;
           }
@@ -544,32 +554,26 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
     logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
     logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
 
-    await packageManager.addDependencies(
-      {
-        type: 'dependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDependencies
-    );
+    const upgrades: [DependencyType, string[]][] = [
+      ['dependencies', upgradedDependencies],
+      ['devDependencies', upgradedDevDependencies],
+      ['peerDependencies', upgradedPeerDependencies],
+    ];
 
-    await packageManager.addDependencies(
-      {
-        type: 'devDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDevDependencies
-    );
-
-    await packageManager.addDependencies(
-      {
-        type: 'peerDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedPeerDependencies
-    );
+    for (const [type, specifiers] of upgrades) {
+      const directSpecifiers = packageManager.writeCatalogUpgrades(
+        specifiers,
+        packageJson[type] ?? {}
+      );
+      await packageManager.addDependencies(
+        {
+          type,
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        directSpecifiers
+      );
+    }
   }
 };
 

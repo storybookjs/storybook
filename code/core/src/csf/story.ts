@@ -570,9 +570,6 @@ export type StoryAnnotations<
     Globals &
       (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
   >;
-
-  /** @deprecated */
-  story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

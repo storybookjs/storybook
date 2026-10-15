@@ -346,7 +346,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   selectedStoryIdRef.current = selectedStoryId;
 
   // A branch toggles its own expansion. A leaf navigates to its story or docs page; the "Story"
-  // row of a story with tests navigates to that story.
+  // row of a story with tests navigates to that story. On mobile the tree lives in the menu
+  // drawer, which closes once a story is chosen.
   const activateRow = useCallback(
     (itemId: string) => {
       const item = hoistedDataRef.current[itemId];
@@ -354,9 +355,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
         setExpanded({ ids: [itemId], append: true, value: !expandedRef.current.has(itemId) });
       } else {
         onSelectStoryId(isStoryRow(item) ? item.storyRowOf : itemId);
+        if (isMobile) {
+          api.setMobileNavigation(false);
+        }
       }
     },
-    [onSelectStoryId, setExpanded]
+    [api, isMobile, onSelectStoryId, setExpanded]
   );
 
   // A pointer click and Space both reach the tree as a selection change.

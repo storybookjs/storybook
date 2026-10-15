@@ -51,14 +51,6 @@ const appConfigError: ClassifiedError = {
     'Error: No renderer found for framework "unknown-framework"\n    at renderPreviewEntry (src/preview.ts:12:3)',
 };
 
-const dependencyError: ClassifiedError = {
-  severity: 'negative',
-  kind: 'dependency',
-  title: 'This story failed to render.',
-  cause: "The story's component failed to render, so the automated accessibility tests cannot run.",
-  message: 'The component test run was skipped because the story failed to render.',
-};
-
 const vitestFailure: ClassifiedError = {
   severity: 'negative',
   kind: 'app-config',
@@ -134,11 +126,25 @@ export const RenderException = {
     });
 
     await step('Raw stack stays collapsed until expanded', async () => {
-      expect(canvas.queryByText(/at renderStory/)).toBeNull();
-      await userEvent.click(canvas.getByRole('button', { name: 'Expand error' }));
-      expect(canvas.getByText(/at renderStory/)).toBeInTheDocument();
-      await userEvent.click(canvas.getByRole('button', { name: 'Collapse error' }));
-      expect(canvas.queryByText(/at renderStory/)).toBeNull();
+      // Collapsible keeps the content mounted (aria-hidden, collapsed to zero size), so the
+      // collapsed state asserts visibility and the expanded/aria state, not absence from the DOM.
+      const detail = canvasElement.querySelector('[data-testid="raw-detail"]');
+      if (!detail) {
+        throw new Error('raw-detail collapsible not found');
+      }
+      const toggle = canvas.getByRole('button', { name: 'Expand error' });
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+      expect(detail).not.toBeVisible();
+      await userEvent.click(toggle);
+      const expandedToggle = canvas.getByRole('button', { name: 'Collapse error' });
+      expect(expandedToggle).toHaveAttribute('aria-expanded', 'true');
+      expect(detail).toBeVisible();
+      await userEvent.click(expandedToggle);
+      expect(canvas.getByRole('button', { name: 'Expand error' })).toHaveAttribute(
+        'aria-expanded',
+        'false'
+      );
+      expect(detail).not.toBeVisible();
     });
 
     await step('Copy error is offered wherever a stack exists', async () => {
@@ -158,13 +164,14 @@ export const StoryNotFound = {
       expect(canvas.queryByText('Error')).toBeNull();
     });
 
-    await step('No negative border token applies', async () => {
+    await step('Carries the neutral tone, not the error border', async () => {
       const container = canvasElement.querySelector('[data-kind="story-not-found"]');
       if (!container) {
         throw new Error('story-not-found container not found');
       }
-      // themes.light.borderColor.negative is #FFC3AD, which computed style normalizes to rgb().
-      expect(getComputedStyle(container).borderColor).not.toBe('rgb(255, 195, 173)');
+      // The tone attribute is the presentation decision itself — asserting on it survives any
+      // token or theme change that would silently hollow out a computed-colour assertion.
+      expect(container.getAttribute('data-tone')).toBe('neutral');
     });
 
     await step('Structured id renders as small print with a Troubleshoot link', async () => {
@@ -195,28 +202,6 @@ export const AppConfigError = {
     expect(canvas.getByText(/The story requested framework/)).toBeInTheDocument();
     await expect(document.body).toHaveLiveRegion({
       text: 'No suitable renderer found.',
-      level: 'polite',
-    });
-  },
-} satisfies Story;
-
-export const Dependency = {
-  args: {
-    error: dependencyError,
-    action: (
-      <Button variant="solid" ariaLabel={false}>
-        Run accessibility scan
-      </Button>
-    ),
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    expect(
-      canvas.getByRole('heading', { name: 'This story failed to render.' })
-    ).toBeInTheDocument();
-    await expect(document.body).toHaveLiveRegion({
-      text: 'This story failed to render.',
       level: 'polite',
     });
   },
@@ -260,7 +245,7 @@ export const ManagerCrash = {
 
     await step('Component stack renders with the raw stack in the expanded block', async () => {
       await userEvent.click(canvas.getByRole('button', { name: 'Expand error' }));
-      expect(canvas.getByText(/Component Stack:/)).toBeInTheDocument();
+      expect(canvas.getByText(/Component Stack:/)).toBeVisible();
       expect(canvas.getByText(/at AddonPanel/)).toBeInTheDocument();
     });
   },
@@ -281,11 +266,6 @@ export const StoryNotFoundDark = {
 
 export const AppConfigErrorDark = {
   ...AppConfigError,
-  globals: { sb_theme: 'dark' },
-} satisfies Story;
-
-export const DependencyDark = {
-  ...Dependency,
   globals: { sb_theme: 'dark' },
 } satisfies Story;
 

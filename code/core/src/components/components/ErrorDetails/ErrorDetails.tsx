@@ -1,13 +1,15 @@
-import React, { useId, useState } from 'react';
+import React from 'react';
 
 import { ChevronDownIcon, CopyIcon } from '@storybook/icons';
-import { styled } from 'storybook/theming';
+import { srOnlyStyles, styled } from 'storybook/theming';
 
 import type { ClassifiedError } from '../../../classified-error.ts';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Badge } from '../Badge/Badge.tsx';
 import { Button } from '../Button/Button.tsx';
+import { Collapsible, useCollapsible } from '../Collapsible/Collapsible.tsx';
 import { Link } from '../typography/link/link.tsx';
+import { ActionsRow, CardShell, Row } from './shared.tsx';
 
 /** The severity pill's label, keyed by the classifier's severity decision. */
 const SEVERITY_LABELS: Record<ClassifiedError['severity'], string> = {
@@ -15,18 +17,33 @@ const SEVERITY_LABELS: Record<ClassifiedError['severity'], string> = {
   critical: 'Critical',
 };
 
-const Container = styled.div<{ severity: ClassifiedError['severity']; neutral: boolean }>(
-  ({ theme, neutral, severity }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-    padding: 16,
-    borderRadius: theme.appBorderRadius,
-    background: theme.background.content,
-    border: `1px solid ${neutral ? theme.appBorderColor : theme.borderColor[severity]}`,
-    color: theme.color.defaultText,
-  })
-);
+/**
+ * One presentation decision per kind — border/pill tone and docs-link label. Exhaustive on
+ * purpose: adding a kind to the contract fails to compile here until someone decides its
+ * presentation, and a tone flip is a one-line data change.
+ */
+const KIND_PRESENTATION: Record<
+  ClassifiedError['kind'],
+  { tone: 'neutral' | 'error'; docsLabel: string }
+> = {
+  'render-exception': { tone: 'error', docsLabel: 'View docs' },
+  'story-not-found': { tone: 'neutral', docsLabel: 'Troubleshoot' },
+  'app-config': { tone: 'error', docsLabel: 'View docs' },
+  // Unreachable through the narrowed prop below — DependencyNotice owns this kind — but the
+  // entry keeps the map exhaustive and honest about what a dependency error would look like.
+  dependency: { tone: 'neutral', docsLabel: 'Troubleshoot' },
+  'manager-crash': { tone: 'error', docsLabel: 'View docs' },
+};
+
+/** `dependency` is excluded: DependencyNotice is that kind's single owner. */
+export type RenderableErrorKind = Exclude<ClassifiedError['kind'], 'dependency'>;
+
+const Container = styled(CardShell)<{
+  severity: ClassifiedError['severity'];
+  tone: 'neutral' | 'error';
+}>(({ theme, tone, severity }) => ({
+  border: `1px solid ${tone === 'neutral' ? theme.appBorderColor : theme.borderColor[severity]}`,
+}));
 
 /** Flex-column stretch would widen the pill across the card; anchor it to the start. */
 const PillSlot = styled.div({
@@ -37,14 +54,7 @@ const PillSlot = styled.div({
  * Failure transitions are announced through an implicit live region so assistive tech reports
  * them without focus moves (WCAG 4.1.3). `role="alert"` is assertive, `role="status"` polite.
  */
-const LiveAnnouncement = styled.span({
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  clipPath: 'inset(50%)',
-  overflow: 'hidden',
-  whiteSpace: 'nowrap',
-});
+const LiveAnnouncement = styled.span(srOnlyStyles);
 
 const Title = styled.h3(({ theme }) => ({
   margin: 0,
@@ -57,7 +67,7 @@ const Cause = styled.p(({ theme }) => ({
   color: theme.textMutedColor,
 }));
 
-const Diagnostics = styled.pre(({ theme }) => ({
+const CodeBlock = styled.pre(({ theme }) => ({
   margin: 0,
   padding: 12,
   borderRadius: theme.appBorderRadius,
@@ -70,12 +80,12 @@ const Diagnostics = styled.pre(({ theme }) => ({
   overflowX: 'auto',
 }));
 
-const CaretLine = styled.span(({ theme }) => ({
-  color: theme.fgColor.negative,
-  fontWeight: theme.typography.weight.bold,
-}));
+const StackBlock = styled(CodeBlock)({
+  maxHeight: 240,
+  overflowY: 'auto',
+});
 
-const SummaryLine = styled.span(({ theme }) => ({
+const AccentLine = styled.span(({ theme }) => ({
   color: theme.fgColor.negative,
   fontWeight: theme.typography.weight.bold,
 }));
@@ -95,36 +105,13 @@ const Metadata = styled.div(({ theme }) => ({
   },
 }));
 
-const StackBlock = styled.pre(({ theme }) => ({
-  margin: 0,
-  padding: 12,
-  borderRadius: theme.appBorderRadius,
-  background: theme.background.app,
-  border: `1px solid ${theme.appBorderColor}`,
-  color: theme.color.defaultText,
-  fontFamily: theme.typography.fonts.mono,
-  fontSize: theme.typography.size.s1,
-  whiteSpace: 'pre-wrap',
-  overflowX: 'auto',
-  maxHeight: 240,
-  overflowY: 'auto',
-}));
-
-const DetailsRow = styled.div({
-  display: 'flex',
-  gap: 8,
-  alignItems: 'center',
-});
-
-const ActionsRow = styled.div({
-  display: 'flex',
-  gap: 12,
-  alignItems: 'center',
-});
-
 export interface ErrorDetailsProps {
-  /** The classified error to render — produced by `classifyError`, never composed on a surface. */
-  error: ClassifiedError;
+  /**
+   * The classified error to render — produced by `classifyError`, never composed on a surface.
+   * `dependency` is not accepted here: a blocked-from-above panel renders `DependencyNotice`,
+   * which is that kind's single owner.
+   */
+  error: Omit<ClassifiedError, 'kind'> & { kind: RenderableErrorKind };
   /**
    * The surface's one primary recovery action, named for the surface (Rerun story / Reload /
    * Run scan). Rendered as the leading action; secondary links follow.
@@ -140,12 +127,19 @@ export interface ErrorDetailsProps {
  * every rendered string flows from the `ClassifiedError` the classifier produced.
  */
 export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
-  const detailsId = useId();
-  const [expanded, setExpanded] = useState(false);
+  const collapsible = useCollapsible({ initialCollapsed: true });
+  const { tone, docsLabel } = KIND_PRESENTATION[error.kind];
+  const { codeFrame } = error;
 
-  const copyContent = [error.message, error.stack, error.componentStack]
+  // One raw-detail string feeds both the expanded block and Copy error, so what users copy is
+  // exactly what they read.
+  const rawDetail = [
+    error.stack,
+    error.componentStack ? `Component Stack:\n${error.componentStack}` : null,
+  ]
     .filter(Boolean)
     .join('\n\n');
+  const copyContent = [error.message, rawDetail].filter(Boolean).join('\n\n');
   const copyButton = useCopyButton({
     children: 'Copy error',
     childrenOnCopy: 'Copied!',
@@ -155,24 +149,20 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
     ariaLabelOnCopy: 'Error copied to clipboard',
   });
 
-  // Not-found is navigation, not a component failure — no error styling (AC3).
-  const neutral = error.kind === 'story-not-found';
-  const { codeFrame } = error;
-
   return (
-    <Container severity={error.severity} neutral={neutral} data-kind={error.kind}>
+    <Container severity={error.severity} tone={tone} data-kind={error.kind} data-tone={tone}>
       <LiveAnnouncement role={error.severity === 'critical' ? 'alert' : 'status'}>
         {error.title}
       </LiveAnnouncement>
-      {neutral ? null : (
+      {tone === 'error' ? (
         <PillSlot>
           <Badge status={error.severity}>{SEVERITY_LABELS[error.severity]}</Badge>
         </PillSlot>
-      )}
+      ) : null}
       <Title>{error.title}</Title>
       {error.cause ? <Cause>{error.cause}</Cause> : null}
-      <Diagnostics>
-        {error.testPath ? <SummaryLine>FAIL {error.testPath}</SummaryLine> : null}
+      <CodeBlock>
+        {error.testPath ? <AccentLine>FAIL {error.testPath}</AccentLine> : null}
         {error.message}
         {codeFrame ? (
           <>
@@ -185,14 +175,14 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
               // frame lines and content keys collide.
               const isCaretLine = index === codeFrame.lines.length - 1;
               return isCaretLine ? (
-                <CaretLine key={index}>{line}</CaretLine>
+                <AccentLine key={index}>{line}</AccentLine>
               ) : (
                 <React.Fragment key={index}>{line}</React.Fragment>
               );
             })}
           </>
         ) : null}
-      </Diagnostics>
+      </CodeBlock>
       {codeFrame || error.errorCode ? (
         <Metadata>
           {codeFrame ? (
@@ -206,29 +196,21 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
       ) : null}
       {error.stack ? (
         <>
-          <DetailsRow>
-            <Button
-              variant="ghost"
-              size="small"
-              ariaLabel={false}
-              aria-expanded={expanded}
-              aria-controls={detailsId}
-              onClick={() => setExpanded((value) => !value)}
-            >
+          <Row>
+            <Button variant="ghost" size="small" ariaLabel={false} {...collapsible.toggleProps}>
               <ChevronDownIcon />
-              {expanded ? 'Collapse error' : 'Expand error'}
+              {collapsible.isCollapsed ? 'Expand error' : 'Collapse error'}
             </Button>
             <Button variant="ghost" size="small" {...copyButton.buttonProps}>
               <CopyIcon />
               {copyButton.children}
             </Button>
-          </DetailsRow>
-          {expanded ? (
-            <StackBlock id={detailsId}>
-              {error.stack}
-              {error.componentStack ? `\n\nComponent Stack:\n${error.componentStack}` : ''}
-            </StackBlock>
-          ) : null}
+          </Row>
+          {/* Collapsible keeps the content mounted with aria-hidden, so aria-controls on the
+              toggle always points at an element in the DOM. */}
+          <Collapsible state={collapsible} data-testid="raw-detail">
+            <StackBlock>{rawDetail}</StackBlock>
+          </Collapsible>
         </>
       ) : null}
       {action || error.docsUrl || links ? (
@@ -236,7 +218,7 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
           {action}
           {error.docsUrl ? (
             <Link href={error.docsUrl} target="_blank" withArrow>
-              {neutral ? 'Troubleshoot' : 'View docs'}
+              {docsLabel}
             </Link>
           ) : null}
           {links}

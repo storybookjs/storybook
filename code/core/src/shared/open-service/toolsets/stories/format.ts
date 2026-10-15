@@ -62,7 +62,7 @@ function formatChangedFilesOutsideStories(
   }
   if (unindexedStoryFiles.length > 0) {
     notes.push(
-      `Story files that are not in the story index yet: ${formatQuotedList(unindexedStoryFiles)}. A file written a moment ago takes a moment to index: pass it to \`${getToolName(ctx)('stories.findByComponent')}\` for its story IDs. If that finds none, the file is outside the \`stories\` globs of the main config. Until it is indexed, the files it imports can show up below as unreachable.`
+      `Story files that are not in the story index yet: ${formatQuotedList(unindexedStoryFiles)}. A file written a moment ago takes a moment to index: pass it to \`${getToolName(ctx)('stories.findByComponent')}\` for its story IDs. If that finds none, check that the file has stories and matches the \`stories\` globs of the main config. Until it is indexed, the files it imports can show up below as unreachable.`
     );
   }
   if (changedConfigFiles.length > 0) {
@@ -114,13 +114,11 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   text += formatChangedFilesOutsideStories(data, ctx);
 
   const gapStories =
-    data.unreachableFiles.length > 0 ||
-    data.unindexedStoryFiles.length > 0 ||
-    data.pendingFiles.length > 0
+    data.unreachableFiles.length > 0 || data.unindexedStoryFiles.length > 0
       ? ' and any you found for the files listed above'
       : '';
   // Last, so output read through `tail` still ends on this step.
-  text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change only to behavior, tests or types gets no review: say that nothing visible changed. These IDs stay valid until you edit a file again.`;
+  text += `\n\nNext: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`;
 
   return text;
 }

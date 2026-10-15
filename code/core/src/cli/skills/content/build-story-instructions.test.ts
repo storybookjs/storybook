@@ -84,8 +84,6 @@ describe('buildStoryInstructions placeholder resolution', () => {
 });
 
 describe('buildStoryInstructions story rules', () => {
-  // Agents on the MCP path stubbed `fetch` and exported `Error` while these rules were only in the
-  // ui-workflow skill.
   it('mocks network requests with MSW and names the preview file of the project', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,

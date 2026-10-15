@@ -134,7 +134,7 @@ Two things you must do now, both of them:
 2. **Once the page is open, show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
 
 ${
-  // A browse request changed nothing, so "your changes" would contradict the answer above it.
+  // A browse request changes no files, so its heading must not speak of changes.
   browse
     ? `## 👀 See the stories
 The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`

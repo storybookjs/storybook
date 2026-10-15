@@ -346,7 +346,10 @@ function formatSubcomponentsSection(
 /**
  * Format a single component manifest into markdown.
  */
-export function formatComponentManifest(componentManifest: ComponentManifest): string {
+export function formatComponentManifest(
+  componentManifest: ComponentManifest,
+  showStoryTool = 'docs show-story'
+): string {
   const parts: string[] = [];
   const parsedDocgen = getParsedDocgen(componentManifest);
   const jsDocTags = getComponentTags(componentManifest, parsedDocgen);
@@ -416,9 +419,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
         parts.push('### Other Stories');
         parts.push('');
       }
-      // Agents guessed a docs show option to see these, so name the tool that shows one.
       parts.push(
-        'Get the code of one of these stories with the docs show-story tool and its story ID.'
+        `Get the code of one of these stories with the ${showStoryTool} tool and its story ID.`
       );
       parts.push('');
       for (const story of remainingStories) {
@@ -482,7 +484,6 @@ export function formatManifestsToLists(
   parts.push('');
   const components = Object.values(manifests.componentManifest.components);
   if (components.length === 0) {
-    // A bare heading left agents unsure whether the lookup worked.
     parts.push(
       'No components are documented yet, so read the source of the project components you need.'
     );

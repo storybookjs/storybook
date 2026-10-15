@@ -366,10 +366,8 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
             return { changed, filesOutsideStories, reachableFiles };
           };
-          // A new story file reaches the index, and an edit the statuses, only after the file
-          // watcher and a debounced scan. A changed file that stories render always marks them, so
-          // an unindexed story file or no marked story at all means the latest edit is still being
-          // processed: wait for it rather than answer from the state before it.
+          // A new story file reaches the index, and an edit the statuses, only after a debounced
+          // scan: wait for it rather than answer from the state before the edit.
           const isPending = ({ changed, filesOutsideStories, reachableFiles }: typeof result) =>
             filesOutsideStories.unindexedStoryFiles.length > 0 ||
             (changed.stories.length === 0 && reachableFiles.length > 0);

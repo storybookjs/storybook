@@ -67,7 +67,7 @@ This project has no command that lists story ids. Select a story by its file and
   const several = commands.length > 1;
   const guidance = [
     inputs.moduleGraphSupported &&
-      'Run \`stories changed\` or \`find-by-component\` after your last edit and before every review, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects. Their ids stay valid until you edit a file again, so checks in between, such as a type check, need no new call.',
+      'Run \`stories changed\` or \`find-by-component\` after your last edit and before every review, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects. The list covers your edits so far, so checks in between, such as a type check, need no new call.',
     `Story ids come only from the output of ${several ? 'these commands' : 'this command'}, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory.`,
     inputs.moduleGraphSupported &&
       'When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`, or for a shared file (design token, theme, util, hook), which has no stories of its own, the components that use it. When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
@@ -102,7 +102,7 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, as with a change only to behavior, tests or types, and the user did not ask to see anything, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook.${discoverFirst} Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, such as a change to a callback, tests or types, and the user did not ask to see anything, and say that instead.
 
 Publish it as your last step, after your other checks such as a type check, lint or \`git status\`. Then do both things the command prints, every time: open the review in the in-app browser with a browser tool (unless you have none), and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }

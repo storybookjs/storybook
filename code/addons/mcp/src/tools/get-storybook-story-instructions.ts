@@ -103,7 +103,7 @@ CRITICAL: You MUST call this tool before:
 - Editing anything that changes how the UI looks — components, styles, CSS, themes, colors, or design tokens; a shared file with no stories of its own still changes its consumers' stories${criticalTestBullets}${criticalA11yBullets}
 
 This tool provides essential Storybook-specific guidance including:
-- How to structure stories correctly for Storybook 9
+- How to structure stories correctly
 - Required imports (Meta, StoryObj from framework package)
 - Test utility imports (from 'storybook/test')
 - Story naming conventions and best practices

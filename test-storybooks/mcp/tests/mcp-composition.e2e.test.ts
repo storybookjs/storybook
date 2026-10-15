@@ -121,7 +121,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				### Other Stories
 
-				Get the code of one of these stories with the docs show-story tool and its story ID.
+				Get the code of one of these stories with the docs-show-story tool and its story ID.
 
 				- Small (example-button--small)
 				- With A 11 Y Violation (example-button--with-a-11-y-violation)

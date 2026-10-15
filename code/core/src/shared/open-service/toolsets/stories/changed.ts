@@ -31,7 +31,10 @@ export type ChangedStoriesParams = {
   index: StoryIndex;
 };
 
-export type ChangedStoriesResult = Omit<ChangedStoriesOutput, keyof ChangedFilesOutsideStories>;
+export type ChangedStoriesResult = Omit<
+  ChangedStoriesOutput,
+  keyof ChangedFilesOutsideStories | 'pendingFiles'
+>;
 
 /**
  * Filters change-detection statuses to new/modified/affected, enriches from the story index,

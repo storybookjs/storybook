@@ -358,7 +358,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				- Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)
 
 				This tool provides essential Storybook-specific guidance including:
-				- How to structure stories correctly for Storybook 9
+				- How to structure stories correctly
 				- Required imports (Meta, StoryObj from framework package)
 				- Test utility imports (from 'storybook/test')
 				- Story naming conventions and best practices

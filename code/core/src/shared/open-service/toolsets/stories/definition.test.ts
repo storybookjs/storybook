@@ -408,7 +408,9 @@ describe('stories.changed', () => {
       await vi.advanceTimersByTimeAsync(500);
       const outcome = await pending;
 
-      expect(outcome.data.stories.map((story) => story.storyId)).toEqual(['button--primary']);
+      expect(outcome.data.stories.map((story: { storyId: string }) => story.storyId)).toEqual([
+        'button--primary',
+      ]);
       expect(outcome.data.pendingFiles).toEqual([]);
       expect(getStatuses).toHaveBeenCalledTimes(3);
     });
@@ -427,7 +429,9 @@ describe('stories.changed', () => {
       const outcome = await pending;
 
       expect(outcome.data.unindexedStoryFiles).toEqual([]);
-      expect(outcome.data.stories.map((story) => story.storyId)).toEqual(['button--primary']);
+      expect(outcome.data.stories.map((story: { storyId: string }) => story.storyId)).toEqual([
+        'button--primary',
+      ]);
     });
 
     it('lists a story file the index has not picked up in time apart from unreachable files', async () => {
@@ -446,7 +450,59 @@ describe('stories.changed', () => {
       });
       expect(outcome.markdown).toBe(`No new, modified, or related stories detected.
 
-Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.stories.tsx\`. A file written a moment ago takes a moment to index: pass it to \`stories-find-by-component\` for its story IDs. If that finds none, the file is outside the \`stories\` globs of the main config. Until it is indexed, the files it imports can show up below as unreachable.`);
+Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.stories.tsx\`. A file written a moment ago takes a moment to index: pass it to \`stories-find-by-component\` for its story IDs. If that finds none, check that the file has stories and matches the \`stories\` globs of the main config. Until it is indexed, the files it imports can show up below as unreachable.`);
+    });
+
+    it('lists a story file next to the changed stories it has not reached yet', async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/ui/src/OrderHistory.stories.tsx']),
+      });
+      markChanged('button--primary', 'status-value:modified');
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data.stories.map((story: { storyId: string }) => story.storyId)).toEqual([
+        'button--primary',
+      ]);
+      expect(outcome.markdown).toContain(
+        'Story files that are not in the story index yet: `packages/ui/src/OrderHistory.stories.tsx`.'
+      );
+    });
+
+    it('classifies a new story file even when more files are unreachable than it lists', async () => {
+      const utils = Array.from({ length: 12 }, (_, index) => `packages/ui/src/util${index}.ts`);
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(utils),
+        new: new Set(['packages/ui/src/OrderHistory.stories.tsx']),
+      });
+
+      const pending = runChanged(mcpCtx);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data).toMatchObject({
+        unindexedStoryFiles: ['packages/ui/src/OrderHistory.stories.tsx'],
+        unreachableFilesTruncated: true,
+      });
+      expect(outcome.data.unreachableFiles).toHaveLength(10);
+    });
+
+    it("does not wait for a story file of another package's Storybook", async () => {
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/web/src/Page.stories.tsx']),
+      });
+
+      const outcome = await runChanged(mcpCtx);
+
+      expect(outcome.data).toMatchObject({
+        unindexedStoryFiles: [],
+        unreachableFiles: ['packages/web/src/Page.stories.tsx'],
+      });
+      expect(getStatuses).toHaveBeenCalledTimes(1);
     });
 
     it('names the files when the scan does not finish in time', async () => {
@@ -585,7 +641,7 @@ Change detection has not processed these changed files yet, although stories ren
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it. A change only to behavior, tests or types gets no review: say that nothing visible changed. These IDs stay valid until you edit a file again.`
+Next: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
       );
     });
 
@@ -607,7 +663,7 @@ Changed files in the Storybook config directory, which can affect every story: \
 
 Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story (no static import path connects them), so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs to fill the gap.
 
-Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs and any you found for the files listed above. That review link is how you finish; do not substitute individual preview URLs for it. A change only to behavior, tests or types gets no review: say that nothing visible changed. These IDs stay valid until you edit a file again.`
+Next: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — call **review-create** curating these story IDs and any you found for the files listed above. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
       );
     });
 

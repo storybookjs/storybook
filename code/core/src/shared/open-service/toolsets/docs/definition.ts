@@ -218,7 +218,10 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
       return `${formatFallback(data)}${
         resolution.entry.kind === 'doc'
           ? formatDocsManifest(resolution.entry.doc)
-          : formatComponentManifest(resolution.entry.component)
+          : formatComponentManifest(
+              resolution.entry.component,
+              getToolName(ctx)(DOCS_METHOD_REFS.showStory)
+            )
       }`;
     default: {
       const exhaustive: never = resolution;
@@ -381,11 +384,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
     multiSource ? selectSource(sources, storybookId, ctx) : { access: docsAccess };
 
-  /**
-   * Resolves an id in the named source or, when it is missing there, in the one other source that
-   * has it. Agents left out `storybookId` for most design-system lookups in a composition, and each
-   * such lookup failed against the default `local` source.
-   */
+  // Falls back to the one other source that has the id, since agents often leave out storybookId.
   const resolveWithFallback = async (
     named: DocsAccess,
     storybookId: string | undefined,

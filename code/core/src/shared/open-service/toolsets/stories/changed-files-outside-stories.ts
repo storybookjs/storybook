@@ -21,7 +21,7 @@ export type ChangedFilesOutsideStories = Pick<
   ChangedStoriesOutput,
   'unreachableFiles' | 'unreachableFilesTruncated' | 'unindexedStoryFiles' | 'changedConfigFiles'
 > & {
-  /** Changed files that stories render, which change detection has to mark. */
+  // Changed files that stories render, which change detection has to mark.
   reachableFiles: string[];
 };
 
@@ -113,8 +113,11 @@ export async function detectChangedFilesOutsideStories({
     }
   }
 
-  // Project files first, so other packages cannot crowd them out of the cap.
-  candidates.sort((a, b) => Number(isWithin(b, projectDir)) - Number(isWithin(a, projectDir)));
+  // Story files of this project first, then its other files, so neither other packages nor the
+  // unreachable cap can crowd them out.
+  const rank = (file: string) =>
+    isWithin(file, projectDir) ? (STORY_FILE_RE.test(basename(file)) ? 0 : 1) : 2;
+  candidates.sort((a, b) => rank(a) - rank(b));
 
   const unreachableFiles: string[] = [];
   const unindexedStoryFiles: string[] = [];
@@ -137,8 +140,9 @@ export async function detectChangedFilesOutsideStories({
         reachableFiles.push(file);
         continue;
       }
-      // A story file renders itself, so it misses only while the index has not picked it up yet.
-      if (STORY_FILE_RE.test(basename(file))) {
+      // A story file of this project renders itself, so it misses only while the index has not
+      // picked it up yet. One of another package's Storybook never reaches this index.
+      if (STORY_FILE_RE.test(basename(file)) && isWithin(file, projectDir)) {
         unindexedStoryFiles.push(file);
       } else {
         unreachableFiles.push(file);

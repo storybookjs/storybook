@@ -1,4 +1,6 @@
 import React from 'react';
+import type { PlayFunction } from 'storybook/internal/csf';
+import { expect } from 'storybook/test';
 
 import { Explorer } from './Explorer.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
@@ -100,3 +102,37 @@ export const WithRefs = () => (
     isHidden={false}
   />
 );
+
+const idlessRefs: Record<string, RefType> = {
+  idless: {
+    title: 'Id-less ref',
+    url: 'https://example.com',
+    previewInitialized: true,
+    type: 'unknown',
+    // @ts-expect-error (invalid input)
+    id: undefined,
+    // @ts-expect-error (invalid input)
+    filteredIndex: mockDataset.noRoot,
+  },
+};
+
+const play: PlayFunction = async ({ canvas }) => {
+  await expect(await canvas.findByText('Id-less ref')).toBeInTheDocument();
+};
+
+// Regression: an id-less ref with no selection used to crash the sidebar with
+// "Cannot read properties of null (reading 'storyId')", because
+// `selected?.refId === ref.id` matched `undefined === undefined`.
+export const IdlessRefWithoutSelection = {
+  render: () => (
+    <Explorer
+      dataset={{ hash: idlessRefs, entries: Object.entries(idlessRefs) }}
+      selected={null}
+      isLoading={false}
+      isBrowsing
+      hasEntries={true}
+      isHidden={false}
+    />
+  ),
+  play,
+};

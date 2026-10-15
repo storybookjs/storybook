@@ -1,9 +1,10 @@
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { checkRef, getRefs } from './get-storybook-refs.ts';
+
+// getAutoRefs walks upward from configDir looking for a package manifest to auto-discover refs
+// from. Pin it to nothing so the test cannot pick up refs from the host filesystem.
+vi.mock('empathic/package', () => ({ up: () => undefined }));
 
 describe('checkRef', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -51,7 +52,7 @@ describe('getRefs', () => {
     vi.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 401 } as Response);
 
     const refs = await getRefs({
-      configDir: join(tmpdir(), 'storybook-get-refs-test'),
+      configDir: 'storybook-get-refs-config-dir',
       presets: {
         apply: async () => ({
           qaWorking: { title: 'QA', url: 'http://localhost:6007' },

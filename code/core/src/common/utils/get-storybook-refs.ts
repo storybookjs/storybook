@@ -93,6 +93,7 @@ export async function getRefs(options: Options) {
       return;
     }
 
+    // Normalize ref keys to lowercase (we don't remember why this was necessary).
     refs[key.toLowerCase()] = {
       ...value,
       id: key.toLowerCase(),

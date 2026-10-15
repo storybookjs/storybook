@@ -7,6 +7,8 @@ import { resolveModulePath } from 'exsolve';
 import semver from 'semver';
 import { dirname, join } from 'pathe';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { jsModuleExtensions } from '../constants/extensions.ts';
 
 /**
@@ -49,30 +51,24 @@ export const resolvePackageDir = (
 let typescriptLoaderRegistration: Promise<void> | null = null;
 
 function registerTypescriptLoader() {
-  // Jest forbids module hook registration inside its sandbox (it compiles TS itself).
-  if (process.env.JEST_WORKER_ID) {
-    return Promise.resolve();
-  }
-  if (!typescriptLoaderRegistration) {
-    typescriptLoaderRegistration = (async () => {
-      if (semver.gte(process.versions.node, '26.0.0')) {
-        try {
-          const { load } = await import('storybook/internal/bin/loader');
-          nodeModule.registerHooks({ load });
-        } catch {
-          // Fallback in case nodejs/node#62786 caused an exception
-          const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-          nodeModule.register(typescriptLoaderUrl, import.meta.url);
-        }
-      } else {
+  typescriptLoaderRegistration ??= (async () => {
+    if (semver.gte(process.versions.node, '26.0.0')) {
+      try {
+        const { load } = await import('storybook/internal/bin/loader');
+        nodeModule.registerHooks({ load });
+      } catch {
+        // Fallback in case nodejs/node#62786 caused an exception
         const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
         nodeModule.register(typescriptLoaderUrl, import.meta.url);
       }
-    })().catch((e) => {
-      typescriptLoaderRegistration = null;
-      throw e;
-    });
-  }
+    } else {
+      const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+      nodeModule.register(typescriptLoaderUrl, import.meta.url);
+    }
+  })().catch((error) => {
+    // Some runtimes (e.g. Jest's sandbox) forbid module hooks; importing may still succeed without them.
+    logger.debug(`Storybook's TypeScript loader hooks could not be registered: ${error}`);
+  });
   return typescriptLoaderRegistration;
 }
 

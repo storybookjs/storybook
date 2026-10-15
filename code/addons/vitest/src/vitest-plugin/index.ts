@@ -465,7 +465,15 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
             'storybook/test',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
-              ? ['react-dom/test-utils']
+              ? [
+                  'react-dom/test-utils',
+                  // The project-annotations setup file loads the renderer's entry previews through
+                  // a virtual module, and those chunks contain a bare `import React from 'react'`.
+                  // Browser mode pre-bundles only the explicit `include` entries, so without this
+                  // pin the browser loads react's CJS index.js raw and module linking fails with
+                  // "The requested module 'react/index.js' does not provide an export named 'default'".
+                  'react',
+                ]
               : []),
           ],
         },

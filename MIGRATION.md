@@ -975,7 +975,7 @@ When a story's render cannot be read statically, such as a helper function, a re
 When nothing can be built, the Source block shows the story's own CSF source with that warning.
 Set `features.docgenServer: false` to restore runtime snippets and runtime docgen; Storybook prints a deprecation warning when you do.
 
-Dynamic static story snippets will be brought back in a minor version.
+We plan to bring back dynamic story snippets in the near future.
 
 ### Builder docgen is deprecated
 

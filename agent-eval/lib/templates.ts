@@ -70,7 +70,6 @@ const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
   'mcp',
   'codex-browser-skill.md'
 );
-const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
 const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   '.agents',
   'skills',
@@ -969,21 +968,35 @@ export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
   await writeStorybookMcpConfig(sandbox, 'codex');
 }
 
-// In code mode (the default for GPT-6 models) Codex shows MCP server
-// instructions only once the model searches its tools, which it skips for
-// tasks it thinks it can do alone. AGENTS.md is always in its context.
-// Eval-only: Storybook writes no AGENTS.md for real Codex users, so remove
-// this once SB-2127 fixes it in the product:
-// https://linear.app/chromaui/issue/SB-2127
-export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
-  // The copies match the checkout's server; the stable server from npm serves other text.
+// The section a project that uses the Storybook MCP server adds to its agent instructions: the
+// server instructions, which run the skills with `--mcp`. Codex in code mode (the default for GPT-6
+// models) shows MCP server instructions only once the model searches its tools, so AGENTS.md is
+// what reaches it. Storybook does not write this section yet; the docs will ask MCP users to add
+// it (SB-2127: https://linear.app/chromaui/issue/SB-2127).
+export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void> {
+  // The stable server from npm serves other instructions and has no `skills --mcp`.
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
     return;
   }
-  const instructions = await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8');
-  await sandbox.writeFiles({
-    'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
-  });
+  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
+  const { buildServerInstructions } = (await import(
+    path.join(
+      AGENT_EVAL_ROOT,
+      '..',
+      'code/core/src/cli/skills/content/build-server-instructions.ts'
+    )
+  )) as {
+    buildServerInstructions: (options: {
+      devEnabled: boolean;
+      testSupported: boolean;
+      docsEnabled: boolean;
+    }) => string;
+  };
+  // The MCP fixtures are all react-vite with addon-vitest, docs and MCP, so every toolset is on.
+  await writeStorybookAgentInstructions(
+    sandbox,
+    `${buildServerInstructions({ devEnabled: true, testSupported: true, docsEnabled: true })}\n`
+  );
 }
 
 /**
@@ -1048,14 +1061,18 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
 
 // The section that `create storybook` and `storybook upgrade` add next to the skills, which makes
 // agents use them. Call it after every other step that writes AGENTS.md or CLAUDE.md, as a user's
-// own files exist before Storybook adds the section.
-export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise<void> {
+// own files exist before Storybook adds the section. `section` replaces the skills section.
+export async function writeStorybookAgentInstructions(
+  sandbox: Sandbox,
+  section?: string
+): Promise<void> {
   // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
   const { planStorybookAgentInstructions } = (await import(
     path.join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
   )) as {
     planStorybookAgentInstructions: (
-      read: (file: string) => Promise<string | undefined>
+      read: (file: string) => Promise<string | undefined>,
+      section?: string
     ) => Promise<Record<string, string>>;
   };
   await sandbox.writeFiles(
@@ -1066,7 +1083,7 @@ export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise
         throw new Error(`Failed to check for ${file}: ${stderr}`);
       }
       return exitCode === 0 ? sandbox.readFile(file) : undefined;
-    })
+    }, section)
   );
 }
 

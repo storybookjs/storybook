@@ -42,35 +42,6 @@ describe('addMcpAddon', () => {
   });
 });
 
-// The Codex MCP experiment copies the server instructions into AGENTS.md, so a
-// change to them must update the copy too.
-describe('Codex AGENTS.md instructions', () => {
-  let buildServerInstructions: (options: Record<string, unknown>) => string;
-
-  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's
-  // sources. Inside `beforeAll`, a moved file fails only these tests.
-  beforeAll(async () => {
-    ({ buildServerInstructions } = await import(
-      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/skills/content/build-server-instructions.ts')
-    ));
-  });
-
-  // The server derives these flags from the sandbox (`getToolAvailability`); they match the MCP
-  // fixtures, which are all react-vite with addon-vitest, docs and MCP. Keep them in sync.
-  it('match the server instructions', () => {
-    const copy = readFileSync(join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md'), 'utf8');
-
-    expect(copy.trim()).toBe(
-      buildServerInstructions({
-        transport: 'mcp',
-        devEnabled: true,
-        testSupported: true,
-        docsEnabled: true,
-      }).trim()
-    );
-  });
-});
-
 describe('readStorybookWorkspace', () => {
   it('lists the published packages with the monorepo packages npm installs along with them', async () => {
     const workspace = await readStorybookWorkspace();

@@ -52,7 +52,6 @@ const TOOL_NAMES = [
   'docs-list',
   'docs-show',
   'docs-show-story',
-  'get-storybook-story-instructions',
   'review-create',
   'stories-changed',
   'stories-find-by-component',

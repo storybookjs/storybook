@@ -42,7 +42,6 @@ function toolMetadata(): ToolMetadata[] {
 
 const instructions = () =>
   buildServerInstructions({
-    transport: 'mcp',
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,

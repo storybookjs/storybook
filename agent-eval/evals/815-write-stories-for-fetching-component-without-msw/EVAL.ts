@@ -65,7 +65,7 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 

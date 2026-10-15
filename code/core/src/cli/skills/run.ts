@@ -5,6 +5,7 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
 import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
+import type { SkillTextTransport } from './content/skill-vocabulary.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
@@ -18,6 +19,10 @@ export const SKILLS_OPTION_SPECS = [
     description: 'Storybook config directory of the target Storybook',
   },
   { flags: '--all', description: 'Print every skill in full' },
+  {
+    flags: '--mcp',
+    description: 'Name the tools of the Storybook MCP server instead of CLI commands',
+  },
   { flags: '-h, --help', description: 'Show this usage and every skill' },
 ] as const;
 
@@ -25,6 +30,9 @@ export type SkillsRunInput = {
   tokens: string[];
   help?: boolean;
   all?: boolean;
+  // Render the skills for an agent connected to the Storybook MCP server: MCP tool names
+  // instead of `npx storybook tools` commands.
+  mcp?: boolean;
   target: { cwd?: string; configDir?: string };
 };
 
@@ -114,6 +122,7 @@ export async function runSkillsCommand(
     const { docs, setupRun } = await serveSkills(
       ids,
       resolveStorybookConfigDir(input.target),
+      input.mcp ? 'mcp' : 'cli',
       deps
     );
     return {
@@ -136,6 +145,7 @@ class SkillsError extends Error {}
 async function serveSkills(
   ids: readonly SkillId[],
   configDir: string,
+  transport: SkillTextTransport,
   deps: SkillsRunDeps
 ): Promise<{ docs: string[]; setupRun?: SetupRun }> {
   let inputs: SkillInputs | undefined;
@@ -149,7 +159,7 @@ async function serveSkills(
       setupRun = setup.run;
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(assemble(id, inputs));
+      docs.push(assemble(id, inputs, transport));
     }
   }
   return { docs, setupRun };
@@ -211,17 +221,22 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
-function assemble(id: 'ui-workflow' | 'component-docs', inputs: SkillInputs): string {
+function assemble(
+  id: 'ui-workflow' | 'component-docs',
+  inputs: SkillInputs,
+  transport: SkillTextTransport
+): string {
   if (id === 'component-docs') {
-    return buildComponentDocsSkill();
+    return buildComponentDocsSkill(transport);
   }
   return buildUiWorkflowSkill({
-    transport: 'cli',
+    transport,
     framework: inputs.framework,
     csfFactories: inputs.csfFactories,
     previewFile: inputs.previewFile,
     typescript: inputs.typescript,
-    docsEnabled: inputs.docsEnabledForCli,
+    // The MCP docs tools also need the `componentsManifest` opt-in; the CLI commands only manifests.
+    docsEnabled: transport === 'mcp' ? inputs.docsEnabled : inputs.docsEnabledForCli,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     moduleGraphSupported: inputs.moduleGraphSupported,

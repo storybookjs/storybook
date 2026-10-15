@@ -327,9 +327,11 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.serverInfo.version).toBeDefined();
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
-    expect(parsedResponse.result.instructions).toContain('- **get-storybook-story-instructions**');
+    expect(parsedResponse.result.instructions).toContain(
+      '- `npx storybook skills ui-workflow --mcp`'
+    );
     expect(parsedResponse.result.instructions).toContain('you run or fix story tests');
-    expect(parsedResponse.result.instructions).not.toContain('**docs-list**');
+    expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
@@ -380,9 +382,10 @@ describe('mcpServerHandler', () => {
     const responseText = dataLine!.replace(/^data: /, '').trim();
     const parsedResponse = JSON.parse(responseText);
 
-    expect(parsedResponse.result.instructions).toContain('- **docs-list**, then **docs-show**');
-    expect(parsedResponse.result.instructions).toContain('use only the props they document');
-    expect(parsedResponse.result.instructions).not.toContain('get-storybook-story-instructions');
+    expect(parsedResponse.result.instructions).toContain(
+      '- `npx storybook skills component-docs --mcp`'
+    );
+    expect(parsedResponse.result.instructions).not.toContain('ui-workflow');
     expect(parsedResponse.result.instructions).not.toContain('test-run');
   });
 

@@ -1,6 +1,6 @@
 /**
- * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`
- * and, on the MCP side, by addon-mcp (server instructions and the story-instructions tool). The
+ * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`,
+ * which addon-mcp's server instructions run with `--mcp`. The
  * ids are public CLI vocabulary — plugin stubs (M7) will reference them — so treat renames as
  * breaking.
  */

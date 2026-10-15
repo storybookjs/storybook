@@ -2042,7 +2042,7 @@ Storybook's MCP tools are now named from their toolset and method (`stories.prev
 | `get-documentation`           | `docs-show`                 |
 | `get-documentation-for-story` | `docs-show-story`           |
 
-`get-storybook-story-instructions` is unchanged (it is not backed by a toolset method).
+`get-storybook-story-instructions` is removed. The server's instructions now have agents run `npx storybook skills ui-workflow --mcp`, which prints the same workflow as the skill, with the MCP tool names. Replace calls to the tool in agent prompts with that command.
 
 ### Angular Vite defaults to server-side docgen
 

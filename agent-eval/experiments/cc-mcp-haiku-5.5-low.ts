@@ -9,6 +9,7 @@ import {
   setupSandbox,
   writeClaudeInAppBrowserMock,
   writeClaudeMcpConfig,
+  writeMcpAgentInstructions,
 } from '../lib/templates.ts';
 
 const model = 'claude-haiku-5-5';
@@ -24,6 +25,7 @@ export default {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp', model });
     await writeClaudeMcpConfig(sandbox);
     await writeClaudeInAppBrowserMock(sandbox);
+    await writeMcpAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

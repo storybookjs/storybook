@@ -23,6 +23,7 @@ type SkillsCommandOptions = {
   configDir?: string;
   help?: boolean;
   all?: boolean;
+  mcp?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
@@ -56,6 +57,7 @@ export function registerSkillsCommand(
       tokens: tokens ?? [],
       help: options.help,
       all: options.all,
+      mcp: options.mcp,
       target: { cwd: options.cwd, configDir: options.configDir },
     };
     const intent = resolveSkillsIntent(invocation);

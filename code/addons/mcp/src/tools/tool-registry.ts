@@ -8,16 +8,11 @@ import {
 import type { McpServer } from 'tmcp';
 import type { AddonContext } from '../types.ts';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
-import {
-  addGetUIBuildingInstructionsTool,
-  getStorybookStoryInstructionsToolMetadata,
-} from './get-storybook-story-instructions.ts';
 import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './preview-stories.ts';
 // The error class must come from the same entry as `getToolset` (which throws it, via
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
 // `instanceof` would silently fail.
 import { OpenServiceMissingToolsetError, toMcpToolName } from 'storybook/open-service';
-import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
   registerToolsetTool,
@@ -161,23 +156,6 @@ const addonToolDefinitions: AddonToolDefinition[] = [
       extras: { _meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } } },
     },
   }),
-  {
-    name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-    toolset: 'dev',
-    getMetadata: ({ availability, toolsets }) => {
-      const testSupported = isToolsetEnabled('test', toolsets) && availability.testSupported;
-      return getStorybookStoryInstructionsToolMetadata({
-        testSupported,
-        a11yAvailable: testSupported && availability.a11yEnabled,
-        docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
-      });
-    },
-    register: (server, { availability, toolsets }, enabled) =>
-      addGetUIBuildingInstructionsTool(server, enabled, {
-        docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
-        addonVitestAvailable: availability.testSupported,
-      }),
-  },
   fromToolset({
     toolset: 'dev',
     options: { method: 'stories.changed', mcpEventName: 'tool:getChangedStories' },

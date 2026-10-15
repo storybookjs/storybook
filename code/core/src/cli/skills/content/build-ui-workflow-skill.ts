@@ -8,8 +8,8 @@ import { ERROR_EXPORT_RULE, networkMockRule, USER_EVENT_RULE } from './story-rul
 
 export type UiWorkflowSkillInputs = {
   /**
-   * `cli` for `storybook skills ui-workflow`, `mcp` for the `get-storybook-story-instructions`
-   * tool: the same workflow, in commands to run or tools to call.
+   * `cli` for `storybook skills ui-workflow`, `mcp` for the same command with `--mcp`: the same
+   * workflow, in commands to run or in tools of the Storybook MCP server to call.
    */
   transport: SkillTextTransport;
   framework: string;
@@ -169,7 +169,7 @@ export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
   const v = skillVocabulary(inputs.transport);
   const nextSteps = v.cli
     ? 'Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.'
-    : 'Some tools return what to do next; follow that too.';
+    : 'The tools named here are the tools of the Storybook MCP server. Some return what to do next; follow that too.';
   return [
     `# Storybook UI workflow
 

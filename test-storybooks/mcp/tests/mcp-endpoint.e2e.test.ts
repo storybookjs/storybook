@@ -153,7 +153,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "additionalProperties": {},
 				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
-				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				The component's documentation lists the props it takes.",
 				                    "propertyNames": {
 				                      "type": "string",
 				                    },
@@ -181,7 +181,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "additionalProperties": {},
 				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
-				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				The component's documentation lists the props it takes.",
 				                    "propertyNames": {
 				                      "type": "string",
 				                    },
@@ -277,7 +277,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                            "additionalProperties": {},
 				                            "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
-				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				The component's documentation lists the props it takes.",
 				                            "propertyNames": {
 				                              "type": "string",
 				                            },
@@ -305,7 +305,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                            "additionalProperties": {},
 				                            "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
-				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				The component's documentation lists the props it takes.",
 				                            "propertyNames": {
 				                              "type": "string",
 				                            },
@@ -343,22 +343,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "object",
 				    },
 				    "title": "Get story preview URLs",
-				  },
-				  {
-				    "description": "Storybook's workflow for UI changes in this project: look up the components to reuse, write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review.
-
-				Call it first, before you edit any file, and follow its result when:
-				- You create, change, or delete a component, story (any *.stories.* file), style, theme, or design token, or otherwise change how the UI looks. A shared file with no stories of its own still changes its consumers' stories.
-				- You run or fix story tests or accessibility violations.
-				- The user asks to see components or stories.
-
-				Read its result in its entirety: it is the mandatory, ordered workflow, with the tools each step calls.",
-				    "inputSchema": {
-				      "properties": {},
-				      "type": "object",
-				    },
-				    "name": "get-storybook-story-instructions",
-				    "title": "Storybook UI workflow",
 				  },
 				  {
 				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
@@ -657,7 +641,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "additionalProperties": {},
 				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
-				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				The component's documentation lists the props it takes.",
 				                    "propertyNames": {
 				                      "type": "string",
 				                    },
@@ -685,7 +669,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "additionalProperties": {},
 				                    "description": "Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 				but you want to customize some args or other props.
-				You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.",
+				The component's documentation lists the props it takes.",
 				                    "propertyNames": {
 				                      "type": "string",
 				                    },
@@ -849,21 +833,6 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(response.result.content).toHaveLength(1);
 			expect(response.result.content[0].text).toContain('No story found');
 			expect(response.result.content[0].text).toContain('NonExistent');
-		});
-	});
-	describe('Tool: get-storybook-story-instructions', () => {
-		it('should return UI building instructions', async () => {
-			const response = await mcpRequest('tools/call', {
-				name: 'get-storybook-story-instructions',
-				arguments: {},
-			});
-
-			expect(response.result).toHaveProperty('content');
-			expect(response.result.content[0]).toHaveProperty('type', 'text');
-
-			const text = response.result.content[0].text;
-			expect(text).toContain('stories');
-			expect(text.length).toBeGreaterThan(100);
 		});
 	});
 
@@ -1136,7 +1105,6 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
 				  "stories-preview",
-				  "get-storybook-story-instructions",
 				  "stories-changed",
 				  "stories-find-by-component",
 				  "review-create",

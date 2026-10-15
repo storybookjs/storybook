@@ -38,8 +38,7 @@ async function resolvePreview(configDir = '.storybook') {
 
 /**
  * The one probing path for skill-content assembly: everything the pure builders need, resolved
- * from the target Storybook's presets. Both the skills CLI and addon-mcp fill builder inputs from
- * this, so the two channels cannot drift.
+ * from the target Storybook's presets.
  */
 export async function resolveSkillInputs(options: Options): Promise<SkillInputs> {
   const [availability, frameworkPreset, preview] = await Promise.all([

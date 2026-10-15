@@ -115,7 +115,13 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 
   const parsedCalls = getParsedMcpWorkflowCalls();
   const rawCalls = getRawCodexMcpWorkflowCalls();
-  cachedStorybookWorkflowCalls = mergeMcpWorkflowCalls(parsedCalls, rawCalls);
+  // The MCP server's instructions have agents run the skills with `--mcp`; every other workflow
+  // step is an MCP tool call. Only name assertions look at the skill calls, so their position in
+  // the list does not matter.
+  const skillCalls = parseStorybookWorkflowShellCommands(getShellCommands()).filter(
+    (call) => call.name === 'skills-get'
+  );
+  cachedStorybookWorkflowCalls = [...mergeMcpWorkflowCalls(parsedCalls, rawCalls), ...skillCalls];
   return cachedStorybookWorkflowCalls;
 }
 

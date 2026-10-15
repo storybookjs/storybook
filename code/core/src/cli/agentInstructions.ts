@@ -21,20 +21,20 @@ const CLAUDE_FILES = [
 // Also matches a section the user customized, so it is not added a second time.
 const NAMES_A_STORYBOOK_SKILL = /\b(ui-workflow|component-docs)\b/;
 
-const withSection = (content: string | undefined) =>
-  content?.trim()
-    ? `${content.trimEnd()}\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`
-    : STORYBOOK_AGENT_INSTRUCTIONS;
+const withSection = (content: string | undefined, section: string) =>
+  content?.trim() ? `${content.trimEnd()}\n\n${section}` : section;
 
 // The new content of each file to write, keyed by its path relative to the project root. `read`
-// resolves to `undefined` for a file that does not exist.
+// resolves to `undefined` for a file that does not exist. `section` is the skills section by
+// default; a project that uses the Storybook MCP server gets the server instructions instead.
 export async function planStorybookAgentInstructions(
-  read: (file: string) => Promise<string | undefined>
+  read: (file: string) => Promise<string | undefined>,
+  section = STORYBOOK_AGENT_INSTRUCTIONS
 ): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
   const agentsMd = await read('AGENTS.md');
   if (!NAMES_A_STORYBOOK_SKILL.test(agentsMd ?? '')) {
-    files['AGENTS.md'] = withSection(agentsMd);
+    files['AGENTS.md'] = withSection(agentsMd, section);
   }
 
   const claudeFiles = [];
@@ -51,7 +51,7 @@ export async function planStorybookAgentInstructions(
   // Claude Code loads every CLAUDE.md, so one copy is enough.
   const [claudeFile] = claudeFiles;
   if (claudeFile && !claudeSeesSection) {
-    files[claudeFile.file] = withSection(claudeFile.content);
+    files[claudeFile.file] = withSection(claudeFile.content, section);
   }
   return files;
 }

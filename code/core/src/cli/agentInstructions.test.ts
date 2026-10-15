@@ -8,6 +8,7 @@ import { vol } from 'memfs';
 import {
   STORYBOOK_AGENT_INSTRUCTIONS,
   addStorybookAgentInstructions,
+  planStorybookAgentInstructions,
 } from './agentInstructions.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -124,5 +125,17 @@ describe('addStorybookAgentInstructions', () => {
     await addStorybookAgentInstructions(ROOT);
 
     expect(vol.existsSync(join(ROOT, 'CLAUDE.md'))).toBe(false);
+  });
+});
+
+describe('planStorybookAgentInstructions', () => {
+  it('writes another section, such as the MCP server instructions, in place of the skills section', async () => {
+    const section = '## Storybook\n\nRun `npx storybook skills ui-workflow --mcp`.\n';
+    const files = await planStorybookAgentInstructions(
+      async (file) => (file === 'CLAUDE.md' ? '# Rules\n' : undefined),
+      section
+    );
+
+    expect(files).toEqual({ 'AGENTS.md': section, 'CLAUDE.md': `# Rules\n\n${section}` });
   });
 });

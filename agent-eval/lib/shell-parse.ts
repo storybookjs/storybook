@@ -10,16 +10,15 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// `storybook skills write-story` and `ui-workflow` serve the document the MCP
-// channel exposes as the get-storybook-story-instructions tool, which
-// assertions ask for by name. Remove the alias once the MCP tool and the skill
-// share one name (or the tool is retired).
+// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
+// ui-workflow`, with or without `--mcp`, its earlier name `write-story`, or
+// `--all` serve it.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
   }
   return (
-    name === 'get-storybook-story-instructions' &&
+    name === 'ui-workflow' &&
     call.name === 'skills-get' &&
     (call.input.id === 'write-story' || call.input.id === 'ui-workflow' || call.input.all === true)
   );
@@ -29,7 +28,6 @@ export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
   'docs-list',
   'docs-show',
   'docs-show-story',
-  'get-storybook-story-instructions',
   'review-create',
   'stories-changed',
   'stories-find-by-component',
@@ -109,7 +107,9 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // is workflowCallMatchesName's concern. A help request prints usage instead
       // of the skill, so it does not count — same rule as the tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
-      const [first, ...rest] = segment;
+      // `--mcp` only changes how the skill names the tools.
+      const mcp = segment.includes('--mcp');
+      const [first, ...rest] = segment.filter((token) => token !== '--mcp');
       const all = first === '--all' && rest.length === 0;
       const single =
         first !== undefined &&
@@ -120,7 +120,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       if (all || single) {
         calls.push({
           name: 'skills-get',
-          input: all ? { all: true } : { id: first },
+          input: { ...(all ? { all: true } : { id: first }), ...(mcp ? { mcp: true } : {}) },
           source: 'cli',
         });
         index += 1 + segment.length;

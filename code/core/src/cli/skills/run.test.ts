@@ -124,6 +124,43 @@ describe('runSkillsCommand', () => {
     expect(writeStory.output).toContain('npx storybook tools docs list');
   });
 
+  it('--mcp names the MCP tools, on the MCP docs gate', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: true,
+      docsEnabledForCli: true,
+    });
+
+    const uiWorkflow = await runSkillsCommand(
+      { tokens: ['ui-workflow'], mcp: true, target: {} },
+      d
+    );
+    expect(uiWorkflow.output).toContain('the tools of the Storybook MCP server');
+    expect(uiWorkflow.output).toContain('`docs-show` with an `id`');
+    expect(uiWorkflow.output).toContain('Call `review-create` with:');
+    expect(uiWorkflow.output).not.toContain('npx storybook tools');
+
+    const componentDocs = await runSkillsCommand(
+      { tokens: ['component-docs'], mcp: true, target: {} },
+      d
+    );
+    expect(componentDocs.output).toContain('`docs-list`: every component and docs page');
+    expect(componentDocs.output).toContain('`npx storybook skills ui-workflow --mcp`');
+    expect(componentDocs.output).not.toContain('npx storybook tools');
+
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: false,
+      docsEnabledForCli: true,
+    });
+    const withoutDocsTools = await runSkillsCommand(
+      { tokens: ['ui-workflow'], mcp: true, target: {} },
+      d
+    );
+    expect(withoutDocsTools.output).not.toContain('## Look up components first');
+  });
+
   it('leaves the component lookup out of ui-workflow when the CLI docs gate is off', async () => {
     const d = deps();
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);

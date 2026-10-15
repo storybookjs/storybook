@@ -16,7 +16,7 @@ describe('buildServerInstructions', () => {
     for (const devEnabled of bools)
       for (const testSupported of bools)
         for (const docsEnabled of bools) {
-          const options = { transport: 'mcp' as const, devEnabled, testSupported, docsEnabled };
+          const options = { devEnabled, testSupported, docsEnabled };
           const length = buildServerInstructions(options).length;
           expect
             .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
@@ -24,9 +24,8 @@ describe('buildServerInstructions', () => {
         }
   });
 
-  it('names the workflow tool for UI tasks and the docs tools for lookups when all toolsets are enabled', () => {
+  it('runs the skills with --mcp, in the words of the AGENTS.md section, when all toolsets are enabled', () => {
     const instructions = buildServerInstructions({
-      transport: 'mcp',
       devEnabled: true,
       testSupported: true,
       docsEnabled: true,
@@ -35,10 +34,10 @@ describe('buildServerInstructions', () => {
     expect(instructions).toMatchInlineSnapshot(`
       "## Storybook
 
-      For each of these tasks, call its Storybook tool first, before you edit any file, and follow its result:
+      For each of these tasks, run its Storybook skill first, before you edit any file, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
 
-      - **get-storybook-story-instructions**: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It returns the mandatory, ordered workflow, with the tools each step calls: it looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results. Read it in its entirety.
-      - **docs-list**, then **docs-show** with an id from its result: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. Answer from these tools, not from source or type definitions, and use only the props they document.
+      - \`npx storybook skills ui-workflow --mcp\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
+      - \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
 
       When you publish a review with **review-create**, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
@@ -46,69 +45,62 @@ describe('buildServerInstructions', () => {
 
   it('leaves out the steps of toolsets that are off', () => {
     const instructions = buildServerInstructions({
-      transport: 'mcp',
       devEnabled: true,
       testSupported: false,
       docsEnabled: false,
     });
 
     expect(instructions).toContain(
-      'It returns the mandatory, ordered workflow, with the tools each step calls: it updates your stories and publishes a review'
+      'It updates your stories and publishes a review of the results.'
     );
     expect(instructions).not.toContain('story tests');
-    expect(instructions).not.toContain('docs-list');
+    expect(instructions).not.toContain('component-docs');
   });
 
   it('names test-run itself when the workflow tool is off', () => {
     const instructions = buildServerInstructions({
-      transport: 'mcp',
       devEnabled: false,
       testSupported: true,
       docsEnabled: false,
     });
 
+    expect(instructions).toContain('For this task, call its Storybook tool first');
     expect(instructions).toContain('- **test-run**: you run or fix story tests.');
-    expect(instructions).not.toContain('get-storybook-story-instructions');
+    expect(instructions).not.toContain('npx storybook skills');
     expect(instructions).not.toContain('review-create');
   });
 
   it('names only the docs tools for docs only', () => {
     const instructions = buildServerInstructions({
-      transport: 'mcp',
       devEnabled: false,
       testSupported: false,
       docsEnabled: true,
     });
 
-    expect(instructions).toContain('- **docs-list**, then **docs-show**');
-    expect(instructions).not.toContain('get-storybook-story-instructions');
+    expect(instructions).toContain('- `npx storybook skills component-docs --mcp`');
+    expect(instructions).not.toContain('ui-workflow');
     expect(instructions).not.toContain('review-create');
+  });
+
+  it('asks to run a skill or call a tool when both are named', () => {
+    const instructions = buildServerInstructions({
+      devEnabled: false,
+      testSupported: true,
+      docsEnabled: true,
+    });
+
+    expect(instructions).toContain(
+      'For each of these tasks, run its Storybook skill or call its Storybook tool first'
+    );
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {
     const instructions = buildServerInstructions({
-      transport: 'mcp',
       devEnabled: false,
       testSupported: false,
       docsEnabled: false,
     });
 
     expect(instructions).toBe('');
-  });
-
-  it('renders tool and skill references as CLI commands on the CLI transport', () => {
-    const instructions = buildServerInstructions({
-      transport: 'cli',
-      devEnabled: true,
-      testSupported: true,
-      docsEnabled: true,
-    });
-
-    expect(instructions).toContain('**npx storybook skills ui-workflow**');
-    expect(instructions).toContain('**npx storybook tools docs list**');
-    expect(instructions).toContain('**npx storybook tools review create**');
-    expect(instructions).not.toContain('get-storybook-story-instructions');
-    expect(instructions).not.toContain('docs-list');
-    expect(instructions).not.toContain('review-create');
   });
 });

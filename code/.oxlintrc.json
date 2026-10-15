@@ -24,6 +24,7 @@
     "core/assets",
     "core/report",
     "lib/cli-storybook/test/default/cli.test.cjs",
+    "lib/eslint-plugin/qa-examples",
     "sandbox"
   ],
   "rules": {

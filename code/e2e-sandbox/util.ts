@@ -15,12 +15,68 @@ export class SbPage {
     this.expect = expect;
   }
 
+  /**
+   * The sidebar row of an index entry. Rows carry their entry id and the id of the Storybook they
+   * come from as data attributes; each composed Storybook renders its own tree.
+   */
+  sidebarRow(entryId: string, refId = 'storybook_internal') {
+    return this.page.locator(`[data-item-id="${entryId}"][data-ref-id="${refId}"]`);
+  }
+
+  /**
+   * Scroll the sidebar until the row is rendered, and return its locator. The tree is virtualized,
+   * so a row far from the viewport has no DOM node to wait for: the scroll area is walked a
+   * viewport at a time until the row mounts, then the row is scrolled to the middle. A row that
+   * never mounts (a filtered-out entry, a composed Storybook still loading) is retried until the
+   * timeout; the returned locator then resolves to nothing.
+   */
+  async revealSidebarRow(entryId: string, refId = 'storybook_internal', timeout = 15000) {
+    const deadline = Date.now() + timeout;
+    do {
+      const found = await this.page.evaluate(
+        async ([id, ref]) => {
+          const selector = `[data-item-id="${id}"][data-ref-id="${ref}"]`;
+          const find = () => document.querySelector<HTMLElement>(selector);
+          // The virtualizer renders on the scroll event, a frame after the scroll position moves.
+          const settle = () =>
+            new Promise<void>((resolve) => {
+              requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+            });
+          const scroller = document.querySelector<HTMLElement>(
+            '[data-testid="sidebar-scroll-area"]'
+          );
+          let row = find();
+          if (!row && scroller) {
+            const step = Math.max(scroller.clientHeight, 1);
+            for (let top = 0; !row && top <= scroller.scrollHeight; top += step) {
+              scroller.scrollTop = top;
+              await settle();
+              row = find();
+            }
+          }
+          if (!row) {
+            return false;
+          }
+          row.scrollIntoView({ block: 'center' });
+          await settle();
+          return true;
+        },
+        [entryId, refId]
+      );
+      if (found) {
+        break;
+      }
+      await this.page.waitForTimeout(250);
+    } while (Date.now() < deadline);
+    return this.sidebarRow(entryId, refId);
+  }
+
   async openComponent(title: string, hasRoot = true) {
     const parts = title.split('/');
     for (let i = hasRoot ? 1 : 0; i < parts.length; i += 1) {
       const parentId = toId(parts.slice(0, i + 1).join('/'));
 
-      const parentLink = this.page.locator(`#${parentId}`);
+      const parentLink = await this.revealSidebarRow(parentId);
 
       await this.expect(parentLink).toBeVisible();
       if ((await parentLink.getAttribute('aria-expanded')) === 'false') {
@@ -52,9 +108,18 @@ export class SbPage {
 
     const titleId = toId(title);
     const storyId = toId(name);
-    const storyLinkId = `#${titleId}--${storyId}`;
-    await this.page.locator(storyLinkId).waitFor();
-    const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
+    let storyLink = await this.revealSidebarRow(`${titleId}--${storyId}`);
+    await storyLink.waitFor();
+    // A story with tests is a branch: its row toggles the tests, and its "Story" child row opens
+    // the story.
+    const expanded = await storyLink.getAttribute('aria-expanded');
+    if (expanded !== null) {
+      if (expanded === 'false') {
+        await storyLink.click();
+      }
+      storyLink = await this.revealSidebarRow(`${titleId}--${storyId}--story`);
+      await storyLink.waitFor();
+    }
     await storyLink.click();
 
     await this.page.waitForURL((url) =>
@@ -83,9 +148,8 @@ export class SbPage {
 
     const titleId = toId(title);
     const storyId = toId(name);
-    const storyLinkId = `#${titleId}-${storyId}--docs`;
-    await this.page.locator(storyLinkId).waitFor();
-    const storyLink = this.page.locator('*', { has: this.page.locator(`> ${storyLinkId}`) });
+    const storyLink = await this.revealSidebarRow(`${titleId}-${storyId}--docs`);
+    await storyLink.waitFor();
     await storyLink.click();
 
     await this.page.waitForURL((url) =>

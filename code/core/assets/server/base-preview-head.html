@@ -3,17 +3,14 @@
 <style>
   /* Mirrors the semantic status tokens in code/core/src/theming/base.ts. This template
      renders before the manager (and its CSS) exists, so it cannot read the tokens —
-     it shares their values instead. Same pattern as preview-navigator.ts. */
+     it shares their values instead. The error card is always a light surface
+     (.sb-errordisplay_main is white), so the accent keeps the light-theme value
+     regardless of the OS color scheme: the dark-theme fgColor.negative (#FF6933)
+     falls below 3:1 non-text contrast on white. */
   :root {
     --sb-error-accent-color: #c23400; /* fgColor.negative, light theme */
     --sb-error-code-bg: #222325; /* bgColor.default, dark theme — terminal-style surface */
     --sb-error-code-color: #c9cccf; /* fgColor.default, dark theme */
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --sb-error-accent-color: #ff6933; /* fgColor.negative, dark theme */
-    }
   }
 
   /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
@@ -222,8 +219,6 @@
   .sb-errordisplay_main .sb-errordisplay_code {
     padding: 10px;
     flex: 1;
-    background: var(--sb-error-code-bg);
-    color: var(--sb-error-code-color);
     box-sizing: border-box;
 
     font-size: 14px;

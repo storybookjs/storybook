@@ -2,6 +2,7 @@
 import glob from 'fast-glob';
 import { join } from 'path/posix';
 
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   type CachePlatform,
@@ -509,6 +510,15 @@ export const benchmarkPackages = defineJob(
       ...workflow.restoreLinux(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
+      {
+        run: {
+          name: 'Upgrade npm',
+          // Node 22 images bundle npm 10.9.x, whose Arborist crashes with `Cannot read properties
+          // of null (reading 'edgesOut')` on some dependency trees (npm/cli#9787), killing the
+          // bench installs. Fixed in npm 11.6; use the repo-wide pinned minimum.
+          command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+        },
+      },
       {
         run: {
           name: 'Benchmarking packages against base branch',

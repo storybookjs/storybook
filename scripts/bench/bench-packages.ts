@@ -123,14 +123,22 @@ export const benchPackage = async (packageName: PackageName) => {
       2
     )
   );
-  const npmInstallResult = await x(
-    'npm',
-    // --force to ignore peer dependency warnings, we aren't installing peer dependencies anyway
-    `install --registry http://localhost:6001 --omit peer --json --force`.split(' '),
-    {
-      nodeOptions: { cwd: tmpBenchPackagePath },
-    }
-  );
+  const runNpmInstall = () =>
+    x(
+      'npm',
+      // --force to ignore peer dependency warnings, we aren't installing peer dependencies anyway
+      `install --registry http://localhost:6001 --omit peer --json --force`.split(' '),
+      {
+        nodeOptions: { cwd: tmpBenchPackagePath },
+      }
+    );
+
+  let npmInstallResult = await runNpmInstall();
+  // Verdaccio hiccups and Arborist races (npm/cli#9787) are transient; one retry clears them.
+  if (npmInstallResult.exitCode !== 0) {
+    console.log(`npm install failed (exit code ${npmInstallResult.exitCode}), retrying once...`);
+    npmInstallResult = await runNpmInstall();
+  }
 
   // npm reports a failed install as JSON on stdout and leaves no node_modules behind, which used
   // to surface as an ENOENT from the size measurement below, without npm's own error.

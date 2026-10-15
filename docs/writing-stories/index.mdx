@@ -66,7 +66,7 @@ The _default_ export metadata controls how Storybook lists your stories and prov
 
 <Callout variant="info">
 
-Starting with Storybook version 7.0, story titles are analyzed statically as part of the build process. The _default_ export must contain a `title` property that can be read statically or a `component` property from which an automatic title can be computed. Using the `id` property to customize your story URL must also be statically readable.
+Starting with Storybook version 7.0, story titles are analyzed statically as part of the build process. If the _default_ export specifies a `title`, it must be readable statically — for example, a string literal. If it is omitted, Storybook generates the title automatically from the file's location in the project. Using the `id` property to customize your story URL must also be statically readable.
 
 </Callout>
 

@@ -140,13 +140,7 @@ describe(transformStoriesCode.name, () => {
       			description: { story: "Description for the default story" }
       		},
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			argCode: {
-      				"onclick": "fn()",
-      				"onmouseenter": "fn()",
-      				"onmouseleave": "fn()"
-      			}
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
       		}
       	}
       });
@@ -162,13 +156,7 @@ describe(transformStoriesCode.name, () => {
       			description: { story: "Description for the rounded story" }
       		},
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			argCode: {
-      				"onclick": "fn()",
-      				"onmouseenter": "fn()",
-      				"onmouseleave": "fn()"
-      			}
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
       		}
       	}
       });
@@ -184,13 +172,7 @@ describe(transformStoriesCode.name, () => {
       			description: { story: "Description for the squared story" }
       		},
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			template: "<Example ⟦props -onclick -children⟧ onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>",
-      			argCode: {
-      				"onclick": "fn()",
-      				"onmouseenter": "fn()",
-      				"onmouseleave": "fn()"
-      			}
+      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
       		}
       	}
       });
@@ -219,15 +201,7 @@ describe(transformStoriesCode.name, () => {
       	}),
       	$$slots: { default: true },
       	parameters: {
-      		__svelteCsf: {
-      			rawCode: "<Example>Label</Example>",
-      			template: "<Example>Label</Example>",
-      			argCode: {
-      				"onclick": "fn()",
-      				"onmouseenter": "fn()",
-      				"onmouseleave": "fn()"
-      			}
-      		}
+      		__svelteCsf: { rawCode: "<Example>Label</Example>" }
       	}
       });
 
@@ -245,13 +219,7 @@ describe(transformStoriesCode.name, () => {
       	$$slots: { default: true },
       	parameters: {
       		__svelteCsf: {
-      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>",
-      			template: "<Example ⟦props -children⟧>\\n  Forwarded label\\n</Example>",
-      			argCode: {
-      				"onclick": "fn()",
-      				"onmouseenter": "fn()",
-      				"onmouseleave": "fn()"
-      			}
+      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
       		}
       	}
       });

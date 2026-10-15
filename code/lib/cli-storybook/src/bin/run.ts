@@ -122,7 +122,7 @@ command('add <addon>')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => {
-    withTelemetry('add', { cliOptions: options }, async () => {
+    return withTelemetry('add', { cliOptions: options }, async () => {
       logger.intro(`Setting up your project for ${addonName}`);
 
       await add(addonName, options);
@@ -253,8 +253,8 @@ command('sandbox [filterValue]')
   .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
   .action((filterValue, options) => {
     logger.intro(`Creating a Storybook sandbox...`);
-    sandbox({ filterValue, ...options })
-      .catch(handleCommandFailure)
+    return sandbox({ filterValue, ...options })
+      .catch(handleCommandFailure(options.logfile))
       .finally(() => {
         logger.outro('Done!');
       });
@@ -319,8 +319,4 @@ program.on('command:*', ([invalidCmd]) => {
 
 program.usage('<command> [options]').version(String(version));
 
-/**
- * Entry point for the CLI: parses the given argv against the registered commands. Exported so the
- * bin entry can invoke it and tests can drive the CLI without executing at import time.
- */
-export const run = (argv: string[] = process.argv) => program.parse(argv);
+export const run = (argv: string[] = process.argv) => program.parseAsync(argv);

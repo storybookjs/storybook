@@ -21,8 +21,9 @@ test.describe('composition', () => {
     const badge7 = await sbPage.revealSidebarRow('components-badge', 'storybook@7.6.18');
     await expect(badge7).toBeVisible({ timeout: 15000 });
 
-    // Expect composed stories to be available in the sidebar
-    await badge8.click();
+    // Expect composed stories to be available in the sidebar. Revealing one row can scroll another
+    // out of the virtualizer's window, so every row is revealed again right before it is used.
+    await (await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0')).click();
     await expect(
       await sbPage.revealSidebarRow('components-badge--default', 'storybook@8.0.0')
     ).toBeVisible();
@@ -76,9 +77,8 @@ test.describe('composition', () => {
     await expect(page.getByTitle('Storybook 7.6.18')).toBeVisible();
 
     // Expect composed stories to be available in the sidebar
-    const badge8 = await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0');
-    await expect(badge8).toBeVisible();
-    await badge8.click();
+    await expect(await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0')).toBeVisible();
+    await (await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0')).click();
     await expect(
       await sbPage.revealSidebarRow('components-badge--default', 'storybook@8.0.0')
     ).toBeVisible();

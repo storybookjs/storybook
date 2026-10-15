@@ -154,11 +154,8 @@ test.describe("component testing", () => {
 
     await sbPage.viewAddonPanel("Interactions");
 
-    // For whatever reason, when visiting a story sometimes the story element is collapsed and that causes flake
-    const testStoryElement = await page.getByRole("button", {
-      name: "Test",
-      exact: true,
-    });
+    // For whatever reason, when visiting a story sometimes the component row is collapsed and that causes flake
+    const testStoryElement = await sbPage.revealSidebarRow("addons-group-test");
     if ((await testStoryElement.getAttribute("aria-expanded")) !== "true") {
       await testStoryElement.click();
     }

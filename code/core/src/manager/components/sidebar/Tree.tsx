@@ -301,13 +301,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const onInputStart = (event: PointerEvent | KeyboardEvent) => {
       lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
       isDoubleClickActionRef.current = false;
-      // Assigned rather than only raised, so an arrow key lowers the flag by itself instead of
-      // relying on the previous press having ended.
-      isActivatingRef.current =
-        event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ';
-    };
-    const onInputEnd = () => {
-      isActivatingRef.current = false;
+      // A pointer press or Space activates the row through react-aria's selection, which reports
+      // the change while this very event is still being handled. The flag is raised for that
+      // press alone and lowered in a microtask, so no end of the press has to arrive: a press
+      // the browser cancels, or one released over the preview, cannot leave it raised for the
+      // next arrow key. Enter, a double-click and a touch open the row through the action and
+      // never read the flag.
+      if (event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ') {
+        isActivatingRef.current = true;
+        queueMicrotask(() => {
+          isActivatingRef.current = false;
+        });
+      }
     };
     const onClick = () => {
       isDoubleClickActionRef.current = false;
@@ -319,22 +324,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
     container.addEventListener('keydown', onInputStart, { capture: true });
     container.addEventListener('click', onClick, { capture: true });
     container.addEventListener('dblclick', onDoubleClick, { capture: true });
-    // The end of a press is watched on the window, in the capture phase, because it can land
-    // anywhere: a drag releases outside the row, a key released after focus moved lands outside
-    // the tree, and a press the browser takes over for a scroll ends in pointercancel with no
-    // pointerup at all. A press whose end is missed would leave the flag raised, and the next
-    // arrow key would open the story it lands on.
-    window.addEventListener('pointerup', onInputEnd, { capture: true });
-    window.addEventListener('pointercancel', onInputEnd, { capture: true });
-    window.addEventListener('keyup', onInputEnd, { capture: true });
     return () => {
       container.removeEventListener('pointerdown', onInputStart, { capture: true });
       container.removeEventListener('keydown', onInputStart, { capture: true });
       container.removeEventListener('click', onClick, { capture: true });
       container.removeEventListener('dblclick', onDoubleClick, { capture: true });
-      window.removeEventListener('pointerup', onInputEnd, { capture: true });
-      window.removeEventListener('pointercancel', onInputEnd, { capture: true });
-      window.removeEventListener('keyup', onInputEnd, { capture: true });
     };
   }, []);
 

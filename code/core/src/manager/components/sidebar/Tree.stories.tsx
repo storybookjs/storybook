@@ -1220,6 +1220,46 @@ export const DoubleClickTogglesOncePerPress: Story = {
   },
 };
 
+/**
+ * Space activates the focused row like a click: it toggles a branch. React-aria reports the Space
+ * press as a selection change, the same way it reports arrow-key focus moves, and the tree tells
+ * the two apart by the press that is being handled.
+ */
+export const SpaceTogglesBranch: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('Introduction');
+    const branch = canvasElement.querySelector<HTMLElement>('[data-item-id="emails"]')!;
+    expect(branch).toHaveAttribute('aria-expanded', 'true');
+
+    // A click focuses the root and folds it. Space unfolds it again, and a second Space folds it.
+    await userEvent.click(branch);
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
+    await userEvent.keyboard(' ');
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'true'));
+    await userEvent.keyboard(' ');
+    await waitFor(() => expect(branch).toHaveAttribute('aria-expanded', 'false'));
+
+    // An arrow key only moves focus: the branch stays folded and the next row is focused.
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() =>
+      expect(
+        canvasElement
+          .querySelector('[data-item-id][data-focused="true"]')
+          ?.getAttribute('data-item-id')
+      ).not.toBe('emails')
+    );
+    expect(branch).toHaveAttribute('aria-expanded', 'false');
+  },
+};
+
 /** Plain arrow keys must move focus between rows (react-aria keyboard navigation). */
 export const KeyboardNavigation: Story = {
   args: {

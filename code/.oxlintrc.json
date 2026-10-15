@@ -205,6 +205,7 @@
         "storybook/no-redundant-story-name": "warn",
         "storybook/no-renderer-packages": "error",
         "storybook/prefer-pascal-case": "warn",
+        "storybook/static-csf-properties": "error",
         "storybook/story-exports": "error",
         "storybook/use-storybook-expect": "error",
         "storybook/use-storybook-testing-library": "error"
@@ -214,6 +215,12 @@
       "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
+      }
+    },
+    {
+      "files": ["renderers/react/src/__test__/*.stories.*"],
+      "rules": {
+        "storybook/default-exports": "off"
       }
     },
     {

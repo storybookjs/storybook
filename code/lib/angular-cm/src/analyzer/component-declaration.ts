@@ -1,11 +1,19 @@
 import type * as ts from 'typescript';
 
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
-import { isDeclaredInAngularCore } from './decorators.ts';
+import { isDeclaredInAngularCore, type MetadataIOEntry } from './decorators.ts';
 
 export interface ComponentMetadata {
   selector: string | undefined;
   standalone: boolean | undefined;
+}
+
+export interface DeclaredIOEntry extends MetadataIOEntry {
+  signal?: boolean;
+}
+
+export interface ComponentDeclaration extends ComponentMetadata {
+  inputsOutputs: DeclaredIOEntry[];
 }
 
 // Angular 12-13 emit seven type arguments; Angular 14 introduced standalone as the eighth.
@@ -14,8 +22,8 @@ const PRE_STANDALONE_ARGUMENT_COUNT = 7;
 // A published library's `.d.ts` keeps a class's `@Component` only as this compiled `ɵcmp` type.
 export const readComponentDeclaration = (
   ctx: AnalyzerContext,
-  classNode: ts.ClassDeclaration
-): ComponentMetadata | undefined => {
+  classNode: ts.ClassLikeDeclaration
+): ComponentDeclaration | undefined => {
   if (!classNode.getSourceFile().isDeclarationFile) {
     return undefined;
   }
@@ -32,14 +40,18 @@ export const readComponentDeclaration = (
   }
   const standaloneArgument = typeArguments[PRE_STANDALONE_ARGUMENT_COUNT];
   return {
-    selector: selectorArgument(ctx, typeArguments[1]),
+    selector: stringLiteral(ctx, typeArguments[1]),
     standalone: standaloneArgument ? booleanArgument(ctx, standaloneArgument) : false,
+    inputsOutputs: [
+      ...ioMapEntries(ctx, typeArguments[3], 'inputs'),
+      ...ioMapEntries(ctx, typeArguments[4], 'outputs'),
+    ],
   };
 };
 
 const staticCmpType = (
   { ts }: AnalyzerContext,
-  classNode: ts.ClassDeclaration
+  classNode: ts.ClassLikeDeclaration
 ): ts.TypeReferenceNode | undefined => {
   for (const member of classNode.members) {
     if (
@@ -67,7 +79,7 @@ const isAngularComponentDeclaration = (ctx: AnalyzerContext, typeName: ts.Entity
 const referencesClass = (
   ctx: AnalyzerContext,
   argument: ts.TypeNode,
-  classNode: ts.ClassDeclaration
+  classNode: ts.ClassLikeDeclaration
 ): boolean => {
   if (!ctx.ts.isTypeReferenceNode(argument) || !classNode.name) {
     return false;
@@ -79,11 +91,6 @@ const referencesClass = (
   );
 };
 
-const selectorArgument = ({ ts }: AnalyzerContext, argument: ts.TypeNode): string | undefined =>
-  ts.isLiteralTypeNode(argument) && ts.isStringLiteral(argument.literal)
-    ? argument.literal.text
-    : undefined;
-
 const booleanArgument = ({ ts }: AnalyzerContext, argument: ts.TypeNode): boolean | undefined => {
   if (!ts.isLiteralTypeNode(argument)) {
     return undefined;
@@ -93,3 +100,62 @@ const booleanArgument = ({ ts }: AnalyzerContext, argument: ts.TypeNode): boolea
   }
   return argument.literal.kind === ts.SyntaxKind.FalseKeyword ? false : undefined;
 };
+
+// Keyed by class field. An entry is the public name, or since Angular 16 an object type such as
+// `{ alias: 'label'; required: false; isSignal?: true }`.
+const ioMapEntries = (
+  ctx: AnalyzerContext,
+  map: ts.TypeNode,
+  bucket: MetadataIOEntry['bucket']
+): DeclaredIOEntry[] => {
+  const { ts } = ctx;
+  if (!ts.isTypeLiteralNode(map)) {
+    return [];
+  }
+  const entries: DeclaredIOEntry[] = [];
+  for (const member of map.members) {
+    const name = member.name && propertyNameText(ctx, member.name);
+    const value = ts.isPropertySignature(member) ? member.type : undefined;
+    if (!name || !value) {
+      continue;
+    }
+    const alias = ts.isTypeLiteralNode(value)
+      ? stringLiteral(ctx, objectTypeMember(ctx, value, 'alias'))
+      : stringLiteral(ctx, value);
+    const required = ts.isTypeLiteralNode(value)
+      ? booleanLiteral(ctx, objectTypeMember(ctx, value, 'required'))
+      : undefined;
+    const signal = ts.isTypeLiteralNode(value)
+      ? booleanLiteral(ctx, objectTypeMember(ctx, value, 'isSignal'))
+      : undefined;
+    entries.push({
+      bucket,
+      name,
+      ...(alias === undefined || alias === name ? {} : { alias }),
+      ...(required === undefined ? {} : { required }),
+      ...(signal ? { signal } : {}),
+    });
+  }
+  return entries;
+};
+
+const propertyNameText = ({ ts }: AnalyzerContext, name: ts.PropertyName): string | undefined =>
+  ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : undefined;
+
+const objectTypeMember = (
+  ctx: AnalyzerContext,
+  object: ts.TypeLiteralNode,
+  key: string
+): ts.TypeNode | undefined =>
+  object.members.find(
+    (member): member is ts.PropertySignature =>
+      ctx.ts.isPropertySignature(member) && propertyNameText(ctx, member.name) === key
+  )?.type;
+
+const stringLiteral = ({ ts }: AnalyzerContext, node: ts.TypeNode | undefined) =>
+  node && ts.isLiteralTypeNode(node) && ts.isStringLiteral(node.literal)
+    ? node.literal.text
+    : undefined;
+
+const booleanLiteral = (ctx: AnalyzerContext, node: ts.TypeNode | undefined) =>
+  node ? booleanArgument(ctx, node) : undefined;

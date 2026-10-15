@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeFiles, analyzeInline, names } from './__testutils__/inline-source.ts';
+import type { Property } from '../types.ts';
+import { analyzeFiles, analyzeInline, byName, names } from './__testutils__/inline-source.ts';
 
 const analyzeDeclaration = (source: string, extraFiles: Record<string, string> = {}) =>
   analyzeFiles('button.component.d.ts', { 'button.component.d.ts': source, ...extraFiles });
@@ -153,10 +154,111 @@ describe('a component compiled into a .d.ts declaration', () => {
   });
 });
 
+const IO_SOURCE = `
+  import { Component, EventEmitter, Input, Output, booleanAttribute, input, model, output } from '@angular/core';
+
+  @Component({ selector: 'my-io', template: '', inputs: ['viaMeta: metaAlias'], outputs: ['metaOut'] })
+  export class IoComponent {
+    @Input() plain = '';
+    @Input('publicName') aliased = '';
+    @Input({ required: true }) needed!: number;
+    @Input({ transform: booleanAttribute }) flag = false;
+    viaMeta = '';
+    metaOut = new EventEmitter<void>();
+    size = input<'sm' | 'md'>('sm');
+    count = input.required<number>({ alias: 'total' });
+    checked = model(false);
+    @Output() clicked = new EventEmitter<string>();
+    @Output('renamed') internal = new EventEmitter<void>();
+    toggled = output<boolean>();
+  }
+`;
+
+// What ngc emits for IO_SOURCE in partial-compilation mode.
+const IO_DECLARATION = `
+  import { EventEmitter } from '@angular/core';
+  import * as i0 from "@angular/core";
+  export declare class IoComponent {
+      plain: string;
+      aliased: string;
+      needed: number;
+      flag: boolean;
+      viaMeta: string;
+      metaOut: EventEmitter<void>;
+      size: import("@angular/core").InputSignal<"sm" | "md">;
+      count: import("@angular/core").InputSignal<number>;
+      checked: import("@angular/core").ModelSignal<boolean>;
+      clicked: EventEmitter<string>;
+      internal: EventEmitter<void>;
+      toggled: import("@angular/core").OutputEmitterRef<boolean>;
+      static ɵfac: i0.ɵɵFactoryDeclaration<IoComponent, never>;
+      static ɵcmp: i0.ɵɵComponentDeclaration<IoComponent, "my-io", never, { "viaMeta": { "alias": "metaAlias"; "required": false; }; "plain": { "alias": "plain"; "required": false; }; "aliased": { "alias": "publicName"; "required": false; }; "needed": { "alias": "needed"; "required": true; }; "flag": { "alias": "flag"; "required": false; }; "size": { "alias": "size"; "required": false; "isSignal": true; }; "count": { "alias": "total"; "required": true; "isSignal": true; }; "checked": { "alias": "checked"; "required": false; "isSignal": true; }; }, { "metaOut": "metaOut"; "checked": "checkedChange"; "clicked": "clicked"; "internal": "renamed"; "toggled": "toggled"; }, never, never, true, never>;
+      static ngAcceptInputType_flag: unknown;
+  }
+`;
+
+describe('inputs and outputs read from the compiled maps', () => {
+  const binding = (property: Property) => ({
+    name: property.name,
+    type: property.type,
+    required: property.required,
+    optional: property.optional,
+    hasLine: property.line !== undefined,
+  });
+  const fromSource = analyzeFiles('io.component.ts', { 'io.component.ts': IO_SOURCE })
+    .components[0];
+  const fromDeclaration = analyzeDeclaration(IO_DECLARATION).components[0];
+
+  it('reports every input as analyzing the source would', () => {
+    expect(fromDeclaration.inputsClass.map(binding)).toEqual(fromSource.inputsClass.map(binding));
+    expect(names(fromDeclaration.inputsClass)).toEqual([
+      'checked',
+      'flag',
+      'metaAlias',
+      'needed',
+      'plain',
+      'publicName',
+      'size',
+      'total',
+    ]);
+  });
+
+  it('reports every output under its public name, a model() under its input name', () => {
+    expect(names(fromDeclaration.outputsClass)).toEqual(names(fromSource.outputsClass));
+    expect(names(fromDeclaration.outputsClass)).toEqual([
+      'checked',
+      'clicked',
+      'metaOut',
+      'renamed',
+      'toggled',
+    ]);
+    expect(byName(fromDeclaration.outputsClass, 'toggled').type).toBe('boolean');
+  });
+
+  it('leaves no input or output among the plain properties', () => {
+    expect(fromDeclaration.propertiesClass).toEqual([]);
+  });
+
+  it('reads the string-valued input map Angular emitted before version 16', () => {
+    const [component] = analyzeDeclaration(`
+      import * as i0 from '@angular/core';
+
+      export declare class ButtonComponent {
+        label: string;
+        static ɵcmp: i0.ɵɵComponentDeclaration<
+          ButtonComponent, 'my-button', never, { "label": "text"; }, {}, never, never, true
+        >;
+      }
+    `).components;
+
+    expect(names(component.inputsClass)).toEqual(['text']);
+  });
+});
+
 describe('a .d.ts class whose `ɵcmp` is not an Angular component declaration', () => {
-  const expectPlainClass = (meta: ReturnType<typeof analyzeDeclaration>) => {
+  const expectLeftOut = (meta: ReturnType<typeof analyzeDeclaration>) => {
     expect(meta.components).toEqual([]);
-    expect(names(meta.classes)).toContain('ButtonComponent');
+    expect(meta.classes).toEqual([]);
   };
 
   it.each([
@@ -175,12 +277,12 @@ describe('a .d.ts class whose `ɵcmp` is not an Angular component declaration', 
       `static ɵcmp: i0.ɵɵDirectiveDeclaration<ButtonComponent, 'my-button', never, {}, {}, never, never, true>;`,
     ],
     ['an instance member', `ɵcmp: i0.ɵɵComponentDeclaration<${MODERN_ARGUMENTS}>;`],
-  ])('stays a plain class when `ɵcmp` has %s', (_, member) => {
-    expectPlainClass(analyzeDeclaration(declaringMember(member)));
+  ])('is left out when `ɵcmp` has %s', (_, member) => {
+    expectLeftOut(analyzeDeclaration(declaringMember(member)));
   });
 
   it('does not mistake a locally declared `ɵɵComponentDeclaration` for Angular', () => {
-    expectPlainClass(
+    expectLeftOut(
       analyzeDeclaration(`
         type ɵɵComponentDeclaration<T, S, E, I, O, Q, N, IsStandalone> = unknown;
 
@@ -192,7 +294,7 @@ describe('a .d.ts class whose `ɵcmp` is not an Angular component declaration', 
   });
 
   it('does not mistake a same-named export of another module for Angular', () => {
-    expectPlainClass(
+    expectLeftOut(
       analyzeDeclaration(declaring(MODERN_ARGUMENTS).replace(`'@angular/core'`, `'./fake-core'`), {
         'fake-core.d.ts': `
           export type ɵɵComponentDeclaration<T, S, E, I, O, Q, N, IsStandalone> = unknown;
@@ -202,7 +304,7 @@ describe('a .d.ts class whose `ɵcmp` is not an Angular component declaration', 
   });
 
   it('does not mistake a package whose name merely starts with `@angular/core` for Angular', () => {
-    expectPlainClass(
+    expectLeftOut(
       analyzeDeclaration(
         declaring(MODERN_ARGUMENTS).replace(
           `'@angular/core'`,
@@ -218,7 +320,7 @@ describe('a .d.ts class whose `ɵcmp` is not an Angular component declaration', 
   });
 
   it('does not read a declaration type whose module does not resolve', () => {
-    expectPlainClass(
+    expectLeftOut(
       analyzeDeclaration(
         declaring(MODERN_ARGUMENTS).replace(`'@angular/core'`, `'@angular/not-installed'`)
       )

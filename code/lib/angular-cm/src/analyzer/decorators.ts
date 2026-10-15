@@ -159,7 +159,7 @@ export const parseInputDecoratorConfig = (
   };
 };
 
-interface MetadataIOEntry {
+export interface MetadataIOEntry {
   bucket: 'inputs' | 'outputs';
   name: string;
   alias?: string;

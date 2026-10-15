@@ -55,6 +55,12 @@ export function analyzeSourceFile(
       continue;
     }
     const declared = kind === 'class' ? readComponentDeclaration(ctx, statement) : undefined;
+    if (!declared && sourceFile.isDeclarationFile) {
+      logger.debug(
+        `[angular-cm] ${statement.name.text} left out of docgen: a declaration-file class with no compiled ɵcmp`
+      );
+      continue;
+    }
     const recordKind = declared ? 'component' : kind;
     const name = statement.name.text;
     const file = sourceFile.fileName;

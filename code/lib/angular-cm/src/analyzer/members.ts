@@ -3,6 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type * as ts from 'typescript';
 
 import type { Argument, Method, Property } from '../types.ts';
+import { type DeclaredIOEntry, readComponentDeclaration } from './component-declaration.ts';
 import type { AnalyzerContext } from './context.ts';
 import type { DecoratorInfo } from './decorators.ts';
 import {
@@ -15,7 +16,7 @@ import { defaultInitializer } from './default-initializer.ts';
 import { analyzeInputTransform, type InputTransformSource } from './input-transform.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { memberName } from './node-text.ts';
-import { buildSignalEntry, parseSignalCall } from './signals.ts';
+import { buildSignalEntry, parseSignalCall, signalValueTypeFromType } from './signals.ts';
 
 /**
  * A collected member, paired with the identity Angular itself merges on.
@@ -149,7 +150,82 @@ export function applyMetadataInputsOutputs(
       }
     }
   }
+  for (const entry of readComponentDeclaration(ctx, classNode)?.inputsOutputs ?? []) {
+    applyDeclaredIO(ctx, members, entry);
+  }
 }
+
+// Mirrors what the source path records for the same member, so a component reads the same from
+// its compiled `.d.ts` as from its source.
+const applyDeclaredIO = (ctx: AnalyzerContext, members: ClassMembers, entry: DeclaredIOEntry) => {
+  const index = members.properties.findIndex(
+    (property) => property.declName === entry.name && !property.isStatic
+  );
+  if (index < 0) {
+    if (entry.bucket === 'outputs') {
+      addModelOutput(members, entry.name);
+    }
+    return;
+  }
+  const [property] = members.properties.splice(index, 1);
+  const signal = signalFields(ctx, property, entry.bucket);
+  const isInput = entry.bucket === 'inputs';
+  const moved: MemberEntry<Property> = {
+    ...property,
+    ...(signal ? { typeSource: signal.typeSource } : {}),
+    value: {
+      ...property.value,
+      name: entry.alias ?? entry.name,
+      ...signal?.value,
+      ...(isInput && signal ? { required: !!entry.required, optional: false } : {}),
+      ...(isInput && !signal && entry.required ? { required: true, optional: false } : {}),
+    },
+  };
+  (isInput ? members.inputs : members.outputs).push(moved);
+};
+
+// A `model()` is in both maps, and its input entry has already taken the field.
+const addModelOutput = (members: ClassMembers, field: string) => {
+  const index = members.inputs.findIndex(
+    (input) => input.declName === field && input.typeSource?.kind === 'signal'
+  );
+  if (index < 0) {
+    return;
+  }
+  const model = {
+    ...members.inputs[index],
+    typeSource: { kind: 'signal', signalKind: 'model' } as const,
+  };
+  members.inputs[index] = model;
+  members.outputs.push(model);
+};
+
+// A declaration types a signal member as its `InputSignal<T>`-style wrapper rather than the call.
+const signalFields = (
+  ctx: AnalyzerContext,
+  { declaration }: MemberEntry<Property>,
+  bucket: DeclaredIOEntry['bucket']
+) => {
+  const type = signalValueTypeFromType(
+    ctx,
+    ctx.checker.getTypeAtLocation(declaration),
+    declaration
+  );
+  if (type === undefined) {
+    return undefined;
+  }
+  const { line } = ctx.ts.getLineAndCharacterOfPosition(
+    declaration.getSourceFile(),
+    declaration.getStart()
+  );
+  return {
+    value: { type, line: line + 1 },
+    typeSource: {
+      kind: 'signal',
+      signalKind: bucket === 'inputs' ? 'input' : 'output',
+    } as const,
+  };
+};
 
 const entryFor = <T>(
   ctx: AnalyzerContext,

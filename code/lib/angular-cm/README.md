@@ -16,7 +16,8 @@ That copy stays frozen on the legacy behaviour its committed baselines pin; this
 These are inherited from the Compodoc behaviour this replaces, and are not fixed yet:
 
 - **Numeric enums produce no control.** `enum Size { Small, Medium }` and `enum Size { Small = 1, Medium }` both surface as `empty-enum` rather than a select, because auto-incremented members carry no initializer to read. String enums and union type aliases resolve correctly. The type checker could answer this via `getConstantValue`, so this is fixable here in a way it was not in Compodoc.
-- **Inputs and outputs inherited from compiled libraries are skipped.** A base class from a `.d.ts` contributes its plain properties and methods but not its IO, because the decorators are erased; Angular records them in `ɵɵDirectiveDeclaration` type arguments, which this analyzer does not read.
+- **Compiled libraries are only partly read.** A `.d.ts` keeps no decorators, so a component there is read from the `ɵɵComponentDeclaration` type Angular compiles into its `static ɵcmp`: selector, standalone, and the input and output maps. Other `.d.ts` classes are dropped, and so is a directive, whose `ɵɵDirectiveDeclaration` is not read. A base class from a `.d.ts` contributes its plain properties and methods but not its IO.
+- **Package imports resolve to compiled JavaScript.** Docgen follows a package's runtime entry rather than its `types`, so a component imported straight from a package is not read from its `.d.ts`; one reached through a local re-export is.
 - **`hostDirectives` bindings are absent.** Inputs and outputs a component exposes through directive composition are not class members, so they never reach the props table.
 
 Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

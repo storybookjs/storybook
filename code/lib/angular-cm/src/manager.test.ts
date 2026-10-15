@@ -179,6 +179,7 @@ describe('AngularComponentMetaManager', () => {
         selector: 'my-button, [my-button]',
         standalone: false,
       });
+      expect(inputsOf(result).map((input) => input.name)).toEqual(['disabled', 'label']);
     }
   );
 

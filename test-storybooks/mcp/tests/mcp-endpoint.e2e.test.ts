@@ -136,7 +136,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  },
 				                  "exportName": {
 				                    "description": "The export name of the story from the story file.
-				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file. Never guess one such as "Primary": read the file first.
 				If you do not already have story file context, prefer the storyId shape instead of searching files.",
 				                    "type": "string",
 				                  },
@@ -260,7 +260,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                          },
 				                          "exportName": {
 				                            "description": "The export name of the story from the story file.
-				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file. Never guess one such as "Primary": read the file first.
 				If you do not already have story file context, prefer the storyId shape instead of searching files.",
 				                            "type": "string",
 				                          },
@@ -521,7 +521,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				## Hard rules
 				1. Every storyId MUST come from those tools, never from file paths, story names or memory.
 				2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
-				3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+				3. Prefer 2-5 collections when the change reaches that many layers; a new component that nothing imports yet needs only one. Avoid one-story collections unless truly isolated, and never add stories of components the change cannot reach.
 				4. In follow-up reviews, keep collection and story order stable.
 				5. Follow each field's formatting rules; no em-dashes in field values.
 				6. Don't tell the user what to do unless they ask for guidance.
@@ -654,7 +654,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  },
 				                  "exportName": {
 				                    "description": "The export name of the story from the story file.
-				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+				Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file. Never guess one such as "Primary": read the file first.
 				If you do not already have story file context, prefer the storyId shape instead of searching files.",
 				                    "type": "string",
 				                  },
@@ -729,7 +729,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Run Storybook tests",
 				  },
 				  {
-				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with docs-show, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.",
+				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with docs-show, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true only when you need the story IDs of many components; the show tool already lists the story IDs of one component.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "additionalProperties": false,

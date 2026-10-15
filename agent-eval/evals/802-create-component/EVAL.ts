@@ -38,15 +38,10 @@ describe('creating a ProfileCard component', () => {
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     // Building the ProfileCard from Reshaped primitives requires the docs tools.
-    // Skipped for Codex: it omits docs-show under both instruction
-    // shapes (CI 28660377980, 2026-07-03). Re-enable after the documentation
-    // tool call passes on three consecutive scheduled CI runs.
-    test.skipIf(agent === 'codex')('uses the documentation tooling', () =>
-      expectWorkflowCalls(['docs-show'])
-    );
+    test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
     test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () =>
       expectSkillInvoked('ui-workflow')

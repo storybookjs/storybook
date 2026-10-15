@@ -67,7 +67,7 @@ This project has no command that lists story ids. Select a story by its file and
   const several = commands.length > 1;
   const guidance = [
     inputs.moduleGraphSupported &&
-      'Run \`stories changed\` or \`find-by-component\` before every review, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects.',
+      'Run \`stories changed\` or \`find-by-component\` after your last edit and before every review, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects.',
     `Story ids come only from the output of ${several ? 'these commands' : 'this command'}, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory.`,
     inputs.moduleGraphSupported &&
       'When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file (design token, theme, util, hook), which has no stories of its own, pass the components that use it. When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',

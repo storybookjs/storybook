@@ -18,15 +18,6 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   // The edited token file has no stories of its own, so the run must surface
   // the stories of its *consumers* (Badge and StatusPill).
 
-  // Skipped for Codex+MCP: edits the token file and ends the turn with zero
-  // MCP calls (~every other run). Codex surfaces MCP server instructions only
-  // as the tool namespace description, so for an edit it judges trivial it
-  // never reads the storybook namespace. Codex+plugin runs pass consistently.
-  // Seen in three local runs on 2026-07-03. Re-enable when the workflow
-  // reliably reaches Codex at turn start.
-  const evalContext = getEvalContext();
-  const codexMcpGap = evalContext.agent === 'codex' && evalContext.integration === 'mcp';
-
   // The fallback assertions only count if the token change was actually done.
   test('changes the accent color token', () => {
     const colors = readFileSync('src/theme/colors.ts', 'utf8');
@@ -34,17 +25,14 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     expect(colors, 'Expected the old accent value #2563eb to be gone').not.toMatch(/#2563eb/i);
   });
 
-  test.skipIf(codexMcpGap)(
-    'runs story tests after the change and finishes with them passing',
-    async () => {
-      await expectStoryTestsRanAndPassed({
-        requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
-        covering: ['badge', 'statuspill'],
-      });
-    }
-  );
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
+      covering: ['badge', 'statuspill'],
+    });
+  });
 
-  describe.skipIf(codexMcpGap)('reviewing the visual token change', () => {
+  describe('reviewing the visual token change', () => {
     test('publishes a display review for the visual token change', () => {
       expectDisplayReviewForVisualChange();
     });

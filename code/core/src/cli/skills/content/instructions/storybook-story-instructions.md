@@ -25,13 +25,13 @@ Naming/structure: Use clear story names that describe the scenario (“Error sta
 
 Imports/format: Import Meta/StoryObj from the framework package; import test helpers from storybook/test (not @storybook/test). Keep stories minimal—only what's needed to demonstrate behavior.
 
-## Storybook 9 Essential Changes for Story Writing
+## Storybook APIs for Story Writing
 
 ### Package Consolidation
 
 #### `Meta` and `StoryObj` imports
 
-Update story imports to use the framework package:
+In the stories you write, import them from the framework package, also when existing stories import them from `{{RENDERER}}`:
 
 ```diff
 - import { Meta, StoryObj } from '{{RENDERER}}';
@@ -40,7 +40,7 @@ Update story imports to use the framework package:
 
 #### Test utility imports
 
-Update test imports to use `storybook/test` instead of `@storybook/test`
+Import test utilities from `storybook/test`, not `@storybook/test`:
 
 ```diff
 - import { fn } from '@storybook/test';
@@ -49,7 +49,7 @@ Update test imports to use `storybook/test` instead of `@storybook/test`
 
 ### Global State Changes
 
-The `globals` annotation has be renamed to `initialGlobals`:
+The preview annotation for initial global values is `initialGlobals`, not `globals`:
 
 ```diff
 // .storybook/preview.js
@@ -153,9 +153,9 @@ play: async ({ canvas }) => {
 
 ## Story Linking Agent Behavior
 
-- ALWAYS provide story links after any changes to stories files, including changes to existing stories.
+- After any change to stories files, including existing ones, show the user those stories as described below.
 - {{STORY_LINKING_WORKFLOW}}
 - {{FINAL_LINKS_GUIDANCE}}
 - When you will share preview/story links (i.e. when you are not collapsing everything into a single review section), pass only the most relevant story IDs into **{{PREVIEW_STORIES}}** (generally no more than 5) so the returned URL list stays manageable. Include every URL returned by that call in your final response — do not drop links there.
 - {{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}
-- After changing any UI components, ALWAYS search for related stories that might cover the changes you've made. If you find any, provide the story links to the user. THIS IS VERY IMPORTANT, as it allows the user to visually inspect the changes you've made. Even later in a session when changing UI components or stories that have already been linked to previously, YOU MUST PROVIDE THE LINKS AGAIN.
+- After changing any UI component, find the stories that cover your change and show them to the user as described above, so they can inspect it visually. Do this again for every later change in a session, also for stories you showed before.

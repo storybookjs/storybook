@@ -36,7 +36,7 @@ export const storyInputSchema = v.union([
       v.string(),
       v.description(
         `The export name of the story from the story file.
-Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file. Never guess one such as "Primary": read the file first.
 If you do not already have story file context, prefer the storyId shape instead of searching files.`
       )
     ),

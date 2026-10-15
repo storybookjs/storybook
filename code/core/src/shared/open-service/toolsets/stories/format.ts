@@ -45,10 +45,26 @@ function formatQuotedList(files: string[]): string {
 }
 
 function formatChangedFilesOutsideStories(
-  { unreachableFiles, unreachableFilesTruncated, changedConfigFiles }: ChangedStoriesOutput,
+  {
+    unreachableFiles,
+    unreachableFilesTruncated,
+    pendingFiles,
+    unindexedStoryFiles,
+    changedConfigFiles,
+  }: ChangedStoriesOutput,
   ctx: ToolsetCtx
 ): string {
   const notes: string[] = [];
+  if (pendingFiles.length > 0) {
+    notes.push(
+      `Change detection has not processed these changed files yet, although stories render them: ${formatQuotedList(pendingFiles)}. Pass them to \`${getToolName(ctx)('stories.findByComponent')}\` for their story IDs.`
+    );
+  }
+  if (unindexedStoryFiles.length > 0) {
+    notes.push(
+      `Story files that are not in the story index yet: ${formatQuotedList(unindexedStoryFiles)}. A file written a moment ago takes a moment to index: pass it to \`${getToolName(ctx)('stories.findByComponent')}\` for its story IDs. If that finds none, the file is outside the \`stories\` globs of the main config.`
+    );
+  }
   if (changedConfigFiles.length > 0) {
     notes.push(
       `Changed files in the Storybook config directory, which can affect every story: ${formatQuotedList(changedConfigFiles)}.`
@@ -98,7 +114,11 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
   text += formatChangedFilesOutsideStories(data, ctx);
 
   const gapStories =
-    data.unreachableFiles.length > 0 ? ' and any you found for the sanity check' : '';
+    data.unreachableFiles.length > 0 ||
+    data.unindexedStoryFiles.length > 0 ||
+    data.pendingFiles.length > 0
+      ? ' and any you found for the files listed above'
+      : '';
   // Last, so output read through `tail` still ends on this step.
   text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it.`;
 

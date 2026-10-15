@@ -38,13 +38,11 @@ describe('editing ReviewCard to add date and optional onReport', () => {
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     // The edit pulls in a new Reshaped component (Button), which requires the
-    // docs tools. Skipped for Codex: it omits docs-show under both
-    // instruction shapes (CI 28660377980, 2026-07-03). Re-enable after the
-    // documentation tool call passes on three consecutive scheduled CI runs.
-    test.skipIf(agent === 'codex')('uses the documentation tooling', () => {
+    // docs tools.
+    test('uses the documentation tooling', () => {
       expectWorkflowCalls(['docs-show']);
     });
 

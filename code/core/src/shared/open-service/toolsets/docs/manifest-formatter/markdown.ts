@@ -416,6 +416,11 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
         parts.push('### Other Stories');
         parts.push('');
       }
+      // Agents guessed a docs show option to see these, so name the tool that shows one.
+      parts.push(
+        'Get the code of one of these stories with the docs show-story tool and its story ID.'
+      );
+      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';
@@ -475,7 +480,14 @@ export function formatManifestsToLists(
 
   parts.push('# Components');
   parts.push('');
-  for (const component of Object.values(manifests.componentManifest.components)) {
+  const components = Object.values(manifests.componentManifest.components);
+  if (components.length === 0) {
+    // A bare heading left agents unsure whether the lookup worked.
+    parts.push(
+      'No components are documented yet, so read the source of the project components you need.'
+    );
+  }
+  for (const component of components) {
     parts.push(formatComponentLine(component));
     if (options.withStoryIds && Array.isArray(component.stories)) {
       for (const story of component.stories) {

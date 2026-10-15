@@ -90,7 +90,7 @@ function describeCreate(ctx: ToolsetCtx): string {
 ## Hard rules
 1. Every storyId MUST come from those tools, never from file paths, story names or memory.
 2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
-3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+3. Prefer 2-5 collections when the change reaches that many layers; a new component that nothing imports yet needs only one. Avoid one-story collections unless truly isolated, and never add stories of components the change cannot reach.
 4. In follow-up reviews, keep collection and story order stable.
 5. Follow each field's formatting rules; no em-dashes in field values.
 6. Don't tell the user what to do unless they ask for guidance.

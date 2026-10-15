@@ -105,10 +105,34 @@ function transformToSvelteDocParserDataItems(docgen: Docgen): SvelteDataItem[] {
   });
 }
 
+function injectDocgen(
+  src: string,
+  id: string,
+  resource: string,
+  docgen: Docgen,
+  ast: AST.Program
+): { code: string; map: string } {
+  const data = transformToSvelteDocParserDataItems(docgen);
+
+  const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
+    data,
+    name: basename(resource),
+  };
+
+  const s = new MagicString(src);
+  const componentName = getComponentName(ast);
+  s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
+
+  return {
+    code: s.toString(),
+    map: s.generateMap({ hires: true, source: id }).toString(),
+  };
+}
+
 export async function svelteDocgen(): Promise<PluginOption> {
   const cwd = process.cwd();
   const include = /\.svelte$/;
-  const exclude = /node_modules\/.*/;
+  const exclude = [/node_modules\/.*/, /\.stories\.svelte$/];
   const { createFilter } = await import('vite');
 
   const filter = createFilter(include, exclude);
@@ -117,10 +141,7 @@ export async function svelteDocgen(): Promise<PluginOption> {
   return {
     name: 'storybook:svelte-docgen-plugin',
     transform: {
-      // This plugin reads the default export of the module, which only exists after
-      // `@sveltejs/vite-plugin-svelte` has compiled the file. Without `order: 'post'`,
-      // plugin registration order can put us before that compilation, handing us the
-      // raw `.svelte` source whose template markup a JS parser rejects as JSX.
+      // Must run after vite-plugin-svelte has compiled the file to JS.
       order: 'post',
       filter: { id: { include, exclude } },
       async handler(src: string, id: string) {
@@ -131,28 +152,15 @@ export async function svelteDocgen(): Promise<PluginOption> {
         const resource = relative(cwd, id);
 
         try {
-          // Get props information
-          const docgen = generateDocgen(resource, sourceFileCache);
-          const data = transformToSvelteDocParserDataItems(docgen);
-
-          const componentDoc: SvelteComponentDoc & { keywords?: string[] } = {
-            data: data,
-            name: basename(resource),
-          };
-
-          const s = new MagicString(src);
-          const outputAst = this.parse(src);
-          const componentName = getComponentName(outputAst as unknown as AST.Program);
-          s.append(`\n;${componentName}.__docgen = ${JSON.stringify(componentDoc)}`);
-
-          return {
-            code: s.toString(),
-            map: s.generateMap({ hires: true, source: id }).toString(),
-          };
+          return injectDocgen(
+            src,
+            id,
+            resource,
+            generateDocgen(resource, sourceFileCache),
+            this.parse(src) as unknown as AST.Program
+          );
         } catch (error) {
-          // Degrade per file: a file that fails docgen (e.g. legacy syntax the docgen
-          // pipeline cannot handle) must not break compilation of the module itself,
-          // which would take down docgen for the whole project.
+          // A docgen failure must not fail the module transform.
           this.warn(
             `Failed to generate docgen for ${resource}, skipping docgen for this file: ${
               error instanceof Error ? error.message : String(error)

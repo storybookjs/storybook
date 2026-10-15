@@ -37,6 +37,12 @@ describe(svelteCsf.name, () => {
     );
   });
 
+  it('transforms stories files after the Svelte compile plugin', () => {
+    const { order } = svelteCsf().transform as Extract<Plugin['transform'], { handler: unknown }>;
+
+    expect(order).toBe('post');
+  });
+
   it('passes the preprocessors that vite-plugin-svelte resolved, including its inline options', async () => {
     const preprocess: PreprocessorGroup = { name: 'inline' };
     const vitePluginSvelte = { name: 'vite-plugin-svelte:config', api: {} as { options?: object } };

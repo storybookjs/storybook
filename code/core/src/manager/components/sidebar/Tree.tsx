@@ -298,20 +298,27 @@ export const Tree = React.memo<TreeProps>(function Tree({
     if (!container) {
       return;
     }
+    let lowerFlag: ReturnType<typeof setTimeout> | null = null;
     const onInputStart = (event: PointerEvent | KeyboardEvent) => {
       lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
       isDoubleClickActionRef.current = false;
       // A pointer press or Space activates the row through react-aria's selection, which reports
-      // the change while this very event is still being handled. The flag is raised for that
-      // press alone and lowered in a microtask, so no end of the press has to arrive: a press
-      // the browser cancels, or one released over the preview, cannot leave it raised for the
-      // next arrow key. Enter, a double-click and a touch open the row through the action and
-      // never read the flag.
+      // the change while this very event is still being dispatched. The flag is raised for that
+      // press alone and lowered once the dispatch is over, so no end of the press has to arrive:
+      // a press the browser cancels, or one released over the preview, cannot leave it raised
+      // for the next arrow key. A timer rather than a microtask: the browser runs microtasks
+      // between the listeners of a native event, so a microtask would lower the flag before
+      // react-aria's own listener, in the bubble phase, gets to read it. Enter, a double-click
+      // and a touch open the row through the action and never read the flag.
       if (event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ') {
         isActivatingRef.current = true;
-        queueMicrotask(() => {
+        if (lowerFlag !== null) {
+          clearTimeout(lowerFlag);
+        }
+        lowerFlag = setTimeout(() => {
+          lowerFlag = null;
           isActivatingRef.current = false;
-        });
+        }, 0);
       }
     };
     const onClick = () => {
@@ -329,6 +336,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
       container.removeEventListener('keydown', onInputStart, { capture: true });
       container.removeEventListener('click', onClick, { capture: true });
       container.removeEventListener('dblclick', onDoubleClick, { capture: true });
+      if (lowerFlag !== null) {
+        clearTimeout(lowerFlag);
+      }
     };
   }, []);
 

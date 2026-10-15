@@ -158,18 +158,22 @@ describe('dependency prebundling', () => {
     expect(optimizeDeps?.include).toContain('react');
   });
 
-  it('does not prebundle react for non-react frameworks', async () => {
-    const applyPreset = presetApply.getMockImplementation()!;
-    presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
-      if (key === 'framework') {
-        return { name: '@storybook/vue3-vite' };
-      }
-      return applyPreset(key, fallback);
+  describe('non-react frameworks', () => {
+    beforeEach(() => {
+      const applyPreset = presetApply.getMockImplementation()!;
+      presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+        if (key === 'framework') {
+          return { name: '@storybook/vue3-vite' };
+        }
+        return applyPreset(key, fallback);
+      });
     });
 
-    const { optimizeDeps } = await getPluginConfig(REPO_ROOT);
+    it('does not prebundle react', async () => {
+      const { optimizeDeps } = await getPluginConfig(REPO_ROOT);
 
-    expect(optimizeDeps?.include).not.toContain('react');
+      expect(optimizeDeps?.include).not.toContain('react');
+    });
   });
 });
 

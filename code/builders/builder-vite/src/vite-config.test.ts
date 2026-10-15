@@ -5,11 +5,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolve } from 'node:path';
 
 import { Channel } from 'storybook/internal/channels';
+import { getProjectRoot } from 'storybook/internal/common';
 import type { Options, Presets } from 'storybook/internal/types';
 
+import * as find from 'empathic/find';
 import { loadConfigFromFile } from 'vite';
 
 import { storybookConfigPlugin } from './plugins/storybook-config-plugin.ts';
+import type { BuilderOptions } from './types.ts';
 import { commonConfig, resolveVitePublicDir } from './vite-config.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -20,10 +23,12 @@ vi.mock('vite', async (importOriginal) => ({
 }));
 const loadConfigFromFileMock = vi.mocked(loadConfigFromFile);
 
+vi.mock('empathic/find', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+
 const { loggerWarnMock } = vi.hoisted(() => ({ loggerWarnMock: vi.fn() }));
 vi.mock('storybook/internal/node-logger', () => ({
-  // `once` passes straight through to the warn mock: deduping is node-logger's own tested
-  // behavior, these tests only assert that the builder reports (or stays quiet).
+  // `once` passes straight through to the warn mock; deduping is node-logger's own tested behavior.
   once: () => (message: string) => loggerWarnMock(message),
   logger: { warn: loggerWarnMock, error: vi.fn(), log: vi.fn(), debug: vi.fn() },
 }));
@@ -49,6 +54,22 @@ const dummyOptions: Options = {
   presetsList: [],
 };
 
+const presetsWith = (builderOptions: BuilderOptions): Presets =>
+  ({
+    apply: async (key: string) =>
+      ({
+        framework: { name: '' },
+        addons: [],
+        core: {
+          builder: {
+            name: '@storybook/builder-vite',
+            options: builderOptions,
+          },
+        },
+        options: {},
+      })[key],
+  }) as Presets;
+
 const mockExistsSync = async (pathToMock: string, exists: boolean) => {
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
 
@@ -65,6 +86,8 @@ afterEach(() => {
   vi.mocked(existsSync).mockReset();
   loadConfigFromFileMock.mockReset();
   loggerWarnMock.mockClear();
+  vi.mocked(find.any).mockReset();
+  vi.mocked(getProjectRoot).mockReset();
 });
 
 describe('commonConfig', () => {
@@ -84,22 +107,7 @@ describe('commonConfig', () => {
   it('should pass configLoader option to loadConfigFromFile', async () => {
     const optionsWithConfigLoader: Options = {
       ...dummyOptions,
-      presets: {
-        apply: async (key: string) =>
-          ({
-            framework: { name: '' },
-            addons: [],
-            core: {
-              builder: {
-                name: '@storybook/builder-vite',
-                options: {
-                  configLoader: 'native',
-                },
-              },
-            },
-            options: {},
-          })[key],
-      } as Presets,
+      presets: presetsWith({ configLoader: 'native' }),
     };
 
     // Inline mock: this test asserts a specific call signature, so it needs its
@@ -199,10 +207,9 @@ describe('resolveVitePublicDir', () => {
 });
 
 describe('discovery miss reporting', () => {
-  it('warns when a Vite config exists outside of the discovery root', async () => {
-    // Custom config-dir layout: the parent of the config dir is `configuration/`, not the
-    // project root, so discovery cannot see the config at the project root.
-    await mockExistsSync('/project/vite.config.mjs', true);
+  it('warns when configDir is nested and the Vite config sits at the project root', async () => {
+    vi.mocked(getProjectRoot).mockReturnValue('/project');
+    vi.mocked(find.any).mockReturnValueOnce(resolve('/project/vite.config.mjs'));
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
     await commonConfig(
@@ -210,6 +217,10 @@ describe('discovery miss reporting', () => {
       'development'
     );
 
+    expect(vi.mocked(find.any)).toHaveBeenCalledWith(expect.anything(), {
+      cwd: resolve('/project/configuration'),
+      last: '/project',
+    });
     expect(loggerWarnMock).toHaveBeenCalledTimes(1);
     expect(loggerWarnMock.mock.calls[0][0]).toContain('/project/vite.config.mjs');
     expect(loggerWarnMock.mock.calls[0][0]).toContain(
@@ -218,7 +229,8 @@ describe('discovery miss reporting', () => {
   });
 
   it('stays quiet when no Vite config exists in the project at all', async () => {
-    await mockExistsSync('/project/vite.config.ts', false);
+    vi.mocked(getProjectRoot).mockReturnValue('/project');
+    vi.mocked(find.any).mockReturnValueOnce(undefined);
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
     await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
@@ -231,36 +243,23 @@ describe('discovery miss reporting', () => {
 
     await commonConfig({ ...dummyOptions, configDir: '/project/.storybook' }, 'development');
 
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
     expect(loggerWarnMock).not.toHaveBeenCalled();
   });
 
   it('stays quiet when an explicit viteConfigPath resolves to nothing', async () => {
-    // An explicit `viteConfigPath` hands config resolution to the user; Vite errors on missing
-    // explicit paths itself, so a null result must not produce a discovery warning.
     loadConfigFromFileMock.mockResolvedValueOnce(null);
 
     await commonConfig(
       {
         ...dummyOptions,
         configDir: '/project/.storybook',
-        presets: {
-          apply: async (key: string) =>
-            ({
-              framework: { name: '' },
-              addons: [],
-              core: {
-                builder: {
-                  name: '@storybook/builder-vite',
-                  options: { viteConfigPath: '/custom/vite.config.ts' },
-                },
-              },
-              options: {},
-            })[key],
-        } as Presets,
+        presets: presetsWith({ viteConfigPath: '/custom/vite.config.ts' }),
       },
       'development'
     );
 
+    expect(vi.mocked(find.any)).not.toHaveBeenCalled();
     expect(loggerWarnMock).not.toHaveBeenCalled();
   });
 });

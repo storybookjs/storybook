@@ -1,10 +1,15 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { getBuilderOptions, resolvePathInStorybookCache } from 'storybook/internal/common';
+import {
+  getBuilderOptions,
+  getProjectRoot,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
 import { once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
+import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 import type {
   ConfigEnv,
@@ -48,35 +53,12 @@ const DEFAULT_VITE_CONFIG_FILES = [
 
 const warnOnce = once('warn');
 
-/**
- * Vite's `loadConfigFromFile` resolves `null` — silently, without logging anything — when it
- * cannot find a Vite config file. Discovery only searches the parent directory of the Storybook
- * config dir, so a config that lives elsewhere in the project (e.g. the repository root above a
- * nested config dir) is silently ignored and Storybook boots with the user's Vite settings
- * unapplied. Make that case loud, while a project with no Vite config at all stays quiet.
- */
+// loadConfigFromFile returns null without logging when discovery misses.
 function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): void {
-  // Walk upwards within the project (bounded by the repository root) for a Vite config that
-  // discovery could not see. Nothing found means the project has no Vite config at all, which
-  // is common and stays quiet.
-  let dir = projectRoot;
-  let unloadedConfig: string | undefined;
-
-  while (dir) {
-    unloadedConfig = DEFAULT_VITE_CONFIG_FILES.map((filename) => resolve(dir, filename)).find(
-      (candidate) => existsSync(candidate)
-    );
-
-    if (unloadedConfig || existsSync(resolve(dir, '.git'))) {
-      break;
-    }
-
-    const parent = resolve(dir, '..');
-    if (parent === dir) {
-      break; // Reached the filesystem root
-    }
-    dir = parent;
-  }
+  const unloadedConfig = find.any(DEFAULT_VITE_CONFIG_FILES, {
+    cwd: projectRoot,
+    last: getProjectRoot(),
+  });
 
   if (!unloadedConfig) {
     return;
@@ -107,8 +89,7 @@ async function loadUserViteConfig(options: Options, type: PluginConfigType): Pro
     configLoader
   );
 
-  // An explicit `viteConfigPath` means the user owns config resolution: Vite either loads it or
-  // errors on it. Only the automatic discovery path can miss silently.
+  // An explicit `viteConfigPath` is the user's responsibility; Vite errors on it itself.
   if (!loaded && !viteConfigPath) {
     reportUnloadedUserViteConfig(options.configDir, projectRoot);
   }

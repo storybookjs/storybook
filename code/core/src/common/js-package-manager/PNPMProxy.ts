@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -60,6 +60,72 @@ const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
 
 /** Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved. */
 const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
+
+/** pnpm 10 build-script list settings that `allowBuilds` replaced in pnpm 11. */
+const LEGACY_BUILD_SCRIPT_LISTS = [
+  'onlyBuiltDependencies',
+  'ignoredBuiltDependencies',
+  'neverBuiltDependencies',
+] as const;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Whether a build-script matcher names `pkg`. A matcher is a bare package name, or a name pinned to
+ * versions (`esbuild@0.25.0 || 0.25.1`) or to a git/tarball source (`foo@git+ssh://...`).
+ */
+const matchesPackage = (matcher: unknown, pkg: string): boolean =>
+  typeof matcher === 'string' && (matcher === pkg || matcher.startsWith(`${pkg}@`));
+
+/**
+ * Whether the user already allowed or denied `pkg`'s build scripts in a block of pnpm settings
+ * (`pnpm-workspace.yaml`, or the `pnpm` field of package.json): through `allowBuilds`, through the
+ * pnpm 10 list settings it replaced, or by allowing every build. A pinned `allowBuilds` matcher
+ * counts whatever its value, since adding a bare `esbuild: true` next to it would widen the user's
+ * choice; the bare key only counts once it holds a boolean, so pnpm's own placeholder still gets
+ * resolved.
+ */
+function hasBuildScriptDecision(settings: unknown, pkg: string): boolean {
+  if (!isRecord(settings)) {
+    return false;
+  }
+  if (settings.dangerouslyAllowAllBuilds === true) {
+    return true;
+  }
+  const { allowBuilds } = settings;
+  if (
+    isRecord(allowBuilds) &&
+    Object.entries(allowBuilds).some(([matcher, value]) =>
+      matcher === pkg ? typeof value === 'boolean' : matchesPackage(matcher, pkg)
+    )
+  ) {
+    return true;
+  }
+  return LEGACY_BUILD_SCRIPT_LISTS.some((key) => {
+    const list = settings[key];
+    return Array.isArray(list) && list.some((matcher) => matchesPackage(matcher, pkg));
+  });
+}
+
+/**
+ * The package matchers listed in the JSON file that pnpm 10's `onlyBuiltDependenciesFile` points
+ * to, resolved against the directory of the workspace file. An unreadable or malformed file counts
+ * as listing nothing.
+ */
+function readOnlyBuiltDependenciesFile(settings: unknown, workspaceDir: string): unknown[] {
+  if (!isRecord(settings) || typeof settings.onlyBuiltDependenciesFile !== 'string') {
+    return [];
+  }
+  try {
+    const list = JSON.parse(
+      readFileSync(resolve(workspaceDir, settings.onlyBuiltDependenciesFile), 'utf8')
+    );
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
 
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
@@ -354,9 +420,16 @@ export class PNPMProxy extends JsPackageManager {
         doc.setIn(['allowBuilds'], doc.createNode({}));
       }
 
-      // Add dependencies that need a build approval, unless a user decision already exists for them.
+      // Add dependencies that need a build approval, unless the user already decided on them in the
+      // workspace file, in package.json's `pnpm` field, or in a trusted-dependencies file.
+      const settings = doc.toJS();
+      const decisions = [settings, this.primaryPackageJson.packageJson.pnpm];
+      const trustedDependencies = readOnlyBuiltDependenciesFile(settings, dirname(path));
       for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
-        if (typeof doc.getIn(['allowBuilds', pkg]) !== 'boolean') {
+        const decided =
+          decisions.some((candidate) => hasBuildScriptDecision(candidate, pkg)) ||
+          trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
+        if (!decided) {
           doc.setIn(['allowBuilds', pkg], true);
           changed = true;
         }

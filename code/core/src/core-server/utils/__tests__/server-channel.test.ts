@@ -713,4 +713,13 @@ describe('ServerChannelTransport', () => {
       expect(handleUpgradeSpy).not.toHaveBeenCalled();
     });
   });
+
+  it('does not crash when a socket emits an error', () => {
+    const server = new EventEmitter() as any as Server;
+    const transport = createTransport(server);
+
+    const socket = connectClient(server, transport, 'manager');
+
+    expect(() => socket.emit('error', new Error('Max payload size exceeded'))).not.toThrow();
+  });
 });

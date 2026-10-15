@@ -574,6 +574,21 @@ export class WebpackCompilationError extends StorybookError {
   }
 }
 
+export class WebpackMissingPreviewTemplateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'WebpackMissingPreviewTemplateError',
+      category: Category.BUILDER_WEBPACK5,
+      code: 4,
+      message: dedent`
+        Storybook's Webpack5 builder requires a template to be specified.
+        Somehow you've ended up with a falsy value for the template option.
+
+        Please file an issue at https://github.com/storybookjs/storybook with a reproduction.`,
+    });
+  }
+}
+
 export class MissingAngularJsonError extends StorybookError {
   constructor(
     public data: {
@@ -1015,6 +1030,19 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
         
         Are you running the Storybook CLI in a project without Storybook?
         It might help if you specify your Storybook config directory with the --config-dir flag.`,
+    });
+  }
+}
+
+export class UpgradeStorybookConfigDirNotFoundError extends StorybookError {
+  constructor() {
+    super({
+      name: 'UpgradeStorybookConfigDirNotFoundError',
+      category: Category.CLI_UPGRADE,
+      isHandledError: true,
+      code: 6,
+      message:
+        'No .storybook directory was found. Pass --config-dir <path> to upgrade a Storybook whose configuration lives elsewhere.',
     });
   }
 }

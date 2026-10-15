@@ -1,6 +1,6 @@
 # Architecture
 
-This document is canonical for repo structure and architecture: renderer vs builder vs framework, the core package layout, key flows, open services and toolsets, and agent-facing skills. `AGENTS.md` owns the pointer to this file and the kickstart commands.
+This document is canonical for repo structure and architecture: renderer vs builder vs framework, the core package layout, key flows, open services and toolsets, and agent-facing skills. `AGENTS.md` owns the pointer to this file.
 
 ## Repository Structure
 

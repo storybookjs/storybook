@@ -179,7 +179,6 @@ const addonToolDefinitions: AddonToolDefinition[] = [
   },
   fromToolset({
     toolset: 'dev',
-    available: ({ availability }) => availability.changeDetectionEnabled,
     options: { method: 'stories.changed', mcpEventName: 'tool:getChangedStories' },
   }),
   fromToolset({
@@ -189,7 +188,6 @@ const addonToolDefinitions: AddonToolDefinition[] = [
   }),
   fromToolset({
     toolset: 'dev',
-    available: ({ availability }) => availability.reviewEnabled,
     options: {
       method: 'review.create',
       mcpEventName: 'tool:displayReview',

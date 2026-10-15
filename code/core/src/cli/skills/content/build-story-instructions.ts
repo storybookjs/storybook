@@ -12,8 +12,6 @@ export type StoryInstructionsInputs = {
   framework: string;
   /** Renderer package name; defaults to `framework` when unmapped (today's behavior). */
   renderer?: string;
-  changeDetectionEnabled: boolean;
-  reviewEnabled: boolean;
   testSupported: boolean;
   a11yEnabled: boolean;
   docsEnabled: boolean;
@@ -23,8 +21,6 @@ export function buildStoryInstructions({
   transport,
   framework,
   renderer,
-  changeDetectionEnabled,
-  reviewEnabled,
   testSupported,
   a11yEnabled,
   docsEnabled,
@@ -32,21 +28,10 @@ export function buildStoryInstructions({
   const ref = getToolName({ transport });
   const resolvedRenderer = renderer ?? frameworkToRendererMap[framework] ?? framework;
 
-  // Mirrors the review-aware rewrite in build-server-instructions.ts:
-  // discovery feeds the review, not the preview list. Plugin-path agents do
-  // see those server instructions (the `stories` skill embeds them), but this tool is billed as
-  // the source of truth for story work and this line still routed discovery
-  // into previews — a contradiction agents resolved by constructing story
-  // IDs from file names and publishing reviews with zero discovery calls.
-  // The two channels must state the same workflow.
-  const storyLinkingWorkflow = changeDetectionEnabled
-    ? reviewEnabled
-      ? `After changing any component or story, call \`${ref('stories.changed')}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as ${ref('stories.findByComponent')} for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **${ref('review.create')}** when the change is visually observable; use \`${ref('stories.preview')}\` only while iterating on a specific story.`
-      : `After changing UI, call \`${ref('stories.changed')}\` first, then use \`${ref('stories.preview')}\` with selected \`storyId\` values from those results.`
-    : `After changing UI, call \`${ref('stories.preview')}\` and share the most relevant links for the changes.`;
-  const changedStoryFallbackLinkGuidance = changeDetectionEnabled
-    ? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${ref('stories.preview')}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
-    : `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${ref('stories.preview')}\`, mention that additional relevant stories may exist in Storybook.`;
+  // Must state the same workflow as build-server-instructions.ts; when it routed discovery into
+  // previews, agents fabricated story IDs.
+  const storyLinkingWorkflow = `After changing any component or story, call \`${ref('stories.changed')}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as ${ref('stories.findByComponent')} for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **${ref('review.create')}** when the change is visually observable; use \`${ref('stories.preview')}\` only while iterating on a specific story.`;
+  const changedStoryFallbackLinkGuidance = `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${ref('stories.preview')}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`;
 
   /**
    * Injected into the story instructions when the documentation toolset is
@@ -73,7 +58,7 @@ This Storybook exposes component documentation tools. Before creating or changin
     )
     .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsEnabled ? docsWorkflowGuidance : '')
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
-    .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport, reviewEnabled))
+    .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport))
     .replace('{{PREVIEW_STORIES}}', ref('stories.preview'))
     .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 

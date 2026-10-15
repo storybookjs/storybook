@@ -111,6 +111,7 @@ export const fmt = defineJob('Format check', () => ({
         command: 'yarn fmt:check',
       },
     },
+    ...workflow.cancelOnFailure(),
   ],
 }));
 

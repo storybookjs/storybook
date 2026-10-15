@@ -14,7 +14,8 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
       'The workflow for UI changes, with every command it needs: look up components, write stories, test, and publish a review.',
   },
   'component-docs': {
-    blurb: 'Look up components, with their props and usage, to answer questions about them.',
+    blurb:
+      'Look up components, with their props and usage, to reuse them instead of building duplicates or to answer questions about them.',
   },
   'write-story': {
     blurb:

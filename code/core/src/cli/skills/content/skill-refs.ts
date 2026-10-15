@@ -9,7 +9,7 @@ export type SkillTransport = ToolsetCtx['transport'];
  * must match `GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME` in addon-mcp's `tools/tool-names.ts`.
  */
 const MCP_SKILL_TOOL_NAMES: Partial<Record<SkillId, string>> = {
-  'write-story': 'get-storybook-story-instructions',
+  'ui-workflow': 'get-storybook-story-instructions',
 };
 
 /**

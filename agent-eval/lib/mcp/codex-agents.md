@@ -1,23 +1,8 @@
-Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.
+## Storybook
 
-## UI Building and Story Writing Workflow
+For each of these tasks, call its Storybook tool first, before you edit any file, and follow its result:
 
-- Before creating or editing components, stories, styles or tokens, call **get-storybook-story-instructions**; its output is the source of truth for writing stories and tests.
-- After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-changed** to discover the affected stories.
-- End your final response with the review section from **review-create**'s result — never substitute preview URLs. **stories-preview** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
-- After a visually observable UI change, or when the user asks to see or browse stories/components, call **review-create** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-- Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.
+- **get-storybook-story-instructions**: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It returns the mandatory, ordered workflow, with the tools each step calls: it looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results. Read it in its entirety.
+- **docs-list**, then **docs-show** with an id from its result: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. Answer from these tools, not from source or type definitions, and use only the props they document.
 
-## Validation Workflow
-
-- After every UI edit, run **test-run** (finish with one run without `stories`) — never a package.json test script.
-- Never report completion while story tests are failing.
-
-## Documentation Workflow
-
-**CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries; verify every prop via these tools, not source or types in node_modules (read source only for unlisted components).
-
-1. Call **docs-list** once per UI task for component and docs IDs.
-2. Call **docs-show** with an `id` from that list for props and usage examples.
-
-Only reference IDs returned by these tools — never guess; scope multi-source requests with `storybookId`.
+When you publish a review with **review-create**, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.

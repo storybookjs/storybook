@@ -1,5 +1,5 @@
 import { resolveSkillInputs } from 'storybook/internal/core-server';
-import { buildStoryInstructions } from 'storybook/internal/skills';
+import { buildUiWorkflowSkill } from 'storybook/internal/skills';
 import type { Options } from 'storybook/internal/types';
 import type { McpServer } from 'tmcp';
 import { collectTelemetry } from '../telemetry.ts';
@@ -27,7 +27,7 @@ export async function addGetUIBuildingInstructionsTool(
   server.tool(
     {
       name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-      title: 'Storybook Story Development Instructions',
+      title: 'Storybook UI workflow',
       get description() {
         const testSupported = (server.ctx.custom?.toolsets?.test ?? true) && addonVitestAvailable;
         const a11yAvailable = testSupported && (server.ctx.custom?.a11yEnabled ?? false);
@@ -78,40 +78,18 @@ export function getStorybookStoryInstructionsDescription({
   testSupported: boolean;
   a11yAvailable: boolean;
 }) {
-  const criticalTestBullets = testSupported
+  const tests = testSupported
     ? `
-- Running story tests or fixing test failures`
-    : '';
-  const criticalA11yBullets = a11yAvailable
-    ? `
-- Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)`
+- You run or fix story tests${a11yAvailable ? ' or accessibility violations' : ''}.`
     : '';
 
-  const testAndA11yGuidance = testSupported
-    ? `
-- How to handle test failures${a11yAvailable ? ' and accessibility violations' : ''}`
-    : '';
+  return `Storybook's workflow for UI changes in this project: look up the components to reuse, write and update stories, ${testSupported ? 'run story tests, ' : ''}and publish a review of the result. Also shows existing components or stories in a review. It is the same text as the ui-workflow skill, with the tools of this server.
 
-  return `Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
+Call it first, before you edit any file, and follow its result when:
+- You create, change, or delete a component, story (any *.stories.* file), style, theme, or design token, or otherwise change how the UI looks. A shared file with no stories of its own still changes its consumers' stories.${tests}
+- The user asks to see components or stories.
 
-CRITICAL: You MUST call this tool before:
-- Creating new Storybook stories or story files
-- Updating or modifying existing Storybook stories
-- Adding new story variants or exports to story files
-- Editing any file matching *.stories.* patterns
-- Writing components that will need stories
-- Editing anything that changes how the UI looks — components, styles, CSS, themes, colors, or design tokens; a shared file with no stories of its own still changes its consumers' stories${criticalTestBullets}${criticalA11yBullets}
-
-This tool provides essential Storybook-specific guidance including:
-- How to structure stories correctly
-- Required imports (Meta, StoryObj from framework package)
-- Test utility imports (from 'storybook/test')
-- Story naming conventions and best practices
-- Play function patterns for interactive testing
-- Mocking strategies for external dependencies
-- Story variants and coverage requirements${testAndA11yGuidance}
-
-Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.`;
+Read its result in its entirety: it is the mandatory, ordered workflow, with the tools each step calls.`;
 }
 
 export function getStorybookStoryInstructionsToolMetadata(options: {
@@ -120,15 +98,16 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
 }) {
   return {
     name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-    title: 'Storybook Story Development Instructions',
+    title: 'Storybook UI workflow',
     description: getStorybookStoryInstructionsDescription(options),
   };
 }
 
 /**
- * Thin adapter over the shared `buildStoryInstructions` content builder: resolves this
- * Storybook's framework/renderer and availability probes through `resolveSkillInputs` (the same
- * path the skills CLI uses), then renders the MCP-flavored prose. Optional overrides
+ * Thin adapter over the shared `buildUiWorkflowSkill` content builder: resolves this Storybook's
+ * framework and availability probes through `resolveSkillInputs` (the same path the skills CLI
+ * uses), then renders the ui-workflow skill with the MCP tool names, so both paths state one
+ * workflow. Optional overrides
  * (toolset gates, `addonVitestAvailable`, `docsEnabled`, `a11yEnabled`) take
  * priority when provided; omitted fields fall back to the probe so callers cannot silently get
  * the wrong prose by leaving a field off.
@@ -144,14 +123,15 @@ export async function buildStorybookStoryInstructions(
 ): Promise<string> {
   const inputs = await resolveSkillInputs(options);
 
-  return buildStoryInstructions({
+  return buildUiWorkflowSkill({
     transport: 'mcp',
     framework: inputs.framework,
-    renderer: inputs.renderer,
-    testSupported: (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
-    a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
-    docsEnabled: (toolsets?.docs ?? true) && (docsEnabled ?? inputs.docsEnabled),
     csfFactories: inputs.csfFactories,
     previewFile: inputs.previewFile,
+    typescript: inputs.typescript,
+    docsEnabled: (toolsets?.docs ?? true) && (docsEnabled ?? inputs.docsEnabled),
+    testSupported: (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
+    a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
+    moduleGraphSupported: inputs.moduleGraphSupported,
   });
 }

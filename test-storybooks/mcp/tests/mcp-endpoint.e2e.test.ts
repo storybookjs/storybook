@@ -345,35 +345,20 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get story preview URLs",
 				  },
 				  {
-				    "description": "Get comprehensive instructions for writing, testing, and fixing Storybook stories (.stories.tsx, .stories.ts, .stories.jsx, .stories.js, .stories.svelte, .stories.vue files).
+				    "description": "Storybook's workflow for UI changes in this project: look up the components to reuse, write and update stories, run story tests, and publish a review of the result. Also shows existing components or stories in a review. It is the same text as the ui-workflow skill, with the tools of this server.
 
-				CRITICAL: You MUST call this tool before:
-				- Creating new Storybook stories or story files
-				- Updating or modifying existing Storybook stories
-				- Adding new story variants or exports to story files
-				- Editing any file matching *.stories.* patterns
-				- Writing components that will need stories
-				- Editing anything that changes how the UI looks — components, styles, CSS, themes, colors, or design tokens; a shared file with no stories of its own still changes its consumers' stories
-				- Running story tests or fixing test failures
-				- Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)
+				Call it first, before you edit any file, and follow its result when:
+				- You create, change, or delete a component, story (any *.stories.* file), style, theme, or design token, or otherwise change how the UI looks. A shared file with no stories of its own still changes its consumers' stories.
+				- You run or fix story tests or accessibility violations.
+				- The user asks to see components or stories.
 
-				This tool provides essential Storybook-specific guidance including:
-				- How to structure stories correctly
-				- Required imports (Meta, StoryObj from framework package)
-				- Test utility imports (from 'storybook/test')
-				- Story naming conventions and best practices
-				- Play function patterns for interactive testing
-				- Mocking strategies for external dependencies
-				- Story variants and coverage requirements
-				- How to handle test failures and accessibility violations
-
-				Even if you're familiar with Storybook, call this tool to ensure you're following the correct patterns, import paths, and conventions for this specific Storybook setup.",
+				Read its result in its entirety: it is the mandatory, ordered workflow, with the tools each step calls.",
 				    "inputSchema": {
 				      "properties": {},
 				      "type": "object",
 				    },
 				    "name": "get-storybook-story-instructions",
-				    "title": "Storybook Story Development Instructions",
+				    "title": "Storybook UI workflow",
 				  },
 				  {
 				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).

@@ -326,14 +326,10 @@ describe('mcpServerHandler', () => {
     });
     expect(parsedResponse.result.serverInfo.version).toBeDefined();
     expect(parsedResponse.result.instructions).toBeDefined();
-    expect(parsedResponse.result.instructions).toContain(
-      'Follow these workflows when working with UI and/or Storybook.'
-    );
-    expect(parsedResponse.result.instructions).toContain(
-      '## UI Building and Story Writing Workflow'
-    );
-    expect(parsedResponse.result.instructions).toContain('## Validation Workflow');
-    expect(parsedResponse.result.instructions).not.toContain('## Documentation Workflow');
+    expect(parsedResponse.result.instructions).toContain('## Storybook');
+    expect(parsedResponse.result.instructions).toContain('- **get-storybook-story-instructions**');
+    expect(parsedResponse.result.instructions).toContain('you run or fix story tests');
+    expect(parsedResponse.result.instructions).not.toContain('**docs-list**');
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
@@ -384,20 +380,10 @@ describe('mcpServerHandler', () => {
     const responseText = dataLine!.replace(/^data: /, '').trim();
     const parsedResponse = JSON.parse(responseText);
 
-    expect(parsedResponse.result.instructions).toContain(
-      'Follow these workflows when working with UI and/or Storybook.'
-    );
-    expect(parsedResponse.result.instructions).toContain('## Documentation Workflow');
-    expect(parsedResponse.result.instructions).toContain(
-      '**CRITICAL: Never hallucinate component properties!**'
-    );
-    expect(parsedResponse.result.instructions).toContain(
-      'scope multi-source requests with `storybookId`'
-    );
-    expect(parsedResponse.result.instructions).not.toContain(
-      '## UI Building and Story Writing Workflow'
-    );
-    expect(parsedResponse.result.instructions).not.toContain('## Validation Workflow');
+    expect(parsedResponse.result.instructions).toContain('- **docs-list**, then **docs-show**');
+    expect(parsedResponse.result.instructions).toContain('use only the props they document');
+    expect(parsedResponse.result.instructions).not.toContain('get-storybook-story-instructions');
+    expect(parsedResponse.result.instructions).not.toContain('test-run');
   });
 
   it('should respect disableTelemetry setting', async () => {

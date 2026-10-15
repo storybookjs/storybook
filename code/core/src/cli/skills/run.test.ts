@@ -157,10 +157,12 @@ describe('runSkillsCommand', () => {
     expect(uiWorkflow.output).not.toContain('npx storybook tools docs');
   });
 
-  it('write-story assembles CLI-transport story instructions', async () => {
+  it('write-story prints the ui-workflow document, under its earlier name', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+    const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
     expect(result.exitCode).toBe(0);
+    expect(result.output).toBe(uiWorkflow.output);
     expect(result.output).toContain('@storybook/react');
     expect(result.output).toContain('npx storybook tools stories changed');
   });
@@ -187,7 +189,6 @@ describe('runSkillsCommand', () => {
 
     expect(result.output.split('# Storybook UI workflow')).toHaveLength(2);
     expect(result.output.split('# Storybook component docs')).toHaveLength(2);
-    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
     expect(result.output.split('# Storybook Setup')).toHaveLength(2);
   });
 

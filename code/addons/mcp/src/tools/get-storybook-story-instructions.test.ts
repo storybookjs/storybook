@@ -6,11 +6,7 @@ import {
   buildStorybookStoryInstructions,
 } from './get-storybook-story-instructions.ts';
 import type { AddonContext } from '../types.ts';
-import {
-  PREVIEW_STORIES_TOOL_NAME,
-  GET_CHANGED_STORIES_TOOL_NAME,
-  GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-} from './tool-names.ts';
+import { PREVIEW_STORIES_TOOL_NAME, GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 
 // Review/addon-vitest availability resolve through core's `resolveSkillInputs` (inside
 // `buildStorybookStoryInstructions`'s adapter), so tests below drive them through the
@@ -95,11 +91,8 @@ describe('getUIBuildingInstructionsTool', () => {
       },
     });
 
-    expect(description).toContain('Running story tests or fixing test failures');
-    expect(description).toContain(
-      'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)'
-    );
-    expect(description).toContain('How to handle test failures and accessibility violations');
+    expect(description).toContain('- You run or fix story tests or accessibility violations.');
+    expect(description).toContain('run story tests, and publish a review');
   });
 
   it('should exclude testing and a11y description when test toolset is disabled', async () => {
@@ -121,11 +114,8 @@ describe('getUIBuildingInstructionsTool', () => {
       },
     });
 
-    expect(description).not.toContain('Running story tests or fixing test failures');
-    expect(description).not.toContain(
-      'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)'
-    );
-    expect(description).not.toContain('How to handle test failures');
+    expect(description).not.toContain('story tests');
+    expect(description).not.toContain('accessibility');
   });
 
   it('should include testing but exclude a11y description when a11y is disabled', async () => {
@@ -147,15 +137,11 @@ describe('getUIBuildingInstructionsTool', () => {
       },
     });
 
-    expect(description).toContain('Running story tests or fixing test failures');
-    expect(description).toContain('How to handle test failures');
-    expect(description).not.toContain('How to handle test failures and accessibility violations');
-    expect(description).not.toContain(
-      'Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)'
-    );
+    expect(description).toContain('- You run or fix story tests.');
+    expect(description).not.toContain('accessibility');
   });
 
-  it('should return UI building instructions with framework placeholders replaced', async () => {
+  it('returns the ui-workflow skill with the MCP tool names', async () => {
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
@@ -188,26 +174,16 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const instructions = response.result?.content[0].text as string;
 
-    // Check that placeholders were replaced
-    expect(instructions).toContain('@storybook/react-vite');
-    expect(instructions).toContain('@storybook/react');
-    expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
-    expect(instructions).toContain(GET_CHANGED_STORIES_TOOL_NAME);
-
-    // Check that no placeholders remain
-    expect(instructions).not.toContain('{{FRAMEWORK}}');
-    expect(instructions).not.toContain('{{RENDERER}}');
-    expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
-    expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
-    expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
-    expect(instructions).not.toContain('{{FINAL_LINKS_GUIDANCE}}');
-    expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
+    expect(instructions).toContain('# Storybook UI workflow');
+    expect(instructions).toContain(`\`${PREVIEW_STORIES_TOOL_NAME}\``);
+    expect(instructions).toContain('Call `review-create` with:');
+    expect(instructions).not.toContain('npx storybook tools');
   });
 
   // The story-instructions output is the one channel every agent reads before
   // writing UI and is never truncated by MCP clients, so it must carry the
-  // docs-workflow trigger whenever the documentation tools are registered.
-  it('includes the docs workflow guidance when the docs tools are available', async () => {
+  // component lookup whenever the documentation tools are registered.
+  it('includes the component lookup when the docs tools are available', async () => {
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
@@ -221,14 +197,13 @@ describe('getUIBuildingInstructionsTool', () => {
       docsEnabled: true,
     });
 
-    expect(instructions).toContain('## Using library components');
-    expect(instructions).toContain('**docs-list**');
-    expect(instructions).toContain('**docs-show**');
-    expect(instructions).toContain('`storybookId`');
-    expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
+    expect(instructions).toContain('## Look up components first');
+    expect(instructions).toContain('call `docs-list` once');
+    expect(instructions).toContain('`docs-show` with an `id`');
+    expect(instructions).toContain('`storybookId: "acme"`');
   });
 
-  it('omits the docs workflow guidance when the docs toolset is disabled', async () => {
+  it('omits the component lookup when the docs toolset is disabled', async () => {
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
@@ -243,15 +218,12 @@ describe('getUIBuildingInstructionsTool', () => {
       toolsets: { dev: true, docs: false, test: true },
     });
 
-    expect(instructions).not.toContain('## Using library components');
-    expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
+    expect(instructions).not.toContain('## Look up components first');
   });
 
   // Regression: the story-instructions output must agree with the server
-  // instructions about how to present links. It previously told the agent to
-  // list the review page AND the preview URLs together, contradicting the
-  // "show one set of links — never both" server rule.
-  it('tells the agent to show only the review section', async () => {
+  // instructions about how to end after a review.
+  it('tells the agent to end with the review lines and nothing else', async () => {
     const mockOptions = {
       presets: {
         apply: vi.fn(async (presetName: string) => {
@@ -280,94 +252,10 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const instructions = response.result?.content[0].text as string;
 
-    expect(instructions).toContain('show one set of links — never both');
     expect(instructions).toContain(
-      'end your reply with the three lines its result gives you, unchanged'
+      'end your answer with the three lines of the review section it gives you, unchanged'
     );
-    expect(instructions).toContain('Never also list the individual story or preview URLs');
-    // The old contradictory instruction must be gone.
-    expect(instructions).not.toContain('present links in this order');
-
-    // The story-linking workflow must route discovery into the review, not
-    // the preview list, and forbid hand-constructed story IDs — matching
-    // the server instructions.
-    // While this line contradicted them, agents were observed publishing
-    // reviews with IDs derived from file names and no discovery call.
-    expect(instructions).toContain('Story IDs must come from that call');
-    expect(instructions).toContain('never construct them from file names');
-    expect(instructions).toContain('Feed the discovered IDs into **review-create**');
-    expect(instructions).not.toContain('first, then use `stories-preview`');
-  });
-
-  it('should handle Vue framework', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue('@storybook/vue3-vite'),
-      },
-    };
-
-    const testContext: AddonContext = {
-      origin: 'http://localhost:6006',
-      options: mockOptions as any,
-      disableTelemetry: true,
-    };
-
-    const request = {
-      jsonrpc: '2.0' as const,
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-        arguments: {},
-      },
-    };
-
-    const response = await server.receive(request, {
-      sessionId: 'test-session',
-      custom: testContext,
-    });
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain('@storybook/vue3-vite');
-    expect(instructions).toContain('@storybook/vue3');
-  });
-
-  it('should handle framework as object with name property', async () => {
-    const mockOptions = {
-      presets: {
-        apply: vi.fn().mockResolvedValue({
-          name: '@storybook/nextjs',
-          options: {},
-        }),
-      },
-    };
-
-    const testContext: AddonContext = {
-      origin: 'http://localhost:6006',
-      options: mockOptions as any,
-      disableTelemetry: true,
-    };
-
-    const request = {
-      jsonrpc: '2.0' as const,
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-        arguments: {},
-      },
-    };
-
-    const response = await server.receive(request, {
-      sessionId: 'test-session',
-      custom: testContext,
-    });
-
-    const instructions = response.result?.content[0].text as string;
-
-    expect(instructions).toContain('@storybook/nextjs');
-    expect(instructions).toContain('@storybook/react');
+    expect(instructions).toContain('Do not list separate story links next to it');
   });
 
   it('should collect telemetry when enabled', async () => {
@@ -452,7 +340,7 @@ describe('getUIBuildingInstructionsTool', () => {
     } as any;
 
     const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsEnabled: true });
-    expect(withDocs).toContain('## Using library components');
+    expect(withDocs).toContain('## Look up components first');
     expect(withDocs).toContain('docs-list');
 
     // Without the docs manifest the tools are not registered, so the
@@ -460,7 +348,7 @@ describe('getUIBuildingInstructionsTool', () => {
     const withoutDocs = await buildStorybookStoryInstructions(mockOptions, {
       docsEnabled: false,
     });
-    expect(withoutDocs).not.toContain('## Using library components');
+    expect(withoutDocs).not.toContain('## Look up components first');
     expect(withoutDocs).not.toContain('docs-list');
   });
 });

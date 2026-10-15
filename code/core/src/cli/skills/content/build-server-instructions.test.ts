@@ -15,135 +15,74 @@ describe('buildServerInstructions', () => {
     const bools = [true, false] as const;
     for (const devEnabled of bools)
       for (const testSupported of bools)
-        for (const docsEnabled of bools)
-          for (const moduleGraphSupported of bools) {
-            const options = {
-              transport: 'mcp' as const,
-              devEnabled,
-              testSupported,
-              docsEnabled,
-              moduleGraphSupported,
-            };
-            const length = buildServerInstructions(options).length;
-            expect
-              .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
-              .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
-          }
+        for (const docsEnabled of bools) {
+          const options = { transport: 'mcp' as const, devEnabled, testSupported, docsEnabled };
+          const length = buildServerInstructions(options).length;
+          expect
+            .soft(length, `instructions exceed the limit for ${JSON.stringify(options)}`)
+            .toBeLessThanOrEqual(MCP_CLIENT_INSTRUCTIONS_CHAR_LIMIT);
+        }
   });
 
-  it('builds a coherent instruction set when all toolsets are enabled', () => {
+  it('names the workflow tool for UI tasks and the docs tools for lookups when all toolsets are enabled', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: true,
       testSupported: true,
       docsEnabled: true,
-      moduleGraphSupported: true,
     });
 
     expect(instructions).toMatchInlineSnapshot(`
-      "Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.
+      "## Storybook
 
-      ## UI Building and Story Writing Workflow
+      For each of these tasks, call its Storybook tool first, before you edit any file, and follow its result:
 
-      - Before creating or editing components, stories, styles or tokens, call **get-storybook-story-instructions**; its output is the source of truth for writing stories and tests.
-      - After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-changed** to discover the affected stories.
-      - End your final response with the review section from **review-create**'s result — never substitute preview URLs. **stories-preview** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
-      - After a visually observable UI change, or when the user asks to see or browse stories/components, call **review-create** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-      - Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.
+      - **get-storybook-story-instructions**: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It returns the mandatory, ordered workflow, with the tools each step calls: it looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results. Read it in its entirety.
+      - **docs-list**, then **docs-show** with an id from its result: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. Answer from these tools, not from source or type definitions, and use only the props they document.
 
-      ## Validation Workflow
-
-      - After every UI edit, run **test-run** (finish with one run without \`stories\`) — never a package.json test script.
-      - Never report completion while story tests are failing.
-
-      ## Documentation Workflow
-
-      **CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries; verify every prop via these tools, not source or types in node_modules (read source only for unlisted components).
-
-      1. Call **docs-list** once per UI task for component and docs IDs.
-      2. Call **docs-show** with an \`id\` from that list for props and usage examples.
-
-      Only reference IDs returned by these tools — never guess; scope multi-source requests with \`storybookId\`."
+      When you publish a review with **review-create**, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
   });
 
-  it('builds a coherent instruction set for dev only', () => {
+  it('leaves out the steps of toolsets that are off', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: true,
       testSupported: false,
       docsEnabled: false,
-      moduleGraphSupported: true,
     });
 
-    expect(instructions).toMatchInlineSnapshot(`
-      "Follow these workflows when working with UI and/or Storybook.
-
-      ## UI Building and Story Writing Workflow
-
-      - Before creating or editing components, stories, styles or tokens, call **get-storybook-story-instructions**; its output is the source of truth for writing stories and tests.
-      - After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-changed** to discover the affected stories.
-      - End your final response with the review section from **review-create**'s result — never substitute preview URLs. **stories-preview** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
-      - After a visually observable UI change, or when the user asks to see or browse stories/components, call **review-create** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
-      - Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so."
-    `);
+    expect(instructions).toContain(
+      'It returns the mandatory, ordered workflow, with the tools each step calls: it updates your stories, and publishes a review'
+    );
+    expect(instructions).not.toContain('story tests');
+    expect(instructions).not.toContain('docs-list');
   });
 
-  it.each([true, false])(
-    'names stories-find-by-component only when it is registered (%s)',
-    (moduleGraphSupported) => {
-      const instructions = buildServerInstructions({
-        transport: 'mcp',
-        devEnabled: true,
-        testSupported: true,
-        docsEnabled: true,
-        moduleGraphSupported,
-      });
-
-      expect(instructions.includes('stories-find-by-component')).toBe(moduleGraphSupported);
-    }
-  );
-
-  it('builds a coherent instruction set for docs only', () => {
-    const instructions = buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: false,
-      testSupported: false,
-      docsEnabled: true,
-      moduleGraphSupported: true,
-    });
-
-    expect(instructions).toMatchInlineSnapshot(`
-      "Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.
-
-      ## Documentation Workflow
-
-      **CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries; verify every prop via these tools, not source or types in node_modules (read source only for unlisted components).
-
-      1. Call **docs-list** once per UI task for component and docs IDs.
-      2. Call **docs-show** with an \`id\` from that list for props and usage examples.
-
-      Only reference IDs returned by these tools — never guess; scope multi-source requests with \`storybookId\`."
-    `);
-  });
-
-  it('builds a coherent instruction set for test only', () => {
+  it('names test-run itself when the workflow tool is off', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: false,
       testSupported: true,
       docsEnabled: false,
-      moduleGraphSupported: true,
     });
 
-    expect(instructions).toMatchInlineSnapshot(`
-      "Follow these workflows when working with UI and/or Storybook.
+    expect(instructions).toContain('- **test-run**: you run or fix story tests.');
+    expect(instructions).not.toContain('get-storybook-story-instructions');
+    expect(instructions).not.toContain('review-create');
+  });
 
-      ## Validation Workflow
+  it('names only the docs tools for docs only', () => {
+    const instructions = buildServerInstructions({
+      transport: 'mcp',
+      devEnabled: false,
+      testSupported: false,
+      docsEnabled: true,
+    });
 
-      - After every UI edit, run **test-run** (finish with one run without \`stories\`) — never a package.json test script.
-      - Never report completion while story tests are failing."
-    `);
+    expect(instructions).toContain('- **docs-list**, then **docs-show**');
+    expect(instructions).not.toContain('get-storybook-story-instructions');
+    expect(instructions).not.toContain('review-create');
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {
@@ -152,69 +91,24 @@ describe('buildServerInstructions', () => {
       devEnabled: false,
       testSupported: false,
       docsEnabled: false,
-      moduleGraphSupported: true,
     });
 
     expect(instructions).toBe('');
   });
 
-  describe('transport: cli', () => {
-    it('renders sibling-tool references as `storybook tools` commands instead of MCP tool names', () => {
-      const instructions = buildServerInstructions({
-        transport: 'cli',
-        devEnabled: true,
-        testSupported: false,
-        docsEnabled: false,
-        moduleGraphSupported: true,
-      });
-
-      expect(instructions).toContain('**npx storybook tools stories changed**');
-      expect(instructions).not.toContain('stories-changed');
+  it('renders tool and skill references as CLI commands on the CLI transport', () => {
+    const instructions = buildServerInstructions({
+      transport: 'cli',
+      devEnabled: true,
+      testSupported: true,
+      docsEnabled: true,
     });
 
-    it('renders the write-story skill cross-reference as a `storybook skills` command', () => {
-      const instructions = buildServerInstructions({
-        transport: 'cli',
-        devEnabled: true,
-        testSupported: false,
-        docsEnabled: false,
-        moduleGraphSupported: true,
-      });
-
-      expect(instructions).toContain('npx storybook skills write-story');
-      expect(instructions).not.toContain('get-storybook-story-instructions');
-    });
-
-    it('renders review, preview, and discovery references as CLI commands', () => {
-      const instructions = buildServerInstructions({
-        transport: 'cli',
-        devEnabled: true,
-        testSupported: false,
-        docsEnabled: false,
-        moduleGraphSupported: true,
-      });
-
-      expect(instructions).toContain('**npx storybook tools stories find-by-component**');
-      expect(instructions).toContain('**npx storybook tools review create**');
-      expect(instructions).toContain('**npx storybook tools stories preview**');
-      expect(instructions).not.toContain('review-create');
-      expect(instructions).not.toContain('stories-preview');
-      expect(instructions).not.toContain('stories-find-by-component');
-    });
-
-    it('renders docs tool references as CLI commands', () => {
-      const instructions = buildServerInstructions({
-        transport: 'cli',
-        devEnabled: false,
-        testSupported: false,
-        docsEnabled: true,
-        moduleGraphSupported: true,
-      });
-
-      expect(instructions).toContain('npx storybook tools docs list');
-      expect(instructions).toContain('npx storybook tools docs show');
-      expect(instructions).not.toContain('docs-list');
-      expect(instructions).not.toContain('docs-show');
-    });
+    expect(instructions).toContain('**npx storybook skills ui-workflow**');
+    expect(instructions).toContain('**npx storybook tools docs list**');
+    expect(instructions).toContain('**npx storybook tools review create**');
+    expect(instructions).not.toContain('get-storybook-story-instructions');
+    expect(instructions).not.toContain('docs-list');
+    expect(instructions).not.toContain('review-create');
   });
 });

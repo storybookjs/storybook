@@ -46,7 +46,6 @@ const instructions = () =>
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,
-    moduleGraphSupported: true,
   });
 
 async function toJsonSchema(schema: unknown): Promise<Record<string, unknown>> {

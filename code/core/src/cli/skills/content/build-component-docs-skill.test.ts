@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildComponentDocsSkill } from './build-component-docs-skill.ts';
+import { buildComponentDocsSkill, componentLookup } from './build-component-docs-skill.ts';
 
 describe('buildComponentDocsSkill', () => {
   it('teaches docs list before docs show, with the source of a composed Storybook', () => {
@@ -23,5 +23,18 @@ describe('buildComponentDocsSkill', () => {
     expect(buildComponentDocsSkill()).toContain(
       "For a change to the UI, use the `ui-workflow` skill when the project's agent instructions"
     );
+  });
+});
+
+describe('componentLookup over MCP', () => {
+  it('names the MCP tools and their inputs instead of commands and flags', () => {
+    const text = componentLookup('mcp');
+
+    expect(text).toContain('- `docs-show` with an `id`: props and usage examples of one entry');
+    expect(text).toContain('Call `docs-show` once per id and read its whole result');
+    expect(text).toContain(
+      'pass the source of the entry as `storybookId: "acme"` to `docs-show` and `docs-show-story`'
+    );
+    expect(text).not.toContain('npx storybook');
   });
 });

@@ -4,6 +4,7 @@ import { componentLookup } from './build-component-docs-skill.ts';
 import { buildUiWorkflowSkill, type UiWorkflowSkillInputs } from './build-ui-workflow-skill.ts';
 
 const everything: UiWorkflowSkillInputs = {
+  transport: 'cli',
   framework: '@storybook/react-vite',
   csfFactories: false,
   previewFile: '.storybook/preview.ts',
@@ -167,5 +168,51 @@ describe('buildUiWorkflowSkill', () => {
       "`addons: [addonMsw()]` (`import addonMsw from 'msw-storybook-addon'`"
     );
     expect(factories).not.toContain('mswLoader');
+  });
+});
+
+describe('buildUiWorkflowSkill over MCP', () => {
+  const mcp = buildUiWorkflowSkill({ ...everything, transport: 'mcp' });
+
+  it('states the same workflow, with the MCP tools instead of commands', () => {
+    for (const heading of [
+      '## Look up components first',
+      '## Write the component and its stories',
+      '## Find the stories',
+      '## Test',
+      '## Finish with a review',
+    ]) {
+      expect(mcp).toContain(heading);
+    }
+    expect(mcp).toContain('call `docs-list` once and read its result');
+    expect(mcp).toContain(
+      '`stories-find-by-component` with `componentPaths: ["/abs/path/Button.tsx"]`'
+    );
+    expect(mcp).toContain('`test-run` with `stories: [{ "storyId": "<id>" }]`');
+    expect(mcp).toContain('Call `review-create` with:');
+    expect(mcp).toContain('pass the source of the entry as `storybookId: "acme"`');
+    expect(mcp).not.toContain('npx storybook tools');
+    expect(mcp).not.toMatch(
+      /--(id|storyId|storybookId|stories|input|componentPaths|maxDistance|withStoryIds)\b/
+    );
+  });
+
+  it('keeps the rules that are not about commands word for word', () => {
+    const cli = buildUiWorkflowSkill(everything);
+    const section = (text: string, heading: string) =>
+      text.slice(text.indexOf(heading), text.indexOf('\n## ', text.indexOf(heading) + 1));
+
+    expect(section(mcp, '## Write the component and its stories')).toBe(
+      section(cli, '## Write the component and its stories')
+    );
+    expect(mcp).toContain(
+      'end your answer with the three lines of the review section it gives you, unchanged'
+    );
+  });
+
+  it('asks for no shell habits that MCP tools do not have', () => {
+    expect(mcp).not.toContain('`head`');
+    expect(mcp).not.toContain('in its own command');
+    expect(mcp).not.toContain('--help');
   });
 });

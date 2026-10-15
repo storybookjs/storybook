@@ -19,7 +19,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
   },
   'write-story': {
     blurb:
-      'How to write, update, and test Storybook stories for this project: imports, patterns, and conventions.',
+      'The same document as ui-workflow, under its earlier name; the MCP tool get-storybook-story-instructions serves it too.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

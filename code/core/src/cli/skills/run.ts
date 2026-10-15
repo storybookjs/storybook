@@ -6,7 +6,6 @@ import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { renderCommandReference } from './command-reference.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
-import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
@@ -115,7 +114,9 @@ export async function runSkillsCommand(
     return { output: '', errorOutput: intent.message, exitCode: 1 };
   }
   try {
-    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
+    // `write-story` prints the same document as `ui-workflow`, so `--all` leaves it out.
+    const ids =
+      intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
     const { docs, setupRun } = await serveSkills(
       ids,
       resolveStorybookConfigDir(input.target),
@@ -223,8 +224,8 @@ function withCommandReference(
   toolsets: ToolsetCatalogEntry[]
 ): string {
   const text = assemble(id, inputs);
-  // These two teach each command inline, so a command reference would only repeat them.
-  if (id === 'ui-workflow' || id === 'component-docs') {
+  // These teach each command inline, so a command reference would only repeat them.
+  if (id === 'ui-workflow' || id === 'write-story' || id === 'component-docs') {
     return text;
   }
   const reference = renderCommandReference(text, toolsets);
@@ -235,26 +236,16 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   if (id === 'component-docs') {
     return buildComponentDocsSkill();
   }
-  if (id === 'ui-workflow') {
-    return buildUiWorkflowSkill({
-      framework: inputs.framework,
-      csfFactories: inputs.csfFactories,
-      previewFile: inputs.previewFile,
-      typescript: inputs.typescript,
-      docsEnabled: inputs.docsEnabledForCli,
-      testSupported: inputs.testSupported,
-      a11yEnabled: inputs.a11yEnabled,
-      moduleGraphSupported: inputs.moduleGraphSupported,
-    });
-  }
-  return buildStoryInstructions({
+  // `write-story` is the same document, under the id the MCP story-instructions tool serves it as.
+  return buildUiWorkflowSkill({
     transport: 'cli',
     framework: inputs.framework,
-    renderer: inputs.renderer,
-    testSupported: inputs.testSupported,
-    a11yEnabled: inputs.a11yEnabled,
-    docsEnabled: inputs.docsEnabledForCli,
     csfFactories: inputs.csfFactories,
     previewFile: inputs.previewFile,
+    typescript: inputs.typescript,
+    docsEnabled: inputs.docsEnabledForCli,
+    testSupported: inputs.testSupported,
+    a11yEnabled: inputs.a11yEnabled,
+    moduleGraphSupported: inputs.moduleGraphSupported,
   });
 }

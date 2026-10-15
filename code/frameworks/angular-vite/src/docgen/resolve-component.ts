@@ -10,7 +10,9 @@ import { readFileSync } from 'node:fs';
 
 // Angular has no single-file-component format, so the JS/TS extensions the resolver already tries
 // are enough. One instance per process: the resolver caches its module resolutions.
-export const resolveMetaComponent = createMetaComponentResolver();
+// The annotation keeps declaration emit from naming core's unexported babel `Node` (TS2883).
+export const resolveMetaComponent: ReturnType<typeof createMetaComponentResolver> =
+  createMetaComponentResolver();
 
 const storyImportResolver = createModuleResolver({
   extensions: [...jsTsSourceExtensions],

@@ -122,7 +122,7 @@ const shortcutLabels = {
   toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
-  focusIframe: 'Focus canvas',
+  focusIframe: 'Focus preview area',
   focusPanel: 'Focus addons',
   prevComponent: 'Previous component',
   nextComponent: 'Next component',

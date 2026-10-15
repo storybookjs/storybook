@@ -11,10 +11,11 @@ import { getChannel, setChannel } from 'storybook/internal/channels';
 
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons } from 'storybook/manager-api';
-import { screen, within } from 'storybook/test';
+import { expect, screen, waitFor, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
 import preview from '../../../.storybook/preview.tsx';
+import { focusableUIElements } from '../manager-api/modules/layout.ts';
 import './components/review/review-service-story-helpers.ts';
 import { Main } from './index.tsx';
 import Provider from './provider.ts';
@@ -191,6 +192,33 @@ export const GuidePage = meta.story({
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(await canvas.findByLabelText('Settings'));
     await userEvent.click(await screen.findByRole('link', { name: /Onboarding guide/i }));
+  },
+});
+
+export const FocusRegionShortcuts = meta.story({
+  play: async ({ canvasElement, userEvent, step }) => {
+    const regions = [
+      ['sidebar', '1', focusableUIElements.sidebarRegion],
+      ['preview area', '2', focusableUIElements.previewRegion],
+      ['addon panel', '3', focusableUIElements.addonPanel],
+    ] as const;
+
+    for (const [name, key, id] of regions) {
+      await step(`Focus the ${name} with its shortcut`, async () => {
+        await userEvent.keyboard(key);
+        const region = canvasElement.querySelector(`#${id}`) as HTMLElement;
+        await waitFor(() => expect(region).toHaveFocus());
+        expect(region).toHaveAttribute('data-sb-landmark');
+        expect(region).toHaveAttribute('data-sb-focus-visible');
+      });
+    }
+
+    await step('The focus ring goes away once focus moves on', async () => {
+      await userEvent.tab();
+      expect(canvasElement.querySelector(`#${focusableUIElements.addonPanel}`)).not.toHaveAttribute(
+        'data-sb-focus-visible'
+      );
+    });
   },
 });
 

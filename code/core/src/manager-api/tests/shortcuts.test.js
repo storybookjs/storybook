@@ -342,6 +342,88 @@ describe('addon shortcut matching', () => {
   });
 });
 
+describe('focus region shortcuts', () => {
+  const flushFocus = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  const setup = ({ navShown = true, panelShown = true } = {}) => {
+    document.body.innerHTML = ['sidebar', 'preview', 'panel']
+      .map((region) => `<div id="storybook-${region}-region" data-sb-landmark></div>`)
+      .join('');
+
+    const store = createMockStore();
+    const fullAPI = {
+      getNavAvailability: () => 'shown',
+      getIsFullscreen: () => false,
+      getIsNavShown: () => navShown,
+      getIsPanelShown: () => panelShown,
+      toggleNav: vi.fn(),
+      togglePanel: vi.fn(),
+      focusOnUIElement: vi.fn((elementId) => {
+        const element = document.getElementById(elementId);
+        element.setAttribute('tabindex', '-1');
+        element.focus();
+        return element === document.activeElement;
+      }),
+    };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return { api, fullAPI };
+  };
+
+  it.each([
+    ['focusNav', 'storybook-sidebar-region'],
+    ['focusIframe', 'storybook-preview-region'],
+    ['focusPanel', 'storybook-panel-region'],
+  ])('%s forces focus onto the landmark and draws its focus ring', async (feature, regionId) => {
+    const { api, fullAPI } = setup();
+
+    api.handleShortcutFeature(feature, {});
+    await flushFocus();
+
+    expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(regionId, {
+      forceFocus: true,
+      poll: true,
+    });
+    const region = document.getElementById(regionId);
+    expect(document.activeElement).toBe(region);
+    expect(region.hasAttribute('data-sb-focus-visible')).toBe(true);
+  });
+
+  it('removes the forced focus ring once the landmark loses focus', async () => {
+    const { api } = setup();
+
+    api.handleShortcutFeature('focusPanel', {});
+    await flushFocus();
+    document.getElementById('storybook-panel-region').blur();
+
+    expect(
+      document.getElementById('storybook-panel-region').hasAttribute('data-sb-focus-visible')
+    ).toBe(false);
+  });
+
+  it('does not draw a focus ring when the landmark could not be focused', async () => {
+    const { api, fullAPI } = setup();
+    fullAPI.focusOnUIElement.mockReturnValue(false);
+
+    api.handleShortcutFeature('focusIframe', {});
+    await flushFocus();
+
+    expect(
+      document.getElementById('storybook-preview-region').hasAttribute('data-sb-focus-visible')
+    ).toBe(false);
+  });
+
+  it('shows hidden regions before focusing them', () => {
+    const { api, fullAPI } = setup({ navShown: false, panelShown: false });
+
+    api.handleShortcutFeature('focusNav', {});
+    api.handleShortcutFeature('focusPanel', {});
+
+    expect(fullAPI.toggleNav).toHaveBeenCalledWith(true);
+    expect(fullAPI.togglePanel).toHaveBeenCalledWith(true);
+  });
+});
+
 describe('keydown match gating', () => {
   it('reports no match when shortcuts are disabled, so the key is not swallowed', () => {
     const store = createMockStore();

@@ -184,6 +184,7 @@ export const getDefaultLayoutState: () => SubState = () => {
 
 export const focusableUIElements = {
   addonPanel: 'storybook-panel-region',
+  previewRegion: 'storybook-preview-region',
   storySearchField: 'storybook-explorer-searchfield',
   storyListMenu: 'storybook-explorer-menu',
   storyPanelRoot: 'storybook-panel-root',

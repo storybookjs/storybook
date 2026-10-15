@@ -15,7 +15,7 @@ import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
 import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import {
-  cleanup,
+  cleanupStories,
   composeStories as originalComposeStories,
   composeStory as originalComposeStory,
   setProjectAnnotations as originalSetProjectAnnotations,
@@ -201,4 +201,4 @@ export function composeStories<TModule extends Store_CSFExports<SvelteRenderer, 
   >;
 }
 
-export { cleanup };
+export { cleanupStories };

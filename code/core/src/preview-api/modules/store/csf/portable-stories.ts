@@ -93,7 +93,7 @@ const cleanups: CleanupCallback[] = [];
  * Use this in test teardown hooks (e.g. Vitest's `afterEach`) to unmount any mounted story, trigger
  * component and hook teardowns, and remove temporary DOM containers.
  */
-export async function cleanup(): Promise<void> {
+export async function cleanupStories(): Promise<void> {
   const callbacks = [...cleanups].reverse();
   cleanups.length = 0;
   const errors: unknown[] = [];
@@ -108,16 +108,7 @@ export async function cleanup(): Promise<void> {
     throw errors[0];
   }
   if (errors.length > 1) {
-    if (typeof AggregateError !== 'undefined') {
-      throw new AggregateError(errors, 'Cleanups failed with multiple errors');
-    }
-    const combinedError = new Error(
-      `Cleanups failed with multiple errors:\n${errors
-        .map((e) => (e instanceof Error ? (e.stack ?? e.message) : String(e)))
-        .join('\n')}`
-    );
-    (combinedError as any).errors = errors;
-    throw combinedError;
+    throw new AggregateError(errors, 'Cleanups failed with multiple errors');
   }
 }
 
@@ -288,7 +279,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       storyName,
       load: async () => {
         // First run any registered cleanup function
-        await cleanup();
+        await cleanupStories();
 
         const context = initializeContext();
         const hookContext = hideArgTypes(context);
@@ -352,7 +343,7 @@ async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
   context: StoryContextForRender<TRenderer>
 ) {
-  await cleanup();
+  await cleanupStories();
   const hookContext = hideArgTypes(context);
 
   if (!context.canvasElement) {

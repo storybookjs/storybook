@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup as rtlCleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
@@ -9,7 +9,7 @@ import type { Meta } from '@storybook/react';
 import { expectTypeOf } from 'expect-type';
 import { addons, useEffect } from 'storybook/preview-api';
 
-import { cleanup, composeStories, composeStory, setProjectAnnotations } from '../index.ts';
+import { cleanupStories, composeStories, composeStory, setProjectAnnotations } from '../index.ts';
 import type { Button } from './Button.tsx';
 import * as ButtonStories from './Button.stories.tsx';
 import * as ComponentWithErrorStories from './ComponentWithError.stories.tsx';
@@ -28,8 +28,8 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
-  rtlCleanup();
-  await cleanup();
+  cleanup();
+  await cleanupStories();
 });
 
 // example with composeStory, returns a single story composed with args/decorators
@@ -240,8 +240,8 @@ it.each(testCases)('Renders %s story', async (_storyName, Story) => {
   expect(document.body).toMatchSnapshot();
 });
 
-describe('cleanup', () => {
-  it('unmounts previous story when next story runs, and unmounts last story on cleanup', async () => {
+describe('cleanupStories', () => {
+  it('unmounts previous story when next story runs, and unmounts last story on cleanupStories', async () => {
     const firstMountSpy = vi.fn();
     const firstUnmountSpy = vi.fn();
     const lastMountSpy = vi.fn();
@@ -292,14 +292,14 @@ describe('cleanup', () => {
     const lastContainer = lastElement.parentElement;
     expect(document.body.contains(lastContainer)).toBe(true);
 
-    // 3. Verify Last unmounts and its DOM is removed after await cleanup()
-    await cleanup();
+    // 3. Verify Last unmounts and its DOM is removed after await cleanupStories()
+    await cleanupStories();
     expect(lastUnmountSpy).toHaveBeenCalledTimes(1);
     expect(document.body.contains(lastContainer)).toBe(false);
     expect(screen.queryByTestId('last-story')).toBeNull();
 
-    // 4. Verify cleanup is safe to call repeatedly
-    await cleanup();
+    // 4. Verify cleanupStories is safe to call repeatedly
+    await cleanupStories();
     expect(lastUnmountSpy).toHaveBeenCalledTimes(1);
 
     // 5. Verify a subsequent story run still works
@@ -310,7 +310,7 @@ describe('cleanup', () => {
     const subsequentContainer = subsequentElement.parentElement;
     expect(document.body.contains(subsequentContainer)).toBe(true);
 
-    await cleanup();
+    await cleanupStories();
     expect(firstUnmountSpy).toHaveBeenCalledTimes(2);
     expect(document.body.contains(subsequentContainer)).toBe(false);
     expect(screen.queryByTestId('first-story')).toBeNull();

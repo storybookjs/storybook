@@ -44,7 +44,7 @@ export { DocsContext } from './preview-web.ts';
 export { simulatePageLoad, simulateDOMContentLoaded } from './preview-web.ts';
 
 export {
-  cleanup,
+  cleanupStories,
   combineArgs,
   combineParameters,
   composeConfigs,

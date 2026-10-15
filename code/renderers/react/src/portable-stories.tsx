@@ -12,7 +12,7 @@ import type {
 } from 'storybook/internal/types';
 
 import {
-  cleanup,
+  cleanupStories,
   composeConfigs,
   composeStories as originalComposeStories,
   composeStory as originalComposeStory,
@@ -159,4 +159,4 @@ export function composeStories<TModule extends Store_CSFExports<ReactRenderer, a
   >;
 }
 
-export { cleanup };
+export { cleanupStories };

@@ -6,6 +6,7 @@
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
+  - [`@storybook/icons` is no longer a manager global](#storybookicons-is-no-longer-a-manager-global)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
@@ -753,19 +754,10 @@ See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-typ
 
 ### `@storybook/icons` is no longer a manager global
 
-Storybook no longer exposes `@storybook/icons` to the manager through the `__STORYBOOK_ICONS__` global, and the package is no longer listed by `storybook/internal/manager/globals`'s `globalPackages`. If your addon's manager code imports `@storybook/icons`, the package is now bundled into your addon's manager build like any other dependency.
+Storybook 11 no longer provides `@storybook/icons` to the manager through the `__STORYBOOK_ICONS__` global, and `globalPackages` from `storybook/internal/manager/globals` no longer includes it. What you need to do depends on how your addon's build treats the package:
 
-Declare `@storybook/icons` in your addon's runtime `dependencies` so consumers get a resolvable copy:
-
-```json
-{
-  "dependencies": {
-    "@storybook/icons": "^2.0.2"
-  }
-}
-```
-
-Alternatively, bundle the icons your addon uses yourself. `devDependencies` alone do not supply the package to consumers: when the dependency is not declared, your addon's manager dist bundles its own copy of the library.
+- **Your build marks `@storybook/icons` as external** (the Addon Kit `tsup` config does, directly and through `globalPackages`): declare it in your addon's `dependencies`. Otherwise the consumer's Storybook can fail to resolve the import.
+- **Your build bundles `@storybook/icons`:** no change is needed. The icons your addon uses are already in your dist.
 
 ### `useThemeParameters` removed
 

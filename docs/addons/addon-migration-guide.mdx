@@ -223,7 +223,9 @@ The `@storybook/icons` package has moved from a default barrel file export to na
 
 Review your usage of the `@storybook/icons` package and ensure you import individual icons via named imports.
 
-In Storybook 11, `@storybook/icons` is no longer provided to the manager as a global. If your addon imports it in manager code, declare it in your addon's runtime `dependencies` (for example `"@storybook/icons": "^2.0.2"`) or bundle it yourself. `devDependencies` alone do not supply the package to consumers — without a declared dependency, your addon's manager dist bundles its own copy. See the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookicons-is-no-longer-a-manager-global).
+#### `@storybook/icons` is no longer a manager global
+
+Storybook 11 no longer provides `@storybook/icons` to the manager as a global. If your addon imports it in manager code, see the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookicons-is-no-longer-a-manager-global) for what to change.
 
 #### `useThemeParameters` removal
 

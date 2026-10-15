@@ -266,16 +266,21 @@ describe('PNPMProxy catalogs', () => {
 
   describe('allowStorybookBuildScripts (workspace reader with createIfMissing)', () => {
     const allowBuildScripts = () => (pnpmProxy as any).allowStorybookBuildScripts();
-    const createdYaml = () =>
-      join(pnpmProxy.primaryPackageJson.operationDir, 'pnpm-workspace.yaml');
+    // The package.json being installed lives below the workspace root, on memfs.
+    const PROJECT_DIR = '/root/packages/app';
+    const createdYaml = () => join(PROJECT_DIR, 'pnpm-workspace.yaml');
 
     beforeEach(() => {
       vi.mocked(executeCommandSync).mockReturnValue('11.0.0');
+      vi.spyOn(pnpmProxy, 'primaryPackageJson', 'get').mockReturnValue({
+        operationDir: PROJECT_DIR,
+        packageJson: { dependencies: {}, devDependencies: {}, peerDependencies: {} },
+      } as any);
+      vol.mkdirSync(PROJECT_DIR, { recursive: true });
     });
 
     it('creates pnpm-workspace.yaml next to the package.json when no workspace file exists', () => {
       vi.mocked(find.up).mockReturnValue(undefined);
-      vol.mkdirSync(pnpmProxy.primaryPackageJson.operationDir, { recursive: true });
 
       allowBuildScripts();
 
@@ -299,7 +304,7 @@ describe('PNPMProxy catalogs', () => {
 
       await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBeNull();
 
-      expect(vol.toJSON()).toEqual({});
+      expect(vol.toJSON()[createdYaml()]).toBeUndefined();
       expect(writeFileSync).not.toHaveBeenCalled();
     });
 

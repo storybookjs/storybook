@@ -10,4 +10,4 @@ Prerequisites:
 
 Run `npx storybook skills setup` from the project root (or the Storybook package in a monorepo).
 
-**Follow the printed Markdown precisely.** Do not substitute your own plan.
+Read its output in full, without `head` or `tail`: every step in it is required. **Follow the printed Markdown precisely.** Do not substitute your own plan.

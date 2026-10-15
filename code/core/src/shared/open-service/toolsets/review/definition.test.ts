@@ -80,7 +80,9 @@ describe('review.create', () => {
       reviewUrl,
       collectionCount: 1,
       storyCount: 1,
-      instructions: expect.stringContaining(`Open ${reviewUrl} in your in-app browser now.`),
+      instructions: expect.stringContaining(
+        `Open ${reviewUrl} in your in-app browser now, as your very next step.`
+      ),
     });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/review', { internal: true });
@@ -207,8 +209,14 @@ This usually means the IDs were inferred from file paths or naming conventions r
         .toBe(`Review applied: 1 collection, 1 story. Storybook is already running at http://localhost:6006 — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`);
+1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page: follow its steps until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Skip this only when you have no such tool.
+2. **Show the link to the user too.** End your final response with these three lines, unchanged, and put nothing after them:
+
+## 👀 Review your changes
+The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.
+👉 [Open the Storybook review page](${reviewUrl})
+
+The user needs to see this link even after you've opened it yourself.`);
     });
   });
 

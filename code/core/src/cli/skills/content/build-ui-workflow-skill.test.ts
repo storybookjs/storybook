@@ -74,10 +74,24 @@ describe('buildUiWorkflowSkill', () => {
     const text = buildUiWorkflowSkill({ ...everything, moduleGraphSupported: false });
 
     expect(text).toContain('docs list --withStoryIds true');
-    expect(text).toContain('Story ids come only from this command.');
+    expect(text).toContain('Story ids come only from the output of this command');
     expect(text).toContain('When it does not find a story');
     expect(text).not.toContain('stories changed');
     expect(text).not.toContain('find-by-component');
+  });
+
+  it('finds the stories before it tests them, and runs every story before the review', () => {
+    const text = buildUiWorkflowSkill(everything);
+
+    expect(text.indexOf('## Find the stories')).toBeLessThan(text.indexOf('## Test'));
+    expect(text).toContain('then one full run without `--stories` before the review');
+    expect(text).toContain('so wait for it before you use an id');
+  });
+
+  it('keeps the accessibility test level of the project', () => {
+    const text = buildUiWorkflowSkill(everything);
+
+    expect(text).toContain('Never change the accessibility test level (`parameters.a11y.test`)');
   });
 
   it('selects stories by file and export when no command lists story ids', () => {

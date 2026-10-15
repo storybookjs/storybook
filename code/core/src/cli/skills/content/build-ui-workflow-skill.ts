@@ -1,5 +1,6 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { componentLookup } from './build-component-docs-skill.ts';
+import { ERROR_EXPORT_RULE, networkMockRule } from './story-rules.ts';
 
 export type UiWorkflowSkillInputs = {
   framework: string;
@@ -27,30 +28,27 @@ function writeSection({
     : typescript
       ? `Import \`Meta\` and \`StoryObj\` from \`${framework}\`, and`
       : 'Import';
-  const mswSetup = csfFactories
-    ? "`addons: [addonMsw()]` (`import addonMsw from 'msw-storybook-addon'`, without an `initialize()` call)"
-    : "`loaders: [mswLoader()]` (`import { mswLoader } from 'msw-storybook-addon/csf3'`, without an `initialize()` call)";
   return `## Write the component and its stories
 
-Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. Never export a story under the name of a global such as \`Error\`: export \`ErrorState\` and set \`name: 'Error'\`. An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
+Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. ${ERROR_EXPORT_RULE} An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
 
 - ${format} \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
 - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. \`userEvent.click(element)\` takes no options.
-- A story never calls a real service. Mock network requests with MSW, never with a module mock or a replaced \`fetch\`: give the story \`beforeEach({ msw }) { msw.use(http.get('/api/users', () => HttpResponse.json([...]))) }\`, and leave the code that calls \`fetch\` as it is. When the project has no \`msw-storybook-addon\` yet, set it up first: install \`msw\` and \`msw-storybook-addon\` as dev dependencies, run \`npx msw init ./public --save\` (\`../public\` has to be in \`staticDirs\` of the main config), and add ${mswSetup} to \`${previewFile}\`. Read the addon's version in \`package.json\`: only before version 3 do stories have no \`msw\` in \`beforeEach\` and take \`parameters: { msw: { handlers: [...] } }\` instead. From version 3 on, never write \`parameters.msw\`.
+- ${networkMockRule({ csfFactories, previewFile })}
 - Mock a module only for a dependency that is not a network call: register it in \`${previewFile}\` with \`sb.mock(import('../src/api.${typescript ? 'ts' : 'js'}'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`.`;
 }
 
 function testSection(a11yEnabled: boolean): string {
   const a11y = a11yEnabled
-    ? '\n\nThe run lists accessibility violations under `## Accessibility Violations`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user.'
+    ? '\n\nThe run lists accessibility violations under `## Accessibility Violations`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change the accessibility test level (`parameters.a11y.test`) to make violations fail or pass.'
     : '';
   return `## Test
 
 \`\`\`sh
-${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids: see "Find the stories"; leave out --stories to run every story
+${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids from "Find the stories"; leave out --stories to run every story
 \`\`\`
 
-Run this after every change. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Use focused runs while iterating and one full run before you finish. Fix failures and rerun; never finish with failing tests.${a11y}`;
+Run this after every change: focused runs with \`--stories\` while you iterate, then one full run without \`--stories\` before the review. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test, change only what the failure needs.${a11y}`;
 }
 
 function discoverSection(inputs: UiWorkflowSkillInputs): string {
@@ -70,7 +68,7 @@ This project has no command that lists story ids. Select a story by its file and
   const guidance = [
     inputs.moduleGraphSupported &&
       'Run \`stories changed\` or \`find-by-component\` before every review, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects.',
-    `Story ids come only from ${several ? 'these commands' : 'this command'}. Never build one from a file name, a title or memory.`,
+    `Story ids come only from the output of ${several ? 'these commands' : 'this command'}, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory.`,
     inputs.moduleGraphSupported &&
       'When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file (design token, theme, util, hook), which has no stories of its own, pass the components that use it. When \`find-by-component\` reports stories hidden by \`maxDistance\`, rerun it with a higher \`--maxDistance\`.',
     `When ${several ? 'none of them finds' : 'it does not find'} a story for a component, it has no stories yet: say so, or write them.`,
@@ -132,8 +130,8 @@ export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
 Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps, for example without the review, skip those steps, but always look up the components first. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
     inputs.docsEnabled && docsSection(),
     writeSection(inputs),
-    inputs.testSupported && testSection(inputs.a11yEnabled),
     discoverSection(inputs),
+    inputs.testSupported && testSection(inputs.a11yEnabled),
     reviewSection(inputs),
     previewSection(),
   ]

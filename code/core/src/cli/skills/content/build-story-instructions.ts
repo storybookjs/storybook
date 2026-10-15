@@ -6,8 +6,9 @@ import a11yInstructionsTemplate from './instructions/a11y-instructions.md';
 import storyTestingInstructionsTemplate from './instructions/story-testing-instructions.md';
 import storyInstructionsTemplate from './instructions/storybook-story-instructions.md';
 import type { SkillTransport } from './skill-refs.ts';
+import { ERROR_EXPORT_RULE, networkMockRule, type StoryFormatInputs } from './story-rules.ts';
 
-export type StoryInstructionsInputs = {
+export type StoryInstructionsInputs = StoryFormatInputs & {
   transport: SkillTransport;
   framework: string;
   /** Renderer package name; defaults to `framework` when unmapped (today's behavior). */
@@ -24,6 +25,8 @@ export function buildStoryInstructions({
   testSupported,
   a11yEnabled,
   docsEnabled,
+  csfFactories,
+  previewFile,
 }: StoryInstructionsInputs): string {
   const ref = getToolName({ transport });
   const resolvedRenderer = renderer ?? frameworkToRendererMap[framework] ?? framework;
@@ -45,7 +48,7 @@ export function buildStoryInstructions({
 
 ## Using library components
 
-This Storybook exposes component documentation tools. Before creating or changing any UI, call **${ref('docs.list')}** once to see what the design system already provides — build on existing components instead of hand-rolling duplicates — then call **${ref('docs.show')}** with the \`id\` of each component you build on or get asked about, for its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **${ref('docs.list')}** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't — and answer props/usage questions from these tools too. Never assume or invent props.`;
+This Storybook exposes component documentation tools. Before creating or changing any UI, call **${ref('docs.list')}** once to see what the design system already provides — build on existing components instead of hand-rolling duplicates — then call **${ref('docs.show')}** with the \`id\` of each component you build on or get asked about, for its real props and usage examples. When multiple Storybook sources are configured, pass the \`storybookId\` from **${ref('docs.list')}** on follow-up calls. Do this instead of reading the library's source or type definitions out of \`node_modules\` — stories show intended usage, raw types don't — and answer props/usage questions from these tools too. Read a project component's source only when these tools have no entry for it. Never assume or invent props.`;
 
   let uiInstructions = storyInstructionsTemplate
     .replaceAll('{{FRAMEWORK}}', framework)
@@ -59,6 +62,9 @@ This Storybook exposes component documentation tools. Before creating or changin
     .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsEnabled ? docsWorkflowGuidance : '')
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
     .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport))
+    .replace('{{ERROR_EXPORT_RULE}}', ERROR_EXPORT_RULE)
+    .replace('{{NETWORK_MOCK_RULE}}', networkMockRule({ csfFactories, previewFile }))
+    .replace('{{PREVIEW_FILE}}', previewFile)
     .replace('{{PREVIEW_STORIES}}', ref('stories.preview'))
     .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 

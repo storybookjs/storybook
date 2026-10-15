@@ -635,7 +635,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				        "stories": {
 				          "description": "Stories to test for focused feedback. Omit this field to run tests for all available stories.
 				Prefer running tests for specific stories while developing to get faster feedback,
-				and only omit this when you explicitly need to run all tests for comprehensive verification.
+				and omit it once before you finish, to verify every story.
 				Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 				Use { storyId } when IDs were discovered from documentation tools.
 				Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.",
@@ -736,7 +736,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "properties": {
 				        "withStoryIds": {
 				          "default": false,
-				          "description": "When true, includes story sub-bullets under each component with story name and story ID. Use this to discover IDs for downstream story-focused workflows without filesystem lookup.",
+				          "description": "When true, includes story sub-bullets under each component with story name and story ID. This makes the list much longer: leave it off to look up components, and use it only to discover story IDs for downstream story-focused workflows without filesystem lookup.",
 				          "type": "boolean",
 				        },
 				      },

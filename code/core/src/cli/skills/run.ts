@@ -254,5 +254,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     docsEnabled: inputs.docsEnabledForCli,
+    csfFactories: inputs.csfFactories,
+    previewFile: inputs.previewFile,
   });
 }

@@ -4,7 +4,7 @@ Use the configured framework (`{{FRAMEWORK}}`) and renderer (`{{RENDERER}}`). Fo
 
 When writing UI, prefer breaking larger components up into smaller parts.
 
-ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component.
+ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component. The rules below are for the stories you write; do not rewrite existing stories only to match them.
 {{DOCS_WORKFLOW_GUIDANCE}}
 
 ## How to write good stories
@@ -13,7 +13,7 @@ Goal: Cover every distinct piece of business logic and state the component can r
 
 Interactivity: If the component is interactive, add Interaction tests using play functions that drive the UI with storybook/test utilities (e.g., fn, userEvent, expect). Simulate key user flows: clicking buttons/links, typing, focus/blur, keyboard nav, form submit, async responses, toggle/selection changes, pagination/filters, etc. When passing `fn` functions as `args` for callback functions, make sure to add a play function which interacts with the component and assert whether the callback function was actually called.
 
-Data/setup: Provide realistic props, state, and mocked data. Include meaningful labels/text to make behaviors observable. Stub network/services with deterministic fixtures; keep stories reliable.
+Data/setup: Provide realistic props, state, and mocked data. Include meaningful labels/text to make behaviors observable. Mock services with deterministic fixtures, as described under Mocking below; keep stories reliable.
 
 Assertions: In play functions, assert the visible outcome of the interaction (text, aria state, enabled/disabled, class/state changes, emitted events). Prefer role/label-based queries.
 
@@ -21,7 +21,7 @@ Variants to consider (pick only those that change behavior): default vs. alterna
 
 Accessibility: Use semantic roles/labels; ensure focusable/keyboard interactions are test-covered where relevant.
 
-Naming/structure: Use clear story names that describe the scenario (“Error state after failed submit”). Group related variants logically; don’t duplicate.
+Naming/structure: Use clear story names that describe the scenario (“Error state after failed submit”). Group related variants logically; don’t duplicate. {{ERROR_EXPORT_RULE}}
 
 Imports/format: Import Meta/StoryObj from the framework package; import test helpers from storybook/test (not @storybook/test). Keep stories minimal—only what's needed to demonstrate behavior.
 
@@ -70,12 +70,16 @@ export default {
 };
 ```
 
+### Mocking network requests
+
+{{NETWORK_MOCK_RULE}}
+
 ### Mocking imports in Storybook
 
-To mock imports in Storybook, use Storybook's mocking features. ALWAYS mock external dependencies to ensure stories render consistently.
+Mock a module only for a dependency that is not a network call, so stories render consistently.
 
-1. **Register in the mock in Storybook's preview file**:
-   To mock dependendencies, you MUST register a module mock in `.storybook/preview.ts` (or equivalent):
+1. **Register the mock in Storybook's preview file**:
+   To mock a module, you MUST register it in `{{PREVIEW_FILE}}`:
 
 ```js
 import { sb } from 'storybook/test';

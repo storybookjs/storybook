@@ -7,6 +7,8 @@ const baseInputs = {
   testSupported: true,
   a11yEnabled: false,
   docsEnabled: false,
+  csfFactories: false,
+  previewFile: '.storybook/preview.ts',
 } as const;
 
 describe('buildStoryInstructions transport refs', () => {
@@ -78,6 +80,31 @@ describe('buildStoryInstructions placeholder resolution', () => {
 
     expect(instructions).not.toContain('## Using library components');
     expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
+  });
+});
+
+describe('buildStoryInstructions story rules', () => {
+  // Agents on the MCP path stubbed `fetch` and exported `Error` while these rules were only in the
+  // ui-workflow skill.
+  it('mocks network requests with MSW and names the preview file of the project', () => {
+    const instructions = buildStoryInstructions({
+      ...baseInputs,
+      transport: 'mcp',
+      previewFile: 'config/preview.ts',
+    });
+
+    expect(instructions).toContain('never with a module mock or a replaced `fetch`');
+    expect(instructions).toContain('msw.use(');
+    expect(instructions).toContain('never write `parameters.msw`');
+    expect(instructions).toContain('you MUST register it in `config/preview.ts`');
+    expect(instructions.indexOf('msw.use(')).toBeLessThan(instructions.indexOf('sb.mock('));
+    expect(instructions).not.toContain('ALWAYS mock external dependencies');
+  });
+
+  it('never exports a story named after a global', () => {
+    const instructions = buildStoryInstructions({ ...baseInputs, transport: 'mcp' });
+
+    expect(instructions).toContain("export `ErrorState` and set `name: 'Error'`");
   });
 });
 

@@ -61,7 +61,7 @@ export function buildServerInstructions({
       devInstructions
         .replace(
           '{{STORY_INSTRUCTIONS_STEP}}',
-          `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
+          `Before creating or editing components, stories, styles or tokens, call **${skillRef('write-story')}**; its output is the source of truth for writing stories and tests.`
         )
         .replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
         .replace('{{FINAL_LINKS_STEP}}', finalLinksStep)

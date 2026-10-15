@@ -151,5 +151,7 @@ export async function buildStorybookStoryInstructions(
     testSupported: (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
     a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
     docsEnabled: (toolsets?.docs ?? true) && (docsEnabled ?? inputs.docsEnabled),
+    csfFactories: inputs.csfFactories,
+    previewFile: inputs.previewFile,
   });
 }

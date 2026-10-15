@@ -78,7 +78,6 @@ export const getExternal = async (cwd: string) => {
     'use-sync-external-store',
     'react-dom',
     'react-dom/client',
-    '@storybook/icons',
 
     /**
      * @note This is not a real package, it's a hack to allow `frameworks/nextjs` to be able to alias

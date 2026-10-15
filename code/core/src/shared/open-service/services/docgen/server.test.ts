@@ -108,7 +108,7 @@ describe('docgen open service', () => {
       );
     });
 
-    it('records a provider error as the component payload instead of failing the command', async () => {
+    it('propagates provider errors out of the command', async () => {
       const service = registerDocgenService({
         getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
         docgenProvider: async () => {
@@ -116,20 +116,9 @@ describe('docgen open service', () => {
         },
       });
 
-      await expect(service.commands.extractDocgen({ id: 'button' })).resolves.toEqual({
-        id: 'button',
-        name: 'Button',
-        path: './button.stories.tsx',
-        jsDocTags: {},
-        error: { name: 'Error', message: 'provider blew up' },
-      });
-      expect(service.queries.docgen.get({ id: 'button' })).toEqual({
-        id: 'button',
-        name: 'Button',
-        path: './button.stories.tsx',
-        jsDocTags: {},
-        error: { name: 'Error', message: 'provider blew up' },
-      });
+      await expect(service.commands.extractDocgen({ id: 'button' })).rejects.toThrow(
+        'provider blew up'
+      );
     });
   });
 
@@ -372,43 +361,6 @@ describe('docgen open service', () => {
             jsDocTags: {},
           },
         },
-      });
-    });
-
-    it('completes the static build when one component fails extraction, recording its error', async () => {
-      registerDocgenService({
-        getIndex: makeGetIndex([
-          makeStoryEntry('button--primary', 'Button'),
-          makeStoryEntry('card--default', 'Card'),
-        ]),
-        docgenProvider: async ({ entry }) => {
-          if (entry.importPath.includes('button')) {
-            throw new Error('extraction wedged');
-          }
-          return makeDocgenPayload({ id: 'card', name: 'Card', path: entry.importPath });
-        },
-      });
-
-      // One component's failure must not fail the build that carries every other component's
-      // payload: the failed one is recorded under its own static path with the `error` field.
-      const store = await buildStaticFiles();
-
-      expect(Object.keys(store).sort()).toEqual([
-        'core/docgen/button.json',
-        'core/docgen/card.json',
-      ]);
-      expect(store['core/docgen/button.json']).toMatchObject({
-        components: {
-          button: {
-            id: 'button',
-            name: 'Button',
-            path: './button.stories.tsx',
-            error: { name: 'Error', message: 'extraction wedged' },
-          },
-        },
-      });
-      expect(store['core/docgen/card.json']).toMatchObject({
-        components: { card: { id: 'card', name: 'Card', path: './card.stories.tsx' } },
       });
     });
   });

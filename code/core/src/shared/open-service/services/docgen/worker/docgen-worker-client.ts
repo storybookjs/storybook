@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
+import pLimit from 'p-limit';
+
 import { logger } from 'storybook/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
@@ -16,6 +18,7 @@ const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
 
 interface Pending {
+  id: number;
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
   timer?: NodeJS.Timeout;
@@ -40,9 +43,7 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 // threads would only duplicate multi-second program builds and their memory.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
-  // Serialized dispatch means the pending map holds at most one request: the drain loop posts the
-  // next extract only after the previous one settles.
-  private readonly pending = new Map<number, Pending>();
+  private current: Pending | undefined;
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
@@ -108,23 +109,21 @@ class DocgenWorker implements DocgenWorkerClient {
     }
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
+      if (this.current) {
+        reject(new Error('docgen worker extract called while another extraction is active'));
+        return;
+      }
       const id = this.nextId++;
-      const pending: Pending = { resolve, reject };
-      this.pending.set(id, pending);
+      const pending: Pending = { id, resolve, reject };
+      this.current = pending;
       if (this.taskTimeoutMs > 0) {
-        pending.timer = setTimeout(() => {
-          this.pending.delete(id);
-          const timeoutError = new Error(
-            `docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`
-          );
-          // The client posts one request at a time, so a request is always the one the worker is
-          // actively extracting: expiry means this extraction itself made no progress for the
-          // whole window, and everything queued behind it would hang too. Reject the wedged
-          // extraction, kill the worker, and let the queue drain onto a replacement
-          // (`replaceable`).
-          this.fail(timeoutError);
-          pending.reject(timeoutError);
-        }, this.taskTimeoutMs);
+        pending.timer = setTimeout(
+          () =>
+            this.fail(
+              new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`)
+            ),
+          this.taskTimeoutMs
+        );
         pending.timer.unref?.();
       }
       this.keepProcessAliveWhileBusy();
@@ -133,7 +132,7 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private keepProcessAliveWhileBusy(): void {
-    if (this.pending.size > 0) {
+    if (this.current) {
       this.worker.ref();
     } else {
       this.worker.unref();
@@ -148,14 +147,14 @@ class DocgenWorker implements DocgenWorkerClient {
     if (msg.type !== 'extract') {
       return;
     }
-    const pending = this.pending.get(msg.id);
-    if (!pending) {
+    const pending = this.current;
+    if (!pending || msg.id !== pending.id) {
       return;
     }
     if (pending.timer) {
       clearTimeout(pending.timer);
     }
-    this.pending.delete(msg.id);
+    this.current = undefined;
     this.served = true;
     this.keepProcessAliveWhileBusy();
     if (msg.error) {
@@ -169,7 +168,7 @@ class DocgenWorker implements DocgenWorkerClient {
     if (this.death) {
       return;
     }
-    logger.warn(`docgen worker died, so component docs are unavailable: ${error.message}`);
+    logger.warn(`docgen worker died: ${error.message}`);
     this.death = error;
     // Without this, an `extract` awaiting `ready` hangs when the worker dies before `init`.
     this.rejectReady(error);
@@ -178,13 +177,15 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [, pending] of this.pending) {
-      if (pending.timer) {
-        clearTimeout(pending.timer);
-      }
-      pending.reject(error);
+    const pending = this.current;
+    if (!pending) {
+      return;
     }
-    this.pending.clear();
+    if (pending.timer) {
+      clearTimeout(pending.timer);
+    }
+    this.current = undefined;
+    pending.reject(error);
     this.worker.unref();
   }
 }
@@ -211,58 +212,19 @@ export function createDocgenWorkerClient(
     return undefined;
   }
 
-  // Requests are queued client-side and dispatched one at a time. The worker thread serializes the
-  // CPU-bound TypeScript work anyway, so this costs no throughput — but it makes the per-request
-  // timeout measure the active extraction instead of queue wait. A static build fans out one
-  // extract per component onto this single worker; with timers armed at fan-out, any repo whose
-  // total extraction exceeds the window would reject queued-but-healthy requests and fail builds
-  // that had already produced a complete index.
   let worker: DocgenWorker | undefined;
-  let draining = false;
-  const queue: Array<{
-    entry: IndexEntry;
-    resolve: (payload: DocgenPayload | undefined) => void;
-    reject: (error: unknown) => void;
-  }> = [];
+  // Serialize so the per-request timeout measures the active extraction, not queue wait.
+  const serial = pLimit(1);
 
-  const drain = async (): Promise<void> => {
-    if (draining) {
-      return;
-    }
-    draining = true;
-    try {
-      while (queue.length > 0) {
+  return {
+    extract: (entry) =>
+      serial(() => {
         if (worker?.replaceable) {
           logger.debug('docgen worker died after serving requests; spawning a replacement');
           worker = undefined;
         }
         worker ??= new DocgenWorker(scriptPath, descriptors);
-        const task = queue.shift();
-        if (!task) {
-          break;
-        }
-        try {
-          task.resolve(await worker.extract(task.entry));
-        } catch (error) {
-          task.reject(error);
-        }
-      }
-    } catch (error) {
-      // Worker construction itself failed; every queued extract fails on the same cause.
-      for (const task of queue.splice(0)) {
-        task.reject(error);
-      }
-    } finally {
-      draining = false;
-    }
-  };
-
-  return {
-    extract(entry) {
-      return new Promise<DocgenPayload | undefined>((resolve, reject) => {
-        queue.push({ entry, resolve, reject });
-        void drain();
-      });
-    },
+        return worker.extract(entry);
+      }),
   };
 }

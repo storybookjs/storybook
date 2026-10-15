@@ -285,6 +285,13 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // the capture-phase listeners below record it: opening the menu via keyboard autofocuses the
   // first item, while a mouse click does not.
   const lastInputModalityRef = useRef<ContextMenuTrigger>('pointer');
+  // True between a mouse double-click and the action react-aria raises for it. Each of its two
+  // presses has already activated the row through the selection, so that action is a third
+  // activation and must be dropped, or two rapid clicks on a branch end up toggling it three
+  // times. A touch, pen or virtual press raises an action with no press of its own, so those
+  // actions must go through: the flag is set by the dblclick event alone, and cleared by the
+  // next click or input so that it can never be left armed.
+  const isDoubleClickActionRef = useRef(false);
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -292,6 +299,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
     const onInputStart = (event: PointerEvent | KeyboardEvent) => {
       lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
+      isDoubleClickActionRef.current = false;
       // Assigned rather than only raised, so an arrow key lowers the flag by itself instead of
       // relying on the previous press having ended.
       isActivatingRef.current =
@@ -300,8 +308,16 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const onInputEnd = () => {
       isActivatingRef.current = false;
     };
+    const onClick = () => {
+      isDoubleClickActionRef.current = false;
+    };
+    const onDoubleClick = () => {
+      isDoubleClickActionRef.current = true;
+    };
     container.addEventListener('pointerdown', onInputStart, { capture: true });
     container.addEventListener('keydown', onInputStart, { capture: true });
+    container.addEventListener('click', onClick, { capture: true });
+    container.addEventListener('dblclick', onDoubleClick, { capture: true });
     // The end of a press is watched on the window, in the capture phase, because it can land
     // anywhere: a drag releases outside the row, a key released after focus moved lands outside
     // the tree, and a press the browser takes over for a scroll ends in pointercancel with no
@@ -313,6 +329,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return () => {
       container.removeEventListener('pointerdown', onInputStart, { capture: true });
       container.removeEventListener('keydown', onInputStart, { capture: true });
+      container.removeEventListener('click', onClick, { capture: true });
+      container.removeEventListener('dblclick', onDoubleClick, { capture: true });
       window.removeEventListener('pointerup', onInputEnd, { capture: true });
       window.removeEventListener('pointercancel', onInputEnd, { capture: true });
       window.removeEventListener('keyup', onInputEnd, { capture: true });
@@ -361,8 +379,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [activateRow]
   );
 
-  // Enter and a double click reach the tree as an action.
-  const handleAction = useCallback((key: React.Key) => activateRow(String(key)), [activateRow]);
+  // Enter, a touch or virtual press, and a mouse double-click reach the tree as an action. The
+  // double-click's presses have activated the row already (see isDoubleClickActionRef).
+  const handleAction = useCallback(
+    (key: React.Key) => {
+      if (isDoubleClickActionRef.current) {
+        isDoubleClickActionRef.current = false;
+        return;
+      }
+      activateRow(String(key));
+    },
+    [activateRow]
+  );
 
   // The open menu lives in a store rather than in React state: the tree renders nothing from it,
   // and only the row that opens or closes its menu needs to re-render (see ContextMenuStore).

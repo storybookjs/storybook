@@ -1164,6 +1164,161 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('appends storybook project when test.projects is bound to an identifier', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      const workspaceProjects = [
+        { extends: true, test: { name: 'client' } },
+        { extends: true, test: { name: 'server' } },
+      ]
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: workspaceProjects,
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the original list keeps applying via spread
+    // and the storybook project is a sibling entry in the same array. Wrapping the reference
+    // inside a project entry would bury it: a `projects` key inside a project entry is not a
+    // project list, so the original list would stop applying.
+    expect(after).toContain('projects: [...workspaceProjects, {');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot();
+  });
+
+  it('appends storybook project when test.projects is a computed expression', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { getWorkspaceProjects } from './vitest.projects'
+
+      export default {
+        test: {
+          globals: true,
+          projects: getWorkspaceProjects(),
+        },
+      }
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the original list keeps applying via spread
+    // and the storybook project is a sibling entry in the same array
+    expect(after).toContain('projects: [...getWorkspaceProjects(), {');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot();
+  });
+
+  it('appends storybook project when a mergeConfig export binds test.projects to an identifier', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { mergeConfig, defineConfig } from 'vitest/config'
+      import viteConfig from './vite.config'
+
+      const workspaceProjects = [
+        { extends: true, test: { name: 'client' } },
+      ]
+
+      export default mergeConfig(
+        viteConfig,
+        defineConfig({
+          test: {
+            projects: workspaceProjects,
+          },
+        })
+      )
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the original list keeps applying via spread
+    // and the storybook project is a sibling entry in the same array
+    expect(after).toContain('projects: [...workspaceProjects, {');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot();
+  });
+
+  it('appends storybook project when test.projects is a single string glob', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: './packages/*/vitest.config.ts',
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the original glob keeps applying as a string
+    // entry and the storybook project is a sibling entry in the same array
+    expect(after).toContain("projects: ['./packages/*/vitest.config.ts', {");
+
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot();
+  });
+
   it('extracts coverage config and keeps it at top level when using workspace', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.4.template', {

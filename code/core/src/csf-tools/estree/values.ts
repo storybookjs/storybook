@@ -14,12 +14,40 @@ import {
 import { type SourceEditor, functionFromMethod } from './editor.ts';
 import type { ScopeInfo } from './scope.ts';
 
-// An object that looks like an AST node rather than data: a node type Babel or ESTree would produce.
-const AST_TYPE =
-  /^(?:TS|JSX)?[A-Z]\w*(?:Expression|Literal|Statement|Declaration|Identifier|Pattern|Property|Specifier|Element|Fragment|Template|Block)$/;
+// Node types Babel produces that OXC's ESTree output has no equivalent for (`@babel/types`
+// `VISITOR_KEYS` minus `visitorKeys`, without Flow), so a Babel node is still told from data.
+const BABEL_ONLY_TYPES = new Set([
+  'File',
+  'InterpreterDirective',
+  'Directive',
+  'DirectiveLiteral',
+  'StringLiteral',
+  'NumericLiteral',
+  'BooleanLiteral',
+  'NullLiteral',
+  'BigIntLiteral',
+  'RegExpLiteral',
+  'DecimalLiteral',
+  'ObjectProperty',
+  'ObjectMethod',
+  'ClassMethod',
+  'ClassPrivateMethod',
+  'ClassProperty',
+  'ClassPrivateProperty',
+  'ClassAccessorProperty',
+  'PrivateName',
+  'Import',
+  'ExportNamespaceSpecifier',
+  'ExportDefaultSpecifier',
+  'OptionalMemberExpression',
+  'OptionalCallExpression',
+  'TSDeclareMethod',
+  'TSExpressionWithTypeArguments',
+]);
 
+/** An object that is an AST node rather than data: a node type OXC or Babel produces. */
 export const isAstLike = (value: unknown): value is Node =>
-  isNode(value) && (Object.hasOwn(visitorKeys, value.type) || AST_TYPE.test(value.type));
+  isNode(value) && (Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type));
 
 /**
  * Source text ready to be placed as a value: a comma expression keeps its parentheses, and a

@@ -148,6 +148,16 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toContain(`control: { type: 'button', label: 'Save' }`);
   });
 
+  it.each(['TextBlock', 'HeroBlock', 'ButtonElement'])(
+    'prints data whose type %s only ends like a node type',
+    (type) => {
+      const csf = parse(`export default { title: 'X' };`);
+      const [meta] = csf.objects({ stories: false });
+      expect(meta.set(['data'], { type, text: 'x' })).toEqual({ ok: true, changed: true });
+      expect(printCsf(csf).code).toContain(`data: { type: '${type}', text: 'x' }`);
+    }
+  );
+
   it('places copied expressions so the surrounding code survives', () => {
     const csf = parse(`export default { a: (1, 2) };\nexport const B = { b: 0 };`);
     const [meta, story] = csf.objects();

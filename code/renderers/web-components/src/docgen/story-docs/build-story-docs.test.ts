@@ -7,7 +7,6 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
-import { DEFAULT_TYPE_PROPERTY } from '../component-docgen/arg-types/alt-type.ts';
 import { mapArgTypes } from '../component-docgen/arg-types/map-arg-types.ts';
 import type {
   ManifestClassField,
@@ -84,7 +83,7 @@ const payload = (extra: Partial<WebComponentsDocgenPayload> = {}): WebComponents
   id: 'example-test-element',
   name: 'test-element',
   path: 'input.stories.ts',
-  argTypes: mapArgTypes(declaration, DEFAULT_TYPE_PROPERTY),
+  argTypes: mapArgTypes(declaration),
   jsDocTags: {},
   customElementsManifest: { manifestPath: 'custom-elements.json', declaration },
   ...extra,

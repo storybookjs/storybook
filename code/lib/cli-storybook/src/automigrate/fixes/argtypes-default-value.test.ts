@@ -124,6 +124,22 @@ describe('argtypes-default-value', () => {
     expect(result.story).not.toContain("defaultValue: 'A'");
   });
 
+  it('deletes a static defaultValue on a CSF2 StoryFn argTypes assignment', async () => {
+    const result = await migrate({
+      story: [
+        "import type { StoryFn } from '@storybook/react';",
+        'export default { title: "Example" };',
+        'export const Playground: StoryFn = () => null;',
+        'Playground.argTypes = { autoTruncateTokens: { defaultValue: false, control: { type: "boolean" } } };',
+      ].join('\n'),
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain('Playground.argTypes');
+    expect(result.story).toContain('type: "boolean"');
+    expect(result.story).not.toContain('defaultValue');
+  });
+
   it('leaves a spread inside the arg unchanged when the editor cannot remove it', async () => {
     const story =
       "import { shared } from './shared';\nexport default { argTypes: { label: { ...shared, defaultValue: 'A' } } };";

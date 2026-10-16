@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Popover, TooltipNote } from 'storybook/internal/components';
 
-import { expect, fn, screen } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers.tsx';
@@ -32,6 +32,19 @@ export const Base = meta.story({
     tooltip: <SampleTooltipNote />,
     children: <Trigger>Hover me!</Trigger>,
   },
+  play: async ({ canvas, canvasElement, userEvent }) => {
+    const trigger = canvas.getByRole('button', { name: 'Hover me!' });
+
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(trigger);
+    await screen.findByRole('tooltip');
+    await expect(trigger).toHaveAccessibleDescription('This note appears on hover and focus');
+
+    await userEvent.unhover(trigger);
+    await waitFor(() => expect(trigger).not.toHaveAccessibleDescription());
+  },
 });
 
 export const FocusOnly = meta.story({
@@ -39,6 +52,18 @@ export const FocusOnly = meta.story({
     triggerOnFocusOnly: true,
     tooltip: <SampleTooltipNote />,
     children: <Trigger tabIndex={0}>Focus me!</Trigger>,
+  },
+  play: async ({ canvas, userEvent }) => {
+    const trigger = canvas.getByRole('button', { name: 'Focus me!' });
+
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
+    await screen.findByRole('tooltip');
+    await expect(trigger).toHaveAccessibleDescription('This note appears on hover and focus');
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).not.toHaveAccessibleDescription());
+    trigger.blur();
   },
 });
 
@@ -199,6 +224,76 @@ export const NeverOpen = meta.story({
   },
   play: async () => {
     await expect(await screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
+  },
+});
+
+/**
+ * A trigger can lose its box while its tooltip is open, such as a row-action button that hides
+ * when its row is no longer hovered. The tooltip must close with it: an open tooltip positioned
+ * against a collapsed rect lands at the viewport origin. The tooltip starts open rather than
+ * opened by a hover, which the test environments' pointer does not perform, and which would
+ * otherwise also close through a blur if the trigger held focus.
+ */
+export const HiddenTriggerCloses = meta.story({
+  args: {
+    defaultVisible: true,
+    delayHide: 5000,
+    tooltip: <SampleTooltip />,
+    children: <Trigger tabIndex={0}>Hover me!</Trigger>,
+  },
+  play: async ({ canvasElement }) => {
+    const trigger = within(canvasElement).getByText('Hover me!');
+    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+    trigger.style.display = 'none';
+    // The close rides on a ResizeObserver tick, which the browser delivers with its next frame. A
+    // background tab gets one frame a second, which the default wait does not cover.
+    await waitFor(
+      () => expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument(),
+      { timeout: 3000 }
+    );
+  },
+});
+
+/**
+ * `disabled` closes an open tooltip and blocks new opens, while react-aria keeps reporting state
+ * changes. The tooltip starts open and the toggle is activated with the keyboard, so the close can
+ * only come from the `disabled` prop: not from a blur of the trigger, and not from the
+ * document-level pointerdown fallback. A later keyboard focus on the trigger, which opens the
+ * tooltip when enabled, must then open nothing.
+ */
+export const DisabledClosesOpenTooltip = meta.story({
+  args: {
+    defaultVisible: true,
+    delayShow: 0,
+    tooltip: <SampleTooltip />,
+    children: <Trigger>Hover me!</Trigger>,
+  },
+  render: function Render(args) {
+    const [disabled, setDisabled] = React.useState(false);
+    return (
+      <>
+        <TooltipProvider {...args} disabled={disabled} />
+        <button onClick={() => setDisabled(true)}>disable tooltips</button>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByText('Hover me!');
+    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+
+    const toggle = canvas.getByText('disable tooltips');
+    toggle.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument()
+    );
+
+    // A key press first, so that the focus counts as a keyboard one, which opens tooltips.
+    await userEvent.keyboard('{ArrowRight}');
+    trigger.focus();
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
   },
 });
 

@@ -44,6 +44,7 @@ export {
   printKey,
   printString,
   printValue,
+  reindent,
   removeFromList,
   removeMembers,
   removeStatement,

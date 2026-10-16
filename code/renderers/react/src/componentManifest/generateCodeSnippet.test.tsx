@@ -426,6 +426,44 @@ test('CustomRenderBlockBody only', async () => {
   );
 });
 
+test('async render with a block body', async () => {
+  const input = withCSF3(
+    `export const AsyncRender = {
+      render: async (args) => {
+        const data = await load();
+        return <Button {...args} data={data}>Render</Button>;
+      },
+      args: { foo: 'bar' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const AsyncRender = async () => {
+      const data = await load();
+      return <Button foo="bar" data={data}>Render</Button>;
+    };"
+  `);
+});
+
+test('template literal inside a render body keeps its lines', async () => {
+  const input = withCSF3(
+    `export const Template = {
+      render: (args) => {
+        const code = \`line1
+line2\`;
+        return <Button {...args}>{code}</Button>;
+      },
+      args: { foo: 'bar' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Template = () => {
+      const code = \`line1
+    line2\`;
+      return <Button foo="bar">{code}</Button>;
+    };"
+  `);
+});
+
 test('ObjectFalsyArgs only', async () => {
   const input = withCSF3(
     `export const ObjectFalsyArgs = {

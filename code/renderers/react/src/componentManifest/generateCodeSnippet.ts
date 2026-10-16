@@ -14,6 +14,7 @@ import {
   metaObject,
   normalizeStoryDeclaration,
   parseModule,
+  reindent,
   resolveRenderFunction,
   storyShapeError,
   walk,
@@ -184,7 +185,7 @@ function functionSnippet(
   if (fn.type === 'ArrowFunctionExpression' && isJsx(fn.body)) {
     if (rewriteJsx(code, fn.body, merged, edits)) {
       const body = printRange(code, fn.body, edits);
-      const kept = readsArgs(`(${body});`) ? params : '';
+      const kept = readsArgs(`${asyncPrefix}() => (${body});`) ? params : '';
       return `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
     }
   } else if (fn.body?.type === 'BlockStatement') {
@@ -196,7 +197,8 @@ function functionSnippet(
     }
     if (changed) {
       const body = printRange(code, fn.body, edits);
-      const kept = readsArgs(`function f() ${body}`) ? params : '';
+      const head = `${asyncPrefix}function${fn.generator ? '*' : ''}`;
+      const kept = readsArgs(`${head} f() ${body}`) ? params : '';
       return fn.type === 'FunctionDeclaration'
         ? `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${kept}) ${body}`
         : `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
@@ -227,14 +229,7 @@ function printRange(code: string, range: { start: number; end: number }, edits: 
 
   const lineStart = code.lastIndexOf('\n', range.start - 1) + 1;
   const indent = /^[ \t]*/.exec(code.slice(lineStart))?.[0] ?? '';
-  return indent
-    ? text
-        .split('\n')
-        .map((line, index) =>
-          index > 0 && line.startsWith(indent) ? line.slice(indent.length) : line
-        )
-        .join('\n')
-    : text;
+  return reindent(text, indent, '');
 }
 
 // Whether code still reads the `args` parameter, so the snippet has to keep declaring it.

@@ -20,7 +20,6 @@ declare var __STORYBOOK_CORE_EVENTS_MANAGER_ERRORS__: any;
 declare var __STORYBOOK_ROUTER__: any;
 declare var __STORYBOOK_THEMING__: any;
 declare var __STORYBOOK_API__: any;
-declare var __STORYBOOK_ICONS__: any;
 declare var __STORYBOOK_CLIENT_LOGGER__: any;
 declare var __STORYBOOK_ADDONS_CHANNEL__: any;
 declare var __STORYBOOK_TYPES__: any;

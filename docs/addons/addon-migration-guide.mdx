@@ -223,6 +223,10 @@ The `@storybook/icons` package has moved from a default barrel file export to na
 
 Review your usage of the `@storybook/icons` package and ensure you import individual icons via named imports.
 
+#### `@storybook/icons` is no longer a manager global
+
+Storybook 11 no longer provides `@storybook/icons` to the manager as a global. If your addon imports it in manager code, see the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookicons-is-no-longer-a-manager-global) for what to change.
+
 #### `useThemeParameters` removal
 
 The `useThemeParameters` hook is removed in Storybook 11. You may instead directly access the theme from the `StoryContext` object that the hook took as a parameter:

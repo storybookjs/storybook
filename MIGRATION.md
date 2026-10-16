@@ -6,6 +6,7 @@
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
+  - [`@storybook/icons` is no longer a manager global](#storybookicons-is-no-longer-a-manager-global)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
@@ -751,6 +752,13 @@ A panel stays next to the story. A tab replaced the canvas. For a short-lived ac
 `parameters.previewTabs`, `layout.showTabs`, and the `tabs` URL parameter no longer change the manager UI.
 
 See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-type-removed) for the same instructions in the addon-author guide.
+
+### `@storybook/icons` is no longer a manager global
+
+Storybook 11 no longer provides `@storybook/icons` to the manager through the `__STORYBOOK_ICONS__` global, and `globalPackages` from `storybook/internal/manager/globals` no longer includes it. What you need to do depends on how your addon's build treats the package:
+
+- **Your build marks `@storybook/icons` as external** (the Addon Kit `tsup` config does, directly and through `globalPackages`): declare it in your addon's `dependencies`. Otherwise the consumer's Storybook can fail to resolve the import.
+- **Your build bundles `@storybook/icons`:** no change is needed. The icons your addon uses are already in your dist.
 
 ### `useThemeParameters` removed
 

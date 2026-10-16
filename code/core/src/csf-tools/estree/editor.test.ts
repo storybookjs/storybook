@@ -166,6 +166,14 @@ describe('removeStatement', () => {
     removeStatement(editor, editor.program.body[0]);
     expect(editor.toString()).toBe(`/* license */\nconst b = 2;`);
   });
+
+  it('takes the blank lines above the statement in a CRLF file', () => {
+    const editor = new SourceEditor(
+      "import a from 'a';\r\n\r\n\r\nconst b = 1;\r\nconst c = 2;\r\n"
+    );
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe("import a from 'a';\r\nconst c = 2;\r\n");
+  });
 });
 
 describe('parenthesized default exports', () => {

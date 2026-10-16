@@ -825,7 +825,10 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
   if (top) {
     to += /^\s*/.exec(code.slice(to))![0].length;
   } else {
-    while (from > 0 && /^[ \t]*\n$/.test(code.slice(code.lastIndexOf('\n', from - 2) + 1, from))) {
+    while (
+      from > 0 &&
+      /^[ \t]*\r?\n$/.test(code.slice(code.lastIndexOf('\n', from - 2) + 1, from))
+    ) {
       from = code.lastIndexOf('\n', from - 2) + 1;
     }
   }

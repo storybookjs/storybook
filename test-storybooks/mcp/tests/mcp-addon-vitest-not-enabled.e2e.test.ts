@@ -33,7 +33,6 @@ describe('MCP endpoint with addon-vitest installed but not enabled', () => {
 
 		const names = response.result.tools.map((tool: { name: string }) => tool.name).sort();
 		expect(names).toEqual([
-			'component-docs',
 			'docs-list',
 			'docs-show',
 			'docs-show-story',
@@ -41,7 +40,6 @@ describe('MCP endpoint with addon-vitest installed but not enabled', () => {
 			'stories-changed',
 			'stories-find-by-component',
 			'stories-preview',
-			'ui-workflow',
 		]);
 	});
 

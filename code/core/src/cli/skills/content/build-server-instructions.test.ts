@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildServerInstructions, getSkillToolDescriptions } from './build-server-instructions.ts';
+import { buildServerInstructions } from './build-server-instructions.ts';
 
 // Claude Code hard-truncates MCP server instructions at 2,048 characters:
 // anything past the limit silently never reaches the model. Between
@@ -24,7 +24,7 @@ describe('buildServerInstructions', () => {
         }
   });
 
-  it('calls the skill tools, in the words of the AGENTS.md section, when all toolsets are enabled', () => {
+  it('runs the skills with --mcp, in the words of the AGENTS.md section, when all toolsets are enabled', () => {
     const instructions = buildServerInstructions({
       devEnabled: true,
       testSupported: true,
@@ -34,10 +34,10 @@ describe('buildServerInstructions', () => {
     expect(instructions).toMatchInlineSnapshot(`
       "## Storybook
 
-      For each of these tasks, call its Storybook tool first, before you edit any file, and follow its result:
+      For each of these tasks, run its Storybook skill first, before you edit any file, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
 
-      - \`ui-workflow\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-      - \`component-docs\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples."
+      - \`npx storybook skills ui-workflow --mcp\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
+      - \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples."
     `);
   });
 
@@ -63,10 +63,10 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toContain(
-      'For this task, call its Storybook tool first, before you edit any file, and follow its result:'
+      'For this task, call its Storybook tool first, before you edit any file, and follow its result.'
     );
     expect(instructions).toContain('- `test-run`: you run or fix story tests.');
-    expect(instructions).not.toContain('ui-workflow');
+    expect(instructions).not.toContain('npx storybook skills');
     expect(instructions).not.toContain('review-create');
   });
 
@@ -77,21 +77,21 @@ describe('buildServerInstructions', () => {
       docsEnabled: true,
     });
 
-    expect(instructions).toContain('- `component-docs`: you look for');
+    expect(instructions).toContain('- `npx storybook skills component-docs --mcp`');
     expect(instructions).not.toContain('ui-workflow');
     expect(instructions).not.toContain('review-create');
   });
 
-  it('names test-run and component-docs when only the dev toolset is off', () => {
+  it('asks to run a skill or call a tool when both are named', () => {
     const instructions = buildServerInstructions({
       devEnabled: false,
       testSupported: true,
       docsEnabled: true,
     });
 
-    expect(instructions).toContain('For each of these tasks, call its Storybook tool first');
-    expect(instructions).toContain('- `test-run`: you run or fix story tests.');
-    expect(instructions).toContain('- `component-docs`: you look for');
+    expect(instructions).toContain(
+      'For each of these tasks, run its Storybook skill or call its Storybook tool first'
+    );
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {
@@ -102,30 +102,5 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toBe('');
-  });
-});
-
-describe('getSkillToolDescriptions', () => {
-  it('says what each skill tool returns and when to call it', () => {
-    expect(getSkillToolDescriptions({ testSupported: true, docsEnabled: true }))
-      .toMatchInlineSnapshot(`
-      {
-        "componentDocs": "Returns how to look up this project's components, with their props and usage examples. Read the whole result.
-
-      Call it first, before you edit any file, and follow its result when you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage.",
-        "uiWorkflow": "Returns Storybook's workflow for UI changes in this project, which looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results. Read the whole result.
-
-      Call it first, before you edit any file, and follow its result when you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories.",
-      }
-    `);
-  });
-
-  it('leaves out the steps of toolsets that are off', () => {
-    const { uiWorkflow } = getSkillToolDescriptions({ testSupported: false, docsEnabled: false });
-
-    expect(uiWorkflow).toContain(
-      'which updates your stories and publishes a review of the results.'
-    );
-    expect(uiWorkflow).not.toContain('story tests');
   });
 });

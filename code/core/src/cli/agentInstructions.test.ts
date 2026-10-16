@@ -130,7 +130,7 @@ describe('addStorybookAgentInstructions', () => {
 
 describe('planStorybookAgentInstructions', () => {
   it('writes another section, such as the MCP server instructions, in place of the skills section', async () => {
-    const section = '## Storybook\n\nCall the `ui-workflow` tool.\n';
+    const section = '## Storybook\n\nRun `npx storybook skills ui-workflow --mcp`.\n';
     const files = await planStorybookAgentInstructions(
       async (file) => (file === 'CLAUDE.md' ? '# Rules\n' : undefined),
       section

@@ -3,8 +3,10 @@ import { relative } from 'node:path';
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import { ALL_MCP_TOOLSETS } from './availability.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
 import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
+import type { SkillTextTransport } from './content/skill-vocabulary.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
@@ -18,6 +20,10 @@ export const SKILLS_OPTION_SPECS = [
     description: 'Storybook config directory of the target Storybook',
   },
   { flags: '--all', description: 'Print every skill in full' },
+  {
+    flags: '--mcp',
+    description: 'Name the tools of the Storybook MCP server instead of CLI commands',
+  },
   { flags: '-h, --help', description: 'Show this usage and every skill' },
 ] as const;
 
@@ -25,6 +31,9 @@ export type SkillsRunInput = {
   tokens: string[];
   help?: boolean;
   all?: boolean;
+  // Render the skills for an agent connected to the Storybook MCP server: MCP tool names
+  // instead of `npx storybook tools` commands.
+  mcp?: boolean;
   target: { cwd?: string; configDir?: string };
 };
 
@@ -114,6 +123,7 @@ export async function runSkillsCommand(
     const { docs, setupRun } = await serveSkills(
       ids,
       resolveStorybookConfigDir(input.target),
+      input.mcp ? 'mcp' : 'cli',
       deps
     );
     return {
@@ -136,6 +146,7 @@ class SkillsError extends Error {}
 async function serveSkills(
   ids: readonly SkillId[],
   configDir: string,
+  transport: SkillTextTransport,
   deps: SkillsRunDeps
 ): Promise<{ docs: string[]; setupRun?: SetupRun }> {
   let inputs: SkillInputs | undefined;
@@ -149,10 +160,10 @@ async function serveSkills(
       setupRun = setup.run;
     } else if (id === 'component-docs') {
       // The same text for every project, so it needs no configuration.
-      docs.push(buildComponentDocsSkill());
+      docs.push(buildComponentDocsSkill(transport));
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(assembleUiWorkflow(inputs));
+      docs.push(assembleUiWorkflow(inputs, transport));
     }
   }
   return { docs, setupRun };
@@ -214,16 +225,24 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
-function assembleUiWorkflow(inputs: SkillInputs): string {
+function assembleUiWorkflow(inputs: SkillInputs, transport: SkillTextTransport): string {
+  // Over MCP, a step only appears when the server registers its tools, with the same gates as
+  // addon-mcp's tool registry: the toolsets `main.ts` turns on, and for the docs tools the
+  // `componentsManifest` opt-in or composed Storybooks. The CLI commands are always there and only
+  // need manifests.
+  const mcp = transport === 'mcp';
+  const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
   return buildUiWorkflowSkill({
-    transport: 'cli',
+    transport,
     framework: inputs.framework,
     csfFactories: inputs.csfFactories,
     previewFile: inputs.previewFile,
     typescript: inputs.typescript,
-    docsEnabled: inputs.docsEnabledForCli,
-    testSupported: inputs.testSupported,
+    docsEnabled:
+      toolsets.docs && (mcp ? inputs.docsEnabled || inputs.composed : inputs.docsEnabledForCli),
+    testSupported: toolsets.test && inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
-    moduleGraphSupported: inputs.moduleGraphSupported,
+    moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
+    devEnabled: toolsets.dev,
   });
 }

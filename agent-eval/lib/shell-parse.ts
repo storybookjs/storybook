@@ -10,8 +10,8 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// Assertions ask for the workflow document as `ui-workflow`: the MCP tool of
-// that name, `storybook skills ui-workflow`, its earlier name `write-story`, or
+// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
+// ui-workflow`, with or without `--mcp`, its earlier name `write-story`, or
 // `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
 // it as the get-storybook-story-instructions tool; drop that name once 11 is
 // the latest release.
@@ -30,7 +30,6 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
 }
 
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
-  'component-docs',
   'docs-list',
   'docs-show',
   'docs-show-story',
@@ -40,7 +39,6 @@ export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
   'stories-find-by-component',
   'stories-preview',
   'test-run',
-  'ui-workflow',
 ] as const;
 
 const SHELL_COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|']);
@@ -115,7 +113,9 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // is workflowCallMatchesName's concern. A help request prints usage instead
       // of the skill, so it does not count — same rule as the tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
-      const [first, ...rest] = segment;
+      // `--mcp` only changes how the skill names the tools.
+      const mcp = segment.includes('--mcp');
+      const [first, ...rest] = segment.filter((token) => token !== '--mcp');
       const all = first === '--all' && rest.length === 0;
       const single =
         first !== undefined &&
@@ -126,7 +126,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       if (all || single) {
         calls.push({
           name: 'skills-get',
-          input: all ? { all: true } : { id: first },
+          input: { ...(all ? { all: true } : { id: first }), ...(mcp ? { mcp: true } : {}) },
           source: 'cli',
         });
         index += 1 + segment.length;

@@ -49,7 +49,6 @@ function toolMetadataFor(options: {
 }
 
 const TOOL_NAMES = [
-  'component-docs',
   'docs-list',
   'docs-show',
   'docs-show-story',
@@ -58,7 +57,6 @@ const TOOL_NAMES = [
   'stories-find-by-component',
   'stories-preview',
   'test-run',
-  'ui-workflow',
 ];
 
 describe('MCP tool descriptions', () => {

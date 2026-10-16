@@ -8,6 +8,7 @@ import {
   getToolAvailability,
   isValidHost,
   loadManifests,
+  type McpToolsets,
 } from 'storybook/internal/core-server';
 import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
@@ -275,6 +276,15 @@ export const experimental_devServer: PresetPropertyFn<
   });
   return app;
 };
+
+/**
+ * The toolsets this server registers, as `main.ts` sets them. `npx storybook skills --mcp` reads
+ * this, so its text names only the tools of this server.
+ */
+export const mcpToolsets = async (
+  _value: unknown,
+  options: AddonOptionsInput
+): Promise<McpToolsets> => v.parse(AddonOptions, { toolsets: options.toolsets ?? {} }).toolsets;
 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {
   return {

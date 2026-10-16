@@ -1,6 +1,6 @@
 /**
- * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`, and
- * `ui-workflow` and `component-docs` also as tools of addon-mcp. The ids are public CLI vocabulary —
+ * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`,
+ * which addon-mcp's server instructions run with `--mcp`. The ids are public CLI vocabulary —
  * plugin stubs (M7) will reference them — so treat renames as breaking.
  */
 export const SKILL_IDS = ['ui-workflow', 'component-docs', 'write-story', 'setup'] as const;

@@ -969,12 +969,12 @@ export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
 }
 
 // The section a project that uses the Storybook MCP server adds to its agent instructions: the
-// server instructions, which have agents call the `ui-workflow` and `component-docs` tools. Codex
-// in code mode (the default for GPT-6 models) shows MCP server instructions only once the model
-// searches its tools, so AGENTS.md is what reaches it. Storybook does not write this section yet; the docs will ask MCP users to add
+// server instructions, which run the skills with `--mcp`. Codex in code mode (the default for GPT-6
+// models) shows MCP server instructions only once the model searches its tools, so AGENTS.md is
+// what reaches it. Storybook does not write this section yet; the docs will ask MCP users to add
 // it (SB-2127: https://linear.app/chromaui/issue/SB-2127).
 export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void> {
-  // The stable server from npm serves other instructions and has no skill tools.
+  // The stable server from npm serves other instructions and has no `skills --mcp`.
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
     return;
   }

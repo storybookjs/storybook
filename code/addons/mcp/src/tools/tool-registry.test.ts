@@ -92,9 +92,8 @@ describe('a broken tool definition', () => {
   it('is dropped from registration with an error log, keeping every other tool served', async () => {
     const { server, tools } = makeServer();
 
-    const registered = await registerAddonMcpTools(server, context);
+    await expect(registerAddonMcpTools(server, context)).resolves.toBeUndefined();
 
-    expect([...registered]).toEqual([...tools.keys()]);
     expect([...tools.keys()]).not.toContain('test-run');
     expect([...tools.keys()]).toEqual(
       expect.arrayContaining(['stories-preview', 'docs-list', 'docs-show'])

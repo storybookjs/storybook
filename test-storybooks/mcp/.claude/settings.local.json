@@ -2,8 +2,6 @@
 	"permissions": {
 		"allow": [
 			"mcp__storybook-addon-mcp__stories-preview",
-			"mcp__storybook-addon-mcp__ui-workflow",
-			"mcp__storybook-addon-mcp__component-docs",
 			"mcp__storybook-addon-mcp__docs-list",
 			"mcp__storybook-addon-mcp__docs-show",
 			"mcp__storybook-mcp__docs-list",

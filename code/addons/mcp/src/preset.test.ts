@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
 import { getToolAvailability } from 'storybook/internal/core-server';
-import { experimental_devServer } from './preset.ts';
+import { experimental_devServer, mcpToolsets } from './preset.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
@@ -981,5 +981,19 @@ describe('experimental_devServer', () => {
 
     const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
     expect(result).toBe(mockApp);
+  });
+});
+
+describe('mcpToolsets', () => {
+  it('turns every toolset on by default', async () => {
+    expect(await mcpToolsets(undefined, {})).toEqual({ dev: true, docs: true, test: true });
+  });
+
+  it('keeps a toolset that main.ts turns off', async () => {
+    expect(await mcpToolsets(undefined, { toolsets: { dev: false } })).toEqual({
+      dev: false,
+      docs: true,
+      test: true,
+    });
   });
 });

@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
-import { registerToolset } from 'storybook/open-service';
-import { createTestToolset } from '../../vitest/src/node/toolset/definition.ts';
 import {
   incomingMessageToWebRequest,
   webResponseToServerResponse,
@@ -283,14 +281,6 @@ describe('mcpServerHandler', () => {
   }
 
   it('should initialize MCP server and handle requests', async () => {
-    // Registers `test-run`, which the instructions then name.
-    registerToolset(
-      createTestToolset({
-        channel: { on: () => {}, off: () => {}, emit: () => {} },
-        storyIndex: { getIndex: async () => ({ v: 5, entries: {} }) },
-        a11yEnabled: false,
-      })
-    );
     const mockOptions = createMockOptions();
     const mockReq = createMockIncomingMessage({
       method: 'POST',
@@ -337,7 +327,9 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.serverInfo.version).toBeDefined();
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
-    expect(parsedResponse.result.instructions).toContain('- `ui-workflow`: you create');
+    expect(parsedResponse.result.instructions).toContain(
+      '- `npx storybook skills ui-workflow --mcp`'
+    );
     expect(parsedResponse.result.instructions).toContain('you run or fix story tests');
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });
@@ -390,7 +382,9 @@ describe('mcpServerHandler', () => {
     const responseText = dataLine!.replace(/^data: /, '').trim();
     const parsedResponse = JSON.parse(responseText);
 
-    expect(parsedResponse.result.instructions).toContain('- `component-docs`: you look for');
+    expect(parsedResponse.result.instructions).toContain(
+      '- `npx storybook skills component-docs --mcp`'
+    );
     expect(parsedResponse.result.instructions).not.toContain('ui-workflow');
     expect(parsedResponse.result.instructions).not.toContain('test-run');
   });
@@ -530,7 +524,6 @@ describe('mcpServerHandler', () => {
       ],
     });
 
-    expect(toolNames).toContain('component-docs');
     expect(toolNames).toContain('docs-list');
     expect(toolNames).toContain('docs-show');
     expect(toolNames).toContain('docs-show-story');

@@ -160,12 +160,13 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
-  test('matches write-story, ui-workflow and --all, but not other ids, to ui-workflow', () => {
+  test('matches write-story, ui-workflow (also with --mcp) and --all, but not other ids, to ui-workflow', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story',
       'npx storybook skills --all',
       'npx storybook skills ui-workflow',
-      'npx storybook skills component-docs',
+      'npx storybook skills ui-workflow --mcp',
+      'npx storybook skills --mcp component-docs',
       'npx storybook skills all',
       'npx storybook skills setup',
     ]);
@@ -174,7 +175,8 @@ describe('parseStorybookWorkflowShellCommands', () => {
       { id: 'write-story' },
       { all: true },
       { id: 'ui-workflow' },
-      { id: 'component-docs' },
+      { id: 'ui-workflow', mcp: true },
+      { id: 'component-docs', mcp: true },
       { id: 'all' },
       { id: 'setup' },
     ]);
@@ -182,15 +184,11 @@ describe('parseStorybookWorkflowShellCommands', () => {
       true,
       true,
       true,
+      true,
       false,
       false,
       false,
     ]);
-  });
-
-  test('recognizes the skill tools of the MCP server', () => {
-    expect(normalizeStorybookWorkflowName('mcp__storybook__ui-workflow')).toBe('ui-workflow');
-    expect(normalizeStorybookWorkflowName('mcp__storybook__component-docs')).toBe('component-docs');
   });
 
   test("matches the stable server's get-storybook-story-instructions tool to ui-workflow", () => {

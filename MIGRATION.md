@@ -79,7 +79,7 @@
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Angular Vite: a new `propsTable` framework option](#angular-vite-a-new-propstable-framework-option)
   - [MCP tool names follow toolset.method](#mcp-tool-names-follow-toolsetmethod)
-  - [The get-storybook-story-instructions MCP tool is renamed to ui-workflow](#the-get-storybook-story-instructions-mcp-tool-is-renamed-to-ui-workflow)
+  - [The get-storybook-story-instructions MCP tool is removed](#the-get-storybook-story-instructions-mcp-tool-is-removed)
   - [Angular Vite defaults to server-side docgen](#angular-vite-defaults-to-server-side-docgen)
   - [Angular Vite: tsconfig paths now take priority over `node_modules` in production builds too](#angular-vite-tsconfig-paths-now-take-priority-over-node_modules-in-production-builds-too)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -2043,9 +2043,9 @@ Storybook's MCP tools are now named from their toolset and method (`stories.prev
 | `get-documentation`           | `docs-show`                 |
 | `get-documentation-for-story` | `docs-show-story`           |
 
-### The get-storybook-story-instructions MCP tool is renamed to ui-workflow
+### The get-storybook-story-instructions MCP tool is removed
 
-`@storybook/addon-mcp` serves its workflow from the `ui-workflow` tool: the same workflow as the `ui-workflow` skill, with the MCP tool names. A new `component-docs` tool, in the docs toolset, returns how to look up the project's components. Replace `get-storybook-story-instructions` in agent prompts and allowlists with `ui-workflow`.
+`@storybook/addon-mcp` no longer serves `get-storybook-story-instructions`. The server's instructions now have agents run `npx storybook skills ui-workflow --mcp`, which prints the same workflow as the `ui-workflow` skill, with the MCP tool names. This needs an agent that can run shell commands. Replace calls to the tool in agent prompts and allowlists with that command.
 
 ### Angular Vite defaults to server-side docgen
 

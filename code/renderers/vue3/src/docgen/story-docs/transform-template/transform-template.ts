@@ -768,11 +768,12 @@ function parseTemplateExpression(code: string): E.Expression | undefined {
     return undefined;
   }
   const [statement, ...rest] = program.body;
-  // Starting anywhere but right after the opening paren means `code` closed it, as in `a) + (b`.
+  // An expression that closed the wrapping paren, as in `a) + (b`, starts at the paren itself.
+  // Whitespace and outer parentheses (which the parser drops) make a valid expression start later.
   if (
     rest.length > 0 ||
     statement?.type !== 'ExpressionStatement' ||
-    (statement.expression as E.Expression & { start: number }).start !== 1
+    (statement.expression as E.Expression & { start: number }).start === 0
   ) {
     return undefined;
   }

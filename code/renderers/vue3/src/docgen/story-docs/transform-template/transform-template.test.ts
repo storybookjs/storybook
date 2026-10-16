@@ -498,6 +498,41 @@ export const Primary = {
     `);
   });
 
+  it('resolves bindings with leading whitespace, line breaks and outer parentheses', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', active: true },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`<MyButton
+      :label="
+        args.label
+      "
+      :active="(args.active)"
+      :class="(args.active ? 'on' : 'off')"
+      v-if=" args.active "
+    >{{ (args.label) }}</MyButton>\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton
+              label="Hi"
+              :active="(true)"
+              :class="(true ? 'on' : 'off')"
+              v-if=" true "
+            >{{ ('Hi') }}</MyButton>
+      </template>"
+    `);
+  });
+
   it('bails when a bound arg is missing from the story args altogether', async () => {
     const payload = await buildPayload(`
 export const Primary = {

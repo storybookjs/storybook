@@ -10065,7 +10065,11 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
+    react: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
+  peerDependenciesMeta:
+    react:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -33707,11 +33711,17 @@ __metadata:
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     prettier: ^2 || ^3
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
     vite-plus: ^0.1.15 || ^0.2.0 || ^0.3.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
     prettier:
+      optional: true
+    react:
+      optional: true
+    react-dom:
       optional: true
     vite-plus:
       optional: true
@@ -36301,8 +36311,12 @@ __metadata:
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
     next: ^15.0.0 || ^16.0.0
+    react: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    react:
+      optional: true
   languageName: unknown
   linkType: soft
 

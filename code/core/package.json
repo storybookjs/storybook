@@ -440,6 +440,8 @@
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
     "vite-plus": "^0.1.15 || ^0.2.0 || ^0.3.0"
   },
   "peerDependenciesMeta": {
@@ -447,6 +449,12 @@
       "optional": true
     },
     "prettier": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
       "optional": true
     },
     "vite-plus": {

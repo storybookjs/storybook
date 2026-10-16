@@ -2,11 +2,11 @@ import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
+  npm,
   sandboxArchive,
   server,
   testResults,
@@ -190,14 +190,9 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         },
         ...('inDevelopment' in data && data.inDevelopment
           ? [
-              {
-                run: {
-                  name: 'Install npm with min-release-age support',
-                  // Node's bundled npm is older and silently ignores NPM_CONFIG_MIN_RELEASE_AGE
-                  // during scaffold; `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
-                  command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
-                },
-              },
+              // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
+              // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
+              npm.pin(),
               {
                 run: {
                   name: 'Generate Sandbox',

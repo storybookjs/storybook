@@ -291,6 +291,21 @@ export interface List {
   items: readonly Span[];
 }
 
+/** The `{ … }` of an import or export with at least one named specifier. */
+export const specifierList = (
+  editor: SourceEditor,
+  declaration: E.ImportDeclaration | E.ExportNamedDeclaration
+): List => {
+  const items = declaration.specifiers.filter(
+    (specifier) => specifier.type === 'ImportSpecifier' || specifier.type === 'ExportSpecifier'
+  );
+  return {
+    open: editor.code.lastIndexOf('{', items[0].start) + 1,
+    close: editor.code.indexOf('}', items.at(-1)!.end),
+    items,
+  };
+};
+
 export const objectList = (object: E.ObjectExpression | E.ObjectPattern): List => ({
   open: object.start + 1,
   close: object.end - 1,
@@ -804,16 +819,9 @@ export const setImportSpecifiers = (
   kept: readonly E.ImportDeclaration['specifiers'][number][],
   added: { default?: string; named?: string[] } = {}
 ) => {
-  const { code } = editor;
   const { specifiers } = declaration;
   const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
-  const list: List | undefined = named.length
-    ? {
-        open: code.lastIndexOf('{', named[0].start) + 1,
-        close: code.indexOf('}', named.at(-1)!.end),
-        items: named,
-      }
-    : undefined;
+  const list = named.length ? specifierList(editor, declaration) : undefined;
   const namedTexts = [
     ...named.filter((specifier) => kept.includes(specifier)).map((s) => itemText(editor, list!, s)),
     ...(added.named ?? []),

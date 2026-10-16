@@ -14,6 +14,7 @@ import {
   printKey,
   printValue,
   exportDefaultKeywords,
+  specifierList,
 } from '../estree/editor.ts';
 import { generateUid } from '../estree/scope.ts';
 import { GeneratedTail, createTestGuardDeclaration, printWithTail } from './transformer.ts';
@@ -75,8 +76,7 @@ const dedupeImports = (
   );
   const named = existing?.specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
   if (existing && named && named.length > 0) {
-    const open = editor.code.indexOf('{', existing.start) + 1;
-    appendToList(editor, { open, close: editor.code.indexOf('}', open), items: named }, texts);
+    appendToList(editor, specifierList(editor, existing), texts);
     return;
   }
   if (

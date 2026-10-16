@@ -26,6 +26,7 @@ import {
   printString,
   removeFromList,
   removeStatement,
+  specifierList,
 } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
 import { valueSource } from './estree/values.ts';
@@ -460,24 +461,6 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     },
   };
 };
-
-const specifierList = (
-  editor: SourceEditor,
-  statement: E.ExportNamedDeclaration | E.ImportDeclaration
-): List => {
-  const open = editor.code.indexOf('{', statement.start) + 1;
-  const close = editor.code.indexOf('}', open);
-  return {
-    open,
-    close,
-    items: statement.specifiers.filter(
-      (specifier) =>
-        specifier.type !== 'ImportDefaultSpecifier' && specifier.type !== 'ImportNamespaceSpecifier'
-    ),
-  };
-};
-
-export { specifierList };
 
 export function createConfigObject(
   config: ConfigFile,

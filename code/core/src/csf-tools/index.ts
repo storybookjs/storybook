@@ -51,5 +51,6 @@ export {
   removeStatement,
   removeStatements,
   setImportSpecifiers,
+  specifierList,
   withParentheses,
 } from './estree/editor.ts';

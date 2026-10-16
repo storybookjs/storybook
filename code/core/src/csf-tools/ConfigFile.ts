@@ -6,7 +6,7 @@ import { dedent } from 'ts-dedent';
 import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { createConfigObject, specifierList } from './ConfigObject.ts';
+import { createConfigObject } from './ConfigObject.ts';
 import {
   type CsfExpression,
   type CsfMutationDiagnostic,
@@ -39,6 +39,7 @@ import {
   printValue,
   removeFromList,
   removeStatement,
+  specifierList,
 } from './estree/editor.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 

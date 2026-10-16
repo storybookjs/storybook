@@ -4,6 +4,7 @@ import {
   loadCsf,
   printCsf,
   removeFromList,
+  specifierList,
   storyShapeError,
   walk,
 } from 'storybook/internal/csf-tools';
@@ -77,7 +78,6 @@ export function upgradeDeprecatedTypes(editor: SourceEditor) {
       continue;
     }
 
-    const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
     const removed: E.ImportSpecifier[] = [];
     for (const specifier of specifiers) {
       if (specifier.type === 'ImportNamespaceSpecifier') {
@@ -122,9 +122,7 @@ export function upgradeDeprecatedTypes(editor: SourceEditor) {
     }
 
     if (removed.length > 0) {
-      const open = editor.code.lastIndexOf('{', named[0].start) + 1;
-      const close = editor.code.indexOf('}', named.at(-1)!.end);
-      removeFromList(editor, { open, close, items: named }, removed);
+      removeFromList(editor, specifierList(editor, statement), removed);
     }
   }
 

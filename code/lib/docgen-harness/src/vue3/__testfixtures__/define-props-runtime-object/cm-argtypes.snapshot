@@ -1,8 +1,5 @@
 {
   "count": {
-    "defaultValue": {
-      "summary": "0",
-    },
     "description": "Number of repetitions.",
     "name": "count",
     "table": {
@@ -20,9 +17,6 @@
     },
   },
   "format": {
-    "defaultValue": {
-      "summary": "String(value)",
-    },
     "description": "Maps the count to a display string.",
     "name": "format",
     "table": {
@@ -41,7 +35,6 @@
     },
   },
   "label": {
-    "defaultValue": undefined,
     "description": "Visible label for the control.",
     "name": "label",
     "table": {

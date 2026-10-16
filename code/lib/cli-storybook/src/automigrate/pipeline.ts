@@ -75,7 +75,7 @@ export interface TransformOutcome {
   errors: FileFailure[];
 }
 
-interface ProjectPaths {
+export interface ProjectPaths {
   configDir: string;
   /** Undefined when core cannot locate the main config. */
   mainConfigPath?: string;
@@ -116,9 +116,10 @@ const edit = async (hook: FixTransform, context: TransformContext, parsed: Parse
 
 /**
  * Classify every project file once, independent of which hooks are active, so a file keeps its kind
- * whichever fixes run. Stories claim their paths before the config directory glob does.
+ * whichever fixes run. Stories claim their paths before the config directory glob does. A fix's
+ * `check` can call this to find the files its hooks visit.
  */
-const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
+export const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
   if (kinds.size === 0) {
     return [];
   }
@@ -143,7 +144,9 @@ const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
   if (kinds.has('config')) {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
-    const configFiles = await globby(`${project.configDir}/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}`, {
+    // A pattern with a Windows path in it matches nothing, because glob patterns read `\` as an escape.
+    const configFiles = await globby('**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}', {
+      cwd: project.configDir,
       absolute: true,
       ignore: ['**/node_modules/**', '**/dist/**'],
     });

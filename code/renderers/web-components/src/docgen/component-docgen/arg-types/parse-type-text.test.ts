@@ -46,11 +46,11 @@ describe('parseTypeText', () => {
     },
     {
       input: 'boolean | number',
-      output: { type: { name: 'other', value: 'boolean | number' }, control: 'object' },
+      output: { type: { name: 'other', value: 'boolean | number' } },
     },
     {
       input: 'number | boolean',
-      output: { type: { name: 'other', value: 'number | boolean' }, control: 'object' },
+      output: { type: { name: 'other', value: 'number | boolean' } },
     },
     {
       input: 'number | SomeType',
@@ -58,39 +58,41 @@ describe('parseTypeText', () => {
     },
     {
       input: "'self' | { id: string }",
-      output: { type: { name: 'other', value: "'self' | { id: string }" }, control: 'object' },
+      output: {
+        type: { name: 'other', value: "'self' | { id: string }" },
+      },
     },
     {
       input: "'a' | Foo",
-      output: { type: { name: 'other', value: "'a' | Foo" }, control: 'object' },
+      output: { type: { name: 'other', value: "'a' | Foo" } },
     },
     {
       input: "'a' | SomeAlias",
-      output: { type: { name: 'other', value: "'a' | SomeAlias" }, control: 'object' },
+      output: { type: { name: 'other', value: "'a' | SomeAlias" } },
     },
     {
       input: "'auto' | true",
-      output: { type: { name: 'other', value: "'auto' | true" }, control: 'object' },
+      output: { type: { name: 'other', value: "'auto' | true" } },
     },
     {
       input: "boolean | 'auto'",
-      output: { type: { name: 'other', value: "boolean | 'auto'" }, control: 'object' },
+      output: { type: { name: 'other', value: "boolean | 'auto'" } },
     },
     {
       input: "'auto' | boolean",
-      output: { type: { name: 'other', value: "'auto' | boolean" }, control: 'object' },
+      output: { type: { name: 'other', value: "'auto' | boolean" } },
     },
     {
       input: "number | 'auto'",
-      output: { type: { name: 'other', value: "number | 'auto'" }, control: 'object' },
+      output: { type: { name: 'other', value: "number | 'auto'" } },
     },
     {
       input: "object | 'a'",
-      output: { type: { name: 'other', value: "object | 'a'" }, control: 'object' },
+      output: { type: { name: 'other', value: "object | 'a'" } },
     },
     {
       input: "'auto' | Date",
-      output: { type: { name: 'other', value: "'auto' | Date" }, control: 'object' },
+      output: { type: { name: 'other', value: "'auto' | Date" } },
     },
     {
       input: "'a' | () => void",
@@ -108,7 +110,7 @@ describe('parseTypeText', () => {
       input: "Array<'a' | 'b'>",
       output: {
         type: { name: 'array', value: { name: 'enum', value: ['a', 'b'] } },
-        control: 'multi-select',
+        control: { type: 'multi-select' },
         options: ['a', 'b'],
       },
     },
@@ -116,7 +118,7 @@ describe('parseTypeText', () => {
       input: "('a' | 'b')[]",
       output: {
         type: { name: 'array', value: { name: 'enum', value: ['a', 'b'] } },
-        control: 'multi-select',
+        control: { type: 'multi-select' },
         options: ['a', 'b'],
       },
     },
@@ -178,7 +180,7 @@ describe('parseTypeText', () => {
     },
     {
       input: 'Date | null',
-      output: { type: { name: 'date' }, control: 'date' },
+      output: { type: { name: 'date' }, control: { type: 'date' } },
     },
     {
       input: '(size: Size) => void',

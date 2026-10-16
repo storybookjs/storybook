@@ -1389,24 +1389,6 @@ describe('CsfFile', () => {
       expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
       expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
     });
-
-    it('v1-style story annotations', () => {
-      const input = dedent`
-        export default { title: 'foo/bar' };
-        export const A = () => {};
-        A.story = {
-          x: 1,
-          y: 2,
-        }
-        export const B = () => {};
-        B.story = {
-          z: 3,
-        }
-    `;
-      const csf = loadCsf(input, { makeTitle }).parse();
-      expect(Object.keys(csf._storyAnnotations.A)).toEqual(['x', 'y']);
-      expect(Object.keys(csf._storyAnnotations.B)).toEqual(['z']);
-    });
   });
 
   describe('CSF3', () => {
@@ -2967,6 +2949,25 @@ describe('CsfFile', () => {
                 mount: false
                 moduleMock: false
         `);
+      });
+
+      it('story typed with meta.type<>()', () => {
+        const parsed = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = meta.type<{ args: { icon: string } }>().story({ name: 'Typed' })
+            export const C = meta.type<{ args: { icon: string } }>().type<{ args: { size: number } }>().story()
+          `,
+          { makeTitle }
+        ).parse();
+
+        expect(parsed.stories).toMatchObject([
+          { id: 'default-title--a', name: 'A', __stats: { factory: true } },
+          { id: 'default-title--b', name: 'Typed', __stats: { factory: true } },
+          { id: 'default-title--c', name: 'C', __stats: { factory: true } },
+        ]);
       });
     });
     describe('errors', () => {

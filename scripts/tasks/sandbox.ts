@@ -7,7 +7,7 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
 import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { isNxTaskExecution } from '../utils/nx.ts';
 
@@ -46,7 +46,7 @@ export const sandbox: Task = {
     sanitizeOptions(details, options);
 
     if ('inDevelopment' in details.template && details.template.inDevelopment) {
-      if (pathExists(join(SANDBOX_DIRECTORY, details.key))) {
+      if (pathExists(details.sandboxDir)) {
         return ['run-registry'];
       }
 
@@ -137,12 +137,12 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const generateSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     await saveBench(
       'sandbox',

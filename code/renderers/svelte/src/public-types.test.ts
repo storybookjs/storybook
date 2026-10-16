@@ -5,15 +5,24 @@ import type {
   Args,
   Canvas,
   ComponentAnnotations,
+  StoryContext as GenericStoryContext,
   StoryAnnotations,
+  StrictArgs,
 } from 'storybook/internal/types';
 
-import type { Component, ComponentProps } from 'svelte';
+import type { Component, ComponentProps, Snippet } from 'svelte';
 
 import Button from './__test__/Button.svelte';
 import Decorator2 from './__test__/Decorator2.svelte';
 import Decorator1 from './__test__/Decorator.svelte';
-import type { Decorator, Meta, StoryObj } from './public-types.ts';
+import type {
+  Args as SvelteArgs,
+  Decorator,
+  Meta,
+  StoryContext,
+  StoryObj,
+} from './public-types.ts';
+import { defineMeta } from './svelte-csf/index.ts';
 import type { SvelteRenderer } from './types.ts';
 
 type SvelteStory<Comp extends Component<any, any, any>, Args, RequiredArgs> = StoryAnnotations<
@@ -220,4 +229,52 @@ it('StoryObj can accept args directly', () => {
       prop: true,
     },
   };
+});
+
+describe('Args', () => {
+  it('is the record of args without a type argument', () => {
+    expectTypeOf<SvelteArgs>().toEqualTypeOf<Args>();
+    expectTypeOf<Meta>().toEqualTypeOf<Meta<Args>>();
+    expectTypeOf<StoryObj>().toEqualTypeOf<StoryObj<Args>>();
+  });
+
+  it('is the args of a Svelte CSF story with the Story component as the type argument', () => {
+    const { Story } = defineMeta({ component: Button });
+
+    expectTypeOf<SvelteArgs<typeof Story>>().toEqualTypeOf<ComponentProps<typeof Button>>();
+  });
+
+  it('is never for a type argument that is not a Story component', () => {
+    expectTypeOf<SvelteArgs<typeof Button>>().toBeNever();
+    expectTypeOf<SvelteArgs<{ label: string }>>().toBeNever();
+  });
+});
+
+describe('StoryContext', () => {
+  it('is the Svelte renderer story context', () => {
+    expectTypeOf<StoryContext>().toEqualTypeOf<GenericStoryContext<SvelteRenderer, StrictArgs>>();
+  });
+
+  it('types the play function of a Svelte CSF story', () => {
+    const { Story: _Story } = defineMeta({
+      component: Button,
+      play(context) {
+        expectTypeOf(context).toExtend<StoryContext<ComponentProps<typeof Button>>>();
+        expectTypeOf(context.args).toEqualTypeOf<ComponentProps<typeof Button>>();
+      },
+    });
+  });
+
+  it('fits the play and template props of a Svelte CSF story', () => {
+    const { Story } = defineMeta({ component: Button });
+    type TArgs = SvelteArgs<typeof Story>;
+    type TStoryProps = ComponentProps<typeof Story>;
+
+    expectTypeOf<(context: StoryContext<TArgs>) => Promise<void>>().toExtend<
+      NonNullable<TStoryProps['play']>
+    >();
+    expectTypeOf<Snippet<[TArgs, StoryContext<TArgs>]>>().toExtend<
+      NonNullable<Extract<TStoryProps, { template?: unknown }>['template']>
+    >();
+  });
 });

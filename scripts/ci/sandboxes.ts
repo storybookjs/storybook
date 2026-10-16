@@ -368,7 +368,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
     !skipTasks?.includes('chromatic') ? chromaticJob : undefined,
     !skipTasks?.includes('vitest-integration') ? vitestJob : undefined,
     !skipTasks?.includes('e2e-tests') ? e2eJob : undefined,
-  ].filter(Boolean);
+  ].filter((job) => job !== undefined);
   return {
     id,
     name: key,

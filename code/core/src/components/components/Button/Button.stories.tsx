@@ -2,7 +2,7 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, fn, screen } from 'storybook/test';
+import { expect, fn, screen, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview.tsx';
@@ -39,6 +39,8 @@ export const IconButton = meta.story({
     await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
     await expect(button).not.toHaveAccessibleDescription();
     await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+    button.blur();
   },
 });
 
@@ -443,14 +445,18 @@ export const Tooltip = meta.story({
     children: 'Button',
     tooltip: 'A button can be pressed to perform an action',
   },
-  play: async ({ args, canvas, userEvent }) => {
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
     const button = canvas.getByRole('button', { name: 'Button' });
 
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
     await userEvent.hover(button);
     await expect(await screen.findByRole('tooltip')).toHaveTextContent(args.tooltip!);
     await expect(button).toHaveAccessibleName('Button');
     await expect(button).not.toHaveAccessibleDescription();
     await userEvent.unhover(button);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
   },
 });
 

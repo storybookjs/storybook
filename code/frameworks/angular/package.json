@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -62,7 +62,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
     "webpack": "5"
   },

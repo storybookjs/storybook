@@ -12,6 +12,19 @@
           },
         },
         {
+          "default": "'Final'",
+          "description": "Label inherited from the base class.",
+          "fieldName": "baseLabel",
+          "inheritedFrom": {
+            "module": "lit-inheritance-mixin.ts",
+            "name": "BaseElement",
+          },
+          "name": "base-label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
           "default": "false",
           "description": "Whether the mixed-in state is active.",
           "fieldName": "mixedActive",
@@ -22,19 +35,6 @@
           "name": "mixed-active",
           "type": {
             "text": "boolean",
-          },
-        },
-        {
-          "default": "'Base'",
-          "description": "Label inherited from the base class.",
-          "fieldName": "baseLabel",
-          "inheritedFrom": {
-            "module": "lit-inheritance-mixin.ts",
-            "name": "BaseElement",
-          },
-          "name": "base-label",
-          "type": {
-            "text": "string",
           },
         },
       ],
@@ -53,6 +53,20 @@
           },
         },
         {
+          "attribute": "base-label",
+          "default": "'Final'",
+          "description": "Label inherited from the base class.",
+          "inheritedFrom": {
+            "module": "lit-inheritance-mixin.ts",
+            "name": "BaseElement",
+          },
+          "kind": "field",
+          "name": "baseLabel",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
           "attribute": "mixed-active",
           "default": "false",
           "description": "Whether the mixed-in state is active.",
@@ -64,20 +78,6 @@
           "name": "mixedActive",
           "type": {
             "text": "boolean",
-          },
-        },
-        {
-          "attribute": "base-label",
-          "default": "'Base'",
-          "description": "Label inherited from the base class.",
-          "inheritedFrom": {
-            "module": "lit-inheritance-mixin.ts",
-            "name": "BaseElement",
-          },
-          "kind": "field",
-          "name": "baseLabel",
-          "type": {
-            "text": "string",
           },
         },
       ],

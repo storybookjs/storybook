@@ -18,11 +18,10 @@ export type FrameworkOptions = {
    * Storybook 8, the official vue plugin "vue-component-meta" (Volar) can be used which supports
    * more complex types, better type docs, support for js(x)/ts(x) components and more.
    *
-   * "vue-docgen-api" is deprecated and will be removed in the next major release of Storybook
-   *
    * Set to `false` to disable docgen processing entirely for improved build performance.
    *
    * @default 'vue-docgen-api'
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
   docgen?:
     | boolean

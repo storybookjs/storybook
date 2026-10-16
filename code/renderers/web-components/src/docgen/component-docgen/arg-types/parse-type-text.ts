@@ -1,5 +1,15 @@
 import type { SBType, StrictInputType } from 'storybook/internal/types';
 
+/** Server argTypes skip the client normalizer, so controls are always the object form. */
+export type ServiceControl = Exclude<StrictInputType['control'], string>;
+
+export interface ParsedTypeText {
+  type: SBType;
+  /** Only when core's `inferControls` would not derive it from `type`. */
+  control?: ServiceControl;
+  options?: (string | number)[];
+}
+
 const ARRAY_RE = /^(?:Array<(.+)>|(.+)\[\])$/;
 const DROPPED_MEMBERS = new Set([
   'undefined',
@@ -15,13 +25,6 @@ const FUNCTION_RE = /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/;
 const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
 /** Real types nest a handful of levels; the cap only stops pathological input. */
 const MAX_ARRAY_DEPTH = 8;
-
-export interface ParsedTypeText {
-  type: SBType;
-  /** Only when core's `inferControls` would not derive it from `type`. */
-  control?: StrictInputType['control'];
-  options?: (string | number)[];
-}
 
 export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeText | undefined {
   const trimmed = text?.trim() ?? '';
@@ -42,7 +45,7 @@ export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeTe
   if (literalValues.length > 0) {
     return {
       type: { name: 'other', value: members.join(' | ') },
-      control: pickObjectControl(members),
+      ...(members.some(isCallable) ? { control: false as const } : {}),
     };
   }
 
@@ -63,13 +66,13 @@ export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeTe
       return element.name === 'enum'
         ? {
             type: { name: 'array', value: element },
-            control: 'multi-select',
+            control: { type: 'multi-select' },
             options: element.value as (string | number)[],
           }
         : { type: { name: 'array', value: element } };
     }
     if (member === 'Date') {
-      return { type: { name: 'date' }, control: 'date' };
+      return { type: { name: 'date' }, control: { type: 'date' } };
     }
     if (isBareObjectType(member)) {
       return { type: { name: 'object', value: {} } };
@@ -85,7 +88,10 @@ export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeTe
     }
   }
 
-  return { type: { name: 'other', value: members.join(' | ') }, control: false };
+  return {
+    type: { name: 'other', value: members.join(' | ') },
+    control: false,
+  };
 }
 
 function normalizeMembers(text: string): string[] {
@@ -125,7 +131,7 @@ function pickScalar(members: string[]): ParsedTypeText | undefined {
   );
   const hasNumber = members.some((member) => member === 'number' || member === 'bigint');
   if (hasBoolean && hasNumber) {
-    return { type: { name: 'other', value: members.join(' | ') }, control: 'object' };
+    return { type: { name: 'other', value: members.join(' | ') } };
   }
 
   if (hasBoolean) {
@@ -135,10 +141,6 @@ function pickScalar(members: string[]): ParsedTypeText | undefined {
     return { type: { name: 'number' } };
   }
   return undefined;
-}
-
-function pickObjectControl(members: string[]): StrictInputType['control'] {
-  return members.some(isCallable) ? false : 'object';
 }
 
 function isCallable(text: string): boolean {

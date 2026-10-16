@@ -12,6 +12,7 @@ import { isRecord } from './utils/type.ts';
 type FixturePackageJson = {
   evals?: {
     template?: unknown;
+    checkoutRegistry?: unknown;
   };
 };
 
@@ -27,8 +28,7 @@ export type StorybookWorkspace = Map<string, WorkspacePackage>;
 
 export type EvalAgent = 'claude-code' | 'codex';
 // 'none' = bare sandbox: no Storybook tooling flavor recorded in the agent
-// context, review off unless forced by EVAL_REVIEW. Used by control cases that
-// must provide zero agent support.
+// context. Used by control cases that must provide zero agent support.
 export type EvalIntegration = 'mcp' | 'plugin' | 'none';
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
@@ -40,17 +40,6 @@ const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
 const EVALS_DIR = path.join(AGENT_EVAL_ROOT, 'evals');
 const TEMPLATE_METADATA_FILE = 'eval-template.json';
-const PREVIEW_BROWSER_MOCK_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'preview-browser-mock.mjs'
-);
-const PREVIEW_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'preview-browser-mock.mjs'
-);
 const NODE_REPL_MOCK_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'node-repl-mock.mjs');
 const NODE_REPL_MOCK_SANDBOX_PATH = path.posix.join('.agent-eval', 'mcp', 'node-repl-mock.mjs');
 const CODEX_BROWSER_MOCK_SOURCE_PATH = path.join(
@@ -82,18 +71,30 @@ const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
   'codex-browser-skill.md'
 );
 const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
-const CODEX_AGENTS_MD_REVIEW_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-agents-review.md'
-);
 const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   '.agents',
   'skills',
   'control-in-app-browser',
   'SKILL.md'
 );
+const CLAUDE_BROWSER_MOCK_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'mcp',
+  'claude-browser-mock.mjs'
+);
+const CLAUDE_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
+  '.agent-eval',
+  'mcp',
+  'claude-browser-mock.mjs'
+);
+const CLAUDE_BROWSER_PROMPT_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'mcp',
+  'claude-browser-prompt.md'
+);
+const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = 'CLAUDE.md';
 const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
   'lib',
@@ -118,26 +119,45 @@ const CHECKOUT_PACKAGES_DIR = 'local-packages';
 // Read by start-storybook-mcp.mjs to fail the install when npm took one of these from the registry.
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
+const CHECKOUT_REGISTRY_PORT = 4873;
+const CHECKOUT_REGISTRY_URL = `http://127.0.0.1:${CHECKOUT_REGISTRY_PORT}/`;
+const CHECKOUT_REGISTRY_SERVER_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'checkout-registry-server.mjs'
+);
+// Outside the project, so the agent never sees the tarballs and the project copy stays small.
+const CHECKOUT_REGISTRY_SANDBOX_DIR = '/tmp/agent-eval-registry';
+const CHECKOUT_REGISTRY_UPLOAD_DIR = '.agent-eval-registry';
+// Read by expectStorybookInstalledFromCheckout in an EVAL.ts.
+const CHECKOUT_REGISTRY_INFO_SANDBOX_PATH = path.posix.join(
+  '__agent_eval__',
+  'checkout-registry.json'
+);
+// The CLIs `create storybook` and `storybook upgrade` run, the React + Vite framework, and the
+// addons `create storybook` installs. `storybook upgrade` bumps every Storybook package a project
+// has, so the registry also serves the MCP addon, which agents add when they upgrade through a
+// published 10.x on the way to 11. The registry also serves the monorepo packages these depend on.
+const CHECKOUT_REGISTRY_PACKAGES = [
+  'create-storybook',
+  '@storybook/cli',
+  'storybook',
+  '@storybook/react-vite',
+  '@storybook/addon-a11y',
+  '@storybook/addon-docs',
+  '@storybook/addon-mcp',
+  '@storybook/addon-onboarding',
+  '@storybook/addon-vitest',
+  'eslint-plugin-storybook',
+];
 const execFileAsync = promisify(execFile);
-// EVAL_REVIEW=1 enables the `experimentalReview` feature flag in every
-// sandbox Storybook, turning review on for the MCP integration too. Plugin
-// runs don't need it: review is on by default for the `storybook tools` CLI
-// channel, so plugin sandboxes always run review-on, matching released
-// users of either integration. EVAL.ts assertions read the effective
-// per-run signal from the agent context (see isReviewEnabled in test-utils).
-const REVIEW_ENABLED = process.env.EVAL_REVIEW === '1';
-
-// The review mode a sandbox actually runs in: the plugin integration gets
-// review by default from the addon; the MCP integration only with the
-// EVAL_REVIEW=1 feature-flag override.
-export function isReviewEnabledFor(integration: EvalIntegration): boolean {
-  return REVIEW_ENABLED || integration === 'plugin';
-}
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
-const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
+const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
+// Captures the entries of the `addons` list, without the trailing comma.
+const STORYBOOK_ADDONS_PATTERN = /addons: \[([^\]]*?),?\s*\]/;
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
+const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
-const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
 const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'code', 'lib', 'claude-plugin', 'skills');
@@ -153,7 +173,7 @@ const CODEX_PLUGIN_SKILLS_DIR = path.join(
 
 export async function setupSandbox(
   sandbox: Sandbox,
-  options: { agent: EvalAgent; integration: EvalIntegration }
+  options: { agent: EvalAgent; integration: EvalIntegration; model?: string }
 ): Promise<void> {
   await writeEvalSupportFiles(sandbox, options);
 
@@ -185,8 +205,8 @@ export async function setupSandbox(
 
   files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
-  if (REVIEW_ENABLED) {
-    enableExperimentalReview(files);
+  if (options.integration === 'mcp') {
+    addMcpAddon(files);
   }
 
   const workspace = await readStorybookWorkspace();
@@ -199,9 +219,7 @@ export async function setupSandbox(
       Object.assign(files, await packCheckoutPackages(packages));
       files[CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH] = JSON.stringify(packages.map((pkg) => pkg.name));
       // Keeps the megabytes of tarballs out of the run's captured changes and saved results.
-      const gitignore = files['.gitignore'] ?? '';
-      files['.gitignore'] =
-        `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${CHECKOUT_PACKAGES_DIR}/\n`;
+      ignoreInGit(files, `${CHECKOUT_PACKAGES_DIR}/`);
       packedCheckout = true;
     }
   }
@@ -214,6 +232,8 @@ export async function setupSandbox(
       START_STORYBOOK_SCRIPT_SOURCE_PATH,
       'utf8'
     );
+    // The script's debug dumps land after the baseline commit and are not the agent's changes.
+    ignoreInGit(files, 'mcp-debug/');
   }
 
   await setupTemplateSandbox(sandbox, templateMetadata);
@@ -222,22 +242,41 @@ export async function setupSandbox(
   if (packedCheckout) {
     await decodeCheckoutPackages(sandbox);
   }
+
+  if (packageJson.evals?.checkoutRegistry === true) {
+    await startCheckoutRegistry(sandbox, workspace);
+  }
+}
+
+function ignoreInGit(files: Record<string, string>, pattern: string): void {
+  const gitignore = files['.gitignore'] ?? '';
+  files['.gitignore'] =
+    `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${pattern}\n`;
+}
+
+// The harness commits the fixture before `setup` runs, so everything setup writes afterwards (the
+// template, skills, mocks, MCP config) would show up as the agent's own change: in `git status`, in
+// `storybook tools stories changed`, and in the files saved with the run. Call this last in `setup`.
+export async function commitSandboxBaseline(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    'git add -A && git commit -q --allow-empty -m "Set up the project"',
+  ]);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to commit the sandbox baseline: ${result.stderr || result.stdout}`);
+  }
 }
 
 async function writeEvalSupportFiles(
   sandbox: Sandbox,
-  options: { agent: EvalAgent; integration: EvalIntegration }
+  options: { agent: EvalAgent; integration: EvalIntegration; model?: string }
 ): Promise<void> {
   await sandbox.writeFiles({
     [TRANSCRIPT_HELPER_SANDBOX_PATH]: await fs.readFile(TRANSCRIPT_HELPER_SOURCE_PATH, 'utf8'),
     [SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
     [TYPE_UTIL_SANDBOX_PATH]: await fs.readFile(TYPE_UTIL_SOURCE_PATH, 'utf8'),
     [AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
-      {
-        agent: options.agent,
-        integration: options.integration,
-        review: isReviewEnabledFor(options.integration),
-      },
+      { agent: options.agent, model: options.model, integration: options.integration },
       null,
       2
     ).concat('\n'),
@@ -337,28 +376,32 @@ function mergeTemplateAndFixtureFiles(
   return files;
 }
 
-// Enables `features.experimentalReview` in every sandbox Storybook config.
-// Review builds on change detection (on by default), so this one flag is the
-// only opt-in needed. The insertion is anchored on the uniform config-object
-// opener every template and fixture main.ts uses; a main.ts that drifts from
-// it fails loudly instead of silently running with review off. Exported for
-// the drift-guard test only.
-export function enableExperimentalReview(files: Record<string, string>): void {
+// Only the MCP experiments get the addon: the plugin skills have to work in a project without it.
+export function addMcpAddon(files: Record<string, string>): void {
   for (const [filePath, content] of Object.entries(files)) {
     if (!STORYBOOK_MAIN_PATTERN.test(filePath)) {
       continue;
     }
 
-    if (!content.includes(STORYBOOK_CONFIG_OBJECT_OPENER)) {
-      throw new Error(
-        `Cannot enable experimentalReview: ${filePath} does not contain "${STORYBOOK_CONFIG_OBJECT_OPENER}"`
-      );
+    if (!STORYBOOK_ADDONS_PATTERN.test(content)) {
+      throw new Error(`Cannot add ${STORYBOOK_MCP_ADDON}: ${filePath} has no "addons: [...]" list`);
     }
-
     files[filePath] = content.replace(
-      STORYBOOK_CONFIG_OBJECT_OPENER,
-      `${STORYBOOK_CONFIG_OBJECT_OPENER}\n\tfeatures: {\n\t\t// @ts-expect-error -- not yet in core's features type; review is opt-in via this flag\n\t\texperimentalReview: true,\n\t},`
+      STORYBOOK_ADDONS_PATTERN,
+      (_, addons: string) =>
+        `addons: [${[addons.trim(), `'${STORYBOOK_MCP_ADDON}'`].filter(Boolean).join(', ')}]`
     );
+
+    const manifestPath = path.posix.join(path.posix.dirname(filePath), '..', 'package.json');
+    const packageJson = parseJsonFile(manifestPath, files[manifestPath] ?? '', 'fixture');
+    if (!isRecord(packageJson)) {
+      throw new Error(`Expected ${manifestPath} to contain a JSON object`);
+    }
+    packageJson.devDependencies = {
+      ...(isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {}),
+      [STORYBOOK_MCP_ADDON]: WORKSPACE_SPEC,
+    };
+    files[manifestPath] = JSON.stringify(packageJson, null, 2).concat('\n');
   }
 }
 
@@ -665,18 +708,108 @@ function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string
 export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]> {
   const workspace = await readStorybookWorkspace();
   const packages = new Map<string, WorkspacePackage>();
+  // No manifest lists the addon: setup adds it for the MCP experiments.
+  const mcpAddon = workspace.get(STORYBOOK_MCP_ADDON);
+  if (mcpAddon) {
+    packages.set(mcpAddon.name, mcpAddon);
+  }
   for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
     for await (const manifestPath of fs.glob('**/package.json', {
       cwd: sourceDir,
       exclude: (name) => name === 'node_modules',
     })) {
       const content = await fs.readFile(path.join(sourceDir, manifestPath), 'utf8');
-      for (const pkg of await pointStorybookAtCheckout({ 'package.json': content }, workspace)) {
+      const manifestPackages = await pointStorybookAtCheckout(
+        { 'package.json': content },
+        workspace
+      );
+      const evals = (JSON.parse(content) as FixturePackageJson).evals;
+      if (evals?.checkoutRegistry === true) {
+        manifestPackages.push(...checkoutRegistryPackages(workspace));
+      }
+      for (const pkg of manifestPackages) {
         packages.set(pkg.name, pkg);
       }
     }
   }
   return [...packages.values()];
+}
+
+export function checkoutRegistryPackages(workspace: StorybookWorkspace): WorkspacePackage[] {
+  const packages = new Map<string, WorkspacePackage>();
+  const add = (name: string) => {
+    const pkg = workspace.get(name);
+    if (!pkg) {
+      throw new Error(`${name} is not a published package of this monorepo`);
+    }
+    if (!packages.has(name)) {
+      packages.set(name, pkg);
+      pkg.dependencies.forEach(add);
+    }
+  };
+  CHECKOUT_REGISTRY_PACKAGES.forEach(add);
+  return [...packages.values()];
+}
+
+// For evals whose agent installs Storybook itself (`evals.checkoutRegistry` in the fixture), so
+// `npm create storybook@next` and `npx storybook@next upgrade` install this checkout instead of the
+// published prerelease. The registry publishes the checkout under `next`, keeps `latest` on the
+// published release until that release is on the checkout's major, and sends every other request
+// on to npm.
+async function startCheckoutRegistry(
+  sandbox: Sandbox,
+  workspace: StorybookWorkspace
+): Promise<void> {
+  const packages = checkoutRegistryPackages(workspace);
+  const tarballs = await packCheckoutPackages(packages);
+  // Every published package of the monorepo carries the version of code/package.json.
+  const { version } = JSON.parse(
+    await fs.readFile(path.join(REPO_ROOT, 'code', 'package.json'), 'utf8')
+  ) as { version: string };
+
+  await sandbox.writeFiles({
+    ...Object.fromEntries(
+      Object.entries(tarballs).map(([tarballPath, tarball]) => [
+        path.posix.join(CHECKOUT_REGISTRY_UPLOAD_DIR, path.posix.basename(tarballPath)),
+        tarball,
+      ])
+    ),
+    [path.posix.join(CHECKOUT_REGISTRY_UPLOAD_DIR, 'registry.json')]: JSON.stringify({
+      version,
+      tarballs: Object.fromEntries(
+        packages.map((pkg) => [pkg.name, path.posix.basename(checkoutTarballPath(pkg.name))])
+      ),
+      workspacePackages: [...workspace.keys()],
+    }),
+    [path.posix.join(CHECKOUT_REGISTRY_UPLOAD_DIR, 'server.mjs')]: await fs.readFile(
+      CHECKOUT_REGISTRY_SERVER_SOURCE_PATH,
+      'utf8'
+    ),
+    [CHECKOUT_REGISTRY_INFO_SANDBOX_PATH]: JSON.stringify({ url: CHECKOUT_REGISTRY_URL, version }),
+  });
+
+  const ping = `curl -sf ${CHECKOUT_REGISTRY_URL}-/ping > /dev/null`;
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    [
+      'set -e',
+      `rm -rf ${CHECKOUT_REGISTRY_SANDBOX_DIR} && mkdir -p ${CHECKOUT_REGISTRY_SANDBOX_DIR}`,
+      `cd ${CHECKOUT_REGISTRY_UPLOAD_DIR}`,
+      `for f in *.base64; do base64 -d "$f" > "${CHECKOUT_REGISTRY_SANDBOX_DIR}/\${f%.base64}"; done`,
+      `mv registry.json server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR}/`,
+      `cd .. && rm -rf ${CHECKOUT_REGISTRY_UPLOAD_DIR}`,
+      // Restarted in a loop, because agents stop a hung Storybook with `killall node`.
+      `setsid bash -c 'while :; do node ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.mjs ${CHECKOUT_REGISTRY_SANDBOX_DIR} ${CHECKOUT_REGISTRY_PORT}; sleep 0.2; done' > ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log 2>&1 < /dev/null &`,
+      `for i in $(seq 1 100); do ${ping} && break; sleep 0.1; done`,
+      `${ping} || { cat ${CHECKOUT_REGISTRY_SANDBOX_DIR}/server.log; exit 1; }`,
+      // User-level, so it applies wherever the agent runs npm and stays out of the project.
+      `npm config set registry ${CHECKOUT_REGISTRY_URL} --location=user`,
+    ].join('\n'),
+  ]);
+
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to start the checkout registry: ${result.stderr || result.stdout}`);
+  }
 }
 
 export async function compileCheckoutPackages(packages: WorkspacePackage[]): Promise<void> {
@@ -847,10 +980,7 @@ export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
     return;
   }
-  const instructions = await fs.readFile(
-    isReviewEnabledFor('mcp') ? CODEX_AGENTS_MD_REVIEW_SOURCE_PATH : CODEX_AGENTS_MD_SOURCE_PATH,
-    'utf8'
-  );
+  const instructions = await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8');
   await sandbox.writeFiles({
     'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
   });
@@ -879,6 +1009,24 @@ tool_timeout_sec = 180
 `;
 
   await appendCodexConfig(sandbox, config);
+}
+
+// The sandbox CLAUDE.md stands in for the `<built_in_browser>` block the
+// desktop app injects, so the agent knows it has that browser.
+export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
+  let existingClaudeMd = '';
+  try {
+    existingClaudeMd = `${(await sandbox.readFile(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH)).trimEnd()}\n\n`;
+  } catch {}
+  await sandbox.writeFiles({
+    [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
+    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]:
+      existingClaudeMd + (await fs.readFile(CLAUDE_BROWSER_PROMPT_SOURCE_PATH, 'utf8')),
+  });
+  await writeClaudeMcpServer(sandbox, CLAUDE_BROWSER_MCP_SERVER_NAME, {
+    command: 'node',
+    args: [CLAUDE_BROWSER_MOCK_SANDBOX_PATH],
+  });
 }
 
 async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<void> {
@@ -968,19 +1116,6 @@ export async function installSkillDir(
     resolvedDir,
     path.posix.join(skillsRoot, path.basename(resolvedDir))
   );
-}
-
-export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {
-  await sandbox.writeFiles({
-    [PREVIEW_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(
-      PREVIEW_BROWSER_MOCK_SOURCE_PATH,
-      'utf8'
-    ),
-  });
-  await writeClaudeMcpServer(sandbox, PREVIEW_BROWSER_MCP_SERVER_NAME, {
-    command: 'node',
-    args: [PREVIEW_BROWSER_MOCK_SANDBOX_PATH],
-  });
 }
 
 async function writePluginSkills(

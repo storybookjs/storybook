@@ -45,8 +45,6 @@ export function createStoryArgsResolver(
   csf: CsfFile,
   references?: StoryReferences
 ): StoryArgsResolver {
-  // Index the story file so its nodes print as written wherever a resolution carries them.
-  csf._editor.parentOf(csf._program);
   const ctx: ReferenceContext = {
     editor: csf._editor,
     filePath: csf._options.fileName ?? '',

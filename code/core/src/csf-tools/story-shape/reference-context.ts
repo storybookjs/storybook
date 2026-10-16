@@ -66,8 +66,6 @@ export function createStoryReferenceResolver(
 export const parseReferenceModule = (filePath: string): ReferenceModule | undefined => {
   try {
     const editor = new SourceEditor(readFileSync(filePath, 'utf8'), filePath);
-    // Index the module so its nodes print as written wherever a resolution carries them.
-    editor.parentOf(editor.program);
     return { editor, filePath };
   } catch {
     return undefined;

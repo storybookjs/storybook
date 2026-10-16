@@ -99,8 +99,6 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       return { reason: 'no-meta-component' };
     }
 
-    // Index the story file so the nodes a resolution carries print as written.
-    csf._editor.parentOf(csf._program);
     const storyModule: ReferenceModule = { editor: csf._editor, filePath: storyPath };
     const expression = unwrapComponentExpression(node);
     if (expression.type === 'Identifier') {

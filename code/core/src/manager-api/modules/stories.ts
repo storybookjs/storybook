@@ -1276,7 +1276,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const { title, name, viewMode, scrollTo } = payload;
       fullAPI.selectStory(title, name, { viewMode, scrollTo, ref: ref?.id });
     } else {
-      logger.warn('Received a SELECT_STORY event without storyId or title; ignoring it.');
+      logger.warn('Received a SELECT_STORY event without storyId, title or name; ignoring it.');
     }
   });
 

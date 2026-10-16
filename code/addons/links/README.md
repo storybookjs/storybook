@@ -141,8 +141,8 @@ export default {
   title: 'Link',
 };
 
-export const first = () => <LinkTo story="second">Go to Second</LinkTo>;
-export const second = () => <LinkTo story="first">Go to First</LinkTo>;
+export const first = () => <LinkTo name="second">Go to Second</LinkTo>;
+export const second = () => <LinkTo name="first">Go to First</LinkTo>;
 ```
 
 It accepts all the props the `a` element does, plus `title` and `name`. If the `title` prop is omitted, the current component's title will be used.

@@ -1457,7 +1457,7 @@ describe('stories API', () => {
       });
     });
 
-    it('warns and does not navigate on a payload without storyId or title', () => {
+    it('warns and does not navigate on a payload without storyId, title or name', () => {
       const { provider, fullAPI } = setup();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
@@ -1465,7 +1465,9 @@ describe('stories API', () => {
       provider.channel.emit(SELECT_STORY, {});
 
       expect(fullAPI.selectStory).not.toHaveBeenCalled();
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('without storyId or title'));
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('without storyId, title or name')
+      );
 
       warnSpy.mockRestore();
     });

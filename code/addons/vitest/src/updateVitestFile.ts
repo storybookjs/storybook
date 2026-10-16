@@ -90,52 +90,63 @@ const findNamedProp = (
       p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === name
   );
 
-/** Type guard for a property that is a `projects` key with an array value. */
-const isProjectsArrayProp = (
-  p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
-): p is t.ObjectProperty =>
-  p.type === 'ObjectProperty' &&
-  p.key.type === 'Identifier' &&
-  p.key.name === 'projects' &&
-  p.value.type === 'ArrayExpression';
-
-/** Type guard for a `projects` property with any value, including non-array lists. */
-const isProjectsProp = (
-  p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement
-): p is t.ObjectProperty & { value: t.Expression } =>
-  p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'projects';
-
 /**
- * Wraps a non-array `projects` value into an array that preserves the original list: a string
- * glob becomes a single entry; anything else must evaluate to the project array Vitest
- * requires, so it is spread to stay flat. The spread coalesces to an empty array because the
- * expression can legitimately evaluate to undefined (e.g. `process.env.CI ? projects :
- * undefined`) — spreading undefined would throw while loading the config.
+ * Normalizes a non-array `projects` property value into an array expression that keeps the
+ * original list applying:
+ * - a string or template-literal glob becomes a single entry;
+ * - a value statically proven to be an array (e.g. an identifier referencing an array
+ *   initializer) spreads plain, since it cannot be nullish at runtime;
+ * - anything else (call results, conditionals, unresolved references) spreads with a
+ *   `?? [{ extends: true }]` fallback. In Vitest 5 an absent list means "no workspace — the
+ *   root config runs as the default project", and `{ extends: true }` reproduces exactly
+ *   that; an empty-array fallback would instead declare an empty workspace and silently
+ *   stop the user's own tests.
  */
-const projectListValueToArray = (value: t.Expression): t.ArrayExpression =>
-  value.type === 'StringLiteral' || value.type === 'TemplateLiteral'
-    ? { type: 'ArrayExpression', elements: [value] }
-    : {
-        type: 'ArrayExpression',
-        elements: [
-          {
-            type: 'SpreadElement',
-            argument: {
-              type: 'LogicalExpression',
-              operator: '??',
-              left: value,
-              right: { type: 'ArrayExpression', elements: [] },
-            },
+const projectListValueToArray = (value: t.Expression, ast: BabelFile['ast']): t.ArrayExpression => {
+  if (value.type === 'StringLiteral' || value.type === 'TemplateLiteral') {
+    return { type: 'ArrayExpression', elements: [value] };
+  }
+  if (resolveExpression(value, ast)?.type === 'ArrayExpression') {
+    return { type: 'ArrayExpression', elements: [{ type: 'SpreadElement', argument: value }] };
+  }
+  return {
+    type: 'ArrayExpression',
+    elements: [
+      {
+        type: 'SpreadElement',
+        argument: {
+          type: 'LogicalExpression',
+          operator: '??',
+          left: value,
+          right: {
+            type: 'ArrayExpression',
+            elements: [
+              {
+                type: 'ObjectExpression',
+                properties: [
+                  {
+                    type: 'ObjectProperty',
+                    key: { type: 'Identifier', name: 'extends' } as t.Identifier,
+                    value: { type: 'BooleanLiteral', value: true } as t.BooleanLiteral,
+                    computed: false,
+                    shorthand: false,
+                  } as t.ObjectProperty,
+                ],
+              },
+            ],
           },
-        ],
-      };
+        },
+      },
+    ],
+  };
+};
 
 /**
  * Appends storybook project(s) from template into an existing `test.projects` array, then merges
  * any additional test-level options (e.g. coverage) that don't already exist.
  */
 const appendToExistingProjectRefs = (
-  existingProjectRefsProp: t.ObjectProperty,
+  existingProjectRefs: t.ArrayExpression,
   resolvedTestValue: t.ObjectExpression,
   templateTestProp: t.ObjectProperty | undefined,
   properties: t.ObjectExpression['properties'],
@@ -143,13 +154,9 @@ const appendToExistingProjectRefs = (
 ) => {
   if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
     // Append template projects entries to the existing projects array
-    const templateProjectRefsProp = templateTestProp.value.properties.find(
-      (p): p is t.ObjectProperty => isProjectsArrayProp(p)
-    );
-    if (templateProjectRefsProp && templateProjectRefsProp.value.type === 'ArrayExpression') {
-      (existingProjectRefsProp.value as t.ArrayExpression).elements.push(
-        ...(templateProjectRefsProp.value as t.ArrayExpression).elements
-      );
+    const templateProjectRefsProp = findNamedProp(templateTestProp.value.properties, 'projects');
+    if (templateProjectRefsProp?.value.type === 'ArrayExpression') {
+      existingProjectRefs.elements.push(...templateProjectRefsProp.value.elements);
     }
 
     // Merge other test-level options from template (e.g. coverage) that don't already exist
@@ -195,7 +202,7 @@ const wrapTestConfigAsProject = (
 ) => {
   const projectsProp =
     templateTestProp.value.type === 'ObjectExpression'
-      ? templateTestProp.value.properties.find((p): p is t.ObjectProperty => isProjectsArrayProp(p))
+      ? findNamedProp(templateTestProp.value.properties, 'projects')
       : undefined;
 
   if (!projectsProp || projectsProp.value.type !== 'ArrayExpression') {
@@ -301,28 +308,22 @@ const mergeTemplateIntoConfigObject = (
   const templateTestProp = findNamedProp(properties, 'test');
 
   if (existingTestProp && resolvedTestValue !== null) {
-    const existingProjectRefsProp = resolvedTestValue.properties.find(isProjectsArrayProp);
+    const existingProjectRefsProp = findNamedProp(resolvedTestValue.properties, 'projects');
 
     if (existingProjectRefsProp) {
+      // `projects` bound to a non-array value (identifier, string glob, call, conditional...) —
+      // normalize it into an array at the same level so the original list keeps applying, then
+      // append as usual. Nesting it inside a project entry instead would drop the list,
+      // because a `projects` key inside a project entry is not a project list.
+      const projectRefs =
+        existingProjectRefsProp.value.type === 'ArrayExpression'
+          ? existingProjectRefsProp.value
+          : (existingProjectRefsProp.value = projectListValueToArray(
+              existingProjectRefsProp.value as t.Expression,
+              target
+            ));
       appendToExistingProjectRefs(
-        existingProjectRefsProp,
-        resolvedTestValue,
-        templateTestProp,
-        properties,
-        targetConfigObject
-      );
-      return;
-    }
-
-    // `projects` bound to a non-array value (identifier, call, string glob...) — wrap it into
-    // an array at the same level so the original list keeps applying, then append as usual.
-    // Nesting it inside a project entry instead would drop the list, because a `projects` key
-    // inside a project entry is not a project list.
-    const existingProjectsProp = resolvedTestValue.properties.find(isProjectsProp);
-    if (existingProjectsProp) {
-      existingProjectsProp.value = projectListValueToArray(existingProjectsProp.value);
-      appendToExistingProjectRefs(
-        existingProjectsProp,
+        projectRefs,
         resolvedTestValue,
         templateTestProp,
         properties,

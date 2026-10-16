@@ -21,6 +21,7 @@ import {
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
+  formatVersionMismatch,
   formatUnknownInstallation,
 } from './attach-messages.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
@@ -127,6 +128,21 @@ export async function bootstrapAttachedRuntime(
               configDir: record.configDir,
             })
           : formatUnknownInstallation(),
+    });
+  }
+
+  // Same installation, but is it the same version? A side that kept running while the package was
+  // updated underneath it speaks the `services:*` envelopes of the build that loaded it; the other
+  // side's envelopes fail its schemas and are dropped in silence (no sync-start reply, no command
+  // ack, only a timeout). The record carries the server's version, so attach refuses any
+  // difference rather than guess whether the envelopes still match: one restart after an upgrade.
+  if (record.storybookVersion !== callerVersion) {
+    throw new EnvironmentMismatchError({
+      reason: formatVersionMismatch({
+        instancePath: installation.callerPath,
+        instanceVersion: record.storybookVersion,
+        callerVersion,
+      }),
     });
   }
 

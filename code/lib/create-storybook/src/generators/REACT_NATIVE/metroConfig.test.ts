@@ -434,36 +434,46 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
   it('containsStorybookImport detects import/require across top-level statement forms', () => {
     expect(
       containsStorybookImport(
-        "import { withStorybook } from '@storybook/react-native/withStorybook';"
+        "import { withStorybook } from '@storybook/react-native/withStorybook';",
+        'metro.config.js'
       )
     ).toBe(true);
-    expect(containsStorybookImport("const sb = require('storybook/internal/common');")).toBe(true);
     expect(
-      containsStorybookImport("withSomething(require('@storybook/react-native/withStorybook'));")
-    ).toBe(true);
-    expect(
-      containsStorybookImport(
-        "module.exports = require('@storybook/react-native/withStorybook').withStorybook({});"
-      )
+      containsStorybookImport("const sb = require('storybook/internal/common');", 'metro.config.js')
     ).toBe(true);
     expect(
       containsStorybookImport(
-        "export const withSb = require('@storybook/react-native/withStorybook');"
+        "withSomething(require('@storybook/react-native/withStorybook'));",
+        'metro.config.js'
       )
     ).toBe(true);
-    expect(containsStorybookImport('const x = require("react-native");')).toBe(false);
+    expect(
+      containsStorybookImport(
+        "module.exports = require('@storybook/react-native/withStorybook').withStorybook({});",
+        'metro.config.js'
+      )
+    ).toBe(true);
+    expect(
+      containsStorybookImport(
+        "export const withSb = require('@storybook/react-native/withStorybook');",
+        'metro.config.js'
+      )
+    ).toBe(true);
+    expect(containsStorybookImport('const x = require("react-native");', 'metro.config.js')).toBe(
+      false
+    );
   });
 
   it('fallback heuristic does not false-positive on storybook-like identifiers', () => {
     // This source is intentionally unparseable so the catch-branch runs.
     const unparseable = 'const storybookEnabled = true; <<<INVALID>>>';
     // 'storybookEnabled' must not fool the fallback into thinking Storybook is imported.
-    expect(containsStorybookImport(unparseable)).toBe(false);
+    expect(containsStorybookImport(unparseable, 'metro.config.js')).toBe(false);
 
     // But a real package specifier in the same unparseable source must still be detected.
     const unparseableWithImport =
       "const storybookEnabled = true; const x = require('@storybook/react-native'); <<<INVALID>>>";
-    expect(containsStorybookImport(unparseableWithImport)).toBe(true);
+    expect(containsStorybookImport(unparseableWithImport, 'metro.config.js')).toBe(true);
   });
 
   it('prepends fallback comment only once', () => {

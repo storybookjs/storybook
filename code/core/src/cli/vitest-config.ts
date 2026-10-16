@@ -147,10 +147,10 @@ export const findExportDefault = (program: E.Program) =>
  * Whether addon-vitest's postinstall can merge its config template into this Vitest/Vite config,
  * which needs a default export that resolves to a config object or a `mergeConfig(...)` call.
  */
-export const canUpdateVitestConfigFile = (fileContent: string): boolean => {
+export const canUpdateVitestConfigFile = (fileContent: string, fileName?: string): boolean => {
   let program: E.Program;
   try {
-    ({ program } = parseModule(fileContent));
+    ({ program } = parseModule(fileContent, fileName));
   } catch {
     return false;
   }

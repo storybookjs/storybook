@@ -291,7 +291,7 @@ async function getManifestForStory(
   vol.fromJSON(
     {
       ['./package.json']: JSON.stringify(packageJson),
-      ['./src/stories/Button.stories.ts']: code,
+      ['./src/stories/Button.stories.tsx']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
         export interface ButtonProps {
@@ -321,7 +321,7 @@ async function getManifestForStory(
       id: 'example-button--primary',
       name: 'Primary',
       title: 'Example/Button',
-      importPath: './src/stories/Button.stories.ts',
+      importPath: './src/stories/Button.stories.tsx',
       componentPath: './src/stories/Button.tsx',
       tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Primary',
@@ -370,7 +370,7 @@ test('fall back to index title when no component name', async () => {
       "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
-      "path": "./src/stories/Button.stories.ts",
+      "path": "./src/stories/Button.stories.tsx",
       "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
@@ -464,7 +464,7 @@ test('component exported from other file', async () => {
       "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
-      "path": "./src/stories/Button.stories.ts",
+      "path": "./src/stories/Button.stories.tsx",
       "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
@@ -492,7 +492,7 @@ test('component exported from other file', async () => {
         {
           "error": {
             "message": "Expected story to be a function or variable declaration
-    (11:0)
+    /app/src/stories/Button.stories.tsx: (11:0)
     > 11 | export { Primary } from './other-file';
          | ^",
             "name": "SyntaxError",
@@ -518,7 +518,7 @@ test('unknown expressions', async () => {
       "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
-      "path": "./src/stories/Button.stories.ts",
+      "path": "./src/stories/Button.stories.tsx",
       "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
@@ -546,7 +546,7 @@ test('unknown expressions', async () => {
         {
           "error": {
             "message": "Expected story to be csf factory, function or an object expression
-    (11:23)
+    /app/src/stories/Button.stories.tsx: (11:23)
     > 11 | export const Primary = someWeirdExpression;
          |                        ^",
             "name": "SyntaxError",

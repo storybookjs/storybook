@@ -328,7 +328,7 @@ export class AddonVitestService {
       reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);
     } else if (vitestConfigFile) {
       const configContent = await fs.readFile(vitestConfigFile, 'utf8');
-      if (!canUpdateVitestConfigFile(configContent)) {
+      if (!canUpdateVitestConfigFile(configContent, vitestConfigFile)) {
         reasons.push(`Found an invalid Vitest config file: ${vitestConfigFile}`);
       }
     }

@@ -49,14 +49,14 @@ test('Warn for possible implicit actions', async () => {
   expect(warn.mock.calls).toMatchInlineSnapshot(`
     [
       [
-        "Component.stories.tsx Possible implicit spy found
-    (7:20)
+        "Possible implicit spy found
+    Component.stories.tsx: (7:20)
     > 7 |   await expect(args.onImplicit).toHaveBeenCalled();
         |                     ^",
       ],
       [
-        "Component.stories.tsx Possible implicit spy found
-    (17:22)
+        "Possible implicit spy found
+    Component.stories.tsx: (17:22)
     > 17 |     await expect(args.onImplicit).toHaveBeenCalled();
          |                       ^",
       ],

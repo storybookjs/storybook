@@ -63,7 +63,12 @@ describe('StoryIndexGenerator', () => {
     'export const parameters = {}; export const Preview = { parameters }; export const tags = ["autodocs"];',
   ])('reads project tags statically from %s', (source) => {
     const generator = new StoryIndexGenerator([], options);
-    expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST, 'autodocs']);
+    expect(generator.getProjectTags({ path: 'preview.ts', code: source })).toEqual([
+      Tag.DEV,
+      Tag.TEST,
+      Tag.MANIFEST,
+      'autodocs',
+    ]);
     expect(once.warn).not.toHaveBeenCalled();
   });
 
@@ -73,7 +78,11 @@ describe('StoryIndexGenerator', () => {
     'export default { tags: "autodocs" };',
   ])('warns and retains default tags for %s', (source) => {
     const generator = new StoryIndexGenerator([], options);
-    expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST]);
+    expect(generator.getProjectTags({ path: 'preview.ts', code: source })).toEqual([
+      Tag.DEV,
+      Tag.TEST,
+      Tag.MANIFEST,
+    ]);
     expect(once.warn).toHaveBeenCalledWith(expect.stringContaining('Unable to parse tags'));
   });
 
@@ -82,7 +91,11 @@ describe('StoryIndexGenerator', () => {
     'export default definePreview(importedConfig);',
   ])('retains default tags without warning for %s', (source) => {
     const generator = new StoryIndexGenerator([], options);
-    expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST]);
+    expect(generator.getProjectTags({ path: 'preview.ts', code: source })).toEqual([
+      Tag.DEV,
+      Tag.TEST,
+      Tag.MANIFEST,
+    ]);
     expect(once.warn).not.toHaveBeenCalled();
   });
 

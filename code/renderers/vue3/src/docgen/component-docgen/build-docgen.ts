@@ -120,7 +120,10 @@ export async function buildDocgenPayload(
 
   let csf;
   try {
-    csf = loadCsf(storyFile, { makeTitle: () => input.entry.title }).parse();
+    csf = loadCsf(storyFile, {
+      makeTitle: () => input.entry.title,
+      fileName: storyPath,
+    }).parse();
   } catch (error) {
     return {
       ...baseFor(fallbackName),

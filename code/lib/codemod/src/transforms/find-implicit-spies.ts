@@ -9,16 +9,14 @@ import {
 
 import type { FileInfo } from 'jscodeshift';
 
-function findImplicitSpies(editor: SourceEditor, node: Node, file: string, keys: string[]) {
+function findImplicitSpies(editor: SourceEditor, node: Node, keys: string[]) {
   walk(node, (identifier) => {
     if (
       identifier.type === 'Identifier' &&
       !keys.includes(identifier.name) &&
       /^on[A-Z].*/.test(identifier.name)
     ) {
-      console.warn(
-        storyShapeError(`${file} Possible implicit spy found`, identifier, editor).message
-      );
+      console.warn(storyShapeError('Possible implicit spy found', identifier, editor).message);
     }
   });
 }
@@ -69,7 +67,7 @@ function findAnnotations(program: E.Program, storyName: string, annotationName: 
 }
 
 export default async function transform(info: FileInfo) {
-  const csf = loadCsf(info.source, { makeTitle: (title) => title });
+  const csf = loadCsf(info.source, { makeTitle: (title) => title, fileName: info.path });
   csf.parse();
   const editor = csf._editor;
 
@@ -98,7 +96,7 @@ export default async function transform(info: FileInfo) {
         node.left.property.type === 'Identifier' &&
         node.left.property.name === 'play'
       ) {
-        findImplicitSpies(editor, node, info.path, allKeys);
+        findImplicitSpies(editor, node, allKeys);
       }
       // CSF3 play function: const Story = {play: () => {} };
       if (
@@ -109,7 +107,7 @@ export default async function transform(info: FileInfo) {
       ) {
         const play = findProperty(node.init, 'play');
         if (play) {
-          findImplicitSpies(editor, play, info.path, allKeys);
+          findImplicitSpies(editor, play, allKeys);
         }
       }
     });

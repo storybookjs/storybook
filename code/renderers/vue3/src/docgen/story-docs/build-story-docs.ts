@@ -141,7 +141,7 @@ export async function buildStoryDocsPayload(
 
   let csf: ParsedCsf;
   try {
-    csf = loadCsf(storyFile, { makeTitle: () => input.entry.title }).parse();
+    csf = loadCsf(storyFile, { makeTitle: () => input.entry.title, fileName: storyPath }).parse();
   } catch {
     return undefined;
   }

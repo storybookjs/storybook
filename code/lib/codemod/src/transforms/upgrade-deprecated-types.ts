@@ -30,7 +30,7 @@ function migrateType(oldType: string) {
 
 export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
   // TODO what do I need to with the title?
-  const csf = loadCsf(info.source, { makeTitle: (title) => title });
+  const csf = loadCsf(info.source, { makeTitle: (title) => title, fileName: info.path });
 
   upgradeDeprecatedTypes(csf._editor);
 

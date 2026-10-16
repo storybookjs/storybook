@@ -244,7 +244,7 @@ function findCommonJsExport(program: E.Program) {
  * unchanged, with a warning to add the Storybook config manually.
  */
 export const configureFlatConfig = async (code: string, configFile: string) => {
-  const editor = new SourceEditor(code);
+  const editor = new SourceEditor(code, configFile);
   const { program } = editor;
 
   // Some configs load plugins with import() (e.g. eslint-flat-config-utils), where we can't safely

@@ -157,9 +157,9 @@ const wiresCompodoc = (program: E.Program): boolean => {
   return wired;
 };
 
-const previewWiresCompodoc = (source: string): boolean => {
+const previewWiresCompodoc = (source: string, fileName: string): boolean => {
   try {
-    return wiresCompodoc(parseModule(source).program);
+    return wiresCompodoc(parseModule(source, fileName).program);
   } catch {
     return false;
   }
@@ -305,7 +305,8 @@ export const findCompodocSetup = async ({
   const hasFrameworkOptions = COMPODOC_OPTIONS.some((option) => option in (frameworkOptions ?? {}));
 
   const hasPreviewWiring =
-    !!previewConfigPath && previewWiresCompodoc(await files.read(previewConfigPath));
+    !!previewConfigPath &&
+    previewWiresCompodoc(await files.read(previewConfigPath), previewConfigPath);
 
   const documents: { filePath: string; json: any }[] = [];
   for (const filePath of await findWorkspaceJsonFiles(packageManager.packageJsonPaths, [

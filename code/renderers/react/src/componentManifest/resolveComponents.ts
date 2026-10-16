@@ -111,7 +111,7 @@ export async function resolveStoryFileComponents(options: {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
   const storyFile = cachedReadTextFileSync(storyPath);
-  const csf = loadCsf(storyFile, { makeTitle: () => title }).parse();
+  const csf = loadCsf(storyFile, { makeTitle: () => title, fileName: storyPath }).parse();
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);

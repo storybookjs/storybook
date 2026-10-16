@@ -37,7 +37,7 @@ export async function configToCsfFactory(
   { configType, frameworkPackage }: { configType: 'main' | 'preview'; frameworkPackage: string },
   { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
 ) {
-  const config = loadConfig(info.source);
+  const config = loadConfig(info.source, info.path);
   try {
     config.parse();
   } catch (err) {

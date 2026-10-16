@@ -24,7 +24,9 @@ export async function transformCsf(
     // Enrichment edits the source text and leaves the parsed nodes untouched, so `csf` can double as
     // the source. An `enrichCsf` hook may print the edited file, so it gets a separate parse.
     const csfSource =
-      code === sourceCode && !options.enrichCsf ? csf : loadCsf(sourceCode, { makeTitle }).parse();
+      code === sourceCode && !options.enrichCsf
+        ? csf
+        : loadCsf(sourceCode, { makeTitle, fileName: id }).parse();
     await enrichCsf(csf, csfSource, options);
     return formatCsf(csf, { sourceMaps: true, sourceFileName: id });
   } catch (err: unknown) {

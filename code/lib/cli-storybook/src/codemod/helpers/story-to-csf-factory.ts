@@ -88,7 +88,7 @@ export async function storyToCsfFactory(
 ) {
   let csf;
   try {
-    csf = loadCsf(info.source, { makeTitle: () => 'FIXME' });
+    csf = loadCsf(info.source, { makeTitle: () => 'FIXME', fileName: info.path });
   } catch {
     logger.log(`Error when parsing ${info.path}, skipping: file could not be parsed`);
     return info.source;
@@ -110,8 +110,6 @@ export async function storyToCsfFactory(
   const editor = csf._editor;
   const { program, scopes } = editor;
   const quote = editor.quote;
-  // Registers every node with its parent, which the reference rewrite below asks for.
-  editor.parentOf(program);
 
   // Check if a root-level constant named 'preview' exists
   const hasRootLevelConfig = program.body.some(

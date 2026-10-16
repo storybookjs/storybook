@@ -102,9 +102,9 @@ const usesEsmSyntax = (program: E.Program) => {
   );
 };
 
-export const containsStorybookImport = (source: string) => {
+export const containsStorybookImport = (source: string, filePath: string) => {
   try {
-    const { program } = parseModule(source);
+    const { program } = parseModule(source, filePath);
     for (const statement of program.body) {
       if (statement.type === 'ImportDeclaration' && hasStorybookPackage(statement.source.value)) {
         return true;
@@ -233,7 +233,7 @@ export const prependMetroFallbackComment = (source: string) => {
 };
 
 export const transformMetroConfigSource = (source: string, filePath: string): TransformResult => {
-  const editor = new SourceEditor(source);
+  const editor = new SourceEditor(source, filePath);
   const { program } = editor;
   const withStorybookLocalName = hasWithStorybookBinding(program) ?? 'withStorybook';
   let matchedExport = false;
@@ -426,7 +426,7 @@ export const runMetroCodemodOrFallback = async ({
 
   const source = await readFile(filePath, 'utf-8');
 
-  if (containsStorybookImport(source)) {
+  if (containsStorybookImport(source, filePath)) {
     return {
       status: 'skipped-existing-storybook-import',
       filePath,

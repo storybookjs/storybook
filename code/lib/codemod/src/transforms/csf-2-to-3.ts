@@ -140,7 +140,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
   const makeTitle = (userTitle?: string) => {
     return userTitle || 'FIXME';
   };
-  const csf = loadCsf(info.source, { makeTitle });
+  const csf = loadCsf(info.source, { makeTitle, fileName: info.path });
 
   try {
     csf.parse();

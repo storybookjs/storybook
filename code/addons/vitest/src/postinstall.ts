@@ -344,10 +344,10 @@ function isStorybookTestPluginSource(value: string) {
   return value === STORYBOOK_TEST_PLUGIN_SOURCE;
 }
 
-export function isConfigAlreadySetup(_configPath: string, configContent: string) {
+export function isConfigAlreadySetup(configPath: string, configContent: string) {
   let program: E.Program;
   try {
-    ({ program } = parseModule(configContent));
+    ({ program } = parseModule(configContent, configPath));
   } catch {
     return false;
   }

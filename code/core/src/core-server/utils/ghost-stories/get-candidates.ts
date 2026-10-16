@@ -7,8 +7,8 @@ import { parseModule, walk } from '../../../csf-tools/estree/ast.ts';
 import { getComponentComplexity } from './component-analyzer.ts';
 
 // A valid candidate includes React code and at least one export
-function isValidCandidate(source: string): boolean {
-  const { program } = parseModule(source);
+function isValidCandidate(source: string, file: string): boolean {
+  const { program } = parseModule(source, file);
 
   let hasJSX = false;
   let hasExport = false;
@@ -52,7 +52,7 @@ export async function getCandidatesForStorybook(
     try {
       source = await readFile(file, 'utf-8');
       // filter out non-React code or files without exports
-      if (!isValidCandidate(source)) {
+      if (!isValidCandidate(source, file)) {
         continue;
       }
     } catch {

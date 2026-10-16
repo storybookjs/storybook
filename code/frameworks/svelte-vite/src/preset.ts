@@ -1,9 +1,10 @@
+import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { assertSvelteCsfAddonNotInstalled } from '@storybook/svelte/internal/svelte-csf/addon-check';
 
 import { svelteCsf } from './plugins/svelte-csf.ts';
-import { resolveDocgenContext } from './docgen/options.ts';
+import { resolveDocgenContext, SVELTE_BUILDER_DOCGEN_DEPRECATION } from './docgen/options.ts';
 import { svelteDocgen } from './plugins/svelte-docgen.ts';
 import type { StorybookConfig } from './types.ts';
 import { handleSvelteKit } from './utils.ts';
@@ -21,6 +22,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   const { docgen, docgenServerActive } = await resolveDocgenContext(options);
   if (docgen && !docgenServerActive) {
+    deprecate(SVELTE_BUILDER_DOCGEN_DEPRECATION);
     plugins.push(await svelteDocgen());
   }
 

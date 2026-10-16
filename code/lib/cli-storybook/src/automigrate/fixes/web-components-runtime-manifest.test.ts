@@ -467,6 +467,75 @@ describe('run', (): void => {
     `);
   });
 
+  it('adds customElementsManifest to a wrapped framework and keeps the helper', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [MAIN]: dedent`
+        import { dirname } from "node:path";
+        import { fileURLToPath } from "node:url";
+
+        function getAbsolutePath(value) {
+          return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
+        }
+
+        export default {
+          framework: { name: getAbsolutePath("@storybook/web-components-vite") },
+        };
+      `,
+      [PREVIEW]: PREVIEW_WITH_MANIFEST,
+    });
+
+    await runWith();
+
+    expect(vol.readFileSync(MAIN, 'utf8')).toMatchInlineSnapshot(`
+      "import { dirname } from \"node:path\";
+import { fileURLToPath } from \"node:url\";
+
+function getAbsolutePath(value) {
+  return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
+}
+
+export default {
+  framework: {
+    name: getAbsolutePath(\"@storybook/web-components-vite\"),
+
+    options: {
+      customElementsManifest: \"../custom-elements.json\"
+    }
+  },
+};"
+    `);
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
+      "export const parameters = { controls: { expanded: true } };"
+    `);
+  });
+
+  it('adds customElementsManifest next to an existing docgen option', async (): Promise<void> => {
+    vol.fromNestedJSON({
+      [MAIN]: dedent`
+        export default {
+          framework: {
+            name: '@storybook/web-components-vite',
+            options: { docgen: {} },
+          },
+        };
+      `,
+    });
+
+    await runWith();
+
+    expect(vol.readFileSync(MAIN, 'utf8')).toMatchInlineSnapshot(`
+      "export default {
+        framework: {
+          name: '@storybook/web-components-vite',
+          options: {
+            docgen: {},
+            customElementsManifest: '../custom-elements.json'
+          },
+        },
+      };"
+    `);
+  });
+
   it('grows a string framework into the object form', async (): Promise<void> => {
     vol.fromNestedJSON({
       [MAIN]: "export default { framework: '@storybook/web-components-vite' };",

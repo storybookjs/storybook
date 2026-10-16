@@ -2,12 +2,12 @@ import type {
   Declaration,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
-  Expression,
   Pattern,
   Program,
 } from 'estree';
 import MagicString from 'magic-string';
 
+import { exportDefaultKeywords } from '../csf-tools/estree/editor.ts';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
 
 // An ESTree program; OXC's own `Program` type is structurally compatible with what is read here.
@@ -159,9 +159,10 @@ export function automockModule(
     }
     if (_node.type === 'ExportDefaultDeclaration') {
       const node = _node as Positioned<ExportDefaultDeclaration>;
-      const declaration = node.declaration as Positioned<Expression>;
       allSpecifiers.push({ name: '__vitest_default', alias: 'default' });
-      m.overwrite(node.start, declaration.start, `const __vitest_default = `);
+      // Only the keywords: the span of `export default (x)`'s expression excludes its parentheses.
+      const keywords = exportDefaultKeywords(code, node.start);
+      m.overwrite(node.start, node.start + keywords, `const __vitest_default = `);
     }
   }
   const moduleObject = `

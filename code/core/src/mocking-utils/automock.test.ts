@@ -20,4 +20,23 @@ describe('getAutomockCode', () => {
       expect(mocked).toContain(`["${name}"]: ${name},`);
     }
   });
+
+  it('keeps the parentheses of a parenthesized default export', () => {
+    const mocked = getAutomockCode('export default (x);', false, (source) =>
+      parseModuleAst(source, '/mod.ts')
+    ).toString();
+
+    expect(mocked).toMatch(/^const __vitest_default = \(x\);/);
+    expect(() => parseModuleAst(mocked, '/mod.ts')).not.toThrow();
+  });
+
+  it('mocks a .ts module with generic arrows under a Vite id with a query', () => {
+    const code = 'export const identity = <T>(value: T) => value;';
+
+    const mocked = getAutomockCode(code, false, (source) =>
+      parseModuleAst(source, '/src/api.ts?v=abc')
+    ).toString();
+
+    expect(mocked).toContain('["identity"]: identity,');
+  });
 });

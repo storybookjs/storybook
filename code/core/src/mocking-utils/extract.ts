@@ -36,8 +36,9 @@ interface ExtractMockCallsOptions {
 }
 
 /**
- * Parse a module into an ESTree program. The file name picks the grammar, so a `.ts` module keeps
- * its generic arrows; without one the TSX and TS grammars are both tried. Throws on syntax errors.
+ * Parse a module into an ESTree program. The file extension picks the grammar, so a `.ts` module
+ * keeps its generic arrows; without a TS or JS extension the TSX and TS grammars are both tried.
+ * Throws on syntax errors.
  */
 export const parseModuleAst = (code: string, fileName?: string) =>
   parseModule(code, fileName).program;
@@ -53,7 +54,7 @@ const isStaticImport = (node: any): boolean =>
   node?.type === 'ImportExpression' && isStringLiteral(node.source);
 
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
-export function rewriteSbMockImportCalls(code: string, fileName?: string) {
+export function rewriteSbMockImportCalls(code: string, fileName: string) {
   const ast = parseModuleAst(code, fileName);
   const edits = new MagicString(code);
 

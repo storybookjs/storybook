@@ -216,7 +216,7 @@ describe('extractMockCalls', () => {
         sb.mock(import('./bar/baz'), { spy: true });
       `;
 
-      const result = extractModule.rewriteSbMockImportCalls(code);
+      const result = extractModule.rewriteSbMockImportCalls(code, 'preview.ts');
       expect(result.code).toMatchInlineSnapshot(`
         "
                 sb.mock("./bar/baz", { spy: true });
@@ -250,7 +250,7 @@ describe('extractMockCalls', () => {
         sb.mock(import('./bar/baz'));
       `;
 
-      const result = extractModule.rewriteSbMockImportCalls(code);
+      const result = extractModule.rewriteSbMockImportCalls(code, 'preview.ts');
       expect(result.code).toMatchInlineSnapshot(`
         "
                 sb.mock("./bar/baz");

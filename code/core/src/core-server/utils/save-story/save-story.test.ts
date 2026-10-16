@@ -4,6 +4,7 @@ import { join, relative } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
+import { formatFileContent } from 'storybook/internal/common';
 import type { ResponseData, SaveStoryResponsePayload } from 'storybook/internal/core-events';
 import {
   SAVE_STORY_REQUEST,
@@ -15,6 +16,7 @@ import type { Options } from 'storybook/internal/types';
 import { initializeSaveStory } from './save-story.ts';
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -37,6 +39,7 @@ function saveStory(payload: { args?: string; name?: string }) {
 describe('save-story', () => {
   beforeEach(() => {
     vi.mocked(writeFile).mockReset();
+    vi.mocked(formatFileContent).mockRestore();
   });
 
   it('rejects a story name that is not a valid identifier', async () => {
@@ -87,6 +90,19 @@ describe('save-story', () => {
           /export const NewStory = \{\s+args: \{\s+class: "primary",\s+nested: \{\s+"not-an-identifier": 1,/
         ),
       },
+    });
+  });
+
+  it('writes a function arg as an empty arrow function on one line without a formatter', async () => {
+    vi.mocked(formatFileContent).mockImplementation(async (_, content) => content);
+
+    const response = await saveStory({
+      args: JSON.stringify({ absolute: true, onClick: '__sb_empty_function_arg__' }),
+    });
+
+    expect(response).toMatchObject({
+      success: true,
+      payload: { sourceFileContent: expect.stringContaining('onClick: () => {},') },
     });
   });
 });

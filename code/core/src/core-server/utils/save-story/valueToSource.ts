@@ -1,11 +1,18 @@
 import { printValue } from '../../../csf-tools/estree/editor.ts';
 
-// Members set to `undefined` are left out, as they would not survive JSON either.
+/**
+ * Stands in for a function arg, which the controls panel cannot send. It prints as `() => {}`
+ * whatever the bundler made of the source of a function literal.
+ */
+export const emptyFunction: () => void = Object.assign(() => {}, { toString: () => '() => {}' });
+
+// Members set to `undefined` are left out, as they would not survive JSON either. Only plain
+// objects are walked: a RegExp prints as itself.
 const withoutUndefined = (value: unknown): unknown => {
   if (Array.isArray(value)) {
     return value.map(withoutUndefined);
   }
-  if (value && typeof value === 'object') {
+  if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
     return Object.fromEntries(
       Object.entries(value)
         .filter(([, item]) => item !== undefined)

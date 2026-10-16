@@ -24,14 +24,10 @@ import { isValidIdentifier } from '../../../csf-tools/estree/ast.ts';
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
 import { SaveStoryError } from './utils.ts';
+import { emptyFunction } from './valueToSource.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
-  JSON.parse(args, (_, value) => {
-    if (value === '__sb_empty_function_arg__') {
-      return () => {};
-    }
-    return value;
-  });
+  JSON.parse(args, (_, value) => (value === '__sb_empty_function_arg__' ? emptyFunction : value));
 
 export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {

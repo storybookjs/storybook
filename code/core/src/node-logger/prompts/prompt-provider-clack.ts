@@ -54,17 +54,20 @@ const formatTaskLogMessage = (message: string) => {
     .join('\n');
 };
 
+// One reason→message mapping, shared by the terminal cancel message and PromptAbortedError, so
+// the two cannot drift apart.
+const CANCEL_MESSAGES: Record<PromptCancelReason, string> = {
+  cancel: 'Operation canceled.',
+  'stdin-ended': 'Prompt aborted: stdin ended before an answer was received.',
+};
+
 // Thrown when a prompt is aborted (user cancel or stdin end) and the onCancel handler returns
 // without terminating the process itself, so the abort can never resolve as the prompt's answer.
-export class PromptAbortedError extends Error {
+class PromptAbortedError extends Error {
   readonly reason: PromptCancelReason;
 
   constructor(reason: PromptCancelReason) {
-    super(
-      reason === 'stdin-ended'
-        ? 'Prompt aborted: stdin ended before an answer was received.'
-        : 'Operation canceled.'
-    );
+    super(CANCEL_MESSAGES[reason]);
     this.name = 'PromptAbortedError';
     this.reason = reason;
   }
@@ -104,7 +107,10 @@ export class ClackPromptProvider extends PromptProvider {
     promptOptions: PromptOptions | undefined,
     stdinEnded: boolean
   ): Promise<void> {
-    if (!stdinEnded && !clack.isCancel(result)) {
+    // Decide the abort from the prompt result: with the signal design every stdin abort already
+    // settles as clack's cancel symbol, and a stream that pushes data and ends in the same tick
+    // must not turn a real answer into an abort. stdinEnded only picks the reason.
+    if (!clack.isCancel(result)) {
       return;
     }
     const reason: PromptCancelReason = stdinEnded ? 'stdin-ended' : 'cancel';
@@ -114,11 +120,7 @@ export class ClackPromptProvider extends PromptProvider {
       // aborted prompt's sentinel back as the answer — reject so the CLI exits non-zero.
       throw new PromptAbortedError(reason);
     }
-    clack.cancel(
-      stdinEnded
-        ? 'Prompt aborted: stdin ended before an answer was received.'
-        : 'Operation canceled.'
-    );
+    clack.cancel(CANCEL_MESSAGES[reason]);
     process.exit(1);
   }
 

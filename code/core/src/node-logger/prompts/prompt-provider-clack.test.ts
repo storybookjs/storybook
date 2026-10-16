@@ -20,7 +20,7 @@ vi.mock('../logger/log-tracker.ts', () => ({
 import * as clack from '@clack/prompts';
 
 import type { PromptOptions } from './prompt-provider-base.ts';
-import { ClackPromptProvider, PromptAbortedError } from './prompt-provider-clack.ts';
+import { ClackPromptProvider } from './prompt-provider-clack.ts';
 
 const CANCELLED = Symbol.for('cancelled');
 
@@ -138,7 +138,7 @@ describe('ClackPromptProvider', () => {
     await vi.waitFor(() => expect(stepOrder).toEqual(['onCancel-start']));
 
     release.resolve();
-    await expect(promptPromise).rejects.toBeInstanceOf(PromptAbortedError);
+    await expect(promptPromise).rejects.toMatchObject({ name: 'PromptAbortedError' });
 
     expect(stepOrder).toEqual(['onCancel-start', 'onCancel-end']);
   });
@@ -204,7 +204,10 @@ describe('ClackPromptProvider', () => {
 
       const promptPromise = runPrompt(method, { onCancel });
       process.stdin.emit('end');
-      await expect(promptPromise).rejects.toBeInstanceOf(PromptAbortedError);
+      await expect(promptPromise).rejects.toMatchObject({
+        name: 'PromptAbortedError',
+        reason: 'stdin-ended',
+      });
 
       expect(onCancel).toHaveBeenCalledWith('stdin-ended');
       expect(exitSpy).not.toHaveBeenCalled();
@@ -218,7 +221,7 @@ describe('ClackPromptProvider', () => {
 
     await expect(
       provider.select({ message: 'Pick one', options: [{ label: 'A', value: 'a' }] }, { onCancel })
-    ).rejects.toBeInstanceOf(PromptAbortedError);
+    ).rejects.toMatchObject({ name: 'PromptAbortedError', reason: 'cancel' });
 
     expect(onCancel).toHaveBeenCalledWith('cancel');
     expect(exitSpy).not.toHaveBeenCalled();

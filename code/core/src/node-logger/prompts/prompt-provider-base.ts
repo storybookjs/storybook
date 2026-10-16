@@ -42,8 +42,12 @@ export interface MultiSelectPromptOptions<T> extends BasePromptOptions {
 export type PromptCancelReason = 'cancel' | 'stdin-ended';
 
 export interface PromptOptions {
-  /** Invoked when the prompt is aborted. The provider always supplies the reason. */
-  onCancel?: (reason?: PromptCancelReason) => void | Promise<void>;
+  /**
+   * Called when the prompt is aborted: 'cancel' for a user cancel (Ctrl+C / Esc), 'stdin-ended'
+   * when stdin closes before an answer. Handlers are expected to exit or throw; if the handler
+   * returns, the prompt rejects with PromptAbortedError.
+   */
+  onCancel?: (reason: PromptCancelReason) => void | Promise<void>;
 }
 
 export interface SpinnerInstance {

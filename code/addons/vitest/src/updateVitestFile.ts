@@ -330,6 +330,39 @@ const missingStatements = (source: SourceEditor, target: E.Program) => {
   });
 };
 
+/**
+ * Insert the statements on the line after the last import, keeping the comments that share its
+ * line with it. A statement sharing that line moves below them instead, so the config is never
+ * evaluated before the variables it reads.
+ */
+const insertStatements = (target: SourceEditor, text: string) => {
+  const { code, program } = target;
+  const index = program.body.findLastIndex((node) => node.type === 'ImportDeclaration');
+  if (index === -1) {
+    target.edits.appendLeft(program.body[0].start, `${text}\n\n`);
+    return;
+  }
+  let end = program.body[index].end;
+  for (const comment of target.comments) {
+    if (comment.start >= end && !code.slice(end, comment.start).includes('\n')) {
+      end = comment.end;
+    }
+  }
+  const next = program.body[index + 1];
+  const lineEnd = code.indexOf('\n', end);
+  if (next && (lineEnd === -1 || next.start < lineEnd)) {
+    if (next.start > end) {
+      target.edits.overwrite(end, next.start, `\n${text}\n`);
+    } else {
+      target.edits.appendLeft(next.start, `\n${text}\n`);
+    }
+  } else if (lineEnd === -1) {
+    target.edits.append(`\n${text}\n`);
+  } else {
+    target.edits.appendLeft(lineEnd + 1, `${text}\n`);
+  }
+};
+
 // Returns whether the config was updated; the edits are committed to `target` only when it was.
 export const updateConfigFile = (sourceCode: string, target: SourceEditor): boolean => {
   const source = new SourceEditor(sourceCode);
@@ -348,18 +381,7 @@ export const updateConfigFile = (sourceCode: string, target: SourceEditor): bool
 
   const statements = missingStatements(source, target.program);
   if (statements.length > 0) {
-    const lastImport = target.program.body.findLast((node) => node.type === 'ImportDeclaration');
-    if (lastImport) {
-      // On the line after the import, so code and comments sharing its line stay where they are.
-      const lineEnd = target.code.indexOf('\n', lastImport.end);
-      if (lineEnd === -1) {
-        target.edits.append(`\n${statements.join('\n')}`);
-      } else {
-        target.edits.appendLeft(lineEnd + 1, `${statements.join('\n')}\n`);
-      }
-    } else {
-      target.edits.appendLeft(target.program.body[0].start, `${statements.join('\n')}\n\n`);
-    }
+    insertStatements(target, statements.join('\n'));
   }
 
   mergeTemplateIntoConfigObject({ source, target }, targetConfig, () => templateConfig()!);

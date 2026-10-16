@@ -19,18 +19,127 @@ const template = dedent`
   });
 `;
 
+const update = (code: string) => {
+  const target = new SourceEditor(code);
+  expect(updateConfigFile(template, target)).toBe(true);
+  const result = target.toString();
+  expect(() => new SourceEditor(result)).not.toThrow();
+  return result;
+};
+
 describe('updateConfigFile statements', () => {
-  it('inserts the template statements on their own lines after the last import', () => {
-    const target = new SourceEditor(
+  it('inserts the template statements before a statement sharing the last import line', () => {
+    const code = update(
       `import react from '@vitejs/plugin-react'; const x = 1\nexport default defineConfig({ test: {} })\n`
     );
 
-    expect(updateConfigFile(template, target)).toBe(true);
+    expect(code).toMatchInlineSnapshot(`
+      "import react from '@vitejs/plugin-react';
+      import { fileURLToPath } from 'node:url';
+      import { dirname } from 'node:path';
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      const dirname = fileURLToPath(new URL('.', import.meta.url));
+      const x = 1
+      export default defineConfig({ test: {
+        projects: [{
+      extends: true,
+      test: {},
+      }, { extends: true, test: { name: 'storybook' } }],
+      } })
+      "
+    `);
+  });
 
-    const code = target.toString();
-    expect(code).toMatch(/^import react from '@vitejs\/plugin-react'; const x = 1$/m);
-    expect(code).toMatch(/^\/\/ More info at: .*\nconst dirname = /m);
-    expect(() => new SourceEditor(code)).not.toThrow();
+  it('inserts the template statements before export default on the last import line', () => {
+    const code = update(
+      `import react from '@vitejs/plugin-react'; export default defineConfig({ test: {} })`
+    );
+
+    expect(code.indexOf('const dirname')).toBeLessThan(code.indexOf('export default'));
+    expect(code).toMatchInlineSnapshot(`
+      "import react from '@vitejs/plugin-react';
+      import { fileURLToPath } from 'node:url';
+      import { dirname } from 'node:path';
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      const dirname = fileURLToPath(new URL('.', import.meta.url));
+      export default defineConfig({ test: {
+        projects: [{
+      extends: true,
+      test: {},
+      }, { extends: true, test: { name: 'storybook' } }],
+      } })"
+    `);
+  });
+
+  it('inserts the template statements after a block comment starting on the last import line', () => {
+    const code = update(
+      `import react from '@vitejs/plugin-react'; /* a\n b */\nexport default defineConfig({ test: {} })\n`
+    );
+
+    expect(code).toMatchInlineSnapshot(`
+      "import react from '@vitejs/plugin-react'; /* a
+       b */
+      import { fileURLToPath } from 'node:url';
+      import { dirname } from 'node:path';
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      const dirname = fileURLToPath(new URL('.', import.meta.url));
+      export default defineConfig({ test: {
+        projects: [{
+      extends: true,
+      test: {},
+      }, { extends: true, test: { name: 'storybook' } }],
+      } })
+      "
+    `);
+  });
+
+  it('keeps a line comment trailing the last import in place', () => {
+    const code = update(
+      `import react from '@vitejs/plugin-react' // plugins\nexport default defineConfig({ test: {} })\n`
+    );
+
+    expect(code).toMatchInlineSnapshot(`
+      "import react from '@vitejs/plugin-react' // plugins
+      import { fileURLToPath } from 'node:url';
+      import { dirname } from 'node:path';
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      const dirname = fileURLToPath(new URL('.', import.meta.url));
+      export default defineConfig({ test: {
+        projects: [{
+      extends: true,
+      test: {},
+      }, { extends: true, test: { name: 'storybook' } }],
+      } })
+      "
+    `);
+  });
+
+  it('appends the template statements when the last import ends the file', () => {
+    const code = update(`export default defineConfig({ test: {} })\nimport react from 'x'`);
+
+    expect(code).toMatchInlineSnapshot(`
+      "export default defineConfig({ test: {
+        projects: [{
+      extends: true,
+      test: {},
+      }, { extends: true, test: { name: 'storybook' } }],
+      } })
+      import react from 'x'
+      import { fileURLToPath } from 'node:url';
+      import { dirname } from 'node:path';
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      const dirname = fileURLToPath(new URL('.', import.meta.url));
+      "
+    `);
+  });
+
+  it('keeps CRLF line endings', () => {
+    const code = update(
+      `import react from '@vitejs/plugin-react';\r\nexport default defineConfig({ test: {} });\r\n`
+    );
+
+    expect(code).toContain('const dirname');
+    expect(code.replaceAll('\r\n', '')).not.toContain('\n');
   });
 
   it('does not declare a name the config already imports', () => {

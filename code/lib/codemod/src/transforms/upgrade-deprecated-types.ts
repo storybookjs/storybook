@@ -3,6 +3,7 @@ import {
   type SourceEditor,
   loadCsf,
   printCsf,
+  removeFromList,
   storyShapeError,
   walk,
 } from 'storybook/internal/csf-tools';
@@ -76,9 +77,9 @@ export function upgradeDeprecatedTypes(editor: SourceEditor) {
       continue;
     }
 
-    let changed = false;
-    const texts = specifiers.flatMap((specifier) => {
-      const text = editor.source(specifier);
+    const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
+    const removed: E.ImportSpecifier[] = [];
+    for (const specifier of specifiers) {
       if (specifier.type === 'ImportNamespaceSpecifier') {
         importedNamespaces.add(specifier.local.name);
       }
@@ -88,7 +89,7 @@ export function upgradeDeprecatedTypes(editor: SourceEditor) {
         !imported ||
         !deprecatedTypes.includes(imported)
       ) {
-        return [text];
+        continue;
       }
       const isShorthand = imported === specifier.local.name;
       // we don't have to rewrite type references for aliased imports
@@ -97,13 +98,12 @@ export function upgradeDeprecatedTypes(editor: SourceEditor) {
       }
 
       const newType = migrateType(imported);
-      changed = true;
 
-      // replace the deprecated import type when the new type isn't yet imported
-      // note that we don't replace the local name of the specifier
+      // Rename only the imported name, so `type` modifiers, aliases and comments stay as written.
       if (!existingImports.some((it) => it.name === newType)) {
         existingImports.push({ name: newType, isAlias: false, node: specifier });
-        return [isShorthand ? newType : `${newType} as ${specifier.local.name}`];
+        editor.edits.overwrite(specifier.imported.start, specifier.imported.end, newType);
+        continue;
       }
       // if the existing import has the same local name but is an alias we throw
       // we could have imported the type with an alias, but seems to much effort
@@ -118,11 +118,13 @@ export function upgradeDeprecatedTypes(editor: SourceEditor) {
       }
       // if the type already exists, without being aliased
       // we can safely remove the deprecated import now
-      return [];
-    });
+      removed.push(specifier);
+    }
 
-    if (changed) {
-      editor.edits.overwrite(specifiers[0].start, specifiers.at(-1)!.end, texts.join(', '));
+    if (removed.length > 0) {
+      const open = editor.code.lastIndexOf('{', named[0].start) + 1;
+      const close = editor.code.indexOf('}', named.at(-1)!.end);
+      removeFromList(editor, { open, close, items: named }, removed);
     }
   }
 

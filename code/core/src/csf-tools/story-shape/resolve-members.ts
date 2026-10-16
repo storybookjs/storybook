@@ -456,19 +456,12 @@ const unguardedBindingMembers = (
     return undefined;
   }
 
-  const rootName = localAliasRoot(ctx, name);
-  const rootBinding = ctx.program.scope.getBinding(rootName);
-  const declared = declaredBindingMembers(
-    ctx,
-    rootBinding?.path.node ?? binding.path.node,
-    position,
-    visited
-  );
+  const declared = declaredBindingMembers(ctx, binding.path.node, position, visited);
   if (declared === undefined) {
     return undefined;
   }
 
-  const assigned = assignedMembers(ctx, localAliases(ctx, rootName), position);
+  const assigned = assignedMembers(ctx, name, position);
 
   return {
     kind: 'members',
@@ -519,17 +512,6 @@ const declaredMembers = (
   if (factory === undefined && (t.isFunction(unwrapped) || isCanonicalCsf2BindCall(unwrapped))) {
     return { members: complete() };
   }
-  if (t.isIdentifier(unwrapped)) {
-    const referenced = bindingMembers(ctx, unwrapped.name, position, visited);
-    if (referenced?.kind === 'members') {
-      const members = referenced.external
-        ? ctx.externalize && externalized(referenced.members, referenced.ctx)
-        : referenced.members;
-      if (members) {
-        return { members, ...(referenced.accessor ? { accessor: referenced.accessor } : {}) };
-      }
-    }
-  }
   if (factory === undefined) {
     return {
       members: { properties: {}, shadowed: [], unresolved: [sourceOf(unwrapped)] },
@@ -568,39 +550,6 @@ const declaredMembers = (
 
 /** Annotations `extend` merges per key rather than replacing outright. */
 const MERGED_ANNOTATIONS = ['args', 'argTypes', 'parameters', 'globals'];
-
-const localAliasRoot = (ctx: ReferenceContext, name: string): string => {
-  const visited = new Set<string>();
-  let current = name;
-  while (!visited.has(current)) {
-    visited.add(current);
-    const binding = ctx.program.scope.getBinding(current);
-    const node = binding?.path.node;
-    if (!binding?.constant || !t.isVariableDeclarator(node) || !node.init) {
-      break;
-    }
-    const init = unwrapExpression(node.init);
-    if (!t.isIdentifier(init)) {
-      break;
-    }
-    const target = ctx.program.scope.getBinding(init.name);
-    if (!target?.constant || target.kind === 'module') {
-      break;
-    }
-    current = init.name;
-  }
-  return current;
-};
-
-const localAliases = (ctx: ReferenceContext, root: string): Map<string, number> => {
-  const aliases = new Map<string, number>([[root, Number.NEGATIVE_INFINITY]]);
-  for (const [name, binding] of Object.entries(ctx.program.scope.bindings)) {
-    if (name !== root && binding.constant && localAliasRoot(ctx, name) === root) {
-      aliases.set(name, binding.path.node.start ?? Number.POSITIVE_INFINITY);
-    }
-  }
-  return aliases;
-};
 
 /**
  * Config members an `extend` call ends up with.
@@ -665,7 +614,7 @@ const factoryCall = (
  */
 const assignedMembers = (
   ctx: ReferenceContext,
-  aliases: Map<string, number>,
+  name: string,
   position: number | undefined
 ): {
   properties: Record<string, t.Node>;
@@ -692,10 +641,7 @@ const assignedMembers = (
             : undefined;
       target = target.object;
     }
-    if (depth === 0 || !t.isIdentifier(target) || !aliases.has(target.name)) {
-      continue;
-    }
-    if ((assignment.start ?? 0) < aliases.get(target.name)!) {
+    if (depth === 0 || !t.isIdentifier(target) || target.name !== name) {
       continue;
     }
     if (position !== undefined && (assignment.start ?? 0) > position) {

@@ -6,7 +6,19 @@ import type { Indexer, PresetProperty } from 'storybook/internal/types';
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
 export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
 
-export const isDocgenProviderEnabled = () => false;
+export const isDocgenProviderEnabled = () => {
+  try {
+    import.meta.resolve('typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],

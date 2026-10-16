@@ -7,7 +7,7 @@ import {
   type ToolsetOutcome,
 } from 'storybook/open-service';
 
-import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
+import { formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -198,7 +198,11 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'cancelled':
       return true;
     case 'completed':
-      return Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0);
+      return (
+        data.result.componentTestCount.error > 0 ||
+        (data.a11y && data.result.a11yCount.error > 0) ||
+        data.result.unhandledErrors.length > 0
+      );
     case 'no-stories':
       return false;
     default: {
@@ -244,7 +248,7 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };
-            const markdown = formatTestRun(data, ctx, { a11yEnabled });
+            const markdown = formatTestRun(data, ctx);
             const telemetry = runTelemetry(data, input);
             return isFailedRun(data)
               ? { ok: false, data, markdown, telemetry }

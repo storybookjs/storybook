@@ -29,35 +29,11 @@ export function normalizeStoryDeclaration(
   storyDeclaration: NodePath<t.Node>
 ): NormalizedStoryDeclaration {
   const storyPath = declarationExpression(storyDeclaration);
-  const resolvedStoryPath = resolveLocalStory(storyDeclaration, storyPath);
-  const resolvedBindPath = bindInitializer(storyDeclaration, resolvedStoryPath);
-  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(resolvedStoryPath);
+  const resolvedBindPath = bindInitializer(storyDeclaration, storyPath);
+  const normalizedPath = resolvedBindPath ?? factoryArgumentExpression(storyPath);
   const unwrappedPath = unwrapTypeExpression(normalizedPath);
 
   return classifyStoryPath(unwrappedPath);
-}
-
-function resolveLocalStory(
-  declaration: NodePath<t.Node>,
-  expression: StoryDeclarationExpression
-): StoryDeclarationExpression {
-  const visited = new Set<string>();
-  let current = unwrapTypeExpression(expression);
-
-  while (current.isIdentifier()) {
-    const name = current.node.name;
-    if (visited.has(name) || !current.scope.getBinding(name)?.constant) {
-      break;
-    }
-    visited.add(name);
-    const resolved = resolveIdentifierInit(declaration, current);
-    if (!resolved) {
-      break;
-    }
-    current = unwrapTypeExpression(resolved);
-  }
-
-  return current;
 }
 
 /** Declaration body that can be classified as a story shape. */

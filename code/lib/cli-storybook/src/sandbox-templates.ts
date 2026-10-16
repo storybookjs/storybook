@@ -614,7 +614,7 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      mainConfig: { features: { componentsManifest: true, docgenServer: true } },
+      mainConfig: { features: { componentsManifest: true } },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'bench'],

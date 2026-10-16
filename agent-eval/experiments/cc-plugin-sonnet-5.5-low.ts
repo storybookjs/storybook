@@ -5,7 +5,6 @@ import {
   PLUGIN_STORYBOOK_EVALS,
 } from '../lib/experiment.ts';
 import {
-  commitSandboxBaseline,
   setupSandbox,
   writeClaudeInAppBrowserMock,
   writeClaudePluginSkills,
@@ -24,6 +23,5 @@ export default {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin', model });
     await writeClaudePluginSkills(sandbox);
     await writeClaudeInAppBrowserMock(sandbox);
-    await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

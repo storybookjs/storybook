@@ -1,1 +1,7 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Avatar from './Avatar.svelte';
+</script>
+
+<div class="wrap">
+  <Avatar name="Wrapped" />
+</div>

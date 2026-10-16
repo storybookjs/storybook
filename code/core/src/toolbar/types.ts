@@ -35,7 +35,10 @@ export interface NormalizedToolbarConfig {
   dynamicTitle?: boolean;
 }
 
-export type NormalizedToolbarArgType = Omit<ToolbarArgType, 'toolbar'> & {
+export type NormalizedToolbarArgType = {
+  name: string;
+  description: string;
+  defaultValue?: any;
   toolbar: NormalizedToolbarConfig;
 };
 
@@ -46,7 +49,13 @@ export type ToolbarConfig = Omit<NormalizedToolbarConfig, 'items'> & {
 export type ToolbarArgType = {
   name?: string;
   description?: string;
+  defaultValue?: any;
   toolbar?: ToolbarConfig;
+  /**
+   * @deprecated This loose index signature has been added for compatibility with InputType, and
+   *   will be removed in Storybook 11
+   */
+  [key: string]: any;
 };
 
 export type ToolbarMenuProps = NormalizedToolbarArgType & { id: string };

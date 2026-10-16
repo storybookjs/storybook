@@ -1,4 +1,9 @@
-import type { NormalizedToolbarArgType, ToolbarArgType } from '../types.ts';
+import type { NormalizedToolbarArgType, ToolbarArgType, ToolbarItem } from '../types.ts';
+
+const defaultItemValues: ToolbarItem = {
+  type: 'item',
+  value: '',
+};
 
 export const normalizeArgType = (
   key: string,
@@ -10,6 +15,8 @@ export const normalizeArgType = (
   }
   return {
     ...argType,
+    name: argType.name || key,
+    description: argType.description || key,
     toolbar: {
       ...argType.toolbar,
       items: toolbar.items.map((_item) => {
@@ -23,7 +30,7 @@ export const normalizeArgType = (
           item.value = undefined;
         }
 
-        return item;
+        return { ...defaultItemValues, ...item };
       }),
     },
   };

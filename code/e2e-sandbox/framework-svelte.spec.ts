@@ -5,6 +5,10 @@ import { SbPage } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
+const expectedSource =
+  templateName === 'svelte-vite/default-ts'
+    ? "<script>\n  import Button from './Button.svelte';\n</script>\n\n<Button />"
+    : '<Button />';
 
 test.describe('Svelte', () => {
   test.beforeEach(async ({ page }) => {
@@ -22,7 +26,6 @@ test.describe('Svelte', () => {
     const showCodeButton = (await root.locator('button', { hasText: 'Show Code' }).all())[0];
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
-    const expectedSource = '<Button />';
     await expect(sourceCode).toHaveText(expectedSource);
   });
 

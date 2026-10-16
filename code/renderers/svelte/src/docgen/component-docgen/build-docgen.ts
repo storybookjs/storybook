@@ -1,3 +1,7 @@
+import { readFile } from 'node:fs/promises';
+
+import { preprocess } from 'svelte/compiler';
+
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { extractComponentDescription } from 'storybook/internal/csf-tools';
@@ -24,7 +28,12 @@ export async function buildDocgenPayload(
   try {
     const component = await resolveStoryComponent(input.entry);
     if (!component) return undefined;
-    const docgen = generateDocgen(component.componentPath, context.cache);
+    const source = await readFile(component.componentPath, 'utf8');
+    const documentationSource = await preprocess(source, { style: () => ({ code: '' }) });
+    const docgen = generateDocgen(component.componentPath, context.cache, {
+      server: true,
+      documentationSource: documentationSource.code,
+    });
     return {
       ...base,
       name: component.name,

@@ -1,14 +1,6 @@
-import { join } from 'node:path';
-
 import { ProjectType } from 'storybook/internal/cli';
-import {
-  SupportedBuilder,
-  SupportedFramework,
-  SupportedLanguage,
-  SupportedRenderer,
-} from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { applyPreviewImportsMap } from '../../../../../core/src/shared/constants/config-folder.ts';
 import reactNativeGeneratorModule from '../REACT_NATIVE/index.ts';
 import reactNativeWebGeneratorModule from '../REACT_NATIVE_WEB/index.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
@@ -26,19 +18,6 @@ export default defineGeneratorModule({
       packageManager,
       context
     );
-
-    const previewExtension = context.language === SupportedLanguage.JAVASCRIPT ? 'jsx' : 'tsx';
-    const { packageJson, operationDir } = packageManager.primaryPackageJson;
-    // Vite resolves this specifier; Metro aliases it to `.rnstorybook`.
-    if (
-      applyPreviewImportsMap(
-        packageJson,
-        join('.storybook', `preview.${previewExtension}`),
-        operationDir
-      )
-    ) {
-      packageManager.writePackageJson(packageJson, operationDir);
-    }
 
     return {
       ...configurationResult,

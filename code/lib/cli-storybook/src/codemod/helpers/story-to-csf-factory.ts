@@ -4,7 +4,6 @@ import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
 
-import { DOCUMENTED_PREVIEW_IMPORT } from '../../../../../core/src/shared/constants/config-folder.ts';
 import type { FileInfo } from '../../automigrate/codemod.ts';
 import { addImportToTop } from './csf-factories-utils.ts';
 import { customArgsTypes } from './custom-args-type.ts';
@@ -58,7 +57,7 @@ export async function storyToCsfFactory(
       n.declarations.some((declaration) => t.isIdentifier(declaration.id, { name: 'preview' }))
   );
 
-  let previewPath = DOCUMENTED_PREVIEW_IMPORT;
+  let previewPath = '#.storybook/preview';
   if (!useSubPathImports) {
     // calculate relative path from story file to preview file
     const relativePath = path.relative(path.dirname(info.path), previewConfigPath);

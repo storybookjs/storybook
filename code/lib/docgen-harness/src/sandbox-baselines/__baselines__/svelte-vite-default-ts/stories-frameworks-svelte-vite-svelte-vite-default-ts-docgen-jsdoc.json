@@ -110,9 +110,9 @@
         }
       },
       "type": {
-        "name": "other",
-        "required": false,
-        "value": "(event: MouseEvent) => number"
+        "name": "function",
+        "raw": "(event: MouseEvent) => number",
+        "required": false
       }
     },
     "inlineObject": {

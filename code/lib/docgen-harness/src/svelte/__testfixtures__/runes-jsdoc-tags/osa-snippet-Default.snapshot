@@ -1,1 +1,10 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import JsdocTags from './JsdocTags.svelte';
+</script>
+
+<JsdocTags
+  oldLabel="Old"
+  label="New"
+  example="Example"
+  internalValue="Internal"
+ />

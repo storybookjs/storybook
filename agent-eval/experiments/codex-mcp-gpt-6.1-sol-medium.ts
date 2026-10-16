@@ -1,7 +1,6 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
 import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import {
-  commitSandboxBaseline,
   setupSandbox,
   writeCodexAgentsMd,
   writeCodexInAppBrowserMock,
@@ -23,6 +22,5 @@ export default {
     await writeCodexMcpConfig(sandbox);
     await writeCodexAgentsMd(sandbox);
     await writeCodexInAppBrowserMock(sandbox);
-    await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

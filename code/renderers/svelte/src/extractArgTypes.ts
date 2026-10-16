@@ -17,6 +17,7 @@ function hasKeyword(keyword: string, keywords: JSDocKeyword[]): boolean {
   return keywords ? keywords.find((k) => k.name === keyword) != null : false;
 }
 
+/** @deprecated Use server-side docgen. See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated. */
 export const extractArgTypes: ArgTypesExtractor = (
   component: ComponentWithDocgen
 ): StrictArgTypes | null => {

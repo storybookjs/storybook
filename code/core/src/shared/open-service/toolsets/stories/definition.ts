@@ -15,7 +15,6 @@ import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../tools
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
-import { detectChangedFilesOutsideStories } from './changed-files-outside-stories.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
@@ -27,6 +26,7 @@ import {
 } from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
+import { detectUnreachableFiles } from './unreachable-files.ts';
 
 const previewSuccessSchema = v.object({
   title: v.string(),
@@ -73,8 +73,6 @@ const changedOutputSchema = v.object({
     affected: v.number(),
   }),
   unreachableFiles: v.array(v.string()),
-  unreachableFilesTruncated: v.boolean(),
-  changedConfigFiles: v.array(v.string()),
 });
 
 export type ChangedStoriesOutput = v.InferOutput<typeof changedOutputSchema>;
@@ -136,13 +134,6 @@ export type StoriesGitAccess = {
   }>;
 };
 
-export type StorybookDirsAccess = {
-  /** Absolute path of the Storybook config directory. */
-  configDir: string;
-  /** Absolute paths of the configured static directories. */
-  getStaticDirs: () => Promise<string[]>;
-};
-
 export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
@@ -152,7 +143,6 @@ export type CreateStoriesToolsetOptions = {
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
-  storybookDirs: StorybookDirsAccess;
 };
 
 const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
@@ -162,8 +152,6 @@ function emptyChangedStories(): ChangedStoriesOutput {
     stories: [],
     counts: { new: 0, modified: 0, affected: 0 },
     unreachableFiles: [],
-    unreachableFilesTruncated: false,
-    changedConfigFiles: [],
   };
 }
 
@@ -242,7 +230,6 @@ export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
-  storybookDirs,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
@@ -346,7 +333,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             ...getChangedStories({ statuses, index }),
             // Files outside the story graph are why an empty or partial result can still be wrong,
             // so they are part of the answer rather than a separate lookup.
-            ...(await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs })),
+            unreachableFiles: await detectUnreachableFiles({ git, moduleGraph }),
           };
 
           return {

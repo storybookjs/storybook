@@ -1,1 +1,14 @@
-(no snippet: the Code panel falls back to the story source)
+<script lang="ts">
+  import Input from './Input.svelte';
+
+  let el = $state<HTMLInputElement | undefined>();
+  let value = $state('');
+</script>
+
+<Input
+  bind:value
+  bind:input={el}
+  placeholder={`multi\nline`}
+  error={null}
+  font="mono" disabled
+/>

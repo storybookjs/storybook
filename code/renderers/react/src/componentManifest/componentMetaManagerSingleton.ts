@@ -22,8 +22,10 @@ export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | 
       try {
         const ts = await import('typescript');
         return new ComponentMetaManager(ts.default ?? ts);
-      } catch (err) {
-        logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
+      } catch {
+        logger.debug(
+          '[reactComponentMeta] TypeScript not available, skipping component meta extraction.'
+        );
         return undefined;
       }
     })();

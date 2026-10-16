@@ -1,7 +1,6 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
 import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import {
-  commitSandboxBaseline,
   setupSandbox,
   writeClaudeInAppBrowserMock,
   writeClaudeMcpConfig,
@@ -19,6 +18,5 @@ export default {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp', model });
     await writeClaudeMcpConfig(sandbox);
     await writeClaudeInAppBrowserMock(sandbox);
-    await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

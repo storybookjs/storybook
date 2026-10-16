@@ -3,7 +3,7 @@ import type * as ESTreeAST from 'estree';
 import { SVELTE_CSF_IMPORT_SOURCES } from '../constants.ts';
 import { isOneOf } from './is-one-of.ts';
 
-function isSvelteCsfImportSource(source: unknown): boolean {
+export function isSvelteCsfImportSource(source: unknown): boolean {
   return typeof source === 'string' && isOneOf(SVELTE_CSF_IMPORT_SOURCES, source);
 }
 

@@ -11,9 +11,9 @@
         }
       },
       "type": {
-        "name": "other",
-        "required": false,
-        "value": "() => void"
+        "name": "function",
+        "raw": "() => void",
+        "required": false
       }
     },
     "onLogin": {
@@ -27,9 +27,9 @@
         }
       },
       "type": {
-        "name": "other",
-        "required": false,
-        "value": "() => void"
+        "name": "function",
+        "raw": "() => void",
+        "required": false
       }
     },
     "onLogout": {
@@ -43,9 +43,9 @@
         }
       },
       "type": {
-        "name": "other",
-        "required": false,
-        "value": "() => void"
+        "name": "function",
+        "raw": "() => void",
+        "required": false
       }
     },
     "user": {

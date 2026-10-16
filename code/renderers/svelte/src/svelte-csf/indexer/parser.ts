@@ -27,7 +27,7 @@ import {
 import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.ts';
 
 interface Results {
-  meta: Pick<IndexInput, 'title' | 'tags'>;
+  meta: Pick<IndexInput, 'title' | 'tags' | 'metaId'>;
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
 }
 
@@ -168,6 +168,10 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const { state } = context;
       const { name } = key as ESTreeAST.Identifier;
 
+      if (name === 'id') {
+        state.meta.metaId = getPropertyStringValue({ node, filename });
+      }
+
       if (name === 'title') {
         state.meta.title = getPropertyStringValue({ node, filename });
       }
@@ -192,6 +196,8 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       for (const node of nodes) {
         if (node.type === 'Component') {
           visit(node, state);
+        } else if (node.type === 'RegularElement') {
+          visit(node.fragment, state);
         }
       }
     },

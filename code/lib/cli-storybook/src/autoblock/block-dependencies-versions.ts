@@ -12,7 +12,7 @@ const minimalVersionsMap = {
   'react-dom': '18.0.0',
   svelte: '5.0.0',
   vue: '3.0.0',
-  vite: '5.0.0',
+  vite: '6.3.0',
 } as const;
 
 const conditionalVersionsMap = {
@@ -114,6 +114,15 @@ export const blocker = createBlocker({
             Please see the migration guide for more information:
           `,
           link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up',
+        };
+      case 'vite':
+        return {
+          title: 'Vite 6.3 or newer required',
+          message: dedent`
+            Support for Vite < 6.3.0 has been removed.
+            Please see the migration guide for more information:
+          `,
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher',
         };
       default:
         return {

@@ -236,6 +236,31 @@ describe('csf-2-to-3', () => {
       `);
     });
 
+    it('drops the comments that led a removed template or annotation', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Button', component: Button };
+
+          /** Shared template */
+          const Template = (args) => <Button {...args} />;
+
+          export const Primary = Template.bind({});
+          // @ts-expect-error
+          Primary.args = { label: 'A' };
+
+          export const Next = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Button", component: Button };
+
+        export const Primary = {
+          args: { label: "A" },
+        };
+
+        export const Next = () => <Cat />;
+      `);
+    });
+
     it('keeps a template that is still rendered as a JSX element', async () => {
       await expect(
         jsTransform(dedent`
@@ -303,6 +328,21 @@ describe('csf-2-to-3', () => {
   });
 
   describe('typescript', () => {
+    it('adds a type import only when it rewrites the annotation', async () => {
+      await expect(
+        tsTransform(dedent`
+          import type { StoryObj } from '@storybook/react';
+          export default { title: 'Cat' };
+          export const A: StoryObj = () => <Cat />, B: StoryObj = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import type { StoryObj } from "@storybook/react";
+        export default { title: "Cat" };
+        export const A: StoryObj = () => <Cat />,
+          B: StoryObj = () => <Cat />;
+      `);
+    });
+
     it('should error with namespace imports', async () => {
       await expect.addSnapshotSerializer({
         serialize: (value) => {

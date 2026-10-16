@@ -5,6 +5,7 @@ import {
   type SourceEditor,
   loadCsf,
   printCsf,
+  removeStatement,
   walk,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -125,7 +126,7 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
     const { declarations } = declaration;
     const index = declarations.indexOf(declarator);
     if (declarations.length === 1) {
-      editor.edits.remove(declaration.start, declaration.end);
+      removeStatement(editor, declaration);
     } else if (index < declarations.length - 1) {
       editor.edits.remove(declarator.start, declarations[index + 1].start);
     } else {
@@ -196,7 +197,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
 
   for (const statement of editor.program.body) {
     if (isStoryAnnotation(statement, objectExports)) {
-      editor.edits.remove(statement.start, statement.end);
+      removeStatement(editor, statement);
     }
   }
   editor.commit();
@@ -306,8 +307,8 @@ class StorybookImportHelper {
       annotation.typeName.type === 'Identifier' &&
       this.getAllLocalImports().includes(annotation.typeName.name)
     ) {
-      const localTypeImport = this.getOrAddImport(type);
       if (apply) {
+        const localTypeImport = this.getOrAddImport(type);
         const { typeName } = annotation;
         this.editor.edits.overwrite(typeName.start, typeName.end, localTypeImport ?? '');
       }

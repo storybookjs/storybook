@@ -11,7 +11,6 @@ import type { Polka } from 'polka';
 
 import { defineService } from '../../../shared/open-service/index.ts';
 import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
-import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
@@ -58,10 +57,7 @@ describe('manifests', () => {
     return registerService(testMdxServiceDef);
   };
 
-  const setupMockPresets = (options?: {
-    componentsManifest?: boolean;
-    experimentalDocgenServer?: boolean;
-  }) => {
+  const setupMockPresets = (options?: { componentsManifest?: boolean; docgenServer?: boolean }) => {
     mockGetIndex = vi.fn<() => Promise<StoryIndex>>().mockResolvedValue({
       entries: {},
     } as StoryIndex);
@@ -78,7 +74,7 @@ describe('manifests', () => {
           case 'features':
             return Promise.resolve({
               componentsManifest: options?.componentsManifest ?? true,
-              experimentalDocgenServer: options?.experimentalDocgenServer ?? false,
+              docgenServer: options?.docgenServer ?? false,
             });
           default:
             return Promise.resolve(undefined);
@@ -140,7 +136,7 @@ describe('manifests', () => {
       );
     });
 
-    it('writes legacy inline components.json with array-shaped stories when experimentalDocgenServer is disabled', async () => {
+    it('writes legacy inline components.json with array-shaped stories when docgenServer is disabled', async () => {
       mockManifests = {
         components: {
           v: 0,
@@ -332,10 +328,10 @@ describe('manifests', () => {
       expect(entryIds).not.toContain('story-without-manifest');
     });
 
-    it('writes ref-based components.json when experimentalDocgenServer is enabled', async () => {
+    it('writes ref-based components.json when docgenServer is enabled', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -388,7 +384,6 @@ describe('manifests', () => {
         },
       }));
 
-      registerTestModuleGraphService();
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         docgenProvider,
@@ -449,15 +444,99 @@ describe('manifests', () => {
       expect(files['/output/manifests/docs.json']).toBeDefined();
       expect(files['/output/manifests/components.html']).toContain('Button');
       expect(files['/output/manifests/components.html']).toContain('Unattached Docs');
+      // Deep-link contract: every component-id key in components.json must be a stable anchor id on
+      // the matching card in components.html, so tooling can open `components.html#<id>`. Asserting
+      // against a key read from the emitted JSON guards against any upstream re-keying of the cards.
+      const [componentId] = Object.keys(componentsJson.components);
+      expect(componentId).toBe('button');
+      expect(files['/output/manifests/components.html']).toContain(`id="${componentId}"`);
       // Both components.json and the HTML come from the on-disk snapshot, so the build must not
       // re-extract docgen from the live service.
       expect(docgenProvider).not.toHaveBeenCalled();
     });
 
+    it('includes a componentless component in components.html, matching components.json', async () => {
+      mockPresets = setupMockPresets({
+        componentsManifest: true,
+        docgenServer: true,
+      });
+      mockGetIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'billboard--default': {
+            type: 'story',
+            subtype: 'story',
+            id: 'billboard--default',
+            name: 'Default',
+            title: 'Billboard',
+            importPath: './billboard.stories.tsx',
+            tags: [Tag.MANIFEST],
+            // No `componentPath`: the story file names no `meta.component`.
+          },
+        },
+      } as StoryIndex);
+
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+      };
+
+      const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
+        id: 'billboard',
+        name: 'Billboard',
+        path: './billboard.stories.tsx',
+        stories: { 'billboard--default': { id: 'billboard--default', name: 'Default' } },
+      }));
+
+      registerDocgenService({
+        getIndex: () => mockGenerator.getIndex(),
+        docgenProvider: vi.fn<DocgenProvider>(async () => undefined),
+      });
+      registerStoryDocsService({
+        getIndex: () => mockGenerator.getIndex(),
+        storyDocsProvider,
+      });
+
+      vol.fromNestedJSON({
+        '/output/services/core/story-docs/billboard.json': JSON.stringify({
+          components: {
+            billboard: {
+              id: 'billboard',
+              name: 'Billboard',
+              path: './billboard.stories.tsx',
+              stories: { 'billboard--default': { id: 'billboard--default', name: 'Default' } },
+            },
+          },
+        }),
+        // Deliberately no /output/services/core/docgen/billboard.json snapshot: docgen extracted
+        // nothing, because the story file names no component.
+      });
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      // The index keeps the row and its stories even though docgen extracted nothing for it.
+      expect(componentsJson.components.billboard).toMatchObject({
+        id: 'billboard',
+        stories: { $ref: expect.stringContaining('billboard') },
+      });
+
+      // The HTML debugger must list the same component the JSON index does, so a maintainer
+      // debugging "why can't the agent see this component" is not told two different stories.
+      // The stub row has no display name of its own (nothing extracted it), so it falls back to the
+      // id, same as components.json's `name: payload?.name ?? id`.
+      expect(files['/output/manifests/components.html']).toContain('id="billboard"');
+      expect(files['/output/manifests/components.html']).toContain('Default');
+    });
+
     it('writes shallow MDX refs and renders HTML from MDX service snapshots', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -664,10 +743,10 @@ describe('manifests', () => {
         expect(res.end).toHaveBeenCalledWith('Manifest "any" not found');
       });
 
-      it('returns 404 for components.json when experimentalDocgenServer is enabled', async () => {
+      it('returns 404 for components.json when docgenServer is enabled', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
 
         registerManifests({ app: mockApp, presets: mockPresets });
@@ -680,14 +759,14 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
-          'Manifest "components" is not available in dev when experimentalDocgenServer is enabled'
+          'Manifest "components" is not available in dev when docgenServer is enabled'
         );
       });
 
-      it('returns 404 for docs.json when experimentalDocgenServer is enabled', async () => {
+      it('returns 404 for docs.json when docgenServer is enabled', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
 
         registerManifests({ app: mockApp, presets: mockPresets });
@@ -700,7 +779,7 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
-          'Manifest "docs" is not available in dev when experimentalDocgenServer is enabled'
+          'Manifest "docs" is not available in dev when docgenServer is enabled'
         );
       });
 
@@ -865,7 +944,7 @@ describe('manifests', () => {
       it('renders docgen-server HTML with MDX from the live service', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
         mockGetIndex.mockResolvedValue({
           v: 5,
@@ -913,7 +992,6 @@ describe('manifests', () => {
           },
         };
 
-        registerTestModuleGraphService();
         registerDocgenService({
           getIndex: () => mockGenerator.getIndex(),
           docgenProvider: async () => ({

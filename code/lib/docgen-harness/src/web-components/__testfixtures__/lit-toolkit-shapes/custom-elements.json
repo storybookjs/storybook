@@ -1,0 +1,363 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-toolkit-shapes.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Exercises the shapes the wc-toolkit helpers special-case.",
+          "name": "LitToolkitShapes",
+          "cssProperties": [
+            {
+              "type": {
+                "text": "<color>"
+              },
+              "description": "Text color.",
+              "name": "--toolkit-color"
+            },
+            {
+              "type": {
+                "text": "<number>"
+              },
+              "description": "Scale factor.",
+              "name": "--toolkit-scale"
+            },
+            {
+              "description": "Font shorthand.",
+              "name": "--toolkit-font"
+            },
+            {
+              "description": "Gap with a default.",
+              "name": "--toolkit-gap",
+              "default": "4px"
+            }
+          ],
+          "cssParts": [
+            {
+              "description": "The wrapper.",
+              "name": "base"
+            }
+          ],
+          "slots": [
+            {
+              "description": "Default content.",
+              "name": ""
+            },
+            {
+              "description": "Rich label content; collides with the `label` attribute.",
+              "name": "label"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "Size"
+              },
+              "parsedType": {
+                "text": "'small' | 'medium' | 'large'"
+              },
+              "default": "'medium'",
+              "description": "Named alias union.",
+              "attribute": "size"
+            },
+            {
+              "kind": "field",
+              "name": "level",
+              "type": {
+                "text": "1 | 2 | 3"
+              },
+              "default": "1",
+              "description": "Inline literal union with a numeric member.",
+              "attribute": "level"
+            },
+            {
+              "kind": "field",
+              "name": "tags",
+              "type": {
+                "text": "Array<'a' | 'b'>"
+              },
+              "default": "['a']",
+              "description": "Array of literals.",
+              "attribute": "tags"
+            },
+            {
+              "kind": "field",
+              "name": "target",
+              "type": {
+                "text": "'self' | { id: string }"
+              },
+              "default": "'self'",
+              "description": "Mixed literal/object union.",
+              "attribute": "target"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Label'",
+              "description": "Plain label; collides with the `label` slot.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "when",
+              "type": {
+                "text": "Date"
+              },
+              "default": "new Date(0)",
+              "description": "Date value.",
+              "attribute": "when"
+            },
+            {
+              "kind": "field",
+              "name": "computed",
+              "type": {
+                "text": "string"
+              },
+              "description": "Read-only computed value.",
+              "readonly": true
+            },
+            {
+              "kind": "field",
+              "name": "version",
+              "type": {
+                "text": "string"
+              },
+              "readonly": true,
+              "default": "'1.0.0'",
+              "description": "Readonly field."
+            },
+            {
+              "kind": "field",
+              "name": "tagName",
+              "type": {
+                "text": "string"
+              },
+              "static": true,
+              "readonly": true,
+              "default": "'lit-toolkit-shapes'",
+              "description": "Static member, excluded."
+            },
+            {
+              "kind": "field",
+              "name": "internalCounter",
+              "type": {
+                "text": "number"
+              },
+              "privacy": "private",
+              "default": "0",
+              "description": "Private field, excluded."
+            },
+            {
+              "kind": "field",
+              "name": "helper",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "protected",
+              "default": "'h'",
+              "description": "Protected field, excluded."
+            },
+            {
+              "kind": "field",
+              "name": "#secret",
+              "privacy": "private",
+              "type": {
+                "text": "string"
+              },
+              "default": "'s'",
+              "description": "ES private, excluded."
+            },
+            {
+              "kind": "field",
+              "name": "pressed",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Internal reactive state."
+            },
+            {
+              "kind": "field",
+              "name": "oldSize",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Old size field.",
+              "deprecated": "Use `size` instead.",
+              "attribute": "old-size"
+            },
+            {
+              "kind": "field",
+              "name": "onSelect",
+              "type": {
+                "text": "((size: Size) => void) | undefined"
+              },
+              "default": "undefined",
+              "description": "Callback property."
+            },
+            {
+              "kind": "method",
+              "name": "focusItem",
+              "return": {
+                "type": {
+                  "text": "boolean"
+                }
+              },
+              "parameters": [
+                {
+                  "name": "index",
+                  "type": {
+                    "text": "number"
+                  }
+                },
+                {
+                  "name": "options",
+                  "optional": true,
+                  "type": {
+                    "text": "{ smooth: boolean }"
+                  }
+                }
+              ],
+              "description": "Public method with params."
+            },
+            {
+              "kind": "method",
+              "name": "tick",
+              "privacy": "private",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Private method, excluded."
+            }
+          ],
+          "events": [
+            {
+              "type": {
+                "text": "CustomEvent<{ size: Size }>"
+              },
+              "parsedType": {
+                "text": "CustomEvent<{ size: 'small' | 'medium' | 'large' }>"
+              },
+              "description": "Fired when the size changes.",
+              "name": "toolkit-resize"
+            },
+            {
+              "description": "Native click passthrough.",
+              "name": "click"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "size",
+              "type": {
+                "text": "Size"
+              },
+              "parsedType": {
+                "text": "'small' | 'medium' | 'large'"
+              },
+              "default": "'medium'",
+              "description": "Named alias union.",
+              "fieldName": "size"
+            },
+            {
+              "name": "level",
+              "type": {
+                "text": "1 | 2 | 3"
+              },
+              "default": "1",
+              "description": "Inline literal union with a numeric member.",
+              "fieldName": "level"
+            },
+            {
+              "name": "tags",
+              "type": {
+                "text": "Array<'a' | 'b'>"
+              },
+              "default": "['a']",
+              "description": "Array of literals.",
+              "fieldName": "tags"
+            },
+            {
+              "name": "target",
+              "type": {
+                "text": "'self' | { id: string }"
+              },
+              "default": "'self'",
+              "description": "Mixed literal/object union.",
+              "fieldName": "target"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Label'",
+              "description": "Plain label; collides with the `label` slot.",
+              "fieldName": "label"
+            },
+            {
+              "name": "when",
+              "type": {
+                "text": "Date"
+              },
+              "default": "new Date(0)",
+              "description": "Date value.",
+              "fieldName": "when"
+            },
+            {
+              "name": "old-size",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Old size field.",
+              "deprecated": "Use `size` instead.",
+              "fieldName": "oldSize"
+            }
+          ],
+          "cssStates": [
+            {
+              "description": "Set while active.",
+              "name": "active"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "lit-toolkit-shapes",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitToolkitShapes",
+          "declaration": {
+            "name": "LitToolkitShapes",
+            "module": "lit-toolkit-shapes.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-toolkit-shapes",
+          "declaration": {
+            "name": "LitToolkitShapes",
+            "module": "lit-toolkit-shapes.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

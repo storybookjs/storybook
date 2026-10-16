@@ -1,0 +1,129 @@
+{
+  "status": "failed",
+  "duration": 403.365,
+  "metadata": {
+    "usage": {
+      "inputTokens": 53157,
+      "cacheWriteTokens": 147365,
+      "cacheReadTokens": 999884,
+      "outputTokens": 8239,
+      "totalTokens": 1208645,
+      "estimatedCostUsd": 1.89273325
+    }
+  },
+  "analysis": {
+    "mcpUsage": {
+      "totalWorkflowCalls": 1,
+      "byTool": {
+        "list-all-documentation": 1
+      },
+      "documentationToolCalls": 1
+    },
+    "externalRepo": {
+      "repo": "yannbf/mealdrop",
+      "ref": "ce507b345666ea8678101fccac580186b2b69b1f"
+    }
+  },
+  "model": "opus",
+  "transcriptPath": "./transcript.json",
+  "transcriptRawPath": "./transcript-raw.jsonl",
+  "o11y": {
+    "totalTurns": 12,
+    "toolCalls": {
+      "file_read": 4,
+      "file_write": 0,
+      "file_edit": 3,
+      "shell": 17,
+      "web_fetch": 0,
+      "web_search": 0,
+      "glob": 0,
+      "grep": 0,
+      "list_dir": 0,
+      "agent_task": 0,
+      "unknown": 1
+    },
+    "totalToolCalls": 25,
+    "webFetches": [],
+    "filesRead": [
+      "/workspace/src/components/Footer/Footer.tsx",
+      "/workspace/src/components/FooterCard/FooterCard.tsx",
+      "/workspace/src/components/Button/Button.tsx"
+    ],
+    "filesModified": ["/workspace/src/components/Footer/Footer.tsx"],
+    "shellCommands": [
+      {
+        "command": "find /workspace/src -iname \"*footer*\" -o -iname \"*Footer*\" | head -50",
+        "success": true
+      },
+      {
+        "command": "ls /workspace/src/components/",
+        "success": true
+      },
+      {
+        "command": "ls /workspace/src/components/Button/ && cat /workspace/src/components/Button/*.tsx | head -120",
+        "success": true
+      },
+      {
+        "command": "grep -rn \"path=\" src/*.tsx src/**/*.tsx 2>/dev/null | grep -i \"route\\|path=\" | head -30; echo \"---HELP---\"; grep -rni \"help\\|support\\|contact\" src --include=*.tsx --include=*.ts -l | head",
+        "success": true
+      },
+      {
+        "command": "cat src/components/Footer/Footer.stories.tsx; echo \"=== navigate usage ===\"; grep -rn \"useNavigate\" src --include=*.tsx | head -5; echo \"=== theme colors ===\"; grep -rn \"footerBackground\\|buttonText\" src/styles/*.ts* | head",
+        "success": true
+      },
+      {
+        "command": "cat /workspace/src/components/Button/index.tsx",
+        "success": true
+      },
+      {
+        "command": "grep -n -A12 \"spacing\" /workspace/src/styles/theme.ts | head -30",
+        "success": true
+      },
+      {
+        "command": "npx tsc --noEmit -p tsconfig.json 2>&1 | tail -20",
+        "success": true
+      },
+      {
+        "command": "npx eslint src/components/Footer/Footer.tsx 2>&1 | tail -20; npx prettier --check src/components/Footer/Footer.tsx",
+        "success": true
+      },
+      {
+        "command": "ls src/components/Footer/; grep -rln \"Footer\" src/**/*.test.* src/*.test.* 2>/dev/null | head",
+        "success": true
+      },
+      {
+        "command": "cat > /tmp/footer.render.test.tsx <<'EOF'\nimport { render, screen } from '@testing-library/react'\nimport { MemoryRouter } from 'react-router-dom'\nimport { ThemeProvider } from 'styled-components'\n\nimport { Footer } from '../workspace/src/components/Footer/Footer'\nimport { lightTheme } from '../workspace/src/styles/theme'\n\ntest('renders Order help button', () => {\n  render(\n    <ThemeProvider theme={lightTheme}>\n      <MemoryRouter>\n        <Footer />\n      </MemoryRouter>\n    </ThemeProvider>\n  )\n  expect(screen.getByRole('button', { name: 'Order help' })).toBeVisible()\n})\nEOF\ngrep -n \"export const.*[Tt]heme\" src/styles/theme.ts | head",
+        "success": true
+      },
+      {
+        "command": "cp /tmp/footer.render.test.tsx /workspace/src/components/Footer/__tmp_footer.test.tsx && sed -i 's#\\.\\./workspace/src/components/Footer/Footer#./Footer#; s#\\.\\./workspace/src/styles/theme#../../styles/theme#' src/components/Footer/__tmp_footer.test.tsx && npx vitest run --config vitest.config.app.ts src/components/Footer/__tmp_footer.test.tsx 2>&1 | tail -25",
+        "success": true
+      },
+      {
+        "command": "rm -f /workspace/src/components/Footer/__tmp_footer.test.tsx; npx vitest run --config vitest.config.app.ts --project \"storybook (chromium)\" src/components/Footer/Footer.stories.tsx 2>&1 | tail -25",
+        "success": true
+      },
+      {
+        "command": "npx vitest run --config vitest.config.app.ts --project \"storybook (chromium)\" src/components/Footer/Footer.stories.tsx 2>&1 | head -40",
+        "success": true
+      },
+      {
+        "command": "cat /workspace/vitest.config.app.ts; echo \"=== root ===\"; cat /workspace/vitest.config.ts",
+        "success": true
+      },
+      {
+        "command": "cat > /workspace/src/components/Footer/__tmp_footer.test.ts <<'EOF'\nimport { createElement as h } from 'react'\nimport { render, screen } from '@testing-library/react'\nimport { MemoryRouter } from 'react-router-dom'\nimport { ThemeProvider } from 'styled-components'\nimport { expect, test } from 'vitest'\n\nimport { Footer } from './Footer'\nimport { lightTheme } from '../../styles/theme'\n\ntest('footer renders a small Order help button', () => {\n  render(h(ThemeProvider, { theme: lightTheme }, h(MemoryRouter, null, h(Footer))))\n  const button = screen.getByRole('button', { name: 'Order help' })\n  expect(button).toBeTruthy()\n  expect(button.tagName).toBe('BUTTON')\n  // small = default size: the large variant's padding must not be applied\n  expect(getComputedStyle(button).padding).not.toContain('1.125rem')\n})\nEOF\nnpx vitest run --config vitest.config.app.ts --project node src/components/Footer/__tmp_footer.test.ts 2>&1 | tail -25",
+        "success": true
+      },
+      {
+        "command": "rm -f /workspace/src/components/Footer/__tmp_footer.test.ts && git -C /workspace status --short src/components/Footer && git -C /workspace diff -- src/components/Footer/Footer.tsx",
+        "success": true
+      }
+    ],
+    "errors": [],
+    "thinkingBlocks": 0
+  },
+  "outputPaths": {
+    "eval": "./outputs/eval.txt"
+  }
+}

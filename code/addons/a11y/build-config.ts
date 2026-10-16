@@ -19,11 +19,6 @@ const config: BuildEntries = {
     ],
     node: [
       {
-        exportEntries: ['./postinstall'],
-        entryPoint: './src/postinstall.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
         dts: false,

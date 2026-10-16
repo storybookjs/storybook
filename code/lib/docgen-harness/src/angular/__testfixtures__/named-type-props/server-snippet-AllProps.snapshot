@@ -1,0 +1,16 @@
+import { Component } from '@angular/core';
+import { NamedTypePropsComponent } from './named-type-props.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [NamedTypePropsComponent],
+  template: `
+    <sb-named-type-props
+        [user]="{name: 'Ada Lovelace', age: 36}"
+        [status]="'green'"
+        [tree]="{label: 'root'}"
+        [id]="'sb-1'"
+        [config]="{collapsed: false}"
+    />`,
+})
+export class DemoComponent {}

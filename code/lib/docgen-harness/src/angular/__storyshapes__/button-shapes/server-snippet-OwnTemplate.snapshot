@@ -1,0 +1,9 @@
+import { Component } from '@angular/core';
+import { ShapeButtonComponent } from './shape-button.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ShapeButtonComponent],
+  template: `<sb-shape-button emphasis>hi</sb-shape-button>`,
+})
+export class DemoComponent {}

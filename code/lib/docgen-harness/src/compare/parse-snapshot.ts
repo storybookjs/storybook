@@ -7,6 +7,11 @@ const WHITESPACE = ' \t\n\r';
 const KEY_STRING = /"([\s\S]*?)"(?=:)/y;
 const VALUE_STRING = /"([\s\S]*?)"(?=,\r?\n|,$)/y;
 
+// pretty-format writes strings unescaped, so a string containing this shape - a quote closing a
+// value, a comma, a newline, then an indented quote - is byte-identical on disk to a real entry
+// boundary and can never be read back unambiguously. Accepting one would fabricate entries.
+const ENTRY_BOUNDARY_MIMIC = /",\r?\n\s*"/;
+
 export function parseArgTypesSnapshot(
   text: string,
   sourceLabel = 'argtypes snapshot'
@@ -30,6 +35,13 @@ export function parseArgTypesSnapshot(
     const match = pattern.exec(text);
     if (match === null) {
       return fail('unterminated string');
+    }
+    if (ENTRY_BOUNDARY_MIMIC.test(match[1])) {
+      return fail(
+        `parsed ${role} string contains the entry-boundary shape '",' + newline + '"', which ` +
+          'pretty-format writes unescaped; this snapshot cannot be read back unambiguously, ' +
+          're-record it'
+      );
     }
     pos = pattern.lastIndex;
     return match[1];
@@ -166,9 +178,6 @@ export function parseArgTypesSnapshot(
     return fail('unexpected trailing content');
   }
 
-  // The close-rule heuristics cannot fully disambiguate prose from structure: a string may
-  // legitimately contain `",` + newline + a key-shaped fragment, which would fabricate entries.
-  // Re-serializing the parse and demanding byte identity turns every such misparse into a throw.
   const source = text.endsWith('\n') ? text.slice(0, -1) : text;
   const reserialized = reserialize(result, '');
   if (reserialized !== source) {

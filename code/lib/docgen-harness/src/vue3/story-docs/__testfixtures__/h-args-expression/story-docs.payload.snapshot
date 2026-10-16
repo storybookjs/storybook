@@ -1,0 +1,20 @@
+{
+  "id": "h-args-expression",
+  "name": "HArgsExpression",
+  "path": "__PATH__",
+  "stories": {
+    "forms-h-args-expression--primary": {
+      "description": undefined,
+      "id": "forms-h-args-expression--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import HArgsExpression from './HArgsExpression.vue';
+</script>
+
+<template>
+  <HArgsExpression :count="2 + 1" :label="`${2} items`" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

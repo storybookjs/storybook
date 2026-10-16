@@ -7,6 +7,15 @@ import { styled } from 'storybook/theming';
 import { Button } from '../Button/Button.tsx';
 import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
 
+const StyledButton = styled(Button)(({ size }) => ({
+  gap: size === 'small' ? 6 : 8,
+
+  '&:focus-visible': {
+    // Prevent focus outline from being cut off by overflow: hidden
+    outlineOffset: -2,
+  },
+}));
+
 const ActionListItem = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
@@ -115,23 +124,7 @@ const ActionListHoverItem = styled(ActionListItem)<{ targetId: string }>(({ targ
   },
 }));
 
-const StyledButton = styled(Button)(({ size }) => ({
-  gap: size === 'small' ? 6 : 8,
-
-  '&:focus-visible': {
-    // Prevent focus outline from being cut off by overflow: hidden
-    outlineOffset: -2,
-  },
-}));
-
-const StyledToggleButton = styled(ToggleButton)({
-  '&:focus-visible': {
-    // Prevent focus outline from being cut off by overflow: hidden
-    outlineOffset: -2,
-  },
-});
-
-const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
+const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function ActionListButton(
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
@@ -140,12 +133,12 @@ const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Sty
   }
 );
 
-const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledToggleButton>>(
+const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof ToggleButton>>(
   function ActionListToggle(
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <StyledToggleButton {...{ ...props, variant, padding, size, ref }} />;
+    return <ToggleButton {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 

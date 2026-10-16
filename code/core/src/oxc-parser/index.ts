@@ -159,6 +159,47 @@ export async function parseLocalBindings(filePath: string, source: string): Prom
   return names;
 }
 
+/**
+ * Local names bound by static default imports, mapped to their module specifier. Type-only
+ * imports are excluded because they introduce no runtime binding.
+ *
+ * @example
+ *
+ * ```ts
+ * // import _sfc_main from './Tab.vue?vue&type=script&lang.ts';
+ * await parseDefaultImports(id, src);
+ * // Map { '_sfc_main' => './Tab.vue?vue&type=script&lang.ts' }
+ * ```
+ */
+export async function parseDefaultImports(
+  filePath: string,
+  source: string
+): Promise<Map<string, string>> {
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
+  try {
+    parseResult = oxcRawParseSync(filePath, source);
+  } catch {
+    return new Map();
+  }
+  const moduleInfo = parseResult.module;
+  if (!moduleInfo) {
+    return new Map();
+  }
+
+  const map = new Map<string, string>();
+
+  for (const staticImport of moduleInfo.staticImports) {
+    for (const entry of staticImport.entries) {
+      if (entry.isType || entry.importName.kind !== 'Default') {
+        continue;
+      }
+      map.set(entry.localName.value, staticImport.moduleRequest.value);
+    }
+  }
+
+  return map;
+}
+
 export async function parseReExports(
   filePath: string,
   source: string

@@ -12,6 +12,7 @@ import {
   commonJobsNoOpJob,
   defineCircleciCompletion,
   docgenMemoryGate,
+  docgenPerfGate,
   knip,
   lint,
   fmt,
@@ -51,11 +52,11 @@ function generateConfig(workflow: Workflow) {
     jobs.push(fmt);
   } else {
     const sandboxes = getSandboxes(workflow);
-    const testStorybooks = getTestStorybooks(workflow);
+    const testStorybooks = getTestStorybooks();
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows, docgenMemoryGate);
+      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate);
     }
 
     jobs.push(

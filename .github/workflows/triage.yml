@@ -26,6 +26,10 @@ jobs:
             }
           reproduction-comment: '.github/comments/invalid-link.md'
           reproduction-hosts: 'github.com,codesandbox.io,stackblitz.com'
+          # nissuer v1.10.0 turns an unset/empty blocklist into [new RegExp("")], which matches
+          # every URL and auto-closes valid bug reports (see balazsorban44/nissuer#41, #35810).
+          # `$^` is a regex that matches nothing.
+          reproduction-blocklist: '$^'
           reproduction-link-section: '### Reproduction link(.*)### Reproduction steps'
           reproduction-invalid-label: 'needs reproduction'
           reproduction-issue-labels: 'bug,needs triage'

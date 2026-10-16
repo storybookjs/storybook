@@ -17,8 +17,8 @@ export type ServiceId = string;
  * 1. State is wrapped in a `deepSignal` proxy for fine-grained per-field reactivity, and `deepSignal`
  *    throws ("this object can't be observed") on primitives, `null`, and `undefined` — there are no
  *    fields to track on a scalar.
- * 2. Cross-peer sync (`applyStatePatch` in `service-sync.ts`) merges state by walking object keys;
- *    it has no notion of replacing a whole scalar, so the wire protocol only carries keyed objects.
+ * 2. Snapshot install (`applyStatePatch` in `service-sync.ts`) merges state by walking object keys,
+ *    and entry pointers need at least one segment, so sync has no way to replace a whole scalar.
  *
  * Arrays are technically observable by `deepSignal` but are still rejected here: `applyStatePatch`
  * replaces arrays wholesale rather than merging by key, so a *top-level* array state would silently
@@ -163,9 +163,8 @@ export type QueryState<TData> = {
  *   and again whenever tracked state or the load lifecycle changes (deduped on the whole state).
  *   Subscribing is what fires the query's reactive `load`.
  *
- * There is intentionally no bare-call form: a previous `query(input)` that returned synchronously
- * *and* fired the `load` behind the scenes was removed because the implicit background load was
- * confusing. Read with `.get(input)`, await with `.loaded(input)`, observe with `.subscribe(...)`.
+ * There is no bare-call form. Read with `.get(input)`, await with `.loaded(input)`, observe with
+ * `.subscribe(...)`.
  *
  * Queries whose input schema resolves to `undefined` (for example `v.void()`) may be called with
  * zero arguments: `query.get()`, `query.loaded()`.
@@ -453,8 +452,10 @@ export type ServiceDefinition<
   id: TId;
   description?: string;
   /**
-   * When true, hides this service from `listServices()` output. Defaults to false. Does not disable
-   * the service at runtime — callers can still resolve it through `getService()`.
+   * When true, hides this service from `listServices()` output and requires
+   * `getService(id, { internal: true })` to resolve it. Defaults to false.
+   * Internal services are unstable: Storybook may break their ids, state, and operations without
+   * a public semver bump. Prefer public toolsets (`defineToolset`) for MCP/CLI surfaces.
    */
   internal?: boolean;
   /**
@@ -500,10 +501,21 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
     ? ServiceInstance<TState, TQueries, TCommands>
     : never;
 
+export type GetServiceOptions = {
+  /**
+   * Required when the target service is marked `internal: true`. Internal OSA surfaces are unstable
+   * and may change without a semver bump — only pass this when you intentionally accept that risk.
+   */
+  internal?: boolean;
+};
+
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
+  getService<TInstance = RuntimeService>(
+    serviceId: ServiceId,
+    options?: GetServiceOptions
+  ): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &

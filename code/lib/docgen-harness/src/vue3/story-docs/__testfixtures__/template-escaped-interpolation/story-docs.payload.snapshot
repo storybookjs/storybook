@@ -1,0 +1,20 @@
+{
+  "id": "template-escaped-interpolation",
+  "name": "TemplateEscapedInterpolation",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-escaped-interpolation--primary": {
+      "description": undefined,
+      "id": "forms-template-escaped-interpolation--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import TemplateEscapedInterpolation from './TemplateEscapedInterpolation.vue';
+</script>
+
+<template>
+  <TemplateEscapedInterpolation>&lt;em&gt;1 &amp; 2&lt;/em&gt;</TemplateEscapedInterpolation>
+</template>",
+      "summary": undefined,
+    },
+  },
+}

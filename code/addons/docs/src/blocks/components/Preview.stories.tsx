@@ -51,6 +51,14 @@ export const CodeError = () => (
   </Preview>
 );
 
+export const IncompleteSnippet = () => (
+  <Preview inline isExpanded withSource={sourceStories.IncompleteSnippet.args}>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
+  </Preview>
+);
+
 export const ActionBarWrapping = {
   render: () => (
     <Preview inline isExpanded withSource={sourceStories.JSX.args}>

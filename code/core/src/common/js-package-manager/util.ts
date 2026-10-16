@@ -69,6 +69,12 @@ export const parseReleaseTime = (value: unknown): Date | null => {
 };
 
 export const parsePackageTimeMap = (value: unknown): Record<string, string> | null => {
+  // pnpm < 11 forwards `view` to npm. With npm 12, the time map is wrapped in an array.
+  // https://github.com/npm/cli/releases/tag/v12.0.0
+  if (Array.isArray(value) && value.length === 1) {
+    value = value[0];
+  }
+
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return null;
   }
@@ -132,7 +138,16 @@ export function getRemotePackageRunnerArgs(
   const usesNpx =
     packageManagerType === PackageManagerName.NPM ||
     packageManagerType === PackageManagerName.YARN1;
-  return usesNpx ? ['--yes', pkgWithVersion, ...args] : [pkgWithVersion, ...args];
+  if (!usesNpx) {
+    return [pkgWithVersion, ...args];
+  }
+
+  // npm 12 defaults allow-remote to none. pkg.pr.new specifiers are remote URLs.
+  if (/^https?:\/\//.test(version)) {
+    return ['--yes', '--allow-remote=all', pkgWithVersion, ...args];
+  }
+
+  return ['--yes', pkgWithVersion, ...args];
 }
 
 export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {
@@ -196,4 +211,23 @@ export const getErrorLogs = (error: unknown): string => {
   }
 
   return String(error);
+};
+
+/** Number of trailing output lines surfaced when a package install fails. */
+export const INSTALL_ERROR_TAIL_LINES = 15;
+
+/**
+ * The tail of a failed package install's captured output (see `getErrorLogs`). Output longer than
+ * `lines` lines is truncated to the last `lines` — package managers print their own error summary
+ * (e.g. an npm ERESOLVE explanation) at the end. Returns '' only when there is no captured output
+ * at all; short outputs are returned in full so they are still logged and folded into the error.
+ */
+export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERROR_TAIL_LINES) => {
+  const output = getErrorLogs(error).trimEnd();
+  if (!output) {
+    return '';
+  }
+
+  const allLines = output.split('\n');
+  return allLines.slice(-lines).join('\n').trim();
 };

@@ -1,0 +1,52 @@
+{
+  "count": {
+    "description": "Number of repetitions.",
+    "name": "count",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "format": {
+    "description": "Maps the count to a display string.",
+    "name": "format",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "String(value)",
+      },
+      "type": {
+        "summary": "((value: number) => string)",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "((value: number) => string) | undefined",
+    },
+  },
+  "label": {
+    "description": "Visible label for the control.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

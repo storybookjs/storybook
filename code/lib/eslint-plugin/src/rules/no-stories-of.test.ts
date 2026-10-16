@@ -1,5 +1,5 @@
 /**
- * @file StoriesOf is deprecated and should not be used
+ * @file storiesOf was removed in Storybook 8.0; use CSF instead
  * @author Yann Braga
  */
 //------------------------------------------------------------------------------

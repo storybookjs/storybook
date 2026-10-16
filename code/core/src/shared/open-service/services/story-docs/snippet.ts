@@ -28,3 +28,11 @@ export function selectSnippetForStory(
   }
   return prependImportToSnippet(payload?.import, story.snippet);
 }
+
+/** Resolves the incomplete-snippet warning for one story from a story-docs payload. */
+export function selectWarningForStory(
+  payload: StoryDocsPayload | undefined,
+  storyId: string
+): string | undefined {
+  return payload?.stories[storyId]?.warning;
+}

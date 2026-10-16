@@ -48,6 +48,8 @@ npm install eslint-plugin-storybook --save-dev
 yarn add eslint-plugin-storybook --dev
 ```
 
+The plugin bundles the CSF helpers it needs, so you do **not** need to install `storybook` just to load the ESLint plugin (for example in a shared monorepo ESLint preset).
+
 And finally, add this to your `.eslintignore` file:
 
 ```
@@ -172,6 +174,41 @@ export default [
 ];
 ```
 
+### Usage with oxlint
+
+[Oxlint](https://oxc.rs/docs/guide/usage/linter) can run this plugin through its [JS plugins support](https://oxc.rs/docs/guide/usage/linter/js-plugins.html) (an alpha oxlint feature). Reference the plugin in your `.oxlintrc.json` and enable rules for your stories files. The following mirrors the `flat/recommended` config:
+
+```jsonc
+{
+  "jsPlugins": ["eslint-plugin-storybook"],
+  "overrides": [
+    {
+      "files": ["**/*.stories.{ts,tsx,js,jsx,mjs,cjs}", "**/*.story.{ts,tsx,js,jsx,mjs,cjs}"],
+      "rules": {
+        "storybook/await-interactions": "error",
+        "storybook/context-in-play-function": "error",
+        "storybook/default-exports": "error",
+        "storybook/hierarchy-separator": "warn",
+        "storybook/no-redundant-story-name": "warn",
+        "storybook/no-renderer-packages": "error",
+        "storybook/prefer-pascal-case": "warn",
+        "storybook/story-exports": "error",
+        "storybook/use-storybook-expect": "error",
+        "storybook/use-storybook-testing-library": "error"
+      }
+    },
+    {
+      "files": [".storybook/main.{js,cjs,mjs,ts}"],
+      "rules": {
+        "storybook/no-uninstalled-addons": "error"
+      }
+    }
+  ]
+}
+```
+
+Note that oxlint's `files` patterns do not support ESLint's `@(ts|tsx)` extglob syntax — patterns using it are silently ignored. Use `{ts,tsx}` braces instead, as shown above.
+
 ### MDX Support
 
 This plugin does not support MDX files.
@@ -194,7 +231,7 @@ This plugin does not support MDX files.
 | [`storybook/meta-inline-properties`](./docs/rules/meta-inline-properties.md)               | Meta should only have inline properties                                                                                       |     | N/A                                                                                                                            |
 | [`storybook/meta-satisfies-type`](./docs/rules/meta-satisfies-type.md)                     | Meta should use `satisfies Meta`                                                                                              | 🔧  | N/A                                                                                                                            |
 | [`storybook/no-redundant-story-name`](./docs/rules/no-redundant-story-name.md)             | A story should not have a redundant name property                                                                             | 🔧  | <ul><li>csf</li><li>flat/csf</li><li>recommended</li><li>flat/recommended</li><li>csf-strict</li><li>flat/csf-strict</li></ul> |
-| [`storybook/no-stories-of`](./docs/rules/no-stories-of.md)                                 | storiesOf is deprecated and should not be used                                                                                |     | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
+| [`storybook/no-stories-of`](./docs/rules/no-stories-of.md)                                 | storiesOf was removed in Storybook 8.0; use CSF instead.                                                                      |     | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
 | [`storybook/no-title-property-in-meta`](./docs/rules/no-title-property-in-meta.md)         | Do not define a title in meta                                                                                                 | 🔧  | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
 | [`storybook/no-uninstalled-addons`](./docs/rules/no-uninstalled-addons.md)                 | This rule identifies storybook addons that are invalid because they are either not installed or contain a typo in their name. |     | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |
 | [`storybook/prefer-pascal-case`](./docs/rules/prefer-pascal-case.md)                       | Stories should use PascalCase                                                                                                 | 🔧  | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |

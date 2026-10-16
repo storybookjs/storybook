@@ -134,7 +134,9 @@ export const benchPackage = async (packageName: PackageName) => {
     );
 
   let npmInstallResult = await runNpmInstall();
-  // Verdaccio hiccups and Arborist races (npm/cli#9787) are transient; one retry clears them.
+  // Verdaccio occasionally drops or stalls a request mid-install; one retry clears it. (The
+  // npm 10.9.x Arborist crash this job originally hit is deterministic — the CI job's npm
+  // upgrade is what fixes that, not this retry.)
   if (npmInstallResult.exitCode !== 0) {
     console.log(`npm install failed (exit code ${npmInstallResult.exitCode}), retrying once...`);
     npmInstallResult = await runNpmInstall();

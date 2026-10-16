@@ -16,7 +16,9 @@ import { useHighlightMenu } from './manager.ts';
 /**
  * The highlight menu is rendered by the manager, positioned over the preview iframe. Under Vitest
  * there is no manager, so boot the manager-side menu on the same (local) channel to exercise the
- * full preview → manager flow in a single document.
+ * full preview → manager flow in a single document. Run it from a decorator (not the play
+ * function) so the menu is listening before the highlights decorator emits its `HIGHLIGHT`
+ * events, which populate the manager-side registry the menu renders from.
  */
 const setupHighlightMenu = () => {
   if (!(globalThis as { __vitest_browser__?: boolean }).__vitest_browser__) {
@@ -170,8 +172,13 @@ export const Selectable = meta.story({
   parameters: {
     highlights: [{ selectors: ['div', 'input'], options: { menu: [] } }],
   },
+  decorators: [
+    (storyFn) => {
+      setupHighlightMenu();
+      return storyFn();
+    },
+  ],
   play: async () => {
-    setupHighlightMenu();
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
@@ -216,8 +223,13 @@ export const Menu = meta.story({
       },
     ],
   },
+  decorators: [
+    (storyFn) => {
+      setupHighlightMenu();
+      return storyFn();
+    },
+  ],
   play: async ({ canvasElement }) => {
-    setupHighlightMenu();
     const onMenuClick = fn();
     addons.getChannel().on(HIGHLIGHT_MENU_CLICK, onMenuClick);
     const clickAt = (element: Element) => {

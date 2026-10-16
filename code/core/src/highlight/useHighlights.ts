@@ -18,6 +18,7 @@ import type { Box, Highlight, HighlightMenuInteraction, HighlightOptions } from 
 import {
   createElement,
   getEventDetails,
+  getTargetLabel,
   isTargeted,
   mapBoxes,
   mapElements,
@@ -48,8 +49,9 @@ export const useHighlights = (channel: Channel) => {
   const hovered = useStore<Box[]>([]);
   const focused = useStore<Box | undefined>();
   const selected = useStore<Box | undefined>();
-  // The click position relative to the first target's box, used to keep the (manager-rendered)
-  // menu anchored to its element while the preview scrolls, resizes or otherwise changes layout.
+  // The click position relative to the first target's element, in the element's viewport
+  // coordinates, used to keep the (manager-rendered) menu anchored to it while the preview
+  // scrolls, resizes or otherwise changes layout.
   const menuAnchor = useStore<
     { element: HTMLElement; offsetX: number; offsetY: number } | undefined
   >();
@@ -214,14 +216,15 @@ export const useHighlights = (channel: Channel) => {
         });
 
         // Update the anchor and click coordinates before publishing the new targets, so the menu
-        // opens at the element just clicked rather than at the previously anchored target.
+        // opens at the element just clicked rather than at the previously anchored target. The
+        // anchor stores the click position relative to the element in viewport coordinates, which
+        // keeps working for `position: fixed` elements and requires no scroll bookkeeping.
         if (results.length) {
-          const anchorBox = results[0];
-          const isFixed = getComputedStyle(anchorBox.element).position === 'fixed';
+          const { left, top } = results[0].element.getBoundingClientRect();
           menuAnchor.set({
-            element: anchorBox.element,
-            offsetX: (isFixed ? coords.x - window.scrollX : coords.x) - anchorBox.left,
-            offsetY: (isFixed ? coords.y - window.scrollY : coords.y) - anchorBox.top,
+            element: results[0].element,
+            offsetX: event.clientX - left,
+            offsetY: event.clientY - top,
           });
         } else {
           menuAnchor.set(undefined);
@@ -331,15 +334,11 @@ export const useHighlights = (channel: Channel) => {
     }
 
     const anchor = menuAnchor.get();
-    if (anchor) {
-      const box = boxes.get().find((b) => b.element === anchor.element);
-      if (box) {
-        const isFixed = getComputedStyle(box.element).position === 'fixed';
-        return {
-          x: box.left + anchor.offsetX - (isFixed ? 0 : window.scrollX),
-          y: box.top + anchor.offsetY - (isFixed ? 0 : window.scrollY),
-        };
-      }
+    if (anchor && boxes.get().some((b) => b.element === anchor.element)) {
+      // The anchor is a viewport-space offset into the element, so the live bounding rect maps it
+      // back onto the element's current position, whatever its `position` or the page scroll.
+      const { left, top } = anchor.element.getBoundingClientRect();
+      return { x: left + anchor.offsetX, y: top + anchor.offsetY };
     }
 
     return { x: click.x - window.scrollX, y: click.y - window.scrollY };
@@ -356,8 +355,7 @@ export const useHighlights = (channel: Channel) => {
     channel.emit(HIGHLIGHT_MENU, {
       targets: targetList.map((box) => ({
         id: box.id,
-        html: box.element.outerHTML,
-        menu: box.menu,
+        label: getTargetLabel(box.element),
         details: getEventDetails(box),
       })),
       selected: selectedIndex !== undefined && selectedIndex >= 0 ? selectedIndex : null,
@@ -365,8 +363,35 @@ export const useHighlights = (channel: Channel) => {
     });
   };
 
+  // Keep the manager-rendered menu in sync while it is open: re-emit on preview scrolling and
+  // window resizing so its coordinates follow the anchor even when no highlight boxes change.
+  let menuSyncFrame: number | undefined;
+  const syncMenu = () => {
+    if (menuSyncFrame === undefined) {
+      menuSyncFrame = requestAnimationFrame(() => {
+        menuSyncFrame = undefined;
+        if (clickCoords.get()) {
+          emitMenuState();
+        }
+      });
+    }
+  };
+  clickCoords.subscribe((coords) => {
+    if (coords) {
+      document.addEventListener('scroll', syncMenu);
+      window.addEventListener('resize', syncMenu);
+    } else {
+      document.removeEventListener('scroll', syncMenu);
+      window.removeEventListener('resize', syncMenu);
+      if (menuSyncFrame !== undefined) {
+        cancelAnimationFrame(menuSyncFrame);
+        menuSyncFrame = undefined;
+      }
+    }
+  });
+
   // Keep the manager-rendered menu in sync while it is open: boxes are remeasured on preview
-  // scrolling, resizing, layout changes and DOM mutations.
+  // resizing, layout changes and DOM mutations.
   boxes.subscribe(() => {
     if (clickCoords.get()) {
       emitMenuState();
@@ -375,13 +400,10 @@ export const useHighlights = (channel: Channel) => {
   targets.subscribe(emitMenuState);
   selected.subscribe(emitMenuState);
 
-  const handleMenuInteraction = ({
-    action,
-    index,
-  }: Pick<HighlightMenuInteraction, 'action' | 'index'>) => {
+  const handleMenuInteraction = (interaction: HighlightMenuInteraction) => {
     const targetList = targets.get();
-    const box = typeof index === 'number' ? targetList[index] : undefined;
-    switch (action) {
+    const box = 'index' in interaction ? targetList[interaction.index] : undefined;
+    switch (interaction.action) {
       case 'select':
         if (box) {
           selected.set(box);

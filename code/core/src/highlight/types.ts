@@ -100,10 +100,13 @@ export type Box = {
 export type HighlightMenuTarget = {
   /** The id of the highlight the target belongs to, used to attribute `HIGHLIGHT_MENU_CLICK`s */
   id: Highlight['id'];
-  /** The element's HTML, rendered as text in the manager menu's element list */
-  html: string;
+  /**
+   * A short, non-content label identifying the element (e.g. `div#id.class`), rendered in the
+   * manager menu's element list. Derived from the tag name, id and class names only, so the
+   * preview never sends renderable DOM content over the channel.
+   */
+  label: string;
   details: ClickEventDetails;
-  menu?: Highlight['menu'];
 };
 
 /**
@@ -117,7 +120,6 @@ export type HighlightMenuState = {
 };
 
 /** Payload of the internal `HIGHLIGHT_MENU_INTERACTION` event (manager → preview). */
-export type HighlightMenuInteraction = {
-  action: 'select' | 'deselect' | 'focus' | 'blur';
-  index?: number;
-};
+export type HighlightMenuInteraction =
+  | { action: 'select' | 'focus'; index: number }
+  | { action: 'deselect' | 'blur' };

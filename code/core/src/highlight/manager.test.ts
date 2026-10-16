@@ -3,7 +3,13 @@ import { Channel } from 'storybook/internal/channels';
 import type { ChannelEvent } from 'storybook/internal/channels';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { HIGHLIGHT_MENU, HIGHLIGHT_MENU_CLICK, HIGHLIGHT_MENU_INTERACTION } from './constants.ts';
+import {
+  HIGHLIGHT,
+  HIGHLIGHT_MENU,
+  HIGHLIGHT_MENU_CLICK,
+  HIGHLIGHT_MENU_INTERACTION,
+  RESET_HIGHLIGHT,
+} from './constants.ts';
 import { useHighlightMenu } from './manager.ts';
 import type { ClickEventDetails, HighlightMenuState, HighlightMenuTarget } from './types.ts';
 
@@ -24,9 +30,8 @@ const makeDetails = (overrides: Partial<ClickEventDetails> = {}): ClickEventDeta
 
 const makeTarget = (overrides: Partial<HighlightMenuTarget> = {}): HighlightMenuTarget => ({
   id: 'h1',
-  html: '<div id="target"></div>',
+  label: 'div#target',
   details: makeDetails(),
-  menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
   ...overrides,
 });
 
@@ -71,6 +76,19 @@ describe('useHighlightMenu', () => {
 
   const getMenu = () => document.getElementById('storybook-highlights-menu');
 
+  const secondTarget = (): HighlightMenuTarget =>
+    makeTarget({
+      id: 'h2',
+      label: 'span#other',
+      details: makeDetails({
+        selectors: ['#other'],
+        element: {
+          localName: 'span',
+          tagName: 'SPAN',
+        },
+      }),
+    });
+
   beforeEach(() => {
     vi.stubGlobal('__STORYBOOK_HIGHLIGHT_MENU_INITIALIZED', false);
     frames = [];
@@ -85,6 +103,17 @@ describe('useHighlightMenu', () => {
     mockIframe('storybook-preview-iframe');
     channel = new Channel({});
     teardown = useHighlightMenu(channel);
+    // The manager renders menus from highlights announced over the channel
+    channel.emit(HIGHLIGHT, {
+      id: 'h1',
+      selectors: ['#target'],
+      menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
+    });
+    channel.emit(HIGHLIGHT, {
+      id: 'h2',
+      selectors: ['#other'],
+      menu: [[{ id: 'item-2', title: 'Other' }]],
+    });
   });
 
   afterEach(() => {
@@ -102,6 +131,8 @@ describe('useHighlightMenu', () => {
     // Preview viewport (400, 300) + iframe offset (100, 20), unclamped
     expect(menu.style.left).toBe('500px');
     expect(menu.style.top).toBe('320px');
+    // The menu is capped at its natural height, even over a taller preview
+    expect(menu.style.maxHeight).toBe('300px');
   });
 
   it('accounts for iframe scaling when positioning the menu', () => {
@@ -145,11 +176,11 @@ describe('useHighlightMenu', () => {
     send(makeState());
     const menuItem = getMenu()!.querySelector('.menu-list .menu-item') as HTMLButtonElement;
 
-    send(makeState({ targets: [makeTarget({ id: 'h2', html: '<span id="other"></span>' })] }));
+    send(makeState({ targets: [makeTarget({ id: 'h2', label: 'span#other' })] }));
 
     const nextItem = getMenu()!.querySelector('.menu-list .menu-item') as HTMLButtonElement;
     expect(nextItem).not.toBe(menuItem);
-    expect(nextItem.textContent).toBe('Open docs');
+    expect(nextItem.textContent).toBe('Other');
   });
 
   it('constrains the menu inside a short preview', () => {
@@ -189,18 +220,7 @@ describe('useHighlightMenu', () => {
 
   it('renders a selectable element list for multiple targets and forwards interactions', () => {
     const emitSpy = vi.spyOn(channel, 'emit');
-    const second = makeTarget({
-      id: 'h2',
-      html: '<span id="other"></span>',
-      details: makeDetails({
-        selectors: ['#other'],
-        element: {
-          localName: 'span',
-          tagName: 'SPAN',
-        },
-      }),
-    });
-    send(makeState({ targets: [makeTarget(), second] }));
+    send(makeState({ targets: [makeTarget(), secondTarget()] }));
 
     const menu = getMenu()!;
     const buttons = menu.querySelectorAll('.element-list li.selectable button');
@@ -211,14 +231,36 @@ describe('useHighlightMenu', () => {
     expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, {
       action: 'select',
       index: 1,
+      options: { target: 'storybook-preview-iframe' },
     });
 
     // The interaction handlers are bound to the list item (mouseenter does not bubble)
     const item = buttons[1].closest('li')!;
     item.dispatchEvent(new Event('mouseenter'));
-    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, { action: 'focus', index: 1 });
+    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, {
+      action: 'focus',
+      index: 1,
+      options: { target: 'storybook-preview-iframe' },
+    });
     item.dispatchEvent(new Event('mouseleave'));
-    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, { action: 'blur' });
+    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, {
+      action: 'blur',
+      options: { target: 'storybook-preview-iframe' },
+    });
+  });
+
+  it('routes interactions back to the ref frame the menu came from', () => {
+    mockIframe('storybook-ref-abc', { left: 500, top: 100, right: 1300, bottom: 720 });
+    const emitSpy = vi.spyOn(channel, 'emit');
+    send(makeState({ targets: [makeTarget(), secondTarget()] }), 'abc');
+
+    const menu = getMenu()!;
+    (menu.querySelector('.element-list li.selectable button') as HTMLButtonElement).click();
+    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, {
+      action: 'select',
+      index: 0,
+      options: { target: 'storybook-ref-abc' },
+    });
   });
 
   it('renders the menu list for a single target and emits its click event on click', () => {
@@ -236,18 +278,7 @@ describe('useHighlightMenu', () => {
 
   it('renders the selected target with a back button which deselects it', () => {
     const emitSpy = vi.spyOn(channel, 'emit');
-    const second = makeTarget({
-      id: 'h2',
-      html: '<span id="other"></span>',
-      details: makeDetails({
-        selectors: ['#other'],
-        element: {
-          localName: 'span',
-          tagName: 'SPAN',
-        },
-      }),
-    });
-    send(makeState({ targets: [makeTarget(), second], selected: 1 }));
+    send(makeState({ targets: [makeTarget(), secondTarget()], selected: 1 }));
 
     const menu = getMenu()!;
     // Only the selected element is listed, and its menu is shown directly
@@ -257,7 +288,43 @@ describe('useHighlightMenu', () => {
     expect(backButton).not.toBeNull();
 
     backButton.click();
-    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, { action: 'deselect' });
+    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_INTERACTION, {
+      action: 'deselect',
+      options: { target: 'storybook-preview-iframe' },
+    });
+  });
+
+  it('renders menu items from the manager-side highlight registry only', () => {
+    send(makeState());
+    expect(getMenu()!.querySelector('.menu-list')).not.toBeNull();
+
+    // A target whose highlight is not registered renders as an element list, without menu items
+    send(makeState({ targets: [makeTarget({ id: 'h3', label: 'span#unknown' })] }));
+    expect(getMenu()!.querySelector('.menu-list')).toBeNull();
+    expect(getMenu()!.querySelector('.element-list code')!.textContent).toBe('span#unknown');
+  });
+
+  it('reflects highlight registry updates', () => {
+    send(makeState({ targets: [makeTarget({ id: 'h3', label: 'span#new' })] }));
+    expect(getMenu()!.querySelector('.menu-list')).toBeNull();
+
+    channel.emit(HIGHLIGHT, {
+      id: 'h3',
+      selectors: ['#target'],
+      menu: [[{ id: 'item-3', title: 'New item', clickable: true }]],
+    });
+    // The selection change forces a rebuild, which must pick up the registered menu
+    send(
+      makeState({
+        targets: [makeTarget({ id: 'h3', label: 'span#new' })],
+        selected: 0,
+      })
+    );
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('New item');
+
+    channel.emit(RESET_HIGHLIGHT);
+    send(makeState({ targets: [makeTarget({ id: 'h3', label: 'span#new' })] }));
+    expect(getMenu()!.querySelector('.menu-list')).toBeNull();
   });
 
   it('hides the menu when the preview reports no targets or no coordinates', () => {
@@ -297,10 +364,30 @@ describe('useHighlightMenu', () => {
     flushFrames();
     expect(frames.filter(Boolean)).toHaveLength(0);
 
-    // Re-register after teardown to not leak the initialized guard into other tests
-    vi.stubGlobal('__STORYBOOK_HIGHLIGHT_MENU_INITIALIZED', false);
+    // Teardown clears the initialized guard so the menu can be re-registered
     teardown = useHighlightMenu(channel);
+    channel.emit(HIGHLIGHT, {
+      id: 'h1',
+      selectors: ['#target'],
+      menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
+    });
     send(makeState());
     expect(getMenu()).not.toBeNull();
+  });
+
+  it('leaves a root element it did not create in place on teardown', () => {
+    teardown();
+    const root = document.createElement('div');
+    root.id = 'storybook-highlights-root';
+    document.body.appendChild(root);
+    teardown = useHighlightMenu(channel);
+
+    send(makeState());
+    expect(document.getElementById('storybook-highlights-menu')!.parentElement).toBe(root);
+
+    teardown();
+    expect(document.getElementById('storybook-highlights-root')).toBe(root);
+    root.remove();
+    teardown = useHighlightMenu(channel);
   });
 });

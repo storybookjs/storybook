@@ -29,6 +29,8 @@ describe('useHighlights', () => {
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });
     Object.defineProperty(event, 'pageX', { value: x });
     Object.defineProperty(event, 'pageY', { value: y });
+    Object.defineProperty(event, 'clientX', { value: x - window.scrollX });
+    Object.defineProperty(event, 'clientY', { value: y - window.scrollY });
     document.dispatchEvent(event);
     flushFrames();
   };
@@ -40,9 +42,13 @@ describe('useHighlights', () => {
     flushFrames();
   };
 
-  const moveTarget = (rect: Partial<DOMRect>) => {
+  const stubTargetRect = (rect: Partial<DOMRect>) => {
     const full = { top: 20, left: 20, width: 50, height: 50, bottom: 70, right: 70, x: 20, y: 20 };
     target.getBoundingClientRect = () => ({ ...full, ...rect }) as DOMRect;
+  };
+
+  const moveTarget = (rect: Partial<DOMRect>) => {
+    stubTargetRect(rect);
     resizeObserverCallback?.();
     flushFrames();
   };
@@ -123,8 +129,10 @@ describe('useHighlights', () => {
 
     expect(lastMenuState).toBeDefined();
     expect(lastMenuState!.targets).toHaveLength(1);
-    expect(lastMenuState!.targets[0]!.html).toContain('id="target"');
-    expect(lastMenuState!.targets[0]!.menu).toHaveLength(1);
+    expect(lastMenuState!.targets[0]!.label).toBe('div#target');
+    // The payload must not include renderable DOM content; menu definitions live in the
+    // manager-side registry, and the element is identified by its non-content label alone
+    expect(Object.keys(lastMenuState!.targets[0]!).sort()).toEqual(['details', 'id', 'label']);
     expect(lastMenuState!.selected).toBeNull();
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
   });
@@ -142,8 +150,20 @@ describe('useHighlights', () => {
     clickAt(30, 30);
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
 
+    // Scrolling moves the element up in the viewport by the scroll amount
+    stubTargetRect({ top: -80, bottom: -30 });
     setScroll(0, 100);
     expect(lastMenuState!.coords).toEqual({ x: 30, y: -70 });
+  });
+
+  it('keeps the menu coordinates in sync when the preview resizes', () => {
+    clickAt(30, 30);
+    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+
+    stubTargetRect({ top: 120, bottom: 170 });
+    window.dispatchEvent(new Event('resize'));
+    flushFrames();
+    expect(lastMenuState!.coords).toEqual({ x: 30, y: 130 });
   });
 
   it('keeps the menu anchored to its element when the layout changes', () => {

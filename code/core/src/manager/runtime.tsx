@@ -39,9 +39,11 @@ channel.emit(CHANNEL_CREATED);
 // Render the interactive highlight menu in the manager, positioned over the preview iframe.
 // This keeps the preview free of interactive UI which a malicious site could trigger by
 // embedding the preview iframe (see GHSA-f2ph-cmg5-wxc8).
-if (global.FEATURES?.highlight) {
-  useHighlightMenu(channel);
-}
+addons.register('storybook/highlight-menu', () => {
+  if (global.FEATURES?.highlight) {
+    useHighlightMenu(channel);
+  }
+});
 
 class ReactProvider extends Provider {
   addons: AddonStore = addons;

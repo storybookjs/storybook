@@ -258,3 +258,28 @@ export const getEventDetails = (target: Box): ClickEventDetails => ({
     tagName: target.element.tagName,
   },
 });
+
+/**
+ * A short, non-content label identifying an element (e.g. `div#id.class`), derived from the tag
+ * name, id and class names only. Used by the manager to render the highlight menu's element list
+ * without the preview sending renderable DOM content over the channel.
+ */
+export const getTargetLabel = (element: {
+  localName?: string;
+  tagName?: string;
+  id?: string;
+  classList?: ArrayLike<string>;
+}) => {
+  const tag = (element.localName || element.tagName || '').toLowerCase();
+  const id = element.id ? `#${element.id}` : '';
+  const classes = element.classList?.length
+    ? `.${Array.from(element.classList as ArrayLike<string>).join('.')}`
+    : '';
+  return `${tag}${id}${classes}`;
+};
+
+/** Menu groups containing at least one item applicable to the given selectors. */
+export const filterMenuGroups = (menu: Highlight['menu'], selectors: string[]): Highlight['menu'] =>
+  menu?.filter((group) =>
+    group.some((item) => !item.selectors || item.selectors.some((s) => selectors.includes(s)))
+  );

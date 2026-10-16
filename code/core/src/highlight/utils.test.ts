@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { HighlightOptions } from './types.ts';
-import { clampToRect, normalizeOptions, previewToManagerCoords, useStore } from './utils.ts';
+import {
+  clampToRect,
+  filterMenuGroups,
+  getTargetLabel,
+  normalizeOptions,
+  previewToManagerCoords,
+  useStore,
+} from './utils.ts';
 
 describe('useStore', () => {
   it('should return the initial value', () => {
@@ -93,6 +100,32 @@ describe('normalizeOptions', () => {
   it('should set menu to undefined when it is not an array', () => {
     const options = { selectors: ['#button'], menu: 'not-a-menu' } as unknown as HighlightOptions;
     expect(normalizeOptions(options)).toEqual(expect.objectContaining({ menu: undefined }));
+  });
+});
+
+describe('getTargetLabel', () => {
+  it('builds a label from the tag name, id and class names', () => {
+    expect(getTargetLabel({ localName: 'div', id: 'target', classList: ['a', 'b'] })).toBe(
+      'div#target.a.b'
+    );
+  });
+
+  it('falls back to the tag name alone without an id or classes', () => {
+    expect(getTargetLabel({ localName: '', tagName: 'SPAN', id: '', classList: [] })).toBe('span');
+  });
+});
+
+describe('filterMenuGroups', () => {
+  const groupA = [{ id: 'a', title: 'A' }];
+  const groupB = [{ id: 'b', title: 'B', selectors: ['#other'] }];
+  const groupC = [{ id: 'c', title: 'C', selectors: ['#target'] }];
+
+  it('keeps groups with at least one item applicable to the selectors', () => {
+    expect(filterMenuGroups([groupA, groupB, groupC], ['#target'])).toEqual([groupA, groupC]);
+  });
+
+  it('returns undefined for an undefined menu', () => {
+    expect(filterMenuGroups(undefined, ['#target'])).toBeUndefined();
   });
 });
 

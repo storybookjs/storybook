@@ -4,7 +4,7 @@
  * Danger transpiles this file and its local TypeScript imports inside its Docker image. Repository
  * dependencies are not installed in CI, so imported utilities must not rely on package dependencies.
  */
-import { danger, fail, schedule, warn } from 'danger';
+import { danger, fail, warn } from 'danger';
 
 import pkg from '../code/package.json';
 

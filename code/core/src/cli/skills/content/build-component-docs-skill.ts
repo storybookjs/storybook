@@ -33,12 +33,15 @@ Do this before you edit any file: ${v.run} ${list} once and read its ${v.output}
 }
 
 /**
- * @param uiWorkflowTool Over MCP, whether the server registers the `ui-workflow` tool, which the
- *   footer points to.
+ * @param mcp Over MCP, whether the server registers the `ui-workflow` tool, which the footer points
+ *   to, and `test-run`, which it runs.
  */
 export function buildComponentDocsSkill(
   transport: SkillTextTransport = 'cli',
-  { uiWorkflowTool = true }: { uiWorkflowTool?: boolean } = {}
+  {
+    uiWorkflowTool = true,
+    testSupported = true,
+  }: { uiWorkflowTool?: boolean; testSupported?: boolean } = {}
 ): string {
   const lookup = `# Storybook component docs
 
@@ -50,7 +53,10 @@ ${transport === 'mcp' ? `${MCP_TOOLS_NOTE}\n\n` : ''}${componentLookup(transport
     transport === 'cli'
       ? "use the `ui-workflow` skill when the project's agent instructions (such as `AGENTS.md`) name it"
       : 'call `ui-workflow`';
+  const steps = testSupported
+    ? 'writes the stories, runs the tests and publishes the review'
+    : 'writes the stories and publishes the review';
   return `${lookup}
 
-For a change to the UI, ${uiWorkflow}: it includes this lookup, then writes the stories, runs the tests and publishes the review.`;
+For a change to the UI, ${uiWorkflow}: it includes this lookup, then ${steps}.`;
 }

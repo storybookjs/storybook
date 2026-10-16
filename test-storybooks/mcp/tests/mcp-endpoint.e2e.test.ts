@@ -99,13 +99,13 @@ describe('MCP Endpoint E2E Tests', () => {
 			const response = await mcpRequest('tools/list');
 
 			expect(response.result).toHaveProperty('tools');
-			// Dev, docs, and test tools should be present
-			expect(response.result.tools).toHaveLength(8);
+			// The skill, dev, docs, and test tools should be present
+			expect(response.result.tools).toHaveLength(10);
 
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
 				  {
-				    "description": "Storybook's workflow for UI changes in this project. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
+				    "description": "Returns Storybook's workflow for UI changes in this project, which looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results. Read the whole result.
 
 				Call it first, before you edit any file, and follow its result when you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories.",
 				    "inputSchema": {
@@ -116,7 +116,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Storybook UI workflow",
 				  },
 				  {
-				    "description": "How to look up this project's components in Storybook. It lists the project's components with their props and usage examples.
+				    "description": "Returns how to look up this project's components, with their props and usage examples. Read the whole result.
 
 				Call it first, before you edit any file, and follow its result when you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage.",
 				    "inputSchema": {
@@ -1160,6 +1160,25 @@ describe('MCP Endpoint E2E Tests', () => {
 				  "review-create",
 				]
 			`);
+		});
+
+		it('leaves the steps of the other toolsets out of ui-workflow for X-MCP-Toolsets: dev', async () => {
+			const request = (method: string, params = {}) =>
+				fetch(MCP_ENDPOINT, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', 'X-MCP-Toolsets': 'dev' },
+					body: JSON.stringify(createMCPRequestBody(method, params)),
+				}).then(parseMCPResponse);
+
+			const list = await request('tools/list');
+			const uiWorkflow = list.result.tools.find((tool: any) => tool.name === 'ui-workflow');
+			expect(uiWorkflow.description).not.toContain('runs the tests');
+
+			const call = await request('tools/call', { name: 'ui-workflow', arguments: {} });
+			const text = call.result.content[0].text;
+			expect(text).toContain('`review-create`');
+			expect(text).not.toContain('`test-run`');
+			expect(text).not.toContain('`docs-list`');
 		});
 
 		it('should respect X-MCP-Toolsets header for docs tools only', async () => {

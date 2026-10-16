@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildServerInstructions } from './build-server-instructions.ts';
+import { buildServerInstructions, getSkillToolDescriptions } from './build-server-instructions.ts';
 
 // Claude Code hard-truncates MCP server instructions at 2,048 characters:
 // anything past the limit silently never reaches the model. Between
@@ -102,5 +102,30 @@ describe('buildServerInstructions', () => {
     });
 
     expect(instructions).toBe('');
+  });
+});
+
+describe('getSkillToolDescriptions', () => {
+  it('says what each skill tool returns and when to call it', () => {
+    expect(getSkillToolDescriptions({ testSupported: true, docsEnabled: true }))
+      .toMatchInlineSnapshot(`
+      {
+        "componentDocs": "Returns how to look up this project's components, with their props and usage examples. Read the whole result.
+
+      Call it first, before you edit any file, and follow its result when you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage.",
+        "uiWorkflow": "Returns Storybook's workflow for UI changes in this project, which looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results. Read the whole result.
+
+      Call it first, before you edit any file, and follow its result when you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories.",
+      }
+    `);
+  });
+
+  it('leaves out the steps of toolsets that are off', () => {
+    const { uiWorkflow } = getSkillToolDescriptions({ testSupported: false, docsEnabled: false });
+
+    expect(uiWorkflow).toContain(
+      'which updates your stories and publishes a review of the results.'
+    );
+    expect(uiWorkflow).not.toContain('story tests');
   });
 });

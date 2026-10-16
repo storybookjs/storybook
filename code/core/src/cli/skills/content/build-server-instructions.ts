@@ -1,4 +1,5 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
+import type { SkillId } from './skills.ts';
 
 export type ServerInstructionsInputs = {
   devEnabled: boolean;
@@ -6,9 +7,9 @@ export type ServerInstructionsInputs = {
   docsEnabled: boolean;
 };
 
-/** The MCP tools that serve the `ui-workflow` and `component-docs` skills. */
-export const UI_WORKFLOW_TOOL_NAME = 'ui-workflow';
-export const COMPONENT_DOCS_TOOL_NAME = 'component-docs';
+/** The MCP tools that serve the `ui-workflow` and `component-docs` skills, under their names. */
+export const UI_WORKFLOW_TOOL_NAME = 'ui-workflow' satisfies SkillId;
+export const COMPONENT_DOCS_TOOL_NAME = 'component-docs' satisfies SkillId;
 
 /**
  * When to call each skill tool and what it does, in the words of the `## Storybook` section that
@@ -30,6 +31,7 @@ function getSkillToolTasks({
   return {
     uiWorkflow: {
       when: `you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks;${testSupported ? ' you run or fix story tests;' : ''} or the user asks to see components or stories`,
+      workflow,
       does: `It ${workflow}.`,
     },
     componentDocs: {
@@ -39,16 +41,22 @@ function getSkillToolTasks({
   };
 }
 
-/** The descriptions of the skill tools: what each one is for, then when to call it. */
+/**
+ * The descriptions of the skill tools: what each one returns, then when to call it. The tools return
+ * instructions, so they say what the instructions do rather than what the tool does.
+ */
 export function getSkillToolDescriptions(inputs: Omit<ServerInstructionsInputs, 'devEnabled'>) {
   const { uiWorkflow, componentDocs } = getSkillToolTasks(inputs);
-  const describe = (summary: string, task: { when: string; does: string }) =>
-    `${summary} ${task.does}\n\nCall it first, before you edit any file, and follow its result when ${task.when}.`;
+  const describe = (returns: string, when: string) =>
+    `${returns} Read the whole result.\n\nCall it first, before you edit any file, and follow its result when ${when}.`;
   return {
-    uiWorkflow: describe("Storybook's workflow for UI changes in this project.", uiWorkflow),
+    uiWorkflow: describe(
+      `Returns Storybook's workflow for UI changes in this project, which ${uiWorkflow.workflow}.`,
+      uiWorkflow.when
+    ),
     componentDocs: describe(
-      "How to look up this project's components in Storybook.",
-      componentDocs
+      "Returns how to look up this project's components, with their props and usage examples.",
+      componentDocs.when
     ),
   };
 }

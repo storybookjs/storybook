@@ -34,6 +34,8 @@ export type AddonToolRegistryContext = {
   availability: ToolAvailability;
   multiSource?: boolean;
   toolsets?: AddonContext['toolsets'];
+  /** The names of the tools that registered, filled in as `registerAddonMcpTools` goes. */
+  registered?: ReadonlySet<string>;
 };
 
 type ToolEnabled = Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'];
@@ -222,10 +224,12 @@ export function getAddonToolMetadata(context: AddonToolRegistryContext): ToolMet
     });
 }
 
+/** Registers the tools, and returns the names of the ones that registered. */
 export async function registerAddonMcpTools(
   server: McpServer<any, AddonContext>,
   context: AddonToolRegistryContext
-) {
+): Promise<ReadonlySet<string>> {
+  const registered = new Set<string>();
   // The preview app resource ships with the preview tool: when the dev toolset is disabled the
   // tool is absent, and the resource must not appear in resources/list either — the same boot
   // gate the tool's own registration uses below.
@@ -241,12 +245,14 @@ export async function registerAddonMcpTools(
       try {
         await definition.register(
           server,
-          context,
+          { ...context, registered },
           createToolsetEnabled(server, definition.toolset)
         );
+        registered.add(definition.name);
       } catch (error) {
         dropToolIfToolsetMissing(definition.name, error);
       }
     }
   }
+  return registered;
 }

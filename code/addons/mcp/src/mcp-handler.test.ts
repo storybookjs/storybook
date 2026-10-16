@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+import { registerToolset } from 'storybook/open-service';
+import { createTestToolset } from '../../vitest/src/node/toolset/definition.ts';
 import {
   incomingMessageToWebRequest,
   webResponseToServerResponse,
@@ -281,6 +283,14 @@ describe('mcpServerHandler', () => {
   }
 
   it('should initialize MCP server and handle requests', async () => {
+    // Registers `test-run`, which the instructions then name.
+    registerToolset(
+      createTestToolset({
+        channel: { on: () => {}, off: () => {}, emit: () => {} },
+        storyIndex: { getIndex: async () => ({ v: 5, entries: {} }) },
+        a11yEnabled: false,
+      })
+    );
     const mockOptions = createMockOptions();
     const mockReq = createMockIncomingMessage({
       method: 'POST',
@@ -520,6 +530,7 @@ describe('mcpServerHandler', () => {
       ],
     });
 
+    expect(toolNames).toContain('component-docs');
     expect(toolNames).toContain('docs-list');
     expect(toolNames).toContain('docs-show');
     expect(toolNames).toContain('docs-show-story');

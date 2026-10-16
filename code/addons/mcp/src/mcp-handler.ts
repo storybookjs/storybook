@@ -14,6 +14,7 @@ import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/int
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { getSkillGates } from './tools/skill-tools.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
@@ -36,15 +37,14 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
   // oxlint-disable-next-line prefer-const -- the instructions getter below may run before this is assigned
   let server: McpServer<any, AddonContext>;
+  let registered: ReadonlySet<string> | undefined;
 
   const serverOptions = {
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
-      return buildServerInstructions({
-        devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-        testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
-        docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
-      });
+      return buildServerInstructions(
+        getSkillGates({ availability, toolsets: server?.ctx.custom?.toolsets, registered })
+      );
     },
     capabilities: {
       tools: { listChanged: true },
@@ -67,7 +67,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     });
   }
 
-  await registerAddonMcpTools(server, { availability, multiSource });
+  registered = await registerAddonMcpTools(server, { availability, multiSource });
 
   transport = new HttpTransport(server, { path: null });
 

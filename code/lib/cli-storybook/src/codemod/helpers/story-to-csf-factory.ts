@@ -351,7 +351,7 @@ export async function storyToCsfFactory(
   // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it. The parser drops
   // parentheses from spans, so `(inner) satisfies T` keeps its own.
   const wrap = (outer: Node, inner: Node, before: string, after: string) => {
-    const span = withParentheses(editor.code, inner, outer.start, outer.end);
+    const span = withParentheses(editor.code, inner, outer.start, outer.end, editor.comments);
     if (span.end < outer.end) {
       editor.edits.remove(span.end, outer.end);
     }

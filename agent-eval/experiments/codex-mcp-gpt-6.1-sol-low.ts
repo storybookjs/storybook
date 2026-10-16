@@ -1,9 +1,5 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
-import {
-  DEFAULT_EXPERIMENT_CONFIG,
-  onlyWhenNamed,
-  WORKFLOW_STORYBOOK_EVALS,
-} from '../lib/experiment.ts';
+import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/experiment.ts';
 import {
   commitSandboxBaseline,
   setupSandbox,
@@ -21,8 +17,7 @@ export default {
   // https://github.com/openai/codex/issues/26234
   agent: 'codex',
   model,
-  // Not in the default set: runs only when named.
-  evals: onlyWhenNamed(import.meta.url, WORKFLOW_STORYBOOK_EVALS),
+  evals: WORKFLOW_STORYBOOK_EVALS,
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp', model });
     await writeCodexMcpConfig(sandbox);

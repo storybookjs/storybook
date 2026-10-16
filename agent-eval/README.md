@@ -46,7 +46,7 @@ yarn eval
 Run a single experiment:
 
 ```bash
-yarn exec agent-eval cc-mcp-opus-5.5-medium
+yarn exec agent-eval cc-mcp-haiku-5.5-low
 ```
 
 AI agents validate their changes locally: only the evals affected by the change
@@ -159,19 +159,17 @@ Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
-- `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
+- `cc-mcp-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with project-local Storybook MCP config in `.mcp.json` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `cc-plugin-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with Storybook plugin skills copied to `.claude/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
-- `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
+- `codex-mcp-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 
-These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Six more experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
+These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Four more experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
 
 - `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
 - `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
 - `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort). Its Codex system prompt says not to run tests unless asked, so evals do not require it to run the story tests itself.
-- `cc-mcp-haiku-5.5-low`: Claude Code (Haiku 5.5 at low effort) with the Storybook MCP config and server instructions in `AGENTS.md`.
-- `codex-mcp-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with the Storybook MCP config and server instructions in `AGENTS.md`.
 
 ## Running evals in CI
 

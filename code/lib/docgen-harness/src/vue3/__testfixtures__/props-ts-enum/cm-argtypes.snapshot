@@ -20,7 +20,6 @@
         "1": "Level.High",
       },
     },
-    "defaultValue": undefined,
     "description": "Priority, a locally declared numeric enum.",
     "name": "level",
     "options": [
@@ -51,7 +50,6 @@
         "warning": "Severity.Warning",
       },
     },
-    "defaultValue": undefined,
     "description": "Alert severity, an imported string enum.",
     "name": "severity",
     "options": [

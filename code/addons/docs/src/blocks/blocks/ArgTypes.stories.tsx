@@ -3,6 +3,8 @@ import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { expect } from 'storybook/test';
+
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
 import { ArgTypes } from './ArgTypes';
@@ -67,7 +69,7 @@ export const OfComponentWithoutAStory: Story = {
   beforeEach: async () => {
     // The block only consults the docgen service behind this feature, which is off by default here.
     const previousFeatures = globalThis.FEATURES;
-    globalThis.FEATURES = { ...previousFeatures, experimentalDocgenServer: true };
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
     return () => {
       globalThis.FEATURES = previousFeatures;
     };
@@ -126,6 +128,9 @@ export const Categories: Story = {
   },
 };
 
+// Service docgen loads argTypes asynchronously, which can outlast the default one-second wait.
+const DOCGEN_TIMEOUT = { timeout: 5000 };
+
 const findSubcomponentTabs = async (
   canvas: Parameters<NonNullable<Story['play']>>[0]['canvas'],
   step: PlayFunctionContext['step']
@@ -133,8 +138,8 @@ const findSubcomponentTabs = async (
   let subcomponentATab: HTMLElement | null = null;
   let subcomponentBTab: HTMLElement | null = null;
   await step('should have tabs for the subcomponents', async () => {
-    subcomponentATab = await canvas.findByText('SubcomponentA');
-    subcomponentBTab = await canvas.findByText('SubcomponentB');
+    subcomponentATab = await canvas.findByText('SubcomponentA', {}, DOCGEN_TIMEOUT);
+    subcomponentBTab = await canvas.findByText('SubcomponentB', {}, DOCGEN_TIMEOUT);
   });
   return { subcomponentATab, subcomponentBTab };
 };
@@ -145,6 +150,9 @@ export const SubcomponentsOfMeta: Story = {
   },
   play: async ({ canvas, step }) => {
     await findSubcomponentTabs(canvas, step);
+    await step('should label the main tab with the component source name', async () => {
+      await expect(await canvas.findByRole('tab', { name: 'ArgTypesParameters' })).toBeVisible();
+    });
   },
 };
 

@@ -12,21 +12,17 @@ const Svg = styled.svg`
   vertical-align: middle;
 `;
 
-// We are importing the icons from @storybook/icons as we need to add symbols inside of them.
-// This will allow to set icons once and use them everywhere.
+// These icons are copies of the @storybook/icons icons, because each icon needs an SVG symbol.
+// Define each symbol once here, then reference it with UseSymbol.
 
 const GROUP_ID = 'icon--group';
 const COMPONENT_ID = 'icon--component';
 const DOCUMENT_ID = 'icon--document';
 const STORY_ID = 'icon--story';
 const TEST_ID = 'icon--test';
-const SUCCESS_ID = 'icon--success';
-const ERROR_ID = 'icon--error';
-const WARNING_ID = 'icon--warning';
-const DOT_ID = 'icon--dot';
-const NEW_ID = 'icon--new';
-const MODIFIED_ID = 'icon--modified';
-const AFFECTED_ID = 'icon--affected';
+const NEW_ID = 'icon--change-new';
+const MODIFIED_ID = 'icon--change-modified';
+const AFFECTED_ID = 'icon--change-affected';
 const REVIEWING_ID = 'icon--reviewing';
 
 export const IconSymbols: FC = () => {
@@ -81,33 +77,6 @@ export const IconSymbols: FC = () => {
           fill="currentColor"
         />
       </symbol>
-      <symbol id={SUCCESS_ID}>
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M10.854 4.146a.5.5 0 010 .708l-5 5a.5.5 0 01-.708 0l-2-2a.5.5 0 11.708-.708L5.5 8.793l4.646-4.647a.5.5 0 01.708 0z"
-          fill="currentColor"
-        />
-      </symbol>
-      <symbol id={ERROR_ID}>
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M7 4a3 3 0 100 6 3 3 0 000-6zM3 7a4 4 0 118 0 4 4 0 01-8 0z"
-          fill="currentColor"
-        />
-      </symbol>
-      <symbol id={WARNING_ID}>
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M7.206 3.044a.498.498 0 01.23.212l3.492 5.985a.494.494 0 01.006.507.497.497 0 01-.443.252H3.51a.499.499 0 01-.437-.76l3.492-5.984a.497.497 0 01.642-.212zM7 4.492L4.37 9h5.26L7 4.492z"
-          fill="currentColor"
-        />
-      </symbol>
-      <symbol id={DOT_ID}>
-        <circle cx="3" cy="3" r="3" fill="currentColor" />
-      </symbol>
       <symbol id={NEW_ID}>
         <rect x="6" y="3.5" width="2" height="7" rx="1" fill="currentColor" />
         <rect x="3.5" y="6" width="7" height="2" rx="1" fill="currentColor" />
@@ -132,17 +101,13 @@ export const UseSymbol: FC<{
   type:
     | 'group'
     | 'component'
-    | 'document'
+    | 'docs'
     | 'story'
     | 'test'
-    | 'success'
-    | 'error'
-    | 'warning'
-    | 'dot'
-    | 'new'
-    | 'reviewing'
-    | 'modified'
-    | 'affected';
+    | 'change-new'
+    | 'change-modified'
+    | 'change-affected'
+    | 'reviewing';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -152,7 +117,7 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${COMPONENT_ID}`} />;
   }
 
-  if (type === 'document') {
+  if (type === 'docs') {
     return <use xlinkHref={`#${DOCUMENT_ID}`} />;
   }
 
@@ -164,23 +129,7 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${TEST_ID}`} />;
   }
 
-  if (type === 'success') {
-    return <use xlinkHref={`#${SUCCESS_ID}`} />;
-  }
-
-  if (type === 'error') {
-    return <use xlinkHref={`#${ERROR_ID}`} />;
-  }
-
-  if (type === 'warning') {
-    return <use xlinkHref={`#${WARNING_ID}`} />;
-  }
-
-  if (type === 'dot') {
-    return <use xlinkHref={`#${DOT_ID}`} />;
-  }
-
-  if (type === 'new') {
+  if (type === 'change-new') {
     return <use xlinkHref={`#${NEW_ID}`} />;
   }
 
@@ -188,11 +137,11 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${REVIEWING_ID}`} />;
   }
 
-  if (type === 'modified') {
+  if (type === 'change-modified') {
     return <use xlinkHref={`#${MODIFIED_ID}`} />;
   }
 
-  if (type === 'affected') {
+  if (type === 'change-affected') {
     return <use xlinkHref={`#${AFFECTED_ID}`} />;
   }
 

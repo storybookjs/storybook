@@ -1,4 +1,5 @@
 import { recast } from 'storybook/internal/babel';
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
 import {
@@ -15,7 +16,7 @@ import {
   type TypescriptOptions,
   getComponents,
 } from './getComponentImports.ts';
-import { extractDeclaredSubcomponents, findExactComponentMatch } from './subcomponents.ts';
+import { findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 
 export type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;

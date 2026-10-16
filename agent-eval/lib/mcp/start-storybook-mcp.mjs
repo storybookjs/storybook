@@ -4,11 +4,18 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const port = process.env.STORYBOOK_MCP_PORT || '6006';
-const mcpUrl = 'http://127.0.0.1:' + port + '/mcp';
+const storybookUrl = 'http://127.0.0.1:' + port;
+const mcpUrl = storybookUrl + '/mcp';
+// Only the MCP experiments keep @storybook/addon-mcp, so only they have an MCP endpoint to wait for.
+const usesMcp =
+  JSON.parse(await readFile('__agent_eval__/agent.json', 'utf8')).integration === 'mcp';
+const readyUrl = usesMcp ? mcpUrl : storybookUrl + '/index.json';
 const logPath = process.env.STORYBOOK_MCP_LOG_PATH || '/tmp/storybook-mcp.log';
 const parsedTimeoutMs = Number(process.env.STORYBOOK_MCP_TIMEOUT_MS);
 const timeoutMs =
   Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 60_000;
+
+await assertCheckoutPackagesInstalled();
 
 if (await isReady()) {
   await dumpMcpDebug();
@@ -74,8 +81,8 @@ const logTail = await readFile(logPath, 'utf8')
   .then((tail) => tail || '(no Storybook log was written)');
 
 process.stderr.write(
-  'Storybook MCP server did not become ready at ' +
-    mcpUrl +
+  'Storybook did not become ready at ' +
+    readyUrl +
     ' within ' +
     timeoutMs +
     'ms. Storybook log tail:\n' +
@@ -84,9 +91,44 @@ process.stderr.write(
 );
 process.exitCode = 1;
 
+// The checkout carries the same version as a published release, so a package the harness packed
+// that npm still resolved from the registry installs without any error. The harness writes
+// local-packages/packages.json only when it installs Storybook from the checkout.
+async function assertCheckoutPackagesInstalled() {
+  let checkoutPackages;
+  try {
+    checkoutPackages = new Set(JSON.parse(await readFile('local-packages/packages.json', 'utf8')));
+  } catch {
+    return;
+  }
+  const lockfile = JSON.parse(await readFile('package-lock.json', 'utf8'));
+
+  const fromRegistry = Object.entries(lockfile.packages)
+    .filter(([location, entry]) => {
+      const nameStart = location.lastIndexOf('node_modules/');
+      return (
+        nameStart !== -1 &&
+        checkoutPackages.has(location.slice(nameStart + 'node_modules/'.length)) &&
+        !entry.resolved?.startsWith('file:')
+      );
+    })
+    .map(([location, entry]) => location + ' (' + entry.resolved + ')');
+
+  if (fromRegistry.length > 0) {
+    // Wait for the write to flush: process.exit() can truncate a pending pipe write.
+    await new Promise((resolve) =>
+      process.stderr.write(
+        'Installed from the registry instead of the checkout:\n' + fromRegistry.join('\n') + '\n',
+        resolve
+      )
+    );
+    process.exit(1);
+  }
+}
+
 async function isReady() {
   try {
-    return await initializeMcp();
+    return usesMcp ? await initializeMcp() : await servesStoryIndex();
   } catch {
     return false;
   }
@@ -103,6 +145,10 @@ async function dumpMcpDebug() {
 
     // The startup log first, so it is captured even when the fetches below throw.
     await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
+
+    if (!usesMcp) {
+      return;
+    }
 
     const landing = await fetch(mcpUrl, {
       headers: { Accept: 'text/html' },
@@ -155,6 +201,15 @@ async function initializeMcp() {
   });
 
   // Drain the body so the polling loop does not accumulate open sockets.
+  await response.body?.cancel();
+  return response.ok;
+}
+
+async function servesStoryIndex() {
+  const response = await fetch(storybookUrl + '/index.json', {
+    signal: AbortSignal.timeout(5_000),
+  });
+
   await response.body?.cancel();
   return response.ok;
 }

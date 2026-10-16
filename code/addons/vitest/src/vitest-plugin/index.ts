@@ -49,7 +49,6 @@ import {
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
-import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
@@ -180,6 +179,24 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
   };
 };
 
+interface ApiPermissions {
+  allowWrite?: boolean;
+  allowExec?: boolean;
+}
+
+const toApiPermissions = (api: unknown): ApiPermissions =>
+  api && typeof api === 'object' ? (api as ApiPermissions) : {};
+
+// Users on Vitest 4 may have set the permissions on `browser.api`, which Vitest 5 no longer types.
+const getUserApiPermissions = (testConfig: ViteUserConfig['test']): ApiPermissions => {
+  const api = toApiPermissions(testConfig?.api);
+  const browserApi = toApiPermissions((testConfig?.browser as { api?: unknown } | undefined)?.api);
+  return {
+    allowWrite: api.allowWrite ?? browserApi.allowWrite,
+    allowExec: api.allowExec ?? browserApi.allowExec,
+  };
+};
+
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   if (!optionalEnvToBoolean(process.env.VITEST)) {
     return [];
@@ -269,16 +286,22 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
 
+  let userApiPermissions: ApiPermissions = {};
+
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
     async transformIndexHtml(html) {
-      const [headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
+      const [frameworkOptions, headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
+        presets.apply('frameworkOptions'),
         presets.apply('previewHead'),
         presets.apply('previewBody'),
       ]);
 
       return html
-        .replace('</head>', `${headHtmlSnippet ?? ''}</head>`)
+        .replace(
+          '</head>',
+          `<script>window.FRAMEWORK_OPTIONS = ${JSON.stringify(frameworkOptions)};</script>${headHtmlSnippet ?? ''}</head>`
+        )
         .replace('<body>', `<body>${bodyHtmlSnippet ?? ''}`);
     },
     async config(nonMutableInputConfig, { mode }) {
@@ -341,16 +364,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const areProjectAnnotationRequired = await requiresProjectAnnotations(
-        nonMutableInputConfig.test,
-        finalOptions
-      );
-
-      const internalSetupFiles = [
-        '@storybook/addon-vitest/internal/setup-file',
-        areProjectAnnotationRequired &&
-          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-      ].filter(Boolean) as string[];
+      userApiPermissions = getUserApiPermissions(testConfig);
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
@@ -365,11 +379,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           setupFiles: [
-            ...internalSetupFiles,
-            // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
-              nonMutableInputConfig.test?.setupFiles,
-          ].filter(Boolean) as string[],
+            '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+          ],
 
           ...(finalOptions.storybookScript
             ? {
@@ -474,7 +486,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
 
             The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
-            
+
             More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
           `)
         );
@@ -486,17 +498,30 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
+      const isBrowserModeEnabled = context.project.config.browser?.enabled === true;
 
       if (isBrowserModeEnabled) {
-        const setupFilePath = '@storybook/addon-vitest/internal/setup-file.browser.4';
+        const browserSetupFile = fileURLToPath(
+          import.meta.resolve('@storybook/addon-vitest/internal/setup-file.browser.4')
+        );
 
-        context.vitest.config.setupFiles = [
-          setupFilePath,
-          ...(context.vitest.config.setupFiles ?? []).filter(
-            (configuredSetupFile) => configuredSetupFile !== setupFilePath
-          ),
-        ];
+        if (!context.project.config.setupFiles.includes(browserSetupFile)) {
+          context.project.config.setupFiles.push(browserSetupFile);
+        }
+
+        // Story code runs in the browser, and Vitest otherwise lets it write files and run commands
+        // in Node through its API whenever the server is bound to loopback. Vitest 5 reads these
+        // permissions from `api`; Vitest 4 reads `browser.api` as well.
+        const { api, browser } = context.project.config as {
+          api: ApiPermissions;
+          browser: { api?: ApiPermissions };
+        };
+        for (const target of [api, browser.api]) {
+          if (target) {
+            target.allowWrite = userApiPermissions.allowWrite ?? false;
+            target.allowExec = userApiPermissions.allowExec ?? false;
+          }
+        }
       }
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete

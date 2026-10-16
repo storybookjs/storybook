@@ -26,14 +26,18 @@ export type { StorybookWorkflowCall };
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
 const RESULTS_PATH = '__agent_eval__/results.json';
 const TRANSCRIPT_PATH = '__agent_eval__/transcript.txt';
+const CHECKOUT_REGISTRY_PATH = '__agent_eval__/checkout-registry.json';
 
 type AgentContext = {
   agent?: unknown;
+  model?: unknown;
   integration?: unknown;
 };
 
 type EvalContext = {
   agent: string;
+  // Such as `gpt-6-luna?reasoningEffort=low`; absent when the experiment passes none.
+  model?: string;
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
@@ -57,7 +61,7 @@ export type StoryInputExpectation = {
 
 export function getEvalContext(): EvalContext {
   const agentContext = readAgentContext();
-  const { agent, integration } = agentContext;
+  const { agent, model, integration } = agentContext;
 
   if (typeof agent !== 'string') {
     throw new Error(
@@ -74,7 +78,13 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  return { agent, integration };
+  return { agent, ...(typeof model === 'string' && { model }), integration };
+}
+
+// Codex's system prompt for GPT-6 Luna alone says "Do not add or run tests unless the user asks
+// you to test or verify implementation."
+export function modelRunsTestsOnlyWhenAsked(): boolean {
+  return getEvalContext().model?.startsWith('gpt-6-luna') === true;
 }
 
 export function getTranscript(agent = getEvalContext().agent): Transcript {
@@ -392,11 +402,16 @@ export type WorkflowToolResult = {
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
+// `requireAgentRun: false` lets the agent skip the tests, for a model that runs
+// them only when asked; a run it did make must still not end red.
 export async function expectStoryTestsRanAndPassed(options?: {
   covering?: string[];
   cwd?: string;
+  requireAgentRun?: boolean;
 }): Promise<void> {
-  expectWorkflowCalls(['test-run']);
+  if (options?.requireAgentRun !== false) {
+    expectWorkflowCalls(['test-run']);
+  }
   expect(
     getWorkflowToolResults('test-run').at(-1)?.output ?? '',
     "The agent's last test run must not report failing stories or unhandled errors"
@@ -823,6 +838,43 @@ export function expectStorybookDependenciesAtLeast(
       expectAtLeastMinimum(packageName, spec);
     }
   }
+}
+
+// For the evals whose agent installs Storybook itself: the setup serves this checkout's packages from
+// a registry in the sandbox (`evals.checkoutRegistry` in lib/templates.ts), and every Storybook
+// package installed at the checkout's version must have come from it rather than from npm.
+export function expectStorybookInstalledFromCheckout(): void {
+  const registry = parseJson(readFileSync(CHECKOUT_REGISTRY_PATH, 'utf8'));
+  if (
+    !isRecord(registry) ||
+    typeof registry.url !== 'string' ||
+    typeof registry.version !== 'string'
+  ) {
+    throw new Error(`${CHECKOUT_REGISTRY_PATH} must contain the registry url and version`);
+  }
+  const { url, version } = registry;
+
+  expect(existsSync('package-lock.json'), 'Expected Storybook to be installed with npm').toBe(true);
+  const lockfile = parseJson(readFileSync('package-lock.json', 'utf8'));
+  const installed = Object.entries(
+    isRecord(lockfile) && isRecord(lockfile.packages) ? lockfile.packages : {}
+  ).filter(([location]) => /(^|\/)node_modules\/(storybook|@storybook\/[^/]+)$/.test(location));
+
+  const storybook = installed.find(([location]) => location === 'node_modules/storybook')?.[1];
+  expect(
+    isRecord(storybook) ? storybook.version : undefined,
+    'Expected the checkout version of storybook in package-lock.json'
+  ).toBe(version);
+
+  const fromNpm = installed
+    .filter(
+      ([, entry]) =>
+        isRecord(entry) &&
+        entry.version === version &&
+        !(typeof entry.resolved === 'string' && entry.resolved.startsWith(`${url}-/checkout/`))
+    )
+    .map(([location]) => location);
+  expect(fromNpm, 'Expected these packages to come from the checkout registry').toEqual([]);
 }
 
 function parseSemverTriple(spec: string): [number, number, number] | undefined {

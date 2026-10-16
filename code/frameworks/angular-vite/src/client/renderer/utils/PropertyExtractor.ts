@@ -106,7 +106,9 @@ export class PropertyExtractor implements NgModuleMetadata {
     return { ...metadata, imports, providers, applicationProviders, declarations };
   };
 
-  static analyzeRestricted = (ngModule: NgModule): [boolean] | [boolean, Provider] => {
+  static analyzeRestricted = async (
+    ngModule: NgModule
+  ): Promise<[boolean] | [boolean, Provider]> => {
     if (ngModule === BrowserModule) {
       console.warn(
         dedent`
@@ -118,25 +120,49 @@ export class PropertyExtractor implements NgModuleMetadata {
       return [true];
     }
 
-    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name;
+    // Guarded dynamic import: `@angular/animations` is only an optional peer of
+    // `@angular/platform-browser`, so it may not be installed. A static import would make it a
+    // hard runtime dependency and break every story render in such projects.
+    try {
+      const animations = await import('@angular/platform-browser/animations');
 
-    if (ngModuleName === 'BrowserAnimationsModule' || ngModuleName === 'NoopAnimationsModule') {
-      const provideFn =
-        ngModuleName === 'BrowserAnimationsModule' ? 'provideAnimations' : 'provideNoopAnimations';
+      // Detect by identity first: bundlers can rename the exported class binding. As a fallback,
+      // compare the class name with leading underscores stripped, since a renamed binding shows
+      // up as e.g. `_BrowserAnimationsModule`.
+      const normalizedModuleName = (
+        ngModule as unknown as { name?: string } | undefined
+      )?.name?.replace(/^_+/, '');
+      const isBrowserAnimationsModule =
+        ngModule === animations.BrowserAnimationsModule ||
+        normalizedModuleName === 'BrowserAnimationsModule';
+      const isNoopAnimationsModule =
+        ngModule === animations.NoopAnimationsModule ||
+        normalizedModuleName === 'NoopAnimationsModule';
+
+      if (!isBrowserAnimationsModule && !isNoopAnimationsModule) {
+        return [false];
+      }
+
+      const provideFn = isBrowserAnimationsModule
+        ? animations.provideAnimations
+        : animations.provideNoopAnimations;
+      const animationModuleName = isBrowserAnimationsModule
+        ? 'BrowserAnimationsModule'
+        : 'NoopAnimationsModule';
       console.warn(
         dedent`
           Storybook Warning:
-          "${ngModuleName}" was found and removed from moduleMetadata.imports, but @storybook/angular-vite no longer registers its providers automatically.
+          You have added the "${animationModuleName}" to the list of "imports" in your moduleMetadata definition of your Story.
+          In Storybook we use Angular's 'bootstrapApplication' API to mount the component to the DOM, which accepts a list of providers to set up application-wide providers.
+          Storybook has automatically added '${provideFn.name}()' to the application providers to keep your animations working.
           This module is part of Angular's legacy animations API, which is deprecated since Angular 20.2 and intended for removal in v23.
-          To migrate:
-            - Preferred: Use native CSS transitions or the 'animate.enter'/'animate.leave' bindings (Angular 20.2+).
-            - Or: Keep using the legacy animations API yourself by adding '${provideFn}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
+          To migrate: use native CSS transitions or the 'animate.enter'/'animate.leave' bindings (Angular 20.2+), or remove "${animationModuleName}" from moduleMetadata.imports and add '${provideFn.name}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
         `
       );
-      return [true];
+      return [true, provideFn()];
+    } catch {
+      return [false];
     }
-
-    return [false];
   };
 
   static analyzeDecorators = (component: any) => {

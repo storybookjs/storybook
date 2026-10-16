@@ -866,6 +866,33 @@ test('an imported bound story keeps its helper and resolved args', () => {
   ]);
 });
 
+test('a comma expression arg keeps its parentheses', () => {
+  const input = withCSF3(dedent`
+    export const Synthesized: Story = { args: { label: (f(), 'x'), '2x': (f(), 'y') } };
+    export const Rendered: Story = {
+      args: { label: (f(), 'x'), children: (f(), 'z') },
+      render: (args) => <Button {...args} />,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Synthesized = () => <Button label={(f(), 'x')} {...{ "2x": (f(), 'y') }}>Click me</Button>;
+    const Rendered = () => <Button label={(f(), 'x')}>{(f(), 'z')}</Button>;"
+  `);
+});
+
+test('an imported bound story keeps the parentheses of a comma expression arg', () => {
+  const input = dedent`
+    import { renderMatch as Match } from './match-helper';
+    export default { title: 'Match' };
+    export const FirstHalf = Match.bind({});
+    FirstHalf.args = { home: (f(), 'Arsenal') };
+  `;
+
+  expect(generateExample(input)).toBe(
+    'const FirstHalf = () => Match.bind({})({\n    "home": (f(), \'Arsenal\')\n});'
+  );
+});
+
 test('args assembled at runtime are reported rather than dropped', () => {
   const input = withCSF3(dedent`
     export const Default: Story = { args: { ...buildArgs(), label: 'runtime' } };

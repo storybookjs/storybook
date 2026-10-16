@@ -86,7 +86,7 @@ function importedBoundStory(
   }
 
   const values = Object.entries(args).map(
-    ([key, value]) => `    ${JSON.stringify(key)}: ${codeOf(value)}`
+    ([key, value]) => `    ${JSON.stringify(key)}: ${valueCode(value)}`
   );
   const argsObject = values.length ? `{\n${values.join(',\n')}\n}` : '{}';
   return {
@@ -255,6 +255,10 @@ function readsArgs(source: string): boolean {
 
 const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
 
+// An arg value as source to place in JSX or an object, where a comma expression needs parentheses.
+const valueCode = (value: Node) =>
+  value.type === 'SequenceExpression' ? `(${codeOf(value)})` : codeOf(value);
+
 const toAttr = (key: string, value: Node) => {
   if (value.type === 'Literal' && typeof value.value === 'boolean') {
     return value.value ? key : `${key}={false}`;
@@ -262,7 +266,7 @@ const toAttr = (key: string, value: Node) => {
   if (isStringLiteral(value) && !value.value.includes('"')) {
     return `${key}="${value.value}"`;
   }
-  return `${key}={${codeOf(value)}}`;
+  return `${key}={${valueCode(value)}}`;
 };
 
 // Attributes for every arg not already set by name, with invalid names collected in a spread.
@@ -273,7 +277,7 @@ function injectedAttributes(merged: Args, existing: ReadonlySet<string>): string
   const attrs = entries.filter(([k]) => isValidJsxAttrName(k)).map(([k, v]) => toAttr(k, v));
   const invalid = entries.filter(([k]) => !isValidJsxAttrName(k));
   if (invalid.length > 0) {
-    const members = invalid.map(([k, v]) => `${JSON.stringify(k)}: ${codeOf(v)}`);
+    const members = invalid.map(([k, v]) => `${JSON.stringify(k)}: ${valueCode(v)}`);
     attrs.push(`{...{ ${members.join(', ')} }}`);
   }
   return attrs;
@@ -286,7 +290,7 @@ const toJsxChildren = (node: Node | null | undefined) =>
       ? node.value
       : isJsx(node)
         ? codeOf(node)
-        : `{${codeOf(node)}}`;
+        : `{${valueCode(node)}}`;
 
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */
 function getArgsMemberKey(expr: Node) {

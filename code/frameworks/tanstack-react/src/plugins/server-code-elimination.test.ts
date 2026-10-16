@@ -112,6 +112,21 @@ describe('serverCodeEliminationPlugin', () => {
       expect(result!.code).toContain('__sb_fn()');
     });
 
+    it('keeps declarations that live code writes or reads through tricky scopes', async () => {
+      const code = [
+        `import { createServerFn } from '@tanstack/react-start';`,
+        `import { config } from './config';`,
+        `let token;`,
+        `export function setSession(s) { token = s.token; }`,
+        `export function useThing(c = config) { const config = 1; return c + config; }`,
+        `export const getData = createServerFn().handler(async () => token + config);`,
+      ].join('\n');
+      const result = await transform(code);
+      expect(result!.code).toContain('let token;');
+      expect(result!.code).toContain(`import { config } from './config';`);
+      expect(result!.code).toContain('__sb_fn()');
+    });
+
     it('handles chained .middleware().handler()', async () => {
       const code = [
         `import { createServerFn } from '@tanstack/react-start';`,

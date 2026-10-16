@@ -16,7 +16,11 @@ const programBindings = (code: string) => {
 describe('analyzeScopes', () => {
   it.each([
     ['a const read once', 'const a = 1; a;', { a: { constant: true, references: 1 } }],
-    ['a reassigned let', 'let a = 1; a = 2;', { a: { constant: false, references: 0 } }],
+    [
+      'a reassigned let, whose write is a use',
+      'let a = 1; a = 2;',
+      { a: { constant: false, references: 1 } },
+    ],
     [
       'an update, which reads and writes',
       'let a = 1; a++;',
@@ -67,6 +71,54 @@ describe('analyzeScopes', () => {
   ])('counts type references like Babel: %s', (_, code, references) => {
     const [first] = Object.values(programBindings(code));
     expect(first.references).toBe(references);
+  });
+
+  it('resolves parameter defaults outside the function body', () => {
+    expect(
+      programBindings('const q = 1; function f(a = q) { const q = 2; return a; }')
+    ).toMatchObject({ q: { references: 1 } });
+  });
+
+  it('resolves the switch discriminant outside the switch scope', () => {
+    expect(
+      programBindings('const x = 1; switch (x) { case 1: { const x = 2; x; } }')
+    ).toMatchObject({ x: { references: 1 } });
+  });
+
+  it('visits decorators on parameters and abstract members', () => {
+    expect(programBindings('const dec = () => {}; class A { m(@dec p: string) {} }')).toMatchObject(
+      { dec: { references: 1 } }
+    );
+    expect(
+      programBindings('const dec = () => {}; abstract class A { @dec abstract p: string; }')
+    ).toMatchObject({ dec: { references: 1 } });
+  });
+
+  it('counts the namespace an import-equals declaration reads', () => {
+    expect(programBindings("import NS from 'x'; import Y = NS.Y; Y;")).toMatchObject({
+      NS: { references: 1 },
+    });
+  });
+
+  it('binds a var declared in a class static block to the block', () => {
+    const { program } = parseModule('class A { static { var v = 1; v; } }', 'file.ts');
+    const info = analyzeScopes(program);
+    expect(info.program.bindings.has('v')).toBe(false);
+    expect(info.unbound.has('v')).toBe(false);
+  });
+
+  it('keeps a binding alive through a write inside a function', () => {
+    expect(
+      programBindings('let token; export function setSession(s) { token = s.token; }')
+    ).toMatchObject({ token: { constant: false, references: 1 } });
+  });
+
+  it('refuses TS node types it does not know instead of treating them as types', () => {
+    const program = {
+      type: 'Program',
+      body: [{ type: 'ExpressionStatement', expression: { type: 'TSNewThing' } }],
+    } as unknown as E.Program;
+    expect(() => analyzeScopes(program)).toThrow('TSNewThing');
   });
 
   it('counts overload signatures as references to the implementation', () => {

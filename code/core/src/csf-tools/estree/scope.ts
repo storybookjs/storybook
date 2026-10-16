@@ -85,7 +85,7 @@ const BLOCK_SCOPE_TYPES = new Set([
   'ClassDeclaration',
 ]);
 
-// TS wrappers that hold a runtime expression; every other `TS*` node is type-only.
+// TS nodes that hold runtime code and are visited like any other expression or declaration.
 const TS_EXPRESSIONS = new Set([
   'TSModuleDeclaration',
   'TSModuleBlock',
@@ -99,6 +99,73 @@ const TS_EXPRESSIONS = new Set([
   'TSEnumDeclaration',
   'TSEnumBody',
   'TSEnumMember',
+  'TSImportEqualsDeclaration',
+  'TSAbstractMethodDefinition',
+  'TSAbstractPropertyDefinition',
+  'TSAbstractAccessorProperty',
+]);
+
+// TS nodes that only describe types. A `TS*` node in neither set is an error rather than a guess:
+// treating a renamed runtime node as a type would silently drop references.
+const TS_TYPES = new Set([
+  'TSAnyKeyword',
+  'TSArrayType',
+  'TSBigIntKeyword',
+  'TSBooleanKeyword',
+  'TSCallSignatureDeclaration',
+  'TSClassImplements',
+  'TSConditionalType',
+  'TSConstructSignatureDeclaration',
+  'TSConstructorType',
+  'TSDeclareFunction',
+  'TSEmptyBodyFunctionExpression',
+  'TSExternalModuleReference',
+  'TSFunctionType',
+  'TSImportType',
+  'TSIndexSignature',
+  'TSIndexedAccessType',
+  'TSInferType',
+  'TSInterfaceBody',
+  'TSInterfaceDeclaration',
+  'TSInterfaceHeritage',
+  'TSIntersectionType',
+  'TSIntrinsicKeyword',
+  'TSJSDocNonNullableType',
+  'TSJSDocNullableType',
+  'TSJSDocUnknownType',
+  'TSLiteralType',
+  'TSMappedType',
+  'TSMethodSignature',
+  'TSNamedTupleMember',
+  'TSNamespaceExportDeclaration',
+  'TSNeverKeyword',
+  'TSNullKeyword',
+  'TSNumberKeyword',
+  'TSObjectKeyword',
+  'TSOptionalType',
+  'TSParenthesizedType',
+  'TSPropertySignature',
+  'TSQualifiedName',
+  'TSRestType',
+  'TSStringKeyword',
+  'TSSymbolKeyword',
+  'TSTemplateLiteralType',
+  'TSThisType',
+  'TSTupleType',
+  'TSTypeAliasDeclaration',
+  'TSTypeAnnotation',
+  'TSTypeLiteral',
+  'TSTypeOperator',
+  'TSTypeParameter',
+  'TSTypeParameterDeclaration',
+  'TSTypeParameterInstantiation',
+  'TSTypePredicate',
+  'TSTypeQuery',
+  'TSTypeReference',
+  'TSUndefinedKeyword',
+  'TSUnionType',
+  'TSUnknownKeyword',
+  'TSVoidKeyword',
 ]);
 
 const TYPE_KEYS = new Set([
@@ -112,11 +179,15 @@ const TYPE_KEYS = new Set([
 
 const isCompatTag = (name: string) => /^[a-z]/.test(name) || name.includes('-');
 
-// Identifiers a binding pattern declares, plus the expressions nested in it (defaults, keys).
+// Identifiers a binding pattern declares, plus the expressions nested in it (defaults, keys,
+// decorators).
 const patternParts = (pattern: Node, ids: E.BindingIdentifier[], expressions: Node[]) => {
   const annotation = (pattern as { typeAnnotation?: Node | null }).typeAnnotation;
   if (annotation) {
     expressions.push(annotation);
+  }
+  for (const decorator of (pattern as { decorators?: Node[] }).decorators ?? []) {
+    expressions.push(decorator);
   }
   switch (pattern.type) {
     case 'Identifier':
@@ -282,9 +353,12 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
           declare(scope, id, 'param', param);
         }
       }
+      // The body declares into its own scope, so a parameter default cannot see a body binding.
       if (fn.body?.type === 'BlockStatement') {
-        hoistVars(scope, fn.body);
-        declareLexical(scope, fn.body);
+        const body = new Scope(fn.body, scope, false);
+        nodeScopes.set(fn.body, body);
+        hoistVars(body, fn.body);
+        declareLexical(body, fn.body);
       }
     } else if (node.type === 'ClassExpression' && node.id) {
       declare(scope, node.id, 'class', node);
@@ -306,7 +380,7 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         declareVariable(scope, declaration);
       }
     } else {
-      if (node.type === 'TSModuleBlock') {
+      if (node.type === 'TSModuleBlock' || node.type === 'StaticBlock') {
         hoistVars(scope, node);
       }
       declareLexical(scope, node);
@@ -328,6 +402,8 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
     patternParts(target, ids, expressions);
     for (const id of ids) {
       names.add(id.name);
+      // A write keeps the binding alive as much as a read does.
+      references.push({ scope, identifier: id, name: id.name });
       violations.push({ scope, identifier: id as unknown as E.IdentifierReference });
     }
     for (const expression of expressions) {
@@ -422,6 +498,9 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
 
   const visitNode = (node: Node, scope: Scope): void => {
     if (node.type.startsWith('TS') && !TS_EXPRESSIONS.has(node.type)) {
+      if (!TS_TYPES.has(node.type)) {
+        throw new Error(`Scope analysis does not know the ${node.type} node type`);
+      }
       visitType(node, scope);
       return;
     }
@@ -534,9 +613,9 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         }
         if (node.body) {
           if (node.body.type === 'BlockStatement') {
-            nodeScopes.set(node.body, current);
+            const body = nodeScopes.get(node.body) ?? current;
             for (const statement of node.body.body) {
-              visit(statement, current);
+              visit(statement, body);
             }
           } else {
             visit(node.body, current);
@@ -569,8 +648,6 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         return;
       case 'UpdateExpression':
         if (node.argument.type === 'Identifier') {
-          // `x++` both reads and writes `x`.
-          references.push({ scope: current, identifier: node.argument, name: node.argument.name });
           markWrites(node.argument, current);
         } else {
           visit(node.argument, current);
@@ -588,6 +665,29 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
         return;
       case 'TSParameterProperty':
         visitPattern(node.parameter, current);
+        return;
+      case 'SwitchStatement':
+        // The discriminant is evaluated before the switch's own scope exists.
+        visit(node.discriminant, scope);
+        for (const switchCase of node.cases) {
+          visit(switchCase, current);
+        }
+        return;
+      case 'TSAbstractMethodDefinition':
+      case 'TSAbstractPropertyDefinition':
+      case 'TSAbstractAccessorProperty':
+        for (const decorator of node.decorators ?? []) {
+          visit(decorator, current);
+        }
+        if (node.computed) {
+          visit(node.key, current);
+        }
+        return;
+      case 'TSImportEqualsDeclaration':
+        // `import X = NS.Y` reads `NS`; `import X = require('y')` reads nothing.
+        if (node.moduleReference.type !== 'TSExternalModuleReference') {
+          reference(node.moduleReference, current);
+        }
         return;
       case 'TSEnumDeclaration':
         visit(node.body, current);

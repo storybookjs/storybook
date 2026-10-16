@@ -7,12 +7,14 @@ import MagicString from 'magic-string';
 import { dedent } from 'ts-dedent';
 
 import { loadCsf, printCsf } from '../CsfFile.ts';
+import { parseExpression } from '../CsfObject.ts';
 import type { E } from './ast.ts';
 import { parseModule } from './ast.ts';
 import {
   SourceEditor,
   appendToList,
   arrayList,
+  printMembers,
   reindent,
   removeFromList,
   removeStatement,
@@ -221,12 +223,48 @@ describe('multi-line members', () => {
     expect(printCsf(csf).code).toContain(`showNav: {\n      value: false,\n    },`);
   });
 
-  it('keeps the value of a template literal set into a multi-line object', () => {
+  it('keeps a template literal when grouping it into a new key', () => {
+    const csf = parse('export default {\n  previewHead: `<style>\n.a {}\n</style>`,\n  b: 1,\n};');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.group(['ui'], ['previewHead'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      'export default {\n  ui: {\n    previewHead: `<style>\n.a {}\n</style>`,\n  },\n  b: 1,\n};'
+    );
+    const [again] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(again.getValue(['ui', 'previewHead'])).toBe('<style>\n.a {}\n</style>');
+  });
+
+  it('keeps a template literal set into a missing parent', () => {
     const csf = parse('export default {\n  parameters: {\n    a: 1,\n  },\n};');
     const [meta] = csf.objects({ stories: false });
-    meta.set(['parameters', 'code'], { code: 'line1\nline2' });
+    meta.set(['globals', 'code'], parseExpression('`line1\nline2`'));
+    expect(printCsf(csf).code).toBe(
+      'export default {\n  parameters: {\n    a: 1,\n  },\n  globals: {\n    code: `line1\nline2`,\n  },\n};'
+    );
     const [again] = parse(printCsf(csf).code).objects({ stories: false });
-    expect(again.getValue(['parameters', 'code', 'code'])).toBe('line1\nline2');
+    expect(again.getValue(['globals', 'code'])).toBe('line1\nline2');
+  });
+
+  it('keeps a template literal moved into a missing parent', () => {
+    const csf = parse('export default {\n  parameters: {\n    code: `line1\nline2`,\n  },\n};');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.move(['parameters', 'code'], ['globals', 'code'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(
+      'export default {\n  globals: {\n    code: `line1\nline2`,\n  },\n};'
+    );
+    const [again] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(again.getValue(['globals', 'code'])).toBe('line1\nline2');
+  });
+});
+
+describe('printMembers', () => {
+  it('leaves the template literal of a function value alone', () => {
+    expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'])).toBe(
+      '{\n  fn: () => {\n    return `a\nb`;\n  },\n}'
+    );
   });
 });
 

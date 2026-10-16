@@ -17,6 +17,7 @@ import {
   keySource,
   prependMembers,
   printKey,
+  printMembers,
   printValue,
   removeMembers,
   renameKey,
@@ -846,9 +847,7 @@ class CsfObjectEditor implements CsfObject {
         // Comments travel with moved members; a line comment needs the object to span lines.
         const multiline = members.some((member) => member.text.includes('\n'));
         const block = (texts: string[]) =>
-          multiline
-            ? `{\n${texts.map((text) => `  ${text.split('\n').join('\n  ')},`).join('\n')}\n}`
-            : `{ ${texts.join(', ')} }`;
+          multiline ? printMembers(texts) : `{ ${texts.join(', ')} }`;
         const nested = missing
           .slice(1)
           .reverse()

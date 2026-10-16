@@ -224,7 +224,7 @@ export const printString = (value: string, quote: string) => {
 export const printMembers = (members: string[]) =>
   members.length === 0
     ? '{}'
-    : `{\n${members.map((member) => `  ${member.split('\n').join('\n  ')},`).join('\n')}\n}`;
+    : `{\n${members.map((member) => `  ${reindent(member, '', '  ')},`).join('\n')}\n}`;
 
 /** Print a JS value as source. `expanded` lays objects out one member per line. */
 export const printValue = (
@@ -678,9 +678,7 @@ export const groupMembers = (
   removeMembers(editor, object, members.slice(1));
   const before = editor.code.slice(0, members[0].start);
   const indent = /[ \t]*$/.exec(before.slice(before.lastIndexOf('\n') + 1))![0];
-  const inner = multiline
-    ? `{\n${texts.map((text) => `${indent}  ${text.split('\n').join(`\n${indent}  `)},`).join('\n')}\n${indent}}`
-    : `{ ${texts.join(', ')} }`;
+  const inner = multiline ? reindent(printMembers(texts), '', indent) : `{ ${texts.join(', ')} }`;
   // Leading comments of the first member move into the group with it.
   const start = separatorBefore(editor.code, object, first);
   const lead = multiline ? `\n${indent}` : ' ';

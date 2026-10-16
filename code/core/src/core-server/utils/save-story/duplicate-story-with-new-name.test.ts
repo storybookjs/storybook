@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
@@ -152,5 +152,17 @@ describe('success', () => {
       + export const NoneDuplicated = {};
       + "
     `);
+  });
+  test('removes the args member only, not a computed key named args', () => {
+    const parsed = loadCsf(
+      [
+        `export default { title: 'A' };`,
+        `const args = 'label';`,
+        `export const A = { args: { label: 'a' }, parameters: { [args]: 1 } };`,
+      ].join('\n'),
+      { makeTitle }
+    ).parse();
+    duplicateStoryWithNewName(parsed, 'A', 'B');
+    expect(printCsf(parsed).code).toContain(`export const B = { parameters: { [args]: 1 } };`);
   });
 });

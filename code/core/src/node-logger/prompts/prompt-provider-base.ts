@@ -39,8 +39,10 @@ export interface MultiSelectPromptOptions<T> extends BasePromptOptions {
   required?: boolean;
 }
 
+export type PromptCancelReason = 'cancel' | 'stdin-ended';
+
 export interface PromptOptions {
-  onCancel?: () => void | Promise<void>;
+  onCancel?: (reason: PromptCancelReason) => void | Promise<void>;
 }
 
 export interface SpinnerInstance {

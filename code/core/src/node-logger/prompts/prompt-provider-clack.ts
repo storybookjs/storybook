@@ -7,6 +7,7 @@ import { wrapTextForClackHint } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
+  PromptCancelReason,
   PromptOptions,
   SelectPromptOptions,
   SpinnerInstance,
@@ -53,44 +54,65 @@ const formatTaskLogMessage = (message: string) => {
     .join('\n');
 };
 
+// Thrown when a prompt is aborted (user cancel or stdin end) and the onCancel handler returns
+// without terminating the process itself, so the abort can never resolve as the prompt's answer.
+export class PromptAbortedError extends Error {
+  readonly reason: PromptCancelReason;
+
+  constructor(reason: PromptCancelReason) {
+    super(
+      reason === 'stdin-ended'
+        ? 'Prompt aborted: stdin ended before an answer was received.'
+        : 'Operation canceled.'
+    );
+    this.name = 'PromptAbortedError';
+    this.reason = reason;
+  }
+}
+
 // Clack never settles a prompt when stdin ends without input (piped runs with stdin closed at
 // EOF, the common CI condition): the promise stays pending and Node exits 0 once the event loop
-// drains, reporting success for an incomplete init. Race each prompt against stdin ending so the
-// provider can abort loudly instead.
-const STDIN_ENDED = Symbol('stdin-ended');
-
-const raceStdinEnd = <T>(prompt: Promise<T>): Promise<T | typeof STDIN_ENDED> => {
-  if (process.stdin.readableEnded) {
-    return Promise.resolve(STDIN_ENDED);
-  }
-  return new Promise<T | typeof STDIN_ENDED>((resolve, reject) => {
-    const onStdinEnd = () => {
-      process.stdin.off('end', onStdinEnd);
-      resolve(STDIN_ENDED);
-    };
-    prompt.then(
-      (value) => {
-        process.stdin.off('end', onStdinEnd);
-        resolve(value);
-      },
-      (error) => {
-        process.stdin.off('end', onStdinEnd);
-        reject(error);
-      }
-    );
+// drains, reporting success for an incomplete init. Hand each prompt clack's own signal support
+// instead — an aborted signal settles the prompt as cancelled and releases its readline — driven
+// by stdin ending, so the cancel path exits non-zero rather than reporting success.
+const stdinEndAbort = (): {
+  signal: AbortSignal;
+  isStdinEnded: () => boolean;
+  dispose: () => void;
+} => {
+  const controller = new AbortController();
+  let stdinEnded = process.stdin.readableEnded;
+  const onStdinEnd = () => {
+    stdinEnded = true;
+    controller.abort();
+  };
+  if (stdinEnded) {
+    controller.abort();
+  } else {
     process.stdin.once('end', onStdinEnd);
-  });
+  }
+  return {
+    signal: controller.signal,
+    isStdinEnded: () => stdinEnded,
+    dispose: () => process.stdin.off('end', onStdinEnd),
+  };
 };
 
 export class ClackPromptProvider extends PromptProvider {
-  private async handleAbort(result: unknown | symbol, promptOptions?: PromptOptions) {
-    const stdinEnded = result === STDIN_ENDED;
+  private async handleAbort(
+    result: unknown,
+    promptOptions: PromptOptions | undefined,
+    stdinEnded: boolean
+  ): Promise<void> {
     if (!stdinEnded && !clack.isCancel(result)) {
       return;
     }
+    const reason: PromptCancelReason = stdinEnded ? 'stdin-ended' : 'cancel';
     if (promptOptions?.onCancel) {
-      await promptOptions.onCancel();
-      return;
+      await promptOptions.onCancel(reason);
+      // Every current onCancel exits or throws; if one ever returns, still refuse to hand the
+      // aborted prompt's sentinel back as the answer — reject so the CLI exits non-zero.
+      throw new PromptAbortedError(reason);
     }
     clack.cancel(
       stdinEnded
@@ -101,49 +123,66 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   async text(options: TextPromptOptions, promptOptions?: PromptOptions): Promise<string> {
-    const result = await raceStdinEnd(clack.text(options));
-    await this.handleAbort(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return result.toString();
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.text({ ...options, signal });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return result.toString();
+    } finally {
+      dispose();
+    }
   }
 
   async confirm(options: ConfirmPromptOptions, promptOptions?: PromptOptions): Promise<boolean> {
-    const result = await raceStdinEnd(
-      clack.confirm({
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.confirm({
         ...options,
         message: wrapTextForClackHint(options.message, undefined, undefined, 2),
-      })
-    );
-    await this.handleAbort(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return Boolean(result);
+        signal,
+      });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return Boolean(result);
+    } finally {
+      dispose();
+    }
   }
 
   async select<T>(options: SelectPromptOptions<T>, promptOptions?: PromptOptions): Promise<T> {
-    const result = await raceStdinEnd(
-      clack.select<T>({
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.select<T>({
         ...options,
         message: wrapTextForClackHint(options.message, undefined, undefined, 2),
-      })
-    );
-    await this.handleAbort(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return result as T;
+        signal,
+      });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return result as T;
+    } finally {
+      dispose();
+    }
   }
 
   async multiselect<T>(
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
-    const result = await raceStdinEnd(
-      clack.multiselect<T>({
+    const { signal, isStdinEnded, dispose } = stdinEndAbort();
+    try {
+      const result = await clack.multiselect<T>({
         ...options,
         required: options.required,
-      })
-    );
-    await this.handleAbort(result, promptOptions);
-    logTracker.addLog('prompt', options.message, { choice: result });
-    return result as T[];
+        signal,
+      });
+      await this.handleAbort(result, promptOptions, isStdinEnded());
+      logTracker.addLog('prompt', options.message, { choice: result });
+      return result as T[];
+    } finally {
+      dispose();
+    }
   }
 
   spinner(options: SpinnerOptions): SpinnerInstance {

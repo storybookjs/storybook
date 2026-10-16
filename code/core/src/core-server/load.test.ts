@@ -57,10 +57,14 @@ describe('loadStorybook', () => {
     expect(vi.mocked(safeResolveModule)).toHaveBeenCalledWith({
       specifier: builderPresetPath,
     });
+    // The builder preset enters the second pass as a critical load: the preset loader downgrades
+    // non-critical failures to a warning and an empty result, and a silently missing builder
+    // preset surfaces downstream as a broken composition (e.g. no core Vite plugins in
+    // @storybook/addon-vitest).
     expect(secondPassPresets()).toEqual([
       '/storybook/dist/core-server/presets/common-preset.js',
       '/framework/preset',
-      builderPresetPath,
+      { name: builderPresetPath, critical: true },
     ]);
   });
 

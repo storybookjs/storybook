@@ -5,6 +5,7 @@ import { join as patheJoin } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
+import { CriticalPresetLoadError } from 'storybook/internal/server-errors';
 
 import * as resolveUtils from '../shared/utils/module.ts';
 import { getPresets, loadPreset, resolveAddonName } from './presets.ts';
@@ -103,6 +104,12 @@ describe('presets', () => {
   it('throws when preset can not be loaded and is critical', async () => {
     // @ts-expect-error (invalid use)
     await expect(getPresets(['preset-foo'], { isCritical: true })).rejects.toThrow();
+  });
+
+  it('throws when a preset marked critical can not be loaded, without escalating the pass', async () => {
+    await expect(
+      getPresets([{ name: 'preset-foo', critical: true }], { configDir: '/project/.storybook' })
+    ).rejects.toThrow(CriticalPresetLoadError);
   });
 
   it('loads a framework preset from the project config directory', async () => {

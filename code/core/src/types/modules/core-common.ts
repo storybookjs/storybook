@@ -167,6 +167,12 @@ export type PresetConfig =
   | {
       name: string;
       options?: unknown;
+      /**
+       * Whether a load failure for this preset should abort startup with a `CriticalPresetLoadError`
+       * instead of being downgraded to a warning and an empty result. The all-or-nothing
+       * `isCritical` flag of a `loadAllPresets` pass still applies to every preset in it.
+       */
+      critical?: boolean;
     };
 
 export interface Ref {

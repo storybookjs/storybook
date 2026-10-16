@@ -255,7 +255,7 @@ export async function loadPreset(
       ${input} is not a valid preset
     `);
   } catch (error: any) {
-    if (storybookOptions?.isCritical) {
+    if (storybookOptions?.isCritical || (isObject(input) && input.critical === true)) {
       throw new CriticalPresetLoadError({
         error,
         presetName,

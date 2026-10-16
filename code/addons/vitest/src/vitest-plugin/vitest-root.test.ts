@@ -5,6 +5,7 @@ import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
+import { MissingProjectAnnotationsProviderError } from 'storybook/internal/preview-errors';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
 import { storybookTest } from './index.ts';
@@ -28,6 +29,10 @@ beforeEach(() => {
         return ['../stories/**/*.stories.tsx'];
       case 'framework':
         return { name: '@storybook/react-vite' };
+      // The builder's `viteCorePlugins` preset normally delivers the project-annotations plugin;
+      // the provider test overrides it to `[]` to reproduce a builder preset that failed to load.
+      case 'viteCorePlugins':
+        return [{ name: 'storybook:project-annotations-plugin' }];
       // Mirrors a project without its own `viteFinal`: the common config is returned untouched,
       // so the root the plugin proposes is the root it ends up returning.
       case 'viteFinal':
@@ -158,6 +163,36 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
+  });
+});
+
+describe('project annotations provider', () => {
+  // The injected `setup-file-with-project-annotations` imports the project-annotations virtual
+  // module, which only the builder's `storybookProjectAnnotationsPlugin` serves. A builder preset
+  // that fails to load is silently dropped by the preset loader (non-critical passes return []),
+  // leaving the provider unregistered — the plugin must fail loudly with a dedicated error rather
+  // than run with a partial plugin list.
+  it('throws a dedicated error when the preset chain delivers no provider', async () => {
+    const applyPreset = presetApply.getMockImplementation()!;
+    presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+      if (key === 'viteCorePlugins') {
+        return [];
+      }
+      return applyPreset(key, fallback);
+    });
+
+    const pending = storybookTest({ configDir: CONFIG_DIR });
+
+    await expect(pending).rejects.toThrow(MissingProjectAnnotationsProviderError);
+    await expect(pending).rejects.toThrow(/Failed to load preset/);
+  });
+
+  it('keeps exactly one provider when the preset chain delivers one', async () => {
+    const plugins = await storybookTest({ configDir: CONFIG_DIR });
+
+    expect(
+      plugins.filter((plugin) => plugin?.name === 'storybook:project-annotations-plugin')
+    ).toHaveLength(1);
   });
 });
 

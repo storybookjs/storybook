@@ -89,7 +89,12 @@ export async function loadStorybook(
     const builderPreset = safeResolveModule({ specifier: join(builderPresetDir, 'preset.js') });
 
     if (builderPreset) {
-      corePresets.push(builderPreset);
+      // Like the framework preset, a builder preset that fails to load is critical: the preset
+      // loader downgrades non-critical failures to a warning and an empty result, and a silently
+      // missing builder preset surfaces downstream as confusing failures — e.g.
+      // @storybook/addon-vitest composes its plugin list without any of the builder's core Vite
+      // plugins. Per-entry criticality keeps the rest of the pass at warning level.
+      corePresets.push({ name: builderPreset, critical: true });
     }
   }
 

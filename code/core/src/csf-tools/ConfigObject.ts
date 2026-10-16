@@ -325,7 +325,9 @@ export const locateConfigRoot = (
 const exportedName = (node: E.ModuleExportName) =>
   node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 
-// A config made of named exports, edited as if it were one object literal.
+// A config made of named exports, edited as if it were one object literal. Each member's key is the
+// node that carries the exported name and its value the declaration's initializer, so every span a
+// shared helper could read is a real one; the member itself only exists in memory.
 const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRoot => {
   const quote = editor.quote;
   const byProperty = new Map<Property, NamedEntry>();
@@ -333,19 +335,14 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     const value = (
       entry.declaration.type === 'VariableDeclarator' ? entry.declaration.init : entry.declaration
     ) as E.Expression;
+    const key = entry.specifier ? entry.specifier.specifier.exported : entry.declaration.id!;
     const property = {
       type: 'Property',
       kind: 'init',
       method: false,
       shorthand: false,
       computed: false,
-      key: {
-        type: 'Literal',
-        value: entry.name,
-        raw: printString(entry.name, quote),
-        start: 0,
-        end: 0,
-      },
+      key,
       value,
       start: entry.declaration.start,
       end: entry.declaration.end,

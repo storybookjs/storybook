@@ -1,4 +1,4 @@
-import { CI_NPM_VERSION } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob, type Workflow } from './types.ts';
 
@@ -239,11 +239,14 @@ export const node = {
 };
 
 export const npm = {
-  pin: () => {
+  installPinnedVersion: () => {
     return {
       run: {
-        name: `Install npm ${CI_NPM_VERSION}`,
-        command: [`sudo npm install -g npm@${CI_NPM_VERSION}`, 'npm --version'].join('\n'),
+        name: `Install npm ${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+        command: [
+          `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+          'npm --version',
+        ].join('\n'),
       },
     };
   },

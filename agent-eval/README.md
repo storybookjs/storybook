@@ -66,9 +66,10 @@ EVAL_ONLY=803-edit-component yarn eval
 ```
 
 A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
-lifecycle evals × 2 plugin experiments) costs roughly **$6** in agent
-tokens at the averages measured in October 2026 (under $0.01 per eval on Haiku 5.5 low, and about
-$0.05–0.17 per eval on GPT-6.1-Sol low and the medium MCP experiments). The budget guardrail is **$75 per full run** — check the
+lifecycle evals × 2 plugin experiments) costs roughly **$0.60** in agent
+tokens at the averages measured in October 2026: about $0.01 per eval on
+Haiku 5.5 low and on gpt-6-luna low with Sol's test rules, against about
+$0.12 per eval on gpt-6.1-sol low. The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
@@ -164,7 +165,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 - `codex-mcp-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-luna-low`: Codex (gpt-6-luna at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 
-The two Codex experiments give gpt-6-luna the test rules of gpt-6.1-sol in its system prompt: Luna's own rules say not to run tests unless asked. They stand in for gpt-6.1-sol in CI at about 1/13 of the cost.
+The two Codex experiments give gpt-6-luna the test rules of gpt-6.1-sol in its system prompt: Luna's own rules say not to run tests unless asked. They stand in for gpt-6.1-sol in CI at about 1/12 of the cost.
 
 These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Five more experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6.1-sol-low`:
 
@@ -186,7 +187,7 @@ CI in two cases:
   label.
 
 Every run costs money in agent tokens. The default smoke eval is cheap, a
-run of all evals costs roughly $30–45.
+run of all evals costs roughly $0.60.
 
 ### When to use
 

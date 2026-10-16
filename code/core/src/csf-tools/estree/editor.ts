@@ -21,12 +21,13 @@ type Span = { start: number; end: number };
 // private member would make the class nominal and break assignability between `src` and `dist`.
 const mapSource = (editor: { fileName: string | undefined }) => editor.fileName ?? 'source';
 
-/** A source map from an earlier transform, as the object or the JSON string it was handed over as. */
 /** A map whose `sourcesContent` may be unknown for sources an input map did not carry. */
 export type GeneratedMap = Omit<SourceMap, 'sourcesContent'> & {
   sourcesContent?: (string | null)[];
+  sourceRoot?: string;
 };
 
+/** A source map from an earlier transform, as the object or the JSON string it was handed over as. */
 export type InputSourceMap =
   | string
   | {
@@ -148,30 +149,42 @@ export class SourceEditor {
       includeContent: true,
       source: mapSource(this),
     });
-    const chain = [current, ...this._committed.slice().reverse()];
-    if (chain.length === 1 && !options.inputSourceMap) {
-      current.sources = [source];
-      return current;
-    }
-    const maps = chain.map((map) => map as unknown as SourceMapInput);
-    if (options.inputSourceMap) {
-      maps.push(options.inputSourceMap as SourceMapInput);
-    }
-    const composed = remapping(maps, () => null);
-    // Keep the source names as the input map spelled them: remapping normalizes them to URLs.
     const input =
       typeof options.inputSourceMap === 'string'
         ? (JSON.parse(options.inputSourceMap) as Exclude<InputSourceMap, string>)
         : options.inputSourceMap;
-    return new SourceMap({
+    const chain = [current, ...this._committed.slice().reverse()];
+    if (chain.length === 1 && !input) {
+      current.sources = [source];
+      return current;
+    }
+    const maps = chain.map((map) => map as unknown as SourceMapInput);
+    if (input) {
+      maps.push(input as SourceMapInput);
+    }
+    // The original sources keep the names the input map spelled them with: remapping resolves
+    // them against `sourceRoot` and hands them to the loader in the input map's order. Without an
+    // input map the only original source is this editor's, under the requested name.
+    let index = 0;
+    const composed = remapping(maps, (_file, context) => {
+      if (context.depth === 1) {
+        context.source = (input ? input.sources[index++] : source) ?? context.source;
+      }
+      return null;
+    });
+    const map = new SourceMap({
       file: composed.file ?? '',
-      sources: composed.sources.map((name, index) => input?.sources[index] ?? name ?? source),
+      sources: composed.sources as string[],
       // Unknown content stays `null`, so devtools load the file instead of showing it empty.
       sourcesContent: composed.sourcesContent as string[] | undefined,
       names: composed.names,
       // Encoded, since `decodedMappings` was not requested.
       mappings: composed.mappings as string,
-    });
+    }) as GeneratedMap;
+    if (input?.sourceRoot) {
+      map.sourceRoot = input.sourceRoot;
+    }
+    return map;
   }
 
   /** Line ending of the file; inserted text is written with `\n` and converted on output. */

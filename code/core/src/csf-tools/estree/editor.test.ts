@@ -1,5 +1,9 @@
+import { SourceMap as NodeSourceMap } from 'node:module';
+
 import { describe, expect, it } from 'vitest';
 
+import { decode, encode } from '@jridgewell/sourcemap-codec';
+import MagicString from 'magic-string';
 import { dedent } from 'ts-dedent';
 
 import { loadCsf, printCsf } from '../CsfFile.ts';
@@ -223,5 +227,76 @@ describe('multi-line members', () => {
     meta.set(['parameters', 'code'], { code: 'line1\nline2' });
     const [again] = parse(printCsf(csf).code).objects({ stories: false });
     expect(again.getValue(['parameters', 'code', 'code'])).toBe('line1\nline2');
+  });
+});
+
+describe('generateMap', () => {
+  const original = `const a = 1;\nconst b = 2;\nexport default { title: 'A' };\n`;
+  // An earlier transform: drops the first line and maps the result back to `original`.
+  const transform = (source: string) => {
+    const edited = new MagicString(original).remove(0, original.indexOf('\n') + 1);
+    return {
+      code: edited.toString(),
+      map: edited.generateMap({ hires: true, source, includeContent: true }),
+    };
+  };
+  const editOf = (editor: SourceEditor) =>
+    editor.edits.appendLeft(editor.code.indexOf('export'), 'const c = 3;\n');
+  const entryOf = (map: object, code: string, token: string) => {
+    const line = code.split('\n').findIndex((text) => text.includes(token));
+    return new NodeSourceMap(map as ConstructorParameters<typeof NodeSourceMap>[0]).findEntry(
+      line,
+      code.split('\n')[line].indexOf(token)
+    );
+  };
+
+  it('keeps the names of a two-source input map whose first source is unused', () => {
+    const { code, map } = transform('real.ts');
+    const unused = {
+      ...map,
+      sources: ['unused.ts', 'real.ts'],
+      sourcesContent: [null, original],
+      mappings: encode(
+        decode(map.mappings).map((line) =>
+          line.map(
+            (segment) =>
+              (segment.length > 1 ? [segment[0], 1, segment[2]!, segment[3]!] : segment) as never
+          )
+        )
+      ),
+    };
+    const editor = new SourceEditor(code, 'out.ts');
+    editOf(editor);
+    const result = editor.generateMap({ inputSourceMap: unused });
+    expect(result.sources).toEqual(['real.ts']);
+    expect(result.sourcesContent).toEqual([original]);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalSource: 'real.ts',
+      originalLine: 2,
+    });
+  });
+
+  it('keeps sourceRoot and the names relative to it', () => {
+    const { code, map } = transform('Button.stories.tsx');
+    const editor = new SourceEditor(code, 'out.ts');
+    editOf(editor);
+    const result = editor.generateMap({
+      inputSourceMap: { ...map, sourceRoot: 'webpack:///src/' },
+    });
+    expect(result.sources).toEqual(['Button.stories.tsx']);
+    expect(result.sourceRoot).toBe('webpack:///src/');
+  });
+
+  it('names the source as requested after a committed edit', () => {
+    const editor = new SourceEditor(original, 'file.ts');
+    editOf(editor);
+    editor.commit();
+    editor.edits.appendLeft(0, '// header\n');
+    const result = editor.generateMap({ source: 'Custom.tsx' });
+    expect(result.sources).toEqual(['Custom.tsx']);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalSource: 'Custom.tsx',
+      originalLine: 2,
+    });
   });
 });

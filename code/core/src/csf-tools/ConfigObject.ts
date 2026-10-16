@@ -7,7 +7,6 @@ import {
   type ObjectRoot,
   createCsfObject,
   literalRoot,
-  valueSource,
 } from './CsfObject.ts';
 import {
   type E,
@@ -29,6 +28,7 @@ import {
   removeStatement,
 } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
+import { valueSource } from './estree/values.ts';
 
 type Span = { start: number; end: number };
 

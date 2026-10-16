@@ -3,12 +3,8 @@ import {
   type Node,
   type Property,
   type SourceLocation,
-  isIdentifier,
-  isNode,
-  isNumericLiteral,
   locationOf,
   expressionFromSource,
-  parseModule,
   staticKey,
   textOf,
   unwrapExpression,
@@ -16,10 +12,9 @@ import {
 import {
   type SourceEditor,
   appendMembers,
-  functionFromMethod,
+  groupMembers,
   isSpan,
   keySource,
-  memberText,
   prependMembers,
   printKey,
   printValue,
@@ -27,10 +22,19 @@ import {
   renameKey,
   renamedMemberText,
   replaceValue,
-  separatorBefore,
 } from './estree/editor.ts';
+import {
+  type CsfValue,
+  UNRESOLVED,
+  isAstLike,
+  isEvaluationInert,
+  placeableSource,
+  readValue,
+  resolveExpression,
+  valueSource,
+} from './estree/values.ts';
 
-import { visitorKeys } from 'oxc-parser';
+export type { CsfValue };
 
 export type CsfObjectTarget =
   | { kind: 'config' }
@@ -68,15 +72,6 @@ export type CsfMutationResult =
   | { ok: true; changed: boolean }
   | { ok: false; changed: false; diagnostic: CsfMutationDiagnostic };
 
-export type CsfValue =
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | readonly CsfValue[]
-  | { readonly [key: string]: CsfValue };
-
 /**
  * An expression detached from any file, as returned by `get` and accepted by `set` and
  * `transform`. It is a plain OXC ESTree node; its source is kept alongside it, so a value read from
@@ -93,21 +88,6 @@ export type CsfExpression = E.Expression;
  * ```
  */
 export const parseExpression = (code: string): CsfExpression => expressionFromSource(code);
-
-// An object that looks like an AST node rather than data: a node type Babel or ESTree would produce.
-const AST_TYPE =
-  /^(?:TS|JSX)?[A-Z]\w*(?:Expression|Literal|Statement|Declaration|Identifier|Pattern|Property|Specifier|Element|Fragment|Template|Block)$/;
-
-const isAstLike = (value: unknown): value is Node =>
-  isNode(value) && (value.type in visitorKeys || AST_TYPE.test(value.type));
-
-// Source text ready to be placed as a value: a comma expression keeps its parentheses, and a
-// trailing line comment ends its line so the code after it survives.
-const placeableSource = (source: string, type: string) => {
-  const text = type === 'SequenceExpression' && !source.startsWith('(') ? `(${source})` : source;
-  const lastComment = parseModule(`(${text}\n)`).comments.at(-1);
-  return lastComment?.type === 'Line' && lastComment.end === text.length + 1 ? `${text}\n` : text;
-};
 
 /** Source of an expression returned by `get` or `parseExpression`, or of any node inside one. */
 export const printExpression = (node: Node): string => {
@@ -306,39 +286,13 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
   remove: (members) => removeMembers(editor, object, members),
   replaceValue: (member, text) => replaceValue(editor, member, text),
   rename: (member, key) => renameKey(editor, member, printKey(key, editor.quote)),
-  group: (members, key) => {
-    const texts = members.map((member) => memberText(editor, object, member));
-    const first = object.properties.indexOf(members[0]);
-    const multiline = editor.code.slice(object.start, object.end).includes('\n');
-    removeMembers(editor, object, members.slice(1));
-    const before = editor.code.slice(0, members[0].start);
-    const indent = /[ \t]*$/.exec(before.slice(before.lastIndexOf('\n') + 1))![0];
-    const inner = multiline
-      ? `{\n${texts.map((text) => `${indent}  ${text.split('\n').join(`\n${indent}  `)},`).join('\n')}\n${indent}}`
-      : `{ ${texts.join(', ')} }`;
-    // Leading comments of the first member move into the group with it.
-    const start = separatorBefore(editor.code, object, first);
-    const lead = multiline ? `\n${indent}` : ' ';
-    editor.edits.overwrite(
-      start,
-      members[0].end,
-      `${lead}${printKey(key, editor.quote)}: ${inner}`
-    );
-  },
+  group: (members, key) => groupMembers(editor, object, members, key),
   take: (member, key) => ({
     key,
     value: valueSource(editor, member),
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
 });
-
-// Methods become function expressions.
-export const valueSource = (editor: SourceEditor, member: Property) =>
-  member.method || member.kind !== 'init'
-    ? functionFromMethod(editor, member)
-    : editor.source(member.value);
-
-const UNRESOLVED = Symbol('unresolved');
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
@@ -392,40 +346,6 @@ const lookupProperty = (
     return { ok: false, code: unproven.code, node: unproven.node };
   }
   return { ok: true, property: matches[0] };
-};
-
-const isEvaluationInert = (node: Node): boolean => {
-  const value = unwrapExpression(node);
-  if (value.type === 'TemplateLiteral') {
-    return value.expressions.length === 0;
-  }
-  if (
-    value.type === 'Literal' ||
-    value.type === 'FunctionExpression' ||
-    value.type === 'ArrowFunctionExpression'
-  ) {
-    return true;
-  }
-  if (value.type === 'UnaryExpression') {
-    return ['!', 'void', 'typeof'].includes(value.operator)
-      ? isEvaluationInert(value.argument)
-      : isNumericLiteral(unwrapExpression(value.argument));
-  }
-  if (value.type === 'ArrayExpression') {
-    return value.elements.every((element) => element === null || isEvaluationInert(element));
-  }
-  if (value.type === 'ObjectExpression') {
-    return value.properties.every(
-      (property) =>
-        property.type === 'Property' &&
-        property.kind === 'init' &&
-        !property.method &&
-        !property.computed &&
-        staticKey(property) !== undefined &&
-        isEvaluationInert(property.value)
-    );
-  }
-  return false;
 };
 
 class CsfObjectEditor implements CsfObject {
@@ -483,7 +403,7 @@ class CsfObjectEditor implements CsfObject {
   getValue(path: readonly string[]): CsfValue {
     const root = this.rootNodeFor(path);
     if (root) {
-      const value = this.readValue(root);
+      const value = readValue(this.editor.scopes, root);
       if (value === UNRESOLVED) {
         this.failure('unsupported-value', path, root);
         return undefined;
@@ -498,7 +418,7 @@ class CsfObjectEditor implements CsfObject {
       this.failure('unsupported-value', path, property);
       return undefined;
     }
-    const value = this.readValue(property.value);
+    const value = readValue(this.editor.scopes, property.value);
     if (value === UNRESOLVED) {
       this.failure('unsupported-value', path, property.value);
       return undefined;
@@ -703,7 +623,7 @@ class CsfObjectEditor implements CsfObject {
       if (!inspected.property) {
         return { ok: true, changed: false };
       }
-      const value = this.resolveExpression(inspected.property.value);
+      const value = resolveExpression(this.editor.scopes, inspected.property.value);
       if (value?.type !== 'ObjectExpression') {
         return this.failure('unsupported-member', path, inspected.property);
       }
@@ -856,7 +776,7 @@ class CsfObjectEditor implements CsfObject {
       ) {
         return;
       }
-      const value = this.resolveExpression(ancestor.property.value);
+      const value = resolveExpression(this.editor.scopes, ancestor.property.value);
       if (value?.type !== 'ObjectExpression' || value.properties.length > 0) {
         return;
       }
@@ -881,110 +801,6 @@ class CsfObjectEditor implements CsfObject {
     return path.slice(this.prefix.length);
   }
 
-  private readValue(node: Node): CsfValue | typeof UNRESOLVED {
-    const value = this.resolveExpression(node);
-    if (!value) {
-      return UNRESOLVED;
-    }
-    if (value.type === 'Literal') {
-      if ('regex' in value || 'bigint' in value) {
-        return UNRESOLVED;
-      }
-      return (value as E.StringLiteral | E.NumericLiteral | E.BooleanLiteral | E.NullLiteral).value;
-    }
-    if (value.type === 'Identifier') {
-      return value.name === 'undefined' ? undefined : UNRESOLVED;
-    }
-    if (value.type === 'TemplateLiteral' && value.expressions.length === 0) {
-      return value.quasis[0].value.cooked ?? UNRESOLVED;
-    }
-    if (value.type === 'UnaryExpression') {
-      const argument = this.readValue(value.argument);
-      if (typeof argument !== 'number') {
-        return UNRESOLVED;
-      }
-      if (value.operator === '-') {
-        return -argument;
-      }
-      return value.operator === '+' ? argument : UNRESOLVED;
-    }
-    if (value.type === 'ArrayExpression') {
-      const elements: CsfValue[] = [];
-      for (const element of value.elements) {
-        if (!element) {
-          elements.length++;
-          continue;
-        }
-        const item = this.readValue(element.type === 'SpreadElement' ? element.argument : element);
-        if (item === UNRESOLVED) {
-          return UNRESOLVED;
-        }
-        if (element.type === 'SpreadElement') {
-          if (!Array.isArray(item)) {
-            return UNRESOLVED;
-          }
-          elements.push(...item);
-        } else {
-          elements.push(item);
-        }
-      }
-      return elements;
-    }
-    if (value.type === 'ObjectExpression') {
-      const entries: [string, CsfValue][] = [];
-      for (const property of value.properties) {
-        if (property.type === 'SpreadElement') {
-          const spread = this.readValue(property.argument);
-          if (typeof spread !== 'object' || spread === null || Array.isArray(spread)) {
-            return UNRESOLVED;
-          }
-          entries.push(...Object.entries(spread));
-          continue;
-        }
-        const key = staticKey(property);
-        if (
-          property.kind !== 'init' ||
-          property.method ||
-          key === undefined ||
-          (key === '__proto__' && !property.computed)
-        ) {
-          return UNRESOLVED;
-        }
-        const item = this.readValue(property.value);
-        if (item === UNRESOLVED) {
-          return UNRESOLVED;
-        }
-        entries.push([key, item]);
-      }
-      return Object.fromEntries(entries);
-    }
-    return UNRESOLVED;
-  }
-
-  private resolveExpression(node: Node): Node | undefined {
-    let value = unwrapExpression(node);
-    const visited = new Set<Node>();
-    while (isIdentifier(value) && !visited.has(value)) {
-      visited.add(value);
-      const binding = this.editor.scopes.bindingOf(value);
-      if (!binding && value.name === 'undefined') {
-        return value;
-      }
-      if (
-        !binding?.constant ||
-        binding.references.length !== 1 ||
-        binding.references[0] !== value ||
-        binding.node.type !== 'VariableDeclarator' ||
-        binding.node.id.type !== 'Identifier' ||
-        !binding.node.init
-      ) {
-        return undefined;
-      }
-      value = unwrapExpression(binding.node.init);
-    }
-    return value;
-  }
-
   private inspect(
     path: readonly string[]
   ):
@@ -1005,7 +821,7 @@ class CsfObjectEditor implements CsfObject {
       if (property.method) {
         return { ok: false, code: 'unsupported-member', node: property };
       }
-      const value = this.resolveExpression(property.value);
+      const value = resolveExpression(this.editor.scopes, property.value);
       if (value?.type !== 'ObjectExpression') {
         return { ok: false, code: 'unsupported-member', node: property.value };
       }
@@ -1044,7 +860,7 @@ class CsfObjectEditor implements CsfObject {
       }
       const value = lookup.property.method
         ? undefined
-        : this.resolveExpression(lookup.property.value);
+        : resolveExpression(this.editor.scopes, lookup.property.value);
       if (value?.type !== 'ObjectExpression') {
         throw new Error('CsfObject mutation preflight was invalidated');
       }

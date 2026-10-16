@@ -631,6 +631,28 @@ export const appendMembers = (editor: SourceEditor, object: E.ObjectExpression, 
 export const prependMembers = (editor: SourceEditor, object: E.ObjectExpression, texts: string[]) =>
   prependToList(editor, objectList(object), texts);
 
+/** Replace contiguous members with `key: { …members }`, keeping the first member's comments. */
+export const groupMembers = (
+  editor: SourceEditor,
+  object: E.ObjectExpression,
+  members: Property[],
+  key: string
+) => {
+  const texts = members.map((member) => memberText(editor, object, member));
+  const first = object.properties.indexOf(members[0]);
+  const multiline = editor.code.slice(object.start, object.end).includes('\n');
+  removeMembers(editor, object, members.slice(1));
+  const before = editor.code.slice(0, members[0].start);
+  const indent = /[ \t]*$/.exec(before.slice(before.lastIndexOf('\n') + 1))![0];
+  const inner = multiline
+    ? `{\n${texts.map((text) => `${indent}  ${text.split('\n').join(`\n${indent}  `)},`).join('\n')}\n${indent}}`
+    : `{ ${texts.join(', ')} }`;
+  // Leading comments of the first member move into the group with it.
+  const start = separatorBefore(editor.code, object, first);
+  const lead = multiline ? `\n${indent}` : ' ';
+  editor.edits.overwrite(start, members[0].end, `${lead}${printKey(key, editor.quote)}: ${inner}`);
+};
+
 export const removeMembers = (
   editor: SourceEditor,
   object: E.ObjectExpression,

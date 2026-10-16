@@ -672,10 +672,15 @@ class CsfObjectEditor implements CsfObject {
     }
 
     const moved = source.parent.root.take(source.property, key);
-    source.parent.root.remove([source.property]);
-    this.commit();
+    // Insert first: if that throws, nothing has been committed. The source is removed afterwards,
+    // looked up again since the insertion moved its spans.
     this.insert(destinationPath, [{ ...moved, key }]);
     this.commit();
+    const remaining = this.inspect(sourcePath);
+    if (remaining.ok !== false && remaining.property && remaining.parent) {
+      remaining.parent.root.remove([remaining.property]);
+      this.commit();
+    }
     this.removeEmptyParents(sourcePath);
     return this.success();
   }

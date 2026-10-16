@@ -404,3 +404,24 @@ The bench also carries unit tests for its own aggregation, reporting and generat
 ## What does not live here
 
 - Framework provider code lives in each framework's own package.
+
+### Svelte sweep import evidence
+
+Record story sources before each build, from the same checkout used by that build:
+
+```sh
+node code/lib/docgen-harness/src/sandbox-baselines/capture/record-story-sources.ts /path/to/project /path/to/sources.json
+```
+
+Then build Storybook and pass `--sources /path/to/sources.json` to the usual
+`baselines:sandbox --capture legacy` or `--capture server` command. The manifest
+records tracked and untracked `*.stories.*` and `*.story.*` sources. Capture checks
+each indexed story against its pre-build source text, SHA and digest. A source
+edit after recording fails capture. Keep the manifest with the build evidence.
+
+The Svelte sweep comparison counts accepted text equivalence, named snippet
+children, default and event omissions, preserved bindings with initialized
+local declarations, and exact callable classification in both reports. Callable
+classification requires the complete baseline `other.value` to survive unchanged
+in the candidate's `function.raw`. Root changes and union text changes remain
+findings. Rootless HTML handlers still require text equivalence.

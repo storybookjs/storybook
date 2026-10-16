@@ -317,6 +317,7 @@ export const Checklist = ({
                     <SectionHeading>{title}</SectionHeading>
                     <Actions>
                       <ToggleButton
+                        ariaLabel={title}
                         {...toggleProps}
                         data-target-id={`toggle-${id}`}
                         variant="ghost"

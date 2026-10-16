@@ -155,7 +155,9 @@ export const TourTooltip: FC<TooltipProps> = ({
           {index + 1} of {size}
         </Count>
         {!step.hideNextButton && (
-          <NextButton {...primaryProps}>{index + 1 === size ? 'Done' : 'Next'}</NextButton>
+          <NextButton ariaLabel={primaryProps['aria-label']} {...primaryProps}>
+            {index + 1 === size ? 'Done' : 'Next'}
+          </NextButton>
         )}
       </TooltipFooter>
     </TooltipBody>

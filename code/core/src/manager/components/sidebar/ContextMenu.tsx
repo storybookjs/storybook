@@ -1,7 +1,7 @@
-import type { ComponentProps, FC, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React, { memo, useCallback, useMemo } from 'react';
 
-import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import { PopoverProvider } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -14,12 +14,13 @@ import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 import type { API } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
-import type { Link, NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import type { MenuItem } from '../../container/Menu.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { isStoryRow } from '../../utils/tree.ts';
 
 import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
+import { type SidebarMenuItem, SidebarMenuList } from './Menu.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
 /** How the user opened a context menu. A keyboard open prepends a nav link item and autofocuses it. */
@@ -108,8 +109,8 @@ export const ContextMenu: FC<{
       content: exportName,
     });
 
-    const topLinks = useMemo<Link[]>(() => {
-      const defaultLinks: NormalLink[] = [];
+    const topLinks = useMemo<MenuItem[]>(() => {
+      const defaultLinks: MenuItem[] = [];
 
       // Add a navigation link at the top when the menu opens from the keyboard.
       // Keyboard-only users then have a way to open a story that has child tests.
@@ -201,7 +202,9 @@ export const ContextMenu: FC<{
         defaultVisible={false}
         visible={isOpen}
         onVisibleChange={setIsOpen}
-        popover={<ContextMenuContent context={context} links={topLinks} />}
+        popover={({ onHide }) => (
+          <ContextMenuContent context={context} links={topLinks} onHide={onHide} />
+        )}
         hasChrome={true}
         padding={0}
       >
@@ -224,38 +227,27 @@ export const ContextMenu: FC<{
 ContextMenu.displayName = 'ContextMenu';
 
 /**
- * The body of the sidebar context menu, rendered as a tooltip link list. It reads the registered
- * test providers on every render, so the provider links stay current, and it renders them below
- * the given links.
+ * The body of the sidebar context menu. It reads the registered test providers on every render, so
+ * the provider links stay current, and it renders them below the given links.
  */
-const ContextMenuContent: FC<
-  {
-    context: API_HashEntry;
-  } & ComponentProps<typeof TooltipLinkList>
-> = ({ context, links, ...rest }) => {
+const ContextMenuContent: FC<{
+  context: API_HashEntry;
+  links: SidebarMenuItem[];
+  onHide: () => void;
+}> = ({ context, links, onHide }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
-  const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+  const providerLinks = generateTestProviderLinks(registeredTestProviders, context);
 
-  /**
-   * The context menu can take a list of lists of links, so that the links are grouped and separated
-   * by a line separator, so we need to make sure that links are contained within arrays (but not
-   * more than one level deep)
-   */
-  const groups: Link[][] =
-    Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
-
-  const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
-
-  return <TooltipLinkList {...rest} links={all} />;
+  return <SidebarMenuList menu={[links, providerLinks]} onHide={onHide} />;
 };
 
 type ExcludesNull = <T>(x: T | null) => x is T;
 export function generateTestProviderLinks(
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry
-): Link[] {
+): SidebarMenuItem[] {
   return Object.entries(registeredTestProviders)
     .map(([testProviderId, state]) => {
       if (!state) {

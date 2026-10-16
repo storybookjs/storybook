@@ -27,13 +27,9 @@ export function customArgsTypes(editor: SourceEditor, component: Node | undefine
     }
   }
 
-  // Whitespace and comments do not make two types different.
+  // Two types are the same when their trees are, whatever the spacing and comments around them.
   const code = (type: Node) =>
-    editor
-      .source(type)
-      .replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    JSON.stringify(type, (key, value) => (key === 'start' || key === 'end' ? undefined : value));
 
   const componentCode = component && code(component);
 

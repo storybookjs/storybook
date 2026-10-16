@@ -1141,6 +1141,33 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('tells custom args types apart by their string literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ href: 'http://x' }>;
+            export default meta;
+
+            export const Same: StoryObj<{ href: 'http://x' }> = {};
+            export const Spaced: StoryObj<{ href: 'http://x' } & { label: 'a  b' }> = {};
+            export const Single: StoryObj<{ href: /* c */ 'http://x' } & { label: 'a b' }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview
+            .type<{ args: { href: "http://x" } }>()
+            .meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Spaced = meta.type<{ args: { label: "a  b" } }>().story();
+          export const Single = meta.type<{ args: { label: "a b" } }>().story();
+        `);
+      });
+
       it('keeps a Storybook type that the custom args type is built from', async () => {
         await expect(
           transform(dedent`

@@ -16,6 +16,27 @@ describe('evaluateArgExpression', () => {
       )
     ).toBe(`helper(\n  'x',\n  2,\n)`);
   });
+
+  it('keeps trailing whitespace inside a template literal', () => {
+    expect(evaluateArgExpression(expressionFromSource('helper(`a  \nb`)'), [])).toBe(
+      'helper(`a  \nb`)'
+    );
+  });
+
+  it('drops the whitespace before a trailing comment in a CRLF file', () => {
+    expect(
+      evaluateArgExpression(
+        expressionFromSource(`helper(\r\n      'x', // trailing\r\n      2,\r\n    )`),
+        []
+      )
+    ).toBe(`helper(\n  'x',\n  2,\n)`);
+  });
+
+  it('keeps the tokens around a removed comment apart', () => {
+    expect(evaluateArgExpression(expressionFromSource('a/* c */instanceof B'), [])).toBe(
+      'a instanceof B'
+    );
+  });
 });
 
 describe('argFieldValue', () => {

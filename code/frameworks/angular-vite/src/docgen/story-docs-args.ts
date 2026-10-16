@@ -80,16 +80,23 @@ const printArgSource = (source: string): string => {
 };
 
 const withoutComments = (code: string): string => {
-  const wrapped = `(${code}\n)`;
+  const wrapped = `(${code.replace(/\r\n/g, '\n')}\n)`;
   const { comments } = parseModule(wrapped);
   let result = '';
   let cursor = 0;
   for (const comment of comments) {
     result += wrapped.slice(cursor, comment.start);
     cursor = comment.end + /^[ \t]*/.exec(wrapped.slice(comment.end))![0].length;
+    if (wrapped[cursor] === '\n') {
+      // A comment that ended its line takes the whitespace before it along.
+      result = result.replace(/[ \t]+$/, '');
+    } else if (/[\w$]$/.test(result) && /[\w$]/.test(wrapped[cursor])) {
+      // `a/* c */instanceof B` stays two tokens.
+      result += ' ';
+    }
   }
   result += wrapped.slice(cursor);
-  return result.slice(1, -2).replace(/[ \t]+\n/g, '\n');
+  return result.slice(1, -2);
 };
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.

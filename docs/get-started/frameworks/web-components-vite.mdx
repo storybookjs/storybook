@@ -42,72 +42,41 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ## Configure
 
-Storybook for Web components with Vite works without extra configuration. It reads your elements from your sources. The sections below cover what you get by default, the optional manifest escape hatch, and the framework options.
+Storybook for Web components with Vite works without extra configuration. It reads your elements from your sources, so your JSDoc comments become controls and documentation. The sections below cover how to write stories for an element and the framework options.
 
-### Component documentation
+### Writing stories
 
-Docgen reads your elements from your sources, with no setup. Your JSDoc comments on elements, attributes, properties, events, slots and CSS API reach [automatic documentation](../../writing-docs/autodocs.mdx) and the [controls](../../essentials/controls.mdx) table. If your project already produces a Custom Elements Manifest, you can hand it to Storybook instead; see [Providing your own manifest](#providing-your-own-manifest).
+Set `component` to the element's tag name and import the module that defines it. Storybook reads the element's attributes, properties, events, slots, CSS custom properties, CSS parts and CSS states, and turns them into controls and [automatic documentation](../../writing-docs/autodocs.mdx), with your JSDoc comments as descriptions.
 
-Docgen runs on the Storybook server and powers controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx). Your sources and any manifest file are watched, so edits show up while Storybook runs.
-
-Attributes, properties, events, slots, CSS custom properties, CSS parts and CSS states from the manifest become argTypes. Event, slot, part and state arg keys are suffixed, such as `my-change-event`, `default-slot`, `panel-part` and `active-state`, so they never collide with attributes. CSS custom properties keep their `--name` key.
-
-For docgen to attach to a story, `meta.component` must be the tag name string, such as `component: 'demo-card'`. Metas without `component` get no docgen, and their stories show the story source in the Code panel.
-
-#### Built-in generator
-
-Nothing to set up. Storybook's built-in generator reads the elements your stories import from your TypeScript or JavaScript sources. It understands Lit and plain `HTMLElement` elements and ships with `@storybook/web-components`.
-
-For each tag, Storybook searches your sources in this order:
-
-1. The file that defined the tag last time.
-2. The story file and the files reachable through its imports.
-3. The preview file and the files reachable through its imports.
-4. The tsconfig files whose sources contain the tag as a string literal.
-
-Storybook selects the tsconfig for each story file, so monorepos and project references work. For a JavaScript project without a tsconfig, it scans only the story's folder.
-
-Editing an element updates its controls and descriptions while Storybook runs. If the generator or TypeScript fails to load, Storybook warns once and manifest docgen keeps working.
-
-#### Providing your own manifest
-
-You do not need a manifest. Provide one only when you already ship one with your package, when you want your library's own analyzer plugins (FAST, Stencil, Catalyst), or when you want the same manifest in Storybook and in your build. Any tool that writes a Custom Elements Manifest (`schemaVersion` 1.x or 2.x) works.
-
-Point Storybook at the file:
-
-<CodeSnippets path="web-components-main-config-custom-elements-manifest.md" />
-
-Manifests you provide win over your sources. Storybook reads `framework.options.customElementsManifest`, relative to the Storybook config directory, or else the `customElements` field in the nearest `package.json`, relative to that `package.json`. Tags your manifests do not declare still come from the built-in generator. The manifest file is watched, so regenerating it updates Storybook while it runs.
-
-Generate the manifest with the plugin that matches how your elements declare their attributes, such as `--litelement` when running `@custom-elements-manifest/analyzer` on Lit elements. Without it, decorator-declared attributes such as Lit's `@property()` are missing from the manifest, and Storybook cannot pair those args with attributes.
-
-#### Warnings
-
-If Storybook cannot read complete metadata, it reports the problem in the Controls table for the affected component and in the tools CLI (`npx storybook tools docs show`). These messages do not fail the build.
-
-- Missing manifest file: `Custom Elements Manifest <path> not found yet; docs load once the analyzer writes it`
-- Tag not found in manifests or sources: `No declaration for "<tag>" was found from story file <story> and preview file <preview>. Searched the tsconfig files covering those files: <tsconfigs>. Import the element module in the story or configure customElementsManifest.`
-- Older web-component-analyzer manifest shape: `<path> uses the web-component-analyzer manifest shape. The Storybook docgen server reads Custom Elements Manifests only; generate one with @custom-elements-manifest/analyzer.`
-
-The tag-not-found message includes `and preview file <preview>` only when a preview file exists. `<tsconfigs>` is `none` when no tsconfig covers the files.
-
-If a watched manifest becomes invalid after Storybook has loaded a valid version, Storybook keeps the last valid version and reports a warning that ends with `; using the last valid version`.
-
-#### Story snippets
-
-With server-side docgen, Storybook generates snippets for the Code panel and the `docs-show` MCP tool from the story file. Args stories become one element with attributes from args: booleans print bare, objects print as JSON, CSS custom properties go into `style`, parts and states go into a leading `<style>` block, `*-slot` args become children, and listeners become a trailing `<script>` with `addEventListener` calls.
-
-For stories with a `render`, Storybook reads and resolves common template shapes before re-indenting the output:
-
-- Reads Lit `html` templates, untagged template literals and strings.
-- Resolves `args.x`, destructured parameters, aliases declared in the render body, `ifDefined`, `nothing`, literal ternaries and nested templates.
-- Prints `?attr` bare when truthy and drops it when falsy, prints `.prop` as its paired attribute, and adds `@event` to the listener script.
-
-A `render` function that builds DOM in code falls back to the args form, and authored `parameters.docs.source.code` supplies the snippet directly.
-
-Args stories generate HTML from their args:
+Args stories render the element from its args:
 
 <CodeSnippets path="web-components-story-snippet-args.md" />
+
+Args map to the element by key. Event, slot, part and state keys carry a suffix so they never collide with attributes:
+
+| Element API         | Arg key                                       | Example                                      | Rendered as                                              |
+| ------------------- | --------------------------------------------- | -------------------------------------------- | -------------------------------------------------------- |
+| Attribute           | the attribute name                            | `heading: 'Hello'`                           | `heading="Hello"`; `true` sets it bare, `false` omits it |
+| Property            | the property name                             | `items: ['a', 'b']`                          | `element.items = ['a', 'b']`                             |
+| Event               | `<name>-event`                                | `'my-change-event': () => {}`                | a listener for `my-change`                               |
+| Slot                | `<name>-slot`, `default-slot` for the default | `'actions-slot': '<button>Confirm</button>'` | children with `slot="actions"`                           |
+| CSS part            | `<name>-part`                                 | `'panel-part': 'color: rebeccapurple;'`      | a `::part(panel)` rule                                   |
+| CSS state           | `<name>-state`                                | `'active-state': 'opacity: 0.5;'`            | a `:state(active)` rule                                  |
+| CSS custom property | `--name`                                      | `'--panel-color': 'teal'`                    | `style="--panel-color: teal"`                            |
+
+To control the markup yourself, write a `render` function with Lit's `html`:
+
+<CodeSnippets path="web-components-story-snippet-template.md" />
+
+To listen to an event, pass a function as the event arg:
+
+<CodeSnippets path="web-components-story-snippet-listeners.md" />
+
+Storybook finds the element through the imports of your story file and preview file. If it cannot find or read one, it says so in the Controls table and in `npx storybook tools docs show`; the build still passes. Metas without `component`, such as the template-function `Button`, `Header` and `Page` the starter generates, get no controls from docgen and show the story source in the Code panel.
+
+### Code snippets
+
+Autodocs and the Code panel show HTML generated from your story. An args story becomes one element with its attributes, slot content and a `<style>` block; the Args story above prints as:
 
 ```html
 <style>
@@ -121,50 +90,17 @@ Args stories generate HTML from their args:
 </lit-slots-and-css>
 ```
 
-Template stories read the returned template:
+A `render` story prints its Lit template with the args filled in, and event args add a `<script>` that attaches the listeners. Snippets show the story as you wrote it; changing a control updates the rendered element but not the snippet.
 
-<CodeSnippets path="web-components-story-snippet-template.md" />
+When a snippet cannot represent something, such as a Lit directive or a property with no matching attribute, Storybook shows a warning above it instead. Set `parameters.docs.source.code` to write the snippet yourself, or set it to `null` to hide it. See the [Source block](../../api/doc-blocks/doc-block-source.mdx) page for the full API.
 
-```html
-<lit-slots-and-css heading="Projected">
-  <p>Default slot content</p>
-  <button slot="actions">Confirm</button>
-</lit-slots-and-css>
-```
+### Custom Elements Manifest
 
-Listener args add a script after the element:
+You do not need one. If your project already ships a [Custom Elements Manifest](https://github.com/webcomponents/custom-elements-manifest), point Storybook at it and it is used instead of your sources for the elements it declares:
 
-<CodeSnippets path="web-components-story-snippet-listeners.md" />
+<CodeSnippets path="web-components-main-config-custom-elements-manifest.md" />
 
-```html
-<lit-events value="changed"></lit-events>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('my-change', () => {});
-  }
-</script>
-```
-
-`parameters.docs.source.code` always wins, and `parameters.docs.source.code: null` disables the snippet. See the [Source block](../../api/doc-blocks/doc-block-source.mdx) page for the full `parameters.docs.source` API.
-
-Storybook reports a warning above the snippet instead of printing values it cannot represent. Warnings cover directives such as `classMap` or `repeat`, properties with no paired attribute, args the template never uses, imported arg values, and render functions that build DOM in code.
-
-## Known limitations
-
-### Code snippets do not follow your controls
-
-The snippets shown in autodocs and the Code panel are generated from your story's source, so they show the story as you wrote it. Changing a value in the controls table updates the rendered component but not the snippet next to it.
-
-### Elements must be reachable from the story
-
-The generator follows imports from your story file and preview file. An element registered in a module neither file imports is not found. Import the element module, or provide a manifest.
-
-Template-function components, like the `Button`, `Header` and `Page` the starter generates, have no custom element and therefore no docgen. Their Code panel shows the story source.
-
-### Properties without an attribute cannot be shown in HTML
-
-Properties with no paired attribute are listed in the snippet warning. Bind them through an attribute, or write the snippet yourself with `parameters.docs.source.code`.
+Storybook also picks up the `customElements` field of your `package.json`. Generate the manifest with the plugin that matches your library, such as `--litelement` for Lit, or decorator-declared attributes are missing from it.
 
 ## FAQ
 

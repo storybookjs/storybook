@@ -171,6 +171,18 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('wraps a sequence expression unless its own parentheses already enclose it', () => {
+    const csf = parse(`export default { b: ((1), 2) };`);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.set(['c'], meta.get(['b'])!)).toEqual({ ok: true, changed: true });
+    expect(meta.set(['d'], parseExpression('((1), 2)'))).toEqual({ ok: true, changed: true });
+    expect(meta.set(['e'], parseExpression('(1), (2)'))).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      `export default { b: ((1), 2), c: ((1), 2), d: ((1), 2), e: ((1), (2)) };`
+    );
+  });
+
   it('edits a local object referenced by a story and cleans up the empty parent', () => {
     const csf = parse(
       `const a11y = { element: '#root' }; export default {}; export const Story = { parameters: { a11y } };`

@@ -20,7 +20,7 @@ const Versions = {
   MAJOR: 'MAJOR',
 };
 
-const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
+const ciLabels = ['ci:focus', 'ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
 const trustedReviewerTeams = {
   org: 'storybookjs',

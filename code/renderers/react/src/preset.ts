@@ -146,6 +146,12 @@ export async function internal_getArgTypesData(
 }
 
 export const optimizeViteDeps: string[] = [
+  // The vitest project-annotations setup file imports this renderer's entry previews through a
+  // virtual module, and those chunks import React by the bare specifier. In the observed failure
+  // (react 19.3.1, vite 7.3.7, vitest 5.0.5, chromium browser mode) the dependency scan had not
+  // registered plain `react`, so the browser loaded react's CJS index.js raw and module linking
+  // failed with "The requested module 'react/index.js' does not provide an export named 'default'".
+  'react',
   'react-dom/client',
   'react-dom/test-utils',
   'react/jsx-runtime',

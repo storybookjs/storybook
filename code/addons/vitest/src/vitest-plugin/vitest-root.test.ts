@@ -76,7 +76,7 @@ async function getPluginConfig(invokingRoot: string, inputTestConfig?: InlineCon
     throw new Error('The plugin config hook returned no test config');
   }
 
-  return { root: config.root, test: config.test, optimizeDeps: config.optimizeDeps, plugin };
+  return { root: config.root, test: config.test, plugin };
 }
 
 describe('story test patterns', () => {
@@ -142,38 +142,6 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
-  });
-});
-
-describe('dependency prebundling', () => {
-  // The project-annotations setup file loads the framework renderer's entry previews through a
-  // virtual module, and the renderer chunks contain a bare `import React from 'react'`. Browser
-  // mode pre-bundles only the explicit `include` entries — there is no HTML-entry discovery — so
-  // when `react` itself is missing from that list the browser loads react's CJS index.js raw and
-  // module linking fails with "The requested module 'react/index.js' does not provide an export
-  // named 'default'".
-  it('prebundles react when the framework renders react components', async () => {
-    const { optimizeDeps } = await getPluginConfig(REPO_ROOT);
-
-    expect(optimizeDeps?.include).toContain('react');
-  });
-
-  describe('non-react frameworks', () => {
-    beforeEach(() => {
-      const applyPreset = presetApply.getMockImplementation()!;
-      presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
-        if (key === 'framework') {
-          return { name: '@storybook/vue3-vite' };
-        }
-        return applyPreset(key, fallback);
-      });
-    });
-
-    it('does not prebundle react', async () => {
-      const { optimizeDeps } = await getPluginConfig(REPO_ROOT);
-
-      expect(optimizeDeps?.include).not.toContain('react');
-    });
   });
 });
 

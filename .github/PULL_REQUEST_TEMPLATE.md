@@ -4,7 +4,12 @@ Closes #
 
 <!--
 
-Thank you for contributing to Storybook! Please submit all PRs to the `next` branch unless they are specific to the current release. Storybook maintainers cherry-pick bug and documentation fixes into the `main` branch as part of the release process, so you shouldn't need to worry about this. For additional guidance: https://storybook.js.org/docs/contribute
+Thank you for contributing to Storybook! 
+Please submit all PRs to the `next` branch unless they are specific to the current release. 
+
+Storybook maintainers cherry-pick bug and documentation fixes into the `main` branch as part of the release process, so you shouldn't need to worry about this. For additional guidance: https://storybook.js.org/docs/contribute
+
+Please enable "Allow edit by maintainers" to allow us to help you out on your PR !
 
 -->
 
@@ -13,6 +18,8 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 <!-- Briefly describe what your PR does -->
 
 ## Checklist for Contributors
+
+- [ ] Please check [Allow edits by maintainers](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork) to make review process faster. Note that this option is not available for repositories that are owned by Github organizations.
 
 ### Testing
 

@@ -1168,6 +1168,54 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('tells custom args types apart by their bigint literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ id: 1n }>;
+            export default meta;
+
+            export const Same: StoryObj<{ id: 1n }> = {};
+            export const Other: StoryObj<{ id: 2n }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.type<{ args: { id: 1n } }>().meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Other = meta.type<{ args: { id: 2n } }>().story();
+        `);
+      });
+
+      it('leaves a namespaced component class out, as its args are inferred', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import * as Components from './components';
+
+            const meta: Meta<Components.Button & { theme: string }> = {
+              component: Components.Button,
+            };
+            export default meta;
+
+            export const A: StoryObj<Components.Button> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import * as Components from "./components";
+
+          const meta = preview.type<{ args: { theme: string } }>().meta({
+            component: Components.Button,
+          });
+
+          export const A = meta.story();
+        `);
+      });
+
       it('keeps a Storybook type that the custom args type is built from', async () => {
         await expect(
           transform(dedent`

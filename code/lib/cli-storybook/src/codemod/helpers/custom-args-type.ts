@@ -29,12 +29,40 @@ export function customArgsTypes(editor: SourceEditor, component: Node | undefine
 
   // Two types are the same when their trees are, whatever the spacing and comments around them.
   const code = (type: Node) =>
-    JSON.stringify(type, (key, value) => (key === 'start' || key === 'end' ? undefined : value));
+    JSON.stringify(type, (key, value) => {
+      if (key === 'start' || key === 'end') {
+        return undefined;
+      }
+      // JSON has no bigint; a `1n` literal's value is one.
+      return typeof value === 'bigint' ? `${value}n` : value;
+    });
 
-  const componentCode = component && code(component);
+  // `Components.Button` is a MemberExpression as a value and a TSQualifiedName as a type.
+  const dottedName = (node: Node | null | undefined): string | undefined => {
+    if (node?.type === 'Identifier') {
+      return node.name;
+    }
+    if (
+      node?.type === 'MemberExpression' &&
+      !node.computed &&
+      node.property.type === 'Identifier'
+    ) {
+      const object = dottedName(node.object);
+      return object && `${object}.${node.property.name}`;
+    }
+    if (node?.type === 'TSQualifiedName') {
+      const left = dottedName(node.left);
+      return left && `${left}.${node.right.name}`;
+    }
+    return undefined;
+  };
+
+  const componentName = dottedName(component);
 
   const isComponentClass = (type: Node | null | undefined): type is E.TSTypeReference =>
-    type?.type === 'TSTypeReference' && code(type.typeName) === componentCode;
+    type?.type === 'TSTypeReference' &&
+    componentName !== undefined &&
+    dottedName(type.typeName) === componentName;
 
   const isComponent = (type: Node | null | undefined) =>
     type?.type === 'TSTypeQuery' || isComponentClass(type);

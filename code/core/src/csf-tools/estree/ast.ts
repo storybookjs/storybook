@@ -35,28 +35,34 @@ export class EstreeParseError extends SyntaxError {
 
 type Lang = 'js' | 'jsx' | 'ts' | 'tsx';
 
-const langFor = (fileName: string): Lang => {
-  if (/\.(c|m)?tsx?$/.test(fileName)) {
-    return /x$/.test(fileName) ? 'tsx' : 'ts';
+const langFor = (fileName: string): Lang | undefined => {
+  // A Vite id's `?query` or `#hash` is not part of the extension.
+  const path = fileName.replace(/[?#].*$/, '');
+  if (/\.[cm]?tsx?$/.test(path)) {
+    return path.endsWith('x') ? 'tsx' : 'ts';
   }
-  // Files without a TS extension may still contain JSX or type syntax, and TSX accepts both.
-  return 'tsx';
+  // JavaScript files may still contain JSX or type syntax, and TSX accepts both.
+  return /\.[cm]?jsx?$/.test(path) ? 'tsx' : undefined;
 };
 
 type ParseAttempt = { module: ParsedModule } | { error: EstreeParseError; offset: number };
 
+const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
+
 const parseWith = (code: string, fileName: string | undefined, lang: Lang): ParseAttempt => {
-  const result = parseSync(fileName ?? `file.${lang}`, code, {
+  const name = fileName ?? `file.${lang}`;
+  const options = {
     lang,
     sourceType: 'module',
     preserveParens: false,
     // Duplicate declarations and legacy octals are reported like Babel did, instead of parsing
     // into a program that silently keeps the last declaration.
     showSemanticErrors: true,
-  });
-  const error = result.errors.find((diagnostic) => diagnostic.severity === 'Error');
+  } as const;
+  const result = parseSync(name, code, options);
+  const [error] = result.errors.filter((diagnostic) => diagnostic.severity === 'Error');
   if (error) {
-    const offset = error.labels?.[0]?.start ?? 0;
+    const offset = labelStart(error) ?? 0;
     return {
       error: new EstreeParseError(
         error.message,
@@ -70,12 +76,13 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
 };
 
 /**
- * Parse a module. Without a file name there is no grammar to pick: TSX accepts the most, but
- * rejects generic arrows and `<T>value` assertions that `.ts` allows, so TS is tried next and the
- * error of the parse that got further is reported.
+ * Parse a module. Without a TS or JS file extension there is no grammar to pick: TSX accepts the
+ * most, but rejects generic arrows and `<T>value` assertions that `.ts` allows, so TS is tried next
+ * and the error of the parse that got further is reported.
  */
 export const parseModule = (code: string, fileName?: string): ParsedModule => {
-  const attempt = fileName ? parseWith(code, fileName, langFor(fileName)) : parseUnnamed(code);
+  const lang = fileName === undefined ? undefined : langFor(fileName);
+  const attempt = lang ? parseWith(code, fileName, lang) : parseEither(code, fileName);
   if ('module' in attempt) {
     return attempt.module;
   }
@@ -94,12 +101,12 @@ const LEADING_COMMENTS = /^(?:\s*(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/))*/;
 // Flow reads its pragma from any comment in the file's header, including `/** @flow */` docblocks.
 const hasFlowPragma = (code: string) => /@flow\b/.test(LEADING_COMMENTS.exec(code)?.[0] ?? '');
 
-const parseUnnamed = (code: string): ParseAttempt => {
-  const tsx = parseWith(code, undefined, 'tsx');
+const parseEither = (code: string, fileName: string | undefined): ParseAttempt => {
+  const tsx = parseWith(code, fileName, 'tsx');
   if ('module' in tsx) {
     return tsx;
   }
-  const ts = parseWith(code, undefined, 'ts');
+  const ts = parseWith(code, fileName, 'ts');
   return 'module' in ts || ts.offset > tsx.offset ? ts : tsx;
 };
 

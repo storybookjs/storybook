@@ -30,6 +30,31 @@ describe('parseModule', () => {
       'in Button.stories.js'
     );
   });
+
+  it.each(['/src/api.ts?v=123', '/src/api.mts#hash', '/src/Api.vue', 'api'])(
+    'parses a generic arrow in %s',
+    (fileName) => {
+      const { program } = parseModule('export const id = <T>(value: T) => value;', fileName);
+      expect(program.body).toHaveLength(1);
+    }
+  );
+
+  it('parses JSX in a .tsx id with a query', () => {
+    const { program } = parseModule('export const a = <div />;', '/src/A.tsx?import');
+    expect(program.body).toHaveLength(1);
+  });
+
+  it('accepts a parenthesized comma expression in JSX, but not a bare one', () => {
+    const { program } = parseModule("export const a = <B label={(f(), 'x')} />;", 'a.tsx');
+    expect(program.body).toHaveLength(1);
+    expect(() =>
+      parseModule("export const a = <B label={(f(), 'x')} title={g(), 'y'} />;", 'a.tsx')
+    ).toThrow('JSX expressions may not use the comma operator (1:46)');
+  });
+
+  it('names a file without a TS or JS extension in its parse error', () => {
+    expect(() => parseModule('export const = ;', '/src/Api.vue')).toThrow('in /src/Api.vue');
+  });
 });
 
 describe('codeFrame', () => {

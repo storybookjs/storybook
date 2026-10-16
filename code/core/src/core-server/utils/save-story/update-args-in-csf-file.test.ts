@@ -507,6 +507,37 @@ describe('success', () => {
     `);
   });
   describe.each([
+    ['plain', 'export const Example: Story ='],
+    ['satisfies', 'export const Example ='],
+  ])('%s story', (shape, declaration) => {
+    test.each([false, true])(
+      'preserves inherited-name args unless supplied (update: %s)',
+      async (update) => {
+        const csf = loadCsf(
+          `
+        export default { title: 'Example' };
+        ${declaration} {
+          args: { toString: 'keep', "constructor": 'keep', label: 'before' }
+        } ${shape === 'satisfies' ? 'satisfies Story' : ''};
+      `,
+          { makeTitle }
+        ).parse();
+        const args: Record<string, unknown> = update
+          ? { label: 'after', toString: 'updated', constructor: 'updated' }
+          : { label: 'after' };
+
+        await updateArgsInCsfFile(csf.getStoryExport('Example'), args);
+
+        const code = await format(printCsf(csf).code, { parser: 'typescript' });
+        const expected = update ? 'updated' : 'keep';
+        expect(code).toContain(`toString: "${expected}"`);
+        expect(code).toContain(`constructor: "${expected}"`);
+        expect(code).toContain('label: "after"');
+      }
+    );
+  });
+
+  describe.each([
     ['without args', '{}'],
     ['with args', '{ args: { label: "keep", "data-testid": "before", 123: "before" } }'],
   ])('plain annotated story %s', (_, object) => {

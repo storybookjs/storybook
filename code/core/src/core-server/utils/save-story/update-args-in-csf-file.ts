@@ -38,7 +38,7 @@ const updateArgsObject = (obj: t.ObjectExpression, args: Record<string, t.Expres
         a.properties.forEach((p) => {
           if (t.isObjectProperty(p)) {
             const keyName = argKeyName(p.key);
-            if (keyName !== null && keyName in args) {
+            if (keyName !== null && Object.hasOwn(args, keyName)) {
               p.value = args[keyName];
               delete args[keyName];
             }
@@ -66,11 +66,7 @@ const updateArgsObject = (obj: t.ObjectExpression, args: Record<string, t.Expres
 };
 
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
-  const args = Object.fromEntries(
-    Object.entries(input).map(([k, v]) => {
-      return [k, valueToAST(v)];
-    })
-  );
+  const args = Object.fromEntries(Object.entries(input).map(([k, v]) => [k, valueToAST(v)]));
 
   const isCsf4Story =
     t.isCallExpression(node) &&

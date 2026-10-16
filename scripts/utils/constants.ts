@@ -31,10 +31,3 @@ export const SCRIPT_TIMEOUT = 5 * 60 * 1000;
  * it without loading the sandbox generator, which needs built core packages at runtime.
  */
 export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.17.0';
-
-/**
- * The npm that CI jobs install over the one bundled with the executor's Node, which trails npm's
- * releases by months and keeps resolver bugs that later releases fixed. Must satisfy
- * {@link BEFORE_SANDBOX_NPM_MIN_VERSION}.
- */
-export const CI_NPM_VERSION = BEFORE_SANDBOX_NPM_MIN_VERSION;

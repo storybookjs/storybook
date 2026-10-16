@@ -192,7 +192,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           ? [
               // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
               // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
-              npm.pin(),
+              npm.installPinnedVersion(),
               {
                 run: {
                   name: 'Generate Sandbox',

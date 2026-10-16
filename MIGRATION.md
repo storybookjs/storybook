@@ -1321,13 +1321,14 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 
 - **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow, so such files fail to index with an error that names Flow. Convert them to TypeScript or plain JavaScript.
 - `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
-- Files that automigrations and codemods rewrite (`main.ts`, `preview.ts`, story files) are written with `\n` line endings, so a file with `\r\n` line endings comes out with `\n`.
 - Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
+- `export { Missing }` of a name the file never declares is no longer a parse error, because OXC's semantic pass does not report it; the file indexes and the error surfaces when the module runs.
+- A parse error in a module that `sb.mock()` automocks under webpack now fails that module's build, where Babel's error recovery used to mock whatever it could parse.
 
 #### Changes for tooling that imports Storybook's internal entry points
 
 - `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
-- The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile._program` and `CsfFile._editor`.
+- The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile._program` and `CsfFile._editor`. `ConfigFile._ast` is removed as well; use `ConfigFile._program`, edit through `ConfigFile._editorSource` and call `ConfigFile._commit()` to apply pending edits and parse the result again.
 - `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `printExpression(node)` to read an expression's source.
 - An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf._appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`.
 - `babelParse` and `babelParseFile` are removed; use `loadCsf(code, options)` and `readCsf(fileName, options)`.

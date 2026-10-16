@@ -69,3 +69,26 @@ it('removes the line containing an empty spread', () => {
     printSvelteCsfSnippet({ code: '<Button\n  {...args}\n  primary\n/>', args: {}, argTypes: {} })
   ).toBe('<Button\n  primary\n/>');
 });
+
+it('preserves expressions in spreads, attributes, text and quoted strings', () => {
+  expect(
+    printSvelteCsfSnippet({
+      code: '<Panel {...args} value={args.data} title="Rows: {args.data.length}">{args.data.length}</Panel>',
+      args: {},
+      expressions: { data: 'rows.filter((row) => row.enabled)' },
+      argTypes: {},
+    })
+  ).toBe(
+    '<Panel data={rows.filter((row) => row.enabled)} value={(rows.filter((row) => row.enabled))} title="Rows: {(rows.filter((row) => row.enabled)).length}">{(rows.filter((row) => row.enabled)).length}</Panel>'
+  );
+});
+
+it('applies explicit overrides separately for each spread element', () => {
+  expect(
+    printSvelteCsfSnippet({
+      code: '<Panel {...args} label="Explicit" /><Panel label="Earlier" {...args} />',
+      args: { label: 'From args', disabled: true },
+      argTypes: {},
+    })
+  ).toBe('<Panel disabled label="Explicit" /><Panel label={"From args"} disabled />');
+});

@@ -8,6 +8,12 @@ function readStaticValue(node: t.Node): StaticValue {
   if (t.isStringLiteral(node) || t.isNumericLiteral(node) || t.isBooleanLiteral(node)) {
     return { kind: 'value', value: node.value };
   }
+  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
+    return {
+      kind: 'value',
+      value: node.quasis.map((part) => part.value.cooked ?? part.value.raw).join(''),
+    };
+  }
   if (t.isNullLiteral(node)) return { kind: 'value', value: null };
   if (t.isIdentifier(node, { name: 'undefined' })) return { kind: 'value', value: undefined };
   if (t.isUnaryExpression(node) && node.operator === '-' && t.isNumericLiteral(node.argument)) {

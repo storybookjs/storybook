@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 
+import pLimit from 'p-limit';
+
 import { logger } from 'storybook/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
@@ -16,6 +18,7 @@ const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
 
 interface Pending {
+  id: number;
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
   timer?: NodeJS.Timeout;
@@ -40,7 +43,7 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 // threads would only duplicate multi-second program builds and their memory.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
-  private readonly pending = new Map<number, Pending>();
+  private current: Pending | undefined;
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
@@ -106,24 +109,30 @@ class DocgenWorker implements DocgenWorkerClient {
     }
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
+      if (this.current) {
+        reject(new Error('docgen worker extract called while another extraction is active'));
+        return;
+      }
       const id = this.nextId++;
-      const pending: Pending = { resolve, reject };
+      const pending: Pending = { id, resolve, reject };
+      this.current = pending;
       if (this.taskTimeoutMs > 0) {
-        pending.timer = setTimeout(() => {
-          this.pending.delete(id);
-          this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
-        }, this.taskTimeoutMs);
+        pending.timer = setTimeout(
+          () =>
+            this.fail(
+              new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`)
+            ),
+          this.taskTimeoutMs
+        );
         pending.timer.unref?.();
       }
-      this.pending.set(id, pending);
       this.keepProcessAliveWhileBusy();
       this.post({ type: 'extract', id, entry });
     });
   }
 
   private keepProcessAliveWhileBusy(): void {
-    if (this.pending.size > 0) {
+    if (this.current) {
       this.worker.ref();
     } else {
       this.worker.unref();
@@ -138,14 +147,14 @@ class DocgenWorker implements DocgenWorkerClient {
     if (msg.type !== 'extract') {
       return;
     }
-    const pending = this.pending.get(msg.id);
-    if (!pending) {
+    const pending = this.current;
+    if (!pending || msg.id !== pending.id) {
       return;
     }
     if (pending.timer) {
       clearTimeout(pending.timer);
     }
-    this.pending.delete(msg.id);
+    this.current = undefined;
     this.served = true;
     this.keepProcessAliveWhileBusy();
     if (msg.error) {
@@ -159,7 +168,7 @@ class DocgenWorker implements DocgenWorkerClient {
     if (this.death) {
       return;
     }
-    logger.warn(`docgen worker died, so component docs are unavailable: ${error.message}`);
+    logger.warn(`docgen worker died: ${error.message}`);
     this.death = error;
     // Without this, an `extract` awaiting `ready` hangs when the worker dies before `init`.
     this.rejectReady(error);
@@ -168,13 +177,15 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [, pending] of this.pending) {
-      if (pending.timer) {
-        clearTimeout(pending.timer);
-      }
-      pending.reject(error);
+    const pending = this.current;
+    if (!pending) {
+      return;
     }
-    this.pending.clear();
+    if (pending.timer) {
+      clearTimeout(pending.timer);
+    }
+    this.current = undefined;
+    pending.reject(error);
     this.worker.unref();
   }
 }
@@ -202,15 +213,18 @@ export function createDocgenWorkerClient(
   }
 
   let worker: DocgenWorker | undefined;
+  // Serialize so the per-request timeout measures the active extraction, not queue wait.
+  const serial = pLimit(1);
 
   return {
-    async extract(entry) {
-      if (worker?.replaceable) {
-        logger.debug('docgen worker died after serving requests; spawning a replacement');
-        worker = undefined;
-      }
-      worker ??= new DocgenWorker(scriptPath, descriptors);
-      return worker.extract(entry);
-    },
+    extract: (entry) =>
+      serial(() => {
+        if (worker?.replaceable) {
+          logger.debug('docgen worker died after serving requests; spawning a replacement');
+          worker = undefined;
+        }
+        worker ??= new DocgenWorker(scriptPath, descriptors);
+        return worker.extract(entry);
+      }),
   };
 }

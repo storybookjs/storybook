@@ -33,7 +33,9 @@ export class EstreeParseError extends SyntaxError {
   }
 }
 
-const langFor = (fileName = ''): 'js' | 'jsx' | 'ts' | 'tsx' => {
+type Lang = 'js' | 'jsx' | 'ts' | 'tsx';
+
+const langFor = (fileName: string): Lang => {
   if (/\.(c|m)?tsx?$/.test(fileName)) {
     return /x$/.test(fileName) ? 'tsx' : 'ts';
   }
@@ -41,22 +43,60 @@ const langFor = (fileName = ''): 'js' | 'jsx' | 'ts' | 'tsx' => {
   return 'tsx';
 };
 
-export const parseModule = (code: string, fileName?: string): ParsedModule => {
-  const result = parseSync(fileName ?? 'file.tsx', code, {
-    lang: langFor(fileName),
+type ParseAttempt = { module: ParsedModule } | { error: EstreeParseError; offset: number };
+
+const parseWith = (code: string, fileName: string | undefined, lang: Lang): ParseAttempt => {
+  const result = parseSync(fileName ?? `file.${lang}`, code, {
+    lang,
     sourceType: 'module',
     preserveParens: false,
+    // Duplicate declarations and legacy octals are reported like Babel did, instead of parsing
+    // into a program that silently keeps the last declaration.
+    showSemanticErrors: true,
   });
   const error = result.errors.find((diagnostic) => diagnostic.severity === 'Error');
   if (error) {
-    const offset = error.labels?.[0]?.start;
-    throw new EstreeParseError(
-      error.message,
-      fileName,
-      offset === undefined ? undefined : locationOf(code, offset, offset)
-    );
+    const offset = error.labels?.[0]?.start ?? 0;
+    return {
+      error: new EstreeParseError(
+        error.message,
+        fileName,
+        error.labels?.[0] ? locationOf(code, offset, offset) : undefined
+      ),
+      offset,
+    };
   }
-  return { code, program: result.program, comments: result.comments };
+  return { module: { code, program: result.program, comments: result.comments } };
+};
+
+/**
+ * Parse a module. Without a file name there is no grammar to pick: TSX accepts the most, but
+ * rejects generic arrows and `<T>value` assertions that `.ts` allows, so TS is tried next and the
+ * error of the parse that got further is reported.
+ */
+export const parseModule = (code: string, fileName?: string): ParsedModule => {
+  const attempt = fileName ? parseWith(code, fileName, langFor(fileName)) : parseUnnamed(code);
+  if ('module' in attempt) {
+    return attempt.module;
+  }
+  throw FLOW_PRAGMA.test(code)
+    ? new EstreeParseError(
+        `Flow syntax is no longer supported, parse failed with: ${attempt.error.message}`,
+        fileName,
+        undefined
+      )
+    : attempt.error;
+};
+
+const FLOW_PRAGMA = /^\s*(?:\/\/|\/\*)\s*@flow\b/;
+
+const parseUnnamed = (code: string): ParseAttempt => {
+  const tsx = parseWith(code, undefined, 'tsx');
+  if ('module' in tsx) {
+    return tsx;
+  }
+  const ts = parseWith(code, undefined, 'ts');
+  return 'module' in ts || ts.offset > tsx.offset ? ts : tsx;
 };
 
 const lineStartsCache = new Map<string, number[]>();
@@ -240,20 +280,8 @@ export const textOf = (node: Node): string | undefined => {
   return code === undefined ? undefined : code.slice(span.start, span.end);
 };
 
-/** Parse an expression from source; it and every node inside it print as the text they came from. */
-// A fragment has no file name to pick its grammar. TSX accepts the most, but rejects generic
-// arrows and `<T>value` assertions that a `.ts` file allows.
-export const parseFragment = (code: string): ParsedModule => {
-  try {
-    return parseModule(code);
-  } catch (error) {
-    try {
-      return parseModule(code, 'fragment.ts');
-    } catch {
-      throw error;
-    }
-  }
-};
+/** Parse an expression fragment, which has no file name to pick its grammar. */
+export const parseFragment = (code: string): ParsedModule => parseModule(code);
 
 export const expressionFromSource = (code: string): E.Expression => {
   const wrapped = `(${code}\n)`;

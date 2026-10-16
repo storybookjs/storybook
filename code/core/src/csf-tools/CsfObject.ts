@@ -597,10 +597,11 @@ class CsfObjectEditor implements CsfObject {
     this.insert(destinationPath, [{ ...moved, key }]);
     this.commit();
     const remaining = this.inspect(sourcePath);
-    if (remaining.ok !== false && remaining.property && remaining.parent) {
-      remaining.parent.root.remove([remaining.property]);
-      this.commit();
+    if (remaining.ok === false || !remaining.property || !remaining.parent) {
+      throw new Error(`CsfObject: ${sourcePath.join('.')} was not found again after moving it`);
     }
+    remaining.parent.root.remove([remaining.property]);
+    this.commit();
     this.removeEmptyParents(sourcePath);
     return this.success();
   }

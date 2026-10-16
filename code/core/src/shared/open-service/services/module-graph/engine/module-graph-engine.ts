@@ -30,7 +30,7 @@ export interface ModuleGraphEngineOptions {
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
-  /** Reports every story file the initial build walked, as story-index-style paths. */
+  /** Reports every story file in the story index at build time, as story-index-style paths. */
   onSnapshot?: (storyFiles: string[]) => void;
   /**
    * Fired after every settled file-change patch. Empty `bumpedStoryFiles` means the path was

@@ -660,7 +660,7 @@ describe('ChangeDetectionService', () => {
       hasGraph: vi.fn(() => false),
       lookup: vi.fn(() => new Map<string, number>()),
     } as unknown as ModuleGraphEngine;
-    const moduleGraphMock = installModuleGraphQueryMock(engine);
+    const moduleGraphMock = installModuleGraphQueryMock(engine, workingDir);
 
     const { getStatusStoreByTypeId } = createStatusStore({
       universalStatusStore: new MockUniversalStore(UNIVERSAL_STATUS_STORE_OPTIONS),

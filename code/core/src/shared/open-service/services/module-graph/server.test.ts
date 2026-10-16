@@ -748,16 +748,20 @@ describe('module-graph open service', () => {
       installTestChannel(null);
     });
 
-    it('keeps the reverse index off the channel while the graph boots and patches', async () => {
+    it('keeps the reverse index off the channel through boot and a dependency-adding patch', async () => {
       const channel = createTestChannel();
       installTestChannel(channel);
       const storyFiles = Array.from({ length: 20 }, (_, j) => `/repo/src/story-${j}.stories.ts`);
       const sourceFiles = Array.from({ length: 400 }, (_, i) => `/repo/src/file-${i}.ts`);
-      const { runtime, emitFileChange } = registerEngineBackedModuleGraph(
-        buildReverseIndex(
-          sourceFiles.flatMap((file) => storyFiles.map((story) => [file, story, 1] as const))
-        )
+      const reverseIndex = buildReverseIndex(
+        sourceFiles.flatMap((file) => storyFiles.map((story) => [file, story, 1] as const))
       );
+      const { runtime, patchSpy, emitFileChange } = registerEngineBackedModuleGraph(reverseIndex);
+      patchSpy.mockImplementationOnce(async () => {
+        for (const story of storyFiles) {
+          reverseIndex.record('/repo/src/file-added.ts', story, 2);
+        }
+      });
 
       await runtime.queries.status.loaded(undefined);
       emitFileChange({ kind: 'change', path: sourceFiles[0] });
@@ -767,9 +771,10 @@ describe('module-graph open service', () => {
       expect(entries.length).toBeGreaterThan(0);
       expect(JSON.stringify(entries)).not.toContain('/src/file-');
       await expect(
-        runtime.commands.storiesForFiles({ files: ['./src/file-399.ts'] })
+        runtime.commands.storiesForFiles({ files: ['./src/file-399.ts', './src/file-added.ts'] })
       ).resolves.toEqual([
         storyFiles.map((story) => ({ storyFile: story.replace('/repo/', './'), depth: 1 })),
+        storyFiles.map((story) => ({ storyFile: story.replace('/repo/', './'), depth: 2 })),
       ]);
     });
   });

@@ -200,7 +200,9 @@ export const moduleGraphServiceDef = defineService({
       input: v.object({
         storyFiles: v.pipe(
           v.array(storyIndexPathSchema),
-          v.description('Every story file the initial build walked, as story-index-style paths.')
+          v.description(
+            'Every story file in the story index at build time, as story-index-style paths.'
+          )
         ),
       }),
       output: v.void(),
@@ -221,7 +223,7 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision, advances `graphChangedAt`, and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
+        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision, advances `graphChangedAt`, and records those stories. Called by the graph engine after each settled patch.',
       input: v.object({
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
@@ -270,7 +272,7 @@ export const moduleGraphServiceDef = defineService({
     },
     storiesForFiles: {
       description:
-        'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file. Waits for in-flight graph updates first. Handler is supplied at server registration.',
+        'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file. Waits for in-flight graph updates first.',
       input: storiesForFilesInputSchema,
       output: storiesForFilesOutputSchema,
     },

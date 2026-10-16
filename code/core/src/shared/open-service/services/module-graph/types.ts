@@ -107,3 +107,16 @@ export function storyIndexPathToAbsolutePath(path: string, workingDir: string): 
 
   return slash(normalize(posix.join(slash(workingDir), path)));
 }
+
+export function lookupStoriesForFiles(
+  engine: { lookup(file: string): Map<string, number> },
+  files: string[],
+  workingDir: string
+) {
+  return files.map((file) =>
+    Array.from(
+      engine.lookup(storyIndexPathToAbsolutePath(file, workingDir)),
+      ([storyFile, depth]) => ({ storyFile: toStoryIndexPath(storyFile, workingDir), depth })
+    )
+  );
+}

@@ -6,7 +6,7 @@ import { registerService } from '../../server.ts';
 import { moduleGraphServiceDef, type ChangeDetectionReadinessResult } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
-import { errorToErrorLike, storyIndexPathToAbsolutePath, toStoryIndexPath } from './types.ts';
+import { errorToErrorLike, lookupStoriesForFiles } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
@@ -90,15 +90,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
         storiesForFiles: {
           handler: async (input) => {
             await waitForSettledEngine();
-            return input.files.map((file) =>
-              Array.from(
-                engine!.lookup(storyIndexPathToAbsolutePath(file, workingDir)),
-                ([storyFile, depth]) => ({
-                  storyFile: toStoryIndexPath(storyFile, workingDir),
-                  depth,
-                })
-              )
-            );
+            return lookupStoriesForFiles(engine!, input.files, workingDir);
           },
         },
         _waitForSettledEngine: {

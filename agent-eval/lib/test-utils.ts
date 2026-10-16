@@ -1021,7 +1021,8 @@ const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
 // Substance floor (relaxed 2026-07-03 after run 28663662412, where correct
 // reviews failed on presentation details): the user must get the review link
 // in the final response, and not a second set of individual story links next
-// to it — one set of links, never both.
+// to it — one set of links, never both. Presentation quality (headings,
+// disclaimers, link placement) belongs in the judge-scored tier, not this gate.
 function expectFinalResponseSharesReviewLink(): void {
   const finalMessage = getFinalAssistantMessage();
   if (finalMessage === undefined) {

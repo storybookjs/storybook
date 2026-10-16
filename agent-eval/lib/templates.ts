@@ -199,7 +199,7 @@ function ignoreInGit(files: Record<string, string>, pattern: string): void {
 }
 
 // The harness commits the fixture before `setup` runs, so everything setup writes afterwards (the
-// template, skills, mocks, MCP config) would show up as the agent's own change: in `git status`, in
+// template, skills, MCP config) would show up as the agent's own change: in `git status`, in
 // `storybook tools stories changed`, and in the files saved with the run. Call this last in `setup`.
 export async function commitSandboxBaseline(sandbox: Sandbox): Promise<void> {
   const result = await sandbox.runCommand('bash', [

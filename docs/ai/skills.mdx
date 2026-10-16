@@ -34,7 +34,7 @@ When you [install Storybook](../get-started/install.mdx), `create storybook` ask
 npx storybook automigrate skills
 ```
 
-Each later `storybook upgrade` updates the skills to the version of Storybook you upgrade to, so the skills always match the `storybook skills` and `storybook tools` commands of your project. It leaves the `AGENTS.md` section alone, so your edits stay, and so does its removal.
+Each later `storybook upgrade` updates the skills to the version of Storybook you upgrade to, so the skills always match the `storybook skills` and `storybook tools` commands of your project. It also replaces the text between the markers of the `AGENTS.md` section when that text changed. A section without the markers and a removed section stay as they are.
 
 ### With the skills CLI
 
@@ -55,21 +55,26 @@ The Storybook plugins for [Claude Code](https://github.com/storybookjs/storybook
 The skills do not take over every UI change on their own. A section in your `AGENTS.md` tells agents when to use them, so you decide when that is:
 
 ```md title="AGENTS.md"
-## Storybook
+<!-- BEGIN:storybook-skills -->
+<!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
+
+## Storybook skills
 
 For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
 
 - `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
 - `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+
+<!-- END:storybook-skills -->
 ```
 
-Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. Edit it to fit how you work. For example, to skip the review, change the end of the `ui-workflow` line:
+Storybook adds this section when it installs the skills, and leaves the file alone when it already names one of the skills. The text between the markers belongs to Storybook, which replaces it when you upgrade. To make the section your own, remove both markers and edit it to fit how you work. For example, to skip the review, change the end of the `ui-workflow` line:
 
 ```md title="AGENTS.md"
 - `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, and runs the tests.
 ```
 
-To stop agents from using the skills on their own, remove the section. You can still ask for a skill in a prompt, for example `/ui-workflow` in Claude Code.
+To stop agents from using the skills on their own, remove the section; an upgrade does not add it back. You can still ask for a skill in a prompt, for example `/ui-workflow` in Claude Code.
 
 <Callout variant="info" icon="💡">
 

@@ -1319,10 +1319,9 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 
 #### Behavior that changes for every project
 
-- **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow, so such files fail to index with an error that names Flow. Convert them to TypeScript or plain JavaScript.
+- **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow. A `// @flow` file whose syntax is also valid TypeScript still indexes, but Flow-only syntax such as variance (`+readOnly`) or type casts (`(value: Type)`) is a parse error, and the error names Flow. Convert such files to TypeScript or plain JavaScript.
 - `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
 - Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
-- `export { Missing }` of a name the file never declares is no longer a parse error, because OXC's semantic pass does not report it; the file indexes and the error surfaces when the module runs.
 - A parse error in a module that `sb.mock()` automocks under webpack now fails that module's build, where Babel's error recovery used to mock whatever it could parse.
 
 #### Changes for tooling that imports Storybook's internal entry points
@@ -1331,14 +1330,14 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 - The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile._program` and `CsfFile._editor`. `ConfigFile._ast` is removed as well; use `ConfigFile._program`, edit through `ConfigFile._editorSource` and call `ConfigFile._commit()` to apply pending edits and parse the result again.
 - `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `printExpression(node)` to read an expression's source.
 - An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf._appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`.
-- `babelParse` and `babelParseFile` are removed; use `loadCsf(code, options)` and `readCsf(fileName, options)`.
+- `babelParse` is removed; use `parseModule(code, fileName)` from `storybook/internal/csf-tools`, which returns the ESTree `program` and `comments`. `babelParseFile` is removed as well; read CSF with `loadCsf(code, options)` or `readCsf(fileName, options)`.
 - `getHeaderComments(statement)` is replaced by `headerComments(editor)`.
 - The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes.
-- The `getAbsolutePath` wrapper helpers in `storybook/internal/common` work on nodes: `getAbsolutePathWrapperAsCallExpression` is replaced by `getAbsolutePathCall`, and `wrapValueWithGetAbsolutePathWrapper` by `wrapValuesWithGetAbsolutePathWrapper`.
+- The `getAbsolutePath` wrapper helpers in `storybook/internal/common` produce source text instead of Babel nodes. `getAbsolutePathWrapperAsCallExpression(isTs, names)`, which returned the wrapper's function declaration, is replaced by `getAbsolutePathWrapperDeclaration(isTs, names)`, which returns the declaration's source for `ConfigFile#setBodyDeclaration`. `getAbsolutePathCall(config, value)` returns the source of a call to the config's wrapper. `wrapValueWithGetAbsolutePathWrapper(config, node)` is replaced by `wrapValuesWithGetAbsolutePathWrapper(config, nodes)`, which wraps every node in the array and commits the edits to `config`.
 - `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
 - `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options; `printCsf` and `printConfig` take no options and always print with `\n` line endings.
 - `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
-- The Vitest config helpers (`canUpdateVitestConfigFile`, `getTargetConfigObject`, ...) moved from `storybook/internal/babel` to `storybook/internal/cli`.
+- The Vitest config helpers `canUpdateVitestConfigFile`, `getTargetConfigObject`, `getEffectiveMergeConfigCall`, `getConfigObjectFromMergeArg` and `resolveExpression` moved from `storybook/internal/babel` to `storybook/internal/cli`. `canUpdateVitestConfigFile` still takes the file's source; the others take an ESTree `Program`, such as `parseModule(code, fileName).program`, instead of a Babel `File`, and return ESTree nodes. `isDefineConfigLike` and `isImportedDefineConfigLikeIdentifier` are no longer exported. `unwrapTSExpression` is now `unwrapESTreeExpression` in `storybook/internal/csf-tools`, and also unwraps non-null assertions (`value!`).
 
 Babel itself is still used where it compiles your code, for example by `@storybook/nextjs` and the webpack Babel compiler addon.
 

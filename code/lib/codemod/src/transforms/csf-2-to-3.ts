@@ -16,6 +16,25 @@ const renameAnnotation = (annotation: string) => {
   return annotation === 'storyName' ? 'name' : annotation;
 };
 
+// `Story.story = { parameters }` is one assignment. The fields inside it are the annotations.
+const annotationProperties = (annotations: Record<string, t.Node>): t.ObjectProperty[] => {
+  const fields = new Map<string, t.Node>();
+  for (const [annotation, value] of Object.entries(annotations)) {
+    if (annotation === 'story' && t.isObjectExpression(value)) {
+      for (const prop of value.properties) {
+        if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
+          fields.set(prop.key.name, prop.value);
+        }
+      }
+      continue;
+    }
+    fields.set(annotation, value);
+  }
+  return [...fields].map(([annotation, value]) =>
+    t.objectProperty(t.identifier(renameAnnotation(annotation)), value as t.Expression)
+  );
+};
+
 const getTemplateBindVariable = (init: t.Expression | undefined) =>
   t.isCallExpression(init) &&
   t.isMemberExpression(init.callee) &&
@@ -137,9 +156,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
 
   const objectExports: Record<string, t.Statement> = {};
   Object.entries(csf._storyExports).forEach(([key, decl]) => {
-    const annotations = Object.entries(csf._storyAnnotations[key]).map(([annotation, val]) => {
-      return t.objectProperty(t.identifier(renameAnnotation(annotation)), val as t.Expression);
-    });
+    const annotations = annotationProperties(csf._storyAnnotations[key]);
 
     if (t.isVariableDeclarator(decl as t.Node)) {
       const { init, id } = decl as any;

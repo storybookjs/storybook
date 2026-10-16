@@ -14,7 +14,6 @@
     },
   },
   "icon": {
-    "defaultValue": undefined,
     "description": "Icon class rendered when the icon slot is empty.",
     "name": "icon",
     "table": {

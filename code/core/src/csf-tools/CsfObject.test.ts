@@ -370,6 +370,38 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toContain(`Basic.parameters = { a11y: { context: '#root' } };`);
   });
 
+  it('uses logical paths for CSF2 argTypes assignments', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Playground = () => null;
+      Playground.argTypes = { autoTruncateTokens: { defaultValue: false, control: 'boolean' } };
+    `);
+    const [argTypes] = csf.objects({ meta: false });
+
+    expect(argTypes.get(['argTypes'])).toMatchObject({ type: 'ObjectExpression' });
+    expect(argTypes.remove(['argTypes', 'autoTruncateTokens', 'defaultValue'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain("control: 'boolean'");
+    expect(printCsf(csf).code).not.toContain('defaultValue');
+  });
+
+  it('resolves local values in CSF2 annotation roots', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      const shared = { defaultValue: false };
+      export const Playground = () => null;
+      Playground.argTypes = { autoTruncateTokens: shared };
+    `);
+    const [argTypes] = csf.objects({ meta: false });
+
+    expect(argTypes.getValue(['argTypes'])).toEqual({
+      autoTruncateTokens: { defaultValue: false },
+    });
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('rejects repeated CSF2 annotations instead of exposing either object', () => {
     const csf = parse(`
       export default { title: 'Example' };

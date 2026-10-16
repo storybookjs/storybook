@@ -1,21 +1,13 @@
-import { readFileSync } from 'node:fs';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages.ts';
+import { checkFix } from '../helpers/fix-test-utils.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 
 vi.mock('../../doctor/getIncompatibleStorybookPackages');
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    readFileSync: vi.fn(),
-  };
-});
 
 const check = async ({
   packageManager,
@@ -26,13 +18,12 @@ const check = async ({
   main?: Partial<StorybookConfig> & Record<string, unknown>;
   storybookVersion?: string;
 }) => {
-  return upgradeStorybookRelatedDependencies.check({
+  return checkFix(upgradeStorybookRelatedDependencies, {
     packageManager: packageManager as any,
     configDir: '',
     mainConfig: mainConfig as any,
     storybookVersion,
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 };
 
@@ -69,20 +60,6 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       },
     ];
     vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue(analyzedPackages);
-
-    // Mock the package.json content
-    const mockPackageJson = {
-      dependencies: {
-        '@storybook/jest': '0.2.3',
-        '@storybook/addon-a11y': '7.0.0',
-      },
-      devDependencies: {
-        '@chromatic-com/storybook': '1.2.9',
-        storybook: '8.0.0',
-      },
-    };
-
-    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockPackageJson));
 
     const mockPackageManager = {
       getAllDependencies: () =>
@@ -122,79 +99,61 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     `);
   });
 
-  it.each([
-    ['2.0.7', '3.0.3', null],
-    ['2.0.7', '3.0.0-beta.1', null],
-    ['2.0.7', '2.0.8', '2.0.8'],
-    ['3.0.0', '3.0.3', '3.0.3'],
-  ])(
-    'handles msw-storybook-addon %s to %s',
-    async (beforeVersion, afterVersion, expectedVersion) => {
-      vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+  it('keeps the major of a lockstep-scoped package whose siblings stay behind', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([
+      {
+        packageName: '@nx/storybook',
+        packageVersion: '22.7.5',
+        availableUpdate: '23.2.1',
+        hasIncompatibleDependencies: true,
+      },
+    ]);
+    const latestVersion = vi.fn(async (_packageName: string, constraint?: string) =>
+      constraint === '^22.7.5' ? '22.9.0' : '23.2.1'
+    );
 
-      const packageManager = {
-        getAllDependencies: () => ({ 'msw-storybook-addon': beforeVersion }),
-        getInstalledVersion: async () => beforeVersion,
-        latestVersion: async () => afterVersion,
-      };
+    const result = await check({
+      packageManager: {
+        getAllDependencies: () => ({ '@nx/storybook': '22.7.5', '@nx/web': '22.7.5' }),
+        latestVersion,
+        getInstalledVersion: async () => '22.7.5',
+      },
+    });
 
-      await expect(check({ packageManager })).resolves.toEqual(
-        expectedVersion === null
-          ? null
-          : {
-              upgradable: [
-                {
-                  packageName: 'msw-storybook-addon',
-                  beforeVersion,
-                  afterVersion: expectedVersion,
-                },
-              ],
-            }
-      );
-    }
-  );
-
-  it('keeps unrelated community-package major upgrades', async () => {
-    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
-
-    const packageManager = {
-      getAllDependencies: () => ({ '@example/storybook-addon': '1.0.0' }),
-      getInstalledVersion: async () => '1.0.0',
-      latestVersion: async () => '2.0.0',
-    };
-
-    await expect(check({ packageManager })).resolves.toEqual({
+    expect(result).toEqual({
       upgradable: [
-        {
-          packageName: '@example/storybook-addon',
-          beforeVersion: '1.0.0',
-          afterVersion: '2.0.0',
-        },
+        { packageName: '@nx/storybook', beforeVersion: '22.7.5', afterVersion: '22.9.0' },
       ],
     });
   });
 
-  it('keeps unrelated upgrades while excluding msw-storybook-addon crossings', async () => {
-    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+  it('upgrades a package across majors when its scope is not lockstep', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([
+      {
+        packageName: '@chromatic-com/storybook',
+        packageVersion: '3.2.7',
+        availableUpdate: '4.1.0',
+        hasIncompatibleDependencies: true,
+      },
+    ]);
+    const latestVersion = vi.fn(async (_packageName: string, constraint?: string) =>
+      constraint === '^3.2.7' ? '3.2.9' : '4.1.0'
+    );
 
-    const packageManager = {
-      getAllDependencies: () => ({
-        'msw-storybook-addon': '2.0.7',
-        '@example/storybook-addon': '1.0.0',
-      }),
-      getInstalledVersion: async (packageName: string) =>
-        packageName === 'msw-storybook-addon' ? '2.0.7' : '1.0.0',
-      latestVersion: async (packageName: string) =>
-        packageName === 'msw-storybook-addon' ? '3.0.3' : '2.0.0',
-    };
+    const result = await check({
+      packageManager: {
+        getAllDependencies: () => ({
+          '@chromatic-com/storybook': '3.2.7',
+          '@chromatic-com/playwright': '0.10.0',
+        }),
+        latestVersion,
+        getInstalledVersion: async () => '3.2.7',
+      },
+    });
 
-    await expect(check({ packageManager })).resolves.toEqual({
+    expect(result).toEqual({
       upgradable: [
-        {
-          packageName: '@example/storybook-addon',
-          beforeVersion: '1.0.0',
-          afterVersion: '2.0.0',
-        },
+        { packageName: '@chromatic-com/storybook', beforeVersion: '3.2.7', afterVersion: '4.1.0' },
       ],
     });
   });

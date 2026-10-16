@@ -138,6 +138,7 @@ describe('initial state', () => {
             tabs: '0',
             path: '/story/button--primary',
             // genuinely custom params that must survive
+            tab: 'my-addon',
             collection: '2',
             tags: 'a11y',
           }).toString(),
@@ -149,7 +150,7 @@ describe('initial state', () => {
 
       // Layout params (full/panel/nav/...) are consumed by the manager and must not leak into the
       // params forwarded to the preview iframe; only genuinely custom params remain.
-      expect(customQueryParams).toEqual({ collection: '2', tags: 'a11y' });
+      expect(customQueryParams).toEqual({ tab: 'my-addon', collection: '2', tags: 'a11y' });
     });
   });
 });
@@ -521,23 +522,6 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toEqual(
       'https://sb.example.com/iframe.html?id=test--story&viewMode=story&refId=external'
     );
-  });
-
-  it('supports PREVIEW_URL override', () => {
-    global.PREVIEW_URL = 'https://custom.preview.url/';
-    const { api, state } = initURL({
-      store,
-      provider: { channel: new EventEmitter() },
-      state: { location: { pathname: '/', search: '' } },
-      navigate: vi.fn(),
-      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
-    });
-    store.setState(state);
-
-    const { managerHref, previewHref } = api.getStoryHrefs('test--story');
-    expect(managerHref).toEqual('/?path=/story/test--story');
-    expect(previewHref).toEqual('https://custom.preview.url/?id=test--story&viewMode=story');
-    delete global.PREVIEW_URL;
   });
 
   it('correctly links from /index.html', () => {

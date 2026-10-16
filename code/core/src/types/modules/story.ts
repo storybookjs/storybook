@@ -18,6 +18,7 @@ import type {
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
+  StoryContextForRender,
   StoryId,
   StoryIdentifier,
   StoryName,
@@ -131,7 +132,7 @@ export declare type RenderContext<TRenderer extends Renderer = Renderer> = Story
   showError: (error: { title: string; description: string }) => void;
   showException: (err: Error) => void;
   forceRemount: boolean;
-  storyContext: StoryContext<TRenderer>;
+  storyContext: StoryContextForRender<TRenderer>;
   storyFn: PartialStoryFn<TRenderer>;
   unboundStoryFn: LegacyStoryFn<TRenderer>;
 };

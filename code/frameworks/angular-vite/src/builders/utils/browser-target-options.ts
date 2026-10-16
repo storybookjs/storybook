@@ -1,3 +1,4 @@
+import type { BuilderContext, Target } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
 import { deepMerge } from 'storybook/internal/common';
 
@@ -13,4 +14,13 @@ export function mergeBrowserTargetOptions<T extends object>(
   }
 
   return deepMerge(browserOptions, own as JsonObject) as T;
+}
+
+export function requireBuilderTarget(context: BuilderContext): Target {
+  if (!context.target) {
+    throw new Error(
+      'The Storybook builder must run as an Angular target to read the options it declares.'
+    );
+  }
+  return context.target;
 }

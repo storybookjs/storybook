@@ -87,7 +87,7 @@ const updateShadowHost = (shadowHost: Element) => {
     .filter((classname) => classname.match(/^pseudo-(.(?!-all))+$/))
     .forEach((classname) => classnames.add(classname));
   // Adopt "pseudo-*-all" classes from ancestors (across shadow boundaries)
-  for (let node = shadowHost.parentNode; node; ) {
+  for (let node = shadowHost.parentNode; node;) {
     if (node instanceof ShadowRoot) {
       node = node.host;
       continue;

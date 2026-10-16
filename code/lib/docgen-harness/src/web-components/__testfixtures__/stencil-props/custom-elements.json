@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "stencil-props.tsx",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A Stencil rating control.",
+          "name": "StencilProps",
+          "members": [
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "Current rating."
+            },
+            {
+              "kind": "field",
+              "name": "max",
+              "type": {
+                "text": "number"
+              },
+              "default": "5",
+              "description": "Maximum number of stars."
+            },
+            {
+              "kind": "field",
+              "name": "variant",
+              "type": {
+                "text": "'compact' | 'full'"
+              },
+              "default": "'full'",
+              "description": "Visual variant."
+            },
+            {
+              "kind": "field",
+              "name": "labelText",
+              "type": {
+                "text": "string | undefined"
+              },
+              "description": "Attribute name differs from the field."
+            },
+            {
+              "kind": "field",
+              "name": "labels",
+              "type": {
+                "text": "Record<number, string>"
+              },
+              "default": "{}",
+              "description": "Complex prop, kept as an object."
+            },
+            {
+              "kind": "field",
+              "name": "hovered",
+              "type": {
+                "text": "number"
+              },
+              "default": "-1",
+              "description": "Internal hover state."
+            },
+            {
+              "kind": "method",
+              "name": "clear",
+              "return": {
+                "type": {
+                  "text": "Promise<void>"
+                }
+              },
+              "description": "Resets the rating to zero."
+            },
+            {
+              "kind": "method",
+              "name": "render"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "value",
+              "fieldName": "value",
+              "default": "0",
+              "description": "Current rating."
+            },
+            {
+              "name": "max",
+              "fieldName": "max",
+              "default": "5",
+              "description": "Maximum number of stars."
+            },
+            {
+              "name": "variant",
+              "fieldName": "variant",
+              "default": "'full'",
+              "description": "Visual variant.",
+              "type": {
+                "text": "'compact' | 'full'"
+              }
+            },
+            {
+              "name": "aria-label-text",
+              "fieldName": "labelText",
+              "description": "Attribute name differs from the field.",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "name": "labels",
+              "fieldName": "labels",
+              "default": "{}",
+              "description": "Complex prop, kept as an object.",
+              "type": {
+                "text": "Record<number, string>"
+              }
+            }
+          ],
+          "tagName": "stencil-props",
+          "events": [
+            {
+              "name": "ratingChange",
+              "type": {
+                "text": "EventEmitter<number>"
+              },
+              "description": "Emitted when the rating changes."
+            },
+            {
+              "name": "stencil-reset",
+              "type": {
+                "text": "EventEmitter<void>"
+              },
+              "description": "Emitted under a custom event name."
+            }
+          ],
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "StencilProps",
+          "declaration": {
+            "name": "StencilProps",
+            "module": "stencil-props.tsx"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "stencil-props",
+          "declaration": {
+            "name": "StencilProps",
+            "module": "stencil-props.tsx"
+          }
+        }
+      ]
+    }
+  ]
+}

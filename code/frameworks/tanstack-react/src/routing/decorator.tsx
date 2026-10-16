@@ -113,9 +113,8 @@ export function createStoryRouter({
     defaultNotFoundComponent(props) {
       return <div>Route not found: {props.routeId}</div>;
     },
-    defaultErrorComponent({ error }) {
-      return <div>Story did something wrong : {String(error)}</div>;
-    },
+    // Let render errors reach Storybook so it shows them and story tests fail.
+    disableGlobalCatchBoundary: true,
     context: routerContext,
   });
 }

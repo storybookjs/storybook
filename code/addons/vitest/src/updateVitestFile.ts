@@ -64,7 +64,9 @@ const memberTexts = (editor: SourceEditor, object: E.ObjectExpression, members: 
   members.map((member) => itemText(editor, objectList(object), member));
 
 const elementTexts = (editor: SourceEditor, array: E.ArrayExpression) =>
-  arrayList(array).items.map((element) => itemText(editor, arrayList(array), element));
+  arrayList(editor, array).items.map((element) =>
+    itemText(editor, arrayList(editor, array), element)
+  );
 
 const indent = (text: string, prefix: string) => prefix + text.replaceAll('\n', `\n${prefix}`);
 
@@ -111,7 +113,7 @@ const mergeProperties = (
     if (sourceValue.type === 'ObjectExpression' && targetValue.type === 'ObjectExpression') {
       mergeProperties({ source, target }, sourceValue, targetValue);
     } else if (sourceValue.type === 'ArrayExpression' && targetValue.type === 'ArrayExpression') {
-      appendItems(target, arrayList(targetValue), elementTexts(source, sourceValue), '');
+      appendItems(target, arrayList(target, targetValue), elementTexts(source, sourceValue), '');
     } else if (targetProp.shorthand) {
       target.edits.overwrite(
         targetProp.start,
@@ -141,7 +143,7 @@ const appendToExistingProjects = (
     if (templateProjects) {
       appendItems(
         merge.target,
-        arrayList(existingProjects),
+        arrayList(merge.target, existingProjects),
         elementTexts(merge.source, templateProjects.value),
         ''
       );
@@ -225,7 +227,7 @@ const wrapTestConfigAsProject = (
     .join('');
   const project = `{\n  extends: true,\n  test: {${projectTest}${projectTest ? '\n  ' : ''}},\n}`;
 
-  prependToList(source, arrayList(templateProjects.value), [project], '');
+  prependToList(source, arrayList(source, templateProjects.value), [project], '');
   if (hoisted.length > 0) {
     prependToList(source, objectList(templateTestObject), memberTexts(target, testObject, hoisted));
   }

@@ -104,8 +104,14 @@ export class SourceEditor {
     this._edits = new MagicString(code, { filename: this.fileName });
   }
 
+  /** Line ending of the file; inserted text is written with `\n` and converted on output. */
+  get eol(): '\n' | '\r\n' {
+    return this.code.includes('\r\n') ? '\r\n' : '\n';
+  }
+
   toString() {
-    return this._edits.toString();
+    const code = this._edits.toString();
+    return this.eol === '\r\n' ? code.replace(/\r?\n/g, '\r\n') : code;
   }
 
   /** Quote for generated strings, overriding the inferred one. */
@@ -212,11 +218,35 @@ export const objectList = (object: E.ObjectExpression | E.ObjectPattern): List =
   items: object.properties,
 });
 
-export const arrayList = (array: E.ArrayExpression): List => ({
+// Nodes are parsed without parentheses, so an element's span may sit inside `( )`.
+export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => ({
   open: array.start + 1,
   close: array.end - 1,
-  items: array.elements.filter((element): element is NonNullable<typeof element> => !!element),
+  items: array.elements
+    .filter((element): element is NonNullable<typeof element> => !!element)
+    .map((element) => withParentheses(editor.code, element, array.start + 1, array.end - 1)),
 });
+
+/** Widen a span to the balanced parentheses wrapped directly around it, within `lower..upper`. */
+export const withParentheses = (code: string, span: Span, lower = 0, upper = code.length): Span => {
+  let { start, end } = span;
+  while (true) {
+    let before = start;
+    while (before > lower && /\s/.test(code[before - 1])) {
+      before--;
+    }
+    let after = end;
+    while (after < upper && /\s/.test(code[after])) {
+      after++;
+    }
+    if (before > lower && after < upper && code[before - 1] === '(' && code[after] === ')') {
+      start = before - 1;
+      end = after + 1;
+    } else {
+      return start === span.start && end === span.end ? span : { start, end };
+    }
+  }
+};
 
 // Position right after the token that precedes an item: the comma or the opening token.
 export const separatorBefore = (code: string, list: List | E.ObjectExpression, index: number) => {
@@ -242,15 +272,84 @@ export const lineIndent = (code: string, index: number) => {
 
 const isMultiline = (code: string, list: List) => code.slice(list.open, list.close).includes('\n');
 
-export const reindent = (text: string, from: string, to: string) =>
-  from === to
-    ? text
-    : text
-        .split('\n')
-        .map((line, index) =>
-          index === 0 ? line : line.startsWith(from) ? to + line.slice(from.length) : line
-        )
-        .join('\n');
+// Offsets of the line breaks in `text` that separate code, excluding those inside string and
+// template literals, whose line breaks are part of the value.
+const codeLineBreaks = (text: string) => {
+  const breaks: number[] = [];
+  type Context = 'template' | { depth: number };
+  const stack: Context[] = [{ depth: 0 }];
+  let quote: string | undefined;
+  let comment: 'line' | 'block' | undefined;
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    const top = stack.at(-1)!;
+    if (quote) {
+      if (char === '\\') {
+        index++;
+      } else if (char === quote || char === '\n') {
+        quote = undefined;
+      }
+    } else if (comment === 'line') {
+      if (char === '\n') {
+        comment = undefined;
+        breaks.push(index);
+      }
+    } else if (comment === 'block') {
+      if (char === '\n') {
+        breaks.push(index);
+      } else if (text.startsWith('*/', index)) {
+        comment = undefined;
+        index++;
+      }
+    } else if (top === 'template') {
+      if (char === '\\') {
+        index++;
+      } else if (char === '`') {
+        stack.pop();
+      } else if (text.startsWith('${', index)) {
+        stack.push({ depth: 0 });
+        index++;
+      }
+    } else if (char === '\n') {
+      breaks.push(index);
+    } else if (char === "'" || char === '"') {
+      quote = char;
+    } else if (char === '`') {
+      stack.push('template');
+    } else if (text.startsWith('//', index)) {
+      comment = 'line';
+    } else if (text.startsWith('/*', index)) {
+      comment = 'block';
+    } else if (char === '{') {
+      top.depth++;
+    } else if (char === '}') {
+      if (top.depth === 0 && stack.length > 1) {
+        stack.pop();
+      } else {
+        top.depth--;
+      }
+    }
+  }
+  return breaks;
+};
+
+/** Re-indent the continuation lines of `text`, leaving string and template literal values alone. */
+export const reindent = (text: string, from: string, to: string) => {
+  if (from === to || !text.includes('\n')) {
+    return text;
+  }
+  let result = '';
+  let cursor = 0;
+  for (const lineBreak of codeLineBreaks(text)) {
+    result += text.slice(cursor, lineBreak + 1);
+    cursor = lineBreak + 1;
+    if (text.startsWith(from, cursor)) {
+      result += to;
+      cursor += from.length;
+    }
+  }
+  return result + text.slice(cursor);
+};
 
 /** Text of an item including the comments that lead it, with continuation lines dedented. */
 export const itemText = (editor: SourceEditor, list: List, item: Span) => {
@@ -339,7 +438,12 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[],
 export const removeFromList = (editor: SourceEditor, list: List, removedItems: readonly Span[]) => {
   const { code, edits } = editor;
   const { items } = list;
-  const removed = new Set(removedItems);
+  // A list item may be a widened span, so an item is removed when it contains a removed span.
+  const removed = new Set(
+    items.filter((item) =>
+      removedItems.some((span) => item.start <= span.start && span.end <= item.end)
+    )
+  );
   if (items.every((item) => removed.has(item))) {
     if (list.close > list.open) {
       edits.remove(list.open, list.close);
@@ -441,17 +545,33 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
   editor.edits.appendLeft(last.end, `\n${text}`);
 };
 
-/** Remove a statement together with its line when nothing else shares the line. */
+/**
+ * Comments that lead a statement on their own lines, above it. The file header stays when the
+ * first statement is removed.
+ */
+export const leadingComments = (editor: SourceEditor, statement: Span): E.Comment[] => {
+  const { code, comments } = editor;
+  const previous = editor.program.body.filter((node) => node.end <= statement.start).at(-1);
+  const previousLineEnd = previous ? code.indexOf('\n', previous.end) : -1;
+  const from = previousLineEnd === -1 && previous ? previous.end : previousLineEnd + 1;
+  const header = new Set(previous ? [] : headerComments(editor));
+  return comments.filter(
+    (comment) => comment.start >= from && comment.end <= statement.start && !header.has(comment)
+  );
+};
+
+/** Remove a statement with its leading comments, and its line when nothing else shares it. */
 export const removeStatement = (editor: SourceEditor, statement: Span) => {
   const { code } = editor;
-  const lineStart = code.lastIndexOf('\n', statement.start - 1) + 1;
+  const first = leadingComments(editor, statement)[0];
+  const lineStart = code.lastIndexOf('\n', (first ?? statement).start - 1) + 1;
   const lineEnd = code.indexOf('\n', statement.end);
-  const before = code.slice(lineStart, statement.start);
+  const before = code.slice(lineStart, (first ?? statement).start);
   const after = code.slice(statement.end, lineEnd === -1 ? code.length : lineEnd);
   if (!before.trim() && !after.trim()) {
     editor.edits.remove(lineStart, lineEnd === -1 ? code.length : lineEnd + 1);
   } else {
-    editor.edits.remove(statement.start, statement.end);
+    editor.edits.remove((first ?? statement).start, statement.end);
   }
 };
 
@@ -501,22 +621,22 @@ export const renameKey = (editor: SourceEditor, member: Property, key: string) =
   editor.edits.overwrite(range.start, range.end, key);
 };
 
+// The member's text with its key renamed, as `memberText` would print it.
 export const renamedMemberText = (
   editor: SourceEditor,
   object: E.ObjectExpression,
   member: Property,
   key: string
 ) => {
-  const text = memberText(editor, object, member);
-  if (member.shorthand) {
-    return (
-      text.slice(0, text.length - (member.end - member.start)) +
-      `${key}: ${editor.source(member.value)}`
-    );
-  }
-  const range = keyRange(editor, member);
-  const offset = text.length - (member.end - range.start);
-  return text.slice(0, offset) + key + text.slice(offset + (range.end - range.start));
+  const list = objectList(object);
+  const start = separatorBefore(editor.code, list, list.items.indexOf(member));
+  const { code } = editor;
+  const renamed = member.shorthand
+    ? code.slice(start, member.start) + `${key}: ${editor.source(member.value)}`
+    : code.slice(start, keyRange(editor, member).start) +
+      key +
+      code.slice(keyRange(editor, member).end, member.end);
+  return reindent(renamed.replace(/^\s+/, ''), lineIndent(code, member.start), '');
 };
 
 // Function expression source for a method, so reads and transforms of `play() {}` see a value.

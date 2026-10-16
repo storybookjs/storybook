@@ -751,7 +751,12 @@ export class ConfigFile implements CsfObject {
     if (!current) {
       this.set(path, parseExpression(`[${printExpression(node)}]`));
     } else if (current.type === 'ArrayExpression') {
-      appendToList(this._editorSource, arrayList(current), [printExpression(node)], '');
+      appendToList(
+        this._editorSource,
+        arrayList(this._editorSource, current),
+        [printExpression(node)],
+        ''
+      );
       this._commit();
     } else {
       throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
@@ -780,7 +785,7 @@ export class ConfigFile implements CsfObject {
         return element ? this._getWrappedValue(element) === value : false;
       });
       if (element) {
-        removeFromList(this._editorSource, arrayList(current), [element]);
+        removeFromList(this._editorSource, arrayList(this._editorSource, current), [element]);
         this._commit();
       } else {
         throw new Error(`Could not find '${value}' in array at '${path.join('.')}'`);

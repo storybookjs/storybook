@@ -1295,6 +1295,37 @@ describe('CsfFile', () => {
       `);
     });
 
+    it.each(['export { Missing };', 'export { type Missing };', 'export type { Missing };'])(
+      'rejects %s of a name the file never declares',
+      (exported) => {
+        expect(() =>
+          loadCsf(`export default {};\n${exported}`, {
+            makeTitle,
+            fileName: 'foo/bar.stories.ts',
+          }).parse()
+        ).toThrow(/^Export 'Missing' is not defined \(2:\d+\) in foo\/bar\.stories\.ts$/);
+      }
+    );
+
+    it.each([
+      'type X = {};\nexport { X };',
+      'type X = {};\nexport { type X };',
+      'interface X {}\nexport { X };',
+      'enum X {}\nexport { X };',
+      'namespace X {}\nexport { X };',
+      'namespace X.Y {}\nexport { X };',
+      'declare function X(): void;\nexport { X };',
+      "import type { X } from './x';\nexport { X };",
+      "export { X } from './x';",
+    ])('accepts the export in %s', (declaration) => {
+      expect(() =>
+        loadCsf(`export default {};\n${declaration}`, {
+          makeTitle,
+          fileName: 'foo/bar.stories.ts',
+        }).parse()
+      ).not.toThrow();
+    });
+
     it('dynamic titles', () => {
       expect(() =>
         parse(

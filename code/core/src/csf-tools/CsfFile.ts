@@ -23,6 +23,7 @@ import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } fro
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import {
   type E,
+  EstreeParseError,
   type Node,
   type SourceLocation,
   children,
@@ -234,6 +235,31 @@ const hasMount = (play: Node | undefined) => {
 };
 
 const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
+
+// TS declarations that the scope analysis does not create a binding for.
+const UNBOUND_DECLARATIONS = new Set([
+  'TSTypeAliasDeclaration',
+  'TSInterfaceDeclaration',
+  'TSEnumDeclaration',
+  'TSModuleDeclaration',
+  'TSDeclareFunction',
+]);
+
+const isDeclared = (editor: SourceEditor, local: E.IdentifierReference) =>
+  !!editor.scopes.bindingOf(local) ||
+  editor.program.body.some((statement) => {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (!declaration || !UNBOUND_DECLARATIONS.has(declaration.type)) {
+      return false;
+    }
+    // `namespace A.B {}` declares `A`.
+    let id = (declaration as { id?: Node | null }).id;
+    while (id?.type === 'TSQualifiedName') {
+      id = id.left;
+    }
+    return isIdentifier(id, local.name);
+  });
 
 export interface CsfOptions {
   fileName?: string;
@@ -783,6 +809,13 @@ export class CsfFile {
             ? specifier.exported.name
             : (specifier.exported as E.StringLiteral).value;
         const localName = specifier.local.name;
+        if (isTopLevel && !node.source && !isDeclared(this._editor, specifier.local)) {
+          throw new EstreeParseError(
+            `Export '${localName}' is not defined`,
+            this._options.fileName,
+            locationOf(this._code, specifier.local.start, specifier.local.start)
+          );
+        }
         const decl = isTopLevel ? findVarInitialization(localName, this._program) : specifier.local;
 
         if (exportName === 'default') {

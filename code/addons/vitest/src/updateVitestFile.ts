@@ -90,6 +90,16 @@ const findNamedProp = (
       p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === name
   );
 
+/** Builds a fresh `{ extends: true }` property — a new node per call so AST parents never share one. */
+const extendsTrueProperty = (): t.ObjectProperty =>
+  ({
+    type: 'ObjectProperty',
+    key: { type: 'Identifier', name: 'extends' } as t.Identifier,
+    value: { type: 'BooleanLiteral', value: true } as t.BooleanLiteral,
+    computed: false,
+    shorthand: false,
+  }) as t.ObjectProperty;
+
 /**
  * Normalizes a non-array `projects` property value into an array expression that keeps the
  * original list applying:
@@ -123,15 +133,7 @@ const projectListValueToArray = (value: t.Expression, ast: BabelFile['ast']): t.
             elements: [
               {
                 type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'ObjectProperty',
-                    key: { type: 'Identifier', name: 'extends' } as t.Identifier,
-                    value: { type: 'BooleanLiteral', value: true } as t.BooleanLiteral,
-                    computed: false,
-                    shorthand: false,
-                  } as t.ObjectProperty,
-                ],
+                properties: [extendsTrueProperty()],
               },
             ],
           },
@@ -252,13 +254,7 @@ const wrapTestConfigAsProject = (
   const existingTestProject: t.ObjectExpression = {
     type: 'ObjectExpression',
     properties: [
-      {
-        type: 'ObjectProperty',
-        key: { type: 'Identifier', name: 'extends' } as t.Identifier,
-        value: { type: 'BooleanLiteral', value: true } as t.BooleanLiteral,
-        computed: false,
-        shorthand: false,
-      } as t.ObjectProperty,
+      extendsTrueProperty(),
       {
         type: 'ObjectProperty',
         key: { type: 'Identifier', name: 'test' } as t.Identifier,

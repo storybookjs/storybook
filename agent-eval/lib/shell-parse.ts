@@ -1,0 +1,645 @@
+// Pure shell-command parsing for plugin-path workflow scoring: no vitest, no
+// filesystem access. This file is copied into eval sandboxes next to
+// test-utils.ts, so it must stay dependency-free.
+
+import { isRecord } from './utils/type.ts';
+
+export type StorybookWorkflowCall = {
+  name: string;
+  input: Record<string, unknown>;
+  source: 'mcp' | 'cli';
+};
+
+// `storybook skills write-story` and `stories` serve the document the MCP
+// channel exposes as the get-storybook-story-instructions tool, which
+// assertions ask for by name. Remove the alias once the MCP tool and the skill
+// share one name (or the tool is retired).
+export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
+  if (call.name === name) {
+    return true;
+  }
+  return (
+    name === 'get-storybook-story-instructions' &&
+    call.name === 'skills-get' &&
+    (call.input.id === 'write-story' || call.input.id === 'stories' || call.input.all === true)
+  );
+}
+
+export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
+  'docs-list',
+  'docs-show',
+  'docs-show-story',
+  'get-storybook-story-instructions',
+  'review-create',
+  'stories-changed',
+  'stories-find-by-component',
+  'stories-preview',
+  'test-run',
+] as const;
+
+const SHELL_COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|']);
+
+// MCP-ish payload wrappers observed across agents: the workflow input may sit
+// directly on the object, under one of these keys, or under `params.<key>`.
+const WORKFLOW_INPUT_KEYS = ['arguments', 'input', 'args'] as const;
+
+export function parseStorybookWorkflowShellCommands(commands: string[]): StorybookWorkflowCall[] {
+  return commands.flatMap(parsePluginWorkflowCalls);
+}
+
+export function normalizeStorybookWorkflowName(
+  name: string
+): (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number] | undefined {
+  return STORYBOOK_WORKFLOW_TOOL_NAMES.find(
+    (toolName) =>
+      name === toolName ||
+      name.endsWith(`__${toolName}`) ||
+      name.endsWith(`.${toolName}`) ||
+      name.endsWith(`/${toolName}`)
+  );
+}
+
+export function getNestedWorkflowInput(
+  record: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  for (const key of WORKFLOW_INPUT_KEYS) {
+    const value = record[key];
+    if (isRecord(value)) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+export function isSameWorkflowCall(
+  first: StorybookWorkflowCall,
+  second: StorybookWorkflowCall
+): boolean {
+  return first.name === second.name && JSON.stringify(first.input) === JSON.stringify(second.input);
+}
+
+function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
+  const nestedCommand = getNestedShellCommand(command);
+  if (nestedCommand !== undefined) {
+    return parsePluginWorkflowCalls(nestedCommand);
+  }
+
+  // Only genuine `storybook tools` CLI invocations count as plugin workflow
+  // calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
+  // are deliberately not recognized: agents must use the documented CLI.
+  return parseStorybookCliWorkflowCalls(command);
+}
+
+function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
+  const words = tokenizeShellWords(command);
+  const tokens = words.map((word) => word.value);
+  const heredocs = catHeredocFiles(words);
+  const calls: StorybookWorkflowCall[] = [];
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    calls.push(...parseSubstitutedCalls([words[index]!]));
+    if (tokens[index] !== 'storybook') {
+      continue;
+    }
+
+    const cli = tokens[index + 1];
+    if (cli === 'skills') {
+      // Record the literal invocation; which skill serves which workflow document
+      // is workflowCallMatchesName's concern. A help request prints usage instead
+      // of the skill, so it does not count — same rule as the tools branch below.
+      const segment = segmentUntilSeparator(tokens, index + 2);
+      const [first, ...rest] = segment;
+      const all = first === '--all' && rest.length === 0;
+      const single =
+        first !== undefined &&
+        !first.startsWith('-') &&
+        !rest.includes('--all') &&
+        !rest.includes('--help') &&
+        !rest.includes('-h');
+      if (all || single) {
+        calls.push({
+          name: 'skills-get',
+          input: all ? { all: true } : { id: first },
+          source: 'cli',
+        });
+        index += 1 + segment.length;
+      }
+      continue;
+    }
+    if (cli !== 'tools') {
+      continue;
+    }
+
+    const invocation = parseStorybookToolsInvocation(words.slice(index + 2), heredocs);
+    if (invocation !== undefined) {
+      const consumed = words.slice(index + 2, index + 2 + invocation.consumed);
+      calls.push(...parseSubstitutedCalls(consumed), invocation.call);
+      index += invocation.consumed + 1;
+    }
+  }
+
+  return calls;
+}
+
+// A `$(…)` runs before the command that uses its output.
+function parseSubstitutedCalls(words: ShellWord[]): StorybookWorkflowCall[] {
+  return words.flatMap((word) => word.substitutions ?? []).flatMap(parsePluginWorkflowCalls);
+}
+
+function segmentUntilSeparator(tokens: string[], start: number): string[] {
+  const end = tokens.findIndex(
+    (token, index) => index >= start && SHELL_COMMAND_SEPARATORS.has(token)
+  );
+  return tokens.slice(start, end === -1 ? tokens.length : end);
+}
+
+function parseStorybookToolsInvocation(
+  cliArgs: ShellWord[],
+  heredocs: Map<string, string>
+): { call: StorybookWorkflowCall; consumed: number } | undefined {
+  const endIndex = cliArgs.findIndex(
+    ({ value }, index) =>
+      SHELL_COMMAND_SEPARATORS.has(value) ||
+      (value === 'storybook' && cliArgs[index + 1]?.value === 'tools')
+  );
+  const consumed = endIndex === -1 ? cliArgs.length : endIndex;
+  const { segment, unresolved } = expandShellWords(cliArgs.slice(0, consumed), heredocs);
+
+  const command = findWorkflowCommand(segment);
+  if (command === undefined || segment[0] === 'help') {
+    return undefined;
+  }
+
+  const commanderOptions = segment.slice(0, command.index);
+  if (commanderOptions.includes('--help') || commanderOptions.includes('-h')) {
+    return undefined;
+  }
+
+  const input = parseToolArguments(
+    segment.slice(command.index + 2),
+    readCommanderInput(commanderOptions),
+    unresolved
+  );
+  if (input === undefined) {
+    return undefined;
+  }
+
+  return { call: { name: command.name, input, source: 'cli' }, consumed };
+}
+
+// The `<toolset> <tool>` pair (`test run`) names the workflow tool (`test-run`).
+function findWorkflowCommand(
+  segment: string[]
+): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; index: number } | undefined {
+  for (let index = 0; index < segment.length - 1; index += 1) {
+    const name = normalizeStorybookWorkflowName(`${segment[index]}-${segment[index + 1]}`);
+    if (name !== undefined) {
+      return { name, index };
+    }
+  }
+
+  return undefined;
+}
+
+// Matches the shell binary of a `bash -c '…'`-style wrapper, with or without a
+// path prefix (`/bin/sh`). `env bash -c` also works, but only because `bash`
+// itself is the token preceding `-c` — `env` is never matched.
+const SHELL_BINARY_PATTERN = /^(?:.*\/)?(?:sh|bash|zsh|dash|ksh)$/;
+
+function getNestedShellCommand(command: string): string | undefined {
+  const tokens = tokenizeShellCommand(command);
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (tokens[index] !== '-c' && tokens[index] !== '-lc') {
+      continue;
+    }
+
+    // Only a `-c` that belongs to a shell binary wraps a nested command;
+    // `head -c 800`, `curl -c jar`, or `grep -c foo` must stay literal.
+    // Walk back over other dash flags so `bash -x -c '…'` still counts.
+    // Known limitation: a flag with a separate value argument (e.g.
+    // `bash -O extglob -c '…'`) stops the walk-back at the value and the
+    // wrapper is missed — accepted, agents have not been observed doing that.
+    let binaryIndex = index - 1;
+    while (binaryIndex >= 0 && tokens[binaryIndex]?.startsWith('-')) {
+      binaryIndex -= 1;
+    }
+    if (binaryIndex >= 0 && SHELL_BINARY_PATTERN.test(tokens[binaryIndex] ?? '')) {
+      return tokens[index + 1];
+    }
+  }
+
+  return undefined;
+}
+
+// `2>&1`, `>`, `>>out.txt`, `2>err.log`, `&>log`, `<in.txt`, …
+const SHELL_REDIRECTION_PATTERN = /^(\d*|&)>{1,2}|^</;
+// Redirections that already name their target (`2>&1`, `>out.txt`) consume one
+// token; a bare operator (`>`, `2>`, `<`) also consumes the following token.
+const BARE_SHELL_REDIRECTION_PATTERN = /^((\d*|&)>{1,2}|<)$/;
+
+function isShellRedirection(token: string): boolean {
+  return SHELL_REDIRECTION_PATTERN.test(token);
+}
+
+const CAT_SUBSTITUTION = /\$\(\s*cat\s+([^\s)]+)\s*\)/g;
+
+// What the shell hands the CLI: redirections removed, and `$(cat path)`
+// replaced by the body of a same-command `cat > path <<TAG` heredoc.
+// `unresolved` holds the values whose substitution the harness cannot see, both
+// as a whole word and as the value of a `--key=value` word.
+function expandShellWords(
+  words: ShellWord[],
+  heredocs: Map<string, string>
+): { segment: string[]; unresolved: Set<string> } {
+  const segment: string[] = [];
+  const unresolved = new Set<string>();
+  for (let index = 0; index < words.length; index += 1) {
+    const word = words[index];
+    if (word === undefined) {
+      continue;
+    }
+    if (!word.quotedStart && BARE_SHELL_REDIRECTION_PATTERN.test(word.value)) {
+      index += 1;
+      continue;
+    }
+    if (!word.quotedStart && isShellRedirection(word.value)) {
+      continue;
+    }
+    if (!word.expands) {
+      segment.push(word.value);
+      continue;
+    }
+    const value = word.value.replace(
+      CAT_SUBSTITUTION,
+      (match, path: string) => heredocs.get(path.replace(/^(['"])(.*)\1$/, '$2')) ?? match
+    );
+    if (value.includes('$')) {
+      unresolved.add(value).add(value.slice(value.indexOf('=') + 1));
+    }
+    segment.push(value);
+  }
+  return { segment, unresolved };
+}
+
+// Commander parses the options before the toolset name; of those, only
+// `--input` reaches the tool.
+function readCommanderInput(options: string[]): string | undefined {
+  let input: string | undefined;
+  options.forEach((option, index) => {
+    if (option === '--input') {
+      input = options[index + 1];
+    } else if (option.startsWith('--input=')) {
+      input = option.slice('--input='.length);
+    }
+  });
+  return input;
+}
+
+// A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
+// returns only the tool arguments, or `undefined` where the CLI prints help or
+// rejects the invocation. shell-parse.test.ts runs both on the same tokens.
+function parseToolArguments(
+  tokens: string[],
+  commanderInput: string | undefined,
+  unresolved: ReadonlySet<string>
+): Record<string, unknown> | undefined {
+  let rawInput = commanderInput;
+  let attach: boolean | undefined;
+  const flagArgs: Record<string, unknown> = {};
+
+  let index = 0;
+  while (index < tokens.length) {
+    const token = tokens[index] ?? '';
+    index += 1;
+
+    if (token === '--help' || token === '-h') {
+      return undefined;
+    }
+    if (token === '--json') {
+      continue;
+    }
+    if (token === '--attach' || token === '--no-attach') {
+      const value = token === '--attach';
+      if (attach === !value) {
+        return undefined;
+      }
+      attach = value;
+      continue;
+    }
+    if (token === '-o') {
+      const path = tokens[index];
+      if (path === undefined || path.startsWith('-')) {
+        return undefined;
+      }
+      index += 1;
+      continue;
+    }
+    if (!token.startsWith('--') || token === '--') {
+      return undefined;
+    }
+
+    const equalsIndex = token.indexOf('=');
+    const key = token.slice(2, equalsIndex === -1 ? undefined : equalsIndex);
+    let value = equalsIndex === -1 ? undefined : token.slice(equalsIndex + 1);
+    const next = tokens[index];
+    if (value === undefined && next !== undefined && !next.startsWith('--')) {
+      value = next;
+      index += 1;
+    }
+
+    if (key === '' || ['help', 'json', 'attach', 'no-attach'].includes(key)) {
+      return undefined;
+    }
+    if (key === 'output') {
+      if (!value) {
+        return undefined;
+      }
+      continue;
+    }
+    if (key === 'input') {
+      if (value === undefined) {
+        return undefined;
+      }
+      rawInput = value;
+      continue;
+    }
+    flagArgs[key] = value === undefined ? true : coerceValue(value);
+  }
+
+  if (rawInput === undefined) {
+    return flagArgs;
+  }
+  let input: unknown;
+  try {
+    input = JSON.parse(rawInput);
+  } catch {
+    // The CLI saw what the shell made of this (`$(cat file)` from an earlier
+    // command, `$VAR`); keep the raw text so a failing assertion shows it.
+    return unresolved.has(rawInput) ? { input: rawInput, ...flagArgs } : undefined;
+  }
+  return isRecord(input) ? { ...input, ...flagArgs } : undefined;
+}
+
+function coerceValue(value: string): unknown {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
+// `cat > path <<TAG`: the file a later `$(cat path)` reads back.
+function catHeredocFiles(words: ShellWord[]): Map<string, string> {
+  const files = new Map<string, string>();
+  words.forEach((word, index) => {
+    const [redirect, path, heredoc] = words.slice(index + 1, index + 4);
+    if (word.value === 'cat' && redirect?.value === '>' && path !== undefined && heredoc?.heredoc) {
+      files.set(path.value, heredoc.heredoc.body);
+    }
+  });
+  return files;
+}
+
+export function tokenizeShellCommand(command: string): string[] {
+  return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
+}
+
+export type ShellWord = {
+  value: string;
+  // The first character was quoted or escaped, so a leading `<` or `>` is text.
+  quotedStart: boolean;
+  // A `$` outside single quotes: the shell substitutes something here.
+  expands: boolean;
+  // The commands inside this word's `$(…)` substitutions.
+  substitutions?: string[];
+  // Set on the `<<TAG` operator word.
+  heredoc?: Heredoc;
+};
+
+export type Heredoc = {
+  delimiter: string;
+  stripTabs: boolean;
+  // A quoted delimiter (`<<'EOF'`) keeps `$` in the body literal.
+  quoted: boolean;
+  body: string;
+};
+
+// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, `<<\TAG`; the caller rules out `<<<`.
+const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()'"\\])+)/;
+
+export function tokenizeShellWords(command: string): ShellWord[] {
+  return scanShellWords(command, 0, false).words;
+}
+
+// Scans to the end of the command, or, inside a `$(…)`, to its closing
+// parenthesis. Heredoc bodies are data: they are read at the end of their line
+// and never tokenized.
+function scanShellWords(
+  command: string,
+  start: number,
+  inSubstitution: boolean
+): { words: ShellWord[]; heredocs: Heredoc[]; end: number } {
+  const words: ShellWord[] = [];
+  const heredocs: Heredoc[] = [];
+  let unreadHeredocs = 0;
+  let word: ShellWord | undefined;
+  let quote: '"' | "'" | undefined;
+  let escaping = false;
+  let parenDepth = 0;
+
+  for (let index = start; index < command.length; index += 1) {
+    const char = command[index];
+    if (char === undefined) {
+      continue;
+    }
+
+    // POSIX: inside single quotes everything is literal, including backslashes.
+    // Agents rely on this when passing JSON payloads (e.g. --input '{"a": "\"x\""}').
+    if (quote === "'") {
+      if (char === "'") {
+        quote = undefined;
+      } else {
+        append(char, true);
+      }
+      continue;
+    }
+
+    if (escaping) {
+      // A backslash-newline continues the line and is removed entirely.
+      if (char !== '\n') {
+        append(char, true);
+      }
+      escaping = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaping = true;
+      continue;
+    }
+
+    if (char === '$' && command[index + 1] === '(') {
+      index = appendCommandSubstitution(index);
+      continue;
+    }
+
+    if (quote === '"') {
+      if (char === '"') {
+        quote = undefined;
+      } else {
+        append(char, true, char === '$');
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      word ??= { value: '', quotedStart: true, expands: false };
+      continue;
+    }
+
+    if (char === '#' && word === undefined) {
+      const lineEnd = command.indexOf('\n', index);
+      index = (lineEnd === -1 ? command.length : lineEnd) - 1;
+      continue;
+    }
+
+    const operator =
+      char === '<' && command[index - 1] !== '<' && command[index + 2] !== '<'
+        ? HEREDOC_OPERATOR_PATTERN.exec(command.slice(index))
+        : null;
+    if (operator !== null) {
+      const rawDelimiter = operator[2] ?? '';
+      const delimiter = rawDelimiter.replace(/\\(.)/g, '$1').replace(/['"]/g, '');
+      const heredoc: Heredoc = {
+        delimiter,
+        stripTabs: operator[1] === '-',
+        quoted: delimiter !== rawDelimiter,
+        body: '',
+      };
+      heredocs.push(heredoc);
+      pushWord();
+      words.push({ value: `<<${delimiter}`, quotedStart: false, expands: false, heredoc });
+      index += operator[0].length - 1;
+      continue;
+    }
+
+    if (char === '&' && command[index + 1] === '&') {
+      pushOperator('&&');
+      index += 1;
+      continue;
+    }
+
+    if (char === '|' && command[index + 1] === '|') {
+      pushOperator('||');
+      index += 1;
+      continue;
+    }
+
+    if (char === ';' || char === '|') {
+      pushOperator(char);
+      continue;
+    }
+
+    if (char === '\n') {
+      pushOperator(';');
+      index = readHeredocBodies(index);
+      continue;
+    }
+
+    if (inSubstitution && char === ')' && parenDepth === 0) {
+      pushWord();
+      return { words, heredocs, end: index };
+    }
+    if (inSubstitution && (char === '(' || char === ')')) {
+      parenDepth += char === '(' ? 1 : -1;
+    }
+
+    if (/\s/.test(char)) {
+      pushWord();
+      continue;
+    }
+
+    append(char, false, char === '$');
+  }
+
+  pushWord();
+  return { words, heredocs, end: command.length };
+
+  function append(text: string, quoted: boolean, expands = false): ShellWord {
+    word ??= { value: '', quotedStart: quoted, expands: false };
+    word.value += text;
+    word.expands ||= expands;
+    return word;
+  }
+
+  function pushWord(): void {
+    if (word !== undefined) {
+      words.push(word);
+      word = undefined;
+    }
+  }
+
+  function pushOperator(operator: string): void {
+    pushWord();
+    words.push({ value: operator, quotedStart: false, expands: false });
+  }
+
+  // Returns the index of the last character consumed. Inside `$(…)`, bash also
+  // ends a body at `TAG)`, leaving the `)` to close the substitution.
+  function readHeredocBodies(newline: number): number {
+    let position = newline + 1;
+    for (const heredoc of heredocs.slice(unreadHeredocs)) {
+      const lines: string[] = [];
+      while (position < command.length) {
+        const lineEnd = command.indexOf('\n', position);
+        const end = lineEnd === -1 ? command.length : lineEnd;
+        const rawLine = command.slice(position, end);
+        const line = heredoc.stripTabs ? rawLine.replace(/^\t+/, '') : rawLine;
+        if (inSubstitution && line.startsWith(`${heredoc.delimiter})`)) {
+          heredoc.body = lines.join('\n');
+          unreadHeredocs = heredocs.length;
+          return end - line.length + heredoc.delimiter.length - 1;
+        }
+        position = end + 1;
+        if (line === heredoc.delimiter) {
+          break;
+        }
+        lines.push(line);
+      }
+      heredoc.body = lines.join('\n');
+    }
+    unreadHeredocs = heredocs.length;
+    return Math.min(position, command.length) - 1;
+  }
+
+  // `"$(cat <<'EOF' … EOF)"` is the heredoc body; any other substitution stays
+  // as written for expandShellWords. Returns the index of the closing `)`.
+  function appendCommandSubstitution(dollar: number): number {
+    const inner = scanShellWords(command, dollar + 2, true);
+    const innerCommand = inner.words.map(({ value }) => value).filter((value) => value !== ';');
+    const [heredoc] = inner.heredocs;
+    if (
+      heredoc !== undefined &&
+      inner.heredocs.length === 1 &&
+      innerCommand.length === 2 &&
+      innerCommand[0] === 'cat'
+    ) {
+      // The shell strips trailing newlines from a substitution's output.
+      append(heredoc.body.replace(/\n+$/, ''), true, !heredoc.quoted && heredoc.body.includes('$'));
+    } else {
+      const substituted = append(command.slice(dollar, inner.end + 1), quote === '"', true);
+      (substituted.substitutions ??= []).push(command.slice(dollar + 2, inner.end));
+    }
+    return inner.end;
+  }
+}
+
+export function parseJson(value: string): unknown {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return undefined;
+  }
+}

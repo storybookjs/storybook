@@ -1,0 +1,7 @@
+{
+  "argTypes": {},
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-globalsetup",
+  "jsDocTags": {},
+  "name": "GlobalSetup",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/GlobalSetup.stories.ts"
+}

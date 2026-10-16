@@ -99,11 +99,29 @@ export const InvalidateAll = {
   },
 };
 
+const refreshAll = fn();
+
+export const RefreshAll = {
+  async play({ canvasElement }) {
+    const canvas = within(canvasElement);
+    const button = canvas.getByText('refreshAll');
+    button.click();
+    expect(refreshAll).toHaveBeenCalledWith();
+  },
+  parameters: {
+    sveltekit_experimental: {
+      navigation: {
+        refreshAll,
+      },
+    },
+  },
+};
+
 const afterNavigateFn = fn();
 
 export const AfterNavigate = {
   async play() {
-    expect(afterNavigateFn).toHaveBeenCalledWith({ test: 'passed' });
+    expect(afterNavigateFn).toHaveBeenCalledWith(expect.objectContaining({ test: 'passed' }));
   },
   args: {
     afterNavigateFn,
@@ -116,5 +134,18 @@ export const AfterNavigate = {
         },
       },
     },
+  },
+};
+
+const defaultAfterNavigateFn = fn();
+
+export const AfterNavigateDefault = {
+  async play() {
+    expect(defaultAfterNavigateFn).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'enter', shallow: false, willUnload: false })
+    );
+  },
+  args: {
+    afterNavigateFn: defaultAfterNavigateFn,
   },
 };

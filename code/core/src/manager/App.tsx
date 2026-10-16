@@ -7,14 +7,12 @@ import type { Addon_PageType } from 'storybook/internal/types';
 import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
-import { global } from '@storybook/global';
-
-import { isReviewFeatureEnabled } from '../shared/review/features.ts';
 import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
 import { ReviewPersistentLayer } from './components/review/components/ReviewPersistentLayer.tsx';
-import { useReview } from './components/review/review-store.ts';
+import { ReviewProvider } from './components/review/components/ReviewProvider.tsx';
+import { useReviewContext } from './components/review/review-context.ts';
 import Panel from './container/Panel.tsx';
 import Preview from './container/Preview.tsx';
 import Sidebar from './container/Sidebar.tsx';
@@ -25,7 +23,7 @@ import Sidebar from './container/Sidebar.tsx';
  * when navigating to a curated story. Unmounting makes each such navigation boot a fresh preview.
  */
 const MainPreview = () => {
-  const { isSummaryVisible } = useReview();
+  const { isSummaryVisible } = useReviewContext();
   return isSummaryVisible ? null : <Preview id="main" withLoader />;
 };
 
@@ -33,10 +31,9 @@ type Props = {
   managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];
   setManagerLayoutState: ComponentProps<typeof Layout>['setManagerLayoutState'];
   pages: Addon_PageType[];
-  hasTab: boolean;
 };
 
-export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
+export const App = ({ managerLayoutState, setManagerLayoutState, pages }: Props) => {
   const { setMobileAboutOpen } = useLayout();
 
   /**
@@ -75,24 +72,27 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     return () => observer.disconnect();
   }, []);
 
+  const layout = (
+    <Layout
+      managerLayoutState={managerLayoutState}
+      setManagerLayoutState={setManagerLayoutState}
+      slotOverlay={<ReviewPersistentLayer />}
+      slotMain={<MainPreview />}
+      slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
+      slotPanel={<Panel />}
+      slotPages={pages.map(({ id, render: Content }) => (
+        <Content key={id} />
+      ))}
+    />
+  );
+
   return (
     <>
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
-        <Layout
-          hasTab={hasTab}
-          managerLayoutState={managerLayoutState}
-          setManagerLayoutState={setManagerLayoutState}
-          slotOverlay={
-            isReviewFeatureEnabled(global.FEATURES) ? <ReviewPersistentLayer /> : undefined
-          }
-          slotMain={<MainPreview />}
-          slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
-          slotPanel={<Panel />}
-          slotPages={pages.map(({ id, render: Content }) => (
-            <Content key={id} />
-          ))}
-        />
+        {/* The provider wraps the whole layout so the sidebar, toolbar, and content
+            overlay share one review context. */}
+        <ReviewProvider>{layout}</ReviewProvider>
       </ManagerErrorBoundary>
     </>
   );

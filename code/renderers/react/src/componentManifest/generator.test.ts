@@ -44,7 +44,6 @@ test('manifests generates correct id, name, description and examples ', async ()
     (entry) => entry.tags?.includes(Tag.MANIFEST) ?? false
   );
   const result = await runManifests(manifestEntries);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
   const { meta: _meta, ...components } = result?.components ?? {};
 
   expect(components).toMatchInlineSnapshot(`
@@ -54,7 +53,8 @@ test('manifests generates correct id, name, description and examples ', async ()
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": "import { Button } from "@design-system/components/override";",
+          "import": "import { Button } from '@design-system/components/override';
+    import { fn } from 'storybook/test';",
           "jsDocTags": {
             "import": [
               "import { Button } from '@design-system/components/override';",
@@ -177,7 +177,8 @@ test('manifests generates correct id, name, description and examples ', async ()
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from "some-package";",
+          "import": "import { Header } from 'some-package';
+    import { fn } from 'storybook/test';",
           "jsDocTags": {
             "summary": [
               "Component summary",
@@ -287,10 +288,13 @@ test('manifests generates correct id, name, description and examples ', async ()
   );
 });
 
-async function getManifestForStory(code: string) {
+async function getManifestForStory(
+  code: string,
+  packageJson: Record<string, unknown> = { name: 'some-package' }
+) {
   vol.fromJSON(
     {
-      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./package.json']: JSON.stringify(packageJson),
       ['./src/stories/Button.stories.ts']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
@@ -367,7 +371,7 @@ test('fall back to index title when no component name', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -408,6 +412,50 @@ test('fall back to index title when no component name', async () => {
   `);
 });
 
+test('keeps the story import for a component in a private app package', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, { name: 'my-app', private: true });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
+test('imports a component in a private workspace package by its package name', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    main: './src/index.ts',
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
+test('imports a component in a private package that exports its root by its package name', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { '.': './src/index.ts' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
+test('keeps the story import for a private package that exports only subpaths', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { './components/*': './src/components/*.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
 test('component exported from other file', async () => {
   const code = withCSF3(dedent`
     export { Primary } from './other-file';
@@ -417,7 +465,7 @@ test('component exported from other file', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -472,7 +520,7 @@ test('unknown expressions', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -909,7 +957,10 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
   const result = await runManifestsWithOptions(manifestEntries, { presets });
   const button = result?.components?.components?.['example-button'];
 
-  expect(button?.import).toBe('import { Button } from "@design-system/components/override";');
+  // `fn` joins the block because the story's args call it, so the snippet compiles as pasted.
+  expect(button?.import).toBe(
+    "import { Button } from '@design-system/components/override';\nimport { fn } from 'storybook/test';"
+  );
   expect(button?.jsDocTags.import).toEqual([
     "import { Button } from '@design-system/components/override';",
   ]);
@@ -999,7 +1050,7 @@ test('generator falls back to title-based matching when meta.component aliases a
 
   expect(accordion?.error).toBeUndefined();
   expect(accordion?.name).toBe('Root');
-  expect(accordion?.import).toBe('import { Root } from "some-package";');
+  expect(accordion?.import).toBe("import { Root } from 'some-package';");
   expect(batchExtract).toHaveBeenCalled();
 });
 
@@ -1060,7 +1111,6 @@ test('should create component manifest when only attached-mdx docs have manifest
   ] satisfies ManifestEntries;
 
   const result = await runManifests(manifestEntries);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructure to omit meta
   const { meta: _meta, ...components } = result?.components ?? {};
   expect({ components }).toMatchInlineSnapshot(`
     {
@@ -1070,7 +1120,7 @@ test('should create component manifest when only attached-mdx docs have manifest
             "description": "Primary UI component for user interaction",
             "error": undefined,
             "id": "example-button",
-            "import": "import { Button } from "some-package";",
+            "import": "import { Button } from 'some-package';",
             "jsDocTags": {},
             "name": "Button",
             "path": "./src/stories/Button.stories.ts",

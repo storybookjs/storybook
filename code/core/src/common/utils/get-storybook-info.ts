@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 import type {
   CoreCommon_StorybookInfo,
@@ -15,6 +15,8 @@ import {
 
 import invariant from 'tiny-invariant';
 
+import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
+import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
 import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
 import { frameworkToBuilder } from './framework.ts';
 import { getAddonNames } from './get-addon-names.ts';
@@ -106,12 +108,10 @@ const getStorybookVersionSpecifier = (configDir: string) => {
   return undefined;
 };
 
-const validConfigExtensions = ['ts', 'js', 'tsx', 'jsx', 'mjs', 'cjs'];
-
 export const findConfigFile = (prefix: string, configDir: string) => {
   const filePrefix = join(configDir, prefix);
-  const extension = validConfigExtensions.find((ext: string) => existsSync(`${filePrefix}.${ext}`));
-  return extension ? `${filePrefix}.${extension}` : null;
+  const extension = storybookConfigExtensions.find((ext) => existsSync(`${filePrefix}${ext}`));
+  return extension ? `${filePrefix}${extension}` : null;
 };
 
 export const getConfigInfo = (configDir?: string) => {
@@ -165,6 +165,27 @@ export const getStorybookInfo = async (
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
   if (!frameworkField) {
+    /*
+      React Native on-device Storybook historically omitted `framework` from main.ts.
+      When the config lives in `.rnstorybook`, infer the framework so telemetry
+      `metadata.framework.name` is populated for existing projects (scoped to the
+      RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
+    */
+    if (basename(configInfo.configDir) === RN_STORYBOOK_DIR) {
+      return {
+        ...configInfo,
+        versionSpecifier,
+        addons,
+        mainConfig,
+        frameworkPackage: '@storybook/react-native',
+        rendererPackage: '@storybook/react-native',
+        renderer: SupportedRenderer.REACT_NATIVE,
+        mainConfigPath: configInfo.mainConfigPath ?? undefined,
+        previewConfigPath: configInfo.previewConfigPath ?? undefined,
+        managerConfigPath: configInfo.managerConfigPath ?? undefined,
+      };
+    }
+
     return {
       ...configInfo,
       versionSpecifier,

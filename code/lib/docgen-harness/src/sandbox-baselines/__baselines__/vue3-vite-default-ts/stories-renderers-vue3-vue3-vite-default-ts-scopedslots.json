@@ -1,0 +1,50 @@
+{
+  "argTypes": {
+    "default": {
+      "description": "",
+      "name": "default",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ text: string; year: number; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ text: string; year: number | undefined; }"
+      }
+    },
+    "label": {
+      "description": "",
+      "name": "label",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "year": {
+      "description": "",
+      "name": "year",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-scopedslots",
+  "jsDocTags": {},
+  "name": "MySlotComponent",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/ScopedSlots.stories.ts"
+}

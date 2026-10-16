@@ -153,6 +153,7 @@ export const BooleanControl: FC<BooleanProps> = ({
 
   return (
     <Label aria-disabled={readonly} htmlFor={controlId} aria-label={name}>
+      {/* oxlint-disable jsx-a11y/role-has-required-aria-props -- the native `checked` attribute provides the switch state */}
       <input
         id={controlId}
         type="checkbox"
@@ -163,6 +164,7 @@ export const BooleanControl: FC<BooleanProps> = ({
         aria-required={required || undefined}
         {...{ name, onBlur, onFocus }}
       />
+      {/* oxlint-enable jsx-a11y/role-has-required-aria-props */}
       <span aria-hidden="true">False</span>
       <span aria-hidden="true">True</span>
     </Label>

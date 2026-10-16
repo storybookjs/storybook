@@ -560,7 +560,7 @@ const runBatchOptions = {
   prompt: {
     type: 'string' as const,
     description:
-      'Prompt variant name (required unless --prompts is set; registered in code/core/src/cli/ai/setup-prompts/)',
+      'Prompt variant name (required unless --prompts is set; registered in code/core/src/cli/skills/content/setup-prompts/)',
   },
   prompts: {
     type: 'string' as const,

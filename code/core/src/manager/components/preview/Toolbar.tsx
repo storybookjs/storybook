@@ -1,11 +1,10 @@
 import React, { useRef } from 'react';
 
-import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
+import { AbstractToolbar, Button } from 'storybook/internal/components';
 import { Addon_TypesEnum, type Addon_BaseType } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
-import type { TabListState } from '@react-stately/tabs';
 import {
   Consumer,
   addons,
@@ -73,8 +72,6 @@ export const fullScreenTool: Addon_BaseType = {
 
 export interface ToolData {
   isShown: boolean;
-  tabs: Addon_BaseType[];
-  tabState: TabListState<object>;
   tools: Addon_BaseType[];
   toolsExtra: Addon_BaseType[];
 }
@@ -83,8 +80,6 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   isShown,
   tools,
   toolsExtra,
-  tabs,
-  tabState,
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
@@ -92,7 +87,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
     sectionRef
   );
 
-  return isShown && (tabs || tools || toolsExtra) ? (
+  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
     <StyledSection
       className="sb-bar"
       key="toolbar"
@@ -103,12 +98,6 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
       <h2 id="sb-preview-toolbar-title" className="sb-sr-only">
         Toolbar
       </h2>
-      {tabs.length > 1 ? (
-        <>
-          <TabList state={tabState} />
-          <Separator />
-        </>
-      ) : null}
       <StyledToolbar>
         <Tools key="left" list={tools} />
         <Tools key="right" list={toolsExtra} />
@@ -148,8 +137,7 @@ export function filterToolsSide(
   entry: PreviewProps['entry'],
   viewMode: State['viewMode'],
   location: State['location'],
-  path: State['path'],
-  tabId: string
+  path: State['path']
 ) {
   const filter = (item: Partial<Addon_BaseType>) =>
     item &&
@@ -160,7 +148,6 @@ export function filterToolsSide(
         viewMode,
         location,
         path,
-        tabId,
       })) &&
     !toolbarItemHasBeenExcluded(item, entry);
 

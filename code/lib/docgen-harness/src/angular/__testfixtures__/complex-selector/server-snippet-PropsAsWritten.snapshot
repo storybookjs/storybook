@@ -1,0 +1,9 @@
+import { Component } from '@angular/core';
+import { ComplexSelectorComponent } from './complex-selector.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ComplexSelectorComponent],
+  template: `<button sb-harness-action [emphasis]="true"></button>`,
+})
+export class DemoComponent {}

@@ -1,0 +1,58 @@
+{
+  "rows": {
+    "description": "
+",
+    "name": "rows",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "Math.max(1, 3)",
+      },
+      "type": {
+        "required": true,
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "saved": {
+    "action": "saved",
+    "description": undefined,
+    "name": "saved",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "timeoutMs": {
+    "description": "
+",
+    "name": "timeoutMs",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": NaN,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+}

@@ -68,7 +68,8 @@ const managerContext: any = (
     getElements: fn(() => ({})),
     navigate: fn().mockName('api::navigate'),
     selectStory: fn().mockName('api::selectStory'),
-    experimental_setFilter: fn().mockName('api::experimental_setFilter'),
+    setFilter: fn().mockName('api::setFilter'),
+    setFilters: fn().mockName('api::setFilters'),
     getDocsUrl: () => 'https://storybook.js.org/docs/',
     getIsNavShown: () => true,
     getUrlState: () => ({
@@ -110,7 +111,6 @@ const meta = {
     refId: DEFAULT_REF_ID,
     refs: {},
     allStatuses: {},
-    showCreateStoryButton: true,
     isDevelopment: true,
   },
   decorators: [
@@ -174,7 +174,6 @@ const refs: Record<string, RefType> = {
   },
 };
 
-// eslint-disable-next-line local-rules/no-uncategorized-errors
 const indexError = new Error('Failed to load index');
 
 const refsError = {
@@ -208,9 +207,6 @@ export const Simple: Story = {
 };
 
 export const SimpleInProduction: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const configType = global.CONFIG_TYPE;
     global.CONFIG_TYPE = 'PRODUCTION';
@@ -221,9 +217,6 @@ export const SimpleInProduction: Story = {
 };
 
 export const SimpleNoChecklist: Story = {
-  args: {
-    showCreateStoryButton: false,
-  },
   beforeEach: () => {
     const features = global.FEATURES;
     global.FEATURES = {
@@ -528,17 +521,11 @@ export const Bottom: Story = {
  *    the bottom
  */
 export const Scrolled: Story = {
-  parameters: {
-    // we need a very short viewport
-    viewport: {
-      defaultViewport: 'mobile1',
-      defaultOrientation: 'landscape',
-    },
-  },
+  // we need a very short viewport
+  globals: { sb_theme: 'light', viewport: { value: 'mobile1', isRotated: true } },
   args: {
     storyId: 'group-1--child-b1',
   },
-  globals: { sb_theme: 'light' },
   decorators: [
     (StoryFn) => (
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
@@ -564,7 +551,8 @@ export const Scrolled: Story = {
   play: async ({ canvasElement, step }) => {
     await waitForChecklistWidget();
     const canvas = await within(canvasElement);
-    const scrollable = await canvasElement.querySelector('[data-radix-scroll-area-viewport]');
+    // The tree is the scroll container. The sidebar has no outer scroll container.
+    const scrollable = await canvasElement.querySelector('[role="treegrid"]');
     await step('expand component', async () => {
       const componentNode = await canvas.queryAllByText('Child A2')[1];
       await userEvent.click(componentNode);

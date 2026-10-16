@@ -1,0 +1,12 @@
+/* Added to the app's `build` (browser) target styles array by the sandbox harness. Reaching the
+   Storybook build only through the browserTarget merge, it styles the banner component below; a
+   regression that drops the browser target's styles entry leaves the story unstyled and shows up
+   as a Chromatic visual diff. */
+@use 'theme' as theme;
+
+.sb-browser-target-banner {
+  background: theme.$banner-background;
+  border: 4px solid theme.$banner-border;
+  padding: 1rem;
+  font-size: 1.25rem;
+}

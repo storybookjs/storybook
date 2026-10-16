@@ -24,7 +24,7 @@ Once your project is set up, you will see a testing widget in the bottom of your
 
 ![Storybook app with story status indicators, testing widget, and interactions panel annotated](../_assets/writing-tests/testing-ui-overview.png)
 
-If you cannot use the Vitest addon in your project, you can still run tests using the [test-runner](./integrations/test-runner.mdx).
+The Vitest addon requires a Vite-based framework. If your project uses Webpack, [migrate to Vite](./integrations/vitest-addon/migration-guide.mdx#what-if-i-am-using-storybook-with-webpack-or-rspack) first.
 
 Next, we’ll cover some key concepts of testing in Storybook.
 
@@ -228,6 +228,7 @@ If you prefer, you can reuse your Storybook stories in a traditional testing env
 
 **More testing resources**
 
+- [See our complete guide to component testing](https://storybook.js.org/blog/component-testing-a-practical-guide-for-frontend-developers/)
 - [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
 - [Interaction testing](./interaction-testing.mdx) for user behavior simulation
 - [Accessibility testing](./accessibility-testing.mdx) for accessibility
@@ -237,4 +238,3 @@ If you prefer, you can reuse your Storybook stories in a traditional testing env
 - [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
 - [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 - [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-- [Test runner](./integrations/test-runner.mdx) to automate test execution

@@ -14,16 +14,6 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 export type FrameworkOptions = {
   builder?: BuilderOptions;
   strictMode?: boolean;
-  /**
-   * Use React's legacy root API to mount components
-   *
-   * React has introduced a new root API with React 18.x to enable a whole set of new features (e.g.
-   * concurrent features) If this flag is true, the legacy Root API is used to mount components to
-   * make it easier to migrate step by step to React 18.
-   *
-   * @default false
-   */
-  legacyRootApi?: boolean;
 };
 
 type StorybookConfigFramework = {
@@ -56,9 +46,14 @@ type TypescriptOptions = TypescriptOptionsBase & {
    * Sets the type of Docgen when working with React and TypeScript
    *
    * @default `'react-docgen'`
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
   reactDocgen: 'react-docgen-typescript' | 'react-docgen' | false;
-  /** Configures `@joshwooding/vite-plugin-react-docgen-typescript` */
+  /**
+   * Configures `@joshwooding/vite-plugin-react-docgen-typescript`
+   *
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
+   */
   reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
 };
 

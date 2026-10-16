@@ -2,8 +2,8 @@
  * @file Prefer pascal case
  * @author Yann Braga
  */
-import type { IncludeExcludeOptions } from 'storybook/internal/csf';
-import { isExportStory } from 'storybook/internal/csf';
+import type { IncludeExcludeOptions } from '../utils/csf-helpers.ts';
+import { isExportStory } from '../utils/csf-helpers.ts';
 
 import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';

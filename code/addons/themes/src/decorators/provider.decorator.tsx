@@ -31,9 +31,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
 
   initializeThemeState(themeNames, initialTheme);
 
-  // eslint-disable-next-line react/display-name
-  return (storyFn, context) => {
-    // eslint-disable-next-line react/destructuring-assignment
+  const decorator: DecoratorFunction<TRenderer> = (storyFn, context) => {
     const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 
@@ -60,4 +58,6 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
       </Provider>
     );
   };
+
+  return decorator;
 };

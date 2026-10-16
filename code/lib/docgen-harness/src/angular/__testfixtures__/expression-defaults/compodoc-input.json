@@ -1,0 +1,109 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "ExpressionDefaultsComponent",
+      "id": "component-ExpressionDefaultsComponent-cbb6506530263f4d0a4182050dd562765086076165ef63ce6a939579656c810b0ae36b8ada95a8dcca45c1a3e86b2b8963c778604b6b768f7314c8a7cdfeb38b",
+      "file": "expression-defaults.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-expression-defaults",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span (click)=\"saved.emit()\">{{ rows }} {{ timeoutMs }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "rows",
+          "defaultValue": "Math.max(1, 3)",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 8,
+          "type": "any",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "timeoutMs",
+          "defaultValue": "5 * 60 * 1000",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 10,
+          "type": "number",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "saved",
+          "coverageIgnore": false,
+          "defaultValue": "new EventEmitter<void>()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 12,
+          "type": "EventEmitter"
+        }
+      ],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, EventEmitter, Input, Output } from '@angular/core';\n\n@Component({\n  selector: 'sb-expression-defaults',\n  template: '<span (click)=\"saved.emit()\">{{ rows }} {{ timeoutMs }}</span>',\n})\nexport class ExpressionDefaultsComponent {\n  @Input() rows = Math.max(1, 3);\n\n  @Input() timeoutMs = 5 * 60 * 1000;\n\n  @Output() saved = new EventEmitter<void>();\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "expression-defaults.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "ExpressionDefaultsComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/4",
+        "status": "low"
+      }
+    ]
+  }
+}

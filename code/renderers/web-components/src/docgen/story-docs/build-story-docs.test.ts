@@ -333,6 +333,34 @@ describe('buildStoryDocsPayload', () => {
       },
     },
     {
+      name: 'keeps the lines and comments of a multi-line listener',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const Primary = {
+          args: {
+            onShapeChange: (e) => {
+              // log the event
+              console.log(e);
+            },
+          },
+        };
+      `,
+      expected: {
+        id: 'example-testelement--primary',
+        name: 'Primary',
+        snippet: `<test-element></test-element>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', (e) => {
+      // log the event
+      console.log(e);
+    });
+  }
+</script>`,
+      },
+    },
+    {
       name: 'args on-convention listener',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };

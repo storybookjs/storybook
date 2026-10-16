@@ -8,10 +8,12 @@ import type {
 } from 'storybook/internal/csf-tools';
 import {
   authoredSource,
+  codeOf,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   noSnippetWarning,
+  reindent,
   resolveEffectiveRender,
   sourceOf,
   unwrapExpression,
@@ -434,8 +436,16 @@ const hasSnippetContent = (snippet: ElementSnippet): boolean =>
   snippet.slots.length > 0 ||
   snippet.styleRules.length > 0;
 
-const listenerHandler = (node: Node): string =>
-  isFunctionNode(unwrapExpression(node)) ? sourceOf(node) : '() => {}';
+// The handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
+// from the story file to the snippet.
+const listenerHandler = (node: Node): string => {
+  if (!isFunctionNode(unwrapExpression(node))) {
+    return '() => {}';
+  }
+  const code = codeOf(node);
+  const closingIndent = /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n') + 1))![0];
+  return reindent(code, closingIndent, '    ');
+};
 
 const incompleteList = (names: string[], suffix: string): string | undefined =>
   names.length === 0

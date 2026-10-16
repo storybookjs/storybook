@@ -101,7 +101,7 @@ Writing clear and informative error messages is crucial for effective debugging 
 - **Provide guidance for resolution:** Offer actionable steps to resolve the error or suggest potential fixes.
 - **Provide documentation links:** Whenever applicable, provide links for users to get guidance or more context to fix their issues.
 
-<img src="./assets/docs/message-reference.png" width="800px" />
+<img src="./message-reference.png" alt="An example error message split into what happened, why it happened, how to fix it, and where to find more info" width="800px" />
 
 ✅ Here are a few recommended examples:
 

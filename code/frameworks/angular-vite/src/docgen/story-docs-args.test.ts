@@ -26,5 +26,12 @@ describe('argFieldValue', () => {
     expect(argFieldValue(expressionFromSource('helper({\n      code: `a\n  b`,\n    })'))).toBe(
       'helper({\n  code: `a\n  b`,\n})'
     );
+    expect(
+      argFieldValue(
+        expressionFromSource(
+          'helper({\n\t\tcode: `a\n\tb`,\n\t\tfn() {\n\t\t\treturn 1;\n\t\t},\n\t})'
+        )
+      )
+    ).toBe('helper({\n  code: `a\n\tb`,\n  fn() {\n    return 1;\n  },\n})');
   });
 });

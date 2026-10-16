@@ -70,7 +70,13 @@ const printArgSource = (source: string): string => {
           (shortest, current) => (current.length < shortest.length ? current : shortest),
           indents[0] ?? ''
         );
-  return reindent(code, indent, '').replace(/^\t+/gm, (tabs) => '  '.repeat(tabs.length));
+  let result = reindent(code, indent, '');
+  // Tabs left on code lines become spaces, deepest first so each line is converted once.
+  const deepest = Math.max(0, ...result.split('\n').map((line) => /^\t*/.exec(line)![0].length));
+  for (let depth = deepest; depth > 0; depth--) {
+    result = reindent(result, '\t'.repeat(depth), '  '.repeat(depth));
+  }
+  return result;
 };
 
 const withoutComments = (code: string): string => {

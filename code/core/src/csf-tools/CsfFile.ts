@@ -35,6 +35,7 @@ import {
   unwrapExpression,
 } from './estree/ast.ts';
 import {
+  type GeneratedMap,
   type InputSourceMap,
   SourceEditor,
   appendStatement,
@@ -1159,10 +1160,11 @@ export class CsfFile {
 // Children in source order; type annotations are skipped since CSF never reads them.
 export const loadCsf = (code: string, options: CsfOptions) => new CsfFile(code, options);
 
-type MagicStringSourceMap = ReturnType<SourceEditor['edits']['generateMap']>;
-
-/** A source map that carries the content of its source, as Vite and Rollup expect. */
-export type CsfSourceMap = Omit<MagicStringSourceMap, 'sourcesContent'> & {
+/**
+ * A source map that carries the content of its sources, as Rollup's types expect. An entry is `null`
+ * only when an input map carried none, which Rollup, Vite and webpack accept at runtime.
+ */
+export type CsfSourceMap = Omit<GeneratedMap, 'sourcesContent'> & {
   sourcesContent: string[];
 };
 

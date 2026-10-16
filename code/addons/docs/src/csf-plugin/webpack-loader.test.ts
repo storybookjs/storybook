@@ -83,6 +83,14 @@ describe('webpack loader', () => {
     expect(result.map.sourcesContent).toEqual([originalCode]);
   });
 
+  it('leaves the content unknown when the incoming map has none', async () => {
+    const transpiled = transpile(originalCode);
+    const result = await run(transpiled.code, { ...transpiled.map, sourcesContent: undefined });
+
+    expect(result.map.sources).toEqual([id]);
+    expect(result.map.sourcesContent).toEqual([null]);
+  });
+
   it('maps to the loaded code when no earlier loader ran', async () => {
     const result = await run(originalCode, undefined);
 

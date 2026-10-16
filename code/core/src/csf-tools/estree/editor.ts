@@ -22,6 +22,11 @@ type Span = { start: number; end: number };
 const mapSource = (editor: { fileName: string | undefined }) => editor.fileName ?? 'source';
 
 /** A source map from an earlier transform, as the object or the JSON string it was handed over as. */
+/** A map whose `sourcesContent` may be unknown for sources an input map did not carry. */
+export type GeneratedMap = Omit<SourceMap, 'sourcesContent'> & {
+  sourcesContent?: (string | null)[];
+};
+
 export type InputSourceMap =
   | string
   | {
@@ -136,7 +141,7 @@ export class SourceEditor {
    * Hi-res map from the code the editor was created with to `toString()`, through every commit,
    * and through `inputSourceMap` when the code came from an earlier transform.
    */
-  generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): SourceMap {
+  generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): GeneratedMap {
     const source = options.source ?? this.fileName ?? '';
     const current = this._edits.generateMap({
       hires: true,
@@ -161,7 +166,8 @@ export class SourceEditor {
     return new SourceMap({
       file: composed.file ?? '',
       sources: composed.sources.map((name, index) => input?.sources[index] ?? name ?? source),
-      sourcesContent: composed.sourcesContent?.map((content) => content ?? ''),
+      // Unknown content stays `null`, so devtools load the file instead of showing it empty.
+      sourcesContent: composed.sourcesContent as string[] | undefined,
       names: composed.names,
       // Encoded, since `decodedMappings` was not requested.
       mappings: composed.mappings as string,

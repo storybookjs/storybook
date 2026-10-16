@@ -73,10 +73,30 @@ export default async function postInstall(options: PostinstallOptions) {
   const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
 
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const rootConfig = vitestConfigFile || viteConfigFile;
+
+  // An already-wired config takes the skip path below and is never rewritten, so the
+  // unmergeable-shape guard must not run for it: hand-configured projects — including shapes
+  // the merger cannot express, like a callback export that already calls storybookTest —
+  // must keep succeeding on a rerun.
+  // The content is read once here and reused by the merge block below: nothing between the
+  // two points rewrites the config file.
+  const rootConfigContent = rootConfig ? await fs.readFile(rootConfig, 'utf8') : undefined;
+  const configAlreadySetup =
+    rootConfig !== undefined &&
+    rootConfigContent !== undefined &&
+    isConfigAlreadySetup(rootConfig, rootConfigContent);
+
   // Use AddonVitestService for compatibility validation
+  // `projectRoot` starts the config-file search; passing the config dir makes the CommonJS guard
+  // see the same `vitest.config.*` the merge below would touch (searching from configDir to root).
+  // Skipped when the config is already wired, since no rewrite will be attempted.
   const compatibilityResult = await addonVitestService.validateCompatibility({
     framework: info.framework,
     builder: info.builder,
+    projectRoot: configAlreadySetup ? undefined : options.configDir,
   });
 
   let result: string | null = null;
@@ -174,10 +194,7 @@ export default async function postInstall(options: PostinstallOptions) {
   const fileExtension =
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
-  const viteConfigFile = findFile('vite.config');
-  const vitestConfigFile = findFile('vitest.config');
   const vitestShimFile = findFile('vitest.shims.d');
-  const rootConfig = vitestConfigFile || viteConfigFile;
 
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile('vitest.shims.d.ts', '/// <reference types="@vitest/browser-playwright" />');
@@ -217,29 +234,26 @@ export default async function postInstall(options: PostinstallOptions) {
   };
 
   // If there's an existing Vite/Vitest config, we update it to include the Storybook Addon Vitest plugin.
-  if (rootConfig) {
+  if (rootConfig && rootConfigContent !== undefined) {
     let target, updated;
-    const configFile = await fs.readFile(rootConfig, 'utf8');
-    const configFileHasTypeReference = configFile.match(
+    const configFileHasTypeReference = rootConfigContent.match(
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
-
-    if (!alreadyConfigured) {
+    if (!configAlreadySetup) {
       const configTemplate = await loadTemplate('vitest.config.4.template', {
         CONFIG_DIR: getTemplateConfigDir(rootConfig, options.configDir),
       });
 
       const source = babelParse(configTemplate);
-      target = babelParse(configFile);
+      target = babelParse(rootConfigContent);
       updated = updateConfigFile(source, target);
     }
 
-    if (alreadyConfigured) {
+    if (configAlreadySetup) {
       // storybookTest is already wired, but the Angular bridge may still be missing. Operate on the
       // current on-disk content (no merge happened in this branch).
-      await maybeWireAngular(rootConfig, configFile);
+      await maybeWireAngular(rootConfig, rootConfigContent);
       logger.step(
         CLI_COLORS.success('Vitest for Storybook is already properly configured. Skipping setup.')
       );
@@ -251,7 +265,7 @@ export default async function postInstall(options: PostinstallOptions) {
       // added storybookTest call, before the single generate/format/write below. Arrow-function
       // configs are rejected by updateConfigFile (updated is falsy), so they never reach here and
       // defer to the manual-setup error in the else branch.
-      if (isAngularVite && !isAngularVitestAlreadyWired(configFile)) {
+      if (isAngularVite && !isAngularVitestAlreadyWired(rootConfigContent)) {
         if (injectAngularVitestIntoAst(target)) {
           logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
         } else {

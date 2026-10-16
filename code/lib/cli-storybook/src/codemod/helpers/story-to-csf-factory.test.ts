@@ -923,6 +923,31 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('migrates parenthesized expressions before satisfies and as', async () => {
+        await expect(
+          transform(dedent`
+            import type { StoryFn, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            export default { component: Button };
+
+            export const P = ((args) => <Button {...args} />) satisfies
+              StoryFn<typeof Button>;
+            export const O = ({ args: { a: 1 } }) satisfies StoryObj;
+            export const A = ({ args: { a: 2 } }) as StoryObj;
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+
+          export const P = meta.story((args) => <Button {...args} />);
+          export const O = meta.story({ args: { a: 1 } });
+          export const A = meta.story({ args: { a: 2 } });
+        `);
+      });
+
       it('keeps the custom args type of a story on that story', async () => {
         await expect(
           transform(dedent`

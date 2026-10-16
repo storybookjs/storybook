@@ -5,6 +5,7 @@ import {
   loadCsf,
   printCsf,
   walk,
+  withParentheses,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -348,13 +349,15 @@ export async function storyToCsfFactory(
       ? customArgs.shared(storyInits.map(({ argsTypes }) => argsTypes))
       : [];
 
-  // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it.
+  // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it. The parser drops
+  // parentheses from spans, so `(inner) satisfies T` keeps its own.
   const wrap = (outer: Node, inner: Node, before: string, after: string) => {
-    if (inner.end < outer.end) {
-      editor.edits.remove(inner.end, outer.end);
+    const span = withParentheses(editor.code, inner, outer.start, outer.end);
+    if (span.end < outer.end) {
+      editor.edits.remove(span.end, outer.end);
     }
-    editor.edits.appendRight(inner.start, before);
-    editor.edits.appendLeft(inner.end, after);
+    editor.edits.appendRight(span.start, before);
+    editor.edits.appendLeft(span.end, after);
   };
 
   // modify meta

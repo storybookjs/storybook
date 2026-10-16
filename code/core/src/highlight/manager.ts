@@ -1,6 +1,7 @@
 /// <reference path="./typings.d.ts" />
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import {
   HIGHLIGHT,
@@ -165,29 +166,29 @@ export const useHighlightMenu = (channel: Channel) => {
   let animationFrame: number | undefined;
 
   // Menu definitions are rendered from this manager-side registry, populated from the `Highlight`
-  // payloads the preview announces. The preview only reports which highlight id was hit; the
-  // manager never renders menu content received through the menu state event.
-  const highlightRegistry = new Map<string, Highlight>();
+  // payloads announced over the channel. The preview only reports which highlight id was hit; the
+  // manager never renders menu content received through the menu state event. Entries are keyed
+  // by the sending frame's ref id, so the host, every ref and manager-local emits cannot overwrite
+  // each other's menus when they use the same highlight id.
+  const highlightRegistry = new Map<string, Map<string, Highlight>>();
+  /** Registry bucket for the host preview and manager-local emits, which apply to every frame. */
+  const GLOBAL_REGISTRY_KEY = '';
 
-  const onAddHighlight = (highlight: HighlightOptions) => {
-    const info = highlight && normalizeOptions(highlight);
-    if (typeof info?.id !== 'string' || !info.id) {
-      return;
-    }
-    highlightRegistry.set(info.id, info);
-  };
+  const findHighlight = (id: string, frameId?: string) =>
+    highlightRegistry.get(frameId ?? GLOBAL_REGISTRY_KEY)?.get(id) ??
+    (frameId ? highlightRegistry.get(GLOBAL_REGISTRY_KEY)?.get(id) : undefined);
 
-  const onRemoveHighlight = (id: string) => {
-    if (id) {
-      highlightRegistry.delete(id);
-    }
-  };
-
-  const onResetHighlights = () => highlightRegistry.clear();
-
-  channel.on(HIGHLIGHT, onAddHighlight);
-  channel.on(REMOVE_HIGHLIGHT, onRemoveHighlight);
-  channel.on(RESET_HIGHLIGHT, onResetHighlights);
+  const getContentKey = ({ targets, selected }: HighlightMenuState) =>
+    JSON.stringify({
+      targets: targets.map(({ id, label, details: { selectors, element } }) => ({
+        id,
+        label,
+        selectors,
+        element,
+      })),
+      selected,
+      refId,
+    });
 
   const getPreviewIframe = () =>
     (refId
@@ -304,7 +305,7 @@ export const useHighlightMenu = (channel: Channel) => {
           { class: 'element-list' },
           elementList.map(({ target, index }) => {
             const menuGroups = filterMenuGroups(
-              highlightRegistry.get(target.id)?.menu,
+              findHighlight(target.id, refId)?.menu,
               target.details.selectors
             );
             const selectable = elementList.length > 1 && !!menuGroups?.length;
@@ -337,7 +338,7 @@ export const useHighlightMenu = (channel: Channel) => {
     const menuTarget = selectedTarget ?? (targets.length === 1 ? targets[0] : undefined);
     if (menuTarget) {
       const menuGroups = filterMenuGroups(
-        highlightRegistry.get(menuTarget.id)?.menu,
+        findHighlight(menuTarget.id, refId)?.menu,
         menuTarget.details.selectors
       );
       if (menuGroups?.length) {
@@ -381,6 +382,67 @@ export const useHighlightMenu = (channel: Channel) => {
     }
   };
 
+  const onHighlightRegistryChange = () => {
+    renderedKey = undefined;
+    // Re-render an open menu right away, so registry updates are not masked by the content key
+    // until the targets or the selection change.
+    if (state && menu) {
+      renderedKey = getContentKey(state);
+      renderMenu(menu, state);
+      positionMenu();
+    }
+  };
+
+  const onAddHighlight = function (this: { refId?: string }, highlight: HighlightOptions) {
+    const info = highlight && normalizeOptions(highlight);
+    if (typeof info?.id !== 'string' || !info.id) {
+      return;
+    }
+    const key = this.refId ?? GLOBAL_REGISTRY_KEY;
+    let registry = highlightRegistry.get(key);
+    if (!registry) {
+      registry = new Map();
+      highlightRegistry.set(key, registry);
+    }
+    registry.set(info.id, info);
+    onHighlightRegistryChange();
+  };
+
+  const onRemoveHighlight = function (this: { refId?: string }, id: string) {
+    if (id) {
+      highlightRegistry.get(this.refId ?? GLOBAL_REGISTRY_KEY)?.delete(id);
+      onHighlightRegistryChange();
+    }
+  };
+
+  const onResetHighlights = function (this: { refId?: string }) {
+    // Every preview resets on this event, so a manager-local reset clears all frames; a
+    // frame-sourced reset only clears that frame's entries.
+    if (this.refId) {
+      highlightRegistry.delete(this.refId);
+    } else {
+      highlightRegistry.clear();
+    }
+    onHighlightRegistryChange();
+  };
+
+  // The preview resets its highlights when a story starts rendering; clear the registry of the
+  // frame that re-rendered so ids from previous stories do not accumulate for the whole session.
+  const onStoryRenderPhaseChanged = function (
+    this: { refId?: string },
+    { newPhase }: { newPhase: string }
+  ) {
+    if (newPhase === 'loading') {
+      highlightRegistry.delete(this.refId ?? GLOBAL_REGISTRY_KEY);
+      onHighlightRegistryChange();
+    }
+  };
+
+  channel.on(HIGHLIGHT, onAddHighlight);
+  channel.on(REMOVE_HIGHLIGHT, onRemoveHighlight);
+  channel.on(RESET_HIGHLIGHT, onResetHighlights);
+  channel.on(STORY_RENDER_PHASE_CHANGED, onStoryRenderPhaseChanged);
+
   const onMenuState = function (this: { refId?: string }, payload: HighlightMenuState) {
     if (!payload || !Array.isArray(payload.targets) || !payload.targets.length || !payload.coords) {
       hideMenu();
@@ -396,15 +458,7 @@ export const useHighlightMenu = (channel: Channel) => {
     // targets and selection with new coordinates or box geometry. Only rebuild the menu when the
     // content it renders actually changes, so keyboard focus and its scroll position survive
     // those updates.
-    const contentKey = JSON.stringify({
-      targets: payload.targets.map(({ id, label, details: { selectors, element } }) => ({
-        id,
-        label,
-        selectors,
-        element,
-      })),
-      selected: payload.selected,
-    });
+    const contentKey = getContentKey(payload);
     if (contentKey !== renderedKey) {
       renderedKey = contentKey;
       renderMenu(menuElement, payload);
@@ -423,6 +477,7 @@ export const useHighlightMenu = (channel: Channel) => {
     channel.off(HIGHLIGHT, onAddHighlight);
     channel.off(REMOVE_HIGHLIGHT, onRemoveHighlight);
     channel.off(RESET_HIGHLIGHT, onResetHighlights);
+    channel.off(STORY_RENDER_PHASE_CHANGED, onStoryRenderPhaseChanged);
     highlightRegistry.clear();
     hideMenu();
     menu?.remove();

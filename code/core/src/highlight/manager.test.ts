@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { Channel } from 'storybook/internal/channels';
 import type { ChannelEvent } from 'storybook/internal/channels';
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -325,6 +326,75 @@ describe('useHighlightMenu', () => {
     channel.emit(RESET_HIGHLIGHT);
     send(makeState({ targets: [makeTarget({ id: 'h3', label: 'span#new' })] }));
     expect(getMenu()!.querySelector('.menu-list')).toBeNull();
+  });
+
+  it('scopes registry entries to the frame that announced them', () => {
+    channel.receive({
+      type: HIGHLIGHT,
+      args: [
+        {
+          id: 'h1',
+          selectors: ['#target'],
+          menu: [[{ id: 'ref-item', title: 'Ref item', clickable: true }]],
+        },
+      ],
+      from: 'preview',
+      refId: 'abc',
+    } as ChannelEvent);
+
+    send(makeState(), 'abc');
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Ref item');
+
+    // The ref's entry does not overwrite the host's menu for the same highlight id
+    send(makeState());
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Open docs');
+  });
+
+  it('applies manager-local highlights to every frame', () => {
+    channel.emit(HIGHLIGHT, {
+      id: 'shared',
+      selectors: ['#target'],
+      menu: [[{ id: 'shared-item', title: 'Shared item', clickable: true }]],
+    });
+
+    send(makeState({ targets: [makeTarget({ id: 'shared' })] }));
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Shared item');
+
+    mockIframe('storybook-ref-abc', { left: 500, top: 100, right: 1300, bottom: 720 });
+    send(makeState({ targets: [makeTarget({ id: 'shared' })] }), 'abc');
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Shared item');
+  });
+
+  it('re-renders the open menu when the registry changes', () => {
+    send(makeState());
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Open docs');
+
+    channel.emit(HIGHLIGHT, {
+      id: 'h1',
+      selectors: ['#target'],
+      menu: [[{ id: 'item-1b', title: 'Updated docs', clickable: true }]],
+    });
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Updated docs');
+  });
+
+  it('clears the registry of a frame when its story starts rendering', () => {
+    send(makeState());
+    expect(getMenu()!.querySelector('.menu-list')).not.toBeNull();
+
+    channel.receive({
+      type: STORY_RENDER_PHASE_CHANGED,
+      args: [{ newPhase: 'loading' }],
+      from: 'preview',
+    } as ChannelEvent);
+    expect(getMenu()!.querySelector('.menu-list')).toBeNull();
+
+    // A later highlight from the same frame restores its menu
+    channel.emit(HIGHLIGHT, {
+      id: 'h1',
+      selectors: ['#target'],
+      menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
+    });
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Open docs');
   });
 
   it('hides the menu when the preview reports no targets or no coordinates', () => {

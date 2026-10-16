@@ -363,8 +363,9 @@ export const useHighlights = (channel: Channel) => {
     });
   };
 
-  // Keep the manager-rendered menu in sync while it is open: re-emit on preview scrolling and
-  // window resizing so its coordinates follow the anchor even when no highlight boxes change.
+  // Keep the manager-rendered menu in sync while it is open: box remeasurements (resizes, layout
+  // changes, DOM mutations, scrolled containers) re-emit through the same rAF-coalesced path as
+  // preview scrolling and window resizing, so the menu state is sent once per frame.
   let menuSyncFrame: number | undefined;
   const syncMenu = () => {
     if (menuSyncFrame === undefined) {
@@ -390,11 +391,9 @@ export const useHighlights = (channel: Channel) => {
     }
   });
 
-  // Keep the manager-rendered menu in sync while it is open: boxes are remeasured on preview
-  // resizing, layout changes and DOM mutations.
   boxes.subscribe(() => {
     if (clickCoords.get()) {
-      emitMenuState();
+      syncMenu();
     }
   });
   targets.subscribe(emitMenuState);

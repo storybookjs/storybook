@@ -20,9 +20,13 @@ describe('useHighlights', () => {
   let lastMenuState: HighlightMenuState | undefined;
 
   const flushFrames = () => {
-    const pending = frames;
-    frames = [];
-    pending.forEach((callback) => callback?.(0));
+    // Drain cascading frames: callbacks queued while flushing (e.g. a box remeasure scheduling
+    // the menu state emission) run in the same flush.
+    while (frames.some(Boolean)) {
+      const pending = frames;
+      frames = [];
+      pending.forEach((callback) => callback?.(0));
+    }
   };
 
   const clickAt = (x: number, y: number) => {
@@ -164,6 +168,19 @@ describe('useHighlights', () => {
     window.dispatchEvent(new Event('resize'));
     flushFrames();
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 130 });
+  });
+
+  it('emits a single menu state update per scroll frame', () => {
+    clickAt(30, 30);
+    stubTargetRect({ top: -30, bottom: 20 });
+    const emitSpy = vi.spyOn(channel, 'emit');
+
+    setScroll(0, 50);
+
+    // The scroll listener and the sticky box remeasure share one rAF-coalesced emission
+    const menuEmits = emitSpy.mock.calls.filter(([type]) => type === HIGHLIGHT_MENU);
+    expect(menuEmits).toHaveLength(1);
+    expect(lastMenuState!.coords).toEqual({ x: 30, y: -20 });
   });
 
   it('keeps the menu anchored to its element when the layout changes', () => {

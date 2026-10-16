@@ -4,6 +4,7 @@
  * helpers.
  */
 export { isExportStory, storyNameFromExport, type IncludeExcludeOptions } from './export-story.ts';
+export { isValidPreviewPath } from './preview-path.ts';
 
 /**
  * Remove punctuation and illegal characters from a story ID, so it is safe to use in URLs and CSS

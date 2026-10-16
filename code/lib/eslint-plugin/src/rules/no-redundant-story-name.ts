@@ -5,6 +5,9 @@
  */
 import { storyNameFromExport } from '../utils/csf-helpers.ts';
 
+import type { TSESTree } from '@typescript-eslint/types';
+
+import { isCsfFactoryStoryCall, unwrapTSExpression } from '../utils/index.ts';
 import {
   isExpressionStatement,
   isIdentifier,
@@ -65,8 +68,13 @@ export default createStorybookRule({
             return;
           }
           const { id, init } = declaration;
-          if (isIdentifier(id) && isObjectExpression(init)) {
-            const storyNameNode = init.properties.find(
+          // CSF3 object exports and CSF4 `meta.story({ ... })` exports carry the same shape
+          let storyObject: TSESTree.Node | null | undefined = init && unwrapTSExpression(init);
+          if (isCsfFactoryStoryCall(storyObject)) {
+            storyObject = storyObject.arguments[0];
+          }
+          if (isIdentifier(id) && isObjectExpression(storyObject)) {
+            const storyNameNode = storyObject.properties.find(
               (prop) =>
                 isProperty(prop) &&
                 isIdentifier(prop.key) &&

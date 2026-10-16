@@ -25,6 +25,7 @@ export default [
       'storybook/default-exports': 'error',
       'storybook/hierarchy-separator': 'warn',
       'storybook/no-redundant-story-name': 'warn',
+      'storybook/static-csf-properties': 'error',
       'storybook/story-exports': 'error',
     } as const,
   },

@@ -1,5 +1,8 @@
 # Meta should only have inline properties (meta-inline-properties)
 
+> [!WARNING]
+> This rule is deprecated. It checks a different property set than Storybook statically analyzes: it flags `args` (which may be dynamic) and local-constant indirection (which the indexer resolves), while missing `tags`, `id`, and `includeStories`/`excludeStories`. Use [`static-csf-properties`](./static-csf-properties.md) instead.
+
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: N/A

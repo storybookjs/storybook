@@ -33,7 +33,7 @@ yarn build storybook <extra packages>
 Then, run in the background:
 
 ```bash
-NODE_OPTIONS="--preserve-symlinks" yarn storybook:ui --no-open
+NODE_OPTIONS="--preserve-symlinks" yarn storybook:ui
 ```
 
 ### Handle an occupied port

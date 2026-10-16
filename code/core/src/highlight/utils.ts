@@ -213,7 +213,9 @@ export const previewToManagerCoords = (
 
 /**
  * Clamp coordinates so a menu of the given size stays within the viewport rectangle, optionally
- * keeping it horizontally centered on the anchor and offsetting it below the anchor.
+ * keeping it horizontally centered on the anchor. The menu is kept between the rect's top and
+ * bottom edges; when it is taller than the rect it is pinned to the top, and the caller should
+ * constrain the menu's height so its contents stay reachable.
  */
 export const clampToRect = (
   coords: { x: number; y: number },
@@ -227,7 +229,9 @@ export const clampToRect = (
   const leftOffset = centered ? width / 2 : 0;
   return {
     x: Math.max(Math.min(x, rect.right - leftOffset - margin), rect.left + leftOffset + margin),
-    y: Math.min(y, rect.bottom - height - margin - topOffset),
+    // The top clamp also covers the short-rect case: if the menu does not fit, the upper bound
+    // falls below the lower bound and the menu is pinned just inside the top edge.
+    y: Math.max(Math.min(y, rect.bottom - height - margin - topOffset), rect.top + margin),
   };
 };
 

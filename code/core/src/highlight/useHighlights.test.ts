@@ -34,8 +34,8 @@ describe('useHighlights', () => {
   };
 
   const setScroll = (x: number, y: number) => {
-    Object.defineProperty(window, 'scrollX', { value: x, configurable: true });
-    Object.defineProperty(window, 'scrollY', { value: y, configurable: true });
+    vi.stubGlobal('scrollX', x);
+    vi.stubGlobal('scrollY', y);
     document.dispatchEvent(new Event('scroll'));
     flushFrames();
   };
@@ -72,8 +72,8 @@ describe('useHighlights', () => {
         }
       }
     );
-    Object.defineProperty(window, 'scrollX', { value: 0, configurable: true });
-    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    vi.stubGlobal('scrollX', 0);
+    vi.stubGlobal('scrollY', 0);
 
     document.body.innerHTML = '<div id="storybook-root"></div>';
     target = document.createElement('div');
@@ -152,6 +152,41 @@ describe('useHighlights', () => {
 
     moveTarget({ top: 200, bottom: 250 });
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 210 });
+  });
+
+  it('positions the menu at the newly clicked target right away', () => {
+    const second = document.createElement('span');
+    second.id = 'other';
+    second.style.position = 'absolute';
+    // A separate, non-overlapping target further down the document
+    second.getBoundingClientRect = () =>
+      ({
+        top: 200,
+        left: 200,
+        width: 50,
+        height: 50,
+        bottom: 250,
+        right: 250,
+        x: 200,
+        y: 200,
+      }) as DOMRect;
+    document.getElementById('storybook-root')!.appendChild(second);
+    channel.emit(HIGHLIGHT, {
+      id: 'h2',
+      selectors: ['#other'],
+      menu: [[{ id: 'item-2', title: 'Other' }]],
+    });
+    flushFrames();
+
+    clickAt(30, 30);
+    expect(lastMenuState!.targets[0]!.id).toBe('h1');
+    expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });
+
+    // Clicking another target must re-anchor the menu before the new state is published
+    clickAt(210, 210);
+    expect(lastMenuState!.targets).toHaveLength(1);
+    expect(lastMenuState!.targets[0]!.id).toBe('h2');
+    expect(lastMenuState!.coords).toEqual({ x: 210, y: 210 });
   });
 
   it('handles select and deselect interactions from the manager', () => {

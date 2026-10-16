@@ -20,6 +20,8 @@ import {
 
 const menuId = 'storybook-highlights-menu';
 const rootId = 'storybook-highlights-root';
+const MENU_MARGIN = 5;
+const MENU_TOP_OFFSET = 15;
 
 const menuStyles = `
   #${menuId} {
@@ -29,6 +31,7 @@ const menuStyles = `
     padding: 0px;
     margin: 15px 0 0 0;
     transform: translateX(-50%);
+    overflow-y: auto;
     font-family: "Nunito Sans", -apple-system, ".SFNSText-Regular", "San Francisco", BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 12px;
     background: white;
@@ -144,6 +147,7 @@ export const useHighlightMenu = (channel: Channel) => {
   globalThis.__STORYBOOK_HIGHLIGHT_MENU_INITIALIZED = true;
 
   let state: HighlightMenuState | undefined;
+  let renderedKey: string | undefined;
   let refId: string | undefined;
   let root: HTMLElement | undefined;
   let menu: HTMLElement | undefined;
@@ -169,13 +173,24 @@ export const useHighlightMenu = (channel: Channel) => {
         state.coords;
     const viewport = iframe
       ? iframe.getBoundingClientRect()
-      : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+      : {
+          left: 0,
+          top: 0,
+          right: window.innerWidth,
+          bottom: window.innerHeight,
+          height: window.innerHeight,
+        };
+
+    // Cap the menu at the space available over the preview, so it can be clamped inside even
+    // when the preview is shorter than the menu; `overflow-y: auto` then keeps its buttons
+    // reachable by scrolling.
+    menu.style.maxHeight = `${Math.max(0, viewport.height - MENU_MARGIN * 2 - MENU_TOP_OFFSET)}px`;
 
     const { x, y } = clampToRect(
       anchor,
       { width: menu.clientWidth, height: menu.clientHeight },
       viewport,
-      { topOffset: 15, centered: true }
+      { margin: MENU_MARGIN, topOffset: MENU_TOP_OFFSET, centered: true }
     );
     Object.assign(menu.style, { left: `${x}px`, top: `${y}px` });
   };
@@ -202,6 +217,7 @@ export const useHighlightMenu = (channel: Channel) => {
 
   const hideMenu = () => {
     state = undefined;
+    renderedKey = undefined;
     stopSync();
     if (menu) {
       hidePopover(menu);
@@ -346,7 +362,16 @@ export const useHighlightMenu = (channel: Channel) => {
     state = payload;
 
     const menuElement = ensureMenu();
-    renderMenu(menuElement, payload);
+
+    // Position-only updates (preview scrolling, resizing and layout changes) re-send the same
+    // targets and selection. Only rebuild the menu when its contents actually change, so
+    // keyboard focus and the menu's scroll position survive those updates.
+    const contentKey = JSON.stringify({ targets: payload.targets, selected: payload.selected });
+    if (contentKey !== renderedKey) {
+      renderedKey = contentKey;
+      renderMenu(menuElement, payload);
+    }
+
     Object.assign(menuElement.style, { display: 'block' });
     showMenu(menuElement);
     positionMenu();

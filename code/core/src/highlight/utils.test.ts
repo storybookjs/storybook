@@ -170,4 +170,19 @@ describe('clampToRect', () => {
       })
     ).toEqual({ x: 745, y: 300 });
   });
+
+  it('should clamp coordinates below the rect top edge', () => {
+    expect(
+      clampToRect({ x: 400, y: 10 }, { width: 300, height: 100 }, rect, { margin: 5 })
+    ).toEqual({ x: 400, y: 55 });
+  });
+
+  it('should pin a menu taller than the rect to its top edge', () => {
+    expect(
+      clampToRect({ x: 400, y: 300 }, { width: 300, height: 700 }, rect, {
+        margin: 5,
+        topOffset: 15,
+      })
+    ).toEqual({ x: 400, y: 55 });
+  });
 });

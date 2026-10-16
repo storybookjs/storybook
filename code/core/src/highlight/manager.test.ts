@@ -125,6 +125,48 @@ describe('useHighlightMenu', () => {
     expect(getMenu()!.style.top).toBe('120px');
   });
 
+  it('preserves menu contents and focus on position-only updates', () => {
+    send(makeState());
+    const menu = getMenu()!;
+    const menuItem = menu.querySelector('.menu-list .menu-item') as HTMLButtonElement;
+    expect(menuItem.tagName).toBe('BUTTON');
+    menuItem.focus();
+    expect(document.activeElement).toBe(menuItem);
+
+    // Same targets and selection, new coordinates: the menu must not be rebuilt
+    send(makeState({ coords: { x: 100, y: 100 } }));
+
+    expect(getMenu()!.querySelector('.menu-list .menu-item')).toBe(menuItem);
+    expect(document.activeElement).toBe(menuItem);
+    expect(menu.style.left).toBe('200px');
+  });
+
+  it('rebuilds the menu when its contents change', () => {
+    send(makeState());
+    const menuItem = getMenu()!.querySelector('.menu-list .menu-item') as HTMLButtonElement;
+
+    send(makeState({ targets: [makeTarget({ id: 'h2', html: '<span id="other"></span>' })] }));
+
+    const nextItem = getMenu()!.querySelector('.menu-list .menu-item') as HTMLButtonElement;
+    expect(nextItem).not.toBe(menuItem);
+    expect(nextItem.textContent).toBe('Open docs');
+  });
+
+  it('constrains the menu inside a short preview', () => {
+    const iframe = document.getElementById('storybook-preview-iframe')!;
+    iframe.getBoundingClientRect = () => ({ ...IFRAME_RECT, height: 100, bottom: 120 }) as DOMRect;
+    Object.defineProperty(iframe, 'clientHeight', { value: 100, configurable: true });
+
+    // A preview coordinate scrolled above the viewport maps above the iframe's top edge
+    send(makeState({ coords: { x: 400, y: -40 } }));
+
+    const menu = getMenu()!;
+    // Menu height is capped to the space over the short preview (100 - 2 * 5 - 15)
+    expect(menu.style.maxHeight).toBe('75px');
+    // The clamped position starts just inside the preview's top edge instead of above it
+    expect(menu.style.top).toBe('25px');
+  });
+
   it('keeps the menu in sync when the iframe moves or resizes in the manager', () => {
     send(makeState());
     const menu = getMenu()!;

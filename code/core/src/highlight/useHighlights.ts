@@ -212,11 +212,9 @@ export const useHighlights = (channel: Channel) => {
           const boxElement = boxElementByTargetElement.get(box.element)!;
           return isTargeted(box, boxElement, coords);
         });
-        clickCoords.set(results.length ? coords : undefined);
-        targets.set(results);
 
-        // Track the click position relative to the first target's box, so the manager-rendered
-        // menu can stay anchored to its element while the preview changes.
+        // Update the anchor and click coordinates before publishing the new targets, so the menu
+        // opens at the element just clicked rather than at the previously anchored target.
         if (results.length) {
           const anchorBox = results[0];
           const isFixed = getComputedStyle(anchorBox.element).position === 'fixed';
@@ -228,6 +226,8 @@ export const useHighlights = (channel: Channel) => {
         } else {
           menuAnchor.set(undefined);
         }
+        clickCoords.set(results.length ? coords : undefined);
+        targets.set(results);
       });
     };
 

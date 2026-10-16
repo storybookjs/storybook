@@ -914,8 +914,12 @@ const methodFromFunction = (text: string, key: string) => {
 };
 
 // Length of `export default` and the whitespace after it at `start`.
+// Comments may sit between and after the keywords.
+const SKIPPED = String.raw`(?:\s|/\*[\s\S]*?\*/|//[^\n]*\n)`;
+const EXPORT_DEFAULT = new RegExp(`^export${SKIPPED}+default${SKIPPED}*`);
+
 export const exportDefaultKeywords = (code: string, start: number) =>
-  /^export\s+default\s*/.exec(code.slice(start))![0].length;
+  EXPORT_DEFAULT.exec(code.slice(start))![0].length;
 
 export const isSpan = (value: unknown): value is Span =>
   isNode(value) && typeof (value as unknown as Span).start === 'number';

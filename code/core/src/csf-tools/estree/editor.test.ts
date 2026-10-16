@@ -150,6 +150,16 @@ describe('parenthesized default exports', () => {
       `const _meta = ({ title: 'X' } satisfies Meta);\nexport default _meta;\nexport const A = {};`
     );
   });
+
+  it('hoists an inline meta with comments between the keywords', () => {
+    const csf = loadCsf(`export /* a */ default // b\n { title: 'X' };\nexport const A = {};`, {
+      transformInlineMeta: true,
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+    expect(printCsf(csf).code).toBe(
+      `const _meta = { title: 'X' };\nexport default _meta;\nexport const A = {};`
+    );
+  });
 });
 
 describe('line endings', () => {

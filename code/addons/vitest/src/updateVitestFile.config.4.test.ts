@@ -424,6 +424,95 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('keeps the lines of template literals and continued strings in the wrapped test config', async () => {
+    const source = await loadTemplate('vitest.config.4.template', {
+      CONFIG_DIR: '.storybook',
+      BROWSER_CONFIG: "{ provider: 'playwright' }",
+      SETUP_FILE: '../.storybook/vitest.setup.ts',
+    });
+    const target = new SourceEditor(`
+      import { defineConfig } from 'vite'
+
+      export default defineConfig({
+        test: {
+          include: [\`src/**/*.test.ts
+lib/**/*.test.ts\`],
+          exclude: ['a\\
+b'],
+        },
+      })
+    `);
+
+    const before = target.code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = target.toString();
+
+    expect(after).toContain('`src/**/*.test.ts\nlib/**/*.test.ts`');
+    expect(after).toContain("'a\\\nb'");
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  
+              import { defineConfig } from 'vite'
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname =
+      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+        
+        
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+      + 
+              export default defineConfig({
+                test: {
+        
+      -           include: [\`src/**/*.test.ts
+      - 
+      +           projects: [
+      +             {
+      +               extends: true,
+      +               test: {
+      +                 include: [\`src/**/*.test.ts
+      + 
+        lib/**/*.test.ts\`],
+        
+      -           exclude: ['a\\
+      - 
+      +                 exclude: ['a\\
+      + 
+        b'],
+        
+      +               },
+      +             },
+      +             {
+      +               extends: true,
+      +               plugins: [
+      +                 // The plugin will run tests for the stories defined in your Storybook config
+      +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +               ],
+      +               test: {
+      +                 name: 'storybook',
+      +                 browser: {
+      +                   enabled: true,
+      +                   headless: true,
+      +                   provider: playwright({}),
+      +                   instances: [{ browser: 'chromium' }],
+      +                 },
+      +               },
+      +             },
+      +           ],
+      + 
+                },
+              })
+            "
+    `);
+  });
+
   it('updates config which is not exported immediately', async () => {
     const source = await loadTemplate('vitest.config.4.template', {
       CONFIG_DIR: '.storybook',

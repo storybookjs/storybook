@@ -240,7 +240,7 @@ const wrapTestConfigAsProject = (
   target.edits.overwrite(
     existingTest.start,
     existingTest.end,
-    itemText(source, objectList(config), templateTest).replaceAll('\n', `\n${lineIndent}`)
+    reindent(itemText(source, objectList(config), templateTest), '', lineIndent)
   );
   mergeProperties(
     merge,

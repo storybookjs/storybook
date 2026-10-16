@@ -113,7 +113,7 @@ describe('removeStatement', () => {
     `);
     removeStatement(editor, editor.program.body[1]);
     removeStatement(editor, editor.program.body[2]);
-    expect(editor.toString()).toBe(`import a from 'a';\n\n`);
+    expect(editor.toString()).toBe(`import a from 'a';\n`);
   });
 
   it('keeps the file header when the first statement is removed', () => {

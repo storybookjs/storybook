@@ -12,6 +12,8 @@ import {
   SourceEditor,
   headerComments,
   walk,
+  removeStatements,
+  setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
 
 import jscodeshift from 'jscodeshift';
@@ -21,7 +23,6 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { findFilesUp } from '../../util.ts';
-import { removeStatements, setImportSpecifiers } from '../helpers/source-edits.ts';
 import type { Fix } from '../types.ts';
 
 const VITEST_ADDON_NAME = '@storybook/addon-vitest';

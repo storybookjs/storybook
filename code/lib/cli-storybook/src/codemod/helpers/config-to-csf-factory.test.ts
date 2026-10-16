@@ -75,6 +75,7 @@ describe('main/preview codemod: general parsing functionality', () => {
       // @ts-check
       /** @license MIT */
       import { defineMain } from '@storybook/react-vite/node';
+
       export default defineMain({
         stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
         framework: '@storybook/react-vite',

@@ -816,7 +816,8 @@ describe('run', (): void => {
     expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
       "import customElements from "../custom-elements.json";
 
-      const m = format(customElements);"
+      const m = format(customElements);
+      "
     `);
     expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
       [
@@ -842,7 +843,8 @@ describe('run', (): void => {
     await runWith({ manifestPath: null });
 
     expect(vol.readFileSync(PREVIEW, 'utf8')).toMatchInlineSnapshot(`
-      "import tokens from "../tokens.json";"
+      "import tokens from "../tokens.json";
+      "
     `);
     expect(logger.warn).not.toHaveBeenCalled();
   });

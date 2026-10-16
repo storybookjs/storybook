@@ -5,9 +5,8 @@ import {
   type SourceEditor,
   generateUid,
   walk,
+  setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
-
-import { setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 
 const mockMembers = [
   'mock',

@@ -4,15 +4,16 @@ import {
   type ESTreeNode as Node,
   loadConfig,
   printConfig,
+  removeStatements,
+  setImportSpecifiers,
+  prependStatement,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
-import { removeStatements, setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 import {
-  addImportToTop,
   cleanupTypeImports,
   getConfigProperties,
   removeExportDeclarations,
@@ -205,7 +206,7 @@ export async function configToCsfFactory(
     }
   } else {
     // if not, add import { defineMain } from '@storybook/framework'
-    addImportToTop(
+    prependStatement(
       editor,
       `import { ${methodName} } from ${quote}${expectedImportSource}${quote};`
     );

@@ -46,7 +46,9 @@ export {
   printValue,
   reindent,
   removeFromList,
-  withParentheses,
   removeMembers,
   removeStatement,
+  removeStatements,
+  setImportSpecifiers,
+  withParentheses,
 } from './estree/editor.ts';

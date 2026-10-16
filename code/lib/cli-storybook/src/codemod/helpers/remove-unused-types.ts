@@ -3,9 +3,9 @@ import {
   type ESTreeNode as Node,
   type SourceEditor,
   walk,
+  removeStatements,
 } from 'storybook/internal/csf-tools';
 
-import { removeStatements } from '../../automigrate/helpers/source-edits.ts';
 import { cleanupTypeImports } from './csf-factories-utils.ts';
 
 // Name of types that should be removed from the import list

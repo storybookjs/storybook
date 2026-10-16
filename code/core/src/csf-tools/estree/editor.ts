@@ -627,19 +627,99 @@ export const leadingComments = (editor: SourceEditor, statement: Span): E.Commen
   );
 };
 
-/** Remove a statement with its leading comments, and its line when nothing else shares it. */
-export const removeStatement = (editor: SourceEditor, statement: Span) => {
+/**
+ * Remove a statement with the comments that lead it and the comment that trails it on its line,
+ * and the line itself when nothing else shares it.
+ */
+export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
   const { code } = editor;
   const first = leadingComments(editor, statement)[0];
-  const lineStart = code.lastIndexOf('\n', (first ?? statement).start - 1) + 1;
+  const start = (first ?? statement).start;
+  const lineStart = code.lastIndexOf('\n', start - 1) + 1;
   const lineEnd = code.indexOf('\n', statement.end);
-  const before = code.slice(lineStart, (first ?? statement).start);
-  const after = code.slice(statement.end, lineEnd === -1 ? code.length : lineEnd);
-  if (!before.trim() && !after.trim()) {
-    editor.edits.remove(lineStart, lineEnd === -1 ? code.length : lineEnd + 1);
-  } else {
-    editor.edits.remove((first ?? statement).start, statement.end);
+  const trailing = editor.comments.find(
+    (comment) =>
+      comment.start >= statement.end &&
+      (lineEnd === -1 || comment.start < lineEnd) &&
+      !code.slice(statement.end, comment.start).trim()
+  );
+  const end =
+    trailing && (lineEnd === -1 || trailing.end <= lineEnd) ? trailing.end : statement.end;
+  const before = code.slice(lineStart, start);
+  const after = code.slice(end, lineEnd === -1 ? code.length : lineEnd);
+  if (before.trim() || after.trim()) {
+    editor.edits.remove(start, end);
+    return;
   }
+  // The statement takes the blank lines above it, so none are left behind; at the top of the
+  // file it takes the ones below instead.
+  const top = atTop ?? lineStart === 0;
+  let from = lineStart;
+  let to = lineEnd === -1 ? code.length : lineEnd + 1;
+  if (top) {
+    to += /^\s*/.exec(code.slice(to))![0].length;
+  } else {
+    while (from > 0 && /^[ \t]*\n$/.test(code.slice(code.lastIndexOf('\n', from - 2) + 1, from))) {
+      from = code.lastIndexOf('\n', from - 2) + 1;
+    }
+  }
+  editor.edits.remove(from, to);
+};
+
+/** Remove top-level statements, each with a `;` that directly follows it. */
+export const removeStatements = (editor: SourceEditor, statements: ReadonlySet<Node>) => {
+  const { body } = editor.program;
+  let keptBefore = false;
+  body.forEach((statement, index) => {
+    const next = body[index + 1];
+    if (!statements.has(statement)) {
+      keptBefore = keptBefore || statement.type !== 'EmptyStatement';
+      return;
+    }
+    const empty = next?.type === 'EmptyStatement' && next.start === statement.end;
+    const span = empty ? { start: statement.start, end: next.end } : statement;
+    // Nothing kept above: the statement takes the whitespace below it instead.
+    removeStatement(editor, span, !keptBefore);
+  });
+};
+
+/**
+ * Rewrite an import's specifiers to `kept` plus `added`, keeping each kept specifier as written,
+ * comments included.
+ */
+export const setImportSpecifiers = (
+  editor: SourceEditor,
+  declaration: E.ImportDeclaration,
+  kept: readonly E.ImportDeclaration['specifiers'][number][],
+  added: { default?: string; named?: string[] } = {}
+) => {
+  const { code } = editor;
+  const { specifiers } = declaration;
+  const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
+  const list: List | undefined = named.length
+    ? {
+        open: code.lastIndexOf('{', named[0].start) + 1,
+        close: code.indexOf('}', named.at(-1)!.end),
+        items: named,
+      }
+    : undefined;
+  const namedTexts = [
+    ...named.filter((specifier) => kept.includes(specifier)).map((s) => itemText(editor, list!, s)),
+    ...(added.named ?? []),
+  ];
+  const parts = [
+    ...(added.default ? [added.default] : []),
+    ...specifiers
+      .filter((specifier) => specifier.type !== 'ImportSpecifier' && kept.includes(specifier))
+      .map((specifier) => editor.source(specifier)),
+    ...(namedTexts.length > 0 ? [`{ ${namedTexts.join(', ')} }`] : []),
+  ];
+  const kind = declaration.importKind === 'type' ? 'import type' : 'import';
+  editor.edits.overwrite(
+    declaration.start,
+    declaration.source.start,
+    `${kind} ${parts.join(', ')} from `
+  );
 };
 
 export const replaceValue = (editor: SourceEditor, member: Property, text: string) => {

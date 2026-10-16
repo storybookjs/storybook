@@ -4,6 +4,8 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   SourceEditor,
+  removeStatements,
+  setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { SupportedRenderer } from 'storybook/internal/types';
@@ -20,7 +22,6 @@ import {
   topLevelCalls,
   topLevelReaders,
 } from '../helpers/preview-call.ts';
-import { removeStatements, setImportSpecifiers } from '../helpers/source-edits.ts';
 import { findWorkspaceFiles, readJsonFile } from '../helpers/workspace-files.ts';
 import type { FixTransform } from '../pipeline.ts';
 import type { Fix } from '../types.ts';

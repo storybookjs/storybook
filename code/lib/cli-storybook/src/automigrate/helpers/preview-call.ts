@@ -4,9 +4,9 @@ import {
   type ESTreeNode as Node,
   type SourceEditor,
   walk,
+  removeStatements,
+  setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
-
-import { removeStatements, setImportSpecifiers } from './source-edits.ts';
 
 export type RemoveTopLevelCallResult =
   | { removed: false; reason: string }

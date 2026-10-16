@@ -3,9 +3,9 @@ import {
   type ESTreeNode as Node,
   type SourceEditor,
   walk,
+  removeStatements,
+  setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
-
-import { removeStatements, setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
 
 const projectAnnotationNames = [
   'decorators',
@@ -118,14 +118,3 @@ export function getConfigProperties(
 }
 
 // Leading file comments, such as license headers or `@ts-check`, stay above the import.
-export function addImportToTop(editor: SourceEditor, importDeclaration: string): void {
-  const first = editor.program.body.find(
-    (node) => !(node.type === 'ExpressionStatement' && node.directive)
-  );
-  if (first) {
-    editor.edits.appendLeft(first.start, `${importDeclaration}\n`);
-  } else {
-    const { code } = editor;
-    editor.edits.append(`${code && !code.endsWith('\n') ? '\n' : ''}${importDeclaration}\n`);
-  }
-}

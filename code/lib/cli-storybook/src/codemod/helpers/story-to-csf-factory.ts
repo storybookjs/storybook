@@ -6,6 +6,9 @@ import {
   printCsf,
   walk,
   withParentheses,
+  removeStatements,
+  setImportSpecifiers,
+  prependStatement,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -13,8 +16,6 @@ import path from 'path';
 
 import { DOCUMENTED_PREVIEW_IMPORT } from '../../../../../core/src/shared/constants/config-folder.ts';
 import type { FileInfo } from '../../automigrate/codemod.ts';
-import { removeStatements, setImportSpecifiers } from '../../automigrate/helpers/source-edits.ts';
-import { addImportToTop } from './csf-factories-utils.ts';
 import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
 import { wrapArgsMocks } from './wrap-args-mocks.ts';
@@ -457,7 +458,7 @@ export async function storyToCsfFactory(
       );
     }
   } else if (hasMeta) {
-    addImportToTop(editor, `import ${sbConfigImportName} from ${quote}${previewPath}${quote};`);
+    prependStatement(editor, `import ${sbConfigImportName} from ${quote}${previewPath}${quote};`);
   }
 
   editor.commit();

@@ -7,7 +7,7 @@ import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { ToolbarIcon } from './ToolbarIcon.tsx';
-import type { ToolbarItem, ToolbarMenuProps } from '../types.ts';
+import type { ToolbarMenuProps } from '../types.ts';
 import { getSelectedItem } from '../utils/get-selected.ts';
 import { registerShortcuts } from '../utils/register-shortcuts.ts';
 
@@ -51,7 +51,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   }
 
   if (!title && !icon) {
-    console.warn(`Toolbar '${name}' has no title or icon`);
+    console.warn(`Toolbar '${id}' has no title or icon`);
   }
 
   const resetItem = items.find((item) => item.type === 'reset');
@@ -59,7 +59,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   const options = React.useMemo(
     () =>
       items
-        .filter((item): item is ToolbarItem => item.type === 'item')
+        .filter((item) => item.type !== 'reset')
         .map((item) => {
           const itemTitle = item.title ?? item.value ?? 'Untitled';
           const iconComponent =

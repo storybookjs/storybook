@@ -125,15 +125,6 @@
       "name": "string",
     },
   },
-  "onSideChanged": {
-    "action": {
-      "name": "side-changed",
-    },
-    "name": "onSideChanged",
-    "table": {
-      "disable": true,
-    },
-  },
   "rows": {
     "description": "Data rows",
     "name": "rows",

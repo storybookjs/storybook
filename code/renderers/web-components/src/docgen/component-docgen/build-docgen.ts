@@ -5,6 +5,7 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 
 import { resolve } from 'node:path';
 
+import { buildApiDescription } from './api-description.ts';
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
 import type { CemSnapshot } from './manifest/cem-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
@@ -13,7 +14,6 @@ import { deprecationMessage, trimmedOrUndefined } from './utils.ts';
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
-  typeProperty: string;
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
@@ -27,7 +27,6 @@ export type WebComponentsDocgenPayload = DocgenPayload & {
 
 export interface BuildDocgenContext {
   cem: CemSnapshot;
-  typeProperty: string;
 }
 
 export function buildDocgenPayload(
@@ -94,7 +93,8 @@ export function buildDocgenPayload(
     description,
     summary,
     jsDocTags,
-    argTypes: mapArgTypes(found.declaration, context.typeProperty),
+    argTypes: mapArgTypes(found.declaration),
+    apiDescription: buildApiDescription(found.declaration),
     renderer: 'web-components',
     ...(found.warning ? { warning: found.warning } : {}),
     customElementsManifest: {

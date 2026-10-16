@@ -1,9 +1,8 @@
-import type { PreparedStory } from 'storybook/internal/types';
+import type { PreparedStory, TagOptions } from 'storybook/internal/types';
 
-const excludeTags = Object.entries(globalThis.TAGS_OPTIONS ?? {}).reduce(
-  (acc, entry) => {
-    const [tag, option] = entry;
-    if ((option as any).excludeFromDocsStories) {
+const excludeTags = Object.entries<Partial<TagOptions>>(globalThis.TAGS_OPTIONS ?? {}).reduce(
+  (acc, [tag, option]) => {
+    if (option.hideFromAutodocs) {
       acc[tag] = true;
     }
     return acc;

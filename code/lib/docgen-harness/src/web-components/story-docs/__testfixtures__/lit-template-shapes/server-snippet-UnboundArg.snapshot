@@ -1,0 +1,3 @@
+<lit-template-shapes label="Bound"></lit-template-shapes>
+
+warning: Incomplete snippet: args not bound by the render template: `count`.

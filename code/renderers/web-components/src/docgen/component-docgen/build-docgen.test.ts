@@ -54,7 +54,6 @@ const context = ({
     errors: loadErrors,
     paths,
   },
-  typeProperty: 'parsedType',
 });
 
 const tag = (declaration: ManifestDeclaration, warning?: string): [string, CemTag] => [
@@ -89,6 +88,14 @@ describe('buildDocgenPayload', () => {
       )
     ).toMatchInlineSnapshot(`
       {
+        "apiDescription": "## Attributes
+
+      \`\`\`
+      export type XCardAttributes = {
+        /** Label. */
+        label?: string;
+      }
+      \`\`\`",
         "argTypes": {
           "label": {
             "description": "Label.",

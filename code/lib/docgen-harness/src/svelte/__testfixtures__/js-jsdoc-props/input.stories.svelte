@@ -1,5 +1,5 @@
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte';
 
   import JsJsdocProps from './JsJsdocProps.svelte';
 

@@ -211,11 +211,11 @@ describe('ArgsStore', () => {
 
     // Server docgen keeps `argTypes` annotation-only, so a plain `args` entry arrives here without
     // a type and would be dropped rather than applied.
-    describe('with experimentalDocgenServer', () => {
+    describe('with docgenServer', () => {
       afterEach(() => vi.unstubAllGlobals());
 
       it('types args from their initial value when the story declares no argTypes', () => {
-        vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+        vi.stubGlobal('FEATURES', { docgenServer: true });
         const store = new ArgsStore();
         const story = { id: 'id', initialArgs: { a: 'Button', b: 1 }, argTypes: {} } as any;
         store.setInitial(story);

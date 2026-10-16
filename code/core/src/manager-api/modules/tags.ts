@@ -57,10 +57,8 @@ export const getDefaultTagsFromPreset = memoize(1)((
 
 export const computeStaticFilterFn = (tagPresets: TagsOptions) => {
   const staticExcludeTags = Object.entries(tagPresets).reduce(
-    (acc, entry) => {
-      const [tag, option] = entry;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((option as any).excludeFromSidebar) {
+    (acc, [tag, option]) => {
+      if (option.hideFromSidebar) {
         acc[tag] = true;
       }
       return acc;

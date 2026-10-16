@@ -226,6 +226,7 @@ export const automigrate = async ({
       fixSummary,
       skippedFiles: fileFailures.filter(({ fixId }) => fixResults[fixId] === FixStatus.SUCCEEDED)
         .length,
+      dryRun,
     });
   }
 
@@ -352,7 +353,7 @@ export async function runFixes({
     };
 
     logger.step(`${getTitle()}: ${picocolors.cyan(f.id)}`);
-    logger.logBox(f.prompt());
+    logger.logBox(f.prompt(result));
 
     let runAnswer: { fix: boolean } | undefined;
 
@@ -360,7 +361,10 @@ export async function runFixes({
       if (dryRun) {
         runAnswer = { fix: false };
       } else if (yes) {
-        runAnswer = { fix: true };
+        // Like `upgrade --yes`, run an opt-in fix only when the user named it.
+        runAnswer = {
+          fix: f.defaultSelected !== false || f.promptType === 'auto' || fixId === f.id,
+        };
         if (promptType === 'manual') {
           fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
           fixSummary.manual.push(f.id);

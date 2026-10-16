@@ -1,24 +1,32 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import { eventActionName } from './event-action-name.ts';
-import { deprecationMessage, namedItems, trimmedOrUndefined } from '../utils.ts';
+import { deprecationMessage, firstValue, trimmedOrUndefined } from '../utils.ts';
+import { classifyDeclaration, type DeclarationApi } from '../manifest/declaration-api.ts';
 import type {
   ManifestAttribute,
   ManifestClassField,
   ManifestClassMethod,
-  ManifestClassMember,
   ManifestCssCustomProperty,
   ManifestCssCustomState,
   ManifestCssPart,
   ManifestDeclaration,
   ManifestEvent,
-  ManifestParameter,
   ManifestSlot,
 } from '../manifest/types.ts';
-import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
+import { formatParameters } from '../manifest/members.ts';
+import { readCssPropertySyntax, readTypeText } from '../manifest/type-text.ts';
+import { DEFAULT_SLOT_NAME, toArgKey } from '../../../arg-keys.ts';
 import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
 
 type ArgTypeCategory = 'attributes' | 'properties';
+type TableCategory =
+  | ArgTypeCategory
+  | 'events'
+  | 'methods'
+  | 'slots'
+  | 'css custom properties'
+  | 'css shadow parts'
+  | 'css states';
 type ArgTypeSource = ManifestAttribute | ManifestClassField;
 type DocSource = {
   summary?: string;
@@ -30,95 +38,71 @@ type ArgTypeFields = Omit<StrictInputType, 'name' | 'description' | 'table' | 'c
   table?: Omit<NonNullable<StrictInputType['table']>, 'category' | 'jsDocTags'>;
 };
 
+const NAMED_ENTRY_CATEGORIES: Record<'slots' | 'cssParts' | 'cssStates', TableCategory> = {
+  slots: 'slots',
+  cssParts: 'css shadow parts',
+  cssStates: 'css states',
+};
+
 interface ToArgTypeOptions {
   key: string;
   category: ArgTypeCategory;
   sources: ArgTypeSource[];
-  typeProperty: string;
 }
 
 /**
  * Suffixed keys keep categories clear of attributes (the `@wc-toolkit/storybook-helpers`
- * convention); the attributes/properties spread last wins the clashes left, `on<Name>`
- * twins and bare `--x` names. The legacy runtime lets the twin win; here the declared API
- * wins on purpose. Within attributes and properties, property rows are written first and
+ * convention); the attributes/properties spread last wins the clashes left and bare `--x`
+ * names. Within attributes and properties, property rows are written first and
  * attribute rows last, so the same precedence holds in every input order.
  */
-export function mapArgTypes(
-  declaration: ManifestDeclaration,
-  typeProperty: string
-): StrictArgTypes {
-  const events = namedItems(declaration.events);
-  const members = namedItems(declaration.members);
-  const slots = namedItems(declaration.slots);
-  const cssParts = namedItems(declaration.cssParts);
-  const cssStates = namedItems(declaration.cssStates);
-  const cssProperties = namedItems(declaration.cssProperties);
+export function mapArgTypes(declaration: ManifestDeclaration): StrictArgTypes {
+  const api = classifyDeclaration(declaration);
 
   return {
     ...Object.fromEntries([
-      ...events.flatMap((event) => eventEntries(event, typeProperty)),
-      ...members.filter(isMethod).filter(isPublicMember).map(methodEntry),
-      ...slots.map((slot) => namedEntry(slot, 'slot', 'slots')),
-      ...cssParts.map((part) => namedEntry(part, 'part', 'css shadow parts')),
-      ...cssStates.map((state) => namedEntry(state, 'state', 'css states')),
-      ...cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
+      ...api.events.flatMap(eventEntries),
+      ...api.methods.map(methodEntry),
+      ...api.slots.map((slot) => namedEntry(slot, 'slots')),
+      ...api.cssParts.map((part) => namedEntry(part, 'cssParts')),
+      ...api.cssStates.map((state) => namedEntry(state, 'cssStates')),
+      ...api.cssProperties.map(cssPropertyEntry),
     ]),
-    ...mapAttributesAndProperties(declaration, members, typeProperty),
+    ...mapAttributesAndProperties(api),
   };
 }
 
-function mapAttributesAndProperties(
-  declaration: ManifestDeclaration,
-  members: ManifestClassMember[],
-  typeProperty: string
-): StrictArgTypes {
+function mapAttributesAndProperties(api: DeclarationApi): StrictArgTypes {
   const argTypes: StrictArgTypes = {};
-  const fields = members.filter(isField);
-  const publicFields = fields.filter(isPublicField);
-  const attributes = namedItems(declaration.attributes);
+  const properties = api.fields.filter(
+    (field) => !api.attributes.some(({ attribute }) => attribute.name === field.name)
+  );
 
-  for (const field of publicFields) {
-    if (attributes.some((attribute) => attribute.name === field.name)) {
-      continue;
-    }
-
+  for (const field of properties) {
+    const attribute = api.attributes.find(({ field: backingField }) => backingField === field);
     argTypes[field.name] = toArgType({
       key: field.name,
       category: 'properties',
-      sources: sourcesForField(field, attributes),
-      typeProperty,
+      sources: attribute ? [field, attribute.attribute] : [field],
     });
   }
 
-  for (const attribute of attributes) {
-    // Attributes backed by non-public fields are dropped with their field.
-    const field =
-      attribute.fieldName === undefined
-        ? undefined
-        : fields.find((item) => item.name === attribute.fieldName);
-    if (field && !isPublicField(field)) {
-      continue;
-    }
-
+  for (const { attribute, field } of api.attributes) {
     argTypes[attribute.name] = toArgType({
       key: attribute.name,
       category: 'attributes',
       sources: field ? [field, attribute] : [attribute],
-      typeProperty,
     });
   }
 
   return argTypes;
 }
 
-function toArgType({ key, category, sources, typeProperty }: ToArgTypeOptions): StrictInputType {
+function toArgType({ key, category, sources }: ToArgTypeOptions): StrictInputType {
   const rawTypeText = firstValue(sources, (source) =>
     typeof source.type?.text === 'string' ? source.type.text : undefined
   );
-  const text = firstValue(sources, (source) =>
-    trimmedOrUndefined(readTypeText(source, typeProperty))
-  );
+  const text = firstValue(sources, (source) => trimmedOrUndefined(readTypeText(source)));
   const parsed =
     parseTypeText(text) ??
     (category === 'attributes'
@@ -138,36 +122,24 @@ function toArgType({ key, category, sources, typeProperty }: ToArgTypeOptions): 
   });
 }
 
-function eventEntries(
-  event: ManifestEvent,
-  typeProperty: string
-): Array<[string, StrictInputType]> {
-  const text = readTypeText(event, typeProperty) ?? 'CustomEvent';
-  const actionName = eventActionName(event.name);
+function eventEntries(event: ManifestEvent): Array<[string, StrictInputType]> {
+  const text = readTypeText(event) ?? 'CustomEvent';
 
   return [
     [
-      `${event.name}-event`,
+      toArgKey('events', event.name),
       memberArgType(event.name, [event], 'events', {
         type: { name: 'other', value: text },
         control: false,
         table: { type: { summary: text } },
       }),
     ],
-    [
-      actionName,
-      {
-        name: actionName,
-        action: { name: event.name },
-        table: { disable: true },
-      },
-    ],
   ];
 }
 
 function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
   return [
-    `${method.name}-method`,
+    toArgKey('methods', method.name),
     memberArgType(method.name, [method], 'methods', {
       type: { name: 'function' },
       table: { type: { summary: methodSignature(method) } },
@@ -177,21 +149,20 @@ function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
 
 function namedEntry(
   item: ManifestSlot | ManifestCssPart | ManifestCssCustomState,
-  suffix: string,
-  category: string
+  category: 'slots' | 'cssParts' | 'cssStates'
 ): [string, StrictInputType] {
-  const name = item.name || 'default';
-  return [`${name}-${suffix}`, memberArgType(name, [item], category, { type: { name: 'string' } })];
+  const name = item.name || DEFAULT_SLOT_NAME;
+  return [
+    toArgKey(category, name),
+    memberArgType(name, [item], NAMED_ENTRY_CATEGORIES[category], { type: { name: 'string' } }),
+  ];
 }
 
-function cssPropertyEntry(
-  property: ManifestCssCustomProperty,
-  typeProperty: string
-): [string, StrictInputType] {
-  const syntax = readCssPropertySyntax(property, typeProperty);
+function cssPropertyEntry(property: ManifestCssCustomProperty): [string, StrictInputType] {
+  const syntax = readCssPropertySyntax(property);
 
   return [
-    property.name,
+    toArgKey('cssProperties', property.name),
     memberArgType(property.name, [property], 'css custom properties', {
       ...cssCustomPropertyControl(syntax),
       table: {
@@ -205,7 +176,7 @@ function cssPropertyEntry(
 function memberArgType(
   name: string,
   sources: DocSource[],
-  category: string,
+  category: TableCategory,
   rest: ArgTypeFields
 ): StrictInputType {
   const { table, ...input } = rest;
@@ -232,40 +203,10 @@ function docFields(sources: DocSource[]): { description?: string; deprecated?: s
   };
 }
 
-function sourcesForField(
-  field: ManifestClassField,
-  attributes: ManifestAttribute[]
-): ArgTypeSource[] {
-  const attribute = attributes.find((item) => item.fieldName === field.name);
-  return attribute ? [field, attribute] : [field];
-}
-
-function firstValue<TSource, TValue>(
-  sources: TSource[],
-  read: (source: TSource) => TValue | undefined
-): TValue | undefined {
-  for (const source of sources) {
-    const value = read(source);
-    if (value !== undefined) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
 function methodSignature(method: ManifestClassMethod): string {
-  const params = (method.parameters ?? []).map(formatParameter).join(', ');
+  const params = formatParameters(method);
   const returnType = method.return?.type?.text;
   return returnType ? `(${params}) => ${returnType}` : `(${params})`;
-}
-
-function formatParameter(parameter: ManifestParameter): string {
-  const restPrefix = parameter.rest ? '...' : '';
-  const optionalSuffix = parameter.optional ? '?' : '';
-  const typeText = parameter.type?.text ? `: ${parameter.type.text}` : '';
-  const defaultText = parameter.default !== undefined ? ` = ${parameter.default}` : '';
-
-  return `${restPrefix}${parameter.name}${optionalSuffix}${typeText}${defaultText}`;
 }
 
 function cssCustomPropertyControl(
@@ -280,26 +221,4 @@ function cssCustomPropertyControl(
     return { type: { name: 'number' } };
   }
   return { type: { name: 'string' } };
-}
-
-/** Public, non-static, non-private field. */
-export function isPublicField(member: ManifestClassMember): member is ManifestClassField {
-  return isField(member) && isPublicMember(member);
-}
-
-function isPublicMember(member: ManifestClassMember): boolean {
-  return (
-    member.privacy !== 'private' &&
-    member.privacy !== 'protected' &&
-    member.static !== true &&
-    !member.name.startsWith('#')
-  );
-}
-
-function isField(member: ManifestClassMember): member is ManifestClassField {
-  return member.kind === 'field';
-}
-
-function isMethod(member: ManifestClassMember): member is ManifestClassMethod {
-  return member.kind === 'method';
 }

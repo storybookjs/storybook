@@ -8,7 +8,6 @@ import { CemManager } from './component-docgen/manifest/cem-manager.ts';
 
 export const createDocgenProvider = ({
   manifestPaths,
-  typeProperty,
 }: WebComponentsDocgenOptions): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
@@ -22,9 +21,5 @@ export const createDocgenProvider = ({
 
       return new CemManager(manifestPaths);
     },
-    extract: async (manager, input) =>
-      buildDocgenPayload(input, {
-        cem: await manager.refresh(),
-        typeProperty,
-      }),
+    extract: async (manager, input) => buildDocgenPayload(input, { cem: await manager.refresh() }),
   });

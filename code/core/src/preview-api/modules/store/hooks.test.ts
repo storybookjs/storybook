@@ -361,6 +361,7 @@ describe('Preview hooks', () => {
       let counter = 0;
       const storyFn = () => {
         counter += 1;
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- autofix drops this unused dep
         const callback = useCallback(() => {}, [counter]);
         callbacks.push(callback);
       };

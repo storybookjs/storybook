@@ -34,7 +34,6 @@ export function extractSubcomponentArgTypes(
 }
 
 export type DocgenServiceRows = {
-  /** The component name reported by the service, used as a fallback table title. */
   serviceComponentName: string;
   mainRows: StrictArgTypes;
   subcomponentRows: Record<string, StrictArgTypes>;
@@ -42,13 +41,13 @@ export type DocgenServiceRows = {
 
 /**
  * Shared docgen-service recipe for the ArgTypes and Controls blocks behind
- * `experimentalDocgenServer`.
+ * `docgenServer`.
  *
  * Subscribes to the `core/docgen` service for the component's server-extracted argTypes and merges
  * them with the locally-prepared `customArgTypes` (the service only carries extracted component
  * docgen, so the block works regardless of whether the story rendered). Surfaces the query's
  * `isInitialLoading` flag alongside the rows so callers can render a loading skeleton while docgen is
- * still resolving (instead of rendering nothing); `rows` stays `null` until a payload arrives.
+ * still resolving (instead of rendering nothing); `rows` stays `null` until docgen resolves, even to nothing.
  */
 export function useDocgenServiceRows({
   componentId,
@@ -65,13 +64,13 @@ export function useDocgenServiceRows({
 }): { rows: DocgenServiceRows | null; isInitialLoading: boolean } {
   const { data: servicePayload, isInitialLoading } = useServiceDocgen(componentId);
 
-  if (!servicePayload) {
+  if (isInitialLoading) {
     return { rows: null, isInitialLoading };
   }
 
   return {
     rows: {
-      serviceComponentName: servicePayload.name,
+      serviceComponentName: servicePayload?.name ?? '',
       mainRows: mergeServiceArgTypes({
         payload: servicePayload,
         storyId: storyId ?? componentId,
@@ -79,7 +78,7 @@ export function useDocgenServiceRows({
         initialArgs,
         customArgTypes,
       }),
-      subcomponentRows: getServiceSubcomponentArgTypes(servicePayload),
+      subcomponentRows: servicePayload ? getServiceSubcomponentArgTypes(servicePayload) : {},
     },
     isInitialLoading,
   };

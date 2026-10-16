@@ -712,6 +712,23 @@ describe('sourceUrlManifestProvider', () => {
       { signal: expect.any(AbortSignal) }
     );
   });
+
+  it('lists a source that answers 401 as a notice pointing at its own MCP endpoint', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response('{}', { status: 401 }));
+
+    const [listing] = await listSources(
+      createCompositionDocsSources({
+        sources: [source],
+        manifestProvider: sourceUrlManifestProvider,
+      }),
+      { withStoryIds: false }
+    );
+
+    expect(listing).toEqual({
+      source,
+      notice: { kind: 'requires-own-mcp', endpoint: 'https://ds.example.com/sub/mcp' },
+    });
+  });
 });
 
 describe('resolveComponentEntry', () => {

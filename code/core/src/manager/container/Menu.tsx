@@ -36,6 +36,7 @@ export interface MenuItem {
   ) => void;
   closeOnClick?: boolean;
   internal?: boolean;
+  autoFocus?: boolean;
 }
 
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({

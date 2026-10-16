@@ -226,15 +226,6 @@
       "name": "string",
     },
   },
-  "onClick": {
-    "action": {
-      "name": "click",
-    },
-    "name": "onClick",
-    "table": {
-      "disable": true,
-    },
-  },
   "onSelect": {
     "description": "Callback property.",
     "name": "onSelect",
@@ -249,15 +240,6 @@
     },
     "type": {
       "name": "function",
-    },
-  },
-  "onToolkitResize": {
-    "action": {
-      "name": "toolkit-resize",
-    },
-    "name": "onToolkitResize",
-    "table": {
-      "disable": true,
     },
   },
   "pressed": {

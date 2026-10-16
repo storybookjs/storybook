@@ -10,32 +10,26 @@ const EXISTING: DocgenProviderDescriptor[] = [{ moduleSpecifier: '/addon/docgen-
 const optionsWith = (features: Record<string, unknown>): Options =>
   ({
     presets: { apply: async (key: string) => (key === 'features' ? features : undefined) },
-  }) as unknown as Options;
+  }) as Options;
 
 describe('experimental_docgenProvider', () => {
   it('appends the Svelte docgen worker after existing descriptors', async () => {
-    await expect(
-      experimental_docgenProvider(EXISTING, optionsWith({ experimentalDocgenServer: true }))
-    ).resolves.toEqual([
+    await expect(experimental_docgenProvider(EXISTING)).resolves.toEqual([
       EXISTING[0],
       {
         moduleSpecifier: expect.stringMatching(/svelte[\\/]dist[\\/]docgen[\\/]docgen-worker\.js$/),
       },
     ]);
   });
-
-  it('registers nothing when the docgen server is off', async () => {
-    await expect(experimental_docgenProvider(EXISTING, optionsWith({}))).resolves.toBe(EXISTING);
-  });
 });
 
 describe('experimental_manifests', () => {
   it.each([
     { name: 'docgen server off', features: { componentsManifest: true }, expected: {} },
-    { name: 'components manifest off', features: { experimentalDocgenServer: true }, expected: {} },
+    { name: 'components manifest off', features: { docgenServer: true }, expected: {} },
     {
       name: 'both on',
-      features: { experimentalDocgenServer: true, componentsManifest: true },
+      features: { docgenServer: true, componentsManifest: true },
       expected: {
         components: { v: 0, components: {}, meta: { docgen: 'svelte2tsx', durationMs: 0 } },
       },

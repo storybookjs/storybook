@@ -4,9 +4,6 @@ export default {
     name: '@storybook/web-components-vite',
     options: {
       customElementsManifest: '../custom-elements.json',
-      docgen: {
-        typeProperty: 'parsedType',
-      },
     },
   },
 };
@@ -20,9 +17,6 @@ const config: StorybookConfig = {
     name: '@storybook/web-components-vite',
     options: {
       customElementsManifest: '../custom-elements.json',
-      docgen: {
-        typeProperty: 'parsedType',
-      },
     },
   },
 };
@@ -38,9 +32,6 @@ export default defineMain({
     name: '@storybook/web-components-vite',
     options: {
       customElementsManifest: '../custom-elements.json',
-      docgen: {
-        typeProperty: 'parsedType',
-      },
     },
   },
 });
@@ -56,9 +47,6 @@ export default defineMain({
     name: '@storybook/web-components-vite',
     options: {
       customElementsManifest: '../custom-elements.json',
-      docgen: {
-        typeProperty: 'parsedType',
-      },
     },
   },
 });

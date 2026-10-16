@@ -47,6 +47,34 @@ const getCsfParsingErrorMessage = ({
     `;
 };
 
+const findImportSource = (node: t.Node, program: t.Program): string | undefined => {
+  const expression = unwrapExpression(node);
+  if (!t.isIdentifier(expression)) {
+    return undefined;
+  }
+  for (const statement of program.body) {
+    if (
+      t.isImportDeclaration(statement) &&
+      statement.importKind !== 'type' &&
+      statement.importKind !== 'typeof' &&
+      statement.specifiers.some(
+        (specifier) =>
+          specifier.local.name === expression.name &&
+          (!t.isImportSpecifier(specifier) ||
+            (specifier.importKind !== 'type' && specifier.importKind !== 'typeof'))
+      )
+    ) {
+      return statement.source.value;
+    }
+  }
+  return undefined;
+};
+
+const getImportedConfigMessage = (fileName: string | undefined, source: string) => dedent`
+  Cannot statically read the default export in ${fileName ? `'${fileName}'` : 'a config file'}: its value comes from '${source}'.
+  Define the configuration object in this file so Storybook can read it statically.
+`;
+
 const propKey = (p: t.ObjectProperty) => {
   if (t.isIdentifier(p.key)) {
     return p.key.name;
@@ -460,13 +488,16 @@ export class ConfigFile implements CsfObject {
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);
           } else {
+            const importSource = findImportSource(node.declaration, self._ast.program);
             logger.debug(
-              getCsfParsingErrorMessage({
-                fileName: self.fileName,
-                expectedType: 'ObjectExpression',
-                foundType: decl?.type,
-                node: decl || node.declaration,
-              })
+              importSource !== undefined
+                ? getImportedConfigMessage(self.fileName, importSource)
+                : getCsfParsingErrorMessage({
+                    fileName: self.fileName,
+                    expectedType: 'ObjectExpression',
+                    foundType: decl?.type,
+                    node: decl || node.declaration,
+                  })
             );
           }
         },
@@ -503,6 +534,18 @@ export class ConfigFile implements CsfObject {
                 const exportName = t.isIdentifier(spec.exported)
                   ? spec.exported.name
                   : spec.exported.value;
+
+                if (
+                  exportName === 'default' &&
+                  node.exportKind !== 'type' &&
+                  spec.exportKind !== 'type'
+                ) {
+                  const importSource =
+                    node.source?.value ?? findImportSource(spec.local, self._ast.program);
+                  if (importSource !== undefined) {
+                    logger.debug(getImportedConfigMessage(self.fileName, importSource));
+                  }
+                }
 
                 const decl =
                   _findVarDeclarator(localName, self._ast.program) ??

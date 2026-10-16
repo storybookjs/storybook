@@ -1,7 +1,10 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { fs as memoryFs, vol } from 'memfs';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf/csf-utils';
@@ -17,6 +20,9 @@ import { Tag } from '../../shared/constants/tags.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
 import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
+
+vi.mock('node:fs', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('../utils/constants', () => {
   return {
@@ -84,6 +90,63 @@ describe('StoryIndexGenerator', () => {
     const generator = new StoryIndexGenerator([], options);
     expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST]);
     expect(once.warn).not.toHaveBeenCalled();
+  });
+
+  describe('preview file diagnostics', () => {
+    const configDir = resolve('/project/.storybook');
+
+    beforeEach(() => {
+      vol.reset();
+      vi.mocked(existsSync).mockImplementation(memoryFs.existsSync);
+      vi.mocked(readFile).mockImplementation(memoryFs.promises.readFile as typeof readFile);
+      vi.mocked(logger.debug).mockClear();
+    });
+
+    afterEach(() => {
+      vi.mocked(existsSync).mockReset();
+      vi.mocked(readFile).mockReset();
+      vol.reset();
+    });
+
+    it.each(['ts', 'mjs'])(
+      'includes the selected preview.%s path in both indexing passes',
+      async (extension) => {
+        const fileName = join(configDir, `preview.${extension}`);
+        vol.fromJSON({
+          [fileName]: "import { previewConfig } from './shared'; export default previewConfig;",
+        });
+        const generator = new StoryIndexGenerator([], { ...options, configDir });
+
+        await generator.initialize();
+        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(`in '${fileName}':`));
+        expect(logger.debug).toHaveBeenCalledWith(
+          expect.stringContaining("its value comes from './shared'")
+        );
+        expect(logger.warn).not.toHaveBeenCalled();
+        expect(once.warn).not.toHaveBeenCalled();
+
+        vi.mocked(logger.debug).mockClear();
+        await generator.getIndex();
+        expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining(`in '${fileName}':`));
+        expect(logger.warn).not.toHaveBeenCalled();
+        expect(once.warn).not.toHaveBeenCalled();
+      }
+    );
+
+    it.each([undefined, ''])(
+      'does not emit diagnostics for a missing or empty preview (%s)',
+      async (source) => {
+        if (source !== undefined) {
+          vol.fromJSON({ [join(configDir, 'preview.ts')]: source });
+        }
+        const generator = new StoryIndexGenerator([], { ...options, configDir });
+        await generator.initialize();
+        expect(await generator.getIndex()).toEqual({ v: 5, entries: {} });
+        expect(logger.debug).not.toHaveBeenCalled();
+        expect(logger.warn).not.toHaveBeenCalled();
+        expect(once.warn).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('extraction', () => {

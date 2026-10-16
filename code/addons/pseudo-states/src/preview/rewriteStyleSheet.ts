@@ -31,14 +31,90 @@ const isEscaped = (selector: string, index: number) => {
   return precedingBackslashes % 2 === 1;
 };
 
+const findSelectorLiteralRanges = (selector: string) => {
+  const ranges: IndexRange[] = [];
+  let start = 0;
+  let brackets = 0;
+  let quote = '';
+
+  for (let index = 0; index < selector.length; index++) {
+    if (isEscaped(selector, index)) {
+      continue;
+    }
+    const character = selector[index];
+    if (quote) {
+      if (character === quote) {
+        quote = '';
+        if (brackets === 0) {
+          ranges.push({ start, end: index + 1 });
+        }
+      }
+    } else if (character === '"' || character === "'") {
+      if (brackets === 0) {
+        start = index;
+      }
+      quote = character;
+    } else if (character === '[') {
+      if (brackets++ === 0) {
+        start = index;
+      }
+    } else if (character === ']' && brackets > 0 && --brackets === 0) {
+      ranges.push({ start, end: index + 1 });
+    }
+  }
+
+  return ranges;
+};
+
+const findFunctionalSelectorRanges = (
+  selector: string,
+  name: string,
+  literalRanges: IndexRange[]
+) => {
+  const ranges: IndexRange[] = [];
+  const opening = `:${name}(`;
+  let start = selector.indexOf(opening);
+
+  while (start !== -1) {
+    let end = start + opening.length;
+    if (
+      !isEscaped(selector, start) &&
+      !literalRanges.some((range) => start >= range.start && start < range.end)
+    ) {
+      let depth = 1;
+      for (; end < selector.length; end++) {
+        if (
+          isEscaped(selector, end) ||
+          literalRanges.some((range) => end >= range.start && end < range.end)
+        ) {
+          continue;
+        }
+        if (selector[end] === '(') {
+          depth++;
+        } else if (selector[end] === ')' && --depth === 0) {
+          ranges.push({ start, end: ++end });
+          break;
+        }
+      }
+    }
+    start = selector.indexOf(opening, end);
+  }
+
+  return ranges;
+};
+
 const findPseudoStates = (selector: string) => {
   const matches: PseudoStateMatch[] = [];
+  const literalRanges = findSelectorLiteralRanges(selector);
   pseudoStatePattern.lastIndex = 0;
 
   let match = pseudoStatePattern.exec(selector);
   while (match) {
     const index = match.index;
-    if (!isEscaped(selector, index)) {
+    if (
+      !isEscaped(selector, index) &&
+      !literalRanges.some(({ start, end }) => index >= start && index < end)
+    ) {
       matches.push({ index, state: match[1], text: match[0] });
     }
     match = pseudoStatePattern.exec(selector);
@@ -108,7 +184,6 @@ const replacePseudoStates = (
   );
 };
 
-// Does not handle :host() or :not() containing pseudo-states. Need to call replaceNotSelectors on the input first.
 const replacePseudoStatesWithAncestorSelector = (
   selector: string,
   forShadowDOM: boolean,
@@ -159,39 +234,76 @@ const extractPseudoStates = (selector: string) => {
   };
 };
 
-const rewriteNotSelectors = (selector: string, forShadowDOM: boolean) => {
-  // Accept up to 3 levels of nested parentheses.
-  return [...selector.matchAll(/:not\((?:[^()]|\([^()]+\)|\((?:[^()]|\([^()]+\))+\))+\)/g)].reduce(
-    (acc, [originalNot]) => {
-      const selectorList = originalNot.match(/^:not\((.+)\)$/)?.[1] ?? '';
-      const rewrittenNot = rewriteNotSelector(selectorList, forShadowDOM);
-      return acc.replace(originalNot, rewrittenNot);
-    },
-    selector
-  );
-};
-
-const rewriteNotSelector = (negatedSelectorList: string, forShadowDOM: boolean) => {
-  const rewrittenSelectors: string[] = [];
-  // For each negated selector
-  for (const negatedSelector of negatedSelectorList.split(/,\s*/)) {
-    // :not cannot be nested and cannot contain pseudo-elements, so no need to worry about that.
-    // Also, there's no compelling use case for :host() inside :not(), so we don't handle that.
-    rewrittenSelectors.push(replacePseudoStatesWithAncestorSelector(negatedSelector, forShadowDOM));
+const protectNegatedPseudoStates = (
+  selector: string,
+  forShadowDOM: boolean,
+  pseudoForcingActive: boolean
+) => {
+  const negations: { placeholder: string; selector: string }[] = [];
+  const literalRanges = findSelectorLiteralRanges(selector);
+  const hostSelectorEnd = findFunctionalSelectorRanges(selector, 'host', literalRanges).find(
+    ({ start }) => start === 0
+  )?.end;
+  const ranges = findFunctionalSelectorRanges(selector, 'not', literalRanges);
+  let cursor = 0;
+  let protectedSelector = '';
+  for (const { start, end } of ranges) {
+    protectedSelector += selector.slice(cursor, start);
+    const negation = selector.slice(start, end);
+    const matches = findPseudoStates(negation);
+    cursor = end;
+    if (matches.length === 0) {
+      protectedSelector += negation;
+      continue;
+    }
+    const rewritten = pseudoForcingActive
+      ? replacePseudoStateMatches(negation, matches, (state) => {
+          const ancestorSelector =
+            hostSelectorEnd && start < hostSelectorEnd
+              ? `.pseudo-${state}-all`
+              : forShadowDOM
+                ? `:host(.pseudo-${state}-all) *`
+                : `.pseudo-${state}-all *`;
+          return `:is(:${state}, .pseudo-${state}, :where(${ancestorSelector}))`;
+        })
+      : negation;
+    let placeholder = `:not(.__storybook_negation_${negations.length})`;
+    while (selector.includes(placeholder)) {
+      placeholder = placeholder.replace(')', '_)');
+    }
+    negations.push({ placeholder, selector: rewritten });
+    protectedSelector += placeholder;
   }
-  return `:not(${rewrittenSelectors.join(', ')})`;
+  protectedSelector += selector.slice(cursor);
+
+  return {
+    selector: protectedSelector,
+    didRewrite: pseudoForcingActive && negations.length > 0,
+    restore: (rewritten: string) =>
+      negations.reduce(
+        (result, negation) => result.replaceAll(negation.placeholder, negation.selector),
+        rewritten
+      ),
+  };
 };
 
-const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boolean) => {
+const rewriteRules = (
+  { cssText, selectorText }: CSSStyleRule,
+  forShadowDOM: boolean,
+  pseudoForcingActive: boolean
+) => {
   let didRewrite = false;
   const rewrittenSelectors = splitSelectors(selectorText).flatMap((selector) => {
     if (selector.includes('.pseudo-')) {
       return [selector];
     }
+    const negations = protectNegatedPseudoStates(selector, forShadowDOM, pseudoForcingActive);
+    selector = negations.selector;
     const replacementSelectors = [selector];
     const pseudoStateMatches = findPseudoStates(selector);
     if (pseudoStateMatches.length === 0) {
-      return replacementSelectors;
+      didRewrite ||= negations.didRewrite;
+      return replacementSelectors.map(negations.restore);
     }
     didRewrite = true;
 
@@ -209,11 +321,8 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
         // E.g. :host(.foo) .bar:hover -> :host(.foo.pseudo-hover-all) .bar
         // E.g. :host(.foo:focus) .bar:hover -> :host(.foo.pseudo-focus-all.pseudo-hover-all) .bar
         let hostInnerSelector = matches[1];
-        let descendantSelector = matches[2];
-        // Simple replacement is fine for pseudo-state selectors inside :host() (even if inside :not()).
+        const descendantSelector = matches[2];
         hostInnerSelector = replacePseudoStates(hostInnerSelector, true);
-        // Rewrite any :not selectors in the descendant selector.
-        descendantSelector = rewriteNotSelectors(descendantSelector, true);
         // Any remaining pseudo-states in the descendant selector need to be moved into the host selector.
         ancestorSelector = replacePseudoStatesWithAncestorSelector(
           descendantSelector,
@@ -221,18 +330,14 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
           hostInnerSelector
         );
       } else {
-        // Don't need to specially handle :not() because:
-        //  - if inside :host(), simple replacement is sufficient
-        //  - if outside :host(), didn't match any pseudo-states
         ancestorSelector = replacePseudoStates(selector, true);
       }
     } else {
-      const withNotsReplaced = rewriteNotSelectors(selector, forShadowDOM);
-      ancestorSelector = replacePseudoStatesWithAncestorSelector(withNotsReplaced, forShadowDOM);
+      ancestorSelector = replacePseudoStatesWithAncestorSelector(selector, forShadowDOM);
     }
     replacementSelectors.push(ancestorSelector);
 
-    return replacementSelectors;
+    return replacementSelectors.map(negations.restore);
   });
 
   if (!didRewrite) {
@@ -271,12 +376,65 @@ const replaceRule = (
   return Array.from(ruleContainer.cssRules).slice(index, index + newRules.length) as CSSStyleRule[];
 };
 
-// Rewrites the style sheet to add alternative selectors for any rule that targets a pseudo state.
-// A sheet can only be rewritten once, and may carry over between stories.
-export const rewriteStyleSheet = (sheet: CSSStyleSheet, forShadowDOM = false): boolean => {
+type RewrittenRule = {
+  container: CSSStyleSheet | CSSGroupingRule;
+  originalSelector: string;
+  rules: CSSStyleRule[];
+};
+
+const sheetStates = new WeakMap<
+  CSSStyleSheet,
+  { forcingActive: boolean; rewrittenRules: RewrittenRule[] }
+>();
+
+const clearProcessedRules = (container: CSSStyleSheet | CSSGroupingRule) => {
+  for (const rule of container.cssRules) {
+    const processed = rule as CSSRule & {
+      __processed?: boolean;
+      __pseudoStatesRewrittenCount?: number;
+    };
+    delete processed.__processed;
+    delete processed.__pseudoStatesRewrittenCount;
+    if ('cssRules' in rule) {
+      clearProcessedRules(rule as CSSGroupingRule);
+    }
+  }
+};
+
+export const rewriteStyleSheet = (
+  sheet: CSSStyleSheet,
+  forShadowDOM = false,
+  pseudoForcingActive = false
+): boolean => {
   try {
+    let state = sheetStates.get(sheet);
+    if (state && state.forcingActive !== pseudoForcingActive) {
+      for (const { container, originalSelector, rules } of [...state.rewrittenRules].reverse()) {
+        const index = Array.from(container.cssRules).indexOf(rules[0]);
+        if (
+          index !== -1 &&
+          rules.every((rule, offset) => container.cssRules[index + offset] === rule)
+        ) {
+          const restored = rules[0].cssText.replace(rules[0].selectorText, () => originalSelector);
+          container.insertRule(restored, index);
+          rules.forEach(() => container.deleteRule(index + 1));
+        }
+      }
+      clearProcessedRules(sheet);
+      state = undefined;
+    }
+    if (!state) {
+      state = { forcingActive: pseudoForcingActive, rewrittenRules: [] };
+      sheetStates.set(sheet, state);
+    }
     const maximumRulesToRewrite = 1000;
-    const count = rewriteRuleContainer(sheet, maximumRulesToRewrite, forShadowDOM);
+    const count = rewriteRuleContainer(
+      sheet,
+      maximumRulesToRewrite,
+      forShadowDOM,
+      pseudoForcingActive,
+      state.rewrittenRules
+    );
 
     if (count >= maximumRulesToRewrite) {
       warnOnce('Reached maximum of 1000 pseudo selectors per sheet, skipping the rest.');
@@ -296,7 +454,9 @@ export const rewriteStyleSheet = (sheet: CSSStyleSheet, forShadowDOM = false): b
 const rewriteRuleContainer = (
   ruleContainer: CSSStyleSheet | CSSGroupingRule,
   rewriteLimit: number,
-  forShadowDOM: boolean
+  forShadowDOM: boolean,
+  pseudoForcingActive: boolean,
+  rewrittenRules: RewrittenRule[]
 ): number => {
   let count = 0;
   let index = -1;
@@ -313,9 +473,11 @@ const rewriteRuleContainer = (
 
       // Modify the rule, if it contains a pseudo state
       if ('selectorText' in styleRules[0]) {
-        const newRules = rewriteRules(styleRules[0], forShadowDOM);
+        const newRules = rewriteRules(styleRules[0], forShadowDOM, pseudoForcingActive);
         if (newRules.length > 0) {
+          const originalSelector = styleRules[0].selectorText;
           styleRules = replaceRule(ruleContainer, index, newRules);
+          rewrittenRules.push({ container: ruleContainer, originalSelector, rules: styleRules });
           numRewritten = 1;
         }
       }
@@ -335,7 +497,9 @@ const rewriteRuleContainer = (
           rewrittenCounts[styleRuleIndex] += rewriteRuleContainer(
             styleRule as CSSGroupingRule,
             remainingRewriteLimit,
-            forShadowDOM
+            forShadowDOM,
+            pseudoForcingActive,
+            rewrittenRules
           );
         }
 

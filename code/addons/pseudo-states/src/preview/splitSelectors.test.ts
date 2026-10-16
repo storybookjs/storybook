@@ -3,6 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { splitSelectors } from './splitSelectors.ts';
 
 describe('splitSelectors', () => {
+  it('ignores quoted parentheses and commas', () => {
+    expect(splitSelectors('.row:not([title=")"], :hover), .other')).toEqual([
+      '.row:not([title=")"], :hover)',
+      '.other',
+    ]);
+  });
+
+  it('preserves escaped selector characters and quotes', () => {
+    expect(splitSelectors(String.raw`.row\,item:not([title="\")"], :hover), .other`)).toEqual([
+      String.raw`.row\,item:not([title="\")"], :hover)`,
+      '.other',
+    ]);
+  });
   it('handles basic selectors', () => {
     expect(splitSelectors('.a')).toEqual(['.a']);
 

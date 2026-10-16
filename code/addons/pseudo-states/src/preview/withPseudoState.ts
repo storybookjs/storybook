@@ -18,6 +18,7 @@ import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
 
 const channel = addons.getChannel();
 const shadowHosts = new Set<Element>();
+const forcedRoots = new Set<Element>();
 
 // Drops any existing pseudo state classnames that carried over from a previously viewed story
 // before adding the new classnames. We use forEach for IE compatibility.
@@ -61,6 +62,12 @@ const applyParameter = (rootElement: Element, parameter: PseudoStateConfig = {})
       );
     }
   });
+
+  if ([...map.values()].some((states) => states.size > 0)) {
+    forcedRoots.add(rootElement);
+  } else {
+    forcedRoots.delete(rootElement);
+  }
 
   map.forEach((states, target) => {
     const classnames = new Set<string>();
@@ -172,7 +179,13 @@ export const withPseudoState: DecoratorFunction = (
     }
     const timeout = setTimeout(() => {
       applyParameter(rootElement, globals || pseudoConfig(parameter));
-      shadowHosts.forEach(updateShadowHost);
+      rewriteStyleSheets();
+      shadowHosts.forEach((host) => {
+        updateShadowHost(host);
+        if (host.shadowRoot) {
+          rewriteStyleSheets(host.shadowRoot);
+        }
+      });
     }, 0);
     return () => clearTimeout(timeout);
   }, [rootElement, globals, parameter]);
@@ -187,7 +200,12 @@ const rewriteStyleSheets = (shadowRoot?: ShadowRoot) => {
   if (shadowRoot?.adoptedStyleSheets?.length) {
     styleSheets = shadowRoot.adoptedStyleSheets;
   }
-  styleSheets.forEach((sheet) => rewriteStyleSheet(sheet, !!shadowRoot));
+  forcedRoots.forEach((root) => {
+    if (!root.isConnected) {
+      forcedRoots.delete(root);
+    }
+  });
+  styleSheets.forEach((sheet) => rewriteStyleSheet(sheet, !!shadowRoot, forcedRoots.size > 0));
 
   if (shadowRoot && shadowHosts) {
     shadowHosts.add(shadowRoot.host);
@@ -195,7 +213,10 @@ const rewriteStyleSheets = (shadowRoot?: ShadowRoot) => {
 };
 
 // Only track shadow hosts for the current story
-channel.on(STORY_CHANGED, () => shadowHosts.clear());
+channel.on(STORY_CHANGED, () => {
+  shadowHosts.clear();
+  forcedRoots.clear();
+});
 
 // Reinitialize CSS enhancements every time the story changes
 channel.on(STORY_RENDERED, () => rewriteStyleSheets());

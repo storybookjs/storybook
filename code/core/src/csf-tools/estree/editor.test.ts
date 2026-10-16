@@ -104,6 +104,28 @@ describe('withParentheses', () => {
     removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
     expect(removal.toString()).toBe(`export default { addons: ['b'] };`);
   });
+
+  it('skips the comments between the parentheses and the element', () => {
+    const editor = new SourceEditor(`export default { addons: [(/* c */ cond ? 'a' : 'c')] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    expect(editor.toString()).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`);
+
+    const removal = new SourceEditor(
+      `export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`
+    );
+    const array = defaultExportArray(removal);
+    removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
+    expect(removal.toString()).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c')] };`);
+
+    const after = new SourceEditor(`export default { addons: [(x /* after */)] };`);
+    appendToList(after, arrayList(after, defaultExportArray(after)), [`'b'`], '');
+    expect(after.toString()).toBe(`export default { addons: [(x /* after */), 'b'] };`);
+
+    // The list spans lines because of the comment, so the item lands on its own line.
+    const line = new SourceEditor(`export default { addons: [(x // after\n)] };`);
+    appendToList(line, arrayList(line, defaultExportArray(line)), [`'b'`], '');
+    expect(line.toString()).toBe(`export default { addons: [(x // after\n),\n'b'] };`);
+  });
 });
 
 describe('array holes', () => {

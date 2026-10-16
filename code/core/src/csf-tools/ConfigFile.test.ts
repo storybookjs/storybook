@@ -805,6 +805,12 @@ describe('ConfigFile', () => {
         `export default { addons: [require.resolve('a11y'), someVariable, 'docs'] };`
       );
     });
+
+    it('appends after a parenthesized element with a comment inside', () => {
+      expect(
+        appendToArray(['addons'], 'b', `export default { addons: [(/* c */ cond ? 'a' : 'c')] };`)
+      ).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`);
+    });
   });
 
   describe('removeField', () => {
@@ -1993,6 +1999,16 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
       expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+    });
+
+    it('removes the entry after a parenthesized element with a comment inside', () => {
+      const config = loadConfig(
+        `export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`
+      ).parse();
+      config.removeEntryFromArray(['addons'], 'b');
+      expect(printConfig(config).code).toBe(
+        `export default { addons: [(/* c */ cond ? 'a' : 'c')] };`
+      );
     });
 
     it('throws when entry is missing', () => {

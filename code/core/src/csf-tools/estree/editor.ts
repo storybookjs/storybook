@@ -347,21 +347,44 @@ export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List 
     close: array.end - 1,
     items: array.elements
       .filter((element): element is NonNullable<typeof element> => !!element)
-      .map((element) => withParentheses(code, element, open, array.end - 1)),
+      .map((element) => withParentheses(code, element, open, array.end - 1, editor.comments)),
   };
 };
 
-/** Widen a span to the balanced parentheses wrapped directly around it, within `lower..upper`. */
-export const withParentheses = (code: string, span: Span, lower = 0, upper = code.length): Span => {
+/**
+ * Widen a span to the balanced parentheses wrapped directly around it, within `lower..upper`.
+ * Whitespace and the given comments may sit between the parentheses and the span.
+ */
+export const withParentheses = (
+  code: string,
+  span: Span,
+  lower = 0,
+  upper = code.length,
+  comments: readonly Span[] = []
+): Span => {
   let { start, end } = span;
   while (true) {
     let before = start;
-    while (before > lower && /\s/.test(code[before - 1])) {
-      before--;
+    while (before > lower) {
+      const comment = comments.find((candidate) => candidate.end === before);
+      if (comment) {
+        before = comment.start;
+      } else if (/\s/.test(code[before - 1])) {
+        before--;
+      } else {
+        break;
+      }
     }
     let after = end;
-    while (after < upper && /\s/.test(code[after])) {
-      after++;
+    while (after < upper) {
+      const comment = comments.find((candidate) => candidate.start === after);
+      if (comment) {
+        after = comment.end;
+      } else if (/\s/.test(code[after])) {
+        after++;
+      } else {
+        break;
+      }
     }
     if (before > lower && after < upper && code[before - 1] === '(' && code[after] === ')') {
       start = before - 1;

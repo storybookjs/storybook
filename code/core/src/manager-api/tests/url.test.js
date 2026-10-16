@@ -427,6 +427,28 @@ describe('getStoryHrefs', () => {
     expect(previewHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
   });
 
+  it('retains empty serialized args when merging query params', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=label:old' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { args: 'label:' },
+    });
+
+    expect(new URL(managerHref, global.window.location.origin).searchParams.get('args')).toBe(
+      'label:'
+    );
+    expect(new URL(previewHref, global.window.location.origin).searchParams.get('args')).toBe(
+      'label:'
+    );
+  });
+
   it('supports additional query params, including nested objects', () => {
     const { api, state } = initURL({
       store,

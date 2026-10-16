@@ -9646,7 +9646,6 @@ __metadata:
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
-    slash: "npm:^5.0.0"
     ts-dedent: "npm:^2.0.0"
     vite: "npm:^7.0.4"
   peerDependencies:

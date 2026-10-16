@@ -1,10 +1,8 @@
 // Writes the bundler's module graph as webpack-style stats for TurboSnap.
-import { isAbsolute, relative } from 'node:path';
 
 import type { BuilderStats } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import slash from 'slash';
+import { isAbsolute, relative } from 'pathe';
 import type { Plugin } from 'vite';
 
 /*
@@ -57,7 +55,7 @@ function createNormalizer(workingDir: string, ids: Iterable<string>) {
       return id;
     }
 
-    return `${virtualPrefix}./${slash(relative(workingDir, path))}${query}`;
+    return `${virtualPrefix}./${relative(workingDir, path)}${query}`;
   };
 }
 

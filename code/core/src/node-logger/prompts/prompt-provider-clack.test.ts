@@ -241,4 +241,22 @@ describe('ClackPromptProvider', () => {
     expect(vi.mocked(clack.cancel)).not.toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
   });
+
+  it('resolves a real answer even when stdin ends before the prompt settles', async () => {
+    // `printf y | storybook add` can close stdin in the same tick the answer arrives. The prompt
+    // result below was already computed when stdin ended (unlike an unsettled prompt, which the
+    // abort signal legitimately cancels), so the abort decision — from the result alone — must
+    // keep the answer.
+    mockAllPrompts(() => Promise.resolve('a'));
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const onCancel = vi.fn();
+
+    const promptPromise = runPrompt('select', { onCancel });
+    process.stdin.emit('end');
+    await expect(promptPromise).resolves.toBe('a');
+
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(vi.mocked(clack.cancel)).not.toHaveBeenCalled();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
 });

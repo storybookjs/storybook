@@ -45,7 +45,7 @@ export interface PromptOptions {
   /**
    * Called when the prompt is aborted: 'cancel' for a user cancel (Ctrl+C / Esc), 'stdin-ended'
    * when stdin closes before an answer. Handlers are expected to exit or throw; if the handler
-   * returns, the prompt rejects with PromptAbortedError.
+   * returns, the prompt rejects with an error named `PromptAbortedError` that carries `reason`.
    */
   onCancel?: (reason: PromptCancelReason) => void | Promise<void>;
 }

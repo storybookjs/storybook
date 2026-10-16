@@ -290,6 +290,31 @@ describe('multi-line members', () => {
   });
 });
 
+describe('tab-indented files', () => {
+  it('groups members with the indent unit of the file', () => {
+    const csf = parse('export default {\n\tlayout: 1,\n\tshowNav: false,\n};');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.group(['ui'], ['layout', 'showNav'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(
+      'export default {\n\tui: {\n\t\tlayout: 1,\n\t\tshowNav: false,\n\t},\n};'
+    );
+  });
+
+  it('creates missing parents with the indent unit of the file', () => {
+    const csf = parse(
+      "export default {\n\tparameters: {\n\t\ta11y: {\n\t\t\ttest: 'todo',\n\t\t},\n\t},\n};"
+    );
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.move(['parameters', 'a11y'], ['globals', 'a11y'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe(
+      "export default {\n\tglobals: {\n\t\ta11y: {\n\t\t\ttest: 'todo',\n\t\t},\n\t},\n};"
+    );
+  });
+});
+
 describe('printMembers', () => {
   it('leaves the template literal of a function value alone', () => {
     expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'])).toBe(

@@ -13,6 +13,7 @@ import {
   type SourceEditor,
   appendMembers,
   groupMembers,
+  indentUnit,
   isSpan,
   keySource,
   prependMembers,
@@ -837,6 +838,7 @@ class CsfObjectEditor implements CsfObject {
   private insert(path: readonly string[], members: MemberInsert[]) {
     let parent = this.root();
     const quote = this.editor.quote;
+    const unit = indentUnit(this.editor.code, parent.node);
     for (const [index, name] of path.slice(0, -1).entries()) {
       const lookup = lookupProperty(parent.properties, name);
       if (lookup.ok === false) {
@@ -847,7 +849,7 @@ class CsfObjectEditor implements CsfObject {
         // Comments travel with moved members; a line comment needs the object to span lines.
         const multiline = members.some((member) => member.text.includes('\n'));
         const block = (texts: string[]) =>
-          multiline ? printMembers(texts) : `{ ${texts.join(', ')} }`;
+          multiline ? printMembers(texts, unit) : `{ ${texts.join(', ')} }`;
         const nested = missing
           .slice(1)
           .reverse()

@@ -221,10 +221,10 @@ export const printString = (value: string, quote: string) => {
 };
 
 /** An object literal laid out one member per line, so formatters keep it expanded. */
-export const printMembers = (members: string[]) =>
+export const printMembers = (members: string[], unit = '  ') =>
   members.length === 0
     ? '{}'
-    : `{\n${members.map((member) => `  ${reindent(member, '', '  ')},`).join('\n')}\n}`;
+    : `{\n${members.map((member) => `${unit}${reindent(member, '', unit)},`).join('\n')}\n}`;
 
 /** Print a JS value as source. `expanded` lays objects out one member per line. */
 export const printValue = (
@@ -415,6 +415,17 @@ const separatorAfter = (code: string, list: List, index: number) => {
 export const lineIndent = (code: string, index: number) => {
   const lineStart = code.lastIndexOf('\n', index - 1) + 1;
   return /^[ \t]*/.exec(code.slice(lineStart))![0];
+};
+
+/** Indent step of the file: from an object's line to its first member's, else two spaces. */
+export const indentUnit = (code: string, object: E.ObjectExpression | undefined) => {
+  const first = object?.properties[0];
+  if (!object || !first || !code.slice(object.start, first.start).includes('\n')) {
+    return '  ';
+  }
+  const outer = lineIndent(code, object.start);
+  const inner = lineIndent(code, first.start);
+  return inner.length > outer.length && inner.startsWith(outer) ? inner.slice(outer.length) : '  ';
 };
 
 const isMultiline = (code: string, list: List) => code.slice(list.open, list.close).includes('\n');
@@ -701,7 +712,9 @@ export const groupMembers = (
   removeMembers(editor, object, members.slice(1));
   const before = editor.code.slice(0, members[0].start);
   const indent = /[ \t]*$/.exec(before.slice(before.lastIndexOf('\n') + 1))![0];
-  const inner = multiline ? reindent(printMembers(texts), '', indent) : `{ ${texts.join(', ')} }`;
+  const inner = multiline
+    ? reindent(printMembers(texts, indentUnit(editor.code, object)), '', indent)
+    : `{ ${texts.join(', ')} }`;
   // Leading comments of the first member move into the group with it.
   const start = separatorBefore(editor.code, object, first);
   const lead = multiline ? `\n${indent}` : ' ';

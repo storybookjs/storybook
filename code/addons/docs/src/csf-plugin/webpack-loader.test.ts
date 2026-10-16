@@ -75,11 +75,12 @@ describe('webpack loader', () => {
     expect(result.code).toContain('originalSource');
     const output = positionOf(result.code, 'play:');
     const entry = new SourceMap(result.map).findEntry(output.line, output.column);
+    // The source keeps the spelling of the incoming map, which may differ from `id` on Windows.
     expect(entry).toMatchObject({
       originalLine: positionOf(originalCode, 'play:').line,
-      originalSource: id,
+      originalSource: transpiled.map.sources[0],
     });
-    expect(result.map.sources).toEqual([id]);
+    expect(result.map.sources).toEqual(transpiled.map.sources);
     expect(result.map.sourcesContent).toEqual([originalCode]);
   });
 
@@ -87,7 +88,7 @@ describe('webpack loader', () => {
     const transpiled = transpile(originalCode);
     const result = await run(transpiled.code, { ...transpiled.map, sourcesContent: undefined });
 
-    expect(result.map.sources).toEqual([id]);
+    expect(result.map.sources).toEqual(transpiled.map.sources);
     expect(result.map.sourcesContent).toEqual([null]);
   });
 

@@ -9,6 +9,7 @@ import type { McpServer } from 'tmcp';
 import type { AddonContext } from '../types.ts';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './preview-stories.ts';
+import { skillToolDefinitions } from './skill-tools.ts';
 // The error class must come from the same entry as `getToolset` (which throws it, via
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
 // `instanceof` would silently fail.
@@ -37,7 +38,7 @@ export type AddonToolRegistryContext = {
 
 type ToolEnabled = Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'];
 
-type AddonToolDefinition = {
+export type AddonToolDefinition = {
   name: string;
   toolset: McpToolsetGroup;
   available?: (context: AddonToolRegistryContext) => boolean;
@@ -148,6 +149,8 @@ const docsToolDefinitions: AddonToolDefinition[] = [
 ];
 
 const addonToolDefinitions: AddonToolDefinition[] = [
+  // The skills first: the server instructions have agents call them before any other tool.
+  ...skillToolDefinitions,
   fromToolset({
     toolset: 'dev',
     options: {

@@ -262,6 +262,22 @@ test.describe('addon-mcp', () => {
       });
     });
 
+    test.describe('Tool: ui-workflow', () => {
+      test('should return the UI workflow', async ({ request }) => {
+        const response = await mcpRequest(request, 'tools/call', {
+          name: 'ui-workflow',
+          arguments: {},
+        });
+
+        expect(response.result).toHaveProperty('content');
+        expect(response.result.content[0]).toHaveProperty('type', 'text');
+
+        const text = response.result.content[0].text;
+        expect(text).toContain('# Storybook UI workflow');
+        expect(text).not.toContain('npx storybook tools');
+      });
+    });
+
     test.describe('Tool: docs-list', () => {
       test('should list all documentation from manifest', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {

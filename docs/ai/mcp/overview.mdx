@@ -107,7 +107,7 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 - Query `docs-show` for that component to see all available properties and examples
 - Only use properties that are explicitly documented or shown in example stories
 - If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
-- Run `npx storybook skills ui-workflow --mcp` for the instructions to create or update stories, and follow them. It names the MCP tools each step calls.
+- Call the `ui-workflow` tool for the instructions to create or update stories, and follow them. It names the MCP tools each step calls.
 - Check your work by running `test-run`.
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
@@ -166,9 +166,13 @@ The MCP server provides a set of tools that an agent can call to interact with y
 
 ### Development
 
-The development toolset provides tools to find the stories a change affects, preview them in the agent's chat interface, and publish a review of them. The workflow that uses them, including how to write well-considered stories with [interaction tests](../../writing-tests/interaction-testing.mdx), comes from `npx storybook skills ui-workflow --mcp`. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
+The development toolset provides tools to find the stories a change affects, preview them in the agent's chat interface, and publish a review of them. The workflow that uses them, including how to write well-considered stories with [interaction tests](../../writing-tests/interaction-testing.mdx), comes from the `ui-workflow` tool. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
 
 The development toolset includes the following tools:
+
+#### `ui-workflow`
+
+Returns Storybook's workflow for UI changes in your project: look up the components to reuse, write and update stories with interaction tests, run the tests, and publish a review. It names only the tools the server serves, so it leaves out the steps of toolsets you turn off.
 
 #### `stories-changed`
 
@@ -191,6 +195,10 @@ Pushes a curated [review](../agentic-review.mdx) of current changes and returns 
 The docs toolset provides tools that help the agent reuse components from your Storybook when generating UI. The agent can query the manifests to find components that match the requirements of the UI it's trying to build, and reference your documentation to understand how to use those components correctly. This helps ensure the generated UI is consistent with your existing design system and uses the components you've already built.
 
 The docs toolset includes the following tools:
+
+#### `component-docs`
+
+Returns how to look up your components with `docs-list` and `docs-show` before the agent reuses them or answers a question about their props.
 
 #### `docs-show`
 

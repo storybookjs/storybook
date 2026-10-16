@@ -327,9 +327,7 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.serverInfo.version).toBeDefined();
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
-    expect(parsedResponse.result.instructions).toContain(
-      '- `npx storybook skills ui-workflow --mcp`'
-    );
+    expect(parsedResponse.result.instructions).toContain('- `ui-workflow`: you create');
     expect(parsedResponse.result.instructions).toContain('you run or fix story tests');
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });
@@ -382,9 +380,7 @@ describe('mcpServerHandler', () => {
     const responseText = dataLine!.replace(/^data: /, '').trim();
     const parsedResponse = JSON.parse(responseText);
 
-    expect(parsedResponse.result.instructions).toContain(
-      '- `npx storybook skills component-docs --mcp`'
-    );
+    expect(parsedResponse.result.instructions).toContain('- `component-docs`: you look for');
     expect(parsedResponse.result.instructions).not.toContain('ui-workflow');
     expect(parsedResponse.result.instructions).not.toContain('test-run');
   });

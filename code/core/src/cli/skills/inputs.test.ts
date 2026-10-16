@@ -22,11 +22,9 @@ beforeEach(() => {
 function createMockOptions({
   framework = '@storybook/react-vite',
   configDir,
-  presets = {},
 }: {
   framework?: string | { name: string };
   configDir?: string;
-  presets?: Record<string, () => unknown>;
 } = {}): Options {
   return {
     configDir,
@@ -35,7 +33,7 @@ function createMockOptions({
         if (key === 'framework') {
           return framework;
         }
-        return key in presets ? presets[key]() : defaultValue;
+        return defaultValue;
       }),
     },
   } as unknown as Options;
@@ -117,41 +115,5 @@ describe('resolveSkillInputs', () => {
       previewFile: '.storybook/preview.ts',
       typescript: true,
     });
-  });
-
-  it('reads the MCP toolsets that main.ts turns on, and all of them without addon-mcp', async () => {
-    const toolsets = { dev: false, docs: true, test: true };
-    const withAddon = await resolveSkillInputs(
-      createMockOptions({ presets: { mcpToolsets: () => toolsets } })
-    );
-    expect(withAddon.mcpToolsets).toEqual(toolsets);
-
-    const withoutAddon = await resolveSkillInputs(createMockOptions());
-    expect(withoutAddon.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
-  });
-
-  it('turns every MCP toolset on when addon-mcp rejects its options', async () => {
-    const inputs = await resolveSkillInputs(
-      createMockOptions({
-        presets: {
-          mcpToolsets: () => {
-            throw new Error('Invalid type: Expected boolean but received "false"');
-          },
-        },
-      })
-    );
-    expect(inputs.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
-  });
-
-  it('marks a project that composes other Storybooks', async () => {
-    const composed = await resolveSkillInputs(
-      createMockOptions({
-        presets: { refs: () => ({ design: { url: 'https://design.example' } }) },
-      })
-    );
-    expect(composed.composed).toBe(true);
-
-    const single = await resolveSkillInputs(createMockOptions());
-    expect(single.composed).toBe(false);
   });
 });

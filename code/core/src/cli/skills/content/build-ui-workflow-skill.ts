@@ -8,8 +8,8 @@ import { ERROR_EXPORT_RULE, networkMockRule, USER_EVENT_RULE } from './story-rul
 
 export type UiWorkflowSkillInputs = {
   /**
-   * `cli` for `storybook skills ui-workflow`, `mcp` for the same command with `--mcp`: the same
-   * workflow, in commands to run or in tools of the Storybook MCP server to call.
+   * `cli` for `storybook skills ui-workflow`, `mcp` for the `ui-workflow` tool of addon-mcp: the
+   * same workflow, in commands to run or in tools of the Storybook MCP server to call.
    */
   transport: SkillTextTransport;
   framework: string;
@@ -22,12 +22,6 @@ export type UiWorkflowSkillInputs = {
   testSupported: boolean;
   a11yEnabled: boolean;
   moduleGraphSupported: boolean;
-  /**
-   * The `dev` toolset is on: `stories-changed`, `stories-preview`, `review-create` and, with
-   * `moduleGraphSupported`, `stories-find-by-component`. Always for the CLI; over MCP, unless
-   * `main.ts` turns it off. Turn `moduleGraphSupported` off with it.
-   */
-  devEnabled: boolean;
 };
 
 function writeSection({
@@ -51,7 +45,7 @@ Every component you create or change gets stories: one per distinct state it can
 - Mock a module only for a dependency that is not a network call: register it in \`${previewFile}\` with \`sb.mock(import('../src/api.${typescript ? 'ts' : 'js'}'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`.`;
 }
 
-function testSection(v: SkillVocabulary, a11yEnabled: boolean, devEnabled: boolean): string {
+function testSection(v: SkillVocabulary, a11yEnabled: boolean): string {
   const a11y = a11yEnabled
     ? '\n\nThe run lists accessibility violations under `## Accessibility Violations`. Fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change the accessibility test level (`parameters.a11y.test`) to make violations fail or pass.'
     : '';
@@ -64,7 +58,7 @@ ${v.ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids from "Find the sto
 
 ${command}
 
-${v.cli ? 'Run this' : `Call ${v.name('test.run')}`} after every change: focused runs with ${v.flag('stories')} while you iterate, then one full run without ${v.flag('stories')} ${devEnabled ? 'before the review' : 'before you finish'}. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test or an accessibility violation, change only what it needs.${a11y}`;
+${v.cli ? 'Run this' : `Call ${v.name('test.run')}`} after every change: focused runs with ${v.flag('stories')} while you iterate, then one full run without ${v.flag('stories')} before the review. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Fix failures and rerun; never finish with failing tests. When you fix a failing test or an accessibility violation, change only what it needs.${a11y}`;
 }
 
 function discoverSection(v: SkillVocabulary, inputs: UiWorkflowSkillInputs): string {
@@ -179,14 +173,13 @@ export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
   return [
     `# Storybook UI workflow
 
-Follow this for every change to how the UI looks (components, stories, styles, themes, tokens)${inputs.devEnabled ? ' and for requests to show components or stories' : ''}. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps${inputs.devEnabled ? ', for example without the review' : ''}, skip those steps, but always look up the components first. ${nextSteps}`,
+Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps, for example without the review, skip those steps, but always look up the components first. ${nextSteps}`,
     inputs.docsEnabled && docsSection(inputs.transport),
     writeSection(inputs),
-    // Story ids are for the test runs and the review.
-    (inputs.devEnabled || inputs.testSupported) && discoverSection(v, inputs),
-    inputs.testSupported && testSection(v, inputs.a11yEnabled, inputs.devEnabled),
-    inputs.devEnabled && reviewSection(v, inputs),
-    inputs.devEnabled && previewSection(v),
+    discoverSection(v, inputs),
+    inputs.testSupported && testSection(v, inputs.a11yEnabled),
+    reviewSection(v, inputs),
+    previewSection(v),
   ]
     .filter(Boolean)
     .join('\n\n');

@@ -105,6 +105,28 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(response.result.tools).toMatchInlineSnapshot(`
 				[
 				  {
+				    "description": "Storybook's workflow for UI changes in this project. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
+
+				Call it first, before you edit any file, and follow its result when you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories.",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "ui-workflow",
+				    "title": "Storybook UI workflow",
+				  },
+				  {
+				    "description": "How to look up this project's components in Storybook. It lists the project's components with their props and usage examples.
+
+				Call it first, before you edit any file, and follow its result when you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage.",
+				    "inputSchema": {
+				      "properties": {},
+				      "type": "object",
+				    },
+				    "name": "component-docs",
+				    "title": "Storybook component docs",
+				  },
+				  {
 				    "_meta": {
 				      "ui": {
 				        "resourceUri": "ui://stories-preview/preview.html",
@@ -836,6 +858,33 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
+	describe('Tool: ui-workflow', () => {
+		it('returns the workflow with the tools of this server', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'ui-workflow',
+				arguments: {},
+			});
+
+			const text = response.result.content[0].text;
+			expect(text).toContain('# Storybook UI workflow');
+			expect(text).toContain('`review-create`');
+			expect(text).not.toContain('npx storybook tools');
+		});
+	});
+
+	describe('Tool: component-docs', () => {
+		it('returns how to look up the components', async () => {
+			const response = await mcpRequest('tools/call', {
+				name: 'component-docs',
+				arguments: {},
+			});
+
+			const text = response.result.content[0].text;
+			expect(text).toContain('# Storybook component docs');
+			expect(text).toContain('`docs-list`');
+		});
+	});
+
 	describe('Tool: docs-list', () => {
 		it('should list all documentation from manifest', async () => {
 			const response = await mcpRequest('tools/call', {
@@ -1104,6 +1153,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
+				  "ui-workflow",
 				  "stories-preview",
 				  "stories-changed",
 				  "stories-find-by-component",
@@ -1127,6 +1177,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
+				  "component-docs",
 				  "docs-list",
 				  "docs-show",
 				  "docs-show-story",

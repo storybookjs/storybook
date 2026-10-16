@@ -5,13 +5,7 @@ import { extractFrameworkPackageName } from '../../common/utils/get-framework-na
 import { findConfigFile } from '../../common/utils/get-storybook-info.ts';
 import { isCsfFactoryPreview, readConfig } from '../../csf-tools/ConfigFile.ts';
 
-import { getRefsFromConfig } from '../../core-server/utils/get-refs-from-config.ts';
-import {
-  ALL_MCP_TOOLSETS,
-  getToolAvailability,
-  type McpToolsets,
-  type ToolAvailability,
-} from './availability.ts';
+import { getToolAvailability, type ToolAvailability } from './availability.ts';
 
 export type SkillInputs = ToolAvailability & {
   framework: string;
@@ -21,25 +15,7 @@ export type SkillInputs = ToolAvailability & {
   previewFile: string;
   /** The preview file, or `main` when there is none, is TypeScript. */
   typescript: boolean;
-  /** The toolsets of addon-mcp that `main.ts` turns on; all of them without addon-mcp. */
-  mcpToolsets: McpToolsets;
-  /** `refs` compose other Storybooks, whose docs the MCP docs tools serve even without local manifests. */
-  composed: boolean;
 };
-
-// Reads the `mcpToolsets` preset property of addon-mcp, so `skills --mcp` names only the tools its
-// server registers. An `X-MCP-Toolsets` request header replaces these toolsets for one client; the
-// CLI cannot see that.
-async function resolveMcpToolsets(options: Options): Promise<McpToolsets> {
-  try {
-    return (
-      (await options.presets.apply<McpToolsets | undefined>('mcpToolsets', undefined)) ??
-      ALL_MCP_TOOLSETS
-    );
-  } catch {
-    return ALL_MCP_TOOLSETS;
-  }
-}
 
 const isTypeScriptFile = (path: string) => /\.[cm]?tsx?$/.test(path);
 
@@ -65,15 +41,13 @@ async function resolvePreview(configDir = '.storybook') {
  * from the target Storybook's presets.
  */
 export async function resolveSkillInputs(options: Options): Promise<SkillInputs> {
-  const [availability, frameworkPreset, preview, mcpToolsets, refs] = await Promise.all([
+  const [availability, frameworkPreset, preview] = await Promise.all([
     getToolAvailability(options),
     options.presets.apply('framework'),
     resolvePreview(options.configDir),
-    resolveMcpToolsets(options),
-    getRefsFromConfig(options),
   ]);
   const framework = extractFrameworkPackageName(
     typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
   );
-  return { ...availability, ...preview, framework, mcpToolsets, composed: refs.length > 0 };
+  return { ...availability, ...preview, framework };
 }

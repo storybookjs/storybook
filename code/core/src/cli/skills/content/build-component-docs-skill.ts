@@ -5,8 +5,8 @@ export const MCP_TOOLS_NOTE = 'The tools named here are tools of the Storybook M
 
 /**
  * How to look up the components to reuse. `ui-workflow` inlines it, so an agent cannot skip the
- * lookup by not invoking `component-docs`. With `--mcp`, both skills render it with the MCP tool
- * names.
+ * lookup by not invoking `component-docs`. Served as tools of the Storybook MCP server, both skills
+ * render it with the MCP tool names.
  */
 export function componentLookup(transport: SkillTextTransport = 'cli'): string {
   const v = skillVocabulary(transport);
@@ -32,14 +32,25 @@ ${v.ref('docs.showStory')} --storyId <id>   # the code of a story that docs show
 Do this before you edit any file: ${v.run} ${list} once and read its ${v.output}, then ${v.run} ${show} with an id from that ${v.output} for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Never guess an id. Reuse what exists instead of building a duplicate. Use only the props that ${show} documents, never one you assume from a name or another library. ${v.Run} ${show} ${oncePerId}: the props often come after long story examples. Answer props, API and usage questions from these ${v.commands}. Read source files or \`node_modules\` only when the ${v.commands} return nothing relevant. When ${list} groups its entries under sources (\`id: acme\`), pass the source of the entry ${sources}.`;
 }
 
-export function buildComponentDocsSkill(transport: SkillTextTransport = 'cli'): string {
+/**
+ * @param uiWorkflowTool Over MCP, whether the server registers the `ui-workflow` tool, which the
+ *   footer points to.
+ */
+export function buildComponentDocsSkill(
+  transport: SkillTextTransport = 'cli',
+  { uiWorkflowTool = true }: { uiWorkflowTool?: boolean } = {}
+): string {
+  const lookup = `# Storybook component docs
+
+${transport === 'mcp' ? `${MCP_TOOLS_NOTE}\n\n` : ''}${componentLookup(transport)}`;
+  if (transport === 'mcp' && !uiWorkflowTool) {
+    return lookup;
+  }
   const uiWorkflow =
     transport === 'cli'
-      ? "the `ui-workflow` skill when the project's agent instructions (such as `AGENTS.md`) name it"
-      : "`npx storybook skills ui-workflow --mcp` when your agent instructions or the Storybook MCP server's instructions name it";
-  return `# Storybook component docs
+      ? "use the `ui-workflow` skill when the project's agent instructions (such as `AGENTS.md`) name it"
+      : 'call `ui-workflow`';
+  return `${lookup}
 
-${transport === 'mcp' ? `${MCP_TOOLS_NOTE}\n\n` : ''}${componentLookup(transport)}
-
-For a change to the UI, use ${uiWorkflow}: it includes this lookup, then writes the stories, runs the tests and publishes the review.`;
+For a change to the UI, ${uiWorkflow}: it includes this lookup, then writes the stories, runs the tests and publishes the review.`;
 }

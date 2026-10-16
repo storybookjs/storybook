@@ -20,8 +20,6 @@ const deps = () => ({
     testSupported: true,
     a11yEnabled: false,
     docgenServer: false,
-    mcpToolsets: { dev: true, docs: true, test: true },
-    composed: false,
   }),
   getProjectInfo: vi.fn().mockResolvedValue({
     ok: true,
@@ -131,73 +129,6 @@ describe('runSkillsCommand', () => {
 
     const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
     expect(writeStory.output).toContain('npx storybook tools docs list');
-  });
-
-  it('--mcp names the MCP tools, on the MCP docs gate', async () => {
-    const d = deps();
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      docsEnabled: true,
-      docsEnabledForCli: true,
-    });
-
-    const uiWorkflow = await runSkillsCommand(
-      { tokens: ['ui-workflow'], mcp: true, target: {} },
-      d
-    );
-    expect(uiWorkflow.output).toContain('tools of the Storybook MCP server');
-    expect(uiWorkflow.output).toContain('`docs-show` with an `id`');
-    expect(uiWorkflow.output).toContain('Call `review-create` with:');
-    expect(uiWorkflow.output).not.toContain('npx storybook tools');
-
-    const componentDocs = await runSkillsCommand(
-      { tokens: ['component-docs'], mcp: true, target: {} },
-      d
-    );
-    expect(componentDocs.output).toContain(
-      'The tools named here are tools of the Storybook MCP server.'
-    );
-    expect(componentDocs.output).toContain('`docs-list`: every component and docs page');
-    expect(componentDocs.output).toContain('`npx storybook skills ui-workflow --mcp`');
-    expect(componentDocs.output).not.toContain('npx storybook tools');
-
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      docsEnabled: false,
-      docsEnabledForCli: true,
-    });
-    const withoutDocsTools = await runSkillsCommand(
-      { tokens: ['ui-workflow'], mcp: true, target: {} },
-      d
-    );
-    expect(withoutDocsTools.output).not.toContain('## Look up components first');
-
-    // Composed Storybooks give the MCP docs tools something to read without local manifests.
-    d.resolveSkillInputs.mockResolvedValue({ ...(await d.resolveSkillInputs()), composed: true });
-    const composed = await runSkillsCommand({ tokens: ['ui-workflow'], mcp: true, target: {} }, d);
-    expect(composed.output).toContain('## Look up components first');
-  });
-
-  it('--mcp leaves out the steps of the toolsets main.ts turns off', async () => {
-    const d = deps();
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      docsEnabled: true,
-      docsEnabledForCli: true,
-      mcpToolsets: { dev: false, docs: false, test: true },
-    });
-
-    const mcp = await runSkillsCommand({ tokens: ['ui-workflow'], mcp: true, target: {} }, d);
-    expect(mcp.output).not.toContain('## Look up components first');
-    expect(mcp.output).not.toContain('stories-changed');
-    expect(mcp.output).not.toContain('## Finish with a review');
-    expect(mcp.output).not.toContain('## Link to one story');
-    expect(mcp.output).toContain('## Test');
-    expect(mcp.output).toContain('This Storybook has no tool that lists story ids.');
-
-    const cli = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
-    expect(cli.output).toContain('## Look up components first');
-    expect(cli.output).toContain('## Finish with a review');
   });
 
   it('leaves the component lookup out of ui-workflow when the CLI docs gate is off', async () => {

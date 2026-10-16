@@ -6,20 +6,19 @@ export type ServerInstructionsInputs = {
   docsEnabled: boolean;
 };
 
+/** The MCP tools that serve the `ui-workflow` and `component-docs` skills. */
+export const UI_WORKFLOW_TOOL_NAME = 'ui-workflow';
+export const COMPONENT_DOCS_TOOL_NAME = 'component-docs';
+
 /**
- * The MCP counterpart of the `## Storybook` section that `create storybook` writes in `AGENTS.md`:
- * the same tasks in the same words, but each one runs its skill with `--mcp`, which names the
- * tools of this server instead of CLI commands, so both paths follow one text. MCP clients truncate
- * server instructions (Claude Code cuts them at 2,048 chars), so anything more belongs in the
- * skills.
+ * When to call each skill tool and what it does, in the words of the `## Storybook` section that
+ * `create storybook` writes in `AGENTS.md`. The server instructions and the tool descriptions both
+ * use them, as some MCP clients show only one of the two.
  */
-export function buildServerInstructions({
-  devEnabled,
+function getSkillToolTasks({
   testSupported,
   docsEnabled,
-}: ServerInstructionsInputs): string {
-  const ref = getToolName({ transport: 'mcp' });
-
+}: Omit<ServerInstructionsInputs, 'devEnabled'>) {
   const steps = [
     docsEnabled && 'looks up the components to reuse',
     'updates your stories',
@@ -28,34 +27,62 @@ export function buildServerInstructions({
   ].filter(Boolean);
   const workflow = `${steps.slice(0, -1).join(', ')}${steps.length > 2 ? ',' : ''} and ${steps.at(-1)}`;
 
+  return {
+    uiWorkflow: {
+      when: `you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks;${testSupported ? ' you run or fix story tests;' : ''} or the user asks to see components or stories`,
+      does: `It ${workflow}.`,
+    },
+    componentDocs: {
+      when: "you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage",
+      does: "It lists the project's components with their props and usage examples.",
+    },
+  };
+}
+
+/** The descriptions of the skill tools: what each one is for, then when to call it. */
+export function getSkillToolDescriptions(inputs: Omit<ServerInstructionsInputs, 'devEnabled'>) {
+  const { uiWorkflow, componentDocs } = getSkillToolTasks(inputs);
+  const describe = (summary: string, task: { when: string; does: string }) =>
+    `${summary} ${task.does}\n\nCall it first, before you edit any file, and follow its result when ${task.when}.`;
+  return {
+    uiWorkflow: describe("Storybook's workflow for UI changes in this project.", uiWorkflow),
+    componentDocs: describe(
+      "How to look up this project's components in Storybook.",
+      componentDocs
+    ),
+  };
+}
+
+/**
+ * The MCP counterpart of the `## Storybook` section that `create storybook` writes in `AGENTS.md`:
+ * the same tasks in the same words, but each one calls the tool of this server that serves its
+ * skill, which names the tools of this server instead of CLI commands. MCP clients truncate server
+ * instructions (Claude Code cuts them at 2,048 chars), so anything more belongs in the skills.
+ */
+export function buildServerInstructions({
+  devEnabled,
+  testSupported,
+  docsEnabled,
+}: ServerInstructionsInputs): string {
+  const ref = getToolName({ transport: 'mcp' });
+  const { uiWorkflow, componentDocs } = getSkillToolTasks({ testSupported, docsEnabled });
+
   const tasks = [
-    devEnabled &&
-      `- \`npx storybook skills ui-workflow --mcp\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks;${testSupported ? ' you run or fix story tests;' : ''} or the user asks to see components or stories. It ${workflow}.`,
+    devEnabled && `- \`${UI_WORKFLOW_TOOL_NAME}\`: ${uiWorkflow.when}. ${uiWorkflow.does}`,
     !devEnabled &&
       testSupported &&
       `- \`${ref('test.run')}\`: you run or fix story tests. It is the only way to run them, never a \`package.json\` test script; finish with one run without \`stories\`, and never finish with failing tests.`,
     docsEnabled &&
-      `- \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.`,
+      `- \`${COMPONENT_DOCS_TOOL_NAME}\`: ${componentDocs.when}. ${componentDocs.does}`,
   ].filter(Boolean);
 
   if (tasks.length === 0) {
     return '';
   }
 
-  const runsSkills = devEnabled || docsEnabled;
-  const callsTool = !devEnabled && testSupported;
-  const first = [runsSkills && 'run its Storybook skill', callsTool && 'call its Storybook tool']
-    .filter(Boolean)
-    .join(' or ');
-  const skillRule = runsSkills
-    ? ' Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`.'
-    : '';
-  const follow = runsSkills ? 'follow it' : 'follow its result';
-  const intro = `For ${tasks.length > 1 ? 'each of these tasks' : 'this task'}, ${first} first, before you edit any file, and ${follow}.${skillRule}`;
-
   return `## Storybook
 
-${intro}
+For ${tasks.length > 1 ? 'each of these tasks' : 'this task'}, call its Storybook tool first, before you edit any file, and follow its result:
 
 ${tasks.join('\n')}`;
 }

@@ -1,0 +1,4393 @@
+{
+  "core-argMapping.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Single",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--single",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Single"
+      },
+      {
+        "exportName": "Multiple",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--multiple",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Multiple"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Single": {
+        "id": "untitled--single",
+        "name": "Single",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Multiple": {
+        "id": "untitled--multiple",
+        "name": "Multiple",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PartialStoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 2
+      },
+      "within": {
+        "constant": true,
+        "uses": 2
+      },
+      "arrows": {
+        "constant": true,
+        "uses": 4
+      },
+      "labels": {
+        "constant": true,
+        "uses": 2
+      },
+      "Single": {
+        "constant": true,
+        "uses": 1
+      },
+      "Multiple": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-args.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Inheritance",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--inheritance",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Inheritance"
+      },
+      {
+        "exportName": "Targets",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--targets",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Targets"
+      },
+      {
+        "exportName": "Events",
+        "title": "Untitled",
+        "tags": ["!vitest", "!test", "play-fn"],
+        "__id": "untitled--events",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Events"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Inheritance": {
+        "id": "untitled--inheritance",
+        "name": "Inheritance",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Targets": {
+        "id": "untitled--targets",
+        "name": "Targets",
+        "tags": ["!vitest", "play-fn"],
+        "localName": null
+      },
+      "Events": {
+        "id": "untitled--events",
+        "name": "Events",
+        "tags": ["!vitest", "!test", "play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "RESET_STORY_ARGS": {
+        "constant": true,
+        "uses": 1
+      },
+      "STORY_ARGS_UPDATED": {
+        "constant": true,
+        "uses": 2
+      },
+      "UPDATE_STORY_ARGS": {
+        "constant": true,
+        "uses": 1
+      },
+      "PartialStoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 2
+      },
+      "expect": {
+        "constant": true,
+        "uses": 2
+      },
+      "within": {
+        "constant": true,
+        "uses": 4
+      },
+      "pick": {
+        "constant": true,
+        "uses": 1
+      },
+      "Inheritance": {
+        "constant": true,
+        "uses": 1
+      },
+      "Targets": {
+        "constant": true,
+        "uses": 1
+      },
+      "Events": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-autotitle.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--default",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Default"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Default": {
+        "id": "untitled--default",
+        "name": "Default",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 1
+      },
+      "Default": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-basics.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Basic",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--basic",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Basic"
+      },
+      {
+        "exportName": "TypeString",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-string",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type String"
+      },
+      {
+        "exportName": "TypeBoolean",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-boolean",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Boolean"
+      },
+      {
+        "exportName": "TypeObject",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-object",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Object"
+      },
+      {
+        "exportName": "TypeNull",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-null",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Null"
+      },
+      {
+        "exportName": "TypeUndefined",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-undefined",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Undefined"
+      },
+      {
+        "exportName": "TypeNaN",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-na-n",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Na N"
+      },
+      {
+        "exportName": "TypeInfinity",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-infinity",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Infinity"
+      },
+      {
+        "exportName": "TypeMinusInfinity",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-minus-infinity",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Minus Infinity"
+      },
+      {
+        "exportName": "TypeNumber",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-number",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Number"
+      },
+      {
+        "exportName": "TypeGlobal",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-global",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Global"
+      },
+      {
+        "exportName": "TypeSymbol",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-symbol",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Symbol"
+      },
+      {
+        "exportName": "TypeRegExp",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-reg-exp",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Reg Exp"
+      },
+      {
+        "exportName": "TypeArray",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-array",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Array"
+      },
+      {
+        "exportName": "TypeClass",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-class",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Class"
+      },
+      {
+        "exportName": "TypeFunction",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-function",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Function"
+      },
+      {
+        "exportName": "TypeMultiple",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--type-multiple",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type Multiple"
+      },
+      {
+        "exportName": "Cyclical",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--cyclical",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Cyclical"
+      },
+      {
+        "exportName": "Reserved",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--reserved",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Reserved"
+      },
+      {
+        "exportName": "OptionPersist",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--option-persist",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Option Persist"
+      },
+      {
+        "exportName": "OptionDepth",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--option-depth",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Option Depth"
+      },
+      {
+        "exportName": "Disabled",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--disabled",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Disabled"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Basic": {
+        "id": "untitled--basic",
+        "name": "Basic",
+        "localName": null
+      },
+      "TypeString": {
+        "id": "untitled--type-string",
+        "name": "Type String",
+        "localName": null
+      },
+      "TypeBoolean": {
+        "id": "untitled--type-boolean",
+        "name": "Type Boolean",
+        "localName": null
+      },
+      "TypeObject": {
+        "id": "untitled--type-object",
+        "name": "Type Object",
+        "localName": null
+      },
+      "TypeNull": {
+        "id": "untitled--type-null",
+        "name": "Type Null",
+        "localName": null
+      },
+      "TypeUndefined": {
+        "id": "untitled--type-undefined",
+        "name": "Type Undefined",
+        "localName": null
+      },
+      "TypeNaN": {
+        "id": "untitled--type-na-n",
+        "name": "Type Na N",
+        "localName": null
+      },
+      "TypeInfinity": {
+        "id": "untitled--type-infinity",
+        "name": "Type Infinity",
+        "localName": null
+      },
+      "TypeMinusInfinity": {
+        "id": "untitled--type-minus-infinity",
+        "name": "Type Minus Infinity",
+        "localName": null
+      },
+      "TypeNumber": {
+        "id": "untitled--type-number",
+        "name": "Type Number",
+        "localName": null
+      },
+      "TypeGlobal": {
+        "id": "untitled--type-global",
+        "name": "Type Global",
+        "localName": null
+      },
+      "TypeSymbol": {
+        "id": "untitled--type-symbol",
+        "name": "Type Symbol",
+        "localName": null
+      },
+      "TypeRegExp": {
+        "id": "untitled--type-reg-exp",
+        "name": "Type Reg Exp",
+        "localName": null
+      },
+      "TypeArray": {
+        "id": "untitled--type-array",
+        "name": "Type Array",
+        "localName": null
+      },
+      "TypeClass": {
+        "id": "untitled--type-class",
+        "name": "Type Class",
+        "localName": null
+      },
+      "TypeFunction": {
+        "id": "untitled--type-function",
+        "name": "Type Function",
+        "localName": null
+      },
+      "TypeMultiple": {
+        "id": "untitled--type-multiple",
+        "name": "Type Multiple",
+        "localName": null
+      },
+      "Cyclical": {
+        "id": "untitled--cyclical",
+        "name": "Cyclical",
+        "localName": null
+      },
+      "Reserved": {
+        "id": "untitled--reserved",
+        "name": "Reserved",
+        "localName": null
+      },
+      "OptionPersist": {
+        "id": "untitled--option-persist",
+        "name": "Option Persist",
+        "localName": null
+      },
+      "OptionDepth": {
+        "id": "untitled--option-depth",
+        "name": "Option Depth",
+        "localName": null
+      },
+      "Disabled": {
+        "id": "untitled--disabled",
+        "name": "Disabled",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "globalThis": {
+        "constant": true,
+        "uses": 2
+      },
+      "action": {
+        "constant": true,
+        "uses": 22
+      },
+      "Basic": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeString": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeBoolean": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeObject": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeNull": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeUndefined": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeNaN": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeInfinity": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeMinusInfinity": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeNumber": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeGlobal": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeSymbol": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeRegExp": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeArray": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeClass": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeFunction": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeMultiple": {
+        "constant": true,
+        "uses": 1
+      },
+      "Cyclical": {
+        "constant": true,
+        "uses": 1
+      },
+      "Reserved": {
+        "constant": true,
+        "uses": 1
+      },
+      "OptionPersist": {
+        "constant": true,
+        "uses": 1
+      },
+      "OptionDepth": {
+        "constant": true,
+        "uses": 1
+      },
+      "Disabled": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-before-each.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "before_each_and_loaders_can_extend_context",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--before-each-and-loaders-can-extend-context",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": true,
+          "beforeEach": true,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Before Each And Loaders Can Extend Context"
+      },
+      {
+        "exportName": "context_prop_is_available",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--context-prop-is-available",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Context Prop Is Available"
+      },
+      {
+        "exportName": "step_and_canvas_element_can_be_used_in_loaders_and_before_each",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--step-and-canvas-element-can-be-used-in-loaders-and-before-each",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": true,
+          "beforeEach": true,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Step And Canvas Element Can Be Used In Loaders And Before Each"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "before_each_and_loaders_can_extend_context": {
+        "id": "untitled--before-each-and-loaders-can-extend-context",
+        "name": "Before Each And Loaders Can Extend Context",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "context_prop_is_available": {
+        "id": "untitled--context-prop-is-available",
+        "name": "Context Prop Is Available",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "step_and_canvas_element_can_be_used_in_loaders_and_before_each": {
+        "id": "untitled--step-and-canvas-element-can-be-used-in-loaders-and-before-each",
+        "name": "Step And Canvas Element Can Be Used In Loaders And Before Each",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "expect": {
+        "constant": true,
+        "uses": 4
+      },
+      "meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "before_each_and_loaders_can_extend_context": {
+        "constant": true,
+        "uses": 1
+      },
+      "context_prop_is_available": {
+        "constant": true,
+        "uses": 1
+      },
+      "step_and_canvas_element_can_be_used_in_loaders_and_before_each": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-component-test.basics.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Validation",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--validation",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Validation"
+      },
+      {
+        "exportName": "Type",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--type",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type"
+      },
+      {
+        "exportName": "Step",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--step",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Step"
+      },
+      {
+        "exportName": "TypeAndClear",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--type-and-clear",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Type And Clear"
+      },
+      {
+        "exportName": "Callback",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--callback",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Callback"
+      },
+      {
+        "exportName": "SyncWaitFor",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--sync-wait-for",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Sync Wait For"
+      },
+      {
+        "exportName": "AsyncWaitFor",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--async-wait-for",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Async Wait For"
+      },
+      {
+        "exportName": "WithLoaders",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--with-loaders",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": true,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "With Loaders"
+      },
+      {
+        "exportName": "UserEventSetup",
+        "title": "Untitled",
+        "tags": ["!vitest", "play-fn"],
+        "__id": "untitled--user-event-setup",
+        "__stats": {
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "UserEventSetup"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["!vitest"],
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Form",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Validation": {
+        "id": "untitled--validation",
+        "name": "Validation",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Type": {
+        "id": "untitled--type",
+        "name": "Type",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Step": {
+        "id": "untitled--step",
+        "name": "Step",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "TypeAndClear": {
+        "id": "untitled--type-and-clear",
+        "name": "Type And Clear",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Callback": {
+        "id": "untitled--callback",
+        "name": "Callback",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "SyncWaitFor": {
+        "id": "untitled--sync-wait-for",
+        "name": "Sync Wait For",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "AsyncWaitFor": {
+        "id": "untitled--async-wait-for",
+        "name": "Async Wait For",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "WithLoaders": {
+        "id": "untitled--with-loaders",
+        "name": "With Loaders",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "UserEventSetup": {
+        "id": "untitled--user-event-setup",
+        "name": "UserEventSetup",
+        "tags": ["play-fn"],
+        "localName": "UserEventSetup"
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 4
+      },
+      "fireEvent": {
+        "constant": true,
+        "uses": 3
+      },
+      "fn": {
+        "constant": true,
+        "uses": 1
+      },
+      "testUserEvent": {
+        "constant": true,
+        "uses": 1
+      },
+      "waitFor": {
+        "constant": true,
+        "uses": 2
+      },
+      "waitForElementToBeRemoved": {
+        "constant": true,
+        "uses": 2
+      },
+      "within": {
+        "constant": true,
+        "uses": 7
+      },
+      "Validation": {
+        "constant": true,
+        "uses": 1
+      },
+      "Type": {
+        "constant": true,
+        "uses": 3
+      },
+      "Step": {
+        "constant": true,
+        "uses": 1
+      },
+      "TypeAndClear": {
+        "constant": true,
+        "uses": 1
+      },
+      "Callback": {
+        "constant": true,
+        "uses": 4
+      },
+      "SyncWaitFor": {
+        "constant": true,
+        "uses": 1
+      },
+      "AsyncWaitFor": {
+        "constant": true,
+        "uses": 1
+      },
+      "WithLoaders": {
+        "constant": true,
+        "uses": 1
+      },
+      "UserEventSetup": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-exportOrder.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Story2",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--story-2",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Story 2"
+      },
+      {
+        "exportName": "Story1",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--story-1",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Story 1"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Story2": {
+        "id": "untitled--story-2",
+        "name": "Story 2",
+        "localName": null
+      },
+      "Story1": {
+        "id": "untitled--story-1",
+        "name": "Story 1",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": ["Story2", "Story1"],
+    "bindings": {
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "Story1": {
+        "constant": true,
+        "uses": 1
+      },
+      "Story2": {
+        "constant": true,
+        "uses": 1
+      },
+      "__namedExportsOrder": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-globals.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Inheritance",
+        "title": "Untitled",
+        "tags": ["autodocs", "play-fn"],
+        "__id": "untitled--inheritance",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Inheritance"
+      },
+      {
+        "exportName": "Events",
+        "title": "Untitled",
+        "tags": ["autodocs", "!vitest", "!test", "play-fn"],
+        "__id": "untitled--events",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Events"
+      },
+      {
+        "exportName": "Overrides1",
+        "title": "Untitled",
+        "tags": ["autodocs", "play-fn"],
+        "__id": "untitled--overrides-1",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Overrides 1"
+      },
+      {
+        "exportName": "Overrides2",
+        "title": "Untitled",
+        "tags": ["autodocs", "play-fn"],
+        "__id": "untitled--overrides-2",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": true,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Overrides 2"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["autodocs"],
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Inheritance": {
+        "id": "untitled--inheritance",
+        "name": "Inheritance",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Events": {
+        "id": "untitled--events",
+        "name": "Events",
+        "tags": ["!vitest", "!test", "play-fn"],
+        "localName": null
+      },
+      "Overrides1": {
+        "id": "untitled--overrides-1",
+        "name": "Overrides 1",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Overrides2": {
+        "id": "untitled--overrides-2",
+        "name": "Overrides 2",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PartialStoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 2
+      },
+      "expect": {
+        "constant": true,
+        "uses": 3
+      },
+      "within": {
+        "constant": true,
+        "uses": 6
+      },
+      "Inheritance": {
+        "constant": true,
+        "uses": 1
+      },
+      "Events": {
+        "constant": true,
+        "uses": 1
+      },
+      "Overrides1": {
+        "constant": true,
+        "uses": 1
+      },
+      "Overrides2": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-indexer.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "metaId": "indexer-custom-meta-id",
+        "tags": ["play-fn"],
+        "__id": "indexer-custom-meta-id--default",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Default"
+      },
+      {
+        "exportName": "CustomParametersId",
+        "title": "Untitled",
+        "metaId": "indexer-custom-meta-id",
+        "tags": ["play-fn"],
+        "__id": "custom-id",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Custom Parameters Id"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": "indexer-custom-meta-id",
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Default": {
+        "id": "indexer-custom-meta-id--default",
+        "name": "Default",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "CustomParametersId": {
+        "id": "custom-id",
+        "name": "Custom Parameters Id",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 2
+      },
+      "Default": {
+        "constant": true,
+        "uses": 1
+      },
+      "CustomParametersId": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-interleavedExports.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Story1",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--story-1",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Story 1"
+      },
+      {
+        "exportName": "Story2",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--story-2",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Story 2"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Story1": {
+        "id": "untitled--story-1",
+        "name": "Story 1",
+        "localName": null
+      },
+      "Story2": {
+        "id": "untitled--story-2",
+        "name": "Story 2",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "Story1": {
+        "constant": true,
+        "uses": 1
+      },
+      "Story2": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-moduleMocking.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Basic",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--basic",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": true,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Basic"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["play-fn"],
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Basic": {
+        "id": "untitled--basic",
+        "name": "Basic",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "foo": {
+        "constant": true,
+        "uses": 3
+      },
+      "expect": {
+        "constant": true,
+        "uses": 2
+      },
+      "fn": {
+        "constant": true,
+        "uses": 1
+      },
+      "isMockFunction": {
+        "constant": true,
+        "uses": 1
+      },
+      "mocked": {
+        "constant": true,
+        "uses": 1
+      },
+      "Basic": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-mount-in-play.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "MountShouldBeDestructured",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--mount-should-be-destructured",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Mount Should Be Destructured"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "MountShouldBeDestructured": {
+        "id": "untitled--mount-should-be-destructured",
+        "name": "Mount Should Be Destructured",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "expect": {
+        "constant": true,
+        "uses": 1
+      },
+      "fn": {
+        "constant": true,
+        "uses": 1
+      },
+      "meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "MountShouldBeDestructured": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-names.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "PrefixAndName",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--prefix-and-name",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Prefix And Name"
+      },
+      {
+        "exportName": "Prefix",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--prefix",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Prefix"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "PrefixAndName": {
+        "id": "untitled--prefix-and-name",
+        "name": "Prefix And Name",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Prefix": {
+        "id": "untitled--prefix",
+        "name": "Prefix",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 2
+      },
+      "PrefixAndName": {
+        "constant": true,
+        "uses": 1
+      },
+      "Prefix": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-parameters.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Inheritance",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--inheritance",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Inheritance"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Inheritance": {
+        "id": "untitled--inheritance",
+        "name": "Inheritance",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PartialStoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 1
+      },
+      "within": {
+        "constant": true,
+        "uses": 1
+      },
+      "Inheritance": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-tags-add.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Inheritance",
+        "title": "Untitled",
+        "tags": ["!dev", "!autodocs", "!test", "story-one", "!vitest", "play-fn"],
+        "__id": "untitled--inheritance",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Inheritance"
+      },
+      {
+        "exportName": "Dev",
+        "title": "Untitled",
+        "tags": ["!dev", "!autodocs", "!test", "dev"],
+        "__id": "untitled--dev",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Dev"
+      },
+      {
+        "exportName": "Autodocs",
+        "title": "Untitled",
+        "tags": ["!dev", "!autodocs", "!test", "autodocs"],
+        "__id": "untitled--autodocs",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Autodocs"
+      },
+      {
+        "exportName": "Test",
+        "title": "Untitled",
+        "tags": ["!dev", "!autodocs", "!test", "test"],
+        "__id": "untitled--test",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Test"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["!dev", "!autodocs", "!test"],
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Inheritance": {
+        "id": "untitled--inheritance",
+        "name": "Inheritance",
+        "tags": ["story-one", "!vitest", "play-fn"],
+        "localName": null
+      },
+      "Dev": {
+        "id": "untitled--dev",
+        "name": "Dev",
+        "tags": ["dev"],
+        "localName": null
+      },
+      "Autodocs": {
+        "id": "untitled--autodocs",
+        "name": "Autodocs",
+        "tags": ["autodocs"],
+        "localName": null
+      },
+      "Test": {
+        "id": "untitled--test",
+        "name": "Test",
+        "tags": ["test"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PartialStoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 1
+      },
+      "within": {
+        "constant": true,
+        "uses": 1
+      },
+      "Inheritance": {
+        "constant": true,
+        "uses": 1
+      },
+      "Dev": {
+        "constant": true,
+        "uses": 1
+      },
+      "Autodocs": {
+        "constant": true,
+        "uses": 1
+      },
+      "Test": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "core-tags-config.stories.ts": {
+    "indexInputs": [
+      {
+        "exportName": "Inheritance",
+        "title": "Untitled",
+        "tags": ["component-one", "component-two", "autodocs", "story-one", "!vitest", "play-fn"],
+        "__id": "untitled--inheritance",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Inheritance"
+      },
+      {
+        "exportName": "DocsOnly",
+        "title": "Untitled",
+        "tags": ["component-one", "component-two", "autodocs", "docs-only"],
+        "__id": "untitled--docs-only",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Docs Only"
+      },
+      {
+        "exportName": "TestOnly",
+        "title": "Untitled",
+        "tags": ["component-one", "component-two", "autodocs", "test-only"],
+        "__id": "untitled--test-only",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Test Only"
+      },
+      {
+        "exportName": "DevOnly",
+        "title": "Untitled",
+        "tags": ["component-one", "component-two", "autodocs", "dev-only"],
+        "__id": "untitled--dev-only",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Dev Only"
+      },
+      {
+        "exportName": "TagRemoval",
+        "title": "Untitled",
+        "tags": ["component-one", "component-two", "autodocs", "!component-two"],
+        "__id": "untitled--tag-removal",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Tag Removal"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["component-one", "component-two", "autodocs"],
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Pre",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Inheritance": {
+        "id": "untitled--inheritance",
+        "name": "Inheritance",
+        "tags": ["story-one", "!vitest", "play-fn"],
+        "localName": null
+      },
+      "DocsOnly": {
+        "id": "untitled--docs-only",
+        "name": "Docs Only",
+        "tags": ["docs-only"],
+        "localName": null
+      },
+      "TestOnly": {
+        "id": "untitled--test-only",
+        "name": "Test Only",
+        "tags": ["test-only"],
+        "localName": null
+      },
+      "DevOnly": {
+        "id": "untitled--dev-only",
+        "name": "Dev Only",
+        "tags": ["dev-only"],
+        "localName": null
+      },
+      "TagRemoval": {
+        "id": "untitled--tag-removal",
+        "name": "Tag Removal",
+        "tags": ["!component-two"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "PartialStoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "PlayFunctionContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "globalThis": {
+        "constant": true,
+        "uses": 1
+      },
+      "expect": {
+        "constant": true,
+        "uses": 1
+      },
+      "within": {
+        "constant": true,
+        "uses": 1
+      },
+      "Inheritance": {
+        "constant": true,
+        "uses": 1
+      },
+      "DocsOnly": {
+        "constant": true,
+        "uses": 1
+      },
+      "TestOnly": {
+        "constant": true,
+        "uses": 1
+      },
+      "DevOnly": {
+        "constant": true,
+        "uses": 1
+      },
+      "TagRemoval": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "edge-legacy.stories.tsx": {
+    "indexInputs": [
+      {
+        "rawComponentPath": "./Button",
+        "exportName": "Bound",
+        "title": "Edge/Legacy",
+        "tags": ["autodocs"],
+        "__id": "edge-legacy--bound",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Bound story"
+      },
+      {
+        "rawComponentPath": "./Button",
+        "exportName": "Cast",
+        "title": "Edge/Legacy",
+        "tags": ["autodocs"],
+        "__id": "edge-legacy--cast",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Cast"
+      },
+      {
+        "rawComponentPath": "./Button",
+        "exportName": "WithPlay",
+        "title": "Edge/Legacy",
+        "tags": ["autodocs", "play-fn"],
+        "__id": "edge-legacy--with-play",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": true,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "With Play"
+      },
+      {
+        "rawComponentPath": "./Button",
+        "exportName": "Declared",
+        "title": "Edge/Legacy",
+        "tags": ["autodocs"],
+        "__id": "edge-legacy--declared",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Declared"
+      },
+      {
+        "rawComponentPath": "./Button",
+        "exportName": "Alias",
+        "title": "Edge/Legacy",
+        "tags": ["autodocs"],
+        "__id": "edge-legacy--alias",
+        "__stats": {
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Alias"
+      }
+    ],
+    "meta": {
+      "title": "Edge/Legacy",
+      "id": null,
+      "tags": ["autodocs"],
+      "component": "Button",
+      "includeStories": {
+        "regex": "^[A-Z]",
+        "flags": ""
+      },
+      "excludeStories": ["Helper"],
+      "isFactory": false
+    },
+    "stories": {
+      "Bound": {
+        "id": "edge-legacy--bound",
+        "name": "Bound story",
+        "localName": null
+      },
+      "Cast": {
+        "id": "edge-legacy--cast",
+        "name": "Cast",
+        "localName": null
+      },
+      "WithPlay": {
+        "id": "edge-legacy--with-play",
+        "name": "With Play",
+        "tags": ["play-fn"],
+        "localName": null
+      },
+      "Declared": {
+        "id": "edge-legacy--declared",
+        "name": "Declared",
+        "localName": null
+      },
+      "Alias": {
+        "id": "edge-legacy--alias",
+        "name": "Alias",
+        "localName": "Local"
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "Meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "StoryFn": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryObj": {
+        "constant": true,
+        "uses": 1
+      },
+      "Button": {
+        "constant": true,
+        "uses": 4
+      },
+      "meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "Helper": {
+        "constant": true,
+        "uses": 1
+      },
+      "Template": {
+        "constant": true,
+        "uses": 3
+      },
+      "Bound": {
+        "constant": true,
+        "uses": 4
+      },
+      "Cast": {
+        "constant": true,
+        "uses": 2
+      },
+      "WithPlay": {
+        "constant": true,
+        "uses": 1
+      },
+      "Declared": {
+        "constant": true,
+        "uses": 1
+      },
+      "Local": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "edge-typescript.stories.ts": {
+    "error": true
+  },
+  "errors-NoStories.stories.ts": {
+    "indexInputs": [],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "component",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {},
+    "namedExportsOrder": null,
+    "bindings": {
+      "component": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-csf1.stories.tsx": {
+    "indexInputs": [
+      {
+        "exportName": "Hello1",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--hello-1",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hello 1"
+      },
+      {
+        "exportName": "Hello2",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--hello-2",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hello 2"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "{}",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Hello1": {
+        "id": "untitled--hello-1",
+        "name": "Hello 1",
+        "localName": null
+      },
+      "Hello2": {
+        "id": "untitled--hello-2",
+        "name": "Hello 2",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "React": {
+        "constant": true,
+        "uses": 0
+      },
+      "Hello1": {
+        "constant": true,
+        "uses": 1
+      },
+      "Hello2": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-csf2.stories.tsx": {
+    "indexInputs": [
+      {
+        "exportName": "Hello1",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--hello-1",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hello 1"
+      },
+      {
+        "exportName": "Hello2",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--hello-2",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hello 2"
+      },
+      {
+        "exportName": "Hello3",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--hello-3",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": true,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hello 3"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "{}",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Hello1": {
+        "id": "untitled--hello-1",
+        "name": "Hello 1",
+        "localName": null
+      },
+      "Hello2": {
+        "id": "untitled--hello-2",
+        "name": "Hello 2",
+        "localName": null
+      },
+      "Hello3": {
+        "id": "untitled--hello-3",
+        "name": "Hello 3",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "React": {
+        "constant": true,
+        "uses": 0
+      },
+      "Template": {
+        "constant": true,
+        "uses": 4
+      },
+      "Hello1": {
+        "constant": true,
+        "uses": 1
+      },
+      "Hello2": {
+        "constant": true,
+        "uses": 1
+      },
+      "Hello3": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-csf4.stories.tsx": {
+    "indexInputs": [
+      {
+        "exportName": "Story",
+        "title": "Untitled",
+        "tags": [],
+        "__id": "untitled--story",
+        "__stats": {
+          "factory": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Story"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "globalThis.__TEMPLATE_COMPONENTS__.Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": true
+    },
+    "stories": {
+      "Story": {
+        "id": "untitled--story",
+        "name": "Story",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "preview": {
+        "constant": true,
+        "uses": 1
+      },
+      "meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "Story": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-decorators.stories.tsx": {
+    "indexInputs": [
+      {
+        "exportName": "All",
+        "title": "Untitled",
+        "tags": ["autodocs"],
+        "__id": "untitled--all",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "All"
+      },
+      {
+        "exportName": "Context",
+        "title": "Untitled",
+        "tags": ["autodocs"],
+        "__id": "untitled--context",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Context"
+      },
+      {
+        "exportName": "AllowUseStateInRender",
+        "title": "Untitled",
+        "tags": ["autodocs", "!vitest", "play-fn"],
+        "__id": "untitled--allow-use-state-in-render",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Allow Use State In Render"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["autodocs"],
+      "component": "Component",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "All": {
+        "id": "untitled--all",
+        "name": "All",
+        "localName": null
+      },
+      "Context": {
+        "id": "untitled--context",
+        "name": "Context",
+        "localName": null
+      },
+      "AllowUseStateInRender": {
+        "id": "untitled--allow-use-state-in-render",
+        "name": "Allow Use State In Render",
+        "tags": ["!vitest", "play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "FC": {
+        "constant": true,
+        "uses": 0
+      },
+      "React": {
+        "constant": true,
+        "uses": 0
+      },
+      "createContext": {
+        "constant": true,
+        "uses": 1
+      },
+      "useContext": {
+        "constant": true,
+        "uses": 1
+      },
+      "useState": {
+        "constant": true,
+        "uses": 1
+      },
+      "Meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "StoryObj": {
+        "constant": true,
+        "uses": 0
+      },
+      "useParameter": {
+        "constant": true,
+        "uses": 1
+      },
+      "Component": {
+        "constant": true,
+        "uses": 2
+      },
+      "All": {
+        "constant": true,
+        "uses": 1
+      },
+      "TestContext": {
+        "constant": true,
+        "uses": 3
+      },
+      "Context": {
+        "constant": true,
+        "uses": 1
+      },
+      "AllowUseStateInRender": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-js-argtypes.stories.jsx": {
+    "indexInputs": [
+      {
+        "rawComponentPath": "./docgen-components/js-function-component-inline-defaults/input.jsx",
+        "exportName": "JsFunctionComponentInlineDefaults",
+        "title": "Untitled",
+        "tags": ["!vitest"],
+        "__id": "untitled--js-function-component-inline-defaults",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": true,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Js Function Component Inline Defaults"
+      },
+      {
+        "rawComponentPath": "./docgen-components/js-function-component-inline-defaults/input.jsx",
+        "exportName": "JsFunctionComponentInlineDefaultsNoPropTypes",
+        "title": "Untitled",
+        "tags": ["!vitest"],
+        "__id": "untitled--js-function-component-inline-defaults-no-prop-types",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": true,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Js Function Component Inline Defaults No Prop Types"
+      },
+      {
+        "rawComponentPath": "./docgen-components/js-function-component-inline-defaults/input.jsx",
+        "exportName": "JsDefaultValues",
+        "title": "Untitled",
+        "tags": ["!vitest"],
+        "__id": "untitled--js-default-values",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": true,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Js Default Values"
+      },
+      {
+        "rawComponentPath": "./docgen-components/js-function-component-inline-defaults/input.jsx",
+        "exportName": "JsReactMemo",
+        "title": "Untitled",
+        "tags": ["!vitest"],
+        "__id": "untitled--js-react-memo",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": true,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Js React Memo"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["!vitest"],
+      "component": "JsFunctionComponentInlineDefaultsComponent",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "JsFunctionComponentInlineDefaults": {
+        "id": "untitled--js-function-component-inline-defaults",
+        "name": "Js Function Component Inline Defaults",
+        "localName": null
+      },
+      "JsFunctionComponentInlineDefaultsNoPropTypes": {
+        "id": "untitled--js-function-component-inline-defaults-no-prop-types",
+        "name": "Js Function Component Inline Defaults No Prop Types",
+        "localName": null
+      },
+      "JsDefaultValues": {
+        "id": "untitled--js-default-values",
+        "name": "Js Default Values",
+        "localName": null
+      },
+      "JsReactMemo": {
+        "id": "untitled--js-react-memo",
+        "name": "Js React Memo",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "React": {
+        "constant": true,
+        "uses": 0
+      },
+      "useState": {
+        "constant": true,
+        "uses": 1
+      },
+      "ArgsTable": {
+        "constant": true,
+        "uses": 1
+      },
+      "PropTypes": {
+        "constant": true,
+        "uses": 1
+      },
+      "storyNameFromExport": {
+        "constant": true,
+        "uses": 1
+      },
+      "getService": {
+        "constant": true,
+        "uses": 1
+      },
+      "inferControls": {
+        "constant": true,
+        "uses": 1
+      },
+      "ThemeProvider": {
+        "constant": true,
+        "uses": 2
+      },
+      "convert": {
+        "constant": true,
+        "uses": 1
+      },
+      "themes": {
+        "constant": true,
+        "uses": 1
+      },
+      "JsReactMemoComponent": {
+        "constant": true,
+        "uses": 2
+      },
+      "JsDefaultValuesComponent": {
+        "constant": true,
+        "uses": 2
+      },
+      "JsFunctionComponentInlineDefaultsNoPropTypesComponent": {
+        "constant": true,
+        "uses": 2
+      },
+      "JsFunctionComponentInlineDefaultsComponent": {
+        "constant": true,
+        "uses": 3
+      },
+      "isVite": {
+        "constant": true,
+        "uses": 1
+      },
+      "ArgsStory": {
+        "constant": true,
+        "uses": 2
+      },
+      "JsFunctionComponentInlineDefaults": {
+        "constant": true,
+        "uses": 1
+      },
+      "JsFunctionComponentInlineDefaultsNoPropTypes": {
+        "constant": true,
+        "uses": 1
+      },
+      "JsDefaultValues": {
+        "constant": true,
+        "uses": 1
+      },
+      "JsReactMemo": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-mount-in-play.stories.tsx": {
+    "indexInputs": [
+      {
+        "exportName": "Basic",
+        "title": "Untitled",
+        "tags": ["play-fn"],
+        "__id": "untitled--basic",
+        "__stats": {
+          "factory": false,
+          "play": true,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": true,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Basic"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": null,
+      "component": "Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "Basic": {
+        "id": "untitled--basic",
+        "name": "Basic",
+        "tags": ["play-fn"],
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "FC": {
+        "constant": true,
+        "uses": 0
+      },
+      "React": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryObj": {
+        "constant": true,
+        "uses": 0
+      },
+      "Button": {
+        "constant": true,
+        "uses": 2
+      },
+      "Basic": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  },
+  "react-test-fn.stories.tsx": {
+    "indexInputs": [
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "tags": ["some-tag"],
+        "__id": "untitled--default",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Default"
+      },
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "tags": ["some-tag", "!autodocs", "test-fn"],
+        "__id": "untitled--default:simple",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "test",
+        "name": "simple",
+        "parent": "untitled--default",
+        "parentName": "Default"
+      },
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "tags": ["some-tag", "!autodocs", "test-fn"],
+        "__id": "untitled--default:referring-to-function-in-file",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "test",
+        "name": "referring to function in file",
+        "parent": "untitled--default",
+        "parentName": "Default"
+      },
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "tags": ["some-tag", "!autodocs", "!test", "test-fn"],
+        "__id": "untitled--default:with-overrides",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "test",
+        "name": "with overrides",
+        "parent": "untitled--default",
+        "parentName": "Default"
+      },
+      {
+        "exportName": "Default",
+        "title": "Untitled",
+        "tags": ["some-tag", "!autodocs", "test-fn"],
+        "__id": "untitled--default:with-play-function",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "test",
+        "name": "with play function",
+        "parent": "untitled--default",
+        "parentName": "Default"
+      },
+      {
+        "exportName": "Extended",
+        "title": "Untitled",
+        "tags": ["some-tag"],
+        "__id": "untitled--extended",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Extended"
+      },
+      {
+        "exportName": "Extended",
+        "title": "Untitled",
+        "tags": ["some-tag", "!autodocs", "test-fn"],
+        "__id": "untitled--extended:should-have-extended-args",
+        "__stats": {
+          "factory": true,
+          "tests": true,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": true,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "test",
+        "name": "should have extended args",
+        "parent": "untitled--extended",
+        "parentName": "Extended"
+      }
+    ],
+    "meta": {
+      "title": "Untitled",
+      "id": null,
+      "tags": ["some-tag"],
+      "component": "Button",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": true
+    },
+    "stories": {
+      "Default": {
+        "id": "untitled--default",
+        "name": "Default",
+        "localName": null
+      },
+      "Extended": {
+        "id": "untitled--extended",
+        "name": "Extended",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "React": {
+        "constant": true,
+        "uses": 0
+      },
+      "StoryContext": {
+        "constant": true,
+        "uses": 0
+      },
+      "expect": {
+        "constant": true,
+        "uses": 7
+      },
+      "fn": {
+        "constant": true,
+        "uses": 1
+      },
+      "preview": {
+        "constant": true,
+        "uses": 1
+      },
+      "Button": {
+        "constant": true,
+        "uses": 1
+      },
+      "meta": {
+        "constant": true,
+        "uses": 1
+      },
+      "Default": {
+        "constant": true,
+        "uses": 6
+      },
+      "doTest": {
+        "constant": true,
+        "uses": 1
+      },
+      "Extended": {
+        "constant": true,
+        "uses": 2
+      }
+    }
+  },
+  "shapes-angular-button.stories.ts": {
+    "indexInputs": [
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "OwnTemplate",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--own-template",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Own Template"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "RenderTemplate",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--render-template",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Render Template"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "MethodRender",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--method-render",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Method Render"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "ArgsToTemplateWrapper",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--args-to-template-wrapper",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Args To Template Wrapper"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "ArgsToTemplateInclude",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--args-to-template-include",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Args To Template Include"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "SlotInterpolation",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--slot-interpolation",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Slot Interpolation"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "ModuleConstant",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--module-constant",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Module Constant"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "HoistedTemplate",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--hoisted-template",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hoisted Template"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "QuotedArgs",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--quoted-args",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Quoted Args"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "ImportedTemplate",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--imported-template",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Imported Template"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "SpreadShadowedRender",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--spread-shadowed-render",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Spread Shadowed Render"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "SpreadArgs",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--spread-args",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Spread Args"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "AccessorRender",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--accessor-render",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Accessor Render"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "MultiExitRender",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--multi-exit-render",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Multi Exit Render"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "DynamicOptions",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--dynamic-options",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Dynamic Options"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "TemplateBind",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--template-bind",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Template Bind"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "MemberAssignedRender",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--member-assigned-render",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": true,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Member Assigned Render"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "ReassignedTemplate",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--reassigned-template",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Reassigned Template"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "SpreadStoryArgs",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--spread-story-args",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Spread Story Args"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "HoistedArgs",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--hoisted-args",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Hoisted Args"
+      },
+      {
+        "rawComponentPath": "./shape-button.component.ts",
+        "exportName": "SpreadCrossFileArgs",
+        "title": "AngularShapes/button-shapes",
+        "tags": [],
+        "__id": "angularshapes-button-shapes--spread-cross-file-args",
+        "__stats": {
+          "factory": false,
+          "play": false,
+          "render": false,
+          "loaders": false,
+          "beforeEach": false,
+          "globals": false,
+          "tags": false,
+          "storyFn": false,
+          "mount": false,
+          "moduleMock": false
+        },
+        "type": "story",
+        "subtype": "story",
+        "name": "Spread Cross File Args"
+      }
+    ],
+    "meta": {
+      "title": "AngularShapes/button-shapes",
+      "id": null,
+      "tags": null,
+      "component": "ShapeButtonComponent",
+      "includeStories": null,
+      "excludeStories": null,
+      "isFactory": false
+    },
+    "stories": {
+      "OwnTemplate": {
+        "id": "angularshapes-button-shapes--own-template",
+        "name": "Own Template",
+        "localName": null
+      },
+      "RenderTemplate": {
+        "id": "angularshapes-button-shapes--render-template",
+        "name": "Render Template",
+        "localName": null
+      },
+      "MethodRender": {
+        "id": "angularshapes-button-shapes--method-render",
+        "name": "Method Render",
+        "localName": null
+      },
+      "ArgsToTemplateWrapper": {
+        "id": "angularshapes-button-shapes--args-to-template-wrapper",
+        "name": "Args To Template Wrapper",
+        "localName": null
+      },
+      "ArgsToTemplateInclude": {
+        "id": "angularshapes-button-shapes--args-to-template-include",
+        "name": "Args To Template Include",
+        "localName": null
+      },
+      "SlotInterpolation": {
+        "id": "angularshapes-button-shapes--slot-interpolation",
+        "name": "Slot Interpolation",
+        "localName": null
+      },
+      "ModuleConstant": {
+        "id": "angularshapes-button-shapes--module-constant",
+        "name": "Module Constant",
+        "localName": null
+      },
+      "HoistedTemplate": {
+        "id": "angularshapes-button-shapes--hoisted-template",
+        "name": "Hoisted Template",
+        "localName": null
+      },
+      "QuotedArgs": {
+        "id": "angularshapes-button-shapes--quoted-args",
+        "name": "Quoted Args",
+        "localName": null
+      },
+      "ImportedTemplate": {
+        "id": "angularshapes-button-shapes--imported-template",
+        "name": "Imported Template",
+        "localName": null
+      },
+      "SpreadShadowedRender": {
+        "id": "angularshapes-button-shapes--spread-shadowed-render",
+        "name": "Spread Shadowed Render",
+        "localName": null
+      },
+      "SpreadArgs": {
+        "id": "angularshapes-button-shapes--spread-args",
+        "name": "Spread Args",
+        "localName": null
+      },
+      "AccessorRender": {
+        "id": "angularshapes-button-shapes--accessor-render",
+        "name": "Accessor Render",
+        "localName": null
+      },
+      "MultiExitRender": {
+        "id": "angularshapes-button-shapes--multi-exit-render",
+        "name": "Multi Exit Render",
+        "localName": null
+      },
+      "DynamicOptions": {
+        "id": "angularshapes-button-shapes--dynamic-options",
+        "name": "Dynamic Options",
+        "localName": null
+      },
+      "TemplateBind": {
+        "id": "angularshapes-button-shapes--template-bind",
+        "name": "Template Bind",
+        "localName": null
+      },
+      "MemberAssignedRender": {
+        "id": "angularshapes-button-shapes--member-assigned-render",
+        "name": "Member Assigned Render",
+        "localName": null
+      },
+      "ReassignedTemplate": {
+        "id": "angularshapes-button-shapes--reassigned-template",
+        "name": "Reassigned Template",
+        "localName": null
+      },
+      "SpreadStoryArgs": {
+        "id": "angularshapes-button-shapes--spread-story-args",
+        "name": "Spread Story Args",
+        "localName": null
+      },
+      "HoistedArgs": {
+        "id": "angularshapes-button-shapes--hoisted-args",
+        "name": "Hoisted Args",
+        "localName": null
+      },
+      "SpreadCrossFileArgs": {
+        "id": "angularshapes-button-shapes--spread-cross-file-args",
+        "name": "Spread Cross File Args",
+        "localName": null
+      }
+    },
+    "namedExportsOrder": null,
+    "bindings": {
+      "ShapeButtonComponent": {
+        "constant": true,
+        "uses": 1
+      },
+      "IMPORTED_TEMPLATE": {
+        "constant": true,
+        "uses": 1
+      },
+      "BaseStories": {
+        "constant": true,
+        "uses": 1
+      },
+      "argsToTemplate": {
+        "constant": true,
+        "uses": 3
+      },
+      "HOISTED_TEMPLATE": {
+        "constant": true,
+        "uses": 1
+      },
+      "HEADER": {
+        "constant": true,
+        "uses": 1
+      },
+      "INCLUDES": {
+        "constant": true,
+        "uses": 1
+      },
+      "base": {
+        "constant": true,
+        "uses": 1
+      },
+      "Template": {
+        "constant": true,
+        "uses": 2
+      },
+      "MUTABLE_TEMPLATE": {
+        "constant": false,
+        "uses": 2
+      },
+      "extraArgs": {
+        "constant": true,
+        "uses": 1
+      },
+      "OwnTemplate": {
+        "constant": true,
+        "uses": 1
+      },
+      "RenderTemplate": {
+        "constant": true,
+        "uses": 1
+      },
+      "MethodRender": {
+        "constant": true,
+        "uses": 1
+      },
+      "ArgsToTemplateWrapper": {
+        "constant": true,
+        "uses": 1
+      },
+      "ArgsToTemplateInclude": {
+        "constant": true,
+        "uses": 1
+      },
+      "SlotInterpolation": {
+        "constant": true,
+        "uses": 1
+      },
+      "ModuleConstant": {
+        "constant": true,
+        "uses": 1
+      },
+      "HoistedTemplate": {
+        "constant": true,
+        "uses": 1
+      },
+      "QuotedArgs": {
+        "constant": true,
+        "uses": 2
+      },
+      "ImportedTemplate": {
+        "constant": true,
+        "uses": 1
+      },
+      "SpreadShadowedRender": {
+        "constant": true,
+        "uses": 1
+      },
+      "SpreadArgs": {
+        "constant": true,
+        "uses": 1
+      },
+      "AccessorRender": {
+        "constant": true,
+        "uses": 1
+      },
+      "MultiExitRender": {
+        "constant": true,
+        "uses": 1
+      },
+      "DynamicOptions": {
+        "constant": true,
+        "uses": 1
+      },
+      "TemplateBind": {
+        "constant": true,
+        "uses": 2
+      },
+      "MemberAssignedRender": {
+        "constant": true,
+        "uses": 2
+      },
+      "ReassignedTemplate": {
+        "constant": true,
+        "uses": 1
+      },
+      "SpreadStoryArgs": {
+        "constant": true,
+        "uses": 1
+      },
+      "HoistedArgs": {
+        "constant": true,
+        "uses": 1
+      },
+      "SpreadCrossFileArgs": {
+        "constant": true,
+        "uses": 1
+      }
+    }
+  }
+}

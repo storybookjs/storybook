@@ -6,5 +6,6 @@
     "module": "esnext",
     "stripInternal": true
   },
-  "include": ["src/**/*", "scripts/**/*", "*.d.ts", "templates/runtime-build-code.template"]
+  "include": ["src/**/*", "scripts/**/*", "*.d.ts", "templates/runtime-build-code.template"],
+  "exclude": ["dist", "node_modules", "src/csf-tools/__corpus__/inputs"]
 }

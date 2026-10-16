@@ -323,6 +323,12 @@ export const locateConfigRoot = (
   return { ok: true, root: namedExportsRoot(editor, entries) };
 };
 
+const declaratorList = (statement: E.VariableDeclaration): List => ({
+  open: statement.start + statement.kind.length,
+  close: statement.declarations.at(-1)!.end,
+  items: statement.declarations,
+});
+
 const exportedName = (node: E.ModuleExportName) =>
   node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 
@@ -366,29 +372,35 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     }
   };
 
-  const removeEntry = (entry: NamedEntry) => {
-    if (entry.specifier) {
-      const { statement, specifier } = entry.specifier;
-      if (statement.specifiers.length === 1) {
-        removeStatement(editor, statement);
-      } else {
-        removeFromList(editor, specifierList(editor, statement), [specifier]);
-      }
-      return;
-    }
-    if (entry.declaration.type === 'VariableDeclarator') {
-      const statement = entry.statement as E.VariableDeclaration;
-      if (statement.declarations.length > 1) {
-        const list: List = {
-          open: statement.start + statement.kind.length,
-          close: statement.declarations.at(-1)!.end,
-          items: statement.declarations,
+  const removalOf = ({ specifier, statement, exportStatement, declaration }: NamedEntry) =>
+    specifier
+      ? {
+          statement: specifier.statement,
+          list: specifierList(editor, specifier.statement),
+          item: specifier.specifier,
+        }
+      : {
+          statement: exportStatement ?? statement,
+          list: statement.type === 'VariableDeclaration' ? declaratorList(statement) : undefined,
+          item: declaration,
         };
-        removeFromList(editor, list, [entry.declaration]);
-        return;
+
+  // One statement at a time: list edits made for each of its entries separately would overlap.
+  const removeEntries = (removed: readonly NamedEntry[]) => {
+    const byStatement = new Map<Node, { list?: List; items: Span[] }>();
+    for (const entry of removed) {
+      const { statement, list, item } = removalOf(entry);
+      const group = byStatement.get(statement) ?? { list, items: [] };
+      group.items.push(item);
+      byStatement.set(statement, group);
+    }
+    for (const [statement, { list, items }] of byStatement) {
+      if (list && items.length < list.items.length) {
+        removeFromList(editor, list, items);
+      } else {
+        removeStatement(editor, statement);
       }
     }
-    removeStatement(editor, entry.exportStatement ?? entry.statement);
   };
 
   const entryOf = (member: Property) => {
@@ -404,7 +416,7 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     detached: true,
     append: declare,
     prepend: declare,
-    remove: (members) => members.forEach((member) => removeEntry(entryOf(member))),
+    remove: (members) => removeEntries(members.map(entryOf)),
     replaceValue: (member, text) => {
       const { declaration } = entryOf(member);
       if (declaration.type === 'VariableDeclarator') {
@@ -429,11 +441,13 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
       const entry = entryOf(member);
       const name = key;
       if (entry.specifier) {
-        const exported = entry.specifier.specifier.exported;
+        const { local, exported } = entry.specifier.specifier;
+        const printed = isValidIdentifier(name) ? name : printString(name, quote);
+        // In `export { a }` the exported name is the local one, which has to stay.
         editor.edits.overwrite(
           exported.start,
           exported.end,
-          isValidIdentifier(name) ? name : printString(name, quote)
+          exported.start === local.start ? `${editor.source(local)} as ${printed}` : printed
         );
         return;
       }
@@ -445,11 +459,11 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
         editor.edits.overwrite(id.start, id.end, name);
         return;
       }
-      removeEntry(entry);
+      removeEntries([entry]);
       declare([{ key: name, value: valueSource(editor, member), text: '' }]);
     },
     group: (members, key) => {
-      members.forEach((member) => removeEntry(entryOf(member)));
+      removeEntries(members.map(entryOf));
       const inner = members
         .map((member) => `${printKey(entryOf(member).name, quote)}: ${valueSource(editor, member)}`)
         .join(', ');

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
-import { loadConfig } from './ConfigFile.ts';
+import { loadConfig, printConfig } from './ConfigFile.ts';
 import { type CsfValue, parseExpression, printExpression } from './CsfObject.ts';
 
 const parse = (source: string) =>
@@ -181,6 +181,20 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(
       `export default { b: ((1), 2), c: ((1), 2), d: ((1), 2), e: ((1), (2)) };`
     );
+  });
+
+  it.each([
+    { expression: '1 // note', output: 'export default {\n  a: 1 // note\n, b: 2,\n};' },
+    { expression: 'x, y', output: 'export default {\n  a: (x, y), b: 2,\n};' },
+  ])('places a transformed $expression so the code after it survives', ({ expression, output }) => {
+    const config = loadConfig('export default {\n  a: 0, b: 2,\n};').parse();
+
+    expect(config.transform(['a'], () => parseExpression(expression))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printConfig(config).code).toBe(output);
+    expect(loadConfig(output).parse().getValue(['b'])).toBe(2);
   });
 
   it('edits a local object referenced by a story and cleans up the empty parent', () => {

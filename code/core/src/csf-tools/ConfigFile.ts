@@ -17,7 +17,7 @@ import {
   createCsfObject,
   literalRoot,
   parseExpression,
-  printExpression,
+  placeableExpression,
 } from './CsfObject.ts';
 import {
   type E,
@@ -39,7 +39,7 @@ import {
   printValue,
   removeFromList,
   removeStatement,
-  specifierList,
+  setImportSpecifiers,
 } from './estree/editor.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
@@ -132,6 +132,9 @@ const _findVarDeclarator = (
   }
   return undefined;
 };
+
+const namesToAdd = (names: readonly string[], has: (name: string) => boolean) =>
+  [...new Set(names)].filter((name) => !has(name));
 
 const isRequireOf = (node: Node | null | undefined, fromImport: string) =>
   node?.type === 'CallExpression' &&
@@ -703,26 +706,11 @@ export class ConfigFile implements CsfObject {
             removedRootProperty = true;
           }
         }
-        // default export
-        if (node.type === 'ExportDefaultDeclaration') {
-          const resolved = this._resolveDeclaration(node.declaration as Node);
-          if (resolved?.type === 'ObjectExpression') {
-            removeProperty(resolved, path[0]);
-            removedRootProperty = true;
-          }
-        }
-        // module.exports
-        if (
-          node.type === 'ExpressionStatement' &&
-          node.expression.type === 'AssignmentExpression' &&
-          node.expression.left.type === 'MemberExpression' &&
-          isIdentifier(node.expression.left.object, 'module') &&
-          isIdentifier(node.expression.left.property, 'exports') &&
-          node.expression.right.type === 'ObjectExpression'
-        ) {
-          removeProperty(node.expression.right, path[0]);
-          removedRootProperty = true;
-        }
+      }
+      // The config object `parse` found, unwrapped from factory calls like `defineMain({})`.
+      if (this._exportsObject) {
+        removeProperty(this._exportsObject, path[0]);
+        removedRootProperty = true;
       }
 
       if (removedRootProperty) {
@@ -749,15 +737,11 @@ export class ConfigFile implements CsfObject {
 
   appendNodeToArray(path: string[], node: CsfExpression) {
     const current = this.getFieldNode(path);
+    const source = placeableExpression(node);
     if (!current) {
-      this.set(path, parseExpression(`[${printExpression(node)}]`));
+      this.set(path, parseExpression(`[${source}]`));
     } else if (current.type === 'ArrayExpression') {
-      appendToList(
-        this._editorSource,
-        arrayList(this._editorSource, current),
-        [printExpression(node)],
-        ''
-      );
+      appendToList(this._editorSource, arrayList(this._editorSource, current), [source], '');
       this._commit();
     } else {
       throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
@@ -909,21 +893,21 @@ export class ConfigFile implements CsfObject {
         prependStatement(editor, `const ${importSpecifier} = require(${source});`);
       }
       // if the import specifier is an array, we're dealing with named imports
-    } else if (requireDeclaration) {
-      const pattern = requireDeclaration.declarations[0].id;
-      if (pattern.type === 'ObjectPattern') {
-        const missing = importSpecifier.filter(
-          (specifier) =>
-            !pattern.properties.some(
-              (property) => property.type === 'Property' && isIdentifier(property.key, specifier)
-            )
-        );
-        if (missing.length > 0) {
-          appendToList(editor, objectList(pattern), missing);
-        }
-      }
     } else {
-      prependStatement(editor, `const { ${importSpecifier.join(', ')} } = require(${source});`);
+      const pattern = requireDeclaration?.declarations[0].id;
+      const names = namesToAdd(
+        importSpecifier,
+        (name) =>
+          pattern?.type === 'ObjectPattern' &&
+          pattern.properties.some(
+            (property) => property.type === 'Property' && isIdentifier(property.key, name)
+          )
+      );
+      if (!pattern) {
+        prependStatement(editor, `const { ${names.join(', ')} } = require(${source});`);
+      } else if (pattern.type === 'ObjectPattern' && names.length > 0) {
+        appendToList(editor, objectList(pattern), names);
+      }
     }
     this._commit();
   }
@@ -977,14 +961,26 @@ export class ConfigFile implements CsfObject {
     }
     const editor = this._editorSource;
     const source = printString(fromImport, this._quote);
-    const has = (type: string, name: string) =>
-      importDeclaration?.specifiers.some(
+    const has = (type: string, name?: string) =>
+      !!importDeclaration?.specifiers.some(
         (specifier) =>
           specifier.type === type &&
-          (type === 'ImportSpecifier'
-            ? isIdentifier((specifier as E.ImportSpecifier).imported, name)
-            : specifier.local.name === name)
+          (name === undefined ||
+            (type === 'ImportSpecifier'
+              ? isIdentifier((specifier as E.ImportSpecifier).imported, name)
+              : specifier.local.name === name))
       );
+    // A clause the declaration cannot take gets a declaration of its own right after it, which
+    // keeps the module evaluation order.
+    const addImport = (clause: string, merged?: { default?: string; named?: string[] }) => {
+      if (!importDeclaration) {
+        prependStatement(editor, `import ${clause} from ${source};`);
+      } else if (merged) {
+        setImportSpecifiers(editor, importDeclaration, importDeclaration.specifiers, merged);
+      } else {
+        editor.edits.appendLeft(importDeclaration.end, `\nimport ${clause} from ${source};`);
+      }
+    };
 
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {
@@ -993,64 +989,29 @@ export class ConfigFile implements CsfObject {
       }
       // Handle default imports e.g. import foo from 'bar'
     } else if (typeof importSpecifier === 'string') {
-      if (!importDeclaration) {
-        prependStatement(editor, `import ${importSpecifier} from ${source};`);
-      } else if (!has('ImportDefaultSpecifier', importSpecifier)) {
-        this._addSpecifiers(importDeclaration, { defaultName: importSpecifier });
+      if (!has('ImportDefaultSpecifier', importSpecifier)) {
+        addImport(
+          importSpecifier,
+          has('ImportDefaultSpecifier') ? undefined : { default: importSpecifier }
+        );
       }
       // Handle named imports e.g. import { foo } from 'bar'
     } else if (Array.isArray(importSpecifier)) {
-      const names = [...new Set(importSpecifier)];
-      if (!importDeclaration) {
-        prependStatement(editor, `import { ${names.join(', ')} } from ${source};`);
-      } else {
-        const missing = names.filter((name) => !has('ImportSpecifier', name));
-        if (missing.length > 0) {
-          this._addSpecifiers(importDeclaration, { named: missing });
-        }
+      const names = namesToAdd(importSpecifier, (name) => has('ImportSpecifier', name));
+      if (names.length > 0) {
+        addImport(
+          `{ ${names.join(', ')} }`,
+          has('ImportNamespaceSpecifier') ? undefined : { named: names }
+        );
       }
       // Handle namespace imports e.g. import * as foo from 'bar'
-    } else if (importSpecifier.namespace) {
-      if (!importDeclaration) {
-        prependStatement(editor, `import * as ${importSpecifier.namespace} from ${source};`);
-      } else if (!has('ImportNamespaceSpecifier', importSpecifier.namespace)) {
-        this._addSpecifiers(importDeclaration, { namespace: importSpecifier.namespace });
-      }
+    } else if (
+      importSpecifier.namespace &&
+      !has('ImportNamespaceSpecifier', importSpecifier.namespace)
+    ) {
+      addImport(`* as ${importSpecifier.namespace}`);
     }
     this._commit();
-  }
-
-  _addSpecifiers(
-    declaration: E.ImportDeclaration,
-    added: { defaultName?: string; named?: string[]; namespace?: string }
-  ) {
-    const editor = this._editorSource;
-    const named = declaration.specifiers.filter(
-      (specifier): specifier is E.ImportSpecifier => specifier.type === 'ImportSpecifier'
-    );
-    if (added.named && named.length > 0) {
-      appendToList(editor, specifierList(editor, declaration), added.named);
-      return;
-    }
-    const defaultSpecifier = declaration.specifiers.find(
-      (specifier) => specifier.type === 'ImportDefaultSpecifier'
-    );
-    const namespace = declaration.specifiers.find(
-      (specifier) => specifier.type === 'ImportNamespaceSpecifier'
-    );
-    const parts = [
-      added.defaultName ?? (defaultSpecifier && editor.source(defaultSpecifier)),
-      added.namespace ? `* as ${added.namespace}` : namespace && editor.source(namespace),
-      named.length > 0
-        ? `{ ${named.map((specifier) => editor.source(specifier)).join(', ')} }`
-        : added.named && `{ ${added.named.join(', ')} }`,
-    ].filter(Boolean);
-    const kind = declaration.importKind === 'type' ? 'import type' : 'import';
-    editor.edits.overwrite(
-      declaration.start,
-      declaration.source.start,
-      `${kind} ${parts.join(', ')} from `
-    );
   }
 
   _removeRequireImport(
@@ -1138,20 +1099,10 @@ export class ConfigFile implements CsfObject {
       removeStatement(editor, importDeclaration);
       return;
     }
-    const kept = importDeclaration.specifiers.filter((specifier) => !removed.includes(specifier));
-    const defaultSpecifier = kept.find((specifier) => specifier.type === 'ImportDefaultSpecifier');
-    const namespace = kept.find((specifier) => specifier.type === 'ImportNamespaceSpecifier');
-    const named = kept.filter((specifier) => specifier.type === 'ImportSpecifier');
-    const parts = [
-      defaultSpecifier && editor.source(defaultSpecifier),
-      namespace && editor.source(namespace),
-      named.length > 0 && `{ ${named.map((specifier) => editor.source(specifier)).join(', ')} }`,
-    ].filter(Boolean);
-    const kind = importDeclaration.importKind === 'type' ? 'import type' : 'import';
-    editor.edits.overwrite(
-      importDeclaration.start,
-      importDeclaration.source.start,
-      `${kind} ${parts.join(', ')} from `
+    setImportSpecifiers(
+      editor,
+      importDeclaration,
+      importDeclaration.specifiers.filter((specifier) => !removed.includes(specifier))
     );
   }
 

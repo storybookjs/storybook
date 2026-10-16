@@ -355,6 +355,17 @@ describe('ConfigFile mutations', () => {
     expect(printConfig(config).code).toBe('export const sibling = true;');
   });
 
+  it.each([
+    { name: 'b', output: 'const a = 1;\nexport { a as b };' },
+    { name: 'custom-field', output: 'const a = 1;\nexport { a as "custom-field" };' },
+  ])('aliases an unaliased export specifier renamed to $name', ({ name, output }) => {
+    const config = loadConfig(`const a = 1;\nexport { a };`).parse();
+
+    expect(config.rename(['a'], name)).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toBe(output);
+    expect(config.getValue([name])).toBe(1);
+  });
+
   it('can create named exports in an empty file', () => {
     const config = loadConfig('').parse();
     const object = config;

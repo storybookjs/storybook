@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
-import type { CsfExpression } from './CsfObject.ts';
+import { type CsfExpression, parseExpression } from './CsfObject.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -811,6 +811,34 @@ describe('ConfigFile', () => {
         appendToArray(['addons'], 'b', `export default { addons: [(/* c */ cond ? 'a' : 'c')] };`)
       ).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`);
     });
+
+    it.each([
+      {
+        source: `export default { addons: ['b'] };`,
+        expression: 'x, y',
+        output: `export default { addons: ['b', (x, y)] };`,
+      },
+      {
+        source: `export default { addons: ['b'] };`,
+        expression: `'x' //c`,
+        output: `export default { addons: ['b', 'x' //c\n] };`,
+      },
+      {
+        source: `export default {};`,
+        expression: 'x, y',
+        output: `export default { addons: [(x, y)] };`,
+      },
+      {
+        source: `export default {};`,
+        expression: `'x' //c`,
+        output: `export default {\n  addons: ['x' //c\n  ],\n};`,
+      },
+    ])('appends $expression as one element to $source', ({ source, expression, output }) => {
+      const config = loadConfig(source).parse();
+      config.appendNodeToArray(['addons'], parseExpression(expression));
+
+      expect(printConfig(config).code).toBe(output);
+    });
   });
 
   describe('removeField', () => {
@@ -1060,6 +1088,12 @@ describe('ConfigFile', () => {
           } satisfies Foo;
           export default preview;
         `);
+      });
+
+      it('root property of a config factory', () => {
+        expect(
+          removeField(['addons'], `export default defineMain({ framework: 'x', addons: ['a'] });`)
+        ).toBe(`export default defineMain({ framework: 'x' });`);
       });
 
       it('root globals as const satisfies as variable', () => {
@@ -1533,6 +1567,44 @@ describe('ConfigFile', () => {
       `);
     });
 
+    it.each([
+      {
+        source: `import { /* A */ a } from 'x';`,
+        specifier: ['b'],
+        output: `import { /* A */ a, b } from 'x';`,
+      },
+      {
+        source: `import { /* A */ a } from 'x';`,
+        specifier: 'd',
+        output: `import d, { /* A */ a } from 'x';`,
+      },
+      {
+        source: `import { a } from 'x';`,
+        specifier: { namespace: 'ns' },
+        output: `import { a } from 'x';\nimport * as ns from 'x';`,
+      },
+      {
+        source: `import 'x';\nimport 'y';`,
+        specifier: { namespace: 'ns' },
+        output: `import 'x';\nimport * as ns from 'x';\nimport 'y';`,
+      },
+      {
+        source: `import * as ns from 'x';`,
+        specifier: ['a'],
+        output: `import * as ns from 'x';\nimport { a } from 'x';`,
+      },
+      {
+        source: `import foo from 'x';`,
+        specifier: 'bar',
+        output: `import foo from 'x';\nimport bar from 'x';`,
+      },
+    ])('adds $specifier to $source', ({ source, specifier, output }) => {
+      const config = loadConfig(source).parse();
+      config.setImport(specifier, 'x');
+
+      expect(printConfig(config).code).toBe(output);
+    });
+
     it(`supports setting a namespaced import`, () => {
       const config = loadConfig('').parse();
       config.setImport({ namespace: 'path' }, 'path');
@@ -1627,6 +1699,22 @@ describe('ConfigFile', () => {
         const config: StorybookConfig = { };
         export default config;
       `);
+    });
+
+    it.each([
+      {
+        source: `module.exports = {};`,
+        output: `const { a } = require("x");\nmodule.exports = {};`,
+      },
+      {
+        source: `const { b } = require('x');`,
+        output: `const { b, a } = require('x');`,
+      },
+    ])('adds a repeated name once to $source', ({ source, output }) => {
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['a', 'a'], 'x');
+
+      expect(printConfig(config).code).toBe(output);
     });
 
     it(`supports setting a named import for a field where the source already exists without "node:" prefix`, () => {
@@ -1762,6 +1850,13 @@ describe('ConfigFile', () => {
         const config: StorybookConfig = { };
         export default config;
       `);
+    });
+
+    it(`keeps the comments of the remaining specifiers`, () => {
+      const config = loadConfig(`import { /* A */ a, /* B */ b, /* C */ c } from 'x';`).parse();
+      config.removeImport(['b'], 'x');
+
+      expect(printConfig(config).code).toBe(`import { /* A */ a, /* C */ c } from 'x';`);
     });
 
     it(`removes a namespace ES6 import`, () => {

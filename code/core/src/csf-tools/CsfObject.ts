@@ -102,6 +102,10 @@ export const printExpression = (node: Node): string => {
   return source;
 };
 
+// The expression's source, adapted so the code placed after it survives.
+export const placeableExpression = (node: Node): string =>
+  placeableSource(printExpression(node), node.type);
+
 export interface CsfObject {
   /**
    * Identify the config, meta, story, annotation, or call argument this editor represents.
@@ -450,8 +454,7 @@ class CsfObjectEditor implements CsfObject {
 
   private sourceFor(value: CsfValue | CsfExpression) {
     if (isSpan(value)) {
-      const node = value as Node;
-      return placeableSource(printExpression(node), node.type);
+      return placeableExpression(value as Node);
     }
     if (isAstLike(value)) {
       throw new Error(
@@ -506,7 +509,7 @@ class CsfObjectEditor implements CsfObject {
     if (!derived || derived === value) {
       return { ok: true, changed: false };
     }
-    parent.root.replaceValue(property, printExpression(derived));
+    parent.root.replaceValue(property, placeableExpression(derived));
     return this.success();
   }
 

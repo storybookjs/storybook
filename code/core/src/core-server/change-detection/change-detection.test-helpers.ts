@@ -1,4 +1,3 @@
-import { normalize } from 'pathe';
 import { vi } from 'vitest';
 
 import { getService } from '../../shared/open-service/server.ts';
@@ -7,7 +6,7 @@ import { ModuleGraphEngine } from '../../shared/open-service/services/module-gra
 import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
 import {
   errorToErrorLike,
-  toStoryIndexPath,
+  lookupStoriesForFiles,
 } from '../../shared/open-service/services/module-graph/types.ts';
 import type { QueryState } from '../../shared/open-service/types.ts';
 import { ChangeDetectionService } from './change-detection-service.ts';
@@ -40,10 +39,10 @@ export {
 type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
- * Installs `getService` mocks for `core/module-graph` and `core/module-graph-index`, backed by a
- * real {@link ModuleGraphEngine} (for tests that call `graph.start(adapter)`).
+ * Installs a `getService` mock for `core/module-graph`, backed by a real {@link ModuleGraphEngine}
+ * (for tests that call `graph.start(adapter)`).
  */
-export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
+export function installModuleGraphQueryMock(engine: ModuleGraphEngine, workingDir: string) {
   let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
   let graphRevision = 0;
   let fileActivityRevision = 0;
@@ -62,16 +61,7 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       subscriber(toSuccessState(fileActivityRevision))
     );
   };
-  const storiesForFiles = ({ files }: { files: string[] }) =>
-    files.map((file) => {
-      const hits = engine.lookup(normalize(file));
-      return [...hits.entries()].map(([storyFile, depth]) => ({
-        storyFile: toStoryIndexPath(storyFile, '/repo'),
-        depth,
-      }));
-    });
-
-  const hotService = {
+  const moduleGraphService = {
     queries: {
       status: {
         get: () => status,
@@ -109,30 +99,19 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       },
     },
     commands: {
+      storiesForFiles: async ({ files }: { files: string[] }) => {
+        await engine.whenSettled();
+        return lookupStoriesForFiles(engine, files, workingDir);
+      },
       _waitForSettledEngine: async () => {
         await engine.whenSettled();
       },
     },
   };
 
-  const indexService = {
-    queries: {
-      storiesForFiles: {
-        get: storiesForFiles,
-        loaded: async (input: { files: string[] }) => {
-          await engine.whenSettled();
-          return storiesForFiles(input);
-        },
-      },
-    },
-  };
-
-  vi.mocked(getService).mockImplementation((serviceId: string) => {
-    if (serviceId === 'core/module-graph-index') {
-      return indexService as never;
-    }
-    return hotService as unknown as ModuleGraphService;
-  });
+  vi.mocked(getService).mockImplementation(
+    () => moduleGraphService as unknown as ModuleGraphService
+  );
 
   return {
     applySnapshot: () => {
@@ -198,7 +177,7 @@ export function createWiredChangeDetection(
     onUnavailable: (reason, error) => moduleGraphMockRef.current?.applyUnavailable(reason, error),
   });
   const service = new ChangeDetectionService(options);
-  const moduleGraphMock = installModuleGraphQueryMock(graph);
+  const moduleGraphMock = installModuleGraphQueryMock(graph, options.workingDir ?? process.cwd());
   moduleGraphMockRef.current = moduleGraphMock;
   void graphOptions;
   return { service, graph, moduleGraphMock };

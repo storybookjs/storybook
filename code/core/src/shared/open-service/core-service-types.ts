@@ -1,6 +1,5 @@
 import { docgenServiceDef } from './services/docgen/definition.ts';
 import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
-import { moduleGraphIndexServiceDef } from './services/module-graph-index/definition.ts';
 import { reviewServiceDef } from './services/review/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
 import type {
@@ -32,7 +31,6 @@ export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
 export const serverCoreServiceDefs = [
   docgenServiceDef,
   storyDocsServiceDef,
-  moduleGraphIndexServiceDef,
   moduleGraphServiceDef,
   reviewServiceDef,
 ];

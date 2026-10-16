@@ -30,7 +30,6 @@ function setup(options?: {
 }) {
   const callbacks = {
     onSnapshot: vi.fn(),
-    onIndex: vi.fn(),
     onBump: vi.fn(),
     onError: vi.fn(),
     onUnavailable: vi.fn(),
@@ -81,7 +80,7 @@ describe('ModuleGraphEngine', () => {
     service.start(adapter);
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onSnapshot).toHaveBeenCalledTimes(1);
+    expect(callbacks.onSnapshot).toHaveBeenCalledExactlyOnceWith(['./src/Button.stories.tsx']);
     expect(callbacks.onError).not.toHaveBeenCalled();
     expect(service.hasGraph()).toBe(true);
     expect(service.lookup('/repo/src/Button.tsx')).toEqual(
@@ -207,14 +206,13 @@ describe('ModuleGraphEngine', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).not.toHaveBeenCalled();
 
     emitFileChange({ kind: 'change', path: '/repo/src/B.tsx' });
     emitFileChange({ kind: 'change', path: '/repo/src/C.tsx' });
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onIndex).toHaveBeenCalledTimes(2);
+    expect(callbacks.onBump).toHaveBeenCalledTimes(2);
   });
 
   it('still bumps file activity when a patch leaves the index untouched and bumps no story', async () => {
@@ -235,12 +233,11 @@ describe('ModuleGraphEngine', () => {
     await vi.runAllTimersAsync();
 
     expect(patchSpy).toHaveBeenCalledTimes(1);
-    expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).toHaveBeenCalledTimes(1);
     expect(callbacks.onBump).toHaveBeenCalledWith([], expect.any(Number));
   });
 
-  it('bumps stories without calling onIndex when a patch leaves the reverse index untouched', async () => {
+  it('bumps a story whose own edit leaves the reverse index untouched', async () => {
     const story = '/repo/src/B.stories.tsx';
     const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
     const { service, adapter, emitFileChange, callbacks } = setup({
@@ -248,7 +245,6 @@ describe('ModuleGraphEngine', () => {
         { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
       ]),
     });
-    // Leave the reverse-index revision alone so the update is bump-only.
     patchSpy.mockImplementation(async () => undefined);
 
     service.start(adapter);
@@ -259,7 +255,6 @@ describe('ModuleGraphEngine', () => {
     emitFileChange({ kind: 'change', path: story });
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).toHaveBeenCalledTimes(1);
     expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
   });
@@ -365,13 +360,11 @@ describe('ModuleGraphEngine', () => {
 
     service.start(adapter);
     await vi.runAllTimersAsync();
-    expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).not.toHaveBeenCalled();
 
     service.onStoryIndexInvalidated();
     await vi.runAllTimersAsync();
 
-    expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).not.toHaveBeenCalled();
   });
 

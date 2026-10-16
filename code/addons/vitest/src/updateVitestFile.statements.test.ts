@@ -185,6 +185,31 @@ describe('updateConfigFile statements', () => {
     expect(() => new SourceEditor(code)).not.toThrow();
   });
 
+  it.each([
+    [
+      'the same dirname declaration',
+      `import path from 'node:path';\nimport { fileURLToPath } from 'node:url';\nconst dirname =\n  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));`,
+      /\bdirname =/g,
+    ],
+    ['a namespace import of path', `import * as path from 'path';`, /\bpath\b/g],
+  ])('reuses %s instead of renaming', async (_, existing, binding) => {
+    const target = new SourceEditor(dedent`
+      ${existing}
+      export default defineConfig({ test: {} });
+    `);
+    const realTemplate = await loadTemplate('vitest.config.4.template', {
+      CONFIG_DIR: '.storybook',
+    });
+
+    expect(updateConfigFile(realTemplate, target)).toBe(true);
+    const code = target.toString();
+    expect(code).not.toContain('storybookDirname');
+    expect(code).not.toContain('storybookPath');
+    expect(code.match(binding)!.length).toBeGreaterThan(0);
+    expect(code.match(/\bconst (storybook)?[dD]irname\b/g)).toHaveLength(1);
+    expect(() => new SourceEditor(code)).not.toThrow();
+  });
+
   it('renames an import the config binds to another module', async () => {
     const target = new SourceEditor(dedent`
       import path from './path-helpers';

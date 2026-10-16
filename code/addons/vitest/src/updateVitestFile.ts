@@ -300,21 +300,21 @@ const findWritableConfigObject = (
   );
 };
 
-// What an import binds, with `node:path` and `path` naming the same module.
-const importedFrom = (binding: Binding) => {
-  if (binding.kind !== 'import' || binding.declaration?.type !== 'ImportDeclaration') {
-    return undefined;
-  }
-  const specifier = binding.node as E.ImportDeclarationSpecifier;
-  const name =
-    specifier.type === 'ImportSpecifier'
-      ? specifier.imported.type === 'Literal'
-        ? specifier.imported.value
-        : specifier.imported.name
-      : specifier.type === 'ImportDefaultSpecifier'
-        ? 'default'
+// What a binding stands for, so the template reuses a target binding that is the same thing: an
+// import of the same export (`node:path` and `path` name the same module, and its default and
+// namespace imports the same object), or a declaration written the same way.
+const bindingIdentity = (editor: SourceEditor, binding: Binding) => {
+  if (binding.kind === 'import' && binding.declaration?.type === 'ImportDeclaration') {
+    const specifier = binding.node as E.ImportDeclarationSpecifier;
+    const name =
+      specifier.type === 'ImportSpecifier'
+        ? specifier.imported.type === 'Literal'
+          ? specifier.imported.value
+          : specifier.imported.name
         : '*';
-  return `${name} from ${binding.declaration.source.value.replace(/^node:/, '')}`;
+    return `${name} from ${binding.declaration.source.value.replace(/^node:/, '')}`;
+  }
+  return editor.code.slice(binding.node.start, binding.node.end).replace(/\s+/g, ' ');
 };
 
 const unusedName = (name: string, editors: SourceEditor[]) => {
@@ -351,10 +351,13 @@ const renameTakenBindings = (source: SourceEditor, target: SourceEditor) => {
   const call = findExportDefault(source.program)?.declaration as E.CallExpression;
   for (const binding of source.scopes.program.bindings.values()) {
     const existing = target.scopes.program.bindings.get(binding.name);
-    const imported = importedFrom(binding);
     // The template's own `defineConfig(...)` call is not merged.
     const merged = binding.references.some((reference) => reference !== call.callee);
-    if (existing && merged && (imported === undefined || imported !== importedFrom(existing))) {
+    if (
+      existing &&
+      merged &&
+      bindingIdentity(source, binding) !== bindingIdentity(target, existing)
+    ) {
       renameBinding(source, binding, unusedName(binding.name, [source, target]));
     }
   }

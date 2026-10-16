@@ -40,6 +40,7 @@ import {
   removeFromList,
   removeStatement,
   setImportSpecifiers,
+  statementEnd,
 } from './estree/editor.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
@@ -978,7 +979,10 @@ export class ConfigFile implements CsfObject {
       } else if (merged) {
         setImportSpecifiers(editor, importDeclaration, importDeclaration.specifiers, merged);
       } else {
-        editor.edits.appendLeft(importDeclaration.end, `\nimport ${clause} from ${source};`);
+        editor.edits.appendLeft(
+          statementEnd(editor, importDeclaration),
+          `\nimport ${clause} from ${source};`
+        );
       }
     };
 

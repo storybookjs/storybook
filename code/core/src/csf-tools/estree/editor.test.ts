@@ -218,6 +218,14 @@ describe('removeStatement', () => {
     expect(editor.toString()).toBe(`/* license */\nconst b = 2;`);
   });
 
+  it('keeps a JSDoc header directly above a removed first import', () => {
+    const editor = new SourceEditor(
+      `/** Copyright ACME */\nimport a from 'a';\nimport b from 'b';`
+    );
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`/** Copyright ACME */\nimport b from 'b';`);
+  });
+
   it('keeps a plain comment directly above the removed first statement', () => {
     const editor = new SourceEditor(`// plain comment\nconst a = 1;\nconst b = 2;`);
     removeStatement(editor, editor.program.body[0]);
@@ -280,6 +288,16 @@ describe('prependStatement', () => {
     prependStatement(editor, `import c from 'c';`);
     expect(editor.toString()).toBe(
       `// Copyright Storybook\nimport a from 'a';\nimport c from 'c';\nconst b = 1;`
+    );
+  });
+
+  it('inserts below a JSDoc header directly above the first import', () => {
+    const editor = new SourceEditor(
+      `/**\n * Copyright ACME\n */\nimport a from 'a';\nconst b = 1;`
+    );
+    prependStatement(editor, `import c from 'c';`);
+    expect(editor.toString()).toBe(
+      `/**\n * Copyright ACME\n */\nimport a from 'a';\nimport c from 'c';\nconst b = 1;`
     );
   });
 

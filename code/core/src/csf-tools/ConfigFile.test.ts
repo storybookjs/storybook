@@ -1594,6 +1594,11 @@ describe('ConfigFile', () => {
         output: `import * as ns from 'x';\nimport { a } from 'x';`,
       },
       {
+        source: `import * as ns from 'x'; // why`,
+        specifier: ['a'],
+        output: `import * as ns from 'x'; // why\nimport { a } from 'x';`,
+      },
+      {
         source: `import foo from 'x';`,
         specifier: 'bar',
         output: `import foo from 'x';\nimport bar from 'x';`,

@@ -728,8 +728,9 @@ const isJSDoc = (comment: E.Comment) => comment.type === 'Block' && comment.valu
 
 /**
  * Comments before the file's first statement that form the file header, such as a license. The
- * JSDoc blocks and next-line directives such as `@ts-expect-error` directly above the statement
- * belong to it instead, as does everything from such a directive on, unless they are pragmas.
+ * JSDoc blocks (unless the statement is an import) and next-line directives such as
+ * `@ts-expect-error` directly above the statement belong to it instead, as does everything from
+ * such a directive on, unless they are pragmas.
  */
 export const headerComments = (editor: SourceEditor): E.Comment[] => {
   const { code } = editor;
@@ -743,10 +744,12 @@ export const headerComments = (editor: SourceEditor): E.Comment[] => {
     (comment) => comment.start >= from && comment.end <= first.start
   );
   const isDirective = (comment: E.Comment) => NEXT_LINE_DIRECTIVE.test(comment.value);
+  // JSDoc documents a declaration; above an import it is a file header such as a license.
+  const ownsJSDoc = first.type !== 'ImportDeclaration';
   let owned = leading.length;
   while (
     owned > 0 &&
-    (isJSDoc(leading[owned - 1]) || isDirective(leading[owned - 1])) &&
+    ((ownsJSDoc && isJSDoc(leading[owned - 1])) || isDirective(leading[owned - 1])) &&
     !/\n\s*\n/.test(code.slice(leading[owned - 1].end, leading[owned]?.start ?? first.start))
   ) {
     owned--;
@@ -819,11 +822,9 @@ export const leadingComments = (editor: SourceEditor, statement: Span): E.Commen
  * Remove a statement with the comments that lead it and the comment that trails it on its line,
  * and the line itself when nothing else shares it.
  */
-export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
+/** The end of a statement, past a comment that trails it on the same line. */
+export const statementEnd = (editor: SourceEditor, statement: Span) => {
   const { code } = editor;
-  const first = leadingComments(editor, statement)[0];
-  const start = (first ?? statement).start;
-  const lineStart = code.lastIndexOf('\n', start - 1) + 1;
   const lineEnd = code.indexOf('\n', statement.end);
   const trailing = editor.comments.find(
     (comment) =>
@@ -831,8 +832,16 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
       (lineEnd === -1 || comment.start < lineEnd) &&
       !code.slice(statement.end, comment.start).trim()
   );
-  const end =
-    trailing && (lineEnd === -1 || trailing.end <= lineEnd) ? trailing.end : statement.end;
+  return trailing && (lineEnd === -1 || trailing.end <= lineEnd) ? trailing.end : statement.end;
+};
+
+export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
+  const { code } = editor;
+  const first = leadingComments(editor, statement)[0];
+  const start = (first ?? statement).start;
+  const lineStart = code.lastIndexOf('\n', start - 1) + 1;
+  const lineEnd = code.indexOf('\n', statement.end);
+  const end = statementEnd(editor, statement);
   const before = code.slice(lineStart, start);
   const after = code.slice(end, lineEnd === -1 ? code.length : lineEnd);
   if (before.trim() || after.trim()) {

@@ -93,3 +93,25 @@ export type Box = {
   width: number;
   height: number;
 };
+
+/** A single clickable target in the highlight menu, as sent from the preview to the manager. */
+export type HighlightMenuTarget = {
+  details: ClickEventDetails;
+  menu?: Highlight['menu'];
+};
+
+/**
+ * Payload of the internal `HIGHLIGHT_MENU` event (preview → manager). `coords` are relative to the
+ * preview iframe's viewport; an empty `targets` array hides the menu.
+ */
+export type HighlightMenuState = {
+  targets: HighlightMenuTarget[];
+  selected: number | null;
+  coords: { x: number; y: number } | null;
+};
+
+/** Payload of the internal `HIGHLIGHT_MENU_INTERACTION` event (manager → preview). */
+export type HighlightMenuInteraction = {
+  action: 'select' | 'deselect' | 'focus' | 'blur';
+  index?: number;
+};

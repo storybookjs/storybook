@@ -12,6 +12,7 @@ import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, types } from 'storybook/manager-api';
 import { color } from 'storybook/theming';
 
+import { useHighlightMenu } from '../highlight/manager.ts';
 import { ToolbarManager } from '../toolbar/components/ToolbarManager.tsx';
 import { TOOLBAR_ID } from '../toolbar/constants.ts';
 import { renderStorybookUI } from './index.tsx';
@@ -34,6 +35,13 @@ addons.register(TOOLBAR_ID, () =>
 const channel = createBrowserChannel({ page: 'manager' });
 addons.setChannel(channel);
 channel.emit(CHANNEL_CREATED);
+
+// Render the interactive highlight menu in the manager, positioned over the preview iframe.
+// This keeps the preview free of interactive UI which a malicious site could trigger by
+// embedding the preview iframe (see GHSA-f2ph-cmg5-wxc8).
+if (global.FEATURES?.highlight) {
+  useHighlightMenu(channel);
+}
 
 class ReactProvider extends Provider {
   addons: AddonStore = addons;

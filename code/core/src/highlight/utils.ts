@@ -173,19 +173,6 @@ export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
     })
     .sort((a, b) => b.width * b.height - a.width * a.height);
 
-export const isOverMenu = (menuElement: HTMLElement, coordinates: { x: number; y: number }) => {
-  const menu = menuElement.getBoundingClientRect();
-  const { x, y } = coordinates;
-  return (
-    menu?.top &&
-    menu?.left &&
-    x >= menu.left &&
-    x <= menu.left + menu.width &&
-    y >= menu.top &&
-    y <= menu.top + menu.height
-  );
-};
-
 export const isTargeted = (
   box: Box,
   boxElement: HTMLElement,
@@ -211,33 +198,37 @@ export const isTargeted = (
   return x >= left && x <= left + width && y >= top && y <= top + height;
 };
 
-export const keepInViewport = (
-  element: HTMLElement,
-  targetCoordinates: { x: number; y: number },
+/**
+ * Convert coordinates from the preview iframe's viewport space to the manager's viewport space,
+ * accounting for the iframe's position and any scaling applied to it (e.g. custom viewports).
+ */
+export const previewToManagerCoords = (
+  coords: { x: number; y: number },
+  iframeRect: { left: number; top: number; width: number; height: number },
+  iframeSize: { width: number; height: number }
+) => ({
+  x: iframeRect.left + coords.x * (iframeRect.width / (iframeSize.width || 1)),
+  y: iframeRect.top + coords.y * (iframeRect.height / (iframeSize.height || 1)),
+});
+
+/**
+ * Clamp coordinates so a menu of the given size stays within the viewport rectangle, optionally
+ * keeping it horizontally centered on the anchor and offsetting it below the anchor.
+ */
+export const clampToRect = (
+  coords: { x: number; y: number },
+  size: { width: number; height: number },
+  rect: { left: number; top: number; right: number; bottom: number },
   options: { margin?: number; topOffset?: number; centered?: boolean } = {}
 ) => {
-  const { x, y } = targetCoordinates;
+  const { x, y } = coords;
+  const { width, height } = size;
   const { margin = 5, topOffset = 0, centered = false } = options;
-  const { scrollX, scrollY, innerHeight: windowHeight, innerWidth: windowWidth } = window;
-
-  const top = Math.min(
-    element.style.position === 'fixed' ? y - scrollY : y,
-    windowHeight - element.clientHeight - margin - topOffset + scrollY
-  );
-
-  const leftOffset = centered ? element.clientWidth / 2 : 0;
-  const left =
-    element.style.position === 'fixed'
-      ? Math.max(Math.min(x - scrollX, windowWidth - leftOffset - margin), leftOffset + margin)
-      : Math.max(
-          Math.min(x, windowWidth - leftOffset - margin + scrollX),
-          leftOffset + margin + scrollX
-        );
-
-  Object.assign(element.style, {
-    ...(left !== x && { left: `${left}px` }),
-    ...(top !== y && { top: `${top}px` }),
-  });
+  const leftOffset = centered ? width / 2 : 0;
+  return {
+    x: Math.max(Math.min(x, rect.right - leftOffset - margin), rect.left + leftOffset + margin),
+    y: Math.min(y, rect.bottom - height - margin - topOffset),
+  };
 };
 
 export const showPopover = (element: HTMLElement) => {

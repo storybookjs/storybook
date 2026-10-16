@@ -1,11 +1,37 @@
 import React from 'react';
 
-import { useChannel } from 'storybook/preview-api';
+import { addons, useChannel } from 'storybook/preview-api';
 import { fn, userEvent, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview.tsx';
 import { StoryContent } from './StoryContent.tsx';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants.ts';
+import { useHighlightMenu } from './manager.ts';
+
+/**
+ * The highlight menu is rendered by the manager, positioned over the preview iframe. Under Vitest
+ * there is no manager, so boot the manager-side menu on the same (local) channel to exercise the
+ * full preview → manager flow in a single document.
+ */
+const setupHighlightMenu = () => {
+  if (!(globalThis as { __vitest_browser__?: boolean }).__vitest_browser__) {
+    return;
+  }
+  useHighlightMenu(addons.getChannel());
+};
+
+/** The menu is rendered in the manager document, except under Vitest where it is local. */
+const getHighlightMenu = () => {
+  const local = document.getElementById('storybook-highlights-menu');
+  if (local) {
+    return local;
+  }
+  try {
+    return parent.document.getElementById('storybook-highlights-menu');
+  } catch {
+    return null;
+  }
+};
 
 const highlight = (
   selectors: string[],
@@ -139,6 +165,7 @@ export const Selectable = meta.story({
     highlights: [{ selectors: ['div', 'input'], options: { menu: [] } }],
   },
   play: async () => {
+    setupHighlightMenu();
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
@@ -183,6 +210,7 @@ export const Menu = meta.story({
     ],
   },
   play: async () => {
+    setupHighlightMenu();
     await new Promise((resolve) => setTimeout(resolve, 200));
     await userEvent.pointer({
       coords: { pageX: 470, pageY: 240 },
@@ -190,7 +218,7 @@ export const Menu = meta.story({
     });
 
     await new Promise((resolve) => setTimeout(resolve, 200));
-    const elementItem = document.querySelector('#storybook-highlights-menu .element-list button')!;
+    const elementItem = getHighlightMenu()!.querySelector('.element-list button')!;
     await userEvent.pointer({
       target: elementItem,
       coords: { pageX: 470, pageY: 260 },
@@ -198,7 +226,7 @@ export const Menu = meta.story({
     });
 
     await new Promise((resolve) => setTimeout(resolve, 200));
-    const menuItem = document.querySelector('#storybook-highlights-menu .menu-list button')!;
+    const menuItem = getHighlightMenu()!.querySelector('.menu-list button')!;
     await userEvent.pointer({
       target: menuItem,
       coords: { pageX: 470, pageY: 310 },

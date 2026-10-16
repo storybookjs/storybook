@@ -5,21 +5,19 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import {
   HIGHLIGHT,
+  HIGHLIGHT_MENU,
+  HIGHLIGHT_MENU_INTERACTION,
   MAX_Z_INDEX,
   MIN_TOUCH_AREA_SIZE,
   REMOVE_HIGHLIGHT,
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
 } from './constants.ts';
-import type { Box, Highlight, HighlightOptions } from './types.ts';
+import type { Box, Highlight, HighlightMenuInteraction, HighlightOptions } from './types.ts';
 import {
   createElement,
-  createIcon,
   getEventDetails,
-  hidePopover,
-  isOverMenu,
   isTargeted,
-  keepInViewport,
   mapBoxes,
   mapElements,
   normalizeOptions,
@@ -27,7 +25,6 @@ import {
   useStore,
 } from './utils.ts';
 
-const menuId = 'storybook-highlights-menu';
 const rootId = 'storybook-highlights-root';
 const storybookRootId = 'storybook-root';
 
@@ -50,6 +47,11 @@ export const useHighlights = (channel: Channel) => {
   const hovered = useStore<Box[]>([]);
   const focused = useStore<Box | undefined>();
   const selected = useStore<Box | undefined>();
+  // The click position relative to the first target's box, used to keep the (manager-rendered)
+  // menu anchored to its element while the preview scrolls, resizes or otherwise changes layout.
+  const menuAnchor = useStore<
+    { element: HTMLElement; offsetX: number; offsetY: number } | undefined
+  >();
 
   let root = document.getElementById(rootId);
 
@@ -200,20 +202,29 @@ export const useHighlights = (channel: Channel) => {
     }
 
     const onClick = (event: MouseEvent) => {
-      // The menu may get repositioned, so we wait for the next frame before checking its position
+      // The targetable boxes may get repositioned, so we wait for the next frame before checking
       requestAnimationFrame(() => {
-        const menu = document.getElementById(menuId);
         const coords = { x: event.pageX, y: event.pageY };
+        // Update menu coordinates and clicked target boxes based on the click position
+        const results = targetable.filter((box) => {
+          const boxElement = boxElementByTargetElement.get(box.element)!;
+          return isTargeted(box, boxElement, coords);
+        });
+        clickCoords.set(results.length ? coords : undefined);
+        targets.set(results);
 
-        // Don't do anything if the click is within the menu
-        if (menu && !isOverMenu(menu, coords)) {
-          // Update menu coordinates and clicked target boxes based on the click position
-          const results = targetable.filter((box) => {
-            const boxElement = boxElementByTargetElement.get(box.element)!;
-            return isTargeted(box, boxElement, coords);
+        // Track the click position relative to the first target's box, so the manager-rendered
+        // menu can stay anchored to its element while the preview changes.
+        if (results.length) {
+          const anchorBox = results[0];
+          const isFixed = getComputedStyle(anchorBox.element).position === 'fixed';
+          menuAnchor.set({
+            element: anchorBox.element,
+            offsetX: (isFixed ? coords.x - window.scrollX : coords.x) - anchorBox.left,
+            offsetY: (isFixed ? coords.y - window.scrollY : coords.y) - anchorBox.top,
           });
-          clickCoords.set(results.length ? coords : undefined);
-          targets.set(results);
+        } else {
+          menuAnchor.set(undefined);
         }
       });
     };
@@ -223,9 +234,8 @@ export const useHighlights = (channel: Channel) => {
   });
 
   const updateHovered = () => {
-    const menu = document.getElementById(menuId);
     const coords = hoverCoords.get();
-    if (!coords || (menu && isOverMenu(menu, coords))) {
+    if (!coords) {
       return;
     }
 
@@ -304,229 +314,85 @@ export const useHighlights = (channel: Channel) => {
   focused.subscribe(updateBoxStyles);
   selected.subscribe(updateBoxStyles);
 
-  const renderMenu = () => {
-    if (!root) {
-      return;
+  //
+  // Menu (rendered by the manager)
+  //
+  // The interactive menu used to be rendered inside the preview. It is now rendered by the manager
+  // and positioned over the preview iframe, so it can no longer be triggered by embedding the
+  // preview on a malicious site. The preview tracks the state and sends it to the manager.
+
+  /** The menu anchor in the preview iframe's viewport coordinates. */
+  const getMenuCoords = () => {
+    const click = clickCoords.get();
+    if (!click) {
+      return undefined;
     }
 
-    let menu = document.getElementById(menuId);
-    if (menu) {
-      menu.innerHTML = '';
-    } else {
-      const props = { id: menuId, popover: 'manual' };
-      menu = root.appendChild(createElement('div', props) as HTMLElement);
-      root.appendChild(
-        createElement('style', {}, [
-          `
-            #${menuId} {
-              position: absolute;
-              z-index: ${MAX_Z_INDEX};
-              width: 300px;
-              padding: 0px;
-              margin: 15px 0 0 0;
-              transform: translateX(-50%);
-              font-family: "Nunito Sans", -apple-system, ".SFNSText-Regular", "San Francisco", BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-              font-size: 12px;
-              background: white;
-              border: none;
-              border-radius: 6px;
-              box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.05), 0 5px 15px 0 rgba(0, 0, 0, 0.1);
-              color: #2E3438;
-            }
-            #${menuId} ul {
-              list-style: none;
-              margin: 0;
-              padding: 0;
-            }
-            #${menuId} > ul {
-              max-height: 300px;
-              overflow-y: auto;
-              padding: 4px 0;
-            }
-            #${menuId} li {
-              padding: 0 4px;
-              margin: 0;
-            }
-            #${menuId} li > :not(ul) {
-              display: flex;
-              padding: 8px;
-              margin: 0;
-              align-items: center;
-              gap: 8px;
-              border-radius: 4px;
-            }
-            #${menuId} button {
-              width: 100%;
-              border: 0;
-              background: transparent;
-              color: inherit;
-              text-align: left;
-              font-family: inherit;
-              font-size: inherit;
-            }
-            #${menuId} button:focus-visible {
-              outline-color: #029CFD;
-            }
-            #${menuId} button:hover {
-              background: rgba(2, 156, 253, 0.07);
-              color: #029CFD;
-              cursor: pointer;
-            }
-            #${menuId} li code {
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              line-height: 16px;
-              font-size: 11px;
-            }
-            #${menuId} li svg {
-              flex-shrink: 0;
-              margin: 1px;
-              color: #73828C;
-            }
-            #${menuId} li > button:hover svg, #${menuId} li > button:focus-visible svg {
-              color: #029CFD;
-            }
-            #${menuId} .element-list li svg {
-              display: none;
-            }
-            #${menuId} li.selectable svg, #${menuId} li.selected svg {
-              display: block;
-            }
-            #${menuId} .menu-list {
-              border-top: 1px solid rgba(38, 85, 115, 0.15);
-            }
-            #${menuId} .menu-list > li:not(:last-child) {
-              padding-bottom: 4px;
-              margin-bottom: 4px;
-              border-bottom: 1px solid rgba(38, 85, 115, 0.15);
-            }
-            #${menuId} .menu-items, #${menuId} .menu-items li {
-              padding: 0;
-            }
-            #${menuId} .menu-item {
-              display: flex;
-            }
-            #${menuId} .menu-item-content {
-              display: flex;
-              flex-direction: column;
-              flex-grow: 1;
-            }
-          `,
-        ])
-      );
-    }
-
-    const selectedElement = selected.get();
-    const elementList = selectedElement ? [selectedElement] : targets.get();
-
-    if (elementList.length) {
-      menu.style.position =
-        getComputedStyle(elementList[0].element).position === 'fixed' ? 'fixed' : 'absolute';
-
-      menu.appendChild(
-        createElement(
-          'ul',
-          { class: 'element-list' },
-          elementList.map((target) => {
-            const selectable =
-              elementList.length > 1 &&
-              !!target.menu?.some((group) =>
-                group.some(
-                  (item) =>
-                    !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
-                )
-              );
-            const props = selectable
-              ? {
-                  class: 'selectable',
-                  onClick: () => selected.set(target),
-                  onMouseEnter: () => focused.set(target),
-                  onMouseLeave: () => focused.set(undefined),
-                }
-              : selectedElement
-                ? { class: 'selected', onClick: () => selected.set(undefined) }
-                : {};
-            const asButton = selectable || selectedElement;
-            return createElement('li', props, [
-              createElement(asButton ? 'button' : 'div', asButton ? { type: 'button' } : {}, [
-                selectedElement ? createIcon('chevronLeft') : null,
-                createElement('code', {}, [target.element.outerHTML]),
-                selectable ? createIcon('chevronRight') : null,
-              ]),
-            ]);
-          })
-        )
-      );
-    }
-
-    if (selected.get() || targets.get().length === 1) {
-      const target = selected.get() || targets.get()[0];
-      const menuGroups = target.menu?.filter((group) =>
-        group.some(
-          (item) => !item.selectors || item.selectors.some((s) => target.selectors.includes(s))
-        )
-      );
-      if (menuGroups?.length) {
-        menu.appendChild(
-          createElement(
-            'ul',
-            { class: 'menu-list' },
-            menuGroups.map((menuItems) =>
-              createElement('li', {}, [
-                createElement(
-                  'ul',
-                  { class: 'menu-items' },
-                  menuItems.map(
-                    ({ id, title, description, iconLeft, iconRight, clickEvent: event }) => {
-                      const onClick =
-                        event && (() => channel.emit(event, id, getEventDetails(target)));
-                      return createElement('li', {}, [
-                        createElement(
-                          onClick ? 'button' : 'div',
-                          onClick
-                            ? { class: 'menu-item', type: 'button', onClick }
-                            : { class: 'menu-item' },
-                          [
-                            iconLeft ? createIcon(iconLeft) : null,
-                            createElement('div', { class: 'menu-item-content' }, [
-                              createElement(description ? 'strong' : 'span', {}, [title]),
-                              description && createElement('span', {}, [description]),
-                            ]),
-                            iconRight ? createIcon(iconRight) : null,
-                          ]
-                        ),
-                      ]);
-                    }
-                  )
-                ),
-              ])
-            )
-          )
-        );
+    const anchor = menuAnchor.get();
+    if (anchor) {
+      const box = boxes.get().find((b) => b.element === anchor.element);
+      if (box) {
+        const isFixed = getComputedStyle(box.element).position === 'fixed';
+        return {
+          x: box.left + anchor.offsetX - (isFixed ? 0 : window.scrollX),
+          y: box.top + anchor.offsetY - (isFixed ? 0 : window.scrollY),
+        };
       }
     }
 
-    const coords = clickCoords.get();
-    if (coords) {
-      Object.assign(menu.style, {
-        display: 'block',
-        left: `${menu.style.position === 'fixed' ? coords.x - window.scrollX : coords.x}px`,
-        top: `${menu.style.position === 'fixed' ? coords.y - window.scrollY : coords.y}px`,
-      });
+    return { x: click.x - window.scrollX, y: click.y - window.scrollY };
+  };
 
-      // Put the menu in #top-layer, above any other popovers and z-indexes
-      showPopover(menu);
+  const emitMenuState = () => {
+    const targetList = targets.get();
+    const coords = targetList.length ? getMenuCoords() : undefined;
+    const selectedBox = selected.get();
+    const selectedIndex = selectedBox
+      ? targetList.findIndex((b) => b.element === selectedBox.element)
+      : undefined;
 
-      // Reposition the menu on after it renders, to avoid rendering outside the viewport
-      requestAnimationFrame(() => keepInViewport(menu, coords, { topOffset: 15, centered: true }));
-    } else {
-      hidePopover(menu);
-      Object.assign(menu.style, { display: 'none' });
+    channel.emit(HIGHLIGHT_MENU, {
+      targets: targetList.map((box) => ({ menu: box.menu, details: getEventDetails(box) })),
+      selected: selectedIndex !== undefined && selectedIndex >= 0 ? selectedIndex : null,
+      coords: coords ?? null,
+    });
+  };
+
+  // Keep the manager-rendered menu in sync while it is open: boxes are remeasured on preview
+  // scrolling, resizing, layout changes and DOM mutations.
+  boxes.subscribe(() => {
+    if (clickCoords.get()) {
+      emitMenuState();
+    }
+  });
+  targets.subscribe(emitMenuState);
+  selected.subscribe(emitMenuState);
+
+  const handleMenuInteraction = ({
+    action,
+    index,
+  }: Pick<HighlightMenuInteraction, 'action' | 'index'>) => {
+    const targetList = targets.get();
+    const box = typeof index === 'number' ? targetList[index] : undefined;
+    switch (action) {
+      case 'select':
+        if (box) {
+          selected.set(box);
+        }
+        break;
+      case 'deselect':
+        selected.set(undefined);
+        break;
+      case 'focus':
+        if (box) {
+          focused.set(box);
+        }
+        break;
+      case 'blur':
+        focused.set(undefined);
+        break;
     }
   };
-  targets.subscribe(renderMenu);
-  selected.subscribe(renderMenu);
 
   //
   // Channel event handlers
@@ -552,6 +418,7 @@ export const useHighlights = (channel: Channel) => {
     boxes.set([]);
     clickCoords.set(undefined);
     hoverCoords.set(undefined);
+    menuAnchor.set(undefined);
     targets.set([]);
     hovered.set([]);
     focused.set(undefined);
@@ -606,6 +473,7 @@ export const useHighlights = (channel: Channel) => {
   channel.on(REMOVE_HIGHLIGHT, removeHighlight);
   channel.on(RESET_HIGHLIGHT, resetState);
   channel.on(SCROLL_INTO_VIEW, scrollIntoView);
+  channel.on(HIGHLIGHT_MENU_INTERACTION, handleMenuInteraction);
   channel.on(STORY_RENDER_PHASE_CHANGED, ({ newPhase }: { newPhase: string }) => {
     if (newPhase === 'loading') {
       resetState();

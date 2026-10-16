@@ -40,6 +40,11 @@
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "code": "./src/theming.ts",
+      "default": "./dist/theming.js"
+    },
     "./vite-plugin": "./dist/vite-plugin.js"
   },
   "files": [

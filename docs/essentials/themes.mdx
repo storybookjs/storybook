@@ -15,7 +15,7 @@ To make your themes accessible to your stories, `@storybook/addon-themes` expose
 
 ### JSX providers
 
-For libraries that expose themes to components through providers, such as [Material UI](https://storybook.js.org/recipes/@mui/material/), [Styled-components](https://storybook.js.org/recipes/styled-components/), and [Emotion](https://storybook.js.org/recipes/@emotion/styled/), use the `withThemeFromJSXProvider`.
+For libraries that expose themes to components through providers, such as [Material UI](https://storybook.js.org/recipes/@mui/material/), [Styled-components](https://storybook.js.org/recipes/styled-components/), and [Emotion](https://storybook.js.org/recipes/@emotion/styled/), use the `withThemeFromJSXProvider`. Because it renders JSX, this decorator is exported by your React framework package (for example `@storybook/react-vite`) rather than by the addon.
 
 <CodeSnippets path="storybook-addon-themes-jsx-provider-decorator.md" />
 

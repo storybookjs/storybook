@@ -1,5 +1,6 @@
-```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+```js filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { withThemeFromJSXProvider } from '@storybook/your-framework';
 
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from '../src/themes';
@@ -27,11 +28,9 @@ const preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import { Preview, Renderer } from '@storybook/your-framework';
-
-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+```ts filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { Preview, Renderer, withThemeFromJSXProvider } from '@storybook/your-framework';
 
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from '../src/themes';
@@ -61,7 +60,7 @@ export default preview;
 
 ```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { Renderer, definePreview } from '@storybook/your-framework';
+import { Renderer, definePreview, withThemeFromJSXProvider } from '@storybook/your-framework';
 
 import addonThemes from '@storybook/addon-themes';
 
@@ -78,7 +77,7 @@ const GlobalStyles = createGlobalStyle`
 export default definePreview({
   addons: [addonThemes()],
   decorators: [
-    addonThemes.withThemeFromJSXProvider<Renderer>({
+    withThemeFromJSXProvider<Renderer>({
       themes: {
         light: lightTheme,
         dark: darkTheme,
@@ -95,7 +94,7 @@ export default definePreview({
 
 ```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
+import { definePreview, withThemeFromJSXProvider } from '@storybook/your-framework';
 
 import addonThemes from '@storybook/addon-themes';
 
@@ -112,7 +111,7 @@ const GlobalStyles = createGlobalStyle`
 export default definePreview({
   addons: [addonThemes()],
   decorators: [
-    addonThemes.withThemeFromJSXProvider({
+    withThemeFromJSXProvider({
       themes: {
         light: lightTheme,
         dark: darkTheme,

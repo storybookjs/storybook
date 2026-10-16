@@ -76,7 +76,12 @@
       "default": "./dist/export-mocks/router/index.js"
     },
     "./rsc/server-only": "./dist/rsc/server-only.js",
-    "./storybook-nextjs-font-loader": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js"
+    "./storybook-nextjs-font-loader": "./dist/font/webpack/loader/storybook-nextjs-font-loader.js",
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "code": "./src/theming.ts",
+      "default": "./dist/theming.js"
+    }
   },
   "files": [
     "dist/**/*",

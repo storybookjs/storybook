@@ -10,6 +10,7 @@ import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import { docgenServer } from './docgen-server.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
+import { reactThemingImports } from './react-theming-imports.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
@@ -50,6 +51,7 @@ export const allFixes: Fix[] = [
   removeChangeDetectionFlag,
   skills,
   docgenServer,
+  reactThemingImports,
 ];
 
 export const commandFixes: CommandFix[] = [csfFactories];

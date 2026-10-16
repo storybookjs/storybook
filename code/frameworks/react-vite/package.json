@@ -41,6 +41,11 @@
       "types": "./dist/preset.d.ts",
       "code": "./src/preset.ts",
       "default": "./dist/preset.js"
+    },
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "code": "./src/theming.ts",
+      "default": "./dist/theming.js"
     }
   },
   "files": [

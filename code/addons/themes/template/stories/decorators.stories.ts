@@ -1,10 +1,6 @@
 import { global as globalThis } from '@storybook/global';
 
-import {
-  withThemeByClassName,
-  withThemeByDataAttribute,
-  withThemeFromJSXProvider,
-} from '@storybook/addon-themes';
+import { withThemeByClassName, withThemeByDataAttribute } from '@storybook/addon-themes';
 
 import { useEffect } from 'storybook/preview-api';
 
@@ -73,26 +69,6 @@ export const WithThemeByDataAttribute = {
       defaultTheme: 'a',
       themes: { a: 'theme-a', b: 'theme-b' },
       parentSelector: '#storybook-root > *',
-    }),
-  ],
-};
-
-export const WithThemeFromJSXProvider = {
-  globals: {},
-  decorators: [
-    withThemeFromJSXProvider({
-      defaultTheme: 'a',
-      themes: { a: { custom: 'theme-a' }, b: { custom: 'theme-b' } },
-      Provider: ({ theme, children }: any) => {
-        // this is not was a normal provider looks like obviously, but this needs to work in non-react as well
-        // the timeout is to wait for the render to complete, as it's not possible to use the useEffect hook here
-        setTimeout(() => {
-          const element = globalThis.document.querySelector('#storybook-root > *');
-          element?.classList.remove('theme-a', 'theme-b');
-          element?.classList.add(theme.custom);
-        }, 16);
-        return children;
-      },
     }),
   ],
 };

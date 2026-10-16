@@ -1,5 +1,5 @@
 ```js filename=".storybook/preview.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
-import { themes, ensure } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default {
   parameters: {
@@ -10,7 +10,7 @@ export default {
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 };
@@ -19,7 +19,7 @@ export default {
 ```ts filename=".storybook/preview.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Preview } from '@storybook/your-framework';
-import { themes, ensure } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 const preview: Preview = {
   parameters: {
@@ -30,7 +30,7 @@ const preview: Preview = {
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 };
@@ -42,7 +42,7 @@ export default preview;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -54,7 +54,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -66,7 +66,7 @@ export default definePreview({
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -78,7 +78,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -87,7 +87,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -99,7 +99,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -110,7 +110,7 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/vue3-vite';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -122,7 +122,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -131,7 +131,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/angular';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -143,7 +143,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -152,7 +152,7 @@ export default definePreview({
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -164,7 +164,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });
@@ -175,7 +175,7 @@ export default definePreview({
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
 import { definePreview } from '@storybook/web-components-vite';
 import addonDocs from '@storybook/addon-docs';
-import { ensure, themes } from 'storybook/theming';
+import { themes } from 'storybook/theming/create';
 
 export default definePreview({
   addons: [addonDocs()],
@@ -187,7 +187,7 @@ export default definePreview({
       },
     },
     docs: {
-      theme: ensure(themes.dark), // The replacement theme to use
+      theme: themes.dark, // The replacement theme to use
     },
   },
 });

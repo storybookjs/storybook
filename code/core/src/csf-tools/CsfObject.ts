@@ -528,9 +528,7 @@ class CsfObjectEditor implements CsfObject {
 
   private sourceFor(value: CsfValue | CsfExpression) {
     if (isSpan(value)) {
-      // Registers the source of this file's nodes, so a node read from the file prints as written.
       const node = value as Node;
-      this.editor.parentOf(node);
       return placeableSource(printExpression(node), node.type);
     }
     if (isAstLike(value)) {

@@ -454,12 +454,11 @@ describe('ConfigFile', () => {
       );
     });
 
-    it('rejects a node whose source is unknown', () => {
+    it('copies a node from another file by its source', () => {
       const other = loadConfig(`export const a = 1;`).parse();
       const config = loadConfig(`export const c = {};`).parse();
-      expect(() => config.set(['c', 'd'], other.getFieldNode(['a']) as CsfExpression)).toThrow(
-        /expressions must come from/
-      );
+      config.set(['c', 'd'], other.getFieldNode(['a']) as CsfExpression);
+      expect(formatConfig(config)).toBe(`export const c = { d: 1 };`);
     });
 
     describe('named exports', () => {

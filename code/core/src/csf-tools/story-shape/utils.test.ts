@@ -136,13 +136,17 @@ describe('keyOf', () => {
 });
 
 describe('unwrapExpression', () => {
-  it.each(['{} as Story', '{} satisfies Story', '{}!', '({})', '(({} as Story)!) satisfies Story'])(
-    'unwraps %s',
-    (code) => {
-      const wrapped = expressionFromSource(code);
-      expect(unwrapExpression(wrapped).type).toBe('ObjectExpression');
-    }
-  );
+  it.each([
+    '{} as Story',
+    '{} satisfies Story',
+    '{}!',
+    '({})',
+    '<Story>{}',
+    '(({} as Story)!) satisfies Story',
+  ])('unwraps %s', (code) => {
+    const wrapped = expressionFromSource(code);
+    expect(unwrapExpression(wrapped).type).toBe('ObjectExpression');
+  });
 
   it('returns other nodes untouched', () => {
     const value = expressionFromSource("'Save'");

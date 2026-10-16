@@ -55,6 +55,8 @@ export class SourceEditor {
   constructor(code: string, fileName?: string) {
     this.fileName = fileName;
     this._module = parseModule(code, fileName);
+    // Every node prints as the text it was parsed from, wherever it is used.
+    registerSource(this._module.program, code);
     this._edits = new MagicString(code, { filename: fileName });
   }
 
@@ -75,14 +77,13 @@ export class SourceEditor {
     return this._scopes;
   }
 
-  /** Parent of a node in this source; building the map also registers every node's source text. */
+  /** Parent of a node in this source. */
   parentOf(node: Node): Node | null {
     if (!this._parents) {
       const parents = new Map<Node, Node | null>();
       walk(this._module.program, (child, parent) => {
         parents.set(child, parent);
       });
-      registerSource(this._module.program, this._module.code);
       this._parents = parents;
     }
     return this._parents.get(node) ?? null;
@@ -124,6 +125,7 @@ export class SourceEditor {
 
   replaceSource(code: string) {
     this._module = parseModule(code, this.fileName);
+    registerSource(this._module.program, code);
     this._scopes = undefined;
     this._parents = undefined;
     this._edits = new MagicString(code, { filename: this.fileName });

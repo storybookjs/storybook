@@ -11278,10 +11278,13 @@ __metadata:
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/node": "npm:^22.19.1"
     "@types/tmp": "npm:^0.2.6"
+    "@wc-toolkit/cem-generator": "npm:^0.2.1"
+    "@wc-toolkit/cem-generator-lit": "npm:^0.1.16"
     cross-spawn: "npm:^7.0.6"
     custom-elements-manifest: "npm:^2.1.0"
     es-toolkit: "npm:^1.43.0"
     lit: "npm:2.3.1"
+    pathe: "npm:^1.1.2"
     tiny-invariant: "npm:^1.3.1"
     tmp: "npm:^0.2.3"
     ts-dedent: "npm:^2.2.0"
@@ -14749,6 +14752,37 @@ __metadata:
     js-beautify: "npm:^1.14.9"
     vue-component-type-helpers: "npm:^2.0.0"
   checksum: 10c0/37fa46cb6b98f90affb2faf5aa41422617bbd23ff35bc714d08035334e593ae31d18757d5ae688f778dd8b4c28de431601c0b9b7ca17fc1b55f1401a5577375e
+  languageName: node
+  linkType: hard
+
+"@wc-toolkit/cem-generator-lit@npm:^0.1.16":
+  version: 0.1.16
+  resolution: "@wc-toolkit/cem-generator-lit@npm:0.1.16"
+  dependencies:
+    "@wc-toolkit/cem-generator": "npm:0.2.1"
+    "@wc-toolkit/cem-generator-utils": "npm:0.1.5"
+    typescript: "npm:^6.0.3"
+  checksum: 10c0/2613a873834fed1bf138a3406fe837efdbd2cba520c48d2bc522997faaf389944c4bedbad425f589153251a711af2e8590e34d7033f3893990b812f10edcc5d4
+  languageName: node
+  linkType: hard
+
+"@wc-toolkit/cem-generator-utils@npm:0.1.5":
+  version: 0.1.5
+  resolution: "@wc-toolkit/cem-generator-utils@npm:0.1.5"
+  dependencies:
+    typescript: "npm:^6.0.3"
+  checksum: 10c0/fe758280a3e6a73fd19bdebf199632b76efdfdceb9ab1279109d39af6a66ab63710e96bff9805ba521e83fac791552664e475f633b52b0e5e62b972d3e5346e5
+  languageName: node
+  linkType: hard
+
+"@wc-toolkit/cem-generator@npm:0.2.1, @wc-toolkit/cem-generator@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "@wc-toolkit/cem-generator@npm:0.2.1"
+  dependencies:
+    "@wc-toolkit/cem-generator-utils": "npm:0.1.5"
+    postcss: "npm:^8.5.6"
+    typescript: "npm:^6.0.3"
+  checksum: 10c0/f2d4f02347b58b9d8f89b928674e42f3691b9099abe70859fa53d74a1251f493c4b91b7a952f7b740f7793b1e4cb030b67d1869885c8cb0c12bc333e9794ba46
   languageName: node
   linkType: hard
 

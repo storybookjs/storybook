@@ -381,11 +381,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           setupFiles: [
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-
-            // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
-            typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
-              nonMutableInputConfig.test?.setupFiles,
-          ].filter(Boolean) as string[],
+          ],
 
           ...(finalOptions.storybookScript
             ? {

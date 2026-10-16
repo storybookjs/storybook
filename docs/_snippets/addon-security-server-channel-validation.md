@@ -33,7 +33,7 @@ export const experimental_serverChannel = async (channel) => {
       }
       await writeFile(realTarget, notes);
     } catch (error) {
-      logger.error(`Could not save notes to ${file}: ${error}`);
+      logger.error(`Could not save notes to ${JSON.stringify(file)}: ${error}`);
     }
   });
 
@@ -77,7 +77,7 @@ export const experimental_serverChannel = async (channel: Channel) => {
       }
       await writeFile(realTarget, notes);
     } catch (error) {
-      logger.error(`Could not save notes to ${file}: ${error}`);
+      logger.error(`Could not save notes to ${JSON.stringify(file)}: ${error}`);
     }
   });
 

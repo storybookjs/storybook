@@ -19,7 +19,7 @@ The safest event is one that only carries data to display. Be careful with any e
 
 Before adding such an event, consider whether the work can happen without one. For example, compute a value when Storybook starts and send the result to the browser, rather than letting the browser ask the server to do the work.
 
-## Only send them from the manager
+## Emit side-effect events only from the manager
 
 When an event with side effects is necessary, emit it from the manager in response to a user action, and don't emit it from the preview. The preview runs story code and is easier for other pages to reach than the manager.
 
@@ -34,11 +34,17 @@ Check every event payload before acting on it:
 - Resolve file paths, following symlinks, and reject any that point outside the project or at files your addon doesn't own.
 - Never pass event data to a shell, `eval`, or a dynamic `import()`.
 
-For example, a dev server handler that saves notes next to a story file checks the payload, only writes files with the addon's own extension, keeps them inside the project, and logs a failed save instead of leaving the error unhandled:
+For example, a dev server handler that saves a `.notes.md` file inside the project checks the payload, only writes files with the addon's own extension, keeps them inside the project, and logs a failed save instead of leaving the error unhandled. Where you can, let the event name what to save and have the server build the path itself, which removes most of these checks.
+
+The example uses `experimental_serverChannel`, an experimental preset hook, and imports from `storybook/internal/*`, which are internal APIs. Both can change between Storybook releases.
 
 <CodeSnippets path="addon-security-server-channel-validation.md" />
 
-In the browser, escape anything from an event before it reaches the page. Insert text with `textContent` or as a JSX child instead of `innerHTML` or `dangerouslySetInnerHTML`, and only use a URL from an event in a link after parsing it with `new URL()` and checking that its `protocol` is `https:` or `http:`.
+In the browser, escape anything from an event before it reaches the page:
+
+- Insert text with `textContent` or as a JSX child instead of `innerHTML` or `dangerouslySetInnerHTML`.
+- Parse a URL from an event with `new URL()` before using it in a link.
+- Only allow a URL whose `protocol` is `https:` or `http:`.
 
 **Learn more about the Storybook addon ecosystem**
 

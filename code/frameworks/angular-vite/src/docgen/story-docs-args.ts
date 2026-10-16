@@ -5,6 +5,8 @@ import {
   codeOf,
   expressionFromSource,
   keyOf,
+  parseModule,
+  reindent,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
@@ -28,14 +30,6 @@ export const createArgExternalizer =
       : expressionFromSource(printExpressionValue(value, new Set()));
   };
 
-// An arg no static evaluation could reduce to a value falls back to its source text. Every
-// expression is escaped for the attribute position it lands in: the double-quote delimiter and
-// text Angular's lexer would decode as a character reference survive the round-trip unchanged.
-export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
-  const literal = evaluateArgLiteral(node, enums);
-  return escapeAttributeExpression(literal ?? printArgSource(unwrapExpression(node)));
-};
-
 /**
  * The arg's value as a standalone expression, or `undefined` when it needs the story to run.
  *
@@ -48,18 +42,48 @@ export const evaluateArgLiteral = (node: Node, enums: SnippetEnum[]): string | u
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
-export const argFieldValue = (node: Node): string => printArgSource(unwrapExpression(node));
+export const argFieldValue = (node: Node): string => printArgSource(codeOf(unwrapExpression(node)));
+
+// An arg no static evaluation could reduce to a value falls back to its source text, without the
+// comments a template expression cannot take (a class field keeps them). Every expression is
+// escaped for the attribute position it lands in: the double-quote delimiter and text Angular's
+// lexer would decode as a character reference survive the round-trip unchanged.
+export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
+  const literal = evaluateArgLiteral(node, enums);
+  return escapeAttributeExpression(
+    literal ?? printArgSource(withoutComments(codeOf(unwrapExpression(node))))
+  );
+};
 
 // Continuation lines keep the story file's indentation, which the snippet replaces with its own.
-const printArgSource = (node: Node): string => {
-  const [first, ...rest] = codeOf(node).split(/\r?\n/);
-  const indent = Math.min(
-    ...rest.filter((line) => line.trim()).map((line) => /^[ \t]*/.exec(line)![0].length)
-  );
-  const dedented = rest.map((line) =>
-    line.slice(Math.min(indent, line.length)).replace(/^\t+/, (tabs) => '  '.repeat(tabs.length))
-  );
-  return [first, ...dedented].join('\n');
+// Lines inside template literals are values and keep theirs.
+const printArgSource = (source: string): string => {
+  const code = source.replace(/\r\n/g, '\n');
+  const lines = code.split('\n').slice(1);
+  const last = lines.at(-1);
+  const indents = lines.filter((line) => line.trim()).map((line) => /^[ \t]*/.exec(line)![0]);
+  // A closing bracket sits at the expression's own indentation; otherwise the shallowest line does.
+  const indent =
+    last && /^[ \t]*[)\]}]/.test(last)
+      ? /^[ \t]*/.exec(last)![0]
+      : indents.reduce(
+          (shortest, current) => (current.length < shortest.length ? current : shortest),
+          indents[0] ?? ''
+        );
+  return reindent(code, indent, '').replace(/^\t+/gm, (tabs) => '  '.repeat(tabs.length));
+};
+
+const withoutComments = (code: string): string => {
+  const wrapped = `(${code}\n)`;
+  const { comments } = parseModule(wrapped);
+  let result = '';
+  let cursor = 0;
+  for (const comment of comments) {
+    result += wrapped.slice(cursor, comment.start);
+    cursor = comment.end + /^[ \t]*/.exec(wrapped.slice(comment.end))![0].length;
+  }
+  result += wrapped.slice(cursor);
+  return result.slice(1, -2).replace(/[ \t]+\n/g, '\n');
 };
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.

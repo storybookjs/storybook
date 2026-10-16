@@ -36,7 +36,7 @@ describe('ConfigFile mutations', () => {
   it.each([
     'let config; config = definePreview({ parameters: { legacy: true } }); module.exports = config;',
     'export default {}; definePreview({ parameters: { legacy: true } });',
-    'export const parameters = {}; export default { parameters: { legacy: true } };',
+    'export const parameters = { legacy: true }; export default { parameters: { legacy: true } };',
     'export default configure({ parameters: { legacy: true } });',
     'export default Object.assign({ parameters: { legacy: true } }, other);',
     'export default definePreview({ parameters: { legacy: true } }).finalize();',
@@ -46,6 +46,50 @@ describe('ConfigFile mutations', () => {
     expect(config.remove(['parameters', 'legacy']).ok).toBe(false);
     expect(config.changed).toBe(false);
     expect(printConfig(config).code).toBe(source);
+  });
+
+  it('reads and mutates the single owning export of mixed exports', () => {
+    const config = loadConfig(
+      'export const parameters = { legacy: true }; export default { other: 1 };'
+    ).parse();
+
+    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
+    expect(config.remove(['parameters', 'legacy'])).toEqual({ ok: true, changed: true });
+    expect(loadConfig(printConfig(config).code).parse().getValue(['parameters'])).toBeUndefined();
+    expect(printConfig(config).code).toContain('export default { other: 1 };');
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('mutates the default export when mixed exports only define the path there', () => {
+    const config = loadConfig(
+      'export const parameters = {}; export default { parameters: { legacy: true } };'
+    ).parse();
+
+    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
+    expect(config.remove(['parameters', 'legacy'])).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toContain('export const parameters = {};');
+    expect(
+      loadConfig(printConfig(config).code).parse().getValue(['parameters', 'legacy'])
+    ).toBeUndefined();
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reads the named export when mixed exports only define the path there', () => {
+    const config = loadConfig(
+      'export const parameters = { legacy: true }; export default { parameters: { other: true } };'
+    ).parse();
+
+    expect(config.getValue(['parameters', 'legacy'])).toBe(true);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it('reports mixed exports that both define the read path', () => {
+    const config = loadConfig(
+      'export const parameters = { legacy: true }; export default { parameters: { legacy: true } };'
+    ).parse();
+
+    expect(config.getValue(['parameters', 'legacy'])).toBeUndefined();
+    expect(config.mutationDiagnostics.length).toBeGreaterThan(0);
   });
 
   it('mutates an aliased config factory import', () => {

@@ -50,6 +50,7 @@ const isExportReference = (reference: NodePath): boolean => {
 export function createConfigObject(
   config: ConfigFile,
   mode: 'read' | 'mutate',
+  path: readonly string[] | undefined,
   report: (diagnostic: CsfMutationDiagnostic) => void,
   markChanged: () => void
 ): { ok: true; object: CsfObject } | { ok: false; diagnostic: CsfMutationDiagnostic } {
@@ -94,107 +95,150 @@ export function createConfigObject(
         },
       });
       const root = pathForNode(program, config._exportsObject);
+      let useNamedExports = false;
       if (root) {
         const declaration = root.findParent((parent) => parent.isVariableDeclarator());
-        if (
-          mode === 'mutate' &&
-          Object.values(config._exportDecls).some((exported) => exported !== declaration?.node)
-        ) {
-          reject(
-            root.node,
-            'ambiguous-binding',
-            'Cannot mutate mixed default and named config exports'
-          );
-          return;
-        }
-        for (
-          let parent: NodePath | null = root.parentPath;
-          parent && !parent.isProgram();
-          parent = parent.parentPath
-        ) {
-          if (!parent.isCallExpression()) {
-            continue;
-          }
-          const callee = parent.get('callee');
-          const typeChain =
-            callee.isMemberExpression() &&
-            !callee.node.computed &&
-            t.isIdentifier(callee.node.property, { name: 'type' }) &&
-            parent.node.arguments.length === 0;
-          if (!typeChain && !(isConfigFactory(callee) && parent.node.arguments.length === 1)) {
-            reject(
-              parent.node,
-              'unsupported-initializer',
-              'Cannot mutate an arbitrary config factory call'
+        const foreignDecls = Object.entries(config._exportDecls).filter(
+          ([, exported]) => exported !== declaration?.node
+        );
+        if (foreignDecls.length > 0) {
+          // The exports map is last-parse-wins, so a path defined by several exports is ambiguous.
+          // Resolve it to its single owning export instead: refuse when both the default and a
+          // named export define it, and edit the named export directly when only it holds the path.
+          const reads = (rootNode: t.Node | undefined, subPath: readonly string[]): boolean =>
+            t.isObjectExpression(rootNode) &&
+            subPath.length > 0 &&
+            createCsfObject(
+              { kind: 'config' },
+              {
+                node: rootNode,
+                scope: program.scope,
+                buildCodeFrameError: program.buildCodeFrameError.bind(program),
+              },
+              [],
+              report,
+              () => {}
+            ).get(subPath) !== undefined;
+          // The exports map is last-parse-wins, so the named value comes from its declaration.
+          const namedValue = (name: string): t.Node | undefined => {
+            const declPath = pathForNode(program, config._exportDecls[name]);
+            return declPath?.isVariableDeclarator() ? (declPath.node.init ?? undefined) : undefined;
+          };
+          if (!path) {
+            if (mode === 'mutate') {
+              reject(
+                root.node,
+                'ambiguous-binding',
+                'Cannot mutate mixed default and named config exports'
+              );
+              return;
+            }
+          } else {
+            const defaultHolds = reads(root.node, path);
+            const namedHolder = foreignDecls.find(
+              ([name]) => path[0] === name && reads(namedValue(name), path.slice(1))
             );
-            return;
+            if (defaultHolds && namedHolder) {
+              reject(
+                root.node,
+                'ambiguous-binding',
+                `Cannot resolve ${path.join('.')} because both the default export and the named ${namedHolder[0]} export define it`
+              );
+              return;
+            }
+            useNamedExports = !defaultHolds && Boolean(namedHolder);
           }
         }
-        const statement = root.getStatementParent();
-        if (
-          statement?.isExpressionStatement() &&
-          (!t.isAssignmentExpression(statement.node.expression) ||
-            !t.isMemberExpression(statement.node.expression.left) ||
-            !t.isIdentifier(statement.node.expression.left.object, { name: 'module' }) ||
-            !t.isIdentifier(statement.node.expression.left.property, { name: 'exports' }))
-        ) {
-          reject(
-            root.node,
-            'ambiguous-binding',
-            'Cannot mutate a config that is not directly exported'
-          );
-          return;
-        }
-        if (
-          !statement?.parentPath.isProgram() &&
-          !statement?.parentPath.isExportNamedDeclaration()
-        ) {
-          reject(
-            root.node,
-            'unsupported-initializer',
-            'Cannot mutate a config declared inside a function or conditional'
-          );
-          return;
-        }
-        if (declaration?.isVariableDeclarator() && t.isIdentifier(declaration.node.id)) {
-          const binding = declaration.scope.getBinding(declaration.node.id.name);
+        if (!useNamedExports) {
+          for (
+            let parent: NodePath | null = root.parentPath;
+            parent && !parent.isProgram();
+            parent = parent.parentPath
+          ) {
+            if (!parent.isCallExpression()) {
+              continue;
+            }
+            const callee = parent.get('callee');
+            const typeChain =
+              callee.isMemberExpression() &&
+              !callee.node.computed &&
+              t.isIdentifier(callee.node.property, { name: 'type' }) &&
+              parent.node.arguments.length === 0;
+            if (!typeChain && !(isConfigFactory(callee) && parent.node.arguments.length === 1)) {
+              reject(
+                parent.node,
+                'unsupported-initializer',
+                'Cannot mutate an arbitrary config factory call'
+              );
+              return;
+            }
+          }
+          const statement = root.getStatementParent();
           if (
-            !binding?.constant ||
-            binding.referencePaths.length !== 1 ||
-            !binding.referencePaths.every(isExportReference)
+            statement?.isExpressionStatement() &&
+            (!t.isAssignmentExpression(statement.node.expression) ||
+              !t.isMemberExpression(statement.node.expression.left) ||
+              !t.isIdentifier(statement.node.expression.left.object, { name: 'module' }) ||
+              !t.isIdentifier(statement.node.expression.left.property, { name: 'exports' }))
           ) {
             reject(
-              declaration.node,
+              root.node,
               'ambiguous-binding',
-              'Cannot mutate a shared or reassigned config binding'
+              'Cannot mutate a config that is not directly exported'
             );
             return;
           }
-        }
-        if (
-          assignments.length > 1 ||
-          assignments.some(
-            (assignment) =>
-              assignment.scope.hasBinding('module') ||
-              (t.isMemberExpression(assignment.node.left) && assignment.node.left.computed) ||
-              !assignment.parentPath.parentPath?.isProgram()
-          )
-        ) {
-          reject(
-            root.node,
-            'ambiguous-binding',
-            'Cannot mutate conditional, repeated, or shadowed module.exports'
-          );
+          if (
+            !statement?.parentPath.isProgram() &&
+            !statement?.parentPath.isExportNamedDeclaration()
+          ) {
+            reject(
+              root.node,
+              'unsupported-initializer',
+              'Cannot mutate a config declared inside a function or conditional'
+            );
+            return;
+          }
+          if (declaration?.isVariableDeclarator() && t.isIdentifier(declaration.node.id)) {
+            const binding = declaration.scope.getBinding(declaration.node.id.name);
+            if (
+              !binding?.constant ||
+              binding.referencePaths.length !== 1 ||
+              !binding.referencePaths.every(isExportReference)
+            ) {
+              reject(
+                declaration.node,
+                'ambiguous-binding',
+                'Cannot mutate a shared or reassigned config binding'
+              );
+              return;
+            }
+          }
+          if (
+            assignments.length > 1 ||
+            assignments.some(
+              (assignment) =>
+                assignment.scope.hasBinding('module') ||
+                (t.isMemberExpression(assignment.node.left) && assignment.node.left.computed) ||
+                !assignment.parentPath.parentPath?.isProgram()
+            )
+          ) {
+            reject(
+              root.node,
+              'ambiguous-binding',
+              'Cannot mutate conditional, repeated, or shadowed module.exports'
+            );
+            return;
+          }
+          result = {
+            ok: true,
+            object: createCsfObject({ kind: 'config' }, root, [], report, markChanged),
+          };
           return;
         }
-        result = {
-          ok: true,
-          object: createCsfObject({ kind: 'config' }, root, [], report, markChanged),
-        };
-        return;
       }
 
-      if (config.hasDefaultExport || assignments.length > 0) {
+      if (!root && (config.hasDefaultExport || assignments.length > 0)) {
         reject(
           config._ast.program,
           'unsupported-initializer',

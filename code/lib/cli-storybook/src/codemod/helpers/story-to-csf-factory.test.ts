@@ -949,6 +949,21 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('migrates parenthesized expressions with a comment inside the parentheses', async () => {
+        const output = await transform(dedent`
+          import type { StoryObj } from '@storybook/react';
+          import { Button } from './Button';
+
+          export default { component: Button };
+
+          export const K = (/* c */ { args: {} }) satisfies StoryObj;
+          export const T = ({ args: {} } /* after */) satisfies StoryObj;
+        `);
+        expect(output).toContain('export const K = meta.story(');
+        expect(output).toContain('export const T = meta.story(');
+        expect(output).not.toContain('satisfies');
+      });
+
       it('keeps the custom args type of a story on that story', async () => {
         await expect(
           transform(dedent`

@@ -186,6 +186,15 @@ export const Crashed: Story = {
       'component-tests': 'test-provider-state:crashed',
     },
   },
+  play: async ({ canvas, canvasElement }) => {
+    const collapse = () => canvasElement.querySelector('[data-testid="collapse"]');
+    await waitFor(() => expect(collapse()).not.toHaveAttribute('inert'));
+    const button = await canvas.findByRole('button', { name: /Collapse testing module/ });
+    await fireEvent.click(button);
+    await waitFor(() => expect(collapse()).toHaveAttribute('inert'));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await expect(collapse()).toHaveAttribute('inert');
+  },
 };
 
 export const SettingsUpdated: Story = {

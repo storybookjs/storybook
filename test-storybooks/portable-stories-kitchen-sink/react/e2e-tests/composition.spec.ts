@@ -9,25 +9,28 @@ test.describe('composition', () => {
   test.describe.configure({ mode: 'serial', timeout: 60000, retries: 2 });
   test('should filter and render composed stories', async ({ page }) => {
     await page.goto(STORYBOOK_URL);
-    await new SbPage(page, expect).waitUntilLoaded();
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
 
-    // Expect that composed Storybooks are visible and loaded
+    // Expect that composed Storybooks are visible and loaded. The sidebar is virtualized, so each
+    // row is scrolled into existence before it is looked at.
     await expect(page.getByTitle('Storybook 8.0.0')).toBeVisible();
-    await expect(page.locator('[id="storybook\\@8\\.0\\.0_components-badge"]')).toBeVisible({
-      timeout: 15000,
-    });
+    const badge8 = await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0');
+    await expect(badge8).toBeVisible({ timeout: 15000 });
     await expect(page.getByTitle('Storybook 7.6.18')).toBeVisible();
-    await expect(page.locator('[id="storybook\\@7\\.6\\.18_components-badge"]')).toBeVisible({
-      timeout: 15000,
-    });
+    const badge7 = await sbPage.revealSidebarRow('components-badge', 'storybook@7.6.18');
+    await expect(badge7).toBeVisible({ timeout: 15000 });
 
-    // Expect composed stories to be available in the sidebar
-    await page.locator('[id="storybook\\@8\\.0\\.0_components-badge"]').click();
+    // Expect composed stories to be available in the sidebar. Revealing one row can scroll another
+    // out of the virtualizer's window, so every row is revealed again right before it is used.
+    await (await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0')).click();
     await expect(
-      page.locator('[id="storybook\\@8\\.0\\.0_components-badge--default"]')
+      await sbPage.revealSidebarRow('components-badge--default', 'storybook@8.0.0')
     ).toBeVisible();
 
-    await page.locator('[id="storybook\\@7\\.6\\.18_components-badge"]').click();
+    // Opening a component only expands it; the story is chosen from its rows.
+    await (await sbPage.revealSidebarRow('components-badge', 'storybook@7.6.18')).click();
+    await (await sbPage.revealSidebarRow('components-badge--default', 'storybook@7.6.18')).click();
     await expect(
       page
         .locator('iframe[title="storybook-ref-storybook\\@7\\.6\\.18"]')
@@ -62,7 +65,8 @@ test.describe('composition', () => {
   test('should filter and render composed stories on mobile', async ({ page }) => {
     page.setViewportSize({ width: 320, height: 800 });
     await page.goto(STORYBOOK_URL);
-    await new SbPage(page, expect).waitUntilLoaded();
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
 
     await page.click('button[aria-label="Open navigation menu"]');
 
@@ -75,14 +79,14 @@ test.describe('composition', () => {
     await expect(page.getByTitle('Storybook 7.6.18')).toBeVisible();
 
     // Expect composed stories to be available in the sidebar
-    await expect(page.locator('[id="storybook\\@8\\.0\\.0_components-badge"]')).toBeVisible();
-    await page.locator('[id="storybook\\@8\\.0\\.0_components-badge"]').click();
+    await expect(await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0')).toBeVisible();
+    await (await sbPage.revealSidebarRow('components-badge', 'storybook@8.0.0')).click();
     await expect(
-      page.locator('[id="storybook\\@8\\.0\\.0_components-badge--default"]')
+      await sbPage.revealSidebarRow('components-badge--default', 'storybook@8.0.0')
     ).toBeVisible();
 
-    await page.locator('[id="storybook\\@7\\.6\\.18_components-badge"]').click();
-    await page.locator('[id="storybook\\@7\\.6\\.18_components-badge--default"]').click();
+    await (await sbPage.revealSidebarRow('components-badge', 'storybook@7.6.18')).click();
+    await (await sbPage.revealSidebarRow('components-badge--default', 'storybook@7.6.18')).click();
     await expect(
       page
         .locator('iframe[title="storybook-ref-storybook\\@7\\.6\\.18"]')

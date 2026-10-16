@@ -116,13 +116,11 @@ const idlessRefs: Record<string, RefType> = {
   },
 };
 
-const play: PlayFunction = async ({ canvas }) => {
-  await expect(await canvas.findByText('Id-less ref')).toBeInTheDocument();
-};
-
 // Regression: an id-less ref with no selection used to crash the sidebar with
 // "Cannot read properties of null (reading 'storyId')", because
-// `selected?.refId === ref.id` matched `undefined === undefined`.
+// `selected?.refId === ref.id` matched `undefined === undefined`. getRefs now
+// only produces refs with lowercase string ids, so the Explorer guard is
+// defence in depth and this story pins that it holds.
 export const IdlessRefWithoutSelection = {
   render: () => (
     <Explorer
@@ -134,5 +132,7 @@ export const IdlessRefWithoutSelection = {
       isHidden={false}
     />
   ),
-  play,
+  play: (async ({ canvas }) => {
+    await expect(await canvas.findByText('Id-less ref')).toBeInTheDocument();
+  }) satisfies PlayFunction,
 };

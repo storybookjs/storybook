@@ -1324,6 +1324,23 @@ This only affects tooling that imports Storybook's internal entry points:
 - `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `printExpression(node)` to read an expression's source.
 - An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf._appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`.
 
+Behavior that changes for every project:
+
+- **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow, so such files fail to index with an error that names Flow. Convert them to TypeScript or plain JavaScript.
+- `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
+- Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
+
+Internal exports that are removed or changed, for tooling built on `storybook/internal/csf-tools`:
+
+- `babelParse` and `babelParseFile` are removed; use `loadCsf(code, options)` and `readCsf(fileName, options)`.
+- `getHeaderComments(statement)` is replaced by `headerComments(editor)`.
+- The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes.
+- The `getAbsolutePath` wrapper helpers in `storybook/internal/common` work on nodes: `getAbsolutePathWrapperAsCallExpression` is replaced by `getAbsolutePathCall`, and `wrapValueWithGetAbsolutePathWrapper` by `wrapValuesWithGetAbsolutePathWrapper`.
+- `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
+- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options; `printCsf` and `printConfig` take no options and always print with `\n` line endings.
+- `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
+- The Vitest config helpers (`canUpdateVitestConfigFile`, `getTargetConfigObject`, ...) moved from `storybook/internal/babel` to `storybook/internal/cli`.
+
 Babel itself is still used where it compiles your code, for example by `@storybook/nextjs` and the webpack Babel compiler addon.
 
 ### Create React App support removed

@@ -1,3 +1,4 @@
+import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { dedent } from 'ts-dedent';
 
 import ruleTester from '../test-utils.ts';
@@ -66,18 +67,18 @@ ruleTester.run('static-csf-properties', rule, {
   invalid: [
     {
       code: 'export default { title: getTitle() }',
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: 'export default { title: `Button/${suffix}` }',
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: dedent`
         import { TITLE } from './titles'
         export default { title: TITLE }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       // the indexer resolves local constants for title and tags, but not for id
@@ -85,18 +86,18 @@ ruleTester.run('static-csf-properties', rule, {
         const ID = 'button-id'
         export default { id: ID }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: "export default { tags: [...baseTags, 'autodocs'] }",
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: dedent`
         const EXTRA = 'autodocs'
         export default { tags: ['dev', EXTRA] }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       // include/exclude do not support identifier indirection at all
@@ -104,13 +105,14 @@ ruleTester.run('static-csf-properties', rule, {
         const included = ['Primary']
         export default { includeStories: included }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: "export default { title: 'Button', ...baseMeta }",
       errors: [
         {
           messageId: 'propertyBeforeSpread',
+          type: AST_NODE_TYPES.Property,
           suggestions: [
             {
               messageId: 'movePropertyAfterSpread',
@@ -126,6 +128,7 @@ ruleTester.run('static-csf-properties', rule, {
       errors: [
         {
           messageId: 'ignoredKey',
+          type: AST_NODE_TYPES.Literal,
           suggestions: [
             {
               messageId: 'useIdentifierKey',
@@ -137,21 +140,21 @@ ruleTester.run('static-csf-properties', rule, {
     },
     {
       code: "export default { ['title']: 'Button' }",
-      errors: [{ messageId: 'ignoredKey' }],
+      errors: [{ messageId: 'ignoredKey', type: AST_NODE_TYPES.Literal }],
     },
     {
       code: dedent`
         const title = 'parameters'
         export default { [title]: { layout: 'fullscreen' } }
       `,
-      errors: [{ messageId: 'misreadComputedKey' }],
+      errors: [{ messageId: 'misreadComputedKey', type: AST_NODE_TYPES.Identifier }],
     },
     {
       code: dedent`
         export default { component: Button }
         export const Primary = { tags: generateTags() }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: dedent`
@@ -161,6 +164,7 @@ ruleTester.run('static-csf-properties', rule, {
       errors: [
         {
           messageId: 'propertyBeforeSpread',
+          type: AST_NODE_TYPES.Property,
           suggestions: [
             {
               messageId: 'movePropertyAfterSpread',
@@ -180,14 +184,14 @@ ruleTester.run('static-csf-properties', rule, {
         export default { component: Button }
         export { story as Primary }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: dedent`
         const meta = { title: getTitle() }
         export { meta as default }
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     // CSF4 factories
     {
@@ -195,14 +199,14 @@ ruleTester.run('static-csf-properties', rule, {
         import preview from '../../.storybook/preview'
         const meta = preview.meta({ title: getTitle() })
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: dedent`
         import preview from '../../.storybook/preview'
         const meta = preview.meta(generateMeta())
       `,
-      errors: [{ messageId: 'unresolvableFactoryMeta' }],
+      errors: [{ messageId: 'unresolvableFactoryMeta', type: AST_NODE_TYPES.CallExpression }],
     },
     {
       code: dedent`
@@ -211,14 +215,14 @@ ruleTester.run('static-csf-properties', rule, {
         config = extend(config)
         const meta = preview.meta(config)
       `,
-      errors: [{ messageId: 'unresolvableFactoryMeta' }],
+      errors: [{ messageId: 'unresolvableFactoryMeta', type: AST_NODE_TYPES.Identifier }],
     },
     {
       code: dedent`
         import preview from './local-preview-config'
         const meta = preview.meta({ title: 'Button' })
       `,
-      errors: [{ messageId: 'invalidPreviewImport' }],
+      errors: [{ messageId: 'invalidPreviewImport', type: AST_NODE_TYPES.CallExpression }],
     },
     {
       code: dedent`
@@ -226,7 +230,7 @@ ruleTester.run('static-csf-properties', rule, {
         const meta = preview.meta({ component: Button })
         export const Primary = meta.story({ tags: computeTags() })
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
     {
       code: dedent`
@@ -234,7 +238,7 @@ ruleTester.run('static-csf-properties', rule, {
         const config = { title: computeTitle() }
         const meta = preview.meta(config)
       `,
-      errors: [{ messageId: 'dynamicProperty' }],
+      errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
     },
   ],
 });

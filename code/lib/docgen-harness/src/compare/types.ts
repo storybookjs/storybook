@@ -1,6 +1,7 @@
 export type Framework = 'vue3' | 'angular' | 'web-components' | 'svelte';
 
 export type ViolationKind =
+  | 'invalid-comparison'
   | 'lost-arg'
   | 'lost-description'
   | 'lost-default'

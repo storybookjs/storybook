@@ -151,6 +151,9 @@ export const optimizeViteDeps: string[] = [
   // (react 19.3.1, vite 7.3.7, vitest 5.0.5, chromium browser mode) the dependency scan had not
   // registered plain `react`, so the browser loaded react's CJS index.js raw and module linking
   // failed with "The requested module 'react/index.js' does not provide an export named 'default'".
+  // Projects only hit this when their stories use the automatic JSX runtime and never import
+  // `react` by name; a story importing `react` (for `useState`, say) registers it in the scan
+  // and masks the failure.
   'react',
   'react-dom/client',
   'react-dom/test-utils',

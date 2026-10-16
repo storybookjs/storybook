@@ -3,7 +3,6 @@ import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/expe
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeClaudeInAppBrowserMock,
   writeClaudeMcpConfig,
   writeMcpAgentInstructions,
 } from '../lib/templates.ts';
@@ -19,7 +18,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'mcp', model });
     await writeClaudeMcpConfig(sandbox);
-    await writeClaudeInAppBrowserMock(sandbox);
     await writeMcpAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },

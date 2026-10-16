@@ -3,7 +3,6 @@ import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/expe
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeCodexInAppBrowserMock,
   writeCodexLunaTestRules,
   writeCodexMcpConfig,
   writeMcpAgentInstructions,
@@ -22,7 +21,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp', model });
     await writeCodexMcpConfig(sandbox);
-    await writeCodexInAppBrowserMock(sandbox);
     await writeMcpAgentInstructions(sandbox);
     await writeCodexLunaTestRules(sandbox, model);
     await commitSandboxBaseline(sandbox);

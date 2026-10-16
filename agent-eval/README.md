@@ -135,7 +135,7 @@ therefore fails.
 
 The harness commits the fixture to git before setup runs. Every experiment in
 `experiments/` ends its `setup` with `commitSandboxBaseline`, which commits
-everything setup wrote (the template, skills, browser mocks, MCP config), so
+everything setup wrote (the template, skills, MCP config), so
 the template and setup files no longer look like the agent's changes:
 `storybook tools stories changed` reports only what the agent changed, and
 `git status` shows that plus the `package-lock.json` the harness's

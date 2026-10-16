@@ -85,7 +85,7 @@ function describeCreate(ctx: ToolsetCtx): string {
 
 ## When to call
 - Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
-- Last: publish it after your tests and other checks (type check, lint); opening the page it returns is your final step. Right before, get your in-app browser ready if you have one (load its tool or run its skill's setup code).
+- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
@@ -117,21 +117,10 @@ function storyNoun(storyCount: number): string {
   return storyCount === 1 ? 'story' : 'stories';
 }
 
-function reviewInstructions(
-  reviewUrl: string,
-  storyCount: number,
-  origin: string,
-  browse: boolean
-): string {
-  // Agents were observed ending visual work at the tool result, so the result itself has to
-  // carry both follow-ups: open the page, and surface the link in the final response.
-  // The running instance is named by the same UI root the review link is built from — for a
-  // sub-path-hosted Storybook the bare origin is not an address the agent can reach.
-  return `Storybook is already running at ${origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
-
-Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page, also when you read it earlier: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
-2. **Then write your final response and end it with these three lines.** Copy them unchanged and put nothing after them. Do not describe the review in your own words instead, and do not mention its link anywhere else in your answer:
+function reviewInstructions(reviewUrl: string, storyCount: number, browse: boolean): string {
+  // Agents were observed ending visual work at the tool result, or summarizing the review in
+  // their own words, so the result carries the lines the final response has to end with.
+  return `Now write your final response and end it with these three lines, copied unchanged, with nothing after them. Do not describe the review in your own words, and do not mention its link anywhere else in your answer:
 
 ${
   // A browse request changes no files, so its heading must not speak of changes.
@@ -196,12 +185,7 @@ export const reviewToolset = defineToolset({
           reviewUrl,
           collectionCount,
           storyCount,
-          instructions: reviewInstructions(
-            reviewUrl,
-            storyCount,
-            ctx.origin,
-            review.changedFiles.length === 0
-          ),
+          instructions: reviewInstructions(reviewUrl, storyCount, review.changedFiles.length === 0),
         };
 
         return {

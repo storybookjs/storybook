@@ -3,7 +3,6 @@ import { DEFAULT_EXPERIMENT_CONFIG, PLUGIN_STORYBOOK_EVALS } from '../lib/experi
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeCodexInAppBrowserMock,
   writeCodexLunaTestRules,
   writeCodexPluginSkills,
   writeStorybookAgentInstructions,
@@ -20,7 +19,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin', model });
     await writeCodexPluginSkills(sandbox);
-    await writeCodexInAppBrowserMock(sandbox);
     await writeStorybookAgentInstructions(sandbox);
     await writeCodexLunaTestRules(sandbox, model);
     await commitSandboxBaseline(sandbox);

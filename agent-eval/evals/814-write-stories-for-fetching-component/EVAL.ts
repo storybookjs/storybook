@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vitest';
 import {
   expectDevServerLeftRunning,
   expectDisplayReviewForVisualChange,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
@@ -50,10 +49,6 @@ describe('writing stories for an existing OrderHistory that fetches its data', (
   test('uses Storybook story instructions and publishes a display review', () => {
     expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new OrderHistory stories', () => {

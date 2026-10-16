@@ -40,60 +40,6 @@ const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
 const EVALS_DIR = path.join(AGENT_EVAL_ROOT, 'evals');
 const TEMPLATE_METADATA_FILE = 'eval-template.json';
-const NODE_REPL_MOCK_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'node-repl-mock.mjs');
-const NODE_REPL_MOCK_SANDBOX_PATH = path.posix.join('.agent-eval', 'mcp', 'node-repl-mock.mjs');
-const CODEX_BROWSER_MOCK_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-browser-client-mock.mjs'
-);
-const CODEX_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'codex-browser-client-mock.mjs'
-);
-const CODEX_BROWSER_API_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-browser-api.json'
-);
-const CODEX_BROWSER_API_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'codex-browser-api.json'
-);
-const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-browser-skill.md'
-);
-const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
-  '.agents',
-  'skills',
-  'control-in-app-browser',
-  'SKILL.md'
-);
-const CLAUDE_BROWSER_MOCK_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'claude-browser-mock.mjs'
-);
-const CLAUDE_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'claude-browser-mock.mjs'
-);
-const CLAUDE_BROWSER_PROMPT_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'claude-browser-prompt.md'
-);
-const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = '.claude/rules/built-in-browser.md';
 const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
   'lib',
@@ -155,7 +101,6 @@ const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 // Captures the entries of the `addons` list, without the trailing comma.
 const STORYBOOK_ADDONS_PATTERN = /addons: \[([^\]]*?),?\s*\]/;
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
-const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
@@ -999,31 +944,6 @@ export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void>
   );
 }
 
-/**
- * Ship the Codex in-app-browser stand-in: a `node_repl` MCP server (the real
- * one is a native binary bundled only with the Codex desktop app), the
- * browser runtime mock it imports, and the `control-in-app-browser` skill
- * that teaches Codex the same bootstrap flow the app uses.
- */
-export async function writeCodexInAppBrowserMock(sandbox: Sandbox): Promise<void> {
-  await sandbox.writeFiles({
-    [NODE_REPL_MOCK_SANDBOX_PATH]: await fs.readFile(NODE_REPL_MOCK_SOURCE_PATH, 'utf8'),
-    [CODEX_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
-    [CODEX_BROWSER_API_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_API_SOURCE_PATH, 'utf8'),
-    [CODEX_BROWSER_SKILL_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_SKILL_SOURCE_PATH, 'utf8'),
-  });
-
-  const config = `[mcp_servers.node_repl]
-command = "node"
-args = ["${NODE_REPL_MOCK_SANDBOX_PATH}"]
-default_tools_approval_mode = "auto"
-startup_timeout_sec = 30
-tool_timeout_sec = 180
-`;
-
-  await appendCodexConfig(sandbox, config);
-}
-
 const LUNA_TEST_RULE =
   '- Do not add or run tests unless the user asks you to test or verify implementation.';
 const SOL_TEST_RULES = '^- (Do not write tests for reversible|Run tests appropriate)';
@@ -1106,23 +1026,6 @@ export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): 
   const rest = existing.replace(/^model_instructions_file = .*\n+/, '');
   await sandbox.writeFiles({
     [CODEX_CONFIG_PATH]: `model_instructions_file = ${JSON.stringify(result.stdout.trim())}\n\n${rest}`,
-  });
-}
-
-// This rule stands in for the `<built_in_browser>` block the desktop app
-// injects, so the agent knows it has that browser. A rule, unlike a
-// CLAUDE.md, does not stop Claude Code from reading AGENTS.md.
-export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
-  await sandbox.writeFiles({
-    [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
-    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]: await fs.readFile(
-      CLAUDE_BROWSER_PROMPT_SOURCE_PATH,
-      'utf8'
-    ),
-  });
-  await writeClaudeMcpServer(sandbox, CLAUDE_BROWSER_MCP_SERVER_NAME, {
-    command: 'node',
-    args: [CLAUDE_BROWSER_MOCK_SANDBOX_PATH],
   });
 }
 

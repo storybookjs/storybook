@@ -80,15 +80,13 @@ describe('buildUiWorkflowSkill', () => {
     expect(text).not.toContain('Run one of these');
   });
 
-  it('gets an in-app browser ready, if there is one, right before the review', () => {
+  it('ends the answer with the three review lines and opens no browser', () => {
     const text = buildUiWorkflowSkill(everything);
 
     expect(text).toContain(
-      'Right before it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives'
+      'Then end your answer with the three lines the command prints, unchanged: heading, text line and 👉 link, with nothing after them.'
     );
-    expect(text.indexOf('get your in-app browser ready')).toBeGreaterThan(
-      text.indexOf('## Finish with a review')
-    );
+    expect(text).not.toContain('browser');
   });
 
   it('takes story ids from the story list when the builder has no module graph', () => {
@@ -237,7 +235,7 @@ describe('buildUiWorkflowSkill over MCP', () => {
       section(cli, '## Write the component and its stories')
     );
     expect(mcp).toContain(
-      'end your answer with the three lines of the review section it gives you, unchanged'
+      'Then end your answer with the three lines its result gives you, unchanged: heading, text line and 👉 link, with nothing after them.'
     );
   });
 
@@ -312,7 +310,7 @@ describe('buildUiWorkflowSkill full text', () => {
 
       Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. When you changed files, take the story ids from \`stories changed\`, run after your last edit (and from \`find-by-component\` only for a file it leaves out), also when you only wrote stories; never take them from the test output. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, such as a change to a callback, tests or types, and the user did not ask to see anything, and say that instead.
 
-      Publish it as your last step, after your other checks such as a type check, lint or \`git status\`. Right before it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives, so the page opens with one call afterwards. Then do both things the command prints, every time: open the review in that browser (unless you have none), and end your answer with the three lines of the review section it gives you, unchanged: heading, text line and 👉 link. Do not list separate story links next to it or repeat the review link elsewhere in your answer.
+      Publish it as your last step, after your other checks such as a type check, lint or \`git status\`. Then end your answer with the three lines the command prints, unchanged: heading, text line and 👉 link, with nothing after them. Do not list separate story links next to it or repeat the review link elsewhere in your answer.
 
       ## Link to one story
 
@@ -420,7 +418,7 @@ describe('buildUiWorkflowSkill full text', () => {
 
       Publish a review after every change the user can see, and again after each later change. When you changed files, take the story ids from \`stories-changed\`, called after your last edit (and from \`stories-find-by-component\` only for a file it leaves out), also when you only wrote stories; never take them from the test result. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. List every file you created or changed in \`changedFiles\`, story files too. When the user only asks to see or browse components or stories and you changed no files, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, such as a change to a callback, tests or types, and the user did not ask to see anything, and say that instead.
 
-      Publish it as your last step, after your other checks such as a type check, lint or \`git status\`. Right before it, get your in-app browser ready if you have one: load its tool, or read its skill and run the setup code it gives, so the page opens with one call afterwards. Then do both things its result tells you, every time: open the review in that browser (unless you have none), and end your answer with the three lines of the review section it gives you, unchanged: heading, text line and 👉 link. Do not list separate story links next to it or repeat the review link elsewhere in your answer.
+      Publish it as your last step, after your other checks such as a type check, lint or \`git status\`. Then end your answer with the three lines its result gives you, unchanged: heading, text line and 👉 link, with nothing after them. Do not list separate story links next to it or repeat the review link elsewhere in your answer.
 
       ## Link to one story
 

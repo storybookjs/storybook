@@ -2,7 +2,6 @@ import { describe, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
@@ -21,10 +20,6 @@ describe('writing stories for an existing AlertBanner', () => {
   test('uses Storybook story instructions and publishes a display review', () => {
     expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new AlertBanner stories', () => {

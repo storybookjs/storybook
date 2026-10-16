@@ -3,7 +3,6 @@ import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
@@ -35,10 +34,6 @@ describe('creating a Callout in a monorepo UI package', () => {
   test('uses Storybook story instructions and publishes a display review', () => {
     expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new Callout stories', () => {

@@ -2,7 +2,6 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
@@ -21,10 +20,6 @@ describe('creating a ProfileCard component', () => {
   test('uses Storybook story instructions and publishes a display review', () => {
     expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('every new story appears in the display review', () => {

@@ -485,7 +485,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 				## When to call
 				- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
-				- Last: publish it after your tests and other checks (type check, lint); opening the page it returns is your final step. Right before, get your in-app browser ready if you have one (load its tool or run its skill's setup code).
+				- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
 				- Browse request ("show me the Badge component"): resolve via stories-find-by-component / docs-list. Show exactly what was asked. Pass changedFiles: [].
 
 				## Hard rules

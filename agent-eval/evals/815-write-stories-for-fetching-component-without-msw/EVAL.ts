@@ -2,7 +2,6 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
@@ -65,10 +64,6 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
   test('uses Storybook story instructions and publishes a display review', () => {
     expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new OrderHistory stories', () => {

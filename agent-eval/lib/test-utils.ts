@@ -331,67 +331,6 @@ export function findDevServerKillCommands(commands: string[]): string[] {
   );
 }
 
-// URLs the Codex in-app browser navigated to: `goto('<url>')` literals in
-// successful node_repl `js` calls.
-export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
-  return readCodexCompletedItems(rawTranscript).flatMap(getCodexItemNavigations);
-}
-
-function readCodexCompletedItems(rawTranscript: string): Record<string, unknown>[] {
-  return rawTranscript.split('\n').flatMap((line) => {
-    const event = parseJson(line);
-    return isRecord(event) && event.type === 'item.completed' && isRecord(event.item)
-      ? [event.item]
-      : [];
-  });
-}
-
-// A call that passes a variable to `goto` (a loop over URLs) counts the full
-// URL literals in its code instead; a composed URL yields only its literal base.
-function getCodexItemNavigations(item: Record<string, unknown>): string[] {
-  if (item.server !== 'node_repl' || item.tool !== 'js' || !codexItemSucceeded(item)) {
-    return [];
-  }
-
-  const code = isRecord(item.arguments) ? item.arguments.code : undefined;
-  if (typeof code !== 'string') {
-    return [];
-  }
-
-  const literalGotos = [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
-    match[2] === undefined ? [] : [match[2]]
-  );
-  if (!/\.goto\(\s*[A-Za-z_$]/.test(code)) {
-    return literalGotos;
-  }
-  const urlLiterals = [...code.matchAll(/(['"`])(https?:\/\/[^'"`\s]+)\1/g)].flatMap((match) =>
-    match[2] === undefined ? [] : [match[2]]
-  );
-  return [...new Set([...literalGotos, ...urlLiterals])];
-}
-
-function codexItemSucceeded(item: Record<string, unknown>): boolean {
-  if (item.type === 'mcp_tool_call') {
-    return item.status === 'completed' && (item.error === null || item.error === undefined);
-  }
-  if (item.type === 'command_execution') {
-    return item.exit_code === 0;
-  }
-  return false;
-}
-
-function isLocalDevServerUrl(value: string): boolean {
-  try {
-    const { protocol, hostname } = new URL(value);
-    return (
-      (protocol === 'http:' || protocol === 'https:') &&
-      ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(hostname)
-    );
-  } catch {
-    return false;
-  }
-}
-
 // Story IDs must come from a discovery tool (stories-changed, or the
 // stories-find-by-component fallback), never from file names or memory. A
 // published review without a prior discovery call means the agent guessed
@@ -1079,95 +1018,10 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
 
 const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
 
-// Not tied to the link in the final response, so `localhost` versus
-// `127.0.0.1` or a slash difference cannot fail the cell. Only navigations
-// after the first successful review-create count: an earlier visit (for
-// example to check that Storybook runs) does not qualify, while a re-publish
-// updates the already open review page in place.
-export function expectReviewOpenedInBrowser(): void {
-  const steps = getBrowserStepsAroundWorkflowCalls('review-create');
-  const workflowCall = steps.indexOf(WORKFLOW_CALLED);
-  if (workflowCall === -1) {
-    expect.fail(
-      'Expected a successful review-create call before the in-app browser check, but the transcript holds none.'
-    );
-  }
-  const navigations = steps
-    .slice(workflowCall + 1)
-    .filter((step): step is string => typeof step === 'string');
-
-  expect(
-    navigations.length,
-    `Expected the agent to open a URL in the in-app browser after review-create (a navigate / preview_start call, or a Codex goto), but the transcript holds no such browser navigation. Every experiment must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).`
-  ).toBeGreaterThan(0);
-  expect(
-    navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
-    `Expected an in-app browser navigation to the review page on the local dev server after review-create. Navigated to:\n${navigations.join('\n')}`
-  ).toBe(true);
-}
-
-const WORKFLOW_CALLED = Symbol('workflow-called');
-
-// In transcript order: each call of the workflow, and each URL the in-app
-// browser navigated to. Claude's parsed transcript does not pair tool calls
-// with their results, so there a failed call still counts.
-function getBrowserStepsAroundWorkflowCalls(
-  workflowName: string
-): (string | typeof WORKFLOW_CALLED)[] {
-  if (getEvalContext().agent === 'codex') {
-    return readCodexCompletedItems(readFileSync(TRANSCRIPT_PATH, 'utf8')).flatMap<
-      string | typeof WORKFLOW_CALLED
-    >((item) => {
-      const callsWorkflow =
-        (item.type === 'mcp_tool_call' &&
-          typeof item.tool === 'string' &&
-          normalizeStorybookWorkflowName(item.tool) === workflowName) ||
-        (item.type === 'command_execution' &&
-          typeof item.command === 'string' &&
-          shellCommandRunsWorkflow(item.command, workflowName));
-      if (callsWorkflow) {
-        return codexItemSucceeded(item) ? [WORKFLOW_CALLED] : [];
-      }
-      return getCodexItemNavigations(item);
-    });
-  }
-
-  return getTranscript().events.flatMap<string | typeof WORKFLOW_CALLED>((event) => {
-    const name = event.tool?.originalName;
-    const args = event.tool?.args;
-    if (event.type !== 'tool_call' || typeof name !== 'string' || !isRecord(args)) {
-      return [];
-    }
-    if (
-      normalizeStorybookWorkflowName(name) === workflowName ||
-      (typeof args.command === 'string' && shellCommandRunsWorkflow(args.command, workflowName))
-    ) {
-      return [WORKFLOW_CALLED];
-    }
-    if (/^mcp__.+__(?:navigate|preview_start)$/.test(name)) {
-      return typeof args.url === 'string' ? [args.url] : [];
-    }
-    if (/^mcp__.+__browser_batch$/.test(name) && Array.isArray(args.actions)) {
-      return args.actions.flatMap((action) =>
-        isRecord(action) &&
-        typeof action.name === 'string' &&
-        action.name.replace(/^mcp__.+?__/, '') === 'navigate' &&
-        isRecord(action.input) &&
-        typeof action.input.url === 'string'
-          ? [action.input.url]
-          : []
-      );
-    }
-    return [];
-  });
-}
-
-// Substance floor only (relaxed 2026-07-03 after run 28663662412, where
-// correct reviews failed on presentation details): the user must get the
-// review link in the final response, and not a second set of individual
-// story links next to it — one set of links, never both. Presentation
-// quality (headings, disclaimers, link placement) belongs in the
-// judge-scored tier, not this gate.
+// Substance floor (relaxed 2026-07-03 after run 28663662412, where correct
+// reviews failed on presentation details): the user must get the review link
+// in the final response, and not a second set of individual story links next
+// to it — one set of links, never both.
 function expectFinalResponseSharesReviewLink(): void {
   const finalMessage = getFinalAssistantMessage();
   if (finalMessage === undefined) {

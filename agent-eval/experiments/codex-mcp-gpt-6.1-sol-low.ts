@@ -7,7 +7,6 @@ import {
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeCodexInAppBrowserMock,
   writeCodexMcpConfig,
   writeMcpAgentInstructions,
 } from '../lib/templates.ts';
@@ -26,7 +25,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp', model });
     await writeCodexMcpConfig(sandbox);
-    await writeCodexInAppBrowserMock(sandbox);
     await writeMcpAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },

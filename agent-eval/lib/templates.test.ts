@@ -12,8 +12,6 @@ import {
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
   type WorkspacePackage,
-  writeClaudeInAppBrowserMock,
-  writeCodexInAppBrowserMock,
   writeCodexLunaTestRules,
   writeStorybookAgentInstructions,
 } from './templates.ts';
@@ -205,27 +203,6 @@ function createSandbox(files: Record<string, string>): Sandbox {
   } as unknown as Sandbox;
 }
 
-describe('writeClaudeInAppBrowserMock', () => {
-  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
-    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
-    const files: Record<string, string> = {
-      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
-    };
-
-    await writeClaudeInAppBrowserMock(createSandbox(files));
-
-    expect(JSON.parse(files['.mcp.json'] ?? '')).toEqual({
-      mcpServers: {
-        'storybook-dev-mcp': storybookServer,
-        Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
-      },
-    });
-    expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
-    expect(files['CLAUDE.md']).toBeUndefined();
-    expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
-  });
-});
-
 describe('writeCodexLunaTestRules', () => {
   const instructionsFile = '/home/user/.codex/storybook-eval-instructions.md';
 
@@ -245,8 +222,9 @@ describe('writeCodexLunaTestRules', () => {
   }
 
   it('points the Codex config at the instructions it writes, above the tables', async () => {
-    const files: Record<string, string> = {};
-    await writeCodexInAppBrowserMock(createSandbox(files));
+    const files: Record<string, string> = {
+      '.codex/config.toml': '[mcp_servers.storybook]\nurl = "http://127.0.0.1:6006/mcp"\n',
+    };
     const { sandbox, commands } = createCodexSandbox(files);
 
     await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
@@ -257,7 +235,7 @@ describe('writeCodexLunaTestRules', () => {
     const config = files['.codex/config.toml'] ?? '';
     expect(
       config.startsWith(
-        `model_instructions_file = "${instructionsFile}"\n\n[mcp_servers.node_repl]\n`
+        `model_instructions_file = "${instructionsFile}"\n\n[mcp_servers.storybook]\n`
       )
     ).toBe(true);
     expect(config.match(/model_instructions_file/g)).toHaveLength(1);
@@ -283,9 +261,8 @@ describe('writeStorybookAgentInstructions', () => {
     ));
   });
 
-  it('writes the section of create storybook to AGENTS.md, next to the browser rule', async () => {
+  it('writes the section of create storybook to AGENTS.md', async () => {
     const files: Record<string, string> = {};
-    await writeClaudeInAppBrowserMock(createSandbox(files));
 
     await writeStorybookAgentInstructions(createSandbox(files));
 

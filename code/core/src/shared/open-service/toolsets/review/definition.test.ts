@@ -80,9 +80,7 @@ describe('review.create', () => {
       reviewUrl,
       collectionCount: 1,
       storyCount: 1,
-      instructions: expect.stringContaining(
-        `Open ${reviewUrl} in your in-app browser now, as your very next step.`
-      ),
+      instructions: expect.stringContaining(`👉 [Open the Storybook review page](${reviewUrl})`),
     });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/review', { internal: true });
@@ -186,31 +184,11 @@ This usually means the IDs were inferred from file paths or naming conventions r
       expect(outcome.markdown).toContain(`Review applied: 2 collections, 2 stories.`);
     });
 
-    it('tells MCP to reuse the request-derived UI root, not the bare origin', async () => {
-      // A sub-path-hosted Storybook serves its UI under the request root; "already running at"
-      // must name the address the agent can actually reach, like the review link does.
-      const outcome = await createReview(
-        {},
-        {
-          ...mcpCtx,
-          origin: 'http://localhost:6006/nested',
-        }
-      );
-
-      expect(outcome.markdown).toContain(
-        'Storybook is already running at http://localhost:6006/nested — reuse it.'
-      );
-    });
-
-    it('tells MCP to open the page itself and to surface the link to the user', async () => {
+    it('asks for one thing: to end the final response with the three review lines', async () => {
       const outcome = await createReview({}, mcpCtx);
 
       expect(outcome.markdown)
-        .toBe(`Review applied: 1 collection, 1 story. Storybook is already running at http://localhost:6006 — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
-
-Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now, as your very next step.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Reading a skill does not open the page, also when you read it earlier: run the code it gives you until the browser has navigated to this URL, and run nothing else in between, not even \`git status\`. Write your final response only after that. Skip this only when you have no such tool.
-2. **Then write your final response and end it with these three lines.** Copy them unchanged and put nothing after them. Do not describe the review in your own words instead, and do not mention its link anywhere else in your answer:
+        .toBe(`Review applied: 1 collection, 1 story. Now write your final response and end it with these three lines, copied unchanged, with nothing after them. Do not describe the review in your own words, and do not mention its link anywhere else in your answer:
 
 ## 👀 Review your changes
 The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.
@@ -242,15 +220,16 @@ The review shows the 1 story you asked to see. Because this is AI-curated, resul
       );
     });
 
-    it('asks to get an in-app browser ready, if there is one, before publishing', () => {
+    it('makes the review the last step and the three lines the end of the answer', () => {
       const description = resolveToolsetDescription(
         reviewToolset.methods.create.description,
         mcpCtx
       );
 
       expect(description).toContain(
-        "Right before, get your in-app browser ready if you have one (load its tool or run its skill's setup code)"
+        '- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.'
       );
+      expect(description).not.toContain('browser');
     });
 
     it('names the discovery tools as CLI commands', () => {

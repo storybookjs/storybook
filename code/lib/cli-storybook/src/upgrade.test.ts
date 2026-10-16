@@ -5,13 +5,18 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
-import { type JsPackageManager, PackageManagerName, versions } from 'storybook/internal/common';
+import {
+  HandledError,
+  type JsPackageManager,
+  PackageManagerName,
+  versions,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
-import { checkVersionConsistency, getStorybookVersion } from './upgrade.ts';
+import { checkVersionConsistency, getStorybookVersion, withNpmForceFallback } from './upgrade.ts';
 import { collectProjects, generateUpgradeSpecs, isSuccessResult } from './util.ts';
 
 const findInstallationsMock =
@@ -572,5 +577,72 @@ describe('Project collection', () => {
     expect(isSuccessResult(results[0]) && results[0].packageManager.type).toBe(
       PackageManagerName.PNPM
     );
+  });
+});
+
+describe('withNpmForceFallback', () => {
+  it('installs without --force for npm when the first install succeeds', async () => {
+    const installDependencies = vi.fn().mockResolvedValue(undefined);
+    const manager = {
+      type: PackageManagerName.NPM,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+    expect(installDependencies.mock.calls[0]).toEqual([]);
+  });
+
+  it('retries npm with --force after a peer dependency conflict', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('npm error code ERESOLVE'))
+      .mockResolvedValue(undefined);
+    const manager = {
+      type: PackageManagerName.NPM,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await withNpmForceFallback(manager, installDependencies);
+
+    expect(installDependencies.mock.calls).toEqual([[], [{ force: true }]]);
+  });
+
+  it('rethrows npm failures other than peer dependency conflicts without a second install', async () => {
+    const installDependencies = vi.fn().mockRejectedValue(new Error('npm error code EACCES'));
+    const manager = {
+      type: PackageManagerName.NPM,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow('EACCES');
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows HandledError without a second install', async () => {
+    const installDependencies = vi
+      .fn()
+      .mockRejectedValue(new HandledError('Minimum release age policy blocked the install'));
+    const manager = {
+      type: PackageManagerName.NPM,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(HandledError);
+    expect(installDependencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('rethrows non-npm install failures without a second install', async () => {
+    const installDependencies = vi.fn().mockRejectedValue(new Error('yarn install failed'));
+    const manager = {
+      type: PackageManagerName.YARN1,
+      installDependencies,
+    } as unknown as JsPackageManager;
+
+    await expect(withNpmForceFallback(manager, installDependencies)).rejects.toThrow(
+      'yarn install failed'
+    );
+    expect(installDependencies).toHaveBeenCalledTimes(1);
   });
 });

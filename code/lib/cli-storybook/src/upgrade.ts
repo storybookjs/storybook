@@ -2,9 +2,11 @@ import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
+  type JsPackageManager,
   JsPackageManagerFactory,
   isCI,
   isCorePackage,
+  isNpmPeerResolutionError,
   resolveStorybookVersionSpecifier,
   getProcessAncestry,
 } from 'storybook/internal/common';
@@ -490,12 +492,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
         : storybookProjects[0].packageManager;
 
-    if (rootPackageManager.type === 'npm') {
-      // see https://github.com/npm/cli/issues/8059 for more details
-      await rootPackageManager.installDependencies({ force: true });
-    } else {
-      await rootPackageManager.installDependencies();
-    }
+    await withNpmForceFallback(rootPackageManager, (options) =>
+      rootPackageManager.installDependencies(options)
+    );
 
     if (
       rootPackageManager.type !== PackageManagerName.YARN1 &&
@@ -513,12 +512,9 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }));
 
       if (dedupe) {
-        if (rootPackageManager.type === 'npm') {
-          // see https://github.com/npm/cli/issues/8059 for more details
-          await rootPackageManager.dedupeDependencies({ force: true });
-        } else {
-          await rootPackageManager.dedupeDependencies();
-        }
+        await withNpmForceFallback(rootPackageManager, (options) =>
+          rootPackageManager.dedupeDependencies(options)
+        );
       } else {
         logger.log(
           `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`
@@ -638,3 +634,19 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     process.removeListener('SIGTERM', handleInterruption);
   }
 }
+
+export const withNpmForceFallback = async (
+  packageManager: JsPackageManager,
+  operation: (options?: { force?: boolean }) => Promise<void>
+) => {
+  try {
+    await operation();
+  } catch (error) {
+    if (packageManager.type !== PackageManagerName.NPM || !isNpmPeerResolutionError(error)) {
+      throw error;
+    }
+    // npm/cli#8059: forcing resolves the conflict but can spin on large trees, so it is only a fallback.
+    logger.warn('Peer dependency conflict detected; retrying with --force');
+    await operation({ force: true });
+  }
+};

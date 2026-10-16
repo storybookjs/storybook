@@ -231,3 +231,6 @@ export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERRO
   const allLines = output.split('\n');
   return allLines.slice(-lines).join('\n').trim();
 };
+
+export const isNpmPeerResolutionError = (error: unknown): boolean =>
+  /npm\s+(?:ERR!|error)\s+code\s+ERESOLVE/i.test(getErrorLogs(error));

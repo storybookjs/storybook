@@ -13,6 +13,7 @@ import {
   getStorybookRerunInstruction,
   getVitestStorybookRunCommand,
   hasStorybookMinimumAgeExclusions,
+  isNpmPeerResolutionError,
   parsePackageData,
   parsePackageTimeMap,
   parsePositiveIntegerConfigValue,
@@ -170,5 +171,12 @@ describe('js package manager util', () => {
         message: 'message',
       })
     ).toBe('short\nstderr\nmessage');
+  });
+
+  it('detects npm peer resolution errors from error logs', () => {
+    expect(isNpmPeerResolutionError(new Error('npm error code ERESOLVE'))).toBe(true);
+    expect(isNpmPeerResolutionError(new Error('npm ERR! code ERESOLVE'))).toBe(true);
+    expect(isNpmPeerResolutionError(new Error('npm error code EACCES'))).toBe(false);
+    expect(isNpmPeerResolutionError(new Error('something went wrong'))).toBe(false);
   });
 });

@@ -75,9 +75,11 @@ describe('webpack loader', () => {
     expect(result.code).toContain('originalSource');
     const output = positionOf(result.code, 'play:');
     const entry = new SourceMap(result.map).findEntry(output.line, output.column);
-    expect(entry).toMatchObject({ originalLine: positionOf(originalCode, 'play:').line });
-    // Windows paths come back with forward slashes.
-    expect((entry as { originalSource?: string }).originalSource).toMatch(/Button\.stories\.tsx$/);
+    expect(entry).toMatchObject({
+      originalLine: positionOf(originalCode, 'play:').line,
+      originalSource: id,
+    });
+    expect(result.map.sources).toEqual([id]);
     expect(result.map.sourcesContent).toEqual([originalCode]);
   });
 

@@ -152,9 +152,14 @@ export class SourceEditor {
       maps.push(options.inputSourceMap as SourceMapInput);
     }
     const composed = remapping(maps, () => null);
+    // Keep the source names as the input map spelled them: remapping normalizes them to URLs.
+    const input =
+      typeof options.inputSourceMap === 'string'
+        ? (JSON.parse(options.inputSourceMap) as Exclude<InputSourceMap, string>)
+        : options.inputSourceMap;
     return new SourceMap({
       file: composed.file ?? '',
-      sources: composed.sources.map((name) => (options.inputSourceMap ? (name ?? '') : source)),
+      sources: composed.sources.map((name, index) => input?.sources[index] ?? name ?? source),
       sourcesContent: composed.sourcesContent?.map((content) => content ?? ''),
       names: composed.names,
       // Encoded, since `decodedMappings` was not requested.
@@ -341,36 +346,90 @@ export const lineIndent = (code: string, index: number) => {
 
 const isMultiline = (code: string, list: List) => code.slice(list.open, list.close).includes('\n');
 
-// Offsets of the line breaks in `text` that separate code, excluding those inside string and
-// template literals, whose line breaks are part of the value.
-const codeLineBreaks = (text: string) => {
-  const breaks: number[] = [];
+// Offsets of the line breaks in `text` that are part of a value: inside string and regex literals
+// and template quasis. JSX text is not one: JSX trims its lines. Read from the parsed text, so no
+// scanner has to know the grammar.
+const valueLineBreaks = (text: string): Set<number> | undefined => {
+  const parsed = parseLoosely(text);
+  if (!parsed) {
+    return undefined;
+  }
+  const breaks = new Set<number>();
+  walk(parsed.program, (node) => {
+    if (
+      node.type === 'TemplateElement' ||
+      (node.type === 'Literal' && (typeof node.value === 'string' || 'regex' in node))
+    ) {
+      const { start, end } = node as Node & { start: number; end: number };
+      for (let index = start; index < end; index++) {
+        if (text[index - parsed.offset] === '\n') {
+          breaks.add(index - parsed.offset);
+        }
+      }
+    }
+  });
+  return breaks;
+};
+
+// A fragment of source: statements, a `key: value` member (a labeled statement) or an expression.
+const parseLoosely = (text: string): { program: E.Program; offset: number } | undefined => {
+  try {
+    return { program: parseModule(text).program, offset: 0 };
+  } catch {
+    try {
+      return { program: parseModule(`(${text}\n)`).program, offset: 1 };
+    } catch {
+      return undefined;
+    }
+  }
+};
+
+// Fallback for text that is not parseable on its own, such as an import specifier: a scanner that
+// tracks strings, templates, comments and regex literals.
+const scannedValueLineBreaks = (text: string): Set<number> => {
+  const breaks = new Set<number>();
   type Context = 'template' | { depth: number };
   const stack: Context[] = [{ depth: 0 }];
   let quote: string | undefined;
   let comment: 'line' | 'block' | undefined;
+  let regex = false;
+  let last = '';
   for (let index = 0; index < text.length; index++) {
     const char = text[index];
     const top = stack.at(-1)!;
     if (quote) {
       if (char === '\\') {
+        if (text[index + 1] === '\n') {
+          breaks.add(index + 1);
+        }
         index++;
       } else if (char === quote || char === '\n') {
         quote = undefined;
       }
-    } else if (comment === 'line') {
+      continue;
+    }
+    if (regex) {
+      if (char === '\\') {
+        index++;
+      } else if (char === '/' || char === '\n') {
+        regex = false;
+      }
+      continue;
+    }
+    if (comment === 'line') {
       if (char === '\n') {
         comment = undefined;
-        breaks.push(index);
       }
-    } else if (comment === 'block') {
-      if (char === '\n') {
-        breaks.push(index);
-      } else if (text.startsWith('*/', index)) {
+      continue;
+    }
+    if (comment === 'block') {
+      if (text.startsWith('*/', index)) {
         comment = undefined;
         index++;
       }
-    } else if (top === 'template') {
+      continue;
+    }
+    if (top === 'template') {
       if (char === '\\') {
         index++;
       } else if (char === '`') {
@@ -378,10 +437,12 @@ const codeLineBreaks = (text: string) => {
       } else if (text.startsWith('${', index)) {
         stack.push({ depth: 0 });
         index++;
+      } else if (char === '\n') {
+        breaks.add(index);
       }
-    } else if (char === '\n') {
-      breaks.push(index);
-    } else if (char === "'" || char === '"') {
+      continue;
+    }
+    if (char === "'" || char === '"') {
       quote = char;
     } else if (char === '`') {
       stack.push('template');
@@ -389,6 +450,8 @@ const codeLineBreaks = (text: string) => {
       comment = 'line';
     } else if (text.startsWith('/*', index)) {
       comment = 'block';
+    } else if (char === '/' && /^$|[(,=:[!&|?{};+\-*%<>~^]/.test(last)) {
+      regex = true;
     } else if (char === '{') {
       top.depth++;
     } else if (char === '}') {
@@ -397,6 +460,9 @@ const codeLineBreaks = (text: string) => {
       } else {
         top.depth--;
       }
+    }
+    if (!/\s/.test(char)) {
+      last = char;
     }
   }
   return breaks;
@@ -407,12 +473,17 @@ export const reindent = (text: string, from: string, to: string) => {
   if (from === to || !text.includes('\n')) {
     return text;
   }
+  const values = valueLineBreaks(text) ?? scannedValueLineBreaks(text);
   let result = '';
   let cursor = 0;
-  for (const lineBreak of codeLineBreaks(text)) {
+  for (
+    let lineBreak = text.indexOf('\n');
+    lineBreak !== -1;
+    lineBreak = text.indexOf('\n', cursor)
+  ) {
     result += text.slice(cursor, lineBreak + 1);
     cursor = lineBreak + 1;
-    if (text.startsWith(from, cursor)) {
+    if (!values.has(lineBreak) && text.startsWith(from, cursor)) {
       result += to;
       cursor += from.length;
     }

@@ -63,6 +63,18 @@ describe('reindent', () => {
     );
   });
 
+  it('does not mistake a regex backtick or JSX text for a template', () => {
+    expect(reindent('{\n    a: /`/.test(s),\n    b: `x\n    y`,\n  }', '  ', '')).toBe(
+      '{\n  a: /`/.test(s),\n  b: `x\n    y`,\n}'
+    );
+    expect(reindent("<p>\n    Don't\n    stop\n  </p>", '  ', '')).toBe(
+      "<p>\n  Don't\n  stop\n</p>"
+    );
+    expect(reindent("{\n    text: 'first\\\nsecond',\n  }", '  ', '')).toBe(
+      "{\n  text: 'first\\\nsecond',\n}"
+    );
+  });
+
   it('re-indents code inside template expressions', () => {
     expect(reindent('`${\nfn()\n}`', '', '  ')).toBe('`${\n  fn()\n  }`');
   });

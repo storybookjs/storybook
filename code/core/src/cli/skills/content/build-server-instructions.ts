@@ -1,100 +1,61 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
-import devInstructions from './instructions/dev-instructions.md';
-import docsInstructions from './instructions/docs-instructions.md';
-import testInstructions from './instructions/test-instructions.md';
-import type { SkillTransport } from './skill-refs.ts';
-import { getSkillRef } from './skill-refs.ts';
 
 export type ServerInstructionsInputs = {
-  transport: SkillTransport;
   devEnabled: boolean;
   testSupported: boolean;
   docsEnabled: boolean;
-  /** `stories-find-by-component` is registered, so the workflow can point at it. */
-  moduleGraphSupported: boolean;
 };
 
 /**
- * The full rule for how the agent should present links in its final
- * user-facing response, delivered through the
- * `get-storybook-story-instructions` output. The server instructions only
- * carry a terse pointer to the same rule: MCP clients truncate server
- * instructions (Claude Code cuts them at 2,048 chars), so anything beyond
- * the workflow trigger must live in tool descriptions and tool results.
- *
- * The guidance covers both paths: ending with a review section after
- * publishing, or falling back to preview URLs when no review was published
- * (e.g. non-visual refactors).
+ * The MCP counterpart of the `## Storybook` section that `create storybook` writes in `AGENTS.md`:
+ * the same tasks in the same words, but each one runs its skill with `--mcp`, which names the
+ * tools of this server instead of CLI commands, so both paths follow one text. MCP clients truncate
+ * server instructions (Claude Code cuts them at 2,048 chars), so anything more belongs in the
+ * skills.
  */
-export function getFinalLinksGuidance(transport: SkillTransport): string {
-  const ref = getToolName({ transport });
-  return `In your final user-facing response, show one set of links — never both. If you published a review with **${ref('review.create')}**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example \`## 👀 Review your changes\`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned \`reviewUrl\` (for example \`👉 [Open the Storybook review page](<reviewUrl>)\`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. A visually observable change is not finished until its review is published — never substitute preview URLs for the review. If **${ref('review.create')}** keeps failing, end with the **${ref('stories.preview')}** URLs instead and say the review could not be published. Only when there is no review because the change has no visually observable impact, say so plainly; include preview URLs only if the user asked to see specific stories.`;
-}
-
 export function buildServerInstructions({
-  transport,
-  ...options
+  devEnabled,
+  testSupported,
+  docsEnabled,
 }: ServerInstructionsInputs): string {
-  const ref = getToolName({ transport });
-  const skillRef = getSkillRef(transport);
+  const ref = getToolName({ transport: 'mcp' });
 
-  // The docs-question rule lives in the very first line: agents (observed on
-  // Claude Code) default to grepping component source for props/usage
-  // questions and never reach a rule that only appears further down in the
-  // Documentation Workflow section.
-  const sections = [
-    options.docsEnabled
-      ? 'Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.'
-      : 'Follow these workflows when working with UI and/or Storybook.',
-  ];
+  const steps = [
+    docsEnabled && 'looks up the components to reuse',
+    'updates your stories',
+    testSupported && 'runs the tests',
+    'publishes a review of the results',
+  ].filter(Boolean);
+  const workflow = `${steps.slice(0, -1).join(', ')}${steps.length > 2 ? ',' : ''} and ${steps.at(-1)}`;
 
-  if (options.devEnabled) {
-    // The after-change step must not end in stories-preview: agents treat that as an alternative
-    // ending and skip review-create.
-    const previewStoriesStep = `After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **${ref('stories.changed')}** to discover the affected stories.`;
-    // Terse pointer only: the full link-presentation rule reaches the agent
-    // through the get-storybook-story-instructions output (getFinalLinksGuidance)
-    // and the review-create and stories-preview tool results, which are
-    // never truncated.
-    const finalLinksStep = `End your final response with the review section from **${ref('review.create')}**'s result — never substitute preview URLs. **${ref('stories.preview')}** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.`;
-    sections.push(
-      devInstructions
-        .replace(
-          '{{STORY_INSTRUCTIONS_STEP}}',
-          `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
-        )
-        .replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
-        .replace('{{FINAL_LINKS_STEP}}', finalLinksStep)
-        .replace(
-          '{{DISPLAY_REVIEW_STEP}}',
-          `\n- After a visually observable UI change, or when the user asks to see or browse stories/components, call **${ref('review.create')}** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.`
-        )
-        .replace(
-          '{{FIND_BY_COMPONENT_STEP}}',
-          options.moduleGraphSupported
-            ? ` **${ref('stories.findByComponent')}** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.`
-            : ''
-        )
-        .trim()
-    );
-  }
+  const tasks = [
+    devEnabled &&
+      `- \`npx storybook skills ui-workflow --mcp\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks;${testSupported ? ' you run or fix story tests;' : ''} or the user asks to see components or stories. It ${workflow}.`,
+    !devEnabled &&
+      testSupported &&
+      `- \`${ref('test.run')}\`: you run or fix story tests. It is the only way to run them, never a \`package.json\` test script; finish with one run without \`stories\`, and never finish with failing tests.`,
+    docsEnabled &&
+      `- \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.`,
+  ].filter(Boolean);
 
-  if (options.testSupported) {
-    sections.push(testInstructions.replaceAll('{{RUN_STORY_TESTS}}', ref('test.run')).trim());
-  }
-
-  if (options.docsEnabled) {
-    sections.push(
-      docsInstructions
-        .replaceAll('{{DOCS_LIST}}', ref('docs.list'))
-        .replaceAll('{{DOCS_SHOW}}', ref('docs.show'))
-        .trim()
-    );
-  }
-
-  if (sections.length === 1) {
+  if (tasks.length === 0) {
     return '';
   }
 
-  return sections.join('\n\n');
+  const runsSkills = devEnabled || docsEnabled;
+  const callsTool = !devEnabled && testSupported;
+  const first = [runsSkills && 'run its Storybook skill', callsTool && 'call its Storybook tool']
+    .filter(Boolean)
+    .join(' or ');
+  const skillRule = runsSkills
+    ? ' Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`.'
+    : '';
+  const follow = runsSkills ? 'follow it' : 'follow its result';
+  const intro = `For ${tasks.length > 1 ? 'each of these tasks' : 'this task'}, ${first} first, before you edit any file, and ${follow}.${skillRule}`;
+
+  return `## Storybook
+
+${intro}
+
+${tasks.join('\n')}`;
 }

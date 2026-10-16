@@ -12,7 +12,7 @@ import {
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
   type WorkspacePackage,
-  writeClaudeInAppBrowserMock,
+  writeCodexLunaTestRules,
   writeStorybookAgentInstructions,
 } from './templates.ts';
 
@@ -39,36 +39,6 @@ describe('addMcpAddon', () => {
         '@storybook/addon-mcp': 'workspace:*',
       });
     }
-  });
-});
-
-// The Codex MCP experiment copies the server instructions into AGENTS.md, so a
-// change to them must update the copy too.
-describe('Codex AGENTS.md instructions', () => {
-  let buildServerInstructions: (options: Record<string, unknown>) => string;
-
-  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's
-  // sources. Inside `beforeAll`, a moved file fails only these tests.
-  beforeAll(async () => {
-    ({ buildServerInstructions } = await import(
-      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/skills/content/build-server-instructions.ts')
-    ));
-  });
-
-  // The server derives these flags from the sandbox (`getToolAvailability`); they match the MCP
-  // fixtures, which are all react-vite with addon-vitest, docs and MCP. Keep them in sync.
-  it('match the server instructions', () => {
-    const copy = readFileSync(join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md'), 'utf8');
-
-    expect(copy.trim()).toBe(
-      buildServerInstructions({
-        transport: 'mcp',
-        devEnabled: true,
-        testSupported: true,
-        docsEnabled: true,
-        moduleGraphSupported: true,
-      }).trim()
-    );
   });
 });
 
@@ -233,24 +203,52 @@ function createSandbox(files: Record<string, string>): Sandbox {
   } as unknown as Sandbox;
 }
 
-describe('writeClaudeInAppBrowserMock', () => {
-  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
-    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
-    const files: Record<string, string> = {
-      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
+describe('writeCodexLunaTestRules', () => {
+  const instructionsFile = '/home/user/.codex/storybook-eval-instructions.md';
+
+  function createCodexSandbox(files: Record<string, string>, nodeExitCode = 0) {
+    const sandbox = createSandbox(files);
+    const commands: string[][] = [];
+    sandbox.runCommand = async (command: string, args: string[] = []) => {
+      commands.push([command, ...args]);
+      const node = command === 'node';
+      return {
+        stdout: node && nodeExitCode === 0 ? instructionsFile : '',
+        stderr: node && nodeExitCode !== 0 ? 'do not have the line' : '',
+        exitCode: node ? nodeExitCode : 0,
+      };
     };
+    return { sandbox, commands };
+  }
 
-    await writeClaudeInAppBrowserMock(createSandbox(files));
+  it('points the Codex config at the instructions it writes, above the tables', async () => {
+    const files: Record<string, string> = {
+      '.codex/config.toml': '[mcp_servers.storybook]\nurl = "http://127.0.0.1:6006/mcp"\n',
+    };
+    const { sandbox, commands } = createCodexSandbox(files);
 
-    expect(JSON.parse(files['.mcp.json'] ?? '')).toEqual({
-      mcpServers: {
-        'storybook-dev-mcp': storybookServer,
-        Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
-      },
-    });
-    expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
-    expect(files['CLAUDE.md']).toBeUndefined();
-    expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
+    await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
+    await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
+
+    expect(commands[1]?.slice(0, 2)).toEqual(['node', '-e']);
+    expect(commands[1]?.[3]).toBe('gpt-6-luna');
+    const config = files['.codex/config.toml'] ?? '';
+    expect(
+      config.startsWith(
+        `model_instructions_file = "${instructionsFile}"\n\n[mcp_servers.storybook]\n`
+      )
+    ).toBe(true);
+    expect(config.match(/model_instructions_file/g)).toHaveLength(1);
+  });
+
+  it('fails when the script cannot write the instructions', async () => {
+    const files: Record<string, string> = {};
+    const { sandbox } = createCodexSandbox(files, 1);
+
+    await expect(writeCodexLunaTestRules(sandbox, 'gpt-6-luna')).rejects.toThrow(
+      'Failed to write the gpt-6-luna instructions: do not have the line'
+    );
+    expect(files).toEqual({});
   });
 });
 
@@ -263,9 +261,8 @@ describe('writeStorybookAgentInstructions', () => {
     ));
   });
 
-  it('writes the section of create storybook to AGENTS.md, next to the browser rule', async () => {
+  it('writes the section of create storybook to AGENTS.md', async () => {
     const files: Record<string, string> = {};
-    await writeClaudeInAppBrowserMock(createSandbox(files));
 
     await writeStorybookAgentInstructions(createSandbox(files));
 

@@ -117,7 +117,7 @@ const runInputSchema = v.strictObject({
       v.description(
         `Stories to test for focused feedback. Omit this field to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
-and only omit this when you explicitly need to run all tests for comprehensive verification.
+and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 Use { storyId } when IDs were discovered from documentation tools.
 Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`

@@ -80,7 +80,7 @@ describe('review.create', () => {
       reviewUrl,
       collectionCount: 1,
       storyCount: 1,
-      instructions: expect.stringContaining(`Open ${reviewUrl} in your in-app browser now.`),
+      instructions: expect.stringContaining(`👉 [Open the Storybook review page](${reviewUrl})`),
     });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/review', { internal: true });
@@ -184,31 +184,26 @@ This usually means the IDs were inferred from file paths or naming conventions r
       expect(outcome.markdown).toContain(`Review applied: 2 collections, 2 stories.`);
     });
 
-    it('tells MCP to reuse the request-derived UI root, not the bare origin', async () => {
-      // A sub-path-hosted Storybook serves its UI under the request root; "already running at"
-      // must name the address the agent can actually reach, like the review link does.
-      const outcome = await createReview(
-        {},
-        {
-          ...mcpCtx,
-          origin: 'http://localhost:6006/nested',
-        }
-      );
-
-      expect(outcome.markdown).toContain(
-        'Storybook is already running at http://localhost:6006/nested — reuse it.'
-      );
-    });
-
-    it('tells MCP to open the page itself and to surface the link to the user', async () => {
+    it('asks for one thing: to end the final response with the three review lines', async () => {
       const outcome = await createReview({}, mcpCtx);
 
       expect(outcome.markdown)
-        .toBe(`Review applied: 1 collection, 1 story. Storybook is already running at http://localhost:6006 — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+        .toBe(`Review applied: 1 collection, 1 story. Now write your final response and end it with these three lines, copied unchanged, with nothing after them. Do not describe the review in your own words, and do not mention its link anywhere else in your answer:
 
-Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`);
+## 👀 Review your changes
+The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.
+👉 [Open the Storybook review page](${reviewUrl})`);
+    });
+  });
+
+  describe('a browse review, which changed no files', () => {
+    it('titles the review section after the stories the user asked to see', async () => {
+      const outcome = await createReview({ changedFiles: [] }, mcpCtx);
+
+      expect(outcome.markdown).toContain(`## 👀 See the stories
+The review shows the 1 story you asked to see. Because this is AI-curated, results may be inaccurate or incomplete.
+👉 [Open the Storybook review page](${reviewUrl})`);
+      expect(outcome.markdown).not.toContain('Review your changes');
     });
   });
 
@@ -220,7 +215,21 @@ Two things you must do now, both of them:
       );
 
       expect(description).toContain('Start from stories-changed;');
-      expect(description).toContain('fall back to stories-find-by-component if');
+      expect(description).toContain(
+        'use stories-find-by-component only for a file it leaves out, or when it is unavailable.'
+      );
+    });
+
+    it('makes the review the last step and the three lines the end of the answer', () => {
+      const description = resolveToolsetDescription(
+        reviewToolset.methods.create.description,
+        mcpCtx
+      );
+
+      expect(description).toContain(
+        '- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.'
+      );
+      expect(description).not.toContain('browser');
     });
 
     it('names the discovery tools as CLI commands', () => {
@@ -231,7 +240,7 @@ Two things you must do now, both of them:
 
       expect(description).toContain('Start from npx storybook tools stories changed;');
       expect(description).toContain(
-        'fall back to npx storybook tools stories find-by-component if'
+        'use npx storybook tools stories find-by-component only for a file it leaves out'
       );
     });
   });

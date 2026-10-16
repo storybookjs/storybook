@@ -41,11 +41,9 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
       return buildServerInstructions({
-        transport: 'mcp',
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
         testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
-        moduleGraphSupported: availability.moduleGraphSupported,
       });
     },
     capabilities: {

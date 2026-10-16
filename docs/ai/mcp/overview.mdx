@@ -107,7 +107,7 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 - Query `docs-show` for that component to see all available properties and examples
 - Only use properties that are explicitly documented or shown in example stories
 - If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
-- Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
+- Run `npx storybook skills ui-workflow --mcp` for the instructions to create or update stories, and follow them. It names the MCP tools each step calls.
 - Check your work by running `test-run`.
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
@@ -166,17 +166,13 @@ The MCP server provides a set of tools that an agent can call to interact with y
 
 ### Development
 
-The development toolset provides tools for authoring well-considered stories (including [interaction tests](../../writing-tests/interaction-testing.mdx)) and previewing those stories in the agent's chat interface. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
+The development toolset provides tools to find the stories a change affects, preview them in the agent's chat interface, and publish a review of them. The workflow that uses them, including how to write well-considered stories with [interaction tests](../../writing-tests/interaction-testing.mdx), comes from `npx storybook skills ui-workflow --mcp`. This allows you to easily check the agent's work, and the generated stories can serve as tests (which the agent can run, with the [testing toolset](#testing), to validate that the generated UI works as intended).
 
 The development toolset includes the following tools:
 
 #### `stories-changed`
 
 Returns a list of stories that are changed or possibly affected by local file changes, using [change detection](../../configure/user-interface/change-detection.mdx).
-
-#### `get-storybook-story-instructions`
-
-Returns instructions on how to write useful stories, including which props to capture and how to write interaction tests for the story (if applicable).
 
 #### `stories-preview`
 

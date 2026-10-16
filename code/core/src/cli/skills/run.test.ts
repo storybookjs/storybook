@@ -2,33 +2,13 @@ import { relative } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { resolveSkillsIntent, runSkillsCommand } from './run.ts';
-
-const toolset = (id: string, methodNames: string[]): ToolsetCatalogEntry => ({
-  id,
-  description: `${id} tools.`,
-  methods: methodNames.map((methodName) => ({
-    ref: `${id}.${methodName}` as ToolsetMethodId,
-    title: methodName,
-    description: `Describes ${id}.${methodName}.`,
-    requiresDevServer: false,
-    input: { type: 'object', properties: {} },
-  })),
-});
-
-const describedTools = (output: string) =>
-  [...output.matchAll(/^Usage: npx storybook tools (.+) \[--key value \.\.\.\]$/gm)].map(
-    ([, command]) => command
-  );
 
 const deps = () => ({
   loadStorybook: vi.fn().mockResolvedValue({ presets: { apply: vi.fn() } }),
   resolveSkillInputs: vi.fn().mockResolvedValue({
     framework: '@storybook/react-vite',
-    renderer: '@storybook/react',
     csfFactories: false,
     previewFile: '.storybook/preview.ts',
     typescript: true,
@@ -40,6 +20,8 @@ const deps = () => ({
     testSupported: true,
     a11yEnabled: false,
     docgenServer: false,
+    mcpToolsets: { dev: true, docs: true, test: true },
+    composed: false,
   }),
   getProjectInfo: vi.fn().mockResolvedValue({
     ok: true,
@@ -48,12 +30,6 @@ const deps = () => ({
   getSetupMarkdown: vi
     .fn()
     .mockResolvedValue({ markdown: '# Storybook Setup', prompt: 'optimized-tests' }),
-  describeToolsets: vi.fn(() => [
-    toolset('stories', ['preview', 'changed', 'findByComponent']),
-    toolset('review', ['create']),
-    toolset('docs', ['list', 'show', 'showStory']),
-    toolset('test', ['run']),
-  ]),
 });
 
 describe('resolveSkillsIntent', () => {
@@ -124,6 +100,13 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
+  it('component-docs prints the same text for every project, without loading config', async () => {
+    const d = deps();
+    const result = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
+    expect(result.output).toContain('# Storybook component docs');
+    expect(d.loadStorybook).not.toHaveBeenCalled();
+  });
+
   it('ui-workflow prints the workflow with CLI commands', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
@@ -150,6 +133,73 @@ describe('runSkillsCommand', () => {
     expect(writeStory.output).toContain('npx storybook tools docs list');
   });
 
+  it('--mcp names the MCP tools, on the MCP docs gate', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: true,
+      docsEnabledForCli: true,
+    });
+
+    const uiWorkflow = await runSkillsCommand(
+      { tokens: ['ui-workflow'], mcp: true, target: {} },
+      d
+    );
+    expect(uiWorkflow.output).toContain('tools of the Storybook MCP server');
+    expect(uiWorkflow.output).toContain('`docs-show` with an `id`');
+    expect(uiWorkflow.output).toContain('Call `review-create` with:');
+    expect(uiWorkflow.output).not.toContain('npx storybook tools');
+
+    const componentDocs = await runSkillsCommand(
+      { tokens: ['component-docs'], mcp: true, target: {} },
+      d
+    );
+    expect(componentDocs.output).toContain(
+      'The tools named here are tools of the Storybook MCP server.'
+    );
+    expect(componentDocs.output).toContain('`docs-list`: every component and docs page');
+    expect(componentDocs.output).toContain('`npx storybook skills ui-workflow --mcp`');
+    expect(componentDocs.output).not.toContain('npx storybook tools');
+
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: false,
+      docsEnabledForCli: true,
+    });
+    const withoutDocsTools = await runSkillsCommand(
+      { tokens: ['ui-workflow'], mcp: true, target: {} },
+      d
+    );
+    expect(withoutDocsTools.output).not.toContain('## Look up components first');
+
+    // Composed Storybooks give the MCP docs tools something to read without local manifests.
+    d.resolveSkillInputs.mockResolvedValue({ ...(await d.resolveSkillInputs()), composed: true });
+    const composed = await runSkillsCommand({ tokens: ['ui-workflow'], mcp: true, target: {} }, d);
+    expect(composed.output).toContain('## Look up components first');
+  });
+
+  it('--mcp leaves out the steps of the toolsets main.ts turns off', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: true,
+      docsEnabledForCli: true,
+      mcpToolsets: { dev: false, docs: false, test: true },
+    });
+
+    const mcp = await runSkillsCommand({ tokens: ['ui-workflow'], mcp: true, target: {} }, d);
+    expect(mcp.output).not.toContain('## Look up components first');
+    expect(mcp.output).not.toContain('stories-changed');
+    expect(mcp.output).not.toContain('## Finish with a review');
+    expect(mcp.output).not.toContain('## Link to one story');
+    expect(mcp.output).toContain('## Test');
+    expect(mcp.output).toContain('This Storybook has no tool that lists story ids.');
+
+    const cli = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
+    expect(cli.output).toContain('## Look up components first');
+    expect(cli.output).toContain('## Finish with a review');
+  });
+
   it('leaves the component lookup out of ui-workflow when the CLI docs gate is off', async () => {
     const d = deps();
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
@@ -157,10 +207,12 @@ describe('runSkillsCommand', () => {
     expect(uiWorkflow.output).not.toContain('npx storybook tools docs');
   });
 
-  it('write-story assembles CLI-transport story instructions', async () => {
+  it('write-story prints the ui-workflow document, under its earlier name', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+    const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
     expect(result.exitCode).toBe(0);
+    expect(result.output).toBe(uiWorkflow.output);
     expect(result.output).toContain('@storybook/react');
     expect(result.output).toContain('npx storybook tools stories changed');
   });
@@ -175,8 +227,8 @@ describe('runSkillsCommand', () => {
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
     const componentDocs = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
 
-    expect(describedTools(uiWorkflow.output)).toEqual([]);
-    expect(describedTools(componentDocs.output)).toEqual([]);
+    expect(uiWorkflow.output).not.toContain('Usage: npx storybook tools');
+    expect(componentDocs.output).not.toContain('Usage: npx storybook tools');
     expect(uiWorkflow.output).toContain("npx storybook tools test run --stories '[{");
     expect(uiWorkflow.output).toContain("npx storybook tools review create --input '{");
     expect(uiWorkflow.output.length).toBeLessThan(10000);
@@ -187,8 +239,8 @@ describe('runSkillsCommand', () => {
 
     expect(result.output.split('# Storybook UI workflow')).toHaveLength(2);
     expect(result.output.split('# Storybook component docs')).toHaveLength(2);
-    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
     expect(result.output.split('# Storybook Setup')).toHaveLength(2);
+    expect(result.skill).toBe('all');
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

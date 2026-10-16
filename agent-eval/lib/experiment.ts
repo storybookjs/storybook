@@ -138,7 +138,7 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
 // For an experiment outside the default set: its evals run only when the experiment is named on
-// the command line (`agent-eval codex-plugin-gpt-6-luna-low`), so a bare `agent-eval`, which is
+// the command line (`agent-eval codex-plugin-gpt-6.1-sol-low`), so a bare `agent-eval`, which is
 // what CI runs, skips it.
 export function onlyWhenNamed(
   experimentUrl: string,

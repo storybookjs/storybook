@@ -36,7 +36,6 @@ describe('MCP endpoint with addon-vitest installed but not enabled', () => {
 			'docs-list',
 			'docs-show',
 			'docs-show-story',
-			'get-storybook-story-instructions',
 			'review-create',
 			'stories-changed',
 			'stories-find-by-component',
@@ -46,11 +45,11 @@ describe('MCP endpoint with addon-vitest installed but not enabled', () => {
 
 	it('still answers tool calls', async () => {
 		const response = await mcpRequest(MCP_ENDPOINT, 'tools/call', {
-			name: 'get-storybook-story-instructions',
+			name: 'docs-list',
 			arguments: {},
 		});
 
 		expect(response.result.isError).toBeUndefined();
-		expect(response.result.content[0].text).toContain('Storybook');
+		expect(response.result.content[0].text).toContain('Button');
 	});
 });

@@ -84,13 +84,14 @@ function describeCreate(ctx: ToolsetCtx): string {
   return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
 ## When to call
-- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
+- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
+- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
 1. Every storyId MUST come from those tools, never from file paths, story names or memory.
-2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
-3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
+2. Every story you CREATED MUST appear, play-function stories too. Curate by grouping, never by omission.
+3. Prefer 2-5 collections when the change reaches that many layers (one for a new, unused component). Avoid one-story collections unless truly isolated; never add stories the change cannot reach.
 4. In follow-up reviews, keep collection and story order stable.
 5. Follow each field's formatting rules; no em-dashes in field values.
 6. Don't tell the user what to do unless they ask for guidance.
@@ -116,16 +117,20 @@ function storyNoun(storyCount: number): string {
   return storyCount === 1 ? 'story' : 'stories';
 }
 
-function reviewInstructions(reviewUrl: string, storyCount: number, origin: string): string {
-  // Agents were observed ending visual work at the tool result, so the result itself has to
-  // carry both follow-ups: open the page, and surface the link in the final response.
-  // The running instance is named by the same UI root the review link is built from — for a
-  // sub-path-hosted Storybook the bare origin is not an address the agent can reach.
-  return `Storybook is already running at ${origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+function reviewInstructions(reviewUrl: string, storyCount: number, browse: boolean): string {
+  // Agents were observed ending visual work at the tool result, or summarizing the review in
+  // their own words, so the result carries the lines the final response has to end with.
+  return `Now write your final response and end it with these three lines, copied unchanged, with nothing after them. Do not describe the review in your own words, and do not mention its link anywhere else in your answer:
 
-Two things you must do now, both of them:
-1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`;
+${
+  // A browse request changes no files, so its heading must not speak of changes.
+  browse
+    ? `## 👀 See the stories
+The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`
+    : `## 👀 Review your changes
+The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now.`
+} Because this is AI-curated, results may be inaccurate or incomplete.
+👉 [Open the Storybook review page](${reviewUrl})`;
 }
 
 function formatReviewApplied({
@@ -180,7 +185,7 @@ export const reviewToolset = defineToolset({
           reviewUrl,
           collectionCount,
           storyCount,
-          instructions: reviewInstructions(reviewUrl, storyCount, ctx.origin),
+          instructions: reviewInstructions(reviewUrl, storyCount, review.changedFiles.length === 0),
         };
 
         return {

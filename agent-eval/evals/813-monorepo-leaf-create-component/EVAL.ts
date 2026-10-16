@@ -3,14 +3,12 @@ import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('creating a Callout in a monorepo UI package', () => {
@@ -28,19 +26,14 @@ describe('creating a Callout in a monorepo UI package', () => {
 
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['callout'],
       cwd: 'packages/ui',
     });
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new Callout stories', () => {

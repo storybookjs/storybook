@@ -634,6 +634,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				### Other Stories
 
+				Get the code of one of these stories with the docs show-story tool and its story ID.
+
 				- Disabled (button--disabled): Button in disabled state
 				- WithIcon (button--with-icon): Button with an icon
 
@@ -748,6 +750,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				## Stories
 
+				Get the code of one of these stories with the docs show-story tool and its story ID.
+
 				- Default (abstractions-billboard--default)
 				- Text (abstractions-billboard--text)"
 			`);
@@ -785,6 +789,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				\`\`\`
 
 				### Other Stories
+
+				Get the code of one of these stories with the docs show-story tool and its story ID.
 
 				- Primary (button--primary)
 				- Secondary (button--secondary): The quiet one"
@@ -1602,6 +1608,14 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
       componentManifest: fullManifestFixture as ComponentManifestMap,
     });
     expect(result).toMatchSnapshot();
+  });
+
+  it('says what to do when no component is documented', () => {
+    const result = formatManifestsToLists({ componentManifest: { v: 0, components: {} } });
+
+    expect(result).toBe(
+      '# Components\n\nNo components are documented yet, so read the source of the project components you need.'
+    );
   });
 
   describe('component list structure', () => {

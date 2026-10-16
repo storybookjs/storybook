@@ -12,4 +12,4 @@ Run every Storybook CLI command from the package where Storybook is installed (i
 
 If the sandbox blocks network access, request escalated permissions for Storybook CLI commands.
 
-Run `npx storybook skills component-docs` and follow its output: it lists the commands that show this project's components, props, and usage examples, and when to use them.
+Run `npx storybook skills component-docs` in a command of its own before you read any component's source, and follow its output: it lists the commands that show this project's components, props, and usage examples, and when to use them.

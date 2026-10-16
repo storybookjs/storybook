@@ -40,61 +40,6 @@ const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
 const EVALS_DIR = path.join(AGENT_EVAL_ROOT, 'evals');
 const TEMPLATE_METADATA_FILE = 'eval-template.json';
-const NODE_REPL_MOCK_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'node-repl-mock.mjs');
-const NODE_REPL_MOCK_SANDBOX_PATH = path.posix.join('.agent-eval', 'mcp', 'node-repl-mock.mjs');
-const CODEX_BROWSER_MOCK_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-browser-client-mock.mjs'
-);
-const CODEX_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'codex-browser-client-mock.mjs'
-);
-const CODEX_BROWSER_API_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-browser-api.json'
-);
-const CODEX_BROWSER_API_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'codex-browser-api.json'
-);
-const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'codex-browser-skill.md'
-);
-const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
-const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
-  '.agents',
-  'skills',
-  'control-in-app-browser',
-  'SKILL.md'
-);
-const CLAUDE_BROWSER_MOCK_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'claude-browser-mock.mjs'
-);
-const CLAUDE_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'claude-browser-mock.mjs'
-);
-const CLAUDE_BROWSER_PROMPT_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'claude-browser-prompt.md'
-);
-const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = '.claude/rules/built-in-browser.md';
 const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
   'lib',
@@ -156,7 +101,6 @@ const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 // Captures the entries of the `addons` list, without the trailing comma.
 const STORYBOOK_ADDONS_PATTERN = /addons: \[([^\]]*?),?\s*\]/;
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
-const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
@@ -969,62 +913,119 @@ export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
   await writeStorybookMcpConfig(sandbox, 'codex');
 }
 
-// In code mode (the default for GPT-6 models) Codex shows MCP server
-// instructions only once the model searches its tools, which it skips for
-// tasks it thinks it can do alone. AGENTS.md is always in its context.
-// Eval-only: Storybook writes no AGENTS.md for real Codex users, so remove
-// this once SB-2127 fixes it in the product:
-// https://linear.app/chromaui/issue/SB-2127
-export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
-  // The copies match the checkout's server; the stable server from npm serves other text.
+// The section a project that uses the Storybook MCP server adds to its agent instructions: the
+// server instructions, which run the skills with `--mcp`. Codex in code mode (the default for GPT-6
+// models) shows MCP server instructions only once the model searches its tools, so AGENTS.md is
+// what reaches it. Storybook does not write this section yet; the docs will ask MCP users to add
+// it (SB-2127: https://linear.app/chromaui/issue/SB-2127).
+export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void> {
+  // The stable server from npm serves other instructions and has no `skills --mcp`.
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
     return;
   }
-  const instructions = await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8');
-  await sandbox.writeFiles({
-    'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
-  });
+  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
+  const { buildServerInstructions } = (await import(
+    path.join(
+      AGENT_EVAL_ROOT,
+      '..',
+      'code/core/src/cli/skills/content/build-server-instructions.ts'
+    )
+  )) as {
+    buildServerInstructions: (options: {
+      devEnabled: boolean;
+      testSupported: boolean;
+      docsEnabled: boolean;
+    }) => string;
+  };
+  // The MCP fixtures are all react-vite with addon-vitest, docs and MCP, so every toolset is on.
+  await writeStorybookAgentInstructions(
+    sandbox,
+    `${buildServerInstructions({ devEnabled: true, testSupported: true, docsEnabled: true })}\n`
+  );
 }
 
-/**
- * Ship the Codex in-app-browser stand-in: a `node_repl` MCP server (the real
- * one is a native binary bundled only with the Codex desktop app), the
- * browser runtime mock it imports, and the `control-in-app-browser` skill
- * that teaches Codex the same bootstrap flow the app uses.
- */
-export async function writeCodexInAppBrowserMock(sandbox: Sandbox): Promise<void> {
-  await sandbox.writeFiles({
-    [NODE_REPL_MOCK_SANDBOX_PATH]: await fs.readFile(NODE_REPL_MOCK_SOURCE_PATH, 'utf8'),
-    [CODEX_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
-    [CODEX_BROWSER_API_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_API_SOURCE_PATH, 'utf8'),
-    [CODEX_BROWSER_SKILL_SANDBOX_PATH]: await fs.readFile(CODEX_BROWSER_SKILL_SOURCE_PATH, 'utf8'),
-  });
+const LUNA_TEST_RULE =
+  '- Do not add or run tests unless the user asks you to test or verify implementation.';
+const SOL_TEST_RULES = '^- (Do not write tests for reversible|Run tests appropriate)';
 
-  const config = `[mcp_servers.node_repl]
-command = "node"
-args = ["${NODE_REPL_MOCK_SANDBOX_PATH}"]
-default_tools_approval_mode = "auto"
-startup_timeout_sec = 30
-tool_timeout_sec = 180
+// Runs in the sandbox after the Codex CLI is installed, with the model slug, LUNA_TEST_RULE and
+// SOL_TEST_RULES as arguments. Reads the catalog bundled with that CLI and prints the path of the
+// instructions it writes.
+const LUNA_INSTRUCTIONS_SCRIPT = `
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const [slug, lunaRule, solRulesPattern] = process.argv.slice(1);
+const codex = (args) =>
+  execFileSync('codex', args, { cwd: os.tmpdir(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+const catalog = JSON.parse(codex(['debug', 'models', '--bundled']));
+const instructions = (model) =>
+  catalog.models.find((entry) => entry.slug === model)?.base_instructions ?? '';
+const fail = (problem) => {
+  throw new Error(
+    problem + ' in the catalog of ' + codex(['--version']).trim() + '. Update LUNA_TEST_RULE or SOL_TEST_RULES in agent-eval/lib/templates.ts.'
+  );
+};
+
+const own = instructions(slug);
+if (!own.includes(lunaRule)) {
+  fail('The base instructions of ' + slug + ' do not have the line ' + JSON.stringify(lunaRule));
+}
+const solRules = instructions('gpt-6.1-sol')
+  .split('\\n')
+  .map((line) => line.trimEnd())
+  .filter((line) => new RegExp(solRulesPattern).test(line));
+if (solRules.length !== 2) {
+  fail('The base instructions of gpt-6.1-sol have ' + solRules.length + ' test rules instead of 2');
+}
+
+const file = path.join(os.homedir(), '.codex', 'storybook-eval-instructions.md');
+fs.mkdirSync(path.dirname(file), { recursive: true });
+fs.writeFileSync(file, own.replace(lunaRule, solRules.join('\\n')));
+process.stdout.write(file);
 `;
 
-  await appendCodexConfig(sandbox, config);
-}
+/**
+ * Give a gpt-6-luna model the test rules of gpt-6.1-sol, and keep the rest of its own base
+ * instructions. Luna's say "Do not add or run tests unless the user asks", which makes it skip
+ * `test-run` on most UI tasks. With Sol's rules, the Luna experiments stand in for Sol in CI at a
+ * fraction of the cost.
+ */
+export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): Promise<void> {
+  // The harness installs the same CLI after `setup`; installing it here first lets the script
+  // read the catalog of the binary that runs. Retried once, as the harness retries its install.
+  const install = await sandbox.runCommand('bash', [
+    '-c',
+    'npm install -g @openai/codex || npm install -g @openai/codex',
+  ]);
+  if (install.exitCode !== 0) {
+    throw new Error(`Failed to install the Codex CLI: ${install.stderr || install.stdout}`);
+  }
 
-// This rule stands in for the `<built_in_browser>` block the desktop app
-// injects, so the agent knows it has that browser. A rule, unlike a
-// CLAUDE.md, does not stop Claude Code from reading AGENTS.md.
-export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
+  const slug = model.split('?', 1)[0] ?? model;
+  const result = await sandbox.runCommand('node', [
+    '-e',
+    LUNA_INSTRUCTIONS_SCRIPT,
+    slug,
+    LUNA_TEST_RULE,
+    SOL_TEST_RULES,
+  ]);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to write the ${slug} instructions: ${result.stderr || result.stdout}`);
+  }
+
+  // A top-level key, so it goes before the `[tables]` the other steps append.
+  let existing = '';
+  try {
+    existing = await sandbox.readFile(CODEX_CONFIG_PATH);
+  } catch {
+    // No config yet.
+  }
+  const rest = existing.replace(/^model_instructions_file = .*\n+/, '');
   await sandbox.writeFiles({
-    [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
-    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]: await fs.readFile(
-      CLAUDE_BROWSER_PROMPT_SOURCE_PATH,
-      'utf8'
-    ),
-  });
-  await writeClaudeMcpServer(sandbox, CLAUDE_BROWSER_MCP_SERVER_NAME, {
-    command: 'node',
-    args: [CLAUDE_BROWSER_MOCK_SANDBOX_PATH],
+    [CODEX_CONFIG_PATH]: `model_instructions_file = ${JSON.stringify(result.stdout.trim())}\n\n${rest}`,
   });
 }
 
@@ -1048,14 +1049,18 @@ async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<voi
 
 // The section that `create storybook` and `storybook upgrade` add next to the skills, which makes
 // agents use them. Call it after every other step that writes AGENTS.md or CLAUDE.md, as a user's
-// own files exist before Storybook adds the section.
-export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise<void> {
+// own files exist before Storybook adds the section. `section` replaces the skills section.
+export async function writeStorybookAgentInstructions(
+  sandbox: Sandbox,
+  section?: string
+): Promise<void> {
   // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's sources.
   const { planStorybookAgentInstructions } = (await import(
     path.join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
   )) as {
     planStorybookAgentInstructions: (
-      read: (file: string) => Promise<string | undefined>
+      read: (file: string) => Promise<string | undefined>,
+      section?: string
     ) => Promise<Record<string, string>>;
   };
   await sandbox.writeFiles(
@@ -1066,7 +1071,7 @@ export async function writeStorybookAgentInstructions(sandbox: Sandbox): Promise
         throw new Error(`Failed to check for ${file}: ${stderr}`);
       }
       return exitCode === 0 ? sandbox.readFile(file) : undefined;
-    })
+    }, section)
   );
 }
 

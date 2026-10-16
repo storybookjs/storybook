@@ -272,6 +272,70 @@ describe('docs.showStory in a composition', () => {
   });
 });
 
+describe('docs lookups that leave out the source in a composition', () => {
+  const emptyAccess: DocsAccess = { list: docsAccess.list, resolve: async () => undefined };
+  const composed = (...others: DocsAccess[]) =>
+    createDocsToolset({
+      sources: [
+        { source: { id: 'local', title: 'Local' }, access: emptyAccess },
+        ...others.map((access, index) => ({
+          source: { id: `ds${index + 1}`, title: `Design system ${index + 1}` },
+          access,
+        })),
+      ],
+    });
+
+  it('shows the entry from the only source that has it', async () => {
+    const outcome = await composed(docsAccess).methods.show.handler(
+      { id: 'button', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ storybookId: 'ds1', fallbackFrom: 'local' });
+    expect(outcome.markdown).toMatch(
+      /^Not found in source "local", so this is the entry from source "ds1", the only source that has it\./
+    );
+    expect(outcome.markdown).toContain('Click me');
+  });
+
+  it('shows a story from the only source that has it', async () => {
+    const outcome = await composed(docsAccess).methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.markdown).toContain('<Button />');
+  });
+
+  it('still reports the entry missing when several sources have it', async () => {
+    const outcome = await composed(docsAccess, docsAccess).methods.show.handler(
+      { id: 'button', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toContain(
+      'Component or Docs Entry not found: "button" in source "local"'
+    );
+  });
+
+  it('skips a source that cannot be read', async () => {
+    const unreadable: DocsAccess = {
+      list: docsAccess.list,
+      resolve: () => Promise.reject(new Error('offline')),
+    };
+    const outcome = await composed(unreadable, docsAccess).methods.show.handler(
+      { id: 'button', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ storybookId: 'ds2' });
+  });
+});
+
 describe('a composed source that requires its own MCP', () => {
   const privateSource = { id: 'private', title: 'Private', url: 'https://private.example.com' };
   const composed = createDocsToolset({

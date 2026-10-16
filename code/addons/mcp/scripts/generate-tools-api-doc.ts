@@ -42,11 +42,9 @@ function toolMetadata(): ToolMetadata[] {
 
 const instructions = () =>
   buildServerInstructions({
-    transport: 'mcp',
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,
-    moduleGraphSupported: true,
   });
 
 async function toJsonSchema(schema: unknown): Promise<Record<string, unknown>> {

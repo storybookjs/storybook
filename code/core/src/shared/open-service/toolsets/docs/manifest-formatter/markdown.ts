@@ -346,7 +346,10 @@ function formatSubcomponentsSection(
 /**
  * Format a single component manifest into markdown.
  */
-export function formatComponentManifest(componentManifest: ComponentManifest): string {
+export function formatComponentManifest(
+  componentManifest: ComponentManifest,
+  showStoryTool = 'docs show-story'
+): string {
   const parts: string[] = [];
   const parsedDocgen = getParsedDocgen(componentManifest);
   const jsDocTags = getComponentTags(componentManifest, parsedDocgen);
@@ -416,6 +419,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
         parts.push('### Other Stories');
         parts.push('');
       }
+      parts.push(
+        `Get the code of one of these stories with the ${showStoryTool} tool and its story ID.`
+      );
+      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';
@@ -475,7 +482,13 @@ export function formatManifestsToLists(
 
   parts.push('# Components');
   parts.push('');
-  for (const component of Object.values(manifests.componentManifest.components)) {
+  const components = Object.values(manifests.componentManifest.components);
+  if (components.length === 0) {
+    parts.push(
+      'No components are documented yet, so read the source of the project components you need.'
+    );
+  }
+  for (const component of components) {
     parts.push(formatComponentLine(component));
     if (options.withStoryIds && Array.isArray(component.stories)) {
       for (const story of component.stories) {

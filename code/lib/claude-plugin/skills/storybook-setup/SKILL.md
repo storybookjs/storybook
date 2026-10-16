@@ -1,6 +1,6 @@
 ---
 name: storybook-setup
-description: Use this skill when Storybook is already installed and the user wants a working `preview` file and stories for real components.
+description: Use this skill when Storybook is already installed and the user wants it set up for the project, with a working `preview` file and stories for its real components. To write or update the stories of a component, use ui-workflow instead.
 ---
 
 Prerequisites:
@@ -10,4 +10,4 @@ Prerequisites:
 
 Run `npx storybook skills setup` from the project root (or the Storybook package in a monorepo).
 
-**Follow the printed Markdown precisely.** Do not substitute your own plan.
+Read its output in full, without `head` or `tail`: every step in it is required. **Follow the printed Markdown precisely.** Do not substitute your own plan.

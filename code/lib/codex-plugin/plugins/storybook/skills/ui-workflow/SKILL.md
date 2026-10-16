@@ -12,9 +12,9 @@ Run the Storybook dev server and every Storybook CLI command from the same worki
 
 If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
 
-Run `npx storybook skills ui-workflow` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
+Run `npx storybook skills ui-workflow` in a command of its own, without `head` or `tail`, and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
 Some commands require a running Storybook dev server:
 
-1. Reuse a dev server that already serves this project's Storybook (probe the URL, usually `http://localhost:6006`) instead of starting a second one. Otherwise start one in the background, using the project's preferred package manager and existing `package.json` Storybook script (e.g. `npm run storybook`) instead of inventing a new command whenever possible. Wait until the URL responds before running commands that need it.
+1. Probe the URL (usually `http://localhost:6006`) in a command of its own. If it serves this project's Storybook, reuse that dev server and never start a second one. Otherwise start one in the background with the project's preferred package manager and existing `package.json` Storybook script (e.g. `npm run storybook`), without adding flags, and wait until the URL responds before running commands that need it.
 2. The dev server is part of the deliverable, not a temporary verification tool: leave it running when your work is done so the user can keep browsing stories. Never kill it after verification.

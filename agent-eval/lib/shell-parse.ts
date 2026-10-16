@@ -1,4 +1,4 @@
-// Pure shell-command parsing for plugin-path workflow scoring: no vitest, no
+// Pure shell-command parsing for workflow scoring: no vitest, no
 // filesystem access. This file is copied into eval sandboxes next to
 // test-utils.ts, so it must stay dependency-free.
 
@@ -10,16 +10,20 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// `storybook skills write-story` and `ui-workflow` serve the document the MCP
-// channel exposes as the get-storybook-story-instructions tool, which
-// assertions ask for by name. Remove the alias once the MCP tool and the skill
-// share one name (or the tool is retired).
+// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
+// ui-workflow`, with or without `--mcp`, its earlier name `write-story`, or
+// `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
+// it as the get-storybook-story-instructions tool; drop that name once 11 is
+// the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
   }
+  if (name === 'ui-workflow' && call.name === 'get-storybook-story-instructions') {
+    return true;
+  }
   return (
-    name === 'get-storybook-story-instructions' &&
+    name === 'ui-workflow' &&
     call.name === 'skills-get' &&
     (call.input.id === 'write-story' || call.input.id === 'ui-workflow' || call.input.all === true)
   );
@@ -109,7 +113,9 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // is workflowCallMatchesName's concern. A help request prints usage instead
       // of the skill, so it does not count — same rule as the tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
-      const [first, ...rest] = segment;
+      // `--mcp` only changes how the skill names the tools.
+      const mcp = segment.includes('--mcp');
+      const [first, ...rest] = segment.filter((token) => token !== '--mcp');
       const all = first === '--all' && rest.length === 0;
       const single =
         first !== undefined &&
@@ -120,7 +126,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       if (all || single) {
         calls.push({
           name: 'skills-get',
-          input: all ? { all: true } : { id: first },
+          input: { ...(all ? { all: true } : { id: first }), ...(mcp ? { mcp: true } : {}) },
           source: 'cli',
         });
         index += 1 + segment.length;

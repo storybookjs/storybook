@@ -31,7 +31,10 @@ export type ChangedStoriesParams = {
   index: StoryIndex;
 };
 
-export type ChangedStoriesResult = Omit<ChangedStoriesOutput, keyof ChangedFilesOutsideStories>;
+export type ChangedStoriesResult = Omit<
+  ChangedStoriesOutput,
+  keyof ChangedFilesOutsideStories | 'pendingFiles'
+>;
 
 /**
  * Filters change-detection statuses to new/modified/affected, enriches from the story index,
@@ -48,7 +51,8 @@ export function getChangedStories({ statuses, index }: ChangedStoriesParams): Ch
 
   const stories = changedFromStatusStore.flatMap(({ storyId, value }) => {
     const entry = index.entries[storyId];
-    if (!entry || !isChangeStatusValue(value)) {
+    // Docs entries carry change statuses too, but a review only takes stories.
+    if (!entry || entry.type !== 'story' || !isChangeStatusValue(value)) {
       return [];
     }
     return [

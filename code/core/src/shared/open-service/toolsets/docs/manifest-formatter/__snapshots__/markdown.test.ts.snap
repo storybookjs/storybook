@@ -69,6 +69,8 @@ const WithSizes = () => (
 
 ### Other Stories
 
+Get the code of one of these stories with the docs show-story tool and its story ID.
+
 - Loading (button--loading): Button in loading state during async operations
 - Danger (button--danger): Danger button for destructive actions
 
@@ -191,6 +193,8 @@ const Clickable = () => (
 
 ### Other Stories
 
+Get the code of one of these stories with the docs show-story tool and its story ID.
+
 - Variants (card--variants): Card visual variants (elevated, outlined, flat)
 - User Profile (card--user-profile): Complete user profile card example
 
@@ -288,6 +292,8 @@ const WithHelperText = () => <Input label="Password" type="password" helperText=
 \`\`\`
 
 ### Other Stories
+
+Get the code of one of these stories with the docs show-story tool and its story ID.
 
 - Types (input--types): Various input types (email, tel, url, number)
 - Disabled (input--disabled): Disabled input state

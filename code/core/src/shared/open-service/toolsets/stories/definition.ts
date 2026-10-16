@@ -74,6 +74,18 @@ const changedOutputSchema = v.object({
   }),
   unreachableFiles: v.array(v.string()),
   unreachableFilesTruncated: v.boolean(),
+  pendingFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Changed files that stories render but change detection has not processed yet, so their stories are missing.'
+    )
+  ),
+  unindexedStoryFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Changed story files that are not in the story index yet, such as one written a moment ago.'
+    )
+  ),
   changedConfigFiles: v.array(v.string()),
 });
 
@@ -163,9 +175,15 @@ function emptyChangedStories(): ChangedStoriesOutput {
     counts: { new: 0, modified: 0, affected: 0 },
     unreachableFiles: [],
     unreachableFilesTruncated: false,
+    pendingFiles: [],
+    unindexedStoryFiles: [],
     changedConfigFiles: [],
   };
 }
+
+// How long `stories.changed` waits for the latest edit to reach the index and the statuses.
+const PENDING_SCAN_POLL_MS = 250;
+const PENDING_SCAN_MAX_POLLS = 12;
 
 function reasonForChangeDetectionReadiness(
   readiness: Exclude<ChangeDetectionReadinessResult, { status: 'ready' }>
@@ -337,16 +355,33 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          const [statuses, index] = await Promise.all([
-            Promise.resolve(changeStatuses.getAll()),
-            storyIndex.getIndex(),
-          ]);
+          // Files outside the story graph are why an empty or partial result can still be wrong,
+          // so they are part of the answer rather than a separate lookup.
+          const read = async () => {
+            const { reachableFiles, ...filesOutsideStories } =
+              await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs });
+            const changed = getChangedStories({
+              statuses: await changeStatuses.getAll(),
+              index: await storyIndex.getIndex(),
+            });
+            return { changed, filesOutsideStories, reachableFiles };
+          };
+          // A new story file reaches the index, and an edit the statuses, only after a debounced
+          // scan: wait for it rather than answer from the state before the edit.
+          const isPending = ({ changed, filesOutsideStories, reachableFiles }: typeof result) =>
+            filesOutsideStories.unindexedStoryFiles.length > 0 ||
+            (changed.stories.length === 0 && reachableFiles.length > 0);
+          let result = await read();
+          for (let poll = 0; isPending(result) && poll < PENDING_SCAN_MAX_POLLS; poll++) {
+            await new Promise((resolve) => setTimeout(resolve, PENDING_SCAN_POLL_MS));
+            result = await read();
+          }
+          const { changed, filesOutsideStories, reachableFiles } = result;
 
           const data = {
-            ...getChangedStories({ statuses, index }),
-            // Files outside the story graph are why an empty or partial result can still be wrong,
-            // so they are part of the answer rather than a separate lookup.
-            ...(await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs })),
+            ...changed,
+            ...filesOutsideStories,
+            pendingFiles: changed.stories.length === 0 ? reachableFiles : [],
           };
 
           return {

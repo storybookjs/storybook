@@ -63,6 +63,8 @@ export type DocsShowOutput = {
   sourceError?: string;
   /** Set when the named source can only be read through its own MCP endpoint. */
   notice?: string;
+  /** The named source, when the entry was missing there and came from `storybookId` instead. */
+  fallbackFrom?: string;
 };
 
 export type DocsShowStoryOutput = {
@@ -73,6 +75,7 @@ export type DocsShowStoryOutput = {
   storybookId?: string;
   sourceError?: string;
   notice?: string;
+  fallbackFrom?: string;
 };
 
 /**
@@ -179,7 +182,7 @@ export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
 }
 
 function describeList(ctx: ToolsetCtx): string {
-  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.`;
+  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true only when you need the story IDs of many components; the show tool already lists the story IDs of one component.`;
 }
 
 function describeShow(ctx: ToolsetCtx): string {
@@ -196,6 +199,12 @@ function formatEntryNotFound(id: string, storybookId: string | undefined, ctx: T
   return `Component or Docs Entry not found: "${id}"${suffix}. Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components and documentation entries.`;
 }
 
+function formatFallback({ fallbackFrom, storybookId }: DocsShowOutput | DocsShowStoryOutput) {
+  return fallbackFrom === undefined
+    ? ''
+    : `Not found in source "${fallbackFrom}", so this is the entry from source "${storybookId}", the only source that has it. Pass storybookId "${storybookId}" for its other lookups.\n\n`;
+}
+
 /** Pure renderer for `show`; the handler attaches it to both outcome branches. */
 function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
   const resolution = resolveShow(data);
@@ -206,9 +215,14 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
     case 'entry-missing':
       return formatEntryNotFound(data.id, data.storybookId, ctx);
     case 'found':
-      return resolution.entry.kind === 'doc'
-        ? formatDocsManifest(resolution.entry.doc)
-        : formatComponentManifest(resolution.entry.component);
+      return `${formatFallback(data)}${
+        resolution.entry.kind === 'doc'
+          ? formatDocsManifest(resolution.entry.doc)
+          : formatComponentManifest(
+              resolution.entry.component,
+              getToolName(ctx)(DOCS_METHOD_REFS.showStory)
+            )
+      }`;
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -247,7 +261,7 @@ function renderShowStory(
         : `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories}`;
     }
     case 'found':
-      return formatStoryDocumentation(resolution.component, resolution.story.name);
+      return `${formatFallback(data)}${formatStoryDocumentation(resolution.component, resolution.story.name)}`;
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -370,6 +384,30 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
     multiSource ? selectSource(sources, storybookId, ctx) : { access: docsAccess };
 
+  // Falls back to the one other source that has the id, since agents often leave out storybookId.
+  const resolveWithFallback = async (
+    named: DocsAccess,
+    storybookId: string | undefined,
+    id: string
+  ): Promise<Pick<DocsShowOutput, 'entry' | 'notice' | 'storybookId' | 'fallbackFrom'>> => {
+    const resolved = await resolveFromSource(named, id);
+    if (resolved.entry || resolved.notice || !multiSource) {
+      return { storybookId, ...resolved };
+    }
+    const others = await Promise.all(
+      sources!
+        .filter(({ source }) => source.id !== storybookId)
+        .map(async ({ source, access: other }) => ({
+          storybookId: source.id,
+          entry: await other.resolve(id).catch(() => undefined),
+        }))
+    );
+    const found = others.filter(({ entry }) => entry !== undefined);
+    return found.length === 1
+      ? { ...found[0], fallbackFrom: storybookId }
+      : { storybookId, ...resolved };
+  };
+
   return defineToolset({
     id: DOCS_TOOLSET_ID,
     description: 'Storybook component and docs documentation.',
@@ -380,7 +418,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
             v.pipe(
               v.boolean(),
               v.description(
-                'When true, includes story sub-bullets under each component with story name and story ID. Use this to discover IDs for downstream story-focused workflows without filesystem lookup.'
+                'When true, includes story sub-bullets under each component with story name and story ID. This makes the list much longer: leave it off to look up components, and use it only to discover story IDs for downstream story-focused workflows without filesystem lookup.'
               )
             ),
             false
@@ -428,7 +466,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
           const selected = access(storybookId, ctx);
           const data: DocsShowOutput = selected.sourceError
             ? { id, storybookId, sourceError: selected.sourceError }
-            : { id, storybookId, ...(await resolveFromSource(selected.access!, id)) };
+            : { id, ...(await resolveWithFallback(selected.access!, storybookId, id)) };
 
           const markdown = renderShow(data, ctx);
 
@@ -469,7 +507,10 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
           const selected = resolveId !== undefined ? access(storybookId, ctx) : {};
           const data: DocsShowStoryOutput =
             selected.access && resolveId !== undefined
-              ? { ...request, ...(await resolveFromSource(selected.access, resolveId)) }
+              ? {
+                  ...request,
+                  ...(await resolveWithFallback(selected.access, storybookId, resolveId)),
+                }
               : { ...request, sourceError: selected.sourceError };
 
           const resolution = resolveShowStory(data);

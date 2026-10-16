@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
 import heredocCommands from './__fixtures__/claude-plugin-801-heredoc-commands.json' with { type: 'json' };
-import { parseStorybookWorkflowShellCommands, workflowCallMatchesName } from './shell-parse.ts';
+import {
+  normalizeStorybookWorkflowName,
+  parseStorybookWorkflowShellCommands,
+  workflowCallMatchesName,
+} from './shell-parse.ts';
 
 // Not a static import: tsc would then check the core source against this
 // package's stricter `noUncheckedIndexedAccess`.
@@ -156,11 +160,13 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
-  test('matches write-story, ui-workflow and --all, but not other ids, to the historic instructions name', () => {
+  test('matches write-story, ui-workflow (also with --mcp) and --all, but not other ids, to ui-workflow', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story',
       'npx storybook skills --all',
       'npx storybook skills ui-workflow',
+      'npx storybook skills ui-workflow --mcp',
+      'npx storybook skills --mcp component-docs',
       'npx storybook skills all',
       'npx storybook skills setup',
     ]);
@@ -169,12 +175,32 @@ describe('parseStorybookWorkflowShellCommands', () => {
       { id: 'write-story' },
       { all: true },
       { id: 'ui-workflow' },
+      { id: 'ui-workflow', mcp: true },
+      { id: 'component-docs', mcp: true },
       { id: 'all' },
       { id: 'setup' },
     ]);
+    expect(calls.map((call) => workflowCallMatchesName(call, 'ui-workflow'))).toEqual([
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  test("matches the stable server's get-storybook-story-instructions tool to ui-workflow", () => {
     expect(
-      calls.map((call) => workflowCallMatchesName(call, 'get-storybook-story-instructions'))
-    ).toEqual([true, true, true, false, false]);
+      workflowCallMatchesName(
+        { name: 'get-storybook-story-instructions', input: {}, source: 'mcp' },
+        'ui-workflow'
+      )
+    ).toBe(true);
+    expect(normalizeStorybookWorkflowName('mcp__storybook__get-storybook-story-instructions')).toBe(
+      'get-storybook-story-instructions'
+    );
   });
 
   test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {

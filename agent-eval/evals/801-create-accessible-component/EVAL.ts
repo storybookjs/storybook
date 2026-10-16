@@ -3,13 +3,11 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
@@ -17,18 +15,13 @@ import { describe, expect, test } from 'vitest';
 describe('creating an accessible ToggleSwitch', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['toggleswitch'],
     });
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('discovers stories through the workflow tools before publishing the review', () => {
@@ -51,18 +44,11 @@ describe('creating an accessible ToggleSwitch', () => {
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     // Building with external Reshaped components requires the docs tools: props
-    // must not be guessed or read out of node_modules. Skipped for Codex+MCP:
-    // GPT-5.5 intermittently builds from prior knowledge without calling
-    // docs-show (~1/4 runs), despite tool descriptions and server
-    // instructions. Codex+plugin passes consistently. Seen in CI 28673251562
-    // and local runs on 2026-07-03. Re-enable when Codex MCP reliably uses the
-    // docs tools.
-    test.skipIf(agent === 'codex' && integration === 'mcp')('uses the documentation tooling', () =>
-      expectWorkflowCalls(['docs-show'])
-    );
+    // must not be guessed or read out of node_modules.
+    test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
     test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () =>
       expectSkillInvoked('ui-workflow')

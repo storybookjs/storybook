@@ -7,7 +7,6 @@ import {
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeCodexInAppBrowserMock,
   writeCodexPluginSkills,
   writeStorybookAgentInstructions,
 } from '../lib/templates.ts';
@@ -26,7 +25,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'plugin', model });
     await writeCodexPluginSkills(sandbox);
-    await writeCodexInAppBrowserMock(sandbox);
     await writeStorybookAgentInstructions(sandbox);
     await commitSandboxBaseline(sandbox);
   },

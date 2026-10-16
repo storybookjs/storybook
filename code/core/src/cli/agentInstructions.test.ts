@@ -106,6 +106,62 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('AGENTS.md')).toBe(custom);
   });
 
+  it('keeps the line endings of a CRLF file, and leaves a current section alone', async () => {
+    const crlf = (text: string) => text.replaceAll('\n', '\r\n');
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), crlf(OUTDATED));
+
+    await addStorybookAgentInstructions(ROOT, 'update');
+    expect(read('AGENTS.md')).toBe(crlf(`# Rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}\nUse pnpm.\n`));
+
+    expect(await addStorybookAgentInstructions(ROOT, 'update')).toEqual([]);
+    expect(read('AGENTS.md')).not.toContain('\n\n');
+  });
+
+  it('appends the section with the line endings of the file', async () => {
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), '# Rules\r\n');
+
+    await addStorybookAgentInstructions(ROOT);
+
+    expect(read('AGENTS.md')).toBe(
+      `# Rules\r\n\r\n${STORYBOOK_AGENT_INSTRUCTIONS.replaceAll('\n', '\r\n')}`
+    );
+  });
+
+  it('ignores a marker mentioned in prose, and stops a block at the next BEGIN marker', async () => {
+    const prose = 'Keep the text between `<!-- BEGIN:storybook-skills -->` and the end marker.\n';
+    const broken = `<!-- BEGIN:storybook-skills -->\nlost its end\n`;
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), `${prose}\n${broken}\n${OUTDATED}`);
+
+    await addStorybookAgentInstructions(ROOT, 'update');
+
+    expect(read('AGENTS.md')).toBe(
+      `${prose}\n${broken}\n# Rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}\nUse pnpm.\n`
+    );
+  });
+
+  it('keeps a block whose body imports AGENTS.md instead of a copy', async () => {
+    const imported = '<!-- BEGIN:storybook-skills -->\n@AGENTS.md\n<!-- END:storybook-skills -->\n';
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), OUTDATED);
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), imported);
+
+    expect(await addStorybookAgentInstructions(ROOT, 'update')).toEqual([
+      { file: 'AGENTS.md', change: 'updated' },
+    ]);
+    expect(read('CLAUDE.md')).toBe(imported);
+  });
+
+  it('adds no copy to CLAUDE.md when another CLAUDE.md has the block between markers', async () => {
+    const block = `<!-- BEGIN:storybook-skills -->\n## Storybook\n\nUse the skills.\n<!-- END:storybook-skills -->\n`;
+    vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');
+    vol.writeFileSync(join(ROOT, '.claude/CLAUDE.md'), block);
+
+    expect(await addStorybookAgentInstructions(ROOT)).toEqual([
+      { file: 'AGENTS.md', change: 'added' },
+      { file: '.claude/CLAUDE.md', change: 'updated' },
+    ]);
+    expect(read('CLAUDE.md')).toBe('Be brief.\n');
+  });
+
   it('updates the copy in CLAUDE.md too, and adds no second copy', async () => {
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), OUTDATED);
     vol.writeFileSync(join(ROOT, 'CLAUDE.md'), 'Be brief.\n');

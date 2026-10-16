@@ -179,6 +179,9 @@ async function removeSkills(
   }
 }
 
+const listFiles = (files: string[]) =>
+  new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
+
 async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
   try {
     const changes = await addStorybookAgentInstructions(getProjectRoot(), mode);
@@ -186,14 +189,30 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${added.join(' and ')} that tells agents when to use the skills. Remove its markers to edit it, or remove the section to opt out.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out.`
       );
     }
     if (updated.length > 0) {
-      logger.log(`Updated the Storybook section in ${updated.join(' and ')}.`);
+      logger.log(`Updated the Storybook section in ${listFiles(updated)}.`);
     }
   } catch (error) {
-    logger.warn('Could not add the Storybook section for agents to AGENTS.md.');
+    logger.warn(
+      mode === 'update'
+        ? 'Could not update the Storybook section for agents in AGENTS.md.'
+        : 'Could not add the Storybook section for agents to AGENTS.md.'
+    );
     logger.debug(error);
   }
+}
+
+/**
+ * Bring the section between Storybook's markers in `AGENTS.md` up to date without installing the
+ * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
+ * nothing, and never runs in CI.
+ */
+export async function refreshAgentInstructions(): Promise<void> {
+  if (isCI()) {
+    return;
+  }
+  await addAgentInstructions('update');
 }

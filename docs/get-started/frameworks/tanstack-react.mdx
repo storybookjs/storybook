@@ -189,7 +189,7 @@ You can create a separate `QueryClient` for each story when you need stronger is
 
 #### Story isolation on Docs pages
 
-It breaks down when several stories render at the same time in one browser context, most often on a [Docs page](../../writing-docs/autodocs.mdx) that shows multiple stories. Simultaneously rendered stories share the single client, so two stories that seed the same query key overwrite each other, and a `beforeEach` cache clear for one story can remove data another story is still reading. A Docs page showing `LoggedInAsAlice` and `LoggedInAsBob` stories seeded through the same key renders the last-seeded user in both.
+The single shared client from the setup above breaks down when several stories render at the same time in one browser context, most often on a [Docs page](../../writing-docs/autodocs.mdx) that shows multiple stories. Simultaneously rendered stories share the single client, so two stories that seed the same query key overwrite each other, and a `beforeEach` cache clear for one story can remove data another story is still reading. A Docs page showing `LoggedInAsAlice` and `LoggedInAsBob` stories seeded through the same key renders the last-seeded user in both.
 
 For per-story isolation, create one client per story and pass the same instance to the router context, the `QueryClientProvider`, and story setup. The [`context`](#context) factory runs before the router's initial load, so route loaders see the story's own client:
 

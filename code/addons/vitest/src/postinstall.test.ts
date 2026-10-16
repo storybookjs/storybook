@@ -161,12 +161,35 @@ describe('CommonJS config guard (storybook add flow)', () => {
     });
   `;
 
+  // An unwired config whose export shape the merger cannot rewrite (a defineConfig callback
+  // with control flow): with the guard active, the add flow must stop at the prerequisite
+  // step with the specific invalid-config reason instead of installing dependencies and
+  // failing later with the generic merge error.
+  const unwiredCallbackConfigContent = dedent`
+    import { defineConfig } from 'vite';
+
+    export default defineConfig(({ mode }) => {
+      if (mode === 'production') {
+        return { test: { environment: 'node' } };
+      }
+      return { test: { environment: 'jsdom' } };
+    });
+  `;
+
   // Nested so the search-window assertion can tell a config-dir search from a cwd search.
   const configDir = 'config/storybook';
 
   // Discovery fixture: test cases declare WHAT discovery finds; the find.any implementation
   // that serves it stays in beforeEach per the repository's spy-mocking rules.
-  let discoveredConfig: { basename: string; path: string; content: string } | undefined;
+  let discoveredConfig: { basename: string; path: string } | undefined;
+
+  // Declares the one config file discovery finds and loads it into memfs at that path, so the
+  // fixture is the single source of the content (no second copy to drift out of sync).
+  const discover = (basename: string, content: string) => {
+    const path = resolve(process.cwd(), basename);
+    discoveredConfig = { basename, path };
+    vol.fromJSON({ [path]: content });
+  };
 
   let mockPackageManager: JsPackageManager;
 
@@ -209,6 +232,11 @@ describe('CommonJS config guard (storybook add flow)', () => {
 
   afterEach(() => {
     vol.reset();
+    // Spy mocks persist file-wide and clearAllMocks only clears call history, so reset the
+    // implementations this describe installed to keep later describes on clean mocks.
+    vi.mocked(readFile).mockReset();
+    vi.mocked(writeFile).mockReset();
+    vi.mocked(find.any).mockReset();
   });
 
   const runPostinstall = () => {
@@ -233,13 +261,7 @@ describe('CommonJS config guard (storybook add flow)', () => {
   it.each(['cts', 'cjs'] as const)(
     'rejects a vitest.config.%s with the CommonJS guard instead of attempting the merge',
     async (ext) => {
-      const configPath = resolve(process.cwd(), `vitest.config.${ext}`);
-      discoveredConfig = {
-        basename: `vitest.config.${ext}`,
-        path: configPath,
-        content: cjsConfigContent,
-      };
-      await vol.fromJSON({ [configPath]: cjsConfigContent });
+      discover(`vitest.config.${ext}`, cjsConfigContent);
 
       const error = await runPostinstall().then(
         () => null,
@@ -262,13 +284,7 @@ describe('CommonJS config guard (storybook add flow)', () => {
   );
 
   it('skips the guard for an already-configured config the merger cannot rewrite', async () => {
-    const configPath = resolve(process.cwd(), 'vitest.config.ts');
-    discoveredConfig = {
-      basename: 'vitest.config.ts',
-      path: configPath,
-      content: wiredCallbackConfigContent,
-    };
-    await vol.fromJSON({ [configPath]: wiredCallbackConfigContent });
+    discover('vitest.config.ts', wiredCallbackConfigContent);
 
     // The already-wired config takes the skip path and is never rewritten, so its unmergeable
     // callback export must not surface as a prerequisite error.
@@ -277,6 +293,20 @@ describe('CommonJS config guard (storybook add flow)', () => {
       (e: unknown) => e
     );
     expect(error).toBeNull();
+  });
+
+  it('rejects an unwired ESM config the merger cannot rewrite with the shape guard', async () => {
+    discover('vitest.config.ts', unwiredCallbackConfigContent);
+
+    const error = await runPostinstall().then(
+      () => null,
+      (e: unknown) => e
+    );
+
+    expect(error).toBeInstanceOf(AddonVitestPostinstallPrerequisiteCheckError);
+    const reasons =
+      error instanceof AddonVitestPostinstallPrerequisiteCheckError ? error.data.reasons : [];
+    expect(reasons.some((r) => r.includes('Found an invalid Vitest config file'))).toBe(true);
   });
 });
 

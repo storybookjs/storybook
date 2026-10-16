@@ -7,6 +7,7 @@ import {
   type ParsedModule,
   type Property,
   isNode,
+  isValidIdentifier,
   parseModule,
   registerSource,
   sourceOf,
@@ -190,10 +191,8 @@ export class SourceEditor {
   }
 }
 
-const isIdentifierName = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
-
 export const printKey = (name: string, quote: string) =>
-  isIdentifierName(name) ? name : printString(name, quote);
+  isValidIdentifier(name, false) ? name : printString(name, quote);
 
 export const printString = (value: string, quote: string) => {
   const json = JSON.stringify(value);

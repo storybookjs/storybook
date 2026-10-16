@@ -1,6 +1,12 @@
 // Reads an arg value written as a name through to the definition it refers to, and reports what
 // printing the result still depends on.
-import { type E, type Node, expressionFromSource, parseFragment } from '../estree/ast.ts';
+import {
+  type E,
+  type Node,
+  expressionFromSource,
+  parseFragment,
+  isValidIdentifier,
+} from '../estree/ast.ts';
 import { analyzeScopes } from '../estree/scope.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
@@ -146,8 +152,6 @@ const hasNamedSpread = (node: Node): boolean => {
   );
 };
 
-const isValidIdentifier = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
-
 /** An object literal with every member value's own spreads written out, when they all can be. */
 const objectFrom = (
   properties: (E.ObjectProperty | { key: string; value: Node })[],
@@ -165,7 +169,7 @@ const objectFrom = (
       const name = keyOf(property);
       key = property.computed
         ? `[${codeOf(property.key)}]`
-        : name !== null && isValidIdentifier(name)
+        : name !== null && isValidIdentifier(name, false)
           ? name
           : codeOf(property.key);
       original = property.value;
@@ -173,7 +177,7 @@ const objectFrom = (
       if (property.value.type === 'Property') {
         return undefined;
       }
-      key = isValidIdentifier(property.key) ? property.key : JSON.stringify(property.key);
+      key = isValidIdentifier(property.key, false) ? property.key : JSON.stringify(property.key);
       original = property.value;
     }
     const value = inlineSpreads(original, ctx, unresolved);

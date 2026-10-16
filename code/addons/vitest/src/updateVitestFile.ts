@@ -6,6 +6,7 @@ import {
   resolveExpression,
 } from 'storybook/internal/cli';
 import {
+  type Binding,
   type ESTree as E,
   SourceEditor,
   appendToList,
@@ -299,6 +300,67 @@ const findWritableConfigObject = (
   );
 };
 
+// What an import binds, with `node:path` and `path` naming the same module.
+const importedFrom = (binding: Binding) => {
+  if (binding.kind !== 'import' || binding.declaration?.type !== 'ImportDeclaration') {
+    return undefined;
+  }
+  const specifier = binding.node as E.ImportDeclarationSpecifier;
+  const name =
+    specifier.type === 'ImportSpecifier'
+      ? specifier.imported.type === 'Literal'
+        ? specifier.imported.value
+        : specifier.imported.name
+      : specifier.type === 'ImportDefaultSpecifier'
+        ? 'default'
+        : '*';
+  return `${name} from ${binding.declaration.source.value.replace(/^node:/, '')}`;
+};
+
+const unusedName = (name: string, editors: SourceEditor[]) => {
+  const base = `storybook${name[0].toUpperCase()}${name.slice(1)}`;
+  let candidate = base;
+  for (let index = 2; editors.some((editor) => editor.scopes.names.has(candidate)); index++) {
+    candidate = `${base}${index}`;
+  }
+  return candidate;
+};
+
+const renameBinding = (editor: SourceEditor, binding: Binding, name: string) => {
+  const { identifier, node } = binding;
+  if (node.type === 'ImportSpecifier' && node.imported.start === identifier.start) {
+    // `import { x }` becomes `import { x as name }`.
+    editor.edits.appendLeft(identifier.end, ` as ${name}`);
+  } else {
+    editor.edits.overwrite(identifier.start, identifier.end, name);
+  }
+  for (const reference of binding.references) {
+    const parent = editor.parentOf(reference);
+    if (parent?.type === 'Property' && parent.shorthand) {
+      // `{ x }` becomes `{ x: name }`.
+      editor.edits.appendLeft(reference.end, `: ${name}`);
+    } else {
+      editor.edits.overwrite(reference.start, reference.end, name);
+    }
+  }
+};
+
+// Rename the template bindings the merged code reads that the target binds to something else,
+// such as the template's `dirname` in a config that imports `dirname` from `node:path`.
+const renameTakenBindings = (source: SourceEditor, target: SourceEditor) => {
+  const call = findExportDefault(source.program)?.declaration as E.CallExpression;
+  for (const binding of source.scopes.program.bindings.values()) {
+    const existing = target.scopes.program.bindings.get(binding.name);
+    const imported = importedFrom(binding);
+    // The template's own `defineConfig(...)` call is not merged.
+    const merged = binding.references.some((reference) => reference !== call.callee);
+    if (existing && merged && (imported === undefined || imported !== importedFrom(existing))) {
+      renameBinding(source, binding, unusedName(binding.name, [source, target]));
+    }
+  }
+  source.commit();
+};
+
 // Template imports and variables the target lacks, each with the comments that follow it.
 const missingStatements = (source: SourceEditor, target: SourceEditor) => {
   const { body } = source.program;
@@ -368,6 +430,7 @@ export const updateConfigFile = (sourceCode: string, target: SourceEditor): bool
     return false;
   }
 
+  renameTakenBindings(source, target);
   const statements = missingStatements(source, target);
   if (statements.length > 0) {
     insertStatements(target, statements.join('\n'));

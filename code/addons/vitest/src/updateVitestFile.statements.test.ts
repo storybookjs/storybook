@@ -4,7 +4,7 @@ import { SourceEditor } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { updateConfigFile } from './updateVitestFile.ts';
+import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
 
 const template = dedent`
   import { fileURLToPath } from 'node:url';
@@ -157,15 +157,48 @@ describe('updateConfigFile statements', () => {
     expect(() => new SourceEditor(code)).not.toThrow();
   });
 
-  it('does not declare a name the config already imports', () => {
+  it.each([
+    ['imports', `import { dirname, resolve } from 'node:path';`],
+    ['requires', `const { dirname } = require('path');`],
+  ])('renames the template dirname when the config %s a dirname function', async (_, binding) => {
     const target = new SourceEditor(dedent`
-      import { dirname } from 'node:path';
-      import { fileURLToPath } from 'node:url';
+      ${binding}
+      import { fileURLToPath } from 'url';
       export default defineConfig({ test: {} });
     `);
+    const realTemplate = await loadTemplate('vitest.config.4.template', {
+      CONFIG_DIR: '.storybook',
+    });
 
-    expect(updateConfigFile(template, target)).toBe(true);
-    expect(target.toString()).not.toContain('const dirname');
-    expect(() => new SourceEditor(target.toString())).not.toThrow();
+    expect(updateConfigFile(realTemplate, target)).toBe(true);
+    const code = target.toString();
+    expect(code).toContain(binding);
+    expect(code).toContain(
+      'const storybookDirname =\n' +
+        "  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));"
+    );
+    expect(code).toContain(
+      "storybookTest({ configDir: path.join(storybookDirname, '.storybook') })"
+    );
+    expect(code).not.toContain("import { fileURLToPath } from 'node:url'");
+    expect(code.match(/(?<!\.)\bdirname\b/g)).toHaveLength(1);
+    expect(() => new SourceEditor(code)).not.toThrow();
+  });
+
+  it('renames an import the config binds to another module', async () => {
+    const target = new SourceEditor(dedent`
+      import path from './path-helpers';
+      export default defineConfig({ test: {} });
+    `);
+    const realTemplate = await loadTemplate('vitest.config.4.template', {
+      CONFIG_DIR: '.storybook',
+    });
+
+    expect(updateConfigFile(realTemplate, target)).toBe(true);
+    const code = target.toString();
+    expect(code).toContain("import storybookPath from 'node:path';");
+    expect(code).toContain('storybookPath.dirname(fileURLToPath(import.meta.url))');
+    expect(code).toContain('storybookPath.join(dirname, ');
+    expect(() => new SourceEditor(code)).not.toThrow();
   });
 });

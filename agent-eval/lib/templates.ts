@@ -1024,6 +1024,61 @@ tool_timeout_sec = 180
   await appendCodexConfig(sandbox, config);
 }
 
+const LUNA_TEST_RULE =
+  '- Do not add or run tests unless the user asks you to test or verify implementation.';
+
+// Runs in the sandbox, where the Codex CLI of the run is not installed yet, so it reads the
+// catalog of the latest one. Prints the path of the instructions it writes.
+const LUNA_INSTRUCTIONS_SCRIPT = `
+const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+
+const catalog = JSON.parse(
+  execFileSync('npx', ['-y', '@openai/codex', 'debug', 'models'], {
+    cwd: os.tmpdir(),
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  })
+);
+const instructions = (slug) =>
+  catalog.models.find((model) => model.slug === slug)?.base_instructions ?? '';
+const luna = instructions('gpt-6-luna');
+const solRules = instructions('gpt-6.1-sol')
+  .split('\\n')
+  .map((line) => line.trimEnd())
+  .filter((line) => /^- (Do not write tests for reversible|Run tests appropriate)/.test(line));
+const lunaRule = ${JSON.stringify(LUNA_TEST_RULE)};
+if (!luna.includes(lunaRule) || solRules.length !== 2) {
+  throw new Error('The Codex catalog no longer has the test rules of gpt-6-luna and gpt-6.1-sol.');
+}
+
+const file = path.join(os.homedir(), '.codex', 'storybook-eval-luna-instructions.md');
+fs.mkdirSync(path.dirname(file), { recursive: true });
+fs.writeFileSync(file, luna.replace(lunaRule, solRules.join('\\n')));
+process.stdout.write(file);
+`;
+
+/**
+ * Give gpt-6-luna the test rules of gpt-6.1-sol, and keep the rest of its own base instructions.
+ * Luna's say "Do not add or run tests unless the user asks", which makes it skip `test-run` on
+ * most UI tasks. With Sol's rules, the Luna experiments stand in for Sol in CI at about 1/13 of
+ * the cost.
+ */
+export async function writeCodexLunaTestRules(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('node', ['-e', LUNA_INSTRUCTIONS_SCRIPT]);
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to write the Luna instructions: ${result.stderr || result.stdout}`);
+  }
+
+  // A top-level key, so it goes before the `[tables]` the other steps append.
+  const existing = await sandbox.readFile(CODEX_CONFIG_PATH).catch(() => '');
+  await sandbox.writeFiles({
+    [CODEX_CONFIG_PATH]: `model_instructions_file = ${JSON.stringify(result.stdout.trim())}\n\n${existing}`,
+  });
+}
+
 // This rule stands in for the `<built_in_browser>` block the desktop app
 // injects, so the agent knows it has that browser. A rule, unlike a
 // CLAUDE.md, does not stop Claude Code from reading AGENTS.md.

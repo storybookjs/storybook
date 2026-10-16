@@ -13,6 +13,8 @@ import {
   type StorybookWorkspace,
   type WorkspacePackage,
   writeClaudeInAppBrowserMock,
+  writeCodexInAppBrowserMock,
+  writeCodexLunaTestRules,
   writeStorybookAgentInstructions,
 } from './templates.ts';
 
@@ -221,6 +223,38 @@ describe('writeClaudeInAppBrowserMock', () => {
     expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
     expect(files['CLAUDE.md']).toBeUndefined();
     expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
+  });
+});
+
+describe('writeCodexLunaTestRules', () => {
+  it('points the Codex config at the instructions it writes, above the tables', async () => {
+    const files: Record<string, string> = {};
+    await writeCodexInAppBrowserMock(createSandbox(files));
+    const sandbox = createSandbox(files);
+    sandbox.runCommand = async (command: string) => ({
+      stdout: command === 'node' ? '/home/user/.codex/storybook-eval-luna-instructions.md' : '',
+      stderr: '',
+      exitCode: 0,
+    });
+
+    await writeCodexLunaTestRules(sandbox);
+
+    expect(files['.codex/config.toml']).toMatch(
+      /^model_instructions_file = "\/home\/user\/\.codex\/storybook-eval-luna-instructions\.md"\n\n\[mcp_servers\.node_repl\]\n/
+    );
+  });
+
+  it('fails when the script cannot write the instructions', async () => {
+    const files: Record<string, string> = {};
+    const sandbox = createSandbox(files);
+    sandbox.runCommand = async () => ({
+      stdout: '',
+      stderr: 'The Codex catalog no longer has the test rules',
+      exitCode: 1,
+    });
+
+    await expect(writeCodexLunaTestRules(sandbox)).rejects.toThrow('no longer has the test rules');
+    expect(files).toEqual({});
   });
 });
 

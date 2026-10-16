@@ -9,13 +9,11 @@ import {
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('writing stories for an existing AlertBanner', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['alertbanner'],
     });
   });

@@ -10,13 +10,11 @@ import {
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('writing the first Button stories in an empty Storybook', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['button'],
     });
   });

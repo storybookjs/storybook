@@ -525,18 +525,6 @@ describe('expectStoryTestsRanAndPassed', () => {
 
     await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/Expected test-run to be called/);
   });
-
-  test('lets the agent skip the tests with requireAgentRun false, but still runs them in the sandbox', async () => {
-    givenRun({
-      commands: ['npm run typecheck'],
-      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
-    });
-    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
-
-    await expectStoryTestsRanAndPassed({ requireAgentRun: false, covering: ['badge'] });
-
-    expect(execFile).toHaveBeenCalled();
-  });
 });
 
 describe('parseCodexBrowserNavigations', () => {

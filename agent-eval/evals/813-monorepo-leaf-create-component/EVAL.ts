@@ -10,7 +10,6 @@ import {
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('creating a Callout in a monorepo UI package', () => {
@@ -28,7 +27,6 @@ describe('creating a Callout in a monorepo UI package', () => {
 
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['callout'],
       cwd: 'packages/ui',
     });

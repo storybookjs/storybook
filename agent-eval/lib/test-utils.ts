@@ -81,12 +81,6 @@ export function getEvalContext(): EvalContext {
   return { agent, ...(typeof model === 'string' && { model }), integration };
 }
 
-// Codex's system prompt for GPT-6 Luna alone says "Do not add or run tests unless the user asks
-// you to test or verify implementation."
-export function modelRunsTestsOnlyWhenAsked(): boolean {
-  return getEvalContext().model?.startsWith('gpt-6-luna') === true;
-}
-
 export function getTranscript(agent = getEvalContext().agent): Transcript {
   const raw = readFileSync(TRANSCRIPT_PATH, 'utf8');
   return loadTranscript(raw, agent);
@@ -408,16 +402,11 @@ export type WorkflowToolResult = {
 //
 // `covering` requires one of the given substrings in the passing story ids.
 // `cwd` is the Storybook project, for fixtures where that is not the root.
-// `requireAgentRun: false` lets the agent skip the tests, for a model that runs
-// them only when asked; a run it did make must still not end red.
 export async function expectStoryTestsRanAndPassed(options?: {
   covering?: string[];
   cwd?: string;
-  requireAgentRun?: boolean;
 }): Promise<void> {
-  if (options?.requireAgentRun !== false) {
-    expectWorkflowCalls(['test-run']);
-  }
+  expectWorkflowCalls(['test-run']);
   expect(
     getWorkflowToolResults('test-run').at(-1)?.output ?? '',
     "The agent's last test run must not report failing stories or unhandled errors"

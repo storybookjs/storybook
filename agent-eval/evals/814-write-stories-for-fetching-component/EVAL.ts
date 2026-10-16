@@ -10,7 +10,6 @@ import {
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 const STORIES_PATH = 'stories/OrderHistory.stories.tsx';
@@ -18,7 +17,6 @@ const STORIES_PATH = 'stories/OrderHistory.stories.tsx';
 describe('writing stories for an existing OrderHistory that fetches its data', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['orderhistory'],
     });
   });

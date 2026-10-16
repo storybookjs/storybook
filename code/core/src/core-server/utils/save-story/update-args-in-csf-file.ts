@@ -12,7 +12,15 @@ import { SaveStoryError } from './utils.ts';
 import { objectSource, valueToSource } from './valueToSource.ts';
 
 // Edits accumulate on `csf`; print them with `printCsf`.
-export const updateArgsInCsfFile = async (csf: CsfFile, node: Node, input: Record<string, any>) => {
+export const updateArgsInCsfFile = async (
+  csf: CsfFile,
+  node: Node | undefined,
+  input: Record<string, any>
+) => {
+  // A story exported through `export { Local as Alias }` has no export of its own to edit.
+  if (!node) {
+    throw new SaveStoryError(`Updating a re-exported story is not supported`);
+  }
   const editor = csf._editor;
   const args = Object.fromEntries(
     Object.entries(input).map(([k, v]) => {

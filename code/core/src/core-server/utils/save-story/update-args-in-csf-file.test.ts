@@ -3,12 +3,13 @@ import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
 import { getDiff } from './getDiff.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
+import { SaveStoryError } from './utils.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 
@@ -94,6 +95,16 @@ describe('success', () => {
         };
         "
     `);
+  });
+  test('re-exported story', async () => {
+    const parsed = loadCsf(
+      `export default { title: 'X' };\nconst Local = { args: { a: 1 } };\nexport { Local as Alias };`,
+      { makeTitle }
+    ).parse();
+
+    await expect(() =>
+      updateArgsInCsfFile(parsed, parsed.getStoryExport('Alias'), { a: 2 })
+    ).rejects.toThrow(SaveStoryError);
   });
   test('Unsupported CSF Variances', async () => {
     const newArgs = { bordered: true, initial: 'test1' };

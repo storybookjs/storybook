@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseModule } from './ast.ts';
+import { codeFrame, parseModule } from './ast.ts';
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -28,6 +28,20 @@ describe('parseModule', () => {
   it('names the file in the Flow error', () => {
     expect(() => parseModule(`// @flow\n${flowBody}`, 'Button.stories.js')).toThrow(
       'in Button.stories.js'
+    );
+  });
+});
+
+describe('codeFrame', () => {
+  it('points at the column of the index', () => {
+    expect(codeFrame('Button.stories.ts', 'const a = 1;\nconst b = ;', 23)).toBe(
+      'Button.stories.ts: (2:10)\n> 2 | const b = ;\n    |           ^'
+    );
+  });
+
+  it('leaves the carriage return of a CRLF line out of the frame', () => {
+    expect(codeFrame(undefined, 'const a = 1;\r\nconst b = ;\r\n', 24)).toBe(
+      '(2:10)\n> 2 | const b = ;\n    |           ^'
     );
   });
 });

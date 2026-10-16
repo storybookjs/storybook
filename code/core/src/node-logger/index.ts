@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
@@ -90,7 +89,54 @@ export const logger = {
   },
 };
 
-export { npmLog as instance };
+/**
+ * The legacy logger instance is kept for internal consumers, but its public
+ * type must not expose npmlog's Node-specific declarations to browser projects.
+ */
+interface LegacyLogger {
+  (): any;
+  level: string;
+  heading: string;
+  stream: any;
+  log(level: string, prefix: string, message: any, ...args: any[]): void;
+  silly(prefix: string, message: any, ...args: any[]): void;
+  verbose(prefix: string, message: any, ...args: any[]): void;
+  info(prefix: string, message: any, ...args: any[]): void;
+  timing(prefix: string, message: any, ...args: any[]): void;
+  http(prefix: string, message: any, ...args: any[]): void;
+  notice(prefix: string, message: any, ...args: any[]): void;
+  warn(prefix: string, message: any, ...args: any[]): void;
+  error(prefix: string, message: any, ...args: any[]): void;
+  silent(prefix: string, message: any, ...args: any[]): void;
+  enableColor(): void;
+  disableColor(): void;
+  enableProgress(): void;
+  disableProgress(): void;
+  progressEnabled(): boolean;
+  enableUnicode(): void;
+  disableUnicode(): void;
+  pause(): void;
+  resume(): void;
+  addLevel(level: string, n: number, style?: object, disp?: string): void;
+  on(event: string, listener: (...args: any[]) => void): this;
+  addListener(event: string, listener: (...args: any[]) => void): this;
+  once(event: string, listener: (...args: any[]) => void): this;
+  prependListener(event: string, listener: (...args: any[]) => void): this;
+  prependOnceListener(event: string, listener: (...args: any[]) => void): this;
+  off(event: string, listener: (...args: any[]) => void): this;
+  removeListener(event: string, listener: (...args: any[]) => void): this;
+  removeAllListeners(event?: string): this;
+  emit(event: string, ...args: any[]): boolean;
+  listeners(event: string): Function[];
+  rawListeners(event: string): Function[];
+  listenerCount(event: string): number;
+  eventNames(): (string | symbol)[];
+  getMaxListeners(): number;
+  setMaxListeners(n: number): this;
+  [key: string]: any;
+}
+
+export const instance = npmLog as LegacyLogger;
 
 const logged = new Set();
 export const once = (type: 'verbose' | 'info' | 'warn' | 'error') => (message: string) => {

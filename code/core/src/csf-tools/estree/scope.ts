@@ -1,4 +1,4 @@
-import { type E, type Node, children, isNode } from './ast.ts';
+import { TYPE_KEYS, type E, type Node, childEntries, children, isNode } from './ast.ts';
 
 export type BindingKind =
   | 'var'
@@ -166,15 +166,6 @@ const TS_TYPES = new Set([
   'TSUnionType',
   'TSUnknownKeyword',
   'TSVoidKeyword',
-]);
-
-const TYPE_KEYS = new Set([
-  'typeAnnotation',
-  'returnType',
-  'typeParameters',
-  'typeArguments',
-  'superTypeArguments',
-  'implements',
 ]);
 
 const isCompatTag = (name: string) => /^[a-z]/.test(name) || name.includes('-');
@@ -785,25 +776,6 @@ export const analyzeScopes = (program: E.Program): ScopeInfo => {
       return best;
     },
   };
-};
-
-const childEntries = (node: Node): { key: string; node: Node }[] => {
-  const result: { key: string; node: Node }[] = [];
-  for (const [key, value] of Object.entries(node)) {
-    if (key === 'parent') {
-      continue;
-    }
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        if (isNode(item)) {
-          result.push({ key, node: item });
-        }
-      }
-    } else if (isNode(value)) {
-      result.push({ key, node: value });
-    }
-  }
-  return result;
 };
 
 /** Generate an unused name: `_meta`, `_meta2`, `_meta3`, … */

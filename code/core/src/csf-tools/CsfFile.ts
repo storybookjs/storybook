@@ -25,6 +25,7 @@ import {
   type E,
   type Node,
   type SourceLocation,
+  children,
   identifierKey,
   isFunction,
   isIdentifier,
@@ -967,7 +968,10 @@ export class CsfFile {
           break;
       }
       ancestors.push(node);
-      for (const child of childNodes(node)) {
+      const sorted = children(node, { skipTypes: true }).sort(
+        (a, b) => (a as Node & { start: number }).start - (b as Node & { start: number }).start
+      );
+      for (const child of sorted) {
         visit(child, ancestors);
       }
       ancestors.pop();
@@ -1153,32 +1157,6 @@ export class CsfFile {
 }
 
 // Children in source order; type annotations are skipped since CSF never reads them.
-const childNodes = (node: Node): Node[] => {
-  const result: Node[] = [];
-  for (const key in node) {
-    if (
-      key === 'parent' ||
-      key === 'typeAnnotation' ||
-      key === 'returnType' ||
-      key === 'typeParameters' ||
-      key === 'typeArguments'
-    ) {
-      continue;
-    }
-    const value = (node as any)[key];
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        if (item && typeof item === 'object' && typeof item.type === 'string') {
-          result.push(item);
-        }
-      }
-    } else if (value && typeof value === 'object' && typeof value.type === 'string') {
-      result.push(value);
-    }
-  }
-  return result.sort((a: any, b: any) => a.start - b.start);
-};
-
 export const loadCsf = (code: string, options: CsfOptions) => new CsfFile(code, options);
 
 type MagicStringSourceMap = ReturnType<SourceEditor['edits']['generateMap']>;

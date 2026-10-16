@@ -148,23 +148,43 @@ export const codeFrame = (fileName: string | undefined, code: string, index: num
 export const isNode = (value: unknown): value is Node =>
   !!value && typeof value === 'object' && typeof (value as Node).type === 'string';
 
-export const children = (node: Node): Node[] => {
+// Keys that hold type annotations rather than runtime code.
+export const TYPE_KEYS = new Set([
+  'typeAnnotation',
+  'returnType',
+  'typeParameters',
+  'typeArguments',
+  'superTypeArguments',
+  'implements',
+]);
+
+/** A node's children with the key each was found under, in OXC's visitor order. */
+export const childEntries = (
+  node: Node,
+  options: { skipTypes?: boolean } = {}
+): { key: string; node: Node }[] => {
   const keys = (visitorKeys as Record<string, readonly string[]>)[node.type] ?? [];
-  const result: Node[] = [];
+  const result: { key: string; node: Node }[] = [];
   for (const key of keys) {
+    if (options.skipTypes && TYPE_KEYS.has(key)) {
+      continue;
+    }
     const value = (node as unknown as Record<string, unknown>)[key];
     if (Array.isArray(value)) {
       for (const item of value) {
         if (isNode(item)) {
-          result.push(item);
+          result.push({ key, node: item });
         }
       }
     } else if (isNode(value)) {
-      result.push(value);
+      result.push({ key, node: value });
     }
   }
   return result;
 };
+
+export const children = (node: Node, options?: { skipTypes?: boolean }): Node[] =>
+  childEntries(node, options).map((entry) => entry.node);
 
 /** Walk depth-first. Return `false` from `enter` to skip a node's children. */
 export const walk = (

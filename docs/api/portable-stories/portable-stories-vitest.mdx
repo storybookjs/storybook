@@ -212,6 +212,30 @@ Type: `ProjectAnnotation | ProjectAnnotation[]`
 
 A set of project [annotations](#annotations) (those defined in `.storybook/preview.*`) or an array of sets of project annotations, which will be applied to all composed stories.
 
+## cleanupStories
+
+This API executes all registered cleanup callbacks for portable stories in reverse order and clears the registry. It unmounts the last rendered story, triggers component and hook teardowns, and removes any temporary DOM containers created during `story.run()`.
+
+Pass `cleanupStories` to Vitest's `afterEach` hook to ensure stories are cleaned up between tests:
+
+```ts
+import { afterEach } from 'vitest';
+import { cleanupStories } from '@storybook/your-framework';
+
+afterEach(cleanupStories);
+```
+
+<Callout variant="info">
+  The cleanup registry is shared within a test file, so concurrent tests may unmount each other's
+  stories.
+</Callout>
+
+### Type
+
+```ts
+() => Promise<void>;
+```
+
 ## Annotations
 
 Annotations are the metadata applied to a story, like [args](../../writing-stories/args.mdx), [decorators](../../writing-stories/decorators.mdx), [loaders](../../writing-stories/loaders.mdx), and [play functions](../../writing-stories/play-function.mdx). They can be defined for a specific story, all stories for a component, or all stories in the project.

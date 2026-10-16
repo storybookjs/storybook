@@ -102,9 +102,9 @@
       },
     },
     "type": {
-      "name": "other",
+      "name": "function",
+      "raw": "(e: MouseEvent) => void",
       "required": false,
-      "value": "(e: MouseEvent) => void",
     },
   },
   "size": {

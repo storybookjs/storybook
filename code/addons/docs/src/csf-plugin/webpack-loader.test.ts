@@ -1,56 +1,91 @@
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import { SourceMap, type SourceMapPayload } from 'node:module';
+import { resolve } from 'node:path';
+
+import MagicString from 'magic-string';
+import { vol } from 'memfs';
+import { dedent } from 'ts-dedent';
 
 import loader from './webpack-loader.ts';
 
-const STORY = `export default { title: 'Example' };
-export const Primary = { args: { label: 'Button' } };
+vi.mock('node:fs/promises', { spy: true });
+
+const id = resolve('/src/Button.stories.tsx');
+
+const originalCode = dedent`
+  import type { Meta } from '@storybook/react';
+
+  export default { title: 'Button' } satisfies Meta;
+
+  export const Primary = {
+    play: async () => {},
+  };
 `;
 
-function runLoader(resourcePath: string, content: string) {
-  return new Promise<{ err: Error | null; result?: string }>((resolve, reject) => {
-    loader
-      .call(
-        {
-          async: () => (err, result) => resolve({ err, result }),
-          getOptions: () => ({}),
-          resourcePath,
-        },
-        content,
-        undefined
-      )
-      .catch(reject);
+// What an earlier loader such as swc-loader hands over: transpiled code plus its map.
+const transpile = (code: string) => {
+  const edited = new MagicString(code)
+    .remove(0, code.indexOf('\n') + 2)
+    .replace(' satisfies Meta', '');
+  return {
+    code: edited.toString(),
+    map: edited.generateMap({ hires: 'boundary', source: id, includeContent: true }),
+  };
+};
+
+const positionOf = (code: string, token: string) => {
+  const line = code.split('\n').findIndex((text) => text.includes(token));
+  return { line, column: code.split('\n')[line].indexOf(token) };
+};
+
+const run = (content: string, map: unknown) =>
+  new Promise<{ code: string; map: SourceMapPayload }>((done, fail) => {
+    loader.call(
+      {
+        async: () => (error, code, result) =>
+          error ? fail(error) : done({ code: code!, map: result }),
+        getOptions: () => ({}),
+        resourcePath: id,
+      },
+      content,
+      map
+    );
   });
-}
 
-describe('csf-plugin webpack loader', () => {
-  let dir: string;
-
+describe('webpack loader', () => {
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'csf-plugin-'));
+    const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+    vi.mocked(readFile).mockImplementation(
+      memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
+    );
+    vol.reset();
+    vol.fromJSON({ [id]: originalCode });
   });
 
-  afterEach(async () => {
-    await rm(dir, { recursive: true, force: true });
+  it('maps the enriched output through the incoming source map', async () => {
+    const transpiled = transpile(originalCode);
+    expect(positionOf(transpiled.code, 'play:').line).not.toBe(
+      positionOf(originalCode, 'play:').line
+    );
+
+    const result = await run(transpiled.code, transpiled.map);
+
+    expect(result.code).toContain('originalSource');
+    const output = positionOf(result.code, 'play:');
+    const entry = new SourceMap(result.map).findEntry(output.line, output.column);
+    expect(entry).toMatchObject({ originalLine: positionOf(originalCode, 'play:').line });
+    // Windows paths come back with forward slashes.
+    expect((entry as { originalSource?: string }).originalSource).toMatch(/Button\.stories\.tsx$/);
+    expect(result.map.sourcesContent).toEqual([originalCode]);
   });
 
-  it('adds the original source to stories', async () => {
-    const file = join(dir, 'Button.stories.ts');
-    await writeFile(file, STORY);
+  it('maps to the loaded code when no earlier loader ran', async () => {
+    const result = await run(originalCode, undefined);
 
-    const { err, result } = await runLoader(file, STORY);
-
-    expect(err).toBeNull();
-    expect(result).toContain('originalSource');
-  });
-
-  it('passes the content through when the story file was deleted during the build', async () => {
-    const { err, result } = await runLoader(join(dir, 'Deleted.stories.ts'), STORY);
-
-    expect(err).toBeNull();
-    expect(result).toBe(STORY);
+    const output = positionOf(result.code, 'play:');
+    const entry = new SourceMap(result.map).findEntry(output.line, output.column);
+    expect(entry).toMatchObject({ originalLine: positionOf(originalCode, 'play:').line });
   });
 });

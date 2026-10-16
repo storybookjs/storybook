@@ -33,7 +33,7 @@ import {
   locationOf,
   unwrapExpression,
 } from './estree/ast.ts';
-import { SourceEditor, appendStatement } from './estree/editor.ts';
+import { type InputSourceMap, SourceEditor, appendStatement } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
@@ -1185,6 +1185,8 @@ export interface FormatCsfOptions {
   sourceMaps?: boolean;
   /** Source name the map refers to; defaults to the file name the CSF was loaded with. */
   sourceFileName?: string;
+  /** Map of the loaded code to its original, when it came from an earlier transform. */
+  inputSourceMap?: InputSourceMap;
 }
 
 /**
@@ -1201,11 +1203,10 @@ export const formatCsf = (
   }
   return {
     code,
-    map: csf._editor.edits.generateMap({
-      hires: true,
+    map: csf._editor.generateMap({
       source: options.sourceFileName ?? csf._options.fileName,
-      includeContent: true,
-    }) as CsfSourceMap,
+      inputSourceMap: options.inputSourceMap,
+    }) as unknown as CsfSourceMap,
   };
 };
 

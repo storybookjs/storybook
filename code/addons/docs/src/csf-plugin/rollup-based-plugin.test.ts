@@ -157,6 +157,27 @@ export const Primary = { args: { label: 'Primary' } };
     expect(code).toContain(`originalSource: "{ args: { label: 'Primary' } }"`);
   });
 
+  it('keeps original positions when a hook commits edits before formatting', async () => {
+    enrichCsf.mockImplementation(async (csf) => {
+      const [primary] = csf.objects({ meta: false });
+      primary.set(['parameters', 'docs', 'extra'], true);
+    });
+
+    const result = await transformCsf(source, storyId, { enrichCsf });
+    if (typeof result !== 'object') {
+      throw new Error('expected a transform result with a sourcemap');
+    }
+
+    expect(result.code).toContain('extra: true');
+    const output = positionOf(result.code, 'export const Primary');
+    const entry = new SourceMap(result.map as unknown as SourceMapPayload).findEntry(
+      output.line,
+      output.column
+    );
+    expect(entry).toMatchObject({ originalLine: positionOf(source, 'export const Primary').line });
+    expect(result.map.sourcesContent).toEqual([source]);
+  });
+
   it('leaves the source passed to enrichCsf hooks unenriched', async () => {
     expect.assertions(3);
     enrichCsf.mockImplementation(async (csf, csfSource) => {

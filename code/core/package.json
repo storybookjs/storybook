@@ -299,6 +299,7 @@
     "@emotion/styled": "^11.14.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@happy-dom/global-registrator": "^20.0.11",
+    "@jridgewell/remapping": "^2.3.5",
     "@jridgewell/sourcemap-codec": "^1.5.5",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",

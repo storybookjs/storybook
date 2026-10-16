@@ -33555,6 +33555,7 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^20.0.11"
+    "@jridgewell/remapping": "npm:^2.3.5"
     "@jridgewell/sourcemap-codec": "npm:^1.5.5"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"

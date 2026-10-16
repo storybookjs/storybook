@@ -1,4 +1,5 @@
-import MagicString from 'magic-string';
+import remapping, { type SourceMapInput } from '@jridgewell/remapping';
+import MagicString, { SourceMap } from 'magic-string';
 
 import {
   type E,
@@ -15,6 +16,23 @@ import { type ScopeInfo, analyzeScopes } from './scope.ts';
 
 type Span = { start: number; end: number };
 
+// Maps in a chain are matched by source name, so every map of an editor uses the same one. A
+// private member would make the class nominal and break assignability between `src` and `dist`.
+const mapSource = (editor: { fileName: string | undefined }) => editor.fileName ?? 'source';
+
+/** A source map from an earlier transform, as the object or the JSON string it was handed over as. */
+export type InputSourceMap =
+  | string
+  | {
+      version: number | string;
+      mappings: string;
+      sources: (string | null)[];
+      sourcesContent?: (string | null)[];
+      names?: string[];
+      file?: string;
+      sourceRoot?: string;
+    };
+
 /**
  * Source text plus its OXC AST. Edits accumulate in `edits`, so untouched code stays
  * byte-identical; `commit()` applies them and parses the result again.
@@ -27,6 +45,10 @@ export class SourceEditor {
   _parents: Map<Node, Node | null> | undefined;
 
   _edits: MagicString;
+
+  // Maps of the edits applied by earlier commits, oldest first, so the output still maps to the
+  // code the editor was created with.
+  _committed: SourceMap[] = [];
 
   readonly fileName: string | undefined;
 
@@ -93,6 +115,9 @@ export class SourceEditor {
     if (!this.pending) {
       return false;
     }
+    this._committed.push(
+      this._edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
+    );
     this.replaceSource(this._edits.toString());
     return true;
   }
@@ -102,6 +127,37 @@ export class SourceEditor {
     this._scopes = undefined;
     this._parents = undefined;
     this._edits = new MagicString(code, { filename: this.fileName });
+  }
+
+  /**
+   * Hi-res map from the code the editor was created with to `toString()`, through every commit,
+   * and through `inputSourceMap` when the code came from an earlier transform.
+   */
+  generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): SourceMap {
+    const source = options.source ?? this.fileName ?? '';
+    const current = this._edits.generateMap({
+      hires: true,
+      includeContent: true,
+      source: mapSource(this),
+    });
+    const chain = [current, ...this._committed.slice().reverse()];
+    if (chain.length === 1 && !options.inputSourceMap) {
+      current.sources = [source];
+      return current;
+    }
+    const maps = chain.map((map) => map as unknown as SourceMapInput);
+    if (options.inputSourceMap) {
+      maps.push(options.inputSourceMap as SourceMapInput);
+    }
+    const composed = remapping(maps, () => null);
+    return new SourceMap({
+      file: composed.file ?? '',
+      sources: composed.sources.map((name) => (options.inputSourceMap ? (name ?? '') : source)),
+      sourcesContent: composed.sourcesContent?.map((content) => content ?? ''),
+      names: composed.names,
+      // Encoded, since `decodedMappings` was not requested.
+      mappings: composed.mappings as string,
+    });
   }
 
   /** Line ending of the file; inserted text is written with `\n` and converted on output. */

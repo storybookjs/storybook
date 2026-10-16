@@ -46,7 +46,9 @@ beforeEach(async () => {
   vol.reset();
   vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
   vi.mocked(isCI).mockReturnValue(false);
-  vi.mocked(addStorybookAgentInstructions).mockResolvedValue(['AGENTS.md']);
+  vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+    { file: 'AGENTS.md', change: 'added' },
+  ]);
 });
 
 describe('supportsSkills', () => {
@@ -195,16 +197,32 @@ describe('installSkills', () => {
   it('adds the section that tells agents when to use the skills', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
     expect(logger.log).toHaveBeenCalledWith(
       expect.stringContaining('Added a Storybook section to AGENTS.md')
     );
   });
 
-  it('leaves AGENTS.md alone on a refresh, so a removed section stays removed', async () => {
+  it('only updates the section between the markers on a refresh', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+      { file: 'AGENTS.md', change: 'updated' },
+      { file: 'CLAUDE.md', change: 'updated' },
+    ]);
+
     await installSkills({ packageManager, source: 'refresh' });
 
-    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(logger.log).toHaveBeenCalledWith(
+      'Updated the Storybook section in AGENTS.md and CLAUDE.md.'
+    );
+  });
+
+  it('says nothing about the section when a refresh changes nothing', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([]);
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('Storybook section'));
   });
 
   it('replaces the stories skill of an 11.0 prerelease on a refresh', async () => {
@@ -224,7 +242,7 @@ describe('installSkills', () => {
       args: ['skills@latest', 'remove', 'stories', '--yes'],
       cwd: PROJECT_ROOT,
     });
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
   });
 
   it('keeps the installed skills when removing the stories skill fails', async () => {
@@ -244,7 +262,7 @@ describe('installSkills', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       'Could not remove the replaced Storybook skills stories. Remove them with: npx skills@latest remove stories --yes'
     );
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
   });
 
   it('does not remove a stories skill from another repository', async () => {

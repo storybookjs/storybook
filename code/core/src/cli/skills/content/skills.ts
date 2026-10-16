@@ -15,7 +15,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
   },
   'component-docs': {
     blurb:
-      'Look up components, with their props and usage, to reuse them instead of building duplicates or to answer questions about them.',
+      'Look up components, with their props and usage, to answer questions about them or to reuse them instead of building duplicates.',
   },
   'write-story': {
     blurb:

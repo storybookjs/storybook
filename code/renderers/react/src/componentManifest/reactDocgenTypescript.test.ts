@@ -10,6 +10,7 @@ import {
   invalidateParser,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
+  readTsconfig,
 } from './reactDocgenTypescript.ts';
 import { invalidateCache } from './utils.ts';
 
@@ -256,6 +257,93 @@ describe('parseWithReactDocgenTypescript', () => {
     expect(docs[0].description).toBe('Primary UI component for user interaction');
   });
 });
+
+describe('readTsconfig', () => {
+  const projectDir = path.resolve('/project');
+  const configPath = path.join(projectDir, 'tsconfig.json');
+  const buttonPath = path.join(projectDir, 'Button.tsx');
+  const cardPath = path.join(projectDir, 'Card.tsx');
+
+  test('reuses tsconfig from cache when parse was successful', () => {
+    const { typescript, readConfigFile, parseJsonConfigFileContent } = createTypescriptStub({
+      [configPath]: { fileNames: [buttonPath] },
+    });
+
+    const first = readTsconfig(typescript, configPath);
+    const second = readTsconfig(typescript, configPath);
+
+    expect(second).toBe(first);
+    expect(readConfigFile).toHaveBeenCalledTimes(1);
+    expect(parseJsonConfigFileContent).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not cache a config with errors', () => {
+    const { typescript, readConfigFile } = createTypescriptStub({
+      [configPath]: { readError: true },
+    });
+
+    expect(readTsconfig(typescript, configPath).error).toBeDefined();
+    expect(readTsconfig(typescript, configPath).error).toBeDefined();
+    expect(readConfigFile).toHaveBeenCalledTimes(2);
+  });
+
+  test('does not cache a config whose parse reports diagnostics', () => {
+    const { typescript, parseJsonConfigFileContent } = createTypescriptStub({
+      [configPath]: { parseError: true },
+    });
+
+    expect(readTsconfig(typescript, configPath).parsed.errors).toHaveLength(1);
+    expect(readTsconfig(typescript, configPath).parsed.errors).toHaveLength(1);
+    expect(parseJsonConfigFileContent).toHaveBeenCalledTimes(2);
+  });
+
+  test('reparses after cache invalidation', () => {
+    const fixtures = { [configPath]: { fileNames: [buttonPath] } };
+    const { typescript, readConfigFile } = createTypescriptStub(fixtures);
+
+    expect(readTsconfig(typescript, configPath).parsed.fileNames).toEqual([buttonPath]);
+
+    fixtures[configPath] = { fileNames: [cardPath] };
+
+    expect(readTsconfig(typescript, configPath).parsed.fileNames).toEqual([buttonPath]);
+    expect(readConfigFile).toHaveBeenCalledTimes(1);
+
+    invalidateCache();
+
+    expect(readTsconfig(typescript, configPath).parsed.fileNames).toEqual([cardPath]);
+    expect(readConfigFile).toHaveBeenCalledTimes(2);
+  });
+});
+
+type TsconfigFixture = { readError?: boolean; parseError?: boolean; fileNames?: string[] };
+
+function createTypescriptStub(fixtures: Record<string, TsconfigFixture>) {
+  const readConfigFile = vi.fn((filePath: string) => {
+    if (fixtures[filePath]?.readError) {
+      return { error: { messageText: `Cannot read file ${filePath}` } };
+    }
+    return { config: { filePath } };
+  });
+
+  const parseJsonConfigFileContent = vi.fn((config?: { filePath: string }) => {
+    const fixture = config ? fixtures[config.filePath] : undefined;
+    return {
+      options: {},
+      fileNames: fixture?.fileNames ?? [],
+      errors: fixture?.parseError ? [{ messageText: 'File tsconfig.base.json not found' }] : [],
+    };
+  });
+
+  return {
+    typescript: {
+      readConfigFile,
+      parseJsonConfigFileContent,
+      sys: { readFile: () => undefined, useCaseSensitiveFileNames: true },
+    } as unknown as Parameters<typeof readTsconfig>[0],
+    readConfigFile,
+    parseJsonConfigFileContent,
+  };
+}
 
 function createTempProject(files: Record<string, string>) {
   const dir = mkdtempSync(path.join(tmpdir(), 'sb-rdt-test-'));

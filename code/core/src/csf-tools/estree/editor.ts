@@ -310,17 +310,49 @@ export interface List {
   items: readonly Span[];
 }
 
+const nextTokenStart = (code: string, comments: readonly Span[], index: number) => {
+  let next = index;
+  while (next < code.length) {
+    const comment = comments.find((candidate) => candidate.start === next);
+    if (comment) {
+      next = comment.end;
+    } else if (/\s/.test(code[next])) {
+      next++;
+    } else {
+      break;
+    }
+  }
+  return next;
+};
+
+const previousTokenEnd = (code: string, comments: readonly Span[], index: number) => {
+  let previous = index;
+  while (previous > 0) {
+    const comment = comments.find((candidate) => candidate.end === previous);
+    if (comment) {
+      previous = comment.start;
+    } else if (/\s/.test(code[previous - 1])) {
+      previous--;
+    } else {
+      break;
+    }
+  }
+  return previous;
+};
+
 /** The `{ … }` of an import or export with at least one named specifier. */
 export const specifierList = (
   editor: SourceEditor,
   declaration: E.ImportDeclaration | E.ExportNamedDeclaration
 ): List => {
+  const { code, comments } = editor;
   const items = declaration.specifiers.filter(
     (specifier) => specifier.type === 'ImportSpecifier' || specifier.type === 'ExportSpecifier'
   );
+  const afterLast = nextTokenStart(code, comments, items.at(-1)!.end);
   return {
-    open: editor.code.lastIndexOf('{', items[0].start) + 1,
-    close: editor.code.indexOf('}', items.at(-1)!.end),
+    open: previousTokenEnd(code, comments, items[0].start),
+    close: code[afterLast] === ',' ? nextTokenStart(code, comments, afterLast + 1) : afterLast,
     items,
   };
 };
@@ -331,24 +363,28 @@ export const objectList = (object: E.ObjectExpression | E.ObjectPattern): List =
   items: object.properties,
 });
 
-// Nodes are parsed without parentheses, so an element's span may sit inside `( )`. Leading holes
-// (`[, a]`) stay in place: the list opens after their commas.
+// A hole (`[a, , b]`) is an empty item right before the comma that writes it.
+const isHole = (item: Span) => item.start === item.end;
+
+// Nodes are parsed without parentheses, so an element's span may sit inside `( )`.
 export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => {
-  const { code } = editor;
-  let open = array.start + 1;
-  for (const element of array.elements) {
+  const { code, comments } = editor;
+  const open = array.start + 1;
+  const close = array.end - 1;
+  let cursor = open;
+  const items = array.elements.map((element): Span => {
+    let item: Span;
     if (element) {
-      break;
+      item = withParentheses(code, element, cursor, close, comments);
+    } else {
+      const comma = nextTokenStart(code, comments, cursor);
+      item = { start: comma, end: comma };
     }
-    open = scanFor(code, open, array.end - 1, ',') ?? open;
-  }
-  return {
-    open,
-    close: array.end - 1,
-    items: array.elements
-      .filter((element): element is NonNullable<typeof element> => !!element)
-      .map((element) => withParentheses(code, element, open, array.end - 1, editor.comments)),
-  };
+    const next = nextTokenStart(code, comments, item.end);
+    cursor = code[next] === ',' ? next + 1 : next;
+    return item;
+  });
+  return { open, close, items };
 };
 
 /**
@@ -364,28 +400,8 @@ export const withParentheses = (
 ): Span => {
   let { start, end } = span;
   while (true) {
-    let before = start;
-    while (before > lower) {
-      const comment = comments.find((candidate) => candidate.end === before);
-      if (comment) {
-        before = comment.start;
-      } else if (/\s/.test(code[before - 1])) {
-        before--;
-      } else {
-        break;
-      }
-    }
-    let after = end;
-    while (after < upper) {
-      const comment = comments.find((candidate) => candidate.start === after);
-      if (comment) {
-        after = comment.end;
-      } else if (/\s/.test(code[after])) {
-        after++;
-      } else {
-        break;
-      }
-    }
+    const before = previousTokenEnd(code, comments, start);
+    const after = nextTokenStart(code, comments, end);
     if (before > lower && after < upper && code[before - 1] === '(' && code[after] === ')') {
       start = before - 1;
       end = after + 1;
@@ -393,16 +409,6 @@ export const withParentheses = (
       return start === span.start && end === span.end ? span : { start, end };
     }
   }
-};
-
-// Position right after the token that precedes an item: the comma or the opening token.
-export const separatorBefore = (code: string, list: List | E.ObjectExpression, index: number) => {
-  const { open, items } = 'open' in list ? list : objectList(list);
-  if (index === 0) {
-    return open;
-  }
-  const previous = items[index - 1];
-  return scanFor(code, previous.end, items[index].start, ',') ?? previous.end;
 };
 
 // Position right after the comma that follows an item, if it has one.
@@ -430,134 +436,48 @@ export const indentUnit = (code: string, object: E.ObjectExpression | undefined)
 
 const isMultiline = (code: string, list: List) => code.slice(list.open, list.close).includes('\n');
 
-// Offsets of the line breaks in `text` that are part of a value: inside string and regex literals
-// and template quasis. JSX text is not one: JSX trims its lines. Read from the parsed text, so no
-// scanner has to know the grammar.
-const valueLineBreaks = (text: string): Set<number> | undefined => {
-  const parsed = parseLoosely(text);
-  if (!parsed) {
-    return undefined;
-  }
-  const breaks = new Set<number>();
-  walk(parsed.program, (node) => {
+// Spans of the literals under `root` whose line breaks are part of their value: strings, regexes
+// and template quasis, but not JSX text, which JSX trims. Relative to `range.start`.
+const literalSpans = (root: Node, range: Span): Span[] => {
+  const spans: Span[] = [];
+  walk(root, (node) => {
+    const { start, end } = node as Node & Span;
+    if (end <= range.start || start >= range.end) {
+      return false;
+    }
     if (
       node.type === 'TemplateElement' ||
       (node.type === 'Literal' && (typeof node.value === 'string' || 'regex' in node))
     ) {
-      const { start, end } = node as Node & { start: number; end: number };
-      for (let index = start; index < end; index++) {
-        if (text[index - parsed.offset] === '\n') {
-          breaks.add(index - parsed.offset);
-        }
-      }
+      spans.push({ start: start - range.start, end: end - range.start });
     }
   });
-  return breaks;
+  return spans;
 };
 
-// A fragment of source: statements, a `key: value` member (a labeled statement) or an expression.
-const parseLoosely = (text: string): { program: E.Program; offset: number } | undefined => {
-  try {
-    return { program: parseModule(text).program, offset: 0 };
-  } catch {
+// What text reaching `reindent` may be: statements, an expression, an object member such as a
+// method, or a function body.
+const FRAGMENTS = [
+  ['', ''],
+  ['(', '\n)'],
+  ['({', '\n})'],
+  ['(async function* () ', '\n)'],
+] as const;
+
+const parsedLiteralSpans = (text: string): Span[] | undefined => {
+  for (const [before, after] of FRAGMENTS) {
+    let program: E.Program;
     try {
-      return { program: parseModule(`(${text}\n)`).program, offset: 1 };
+      program = parseModule(`${before}${text}${after}`).program;
     } catch {
-      return undefined;
+      continue;
     }
+    return literalSpans(program, { start: before.length, end: before.length + text.length });
   }
+  return undefined;
 };
 
-// Fallback for text that is not parseable on its own, such as an import specifier: a scanner that
-// tracks strings, templates, comments and regex literals.
-const scannedValueLineBreaks = (text: string): Set<number> => {
-  const breaks = new Set<number>();
-  type Context = 'template' | { depth: number };
-  const stack: Context[] = [{ depth: 0 }];
-  let quote: string | undefined;
-  let comment: 'line' | 'block' | undefined;
-  let regex = false;
-  let last = '';
-  for (let index = 0; index < text.length; index++) {
-    const char = text[index];
-    const top = stack.at(-1)!;
-    if (quote) {
-      if (char === '\\') {
-        if (text[index + 1] === '\n') {
-          breaks.add(index + 1);
-        }
-        index++;
-      } else if (char === quote || char === '\n') {
-        quote = undefined;
-      }
-      continue;
-    }
-    if (regex) {
-      if (char === '\\') {
-        index++;
-      } else if (char === '/' || char === '\n') {
-        regex = false;
-      }
-      continue;
-    }
-    if (comment === 'line') {
-      if (char === '\n') {
-        comment = undefined;
-      }
-      continue;
-    }
-    if (comment === 'block') {
-      if (text.startsWith('*/', index)) {
-        comment = undefined;
-        index++;
-      }
-      continue;
-    }
-    if (top === 'template') {
-      if (char === '\\') {
-        index++;
-      } else if (char === '`') {
-        stack.pop();
-      } else if (text.startsWith('${', index)) {
-        stack.push({ depth: 0 });
-        index++;
-      } else if (char === '\n') {
-        breaks.add(index);
-      }
-      continue;
-    }
-    if (char === "'" || char === '"') {
-      quote = char;
-    } else if (char === '`') {
-      stack.push('template');
-    } else if (text.startsWith('//', index)) {
-      comment = 'line';
-    } else if (text.startsWith('/*', index)) {
-      comment = 'block';
-    } else if (char === '/' && /^$|[(,=:[!&|?{};+\-*%<>~^]/.test(last)) {
-      regex = true;
-    } else if (char === '{') {
-      top.depth++;
-    } else if (char === '}') {
-      if (top.depth === 0 && stack.length > 1) {
-        stack.pop();
-      } else {
-        top.depth--;
-      }
-    }
-    if (!/\s/.test(char)) {
-      last = char;
-    }
-  }
-  return breaks;
-};
-
-/** Re-indent the continuation lines of `text`, leaving string and template literal values alone. */
-export const reindent = (text: string, from: string, to: string) => {
-  if (from === to || !text.includes('\n')) {
-    return text;
-  }
-  const values = valueLineBreaks(text) ?? scannedValueLineBreaks(text);
+const reindentLines = (text: string, from: string, to: string, literals: readonly Span[]) => {
   let result = '';
   let cursor = 0;
   for (
@@ -567,7 +487,8 @@ export const reindent = (text: string, from: string, to: string) => {
   ) {
     result += text.slice(cursor, lineBreak + 1);
     cursor = lineBreak + 1;
-    if (!values.has(lineBreak) && text.startsWith(from, cursor)) {
+    const inLiteral = literals.some((span) => span.start < lineBreak && lineBreak < span.end);
+    if (!inLiteral && text.startsWith(from, cursor)) {
       result += to;
       cursor += from.length;
     }
@@ -575,12 +496,72 @@ export const reindent = (text: string, from: string, to: string) => {
   return result + text.slice(cursor);
 };
 
-/** Text of an item including the comments that lead it, with continuation lines dedented. */
-export const itemText = (editor: SourceEditor, list: List, item: Span) => {
-  const start = separatorBefore(editor.code, list, list.items.indexOf(item));
-  const raw = editor.code.slice(start, item.end).replace(/^\s+/, '');
-  return reindent(raw, lineIndent(editor.code, item.start), '');
+/**
+ * Re-indent the continuation lines of `text`, leaving string and template literal values alone.
+ * Text that does not parse is returned unchanged, as its literals cannot be located.
+ */
+export const reindent = (text: string, from: string, to: string) => {
+  if (from === to || !text.includes('\n')) {
+    return text;
+  }
+  const literals = parsedLiteralSpans(text);
+  return literals ? reindentLines(text, from, to, literals) : text;
 };
+
+const dedentSource = (editor: SourceEditor, start: number, end: number, from: string) => {
+  const text = editor.code.slice(start, end);
+  return from === '' || !text.includes('\n')
+    ? text
+    : reindentLines(text, from, '', literalSpans(editor.program, { start, end }));
+};
+
+// The comment after `index` on its line, when nothing else follows it there.
+const trailingComment = (editor: SourceEditor, index: number) => {
+  const { code } = editor;
+  const lineBreak = code.indexOf('\n', index);
+  const lineEnd = lineBreak === -1 ? code.length : lineBreak;
+  const comment = editor.comments.find(
+    (candidate) => candidate.start >= index && candidate.end <= lineEnd
+  );
+  const alone =
+    comment && !code.slice(index, comment.start).trim() && !code.slice(comment.end, lineEnd).trim();
+  return alone ? comment : undefined;
+};
+
+// End of an item with its separator and the comment that trails them on their line.
+const itemEnd = (editor: SourceEditor, list: List, index: number) => {
+  const end = separatorAfter(editor.code, list, index) ?? list.items[index].end;
+  return trailingComment(editor, end)?.end ?? end;
+};
+
+// Start of what an item owns: after the separator before it and the comment trailing that.
+const itemStart = (editor: SourceEditor, list: List, index: number) =>
+  index === 0 ? list.open : itemEnd(editor, list, index - 1);
+
+// `itemText` with the text from the start of the leading comments printed by `print`.
+const itemTextWith = (
+  editor: SourceEditor,
+  list: List,
+  index: number,
+  print: (start: number) => string
+) => {
+  const { code } = editor;
+  const item = list.items[index];
+  const from = itemStart(editor, list, index);
+  const text = print(from + /^\s*/.exec(code.slice(from, item.start))![0].length);
+  const end = separatorAfter(code, list, index) ?? item.end;
+  const comment = trailingComment(editor, end);
+  return comment ? `${editor.source(comment)}\n${text}` : text;
+};
+
+/**
+ * Text of an item including the comments that lead it, with continuation lines dedented. A
+ * comment that trails the item on its line moves above it, so a comma can follow the text.
+ */
+export const itemText = (editor: SourceEditor, list: List, item: Span) =>
+  itemTextWith(editor, list, list.items.indexOf(item), (start) =>
+    dedentSource(editor, start, item.end, lineIndent(editor.code, item.start))
+  );
 
 export const memberText = (
   editor: SourceEditor,
@@ -622,19 +603,20 @@ export const appendToList = (
     return;
   }
   const last = items.at(-1)!;
-  const trailingComma = separatorAfter(code, list, items.length - 1);
+  const comma = separatorAfter(code, list, items.length - 1);
+  // The comma of a hole writes the hole, so it is no trailing comma to keep.
+  const trailingComma = comma === undefined || isHole(last) ? '' : ',';
   if (isMultiline(code, list)) {
     const indent = lineIndent(code, last.start);
     const block = texts.map((text) => `${indent}${reindent(text, '', indent)}`).join(',\n');
-    if (trailingComma !== undefined) {
-      edits.appendLeft(trailingComma, `\n${block},`);
-    } else {
-      edits.appendLeft(last.end, `,\n${block}`);
+    if (comma === undefined) {
+      edits.appendLeft(last.end, ',');
     }
+    edits.appendLeft(itemEnd(editor, list, items.length - 1), `\n${block}${trailingComma}`);
     return;
   }
-  if (trailingComma !== undefined) {
-    edits.appendLeft(trailingComma, ` ${texts.join(', ')},`);
+  if (comma !== undefined) {
+    edits.appendLeft(comma, ` ${texts.join(', ')}${trailingComma}`);
   } else {
     edits.appendLeft(last.end, `, ${texts.join(', ')}`);
   }
@@ -658,7 +640,7 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[],
   edits.appendRight(first.start, `${texts.join(', ')}, `);
 };
 
-/** Remove items with their leading comments and separators from a list. */
+/** Remove items with their separators and the comments that lead and trail them from a list. */
 export const removeFromList = (editor: SourceEditor, list: List, removedItems: readonly Span[]) => {
   const { code, edits } = editor;
   const { items } = list;
@@ -674,22 +656,20 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
     }
     return;
   }
-  const keptIndexes = items.flatMap((item, index) => (removed.has(item) ? [] : [index]));
-  const lastKept = keptIndexes.at(-1)!;
+  const lastKept = items.findLastIndex((item) => !removed.has(item));
   items.forEach((item, index) => {
     if (!removed.has(item)) {
       return;
     }
-    const after = separatorAfter(code, list, index);
-    if (index > lastKept && after === undefined) {
-      // Trailing item without a comma: drop the comma of the last kept item instead.
+    if (index > lastKept && separatorAfter(code, list, index) === undefined) {
+      // Trailing item without a comma: drop the comma of the last kept item instead, unless that
+      // comma writes a hole.
       const previous = items[lastKept];
-      const comma = separatorAfter(code, list, lastKept)!;
-      edits.remove(previous.end, comma);
-      edits.remove(comma, item.end);
-      return;
+      if (!isHole(previous)) {
+        edits.remove(previous.end, separatorAfter(code, list, lastKept)!);
+      }
     }
-    edits.remove(separatorBefore(code, list, index), after ?? item.end);
+    edits.remove(itemStart(editor, list, index), itemEnd(editor, list, index));
   });
 };
 
@@ -706,8 +686,9 @@ export const groupMembers = (
   members: Property[],
   key: string
 ) => {
+  const list = objectList(object);
   const texts = members.map((member) => memberText(editor, object, member));
-  const first = object.properties.indexOf(members[0]);
+  const first = list.items.indexOf(members[0]);
   const multiline = editor.code.slice(object.start, object.end).includes('\n');
   removeMembers(editor, object, members.slice(1));
   const before = editor.code.slice(0, members[0].start);
@@ -715,10 +696,17 @@ export const groupMembers = (
   const inner = multiline
     ? reindent(printMembers(texts, indentUnit(editor.code, object)), '', indent)
     : `{ ${texts.join(', ')} }`;
-  // Leading comments of the first member move into the group with it.
-  const start = separatorBefore(editor.code, object, first);
+  // The comments of the first member move into the group with it.
   const lead = multiline ? `\n${indent}` : ' ';
-  editor.edits.overwrite(start, members[0].end, `${lead}${printKey(key, editor.quote)}: ${inner}`);
+  editor.edits.overwrite(
+    itemStart(editor, list, first),
+    members[0].end,
+    `${lead}${printKey(key, editor.quote)}: ${inner}`
+  );
+  const comma = separatorAfter(editor.code, list, first) ?? members[0].end;
+  if (itemEnd(editor, list, first) > comma) {
+    editor.edits.remove(comma, itemEnd(editor, list, first));
+  }
 };
 
 export const removeMembers = (
@@ -733,19 +721,40 @@ const NEXT_LINE_DIRECTIVE =
 const leadingDirectives = (editor: SourceEditor) =>
   editor.program.body.filter((statement) => 'directive' in statement && statement.directive);
 
+const FILE_PRAGMA =
+  /^!|@(license|preserve|flow|jsx\w*|(vitest|jest)-environment|ts-nocheck)\b|^\s*eslint-(disable|env)(?![\w-])|^\/\s*<reference\b/;
+
+const isJSDoc = (comment: E.Comment) => comment.type === 'Block' && comment.value.startsWith('*');
+
 /**
- * Comments leading the file's first statement that form the file header, such as a license. A
- * directive that applies only to that statement, such as `@ts-expect-error`, ends the header.
+ * Comments before the file's first statement that form the file header, such as a license. The
+ * JSDoc blocks and next-line directives such as `@ts-expect-error` directly above the statement
+ * belong to it instead, as does everything from such a directive on, unless they are pragmas.
  */
 export const headerComments = (editor: SourceEditor): E.Comment[] => {
+  const { code } = editor;
   const directives = leadingDirectives(editor);
   const first = editor.program.body[directives.length];
+  if (!first) {
+    return [];
+  }
   const from = directives.at(-1)?.end ?? 0;
   const leading = editor.comments.filter(
-    (comment) => comment.start >= from && first && comment.end <= first.start
+    (comment) => comment.start >= from && comment.end <= first.start
   );
-  const directive = leading.findIndex(({ value }) => NEXT_LINE_DIRECTIVE.test(value));
-  return directive === -1 ? leading : leading.slice(0, directive);
+  const isDirective = (comment: E.Comment) => NEXT_LINE_DIRECTIVE.test(comment.value);
+  let owned = leading.length;
+  while (
+    owned > 0 &&
+    (isJSDoc(leading[owned - 1]) || isDirective(leading[owned - 1])) &&
+    !/\n\s*\n/.test(code.slice(leading[owned - 1].end, leading[owned]?.start ?? first.start))
+  ) {
+    owned--;
+  }
+  const directive = leading.findIndex(isDirective);
+  return (directive === -1 ? leading : leading.slice(0, directive)).filter(
+    (comment, index) => index < owned || FILE_PRAGMA.test(comment.value)
+  );
 };
 
 /**
@@ -867,7 +876,7 @@ export const removeStatements = (editor: SourceEditor, statements: ReadonlySet<N
 
 /**
  * Rewrite an import's specifiers to `kept` plus `added`, keeping each kept specifier as written,
- * comments included.
+ * comments and layout included.
  */
 export const setImportSpecifiers = (
   editor: SourceEditor,
@@ -877,24 +886,35 @@ export const setImportSpecifiers = (
 ) => {
   const { specifiers } = declaration;
   const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
-  const list = named.length ? specifierList(editor, declaration) : undefined;
-  const namedTexts = [
-    ...named.filter((specifier) => kept.includes(specifier)).map((s) => itemText(editor, list!, s)),
-    ...(added.named ?? []),
-  ];
-  const parts = [
+  const others = specifiers.filter((specifier) => specifier.type !== 'ImportSpecifier');
+  const head = [
     ...(added.default ? [added.default] : []),
-    ...specifiers
-      .filter((specifier) => specifier.type !== 'ImportSpecifier' && kept.includes(specifier))
-      .map((specifier) => editor.source(specifier)),
-    ...(namedTexts.length > 0 ? [`{ ${namedTexts.join(', ')} }`] : []),
+    ...others.filter((specifier) => kept.includes(specifier)).map((s) => editor.source(s)),
   ];
   const kind = declaration.importKind === 'type' ? 'import type' : 'import';
-  editor.edits.overwrite(
-    declaration.start,
-    declaration.source.start,
-    `${kind} ${parts.join(', ')} from `
-  );
+  const addedNamed = added.named ?? [];
+  if (!named.some((specifier) => kept.includes(specifier))) {
+    const parts = [...head, ...(addedNamed.length > 0 ? [`{ ${addedNamed.join(', ')} }`] : [])];
+    editor.edits.overwrite(
+      declaration.start,
+      declaration.source.start,
+      `${kind} ${parts.join(', ')} from `
+    );
+    return;
+  }
+  const list = specifierList(editor, declaration);
+  const removed = named.filter((specifier) => !kept.includes(specifier));
+  removeFromList(editor, list, removed);
+  if (addedNamed.length > 0) {
+    appendToList(editor, list, addedNamed);
+  }
+  if (added.default || others.some((specifier) => !kept.includes(specifier))) {
+    editor.edits.overwrite(
+      declaration.start,
+      list.open - 1,
+      `${kind} ${head.map((part) => `${part}, `).join('')}`
+    );
+  }
 };
 
 export const replaceValue = (editor: SourceEditor, member: Property, text: string) => {
@@ -914,22 +934,19 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
   editor.edits.overwrite(member.value.start, member.value.end, text);
 };
 
-export const keySource = (editor: SourceEditor, member: Property) => {
-  if (!member.computed) {
-    return editor.source(member.key);
-  }
-  const open = editor.code.lastIndexOf('[', member.key.start);
-  const close = editor.code.indexOf(']', member.key.end);
-  return editor.code.slice(open, close + 1);
-};
+export const keySource = (editor: SourceEditor, member: Property) =>
+  editor.source(keyRange(editor, member));
 
+// A computed key's span includes its brackets: the tokens around the key and its parentheses.
 const keyRange = (editor: SourceEditor, member: Property): Span => {
   if (!member.computed) {
     return member.key;
   }
+  const { code, comments } = editor;
+  const key = withParentheses(code, member.key, member.start, member.end, comments);
   return {
-    start: editor.code.lastIndexOf('[', member.key.start),
-    end: editor.code.indexOf(']', member.key.end) + 1,
+    start: previousTokenEnd(code, comments, key.start) - 1,
+    end: nextTokenStart(code, comments, key.end) + 1,
   };
 };
 
@@ -951,14 +968,15 @@ export const renamedMemberText = (
   key: string
 ) => {
   const list = objectList(object);
-  const start = separatorBefore(editor.code, list, list.items.indexOf(member));
-  const { code } = editor;
-  const renamed = member.shorthand
-    ? code.slice(start, member.start) + `${key}: ${editor.source(member.value)}`
-    : code.slice(start, keyRange(editor, member).start) +
-      key +
-      code.slice(keyRange(editor, member).end, member.end);
-  return reindent(renamed.replace(/^\s+/, ''), lineIndent(code, member.start), '');
+  const indent = lineIndent(editor.code, member.start);
+  const dedent = (start: number, end: number) => dedentSource(editor, start, end, indent);
+  return itemTextWith(editor, list, list.items.indexOf(member), (start) => {
+    if (member.shorthand) {
+      return `${dedent(start, member.start)}${key}: ${editor.source(member.value)}`;
+    }
+    const range = keyRange(editor, member);
+    return `${dedent(start, range.start)}${key}${dedent(range.end, member.end)}`;
+  });
 };
 
 // Function expression source for a method, so reads and transforms of `play() {}` see a value.

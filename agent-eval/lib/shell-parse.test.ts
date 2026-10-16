@@ -146,21 +146,21 @@ describe('parseStorybookWorkflowShellCommands', () => {
   test('records `skills <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
-      'npx storybook skills stories',
+      'npx storybook skills ui-workflow',
       'npx storybook skills',
     ]);
 
     expect(calls).toEqual([
       { name: 'skills-get', input: { id: 'write-story' }, source: 'cli' },
-      { name: 'skills-get', input: { id: 'stories' }, source: 'cli' },
+      { name: 'skills-get', input: { id: 'ui-workflow' }, source: 'cli' },
     ]);
   });
 
-  test('matches write-story, stories and --all, but not other ids, to the historic instructions name', () => {
+  test('matches write-story, ui-workflow and --all, but not other ids, to the historic instructions name', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story',
       'npx storybook skills --all',
-      'npx storybook skills stories',
+      'npx storybook skills ui-workflow',
       'npx storybook skills all',
       'npx storybook skills setup',
     ]);
@@ -168,7 +168,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
     expect(calls.map((call) => call.input)).toEqual([
       { id: 'write-story' },
       { all: true },
-      { id: 'stories' },
+      { id: 'ui-workflow' },
       { id: 'all' },
       { id: 'setup' },
     ]);
@@ -181,8 +181,8 @@ describe('parseStorybookWorkflowShellCommands', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story --help',
       'npx storybook skills write-story -h && npx storybook skills --all --help',
-      'npx storybook skills stories --all',
-      'npx storybook skills --all stories',
+      'npx storybook skills ui-workflow --all',
+      'npx storybook skills --all ui-workflow',
       "echo 'storybook skills write-story'",
     ]);
 

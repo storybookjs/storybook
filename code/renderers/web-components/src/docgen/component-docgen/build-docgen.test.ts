@@ -8,7 +8,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import type { BuildDocgenContext } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
-import type { CemTag } from './manifest/cem-manager.ts';
+import { type CemTag, findInSnapshot } from './manifest/cem-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -49,10 +49,8 @@ const context = ({
   loadErrors?: DocgenError[];
   paths?: string[];
 }): BuildDocgenContext => ({
-  cem: {
-    tags: new Map(tags),
-    errors: loadErrors,
-    paths,
+  resolver: {
+    find: async (tag) => findInSnapshot({ tags: new Map(tags), errors: loadErrors, paths }, tag),
   },
 });
 
@@ -66,10 +64,10 @@ const tag = (declaration: ManifestDeclaration, warning?: string): [string, CemTa
 ];
 
 describe('buildDocgenPayload', () => {
-  it('builds a payload from the matching manifest declaration', () => {
+  it('builds a payload from the matching manifest declaration', async () => {
     givenStory("'x-card'");
 
-    expect(
+    await expect(
       buildDocgenPayload(
         { entry },
         context({
@@ -86,7 +84,7 @@ describe('buildDocgenPayload', () => {
           ],
         })
       )
-    ).toMatchInlineSnapshot(`
+    ).resolves.toMatchInlineSnapshot(`
       {
         "apiDescription": "## Attributes
 
@@ -149,7 +147,7 @@ describe('buildDocgenPayload', () => {
     `);
   });
 
-  it('combines the story meta docblock with component-level manifest tags', () => {
+  it('combines the story meta docblock with component-level manifest tags', async () => {
     vol.fromNestedJSON({
       [STORY_PATH]: `
         /**
@@ -161,7 +159,7 @@ describe('buildDocgenPayload', () => {
       `,
     });
 
-    expect(
+    await expect(
       buildDocgenPayload(
         { entry },
         context({
@@ -178,7 +176,7 @@ describe('buildDocgenPayload', () => {
           ],
         })
       )
-    ).toMatchObject({
+    ).resolves.toMatchObject({
       description: 'Story-level docs for the card.',
       summary: 'Card declaration summary.',
       jsDocTags: {
@@ -315,14 +313,26 @@ describe('buildDocgenPayload', () => {
         },
       },
     ],
-  ])('reports %s', (_name, buildContext, expected) => {
-    expect(buildDocgenPayload({ entry }, buildContext())).toEqual(expected);
+  ])('reports %s', async (_name, buildContext, expected) => {
+    await expect(buildDocgenPayload({ entry }, buildContext())).resolves.toEqual(expected);
   });
 
-  it('copies manifest warnings to resolved payloads', () => {
+  it('asks the resolver for the tag with the absolute story path', async () => {
+    givenStory("'x-card'");
+    const find = vi.fn(async () => ({
+      name: 'tag-not-found',
+      message: 'No declaration for "x-card" was found.',
+    }));
+
+    await buildDocgenPayload({ entry }, { resolver: { find } });
+
+    expect(find).toHaveBeenCalledWith('x-card', { storyFilePath: STORY_PATH });
+  });
+
+  it('copies manifest warnings to resolved payloads', async () => {
     givenStory("'x-card'");
 
-    expect(
+    await expect(
       buildDocgenPayload(
         { entry },
         context({
@@ -334,23 +344,23 @@ describe('buildDocgenPayload', () => {
           ],
         })
       )
-    ).toMatchObject({
+    ).resolves.toMatchObject({
       warning:
         'Invalid Custom Elements Manifest at custom-elements.json: Unexpected token; using the last valid version',
     });
   });
 
-  it('falls through when the story has no meta.component', () => {
+  it('falls through when the story has no meta.component', async () => {
     vol.fromNestedJSON({ [STORY_PATH]: `export default { title: 'Fixture' };` });
 
-    expect(
+    await expect(
       buildDocgenPayload(
         { entry },
         context({
           tags: [tag({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' })],
         })
       )
-    ).toBeUndefined();
+    ).resolves.toBeUndefined();
   });
 
   it.each([
@@ -362,10 +372,10 @@ describe('buildDocgenPayload', () => {
     { slots: {} },
     { cssProperties: 3 },
     { cssParts: 'bad' },
-  ])('builds a payload for a declaration with malformed %j', (malformed) => {
+  ])('builds a payload for a declaration with malformed %j', async (malformed) => {
     givenStory("'x-card'");
 
-    expect(
+    await expect(
       buildDocgenPayload(
         { entry },
         context({
@@ -380,6 +390,6 @@ describe('buildDocgenPayload', () => {
           ],
         })
       )
-    ).toMatchObject({ name: 'x-card', renderer: 'web-components' });
+    ).resolves.toMatchObject({ name: 'x-card', renderer: 'web-components' });
   });
 });

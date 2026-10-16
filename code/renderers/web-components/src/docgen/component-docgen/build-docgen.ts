@@ -7,13 +7,15 @@ import { resolve } from 'node:path';
 
 import { buildApiDescription } from './api-description.ts';
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
-import type { CemSnapshot } from './manifest/cem-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
 import { parseStoryFile, resolveStoryComponent } from './resolve-component/resolve-component.ts';
+import type { TagResolver } from './tag-resolver.ts';
 import { deprecationMessage, trimmedOrUndefined } from './utils.ts';
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
+  /** Also searched for element registrations when generating from sources. */
+  previewFilePath?: string;
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
@@ -26,13 +28,13 @@ export type WebComponentsDocgenPayload = DocgenPayload & {
 };
 
 export interface BuildDocgenContext {
-  cem: CemSnapshot;
+  resolver: TagResolver;
 }
 
-export function buildDocgenPayload(
+export async function buildDocgenPayload(
   input: DocgenProviderInput,
   context: BuildDocgenContext
-): WebComponentsDocgenPayload | undefined {
+): Promise<WebComponentsDocgenPayload | undefined> {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -66,18 +68,9 @@ export function buildDocgenPayload(
   }
 
   const { tag } = resolved;
-
-  const found = context.cem.tags.get(tag);
-  if (!found) {
-    return fail(
-      tag,
-      context.cem.errors[0] ?? {
-        name: 'tag-not-found',
-        message:
-          `No declaration for "${tag}" was found in ${context.cem.paths.join(', ')}. ` +
-          'If the element is new, rerun the custom elements manifest analyzer.',
-      }
-    );
+  const found = await context.resolver.find(tag, { storyFilePath });
+  if (!('declaration' in found)) {
+    return fail(tag, found);
   }
 
   const { description, summary, jsDocTags } = extractComponentDescription(

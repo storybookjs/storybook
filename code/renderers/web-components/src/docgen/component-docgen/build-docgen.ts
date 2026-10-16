@@ -59,6 +59,14 @@ export function buildDocgenPayload(
     }
 
     const componentName = input.entry.title.slice(input.entry.title.lastIndexOf('/') + 1);
+    if (resolved.reason === 'unresolvable-meta-spread') {
+      return fail(componentName, {
+        name: 'unresolvable-meta-spread',
+        message:
+          `\`meta.component\` could not be read because \`${resolved.spread}\` is not a local object literal. ` +
+          "Set `component: '<tag-name>'` on the default export.",
+      });
+    }
     return fail(componentName, {
       name: 'component-not-a-tag',
       message: `\`meta.component\` must be the element's tag name as a string, got \`${resolved.expression}\``,

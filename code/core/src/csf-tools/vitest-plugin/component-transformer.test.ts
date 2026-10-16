@@ -114,6 +114,13 @@ describe('component transformer', () => {
 
     expect(result.code).toContain('const _Spinner = someWrapper(Component);');
     expect(result.code).toContain('export default _Spinner;');
+
+    const parenthesized = await transform({
+      code: `import { memo } from 'react';\nfunction Inner() {}\nexport default (memo(Inner));`,
+      fileName: 'src/components/Button.tsx',
+    });
+    expect(parenthesized.code).toContain('const _Button = (memo(Inner));');
+    expect(result.code).toContain('export default _Spinner;');
     expect(result.code).toContain('_test("Spinner", _testStory({');
 
     expect(result.code).toMatchInlineSnapshot(`

@@ -13,6 +13,7 @@ import {
   prependStatement,
   printKey,
   printValue,
+  exportDefaultKeywords,
 } from '../estree/editor.ts';
 import { generateUid } from '../estree/scope.ts';
 import { GeneratedTail, createTestGuardDeclaration, printWithTail } from './transformer.ts';
@@ -163,8 +164,8 @@ const collectComponentExports = (editor: SourceEditor, fileName: string) => {
       ) {
         const identifierName = createComponentNameFromFileName(fileName);
         const identifier = generateUid(scopes, identifierName);
-        const span = declaration as Node & { start: number };
-        editor.edits.overwrite(node.start, span.start, `const ${identifier} = `);
+        const keywords = exportDefaultKeywords(editor.code, node.start);
+        editor.edits.overwrite(node.start, node.start + keywords, `const ${identifier} = `);
         editor.edits.appendLeft(node.end, `\nexport default ${identifier};`);
 
         if (declaration.type === 'CallExpression') {

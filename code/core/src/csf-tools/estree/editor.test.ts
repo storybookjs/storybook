@@ -115,6 +115,18 @@ describe('removeStatement', () => {
   });
 });
 
+describe('parenthesized default exports', () => {
+  it('hoists an inline meta without breaking its parentheses', () => {
+    const csf = loadCsf(`export default ({ title: 'X' } satisfies Meta);\nexport const A = {};`, {
+      transformInlineMeta: true,
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+    expect(printCsf(csf).code).toBe(
+      `const _meta = ({ title: 'X' } satisfies Meta);\nexport default _meta;\nexport const A = {};`
+    );
+  });
+});
+
 describe('line endings', () => {
   it('writes inserted text with the line ending of the file', () => {
     const csf = parse('export default {\r\n  title: "A",\r\n};\r\n');

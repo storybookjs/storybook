@@ -711,6 +711,10 @@ const methodFromFunction = (text: string, key: string) => {
     : undefined;
 };
 
+// Length of `export default` and the whitespace after it at `start`.
+export const exportDefaultKeywords = (code: string, start: number) =>
+  /^export\s+default\s*/.exec(code.slice(start))![0].length;
+
 export const isSpan = (value: unknown): value is Span =>
   isNode(value) && typeof (value as unknown as Span).start === 'number';
 

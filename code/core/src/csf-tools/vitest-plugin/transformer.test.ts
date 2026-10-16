@@ -49,6 +49,15 @@ const transform = async ({
 };
 
 describe('transformer', () => {
+  it('writes the generated tests with the line endings of a CRLF story file', async () => {
+    const code = `export default { title: 'Button' };\r\nexport const Primary = {};`;
+
+    const result = await transform({ code });
+
+    expect(result.code).toContain('_test("Primary"');
+    expect(result.code.replaceAll('\r\n', '')).not.toContain('\n');
+  });
+
   describe('CSF v1/v2/v3', () => {
     describe('default exports (meta)', () => {
       it('should add title to inline default export if not present', async () => {

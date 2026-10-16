@@ -355,6 +355,15 @@ describe('component transformer', () => {
     `);
   });
 
+  it('writes the generated tests with the line endings of a CRLF component file', async () => {
+    const code = `export const Badge = () => <div />;\r\nexport default () => <span />;`;
+
+    const result = await transform({ code });
+
+    expect(result.code).toContain('_test("Badge"');
+    expect(result.code.replaceAll('\r\n', '')).not.toContain('\n');
+  });
+
   it('correctly handles aliased function and class exports', async () => {
     const code = `
       function MyComponent() {

@@ -14,7 +14,7 @@ import {
 } from '#test-utils';
 
 describe('creating a Callout in a monorepo UI package', () => {
-  // Workflow asserts are enabled. The stories skills direct the dev server and
+  // Workflow asserts are enabled. The ui-workflow skills direct the dev server and
   // every Storybook CLI command to the package where Storybook is installed,
   // which avoids the degraded help output at the monorepo root (historical
   // context: storybookjs/storybook#35359).
@@ -54,8 +54,8 @@ describe('creating a Callout in a monorepo UI package', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
-      expectSkillInvoked('stories');
+    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
+      expectSkillInvoked('ui-workflow');
     });
 
     test.skipIf(integration !== 'plugin')(

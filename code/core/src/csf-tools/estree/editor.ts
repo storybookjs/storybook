@@ -274,14 +274,25 @@ export const objectList = (object: E.ObjectExpression | E.ObjectPattern): List =
   items: object.properties,
 });
 
-// Nodes are parsed without parentheses, so an element's span may sit inside `( )`.
-export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => ({
-  open: array.start + 1,
-  close: array.end - 1,
-  items: array.elements
-    .filter((element): element is NonNullable<typeof element> => !!element)
-    .map((element) => withParentheses(editor.code, element, array.start + 1, array.end - 1)),
-});
+// Nodes are parsed without parentheses, so an element's span may sit inside `( )`. Leading holes
+// (`[, a]`) stay in place: the list opens after their commas.
+export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => {
+  const { code } = editor;
+  let open = array.start + 1;
+  for (const element of array.elements) {
+    if (element) {
+      break;
+    }
+    open = scanFor(code, open, array.end - 1, ',') ?? open;
+  }
+  return {
+    open,
+    close: array.end - 1,
+    items: array.elements
+      .filter((element): element is NonNullable<typeof element> => !!element)
+      .map((element) => withParentheses(code, element, open, array.end - 1)),
+  };
+};
 
 /** Widen a span to the balanced parentheses wrapped directly around it, within `lower..upper`. */
 export const withParentheses = (code: string, span: Span, lower = 0, upper = code.length): Span => {

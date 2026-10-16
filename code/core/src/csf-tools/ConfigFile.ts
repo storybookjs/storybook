@@ -999,10 +999,11 @@ export class ConfigFile implements CsfObject {
       }
       // Handle named imports e.g. import { foo } from 'bar'
     } else if (Array.isArray(importSpecifier)) {
+      const names = [...new Set(importSpecifier)];
       if (!importDeclaration) {
-        prependStatement(editor, `import { ${importSpecifier.join(', ')} } from ${source};`);
+        prependStatement(editor, `import { ${names.join(', ')} } from ${source};`);
       } else {
-        const missing = importSpecifier.filter((name) => !has('ImportSpecifier', name));
+        const missing = names.filter((name) => !has('ImportSpecifier', name));
         if (missing.length > 0) {
           this._addSpecifiers(importDeclaration, { named: missing });
         }

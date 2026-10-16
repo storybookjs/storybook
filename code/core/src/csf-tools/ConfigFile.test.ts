@@ -1354,6 +1354,14 @@ describe('ConfigFile', () => {
   });
 
   describe('setImport', () => {
+    it('imports a repeated name once', () => {
+      const config = loadConfig(`export default {};`).parse();
+      config.setImport(['a', 'a'], 'x');
+      config.setImport(['a', 'b', 'b'], 'x');
+
+      expect(formatConfig(config)).toBe(`import { a, b } from "x";\nexport default {};`);
+    });
+
     it('keeps a license header above the imports it adds', () => {
       const source = dedent`
         /*

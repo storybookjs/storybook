@@ -88,6 +88,19 @@ describe('withParentheses', () => {
   });
 });
 
+describe('array holes', () => {
+  it('keeps leading holes when appending to and emptying an array', () => {
+    const editor = new SourceEditor(`export default { addons: [, 'a'] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    expect(editor.toString()).toBe(`export default { addons: [, 'a', 'b'] };`);
+
+    const removal = new SourceEditor(`export default { addons: [, 'a'] };`);
+    const array = defaultExportArray(removal);
+    removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
+    expect(removal.toString()).toBe(`export default { addons: [,] };`);
+  });
+});
+
 describe('removeStatement', () => {
   it('removes the leading comments with the statement', () => {
     const editor = new SourceEditor(dedent`

@@ -3,11 +3,17 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { format } from 'prettier';
+
 import { loadCsf } from './CsfFile.ts';
 import golden from './__corpus__/golden.json';
+import { summarizeTransforms } from './__corpus__/summarize.ts';
+import transforms from './__corpus__/transforms.json';
+import * as csfTools from './index.ts';
 
-// Golden outputs were recorded from the Babel implementation with `__corpus__/record.mjs`. They
-// are compared with `toEqual` so `vitest -u` cannot re-baseline them from this implementation.
+// `golden.json` was recorded from the Babel implementation and `transforms.json` from this one, both
+// with `__corpus__/record.mjs`. They are compared with `toEqual` so `vitest -u` cannot re-baseline
+// them.
 
 const inputs = join(__dirname, '__corpus__', 'inputs');
 
@@ -59,6 +65,7 @@ describe('CSF corpus', () => {
 
   it('covers every recorded file', () => {
     expect(files).toEqual(Object.keys(golden).sort());
+    expect(files).toEqual(Object.keys(transforms).sort());
   });
 
   it.each(files.filter((file) => !improved.has(file)))(
@@ -67,6 +74,21 @@ describe('CSF corpus', () => {
       expect(summaryOf(file)).toEqual(golden[file as keyof typeof golden]);
     }
   );
+
+  it.each(files)('transforms %s like the recorded outputs', async (file) => {
+    const code = readFileSync(join(inputs, file), 'utf8');
+    expect(await summarizeTransforms({ csfTools, format }, inputs, file, code)).toEqual(
+      transforms[file as keyof typeof transforms]
+    );
+  });
+
+  it.each(files)('documents the stories of %s with their authored source', (file) => {
+    const code = readFileSync(join(inputs, file), 'utf8');
+    const { originalSources } = transforms[file as keyof typeof transforms];
+    for (const source of Object.values(originalSources)) {
+      expect(code).toContain(source);
+    }
+  });
 
   it('indexes .ts files that Babel rejected', () => {
     expect(golden['edge-typescript.stories.ts']).toEqual({ error: true });

@@ -1,27 +1,39 @@
-// Records golden outputs for the corpus from a Storybook checkout that still indexes with Babel.
+// Records golden outputs for the corpus from a Storybook checkout with `core` compiled.
 //
-//   node code/core/src/csf-tools/__corpus__/record.mjs <path-to-babel-checkout>/code
+//   node code/core/src/csf-tools/__corpus__/record.mjs index <path-to-babel-checkout>/code
+//   node code/core/src/csf-tools/__corpus__/record.mjs transforms [<path-to-checkout>/code]
 //
-// The checkout must have `core` compiled. The summary written here mirrors `summarize` in
-// `corpus.test.ts`, which runs the OXC implementation against the same inputs.
+// `index` writes `golden.json` from a checkout that still indexes with Babel; its summary mirrors
+// `summarize` in `corpus.test.ts`. `transforms` writes `transforms.json` with the summary the test
+// shares from `summarize.ts`, from this checkout unless another is given.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { format } from 'prettier';
+
+import { summarizeTransforms } from './summarize.ts';
+
 const here = dirname(fileURLToPath(import.meta.url));
-const checkout = resolve(process.argv[2]);
+const [mode, checkoutPath] = process.argv.slice(2);
+if (mode !== 'transforms' && (mode !== 'index' || !checkoutPath)) {
+  throw new Error('Usage: record.mjs index <babel-checkout>/code | transforms [<checkout>/code]');
+}
+const checkout = checkoutPath ? resolve(checkoutPath) : join(here, '../../../..');
 const require = createRequire(join(checkout, 'package.json'));
-const { loadCsf } = await import(join(checkout, 'core/dist/csf-tools/index.js'));
-const traverse = require('@babel/traverse').default;
+const csfTools = await import(join(checkout, 'core/dist/csf-tools/index.js'));
 
 const regexOrArray = (value) =>
   value instanceof RegExp ? { regex: value.source, flags: value.flags } : (value ?? null);
 
-const summarize = (file, code) => {
+const summarizeIndex = (file, code) => {
+  const traverse = require('@babel/traverse').default;
   let csf;
   try {
-    csf = loadCsf(code, { fileName: file, makeTitle: (title) => title ?? 'Untitled' }).parse();
+    csf = csfTools
+      .loadCsf(code, { fileName: file, makeTitle: (title) => title ?? 'Untitled' })
+      .parse();
   } catch {
     return { error: true };
   }
@@ -60,9 +72,14 @@ const summarize = (file, code) => {
 };
 
 const inputs = join(here, 'inputs');
-const golden = {};
+const recorded = {};
 for (const file of readdirSync(inputs).sort()) {
-  golden[file] = summarize(file, readFileSync(join(inputs, file), 'utf8'));
+  const code = readFileSync(join(inputs, file), 'utf8');
+  recorded[file] =
+    mode === 'index'
+      ? summarizeIndex(file, code)
+      : await summarizeTransforms({ csfTools, format }, inputs, file, code);
 }
-writeFileSync(join(here, 'golden.json'), `${JSON.stringify(golden, null, 2)}\n`);
-console.log(`recorded ${Object.keys(golden).length} files`);
+const output = mode === 'index' ? 'golden.json' : 'transforms.json';
+writeFileSync(join(here, output), `${JSON.stringify(recorded, null, 2)}\n`);
+console.log(`recorded ${Object.keys(recorded).length} files in ${output}`);

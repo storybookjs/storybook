@@ -9,7 +9,9 @@ import {
 } from '../../../csf-tools/estree/ast.ts';
 import { appendMembers, prependMembers, replaceValue } from '../../../csf-tools/estree/editor.ts';
 import { SaveStoryError } from './utils.ts';
-import { objectSource, valueToSource } from './valueToSource.ts';
+import { printMembers } from 'storybook/internal/csf-tools';
+
+import { valueToSource } from './valueToSource.ts';
 
 // Edits accumulate on `csf`; print them with `printCsf`.
 export const updateArgsInCsfFile = async (
@@ -64,7 +66,7 @@ export const updateArgsInCsfFile = async (
 
   if (!argsProperty) {
     prependMembers(editor, story, [
-      `args: ${objectSource(Object.entries(args).map(([key, value]) => `${key}: ${value}`))}`,
+      `args: ${printMembers(Object.entries(args).map(([key, value]) => `${key}: ${value}`))}`,
     ]);
     return;
   }

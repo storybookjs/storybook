@@ -42,6 +42,7 @@ export {
   prependStatement,
   prependToList,
   printKey,
+  printMembers,
   printString,
   printValue,
   reindent,

@@ -202,12 +202,26 @@ export const printString = (value: string, quote: string) => {
     : `'${json.slice(1, -1).replaceAll('\\"', '"').replaceAll("'", "\\'")}'`;
 };
 
-export const printValue = (value: unknown, quote: string): string => {
+/** An object literal laid out one member per line, so formatters keep it expanded. */
+export const printMembers = (members: string[]) =>
+  members.length === 0
+    ? '{}'
+    : `{\n${members.map((member) => `  ${member.split('\n').join('\n  ')},`).join('\n')}\n}`;
+
+/** Print a JS value as source. `expanded` lays objects out one member per line. */
+export const printValue = (
+  value: unknown,
+  quote: string,
+  options: { expanded?: boolean } = {}
+): string => {
   if (value === undefined) {
     return 'undefined';
   }
   if (value === null) {
     return 'null';
+  }
+  if (typeof value === 'function') {
+    return value.toString();
   }
   if (typeof value === 'string') {
     return printString(value, quote);
@@ -231,13 +245,16 @@ export const printValue = (value: unknown, quote: string): string => {
     return value.toString();
   }
   if (Array.isArray(value)) {
-    return `[${Array.from(value, (item) => printValue(item, quote)).join(', ')}]`;
+    return `[${Array.from(value, (item) => printValue(item, quote, options)).join(', ')}]`;
   }
   if (typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>);
-    return entries.length === 0
-      ? '{}'
-      : `{ ${entries.map(([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote)}`).join(', ')} }`;
+    const members = Object.entries(value as Record<string, unknown>).map(
+      ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, options)}`
+    );
+    if (options.expanded) {
+      return printMembers(members);
+    }
+    return members.length === 0 ? '{}' : `{ ${members.join(', ')} }`;
   }
   throw new Error(`Cannot print value of type ${typeof value}`);
 };

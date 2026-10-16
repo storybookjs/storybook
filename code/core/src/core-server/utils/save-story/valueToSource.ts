@@ -1,33 +1,20 @@
-import { printString } from '../../../csf-tools/estree/editor.ts';
+import { printValue } from '../../../csf-tools/estree/editor.ts';
 
-export function valueToSource<T>(literal: T, quote = '"'): string {
-  if (literal === null) {
-    return 'null';
+// Members set to `undefined` are left out, as they would not survive JSON either.
+const withoutUndefined = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(withoutUndefined);
   }
-  switch (typeof literal) {
-    case 'function':
-      return literal.toString();
-    case 'number':
-    case 'boolean':
-      return String(literal);
-    case 'string':
-      return printString(literal, quote);
-    case 'undefined':
-      return 'undefined';
-    default:
-      if (Array.isArray(literal)) {
-        return `[${literal.map((item) => valueToSource(item, quote)).join(', ')}]`;
-      }
-      return objectSource(
-        Object.entries(literal as Record<string, unknown>)
-          .filter(([, value]) => typeof value !== 'undefined')
-          .map(([key, value]) => `${printString(key, quote)}: ${valueToSource(value, quote)}`)
-      );
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => item !== undefined)
+        .map(([key, item]) => [key, withoutUndefined(item)])
+    );
   }
-}
+  return value;
+};
 
-// An object literal laid out one member per line, so formatters keep it expanded.
-export const objectSource = (members: string[]) =>
-  members.length === 0
-    ? '{}'
-    : `{\n${members.map((member) => `  ${member.split('\n').join('\n  ')},`).join('\n')}\n}`;
+/** Print an arg value as source, with objects expanded one member per line. */
+export const valueToSource = (value: unknown, quote = '"'): string =>
+  printValue(withoutUndefined(value), quote, { expanded: true });

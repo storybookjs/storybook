@@ -5,7 +5,7 @@ import type { StorybookConfig } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { locationOf, parseModule, walk } from '../../csf-tools/estree/ast.ts';
+import { codeFrame, parseModule, walk } from '../../csf-tools/estree/ast.ts';
 
 export async function warnWhenUsingArgTypesRegex(
   previewConfigPath: string | undefined,
@@ -47,10 +47,3 @@ export async function warnWhenUsingArgTypesRegex(
     });
   }
 }
-
-// `file (line:column)` and the offending line with a marker under the identifier.
-const codeFrame = (fileName: string, code: string, index: number) => {
-  const { line, column } = locationOf(code, index, index).start;
-  const text = code.split('\n')[line - 1] ?? '';
-  return `${fileName}: (${line}:${column})\n> ${line} | ${text}\n  ${' '.repeat(String(line).length)} | ${' '.repeat(column)}^`;
-};

@@ -1,4 +1,4 @@
-import { type E, type Node, locationOf } from '../estree/ast.ts';
+import { type E, type Node, codeFrame } from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
 import { isCanonicalCsf2BindCall, isCsfFactoryCall, resolveIdentifierInit } from './utils.ts';
 
@@ -12,10 +12,7 @@ type StoryDeclarationExpression = E.Function | E.Expression;
 /** An error pointing at the node a story file got wrong. */
 export const storyShapeError = (message: string, node: Node, editor: SourceEditor) => {
   const span = node as Node & { start: number; end: number };
-  const { start } = locationOf(editor.code, span.start, span.end);
-  return new SyntaxError(
-    `${editor.fileName ? `${editor.fileName}: ` : ''}${message} (${start.line}:${start.column})`
-  );
+  return new SyntaxError(`${message}\n${codeFrame(editor.fileName, editor.code, span.start)}`);
 };
 
 /**

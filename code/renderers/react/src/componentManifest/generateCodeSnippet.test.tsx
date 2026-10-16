@@ -105,7 +105,12 @@ test('Edge case identifier we can not find', () => {
     export const Default = someImportOrWhatever;
   `);
   expect(() => generateExample(input)).toThrowErrorMatchingInlineSnapshot(
-    `[SyntaxError: Expected story to be csf factory, function or an object expression (13:27)]`
+    `
+    [SyntaxError: Expected story to be csf factory, function or an object expression
+    (13:27)
+    > 13 |     export const Default = someImportOrWhatever;
+         |                            ^]
+  `
   );
 });
 

@@ -491,7 +491,10 @@ test('component exported from other file', async () => {
       "stories": [
         {
           "error": {
-            "message": "Expected story to be a function or variable declaration (11:0)",
+            "message": "Expected story to be a function or variable declaration
+    (11:0)
+    > 11 | export { Primary } from './other-file';
+         | ^",
             "name": "SyntaxError",
           },
           "id": "example-button--primary",
@@ -542,7 +545,10 @@ test('unknown expressions', async () => {
       "stories": [
         {
           "error": {
-            "message": "Expected story to be csf factory, function or an object expression (11:23)",
+            "message": "Expected story to be csf factory, function or an object expression
+    (11:23)
+    > 11 | export const Primary = someWeirdExpression;
+         |                        ^",
             "name": "SyntaxError",
           },
           "id": "example-button--primary",

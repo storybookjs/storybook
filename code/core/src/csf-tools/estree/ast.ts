@@ -137,6 +137,14 @@ export const locationOf = (code: string, start: number, end: number): SourceLoca
   end: position(code, end),
 });
 
+/** `file: (line:column)` and the offending line with a marker under `index`, as Babel printed it. */
+export const codeFrame = (fileName: string | undefined, code: string, index: number) => {
+  const { line, column } = locationOf(code, index, index).start;
+  const text = code.split('\n')[line - 1] ?? '';
+  const gutter = ' '.repeat(String(line).length);
+  return `${fileName ? `${fileName}: ` : ''}(${line}:${column})\n> ${line} | ${text}\n  ${gutter} | ${' '.repeat(column)}^`;
+};
+
 export const isNode = (value: unknown): value is Node =>
   !!value && typeof value === 'object' && typeof (value as Node).type === 'string';
 

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/core-webpack",
-  "version": "10.5.0-alpha.2",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -37,11 +37,11 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "webpack": "5"
   },
   "peerDependencies": {

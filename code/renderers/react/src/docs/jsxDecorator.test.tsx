@@ -8,7 +8,9 @@ import React, { Profiler, StrictMode, createElement } from 'react';
 import PropTypes from 'prop-types';
 import { addons, emitTransformCode, useState } from 'storybook/preview-api';
 
-import type { ReactRenderer, StoryContext } from '../types';
+import type { StoryContextForRender } from 'storybook/internal/types';
+
+import type { ReactRenderer } from '../types';
 import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
 
 vi.mock('storybook/preview-api', () => ({
@@ -169,6 +171,7 @@ describe('renderJsx', () => {
     });
 
     it('with displayName coming from forwarded render function', () => {
+      // oxlint-disable-next-line react/display-name -- displayName is assigned via Object.assign below
       const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
         Object.assign(
           function MyExoticComponent(props: any, _ref: any) {
@@ -298,6 +301,32 @@ describe('renderJsx', () => {
     `);
   });
 
+  // arrow functions with an empty .name, so without help they rendered as <No Display Name>.
+  it('resolves subcomponents attached as properties of a parent component', () => {
+    const Modal: any = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
+    Modal.Title = ({ children }: { children?: React.ReactNode }) => <h2>{children}</h2>;
+    Modal.Content = ({ children }: { children?: React.ReactNode }) => <p>{children}</p>;
+
+    expect(
+      renderJsx(
+        <Modal>
+          <Modal.Title>Hi</Modal.Title>
+          <Modal.Content>Body</Modal.Content>
+        </Modal>,
+        { parentComponent: Modal }
+      )
+    ).toMatchInlineSnapshot(`
+      <Modal>
+        <Modal.Title>
+          Hi
+        </Modal.Title>
+        <Modal.Content>
+          Body
+        </Modal.Content>
+      </Modal>
+    `);
+  });
+
   // Regression for #27127: react-element-to-jsx-string used to omit boolean
   // props explicitly set to `false`. Patched via algolia/react-element-to-jsx-string#733
   // so a `false` prop is rendered while a `true` prop keeps the shorthand syntax.
@@ -311,8 +340,13 @@ describe('renderJsx', () => {
   });
 });
 
-// @ts-expect-error (Converted from ts-ignore)
-const makeContext = (name: string, parameters: any, args: any, extra?: object): StoryContext => ({
+const makeContext = (
+  name: string,
+  parameters: any,
+  args: any,
+  extra?: object
+  // @ts-expect-error (Converted from ts-ignore)
+): StoryContextForRender<ReactRenderer> => ({
   id: `jsx-test--${name}`,
   kind: 'js-text',
   name,
@@ -324,7 +358,7 @@ const makeContext = (name: string, parameters: any, args: any, extra?: object): 
 
 describe('jsxDecorator', () => {
   const channel = { emit: vi.fn() };
-  let mockContext: StoryContext<ReactRenderer>;
+  let mockContext: StoryContextForRender<ReactRenderer>;
   let mockStoryFn: Mock;
 
   const mockSetSource = vi.fn();
@@ -391,5 +425,23 @@ describe('jsxDecorator', () => {
       expect.stringContaining('Hello MDX'),
       context
     );
+  });
+
+  it('should skip JSX rendering for portable stories', () => {
+    const storyOutput = <div>Portable Story</div>;
+    mockStoryFn.mockReturnValue(storyOutput);
+
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+        __isPortableStory: true,
+      },
+      originalStoryFn: () => <div>Test Story</div>,
+    };
+
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+    expect(result).toEqual(storyOutput);
   });
 });

@@ -263,6 +263,6 @@ export const zoomTool: Addon_BaseType = {
   title: 'zoom',
   id: 'zoom',
   type: types.TOOL,
-  match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+  match: ({ viewMode }) => viewMode === 'story',
   render: () => <ZoomConsumer>{(zoomContext) => <ZoomWrapper {...zoomContext} />}</ZoomConsumer>,
 };

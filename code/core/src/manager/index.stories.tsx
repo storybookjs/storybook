@@ -1,25 +1,29 @@
-import type { Channel } from 'storybook/internal/channels';
+import { Channel } from 'storybook/internal/channels';
 import { CHANNEL_CREATED, CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 import { MemoryRouter } from 'storybook/internal/router';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
+import { getChannel, setChannel } from 'storybook/internal/channels';
+
 import type { API, AddonStore } from 'storybook/manager-api';
-import { addons, mockChannel } from 'storybook/manager-api';
+import { addons } from 'storybook/manager-api';
 import { screen, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
 import preview from '../../../.storybook/preview.tsx';
+import './components/review/review-service-story-helpers.ts';
 import { Main } from './index.tsx';
 import Provider from './provider.ts';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
+const MOCK_STORY_PATH = '/?path=/story/example-button--primary';
 
-const channel = mockChannel() as unknown as Channel;
+const originalChannel = getChannel();
+const channel = new Channel({});
 
 const originalGetItem = Storage.prototype.getItem;
 const originalSetItem = Storage.prototype.setItem;
@@ -50,12 +54,8 @@ class ReactProvider extends Provider {
   constructor() {
     super();
 
-    addons.setChannel(channel);
-    channel.emit(CHANNEL_CREATED);
-
     this.addons = addons;
     this.channel = channel;
-    global.__STORYBOOK_ADDONS_CHANNEL__ = channel;
   }
 
   getElements(type: Addon_Types) {
@@ -79,14 +79,13 @@ class ReactProvider extends Provider {
       api.selectStory('example-button--primary', undefined, { viewMode: 'story' });
     });
 
-    this.channel.on(CHANNEL_WS_DISCONNECT, (ev) => {
-      const TIMEOUT_CODE = 3008;
+    this.channel.on(CHANNEL_WS_DISCONNECT, () => {
       this.wsDisconnected = true;
 
       api.addNotification({
         id: WS_DISCONNECTED_NOTIFICATION_ID,
         content: {
-          headline: ev.code === TIMEOUT_CODE ? 'Server timed out' : 'Connection lost',
+          headline: 'Connection lost',
           subHeadline: 'Please restart your Storybook server and reload the page',
         },
         icon: <FailedIcon color={color.negative} />,
@@ -109,13 +108,19 @@ const meta = preview.meta({
     },
   },
   beforeEach: () => {
-    global.PREVIEW_URL = 'about:blank';
+    addons.setChannel(channel);
+    channel.emit(CHANNEL_CREATED);
 
     Storage.prototype.getItem = () => null;
     Storage.prototype.setItem = () => {};
     Storage.prototype.clear = () => {};
   },
   afterEach: () => {
+    if (originalChannel) {
+      setChannel(originalChannel);
+      addons.setChannel(originalChannel as Channel);
+    }
+
     Storage.prototype.getItem = originalGetItem;
     Storage.prototype.setItem = originalSetItem;
     Storage.prototype.clear = originalClear;
@@ -123,7 +128,7 @@ const meta = preview.meta({
   decorators: [
     (Story) => (
       <HelmetProvider key="helmet.Provider">
-        <MemoryRouter key="location.provider">
+        <MemoryRouter initialEntries={[MOCK_STORY_PATH]} key="location.provider">
           <Story />
         </MemoryRouter>
       </HelmetProvider>
@@ -171,13 +176,7 @@ export const FullScreen = meta.story({
 
 export const ConnectionLost = meta.story({
   play: async () => {
-    channel.emit(CHANNEL_WS_DISCONNECT, { code: 3007 });
-  },
-});
-
-export const ServerTimedOut = meta.story({
-  play: async () => {
-    channel.emit(CHANNEL_WS_DISCONNECT, { code: 3008 });
+    channel.emit(CHANNEL_WS_DISCONNECT, { code: 1006 });
   },
 });
 

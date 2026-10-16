@@ -1,0 +1,64 @@
+{
+  "argTypes": {
+    "default": {
+      "description": "",
+      "name": "default",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ num: number; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ num: number; }"
+      }
+    },
+    "named": {
+      "description": "",
+      "name": "named",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ str: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ str: string; }"
+      }
+    },
+    "no-bind": {
+      "description": "",
+      "name": "no-bind",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{}"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{}"
+      }
+    },
+    "vbind": {
+      "description": "",
+      "name": "vbind",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ num: number; str: string; obj: { title: string; style: { color: string; }; }; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ num: number; str: string; obj: { title: string; style: { color: string; }; }; }"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-templateslots",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/TemplateSlots.stories.ts"
+}

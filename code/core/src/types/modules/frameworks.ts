@@ -2,6 +2,7 @@
 export enum SupportedFramework {
   // CORE
   ANGULAR = 'angular',
+  ANGULAR_VITE = 'angular-vite',
   EMBER = 'ember',
   HTML_VITE = 'html-vite',
   NEXTJS = 'nextjs',

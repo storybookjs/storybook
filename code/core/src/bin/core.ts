@@ -1,4 +1,9 @@
-import { getEnvConfig, optionalEnvToBoolean, parseList } from 'storybook/internal/common';
+import {
+  HandledError,
+  getEnvConfig,
+  optionalEnvToBoolean,
+  parseList,
+} from 'storybook/internal/common';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -7,10 +12,13 @@ import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
+import { registerSkillsCommand } from '../cli/skills/register.ts';
+import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -23,6 +31,7 @@ process.env.STORYBOOK = 'true';
  * - `dev`: Start the Storybook development server
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
+ * - `tools`: Agent tools derived from the target Storybook configuration's registered toolsets
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
@@ -77,10 +86,14 @@ const command = (name: string) =>
           logger.outro(`Debug logs are written to: ${logFile}`);
         } catch {}
       }
+      // Exit explicitly so Node won't hang on Windows due to lingering file handles
+      if (command.name() === 'build') {
+        process.exit(0);
+      }
     });
 
 command('dev')
-  .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
+  .option('-p, --port <number>', 'Port to run Storybook')
   .option('-h, --host <string>', 'Host to run Storybook')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
@@ -96,7 +109,7 @@ command('dev')
   .option('--ssl-key <key>', 'Provide an SSL key. (Required with --https)')
   .option('--smoke-test', 'Exit after successful start')
   .option('--ci', "CI mode (skip interactive prompts, don't open browser)")
-  .option('--no-open', 'Do not open Storybook automatically in the browser')
+  .option('--open', 'Open Storybook automatically in the browser', false)
   .option('--quiet', 'Suppress verbose build output')
   .option('--no-version-updates', 'Suppress update check', true)
   .option('--debug-webpack', 'Display final webpack configurations for debugging purposes')
@@ -105,11 +118,6 @@ command('dev')
     'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
   )
   .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option(
-    '--preview-url <string>',
-    'Disables the default storybook preview and lets your use your own'
-  )
-  .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--exact-port', 'Exit early if the desired port is not available')
   .option(
@@ -124,21 +132,15 @@ command('dev')
 
     logger.intro(`${packageJson.name} v${packageJson.version}`);
 
-    // The key is the field created in `options` variable for
-    // each command line argument. Value is the env variable.
-    getEnvConfig(options, {
-      port: 'SBCONFIG_PORT',
-      host: 'SBCONFIG_HOSTNAME',
-      staticDir: 'SBCONFIG_STATIC_DIR',
-      configDir: 'SBCONFIG_CONFIG_DIR',
-      ci: 'CI',
-    });
-
-    if (parseInt(`${options.port}`, 10)) {
-      options.port = parseInt(`${options.port}`, 10);
+    let resolvedOptions: typeof options;
+    try {
+      resolvedOptions = resolveDevCommandOptions(options);
+    } catch (error) {
+      logger.error(error instanceof Error ? error.message : String(error));
+      return handleCommandFailure(options.logfile);
     }
 
-    await dev({ ...options, packageJson }).catch(() => {
+    await dev({ ...resolvedOptions, packageJson }).catch(() => {
       handleCommandFailure(options.logfile);
     });
   });
@@ -153,11 +155,6 @@ command('build')
     'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
   )
   .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option(
-    '--preview-url <string>',
-    'Disables the default storybook preview and lets your use your own'
-  )
-  .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
   .option('--preview-only', 'Use the preview without the manager UI')
@@ -217,6 +214,31 @@ command('index')
       packageJson,
     }).catch(() => process.exit(1));
   });
+
+// Like `handleCommandFailure`, but curried and surfacing the error, matching the signature the
+// `tools` and `skills` command handlers expect.
+const handleCliCommandFailure =
+  (logFilePath: string | boolean | undefined) =>
+  async (error: unknown): Promise<never> => {
+    if (!(error instanceof HandledError)) {
+      logger.error(String(error));
+    }
+    return handleCommandFailure(logFilePath ?? false);
+  };
+
+// `storybook tools <toolset> <tool>`: runs the toolsets registered by the target Storybook
+// configuration in this process, disconnected from any dev server (storybookjs/storybook#35716).
+const toolsCommand = command('tools').description(
+  'Run the agent tools provided by the target Storybook configuration'
+);
+registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
+
+// `storybook skills`: agent-facing instruction documents served by the target Storybook
+// configuration (storybookjs/storybook#35526, Milestone 6).
+const skillsCommand = command('skills').description(
+  'Agent skills served by the target Storybook configuration'
+);
+registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

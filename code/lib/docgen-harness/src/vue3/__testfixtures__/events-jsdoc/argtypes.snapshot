@@ -1,0 +1,56 @@
+{
+  "cancel": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Emitted when the user cancels editing.",
+    "name": "cancel",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "label": {
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "save": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Emitted when the user saves the current value.",
+    "name": "save",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ id: number }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ id: number }",
+    },
+  },
+}

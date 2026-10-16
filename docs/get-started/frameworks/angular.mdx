@@ -1,12 +1,18 @@
 ---
-title: Storybook for Angular
+title: Storybook for Angular with Webpack
 hideRendererSelector: true
 sidebar:
-  order: 1
-  title: Angular
+  order: 2
+  title: Angular (Webpack)
 ---
 
 Storybook for Angular is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses Angular builders and integrates with [Compodoc](https://compodoc.app/) to provide automatic documentation generation.
+
+<Callout variant="info">
+
+If you are on **Angular ≥ 21** and want faster builds and the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), consider using [`@storybook/angular-vite`](./angular-vite.mdx) instead. It is a Vite-based framework with the same authoring surface and full Vitest integration support.
+
+</Callout>
 
 ## Install
 
@@ -27,7 +33,7 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
   versions={[
     {
       name: 'Angular',
-      range: '≥ 18.0 < 22.0',
+      range: '≥ 18.0 < 23.0',
       icon: '/images/logos/renderers/logo-angular.svg',
     },
     {
@@ -120,6 +126,12 @@ Go to your `.storybook/preview.ts` and add the following:
 If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.dev/api/platform-browser/bootstrapApplication), used to bootstrap the component in Storybook.
 
 <CodeSnippets path="angular-application-providers-in-meta-and-story.md" />
+
+<Callout variant="info">
+
+Use `applicationConfig` for providers that belong to the application bootstrap environment, such as providers passed to Angular's `bootstrapApplication`. Use `moduleMetadata` for declarations, imports, and providers needed by the story's Angular template. The decorators configure different scopes and can be used together when a story needs both.
+
+</Callout>
 
 ### Angular dependencies
 
@@ -226,8 +238,8 @@ Then, adjust your `package.json` script section, to replace the existing Storybo
   "scripts": {
 -    "storybook": "start-storybook -p 6006", // or `storybook dev -p 6006`
 -    "build-storybook": "build-storybook" // or `storybook build`
-+    "storybook": "ng run <project-name:storybook",
-+    "storybook": "ng run <project-name:storybook",
++    "storybook": "ng run <project-name>:storybook",
++    "build-storybook": "ng run <project-name>:build-storybook",
   }
 }
 ```
@@ -240,8 +252,8 @@ Note that `compodoc` is now built into `@storybook/angular`; you don't have to c
 -    "docs:json": "compodoc -p tsconfig.json -e json -d ./documentation",
 -    "storybook": "npm run docs:json && start-storybook -p 6006",
 -    "build-storybook": "npm run docs:json && build-storybook"
-+    "storybook": "ng run <project-name:storybook",
-+    "storybook": "ng run <project-name:storybook",
++    "storybook": "ng run <project-name>:storybook",
++    "build-storybook": "ng run <project-name>:build-storybook",
   }
 }
 ```
@@ -284,7 +296,6 @@ These are common options you may need for the Angular builder:
 | `"assets"`                   | List of static application assets. <br /> `"assets": ["src/assets"]`                                                                                                                        |
 | `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                             |
 | `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                         |
-| `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                      |
 | `"loglevel"`                 | Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                     |
 | `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                        |
 | `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                            |

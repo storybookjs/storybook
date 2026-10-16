@@ -376,6 +376,7 @@ export const ColorControl: FC<ColorControlProps> = ({
   maxPresetColors,
   startOpen = false,
   argType,
+  required,
 }) => {
   const debouncedOnChange = useCallback(debounce(onChange, 200), [onChange]);
   const { value, realValue, updateValue, color, colorSpace, cycleColorSpace } = useColorInput(
@@ -399,6 +400,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
         onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
         readOnly={readOnly}
+        aria-required={required || undefined}
         placeholder="Choose color..."
       />
       <PopoverProvider

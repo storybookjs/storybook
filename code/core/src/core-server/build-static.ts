@@ -17,8 +17,11 @@ import { global } from '@storybook/global';
 import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
+import {
+  getRegisteredServices,
+  writeOpenServiceStaticFiles,
+} from '../shared/open-service/server.ts';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
-import { writeOpenServiceStaticFiles } from '../shared/open-service/server.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
@@ -58,7 +61,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const frameworkName = typeof framework === 'string' ? framework : framework?.name;
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
-  } else if (!options.ignorePreview) {
+  } else {
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }
 
@@ -147,24 +150,30 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
-  effects.push(writeOpenServiceStaticFiles(options.outputDir));
 
-  let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
-    Promise.resolve(undefined);
-  if (!options.ignorePreview) {
-    storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const hasRegisteredServices = getRegisteredServices().length > 0;
+  const shouldWriteManifests = features?.componentsManifest;
 
+  if (hasRegisteredServices || shouldWriteManifests) {
     effects.push(
-      writeIndexJson(
-        join(options.outputDir, 'index.json'),
-        storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
-      )
-    );
+      (async () => {
+        if (hasRegisteredServices) {
+          logger.info('Building open services..');
+          await writeOpenServiceStaticFiles(options.outputDir);
+        }
 
-    if (features?.componentsManifest) {
-      effects.push(writeManifests(options.outputDir, presets));
-    }
+        if (shouldWriteManifests) {
+          // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
+          // must run after open-service static files are written.
+          await writeManifests(options.outputDir, presets);
+        }
+      })()
+    );
   }
+
+  const storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  effects.push(writeIndexJson(join(options.outputDir, 'index.json'), storyIndexGeneratorPromise));
 
   if (!core?.disableProjectJson) {
     effects.push(
@@ -176,37 +185,29 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     logConfig('Preview webpack config', await previewBuilder.getConfig(fullOptions));
   }
 
-  if (options.ignorePreview) {
-    logger.info(`Not building preview`);
-  } else {
-    logger.info('Building preview..');
-  }
+  logger.info('Building preview..');
 
   const startTime = process.hrtime();
   await Promise.all([
-    ...(options.ignorePreview
-      ? []
-      : [
-          previewBuilder
-            .build({
-              startTime,
-              options: fullOptions,
-            })
-            .then(async (previewStats) => {
-              logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
+    previewBuilder
+      .build({
+        startTime,
+        options: fullOptions,
+      })
+      .then(async (previewStats) => {
+        logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
 
-              const statsOption = options.webpackStatsJson || options.statsJson;
-              if (statsOption) {
-                const target = statsOption === true ? options.outputDir : statsOption;
-                await outputStats(target, previewStats);
-              }
-            })
-            .catch((error) => {
-              logger.error('Failed to build the preview');
-              process.exitCode = 1;
-              throw error;
-            }),
-        ]),
+        const statsOption = options.webpackStatsJson || options.statsJson;
+        if (statsOption) {
+          const target = statsOption === true ? options.outputDir : statsOption;
+          await outputStats(target, previewStats);
+        }
+      })
+      .catch((error) => {
+        logger.error('Failed to build the preview');
+        process.exitCode = 1;
+        throw error;
+      }),
     ...effects,
   ]);
 

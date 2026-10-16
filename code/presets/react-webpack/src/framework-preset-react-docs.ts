@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
+import { deprecate } from 'storybook/internal/node-logger';
+
 import type { Configuration } from 'webpack';
 
 import type { StorybookConfig } from './types.ts';
@@ -8,6 +10,14 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
   options
 ): Promise<Configuration> => {
+  const features = await options.presets.apply('features', {});
+  if (features?.docgenServer) {
+    // The docgen service owns React metadata extraction for this mode. Do not inject
+    // `Component.__docgenInfo` into the preview bundle, otherwise preview argTypes would include
+    // docgen data that the UI is now responsible for merging from the service.
+    return config;
+  }
+
   const typescriptOptions = await options.presets.apply('typescript', {} as any);
   const debug = options.loglevel === 'debug';
 
@@ -16,6 +26,11 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   if (typeof reactDocgen !== 'string') {
     return config;
   }
+
+  deprecate(
+    `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
+      `It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.`
+  );
 
   if (reactDocgen !== 'react-docgen-typescript') {
     return {

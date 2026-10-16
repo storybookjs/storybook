@@ -11,7 +11,7 @@ import { cache } from 'storybook/internal/common';
  * Both flags are scoped to a Storybook project via `configDir`. In monorepos
  * with hoisted `node_modules`, multiple Storybook projects share the same
  * `node_modules/.cache/storybook/...` directory — without scoping, running
- * `storybook ai setup` (or `storybook init` with AI accepted) in package A
+ * `storybook skills setup` (or `storybook init` with AI accepted) in package A
  * would falsely flip package B's checklist or copy-prompt UI.
  *
  * The CLI writes `{ timestamp, configDir }` (absolute, resolved). The dev
@@ -49,13 +49,17 @@ async function readProjectScopedFlag(
   } catch {}
 }
 
-/** Written by `storybook init` when the user accepted the AI feature and in legacy inits where the question was not asked. */
+/** Written by `storybook init` when the user accepted the AI feature and in legacy inits where the question was not asked.
+ * Due to regressions with unsupported frameworks, and the computational complexity of plugging framework feature support
+ * into this part of the app, we've decided to revert the flag to treat the user as opting out from init when the flag
+ * isn't found.
+ */
 export async function hasAiInitOptIn(configDir: string): Promise<boolean> {
   const flag = await readProjectScopedFlag('ai-init-opt-in', configDir);
-  return flag?.answer !== false;
+  return flag?.answer === true;
 }
 
-/** Written by `storybook ai setup` when the prompt CLI ran in this project. */
+/** Written by `storybook skills setup` when it ran in this project. */
 export async function hasAiSetupRun(configDir: string): Promise<boolean> {
   return !!(await readProjectScopedFlag('ai-setup-ran', configDir));
 }

@@ -19,17 +19,26 @@ if (process.env.INSPECT === 'true') {
 }
 
 export default defineProject({
+  // react-aria's Virtualizer reads process.env.NODE_ENV at runtime; the browser has no process.
+  define: {
+    'process.env.NODE_ENV': JSON.stringify('test'),
+  },
   plugins: [
     storybookTest({
       configDir: import.meta.dirname + '/.storybook',
       tags: {
         include: ['vitest'],
       },
+      // Pinned for the InitialGlobals story, which asserts this reaches the run (see
+      // addons/vitest/src/components/InitialGlobals.stories.tsx).
+      initialGlobals: { initialGlobalsWork: true },
     }),
     ...extraPlugins,
   ],
   test: {
     name: 'storybook-ui',
+    // Playwright occasionally misses the vitest-iframe frame within 1s under full-suite load.
+    retry: process.env.CI ? 2 : 1,
     exclude: [
       ...defaultExclude,
       'node_modules/**',

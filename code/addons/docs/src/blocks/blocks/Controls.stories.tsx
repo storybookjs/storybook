@@ -1,10 +1,11 @@
+/** Custom docs page: {@link ./Controls.mdx} (attached via `<Meta of={...} />`). */
 import React from 'react';
 
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, within } from 'storybook/test';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import * as ExampleStories from '../examples/ControlsParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
@@ -97,6 +98,9 @@ export const Categories: Story = {
   },
 };
 
+// Service docgen loads argTypes asynchronously, which can outlast the default one-second wait.
+const DOCGEN_TIMEOUT = { timeout: 5000 };
+
 const findSubcomponentTabs = async (
   canvas: ReturnType<typeof within>,
   step: PlayFunctionContext['step']
@@ -104,8 +108,8 @@ const findSubcomponentTabs = async (
   let subcomponentATab: HTMLElement | null = null;
   let subcomponentBTab: HTMLElement | null = null;
   await step('should have tabs for the subcomponents', async () => {
-    subcomponentATab = await canvas.findByText('SubcomponentA');
-    subcomponentBTab = await canvas.findByText('SubcomponentB');
+    subcomponentATab = await canvas.findByText('SubcomponentA', {}, DOCGEN_TIMEOUT);
+    subcomponentBTab = await canvas.findByText('SubcomponentB', {}, DOCGEN_TIMEOUT);
   });
   return { subcomponentATab, subcomponentBTab };
 };
@@ -117,6 +121,40 @@ export const SubcomponentsOfStory: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     await findSubcomponentTabs(canvas, step);
+    await step('should label the main tab with the component source name', async () => {
+      await expect(await canvas.findByRole('tab', { name: 'ControlsParameters' })).toBeVisible();
+    });
+  },
+};
+
+/**
+ * When a component declares subcomponents, editing a control on the main component tab should not
+ * remount the input and drop focus. This verifies the fix for
+ * https://github.com/storybookjs/storybook/issues/29028
+ */
+export const SubcomponentsRetainControlFocus: Story = {
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+  },
+  beforeEach: async ({ canvasElement }) => {
+    return async () => {
+      const canvas = within(canvasElement);
+      const input = canvas.queryByDisplayValue('bx') ?? canvas.queryByDisplayValue('b');
+      if (!input) {
+        return;
+      }
+      await userEvent.clear(input);
+      await userEvent.type(input, 'b');
+    };
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = await canvas.findByDisplayValue('b', {}, DOCGEN_TIMEOUT);
+    await userEvent.click(input);
+    await userEvent.type(input, 'x');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
   },
 };
 
@@ -173,6 +211,10 @@ export const MultipleControlsOnSamePage: Story = {
     </>
   ),
   play: async ({ canvasElement }) => {
+    await waitFor(
+      () => expect(canvasElement.querySelector('[id^="control-"]')).not.toBeNull(),
+      DOCGEN_TIMEOUT
+    );
     const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
       (el) => el.id
     );
@@ -195,6 +237,10 @@ export const MultipleControlsForSameStoryOnSamePage: Story = {
     </>
   ),
   play: async ({ canvasElement }) => {
+    await waitFor(
+      () => expect(canvasElement.querySelector('[id^="control-"]')).not.toBeNull(),
+      DOCGEN_TIMEOUT
+    );
     const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
       (el) => el.id
     );

@@ -10,28 +10,26 @@ export const PreviewContainer = styled.div({
   overflow: 'hidden',
 });
 
-export const FrameWrap = styled.main({
+export const FrameWrap = styled.main(({ theme }) => ({
   overflow: 'auto',
   width: '100%',
   zIndex: 3,
-  background: 'transparent',
+  background: theme.background.app,
   flex: 1,
+}));
+export const CanvasWrap = styled.div({
+  alignContent: 'center',
+  alignItems: 'center',
+  justifyContent: 'center',
+  justifyItems: 'center',
+  overflow: 'auto',
+  display: 'grid',
+  gridTemplateColumns: '100%',
+  gridTemplateRows: '100%',
+  position: 'relative',
+  width: '100%',
+  height: '100%',
 });
-export const CanvasWrap = styled.div<{ show: boolean }>(
-  {
-    alignContent: 'center',
-    alignItems: 'center',
-    justifyContent: 'center',
-    justifyItems: 'center',
-    overflow: 'auto',
-    gridTemplateColumns: '100%',
-    gridTemplateRows: '100%',
-    position: 'relative',
-    minWidth: '100%',
-    minHeight: '100%',
-  },
-  ({ show }) => ({ display: show ? 'grid' : 'none' })
-);
 
 export const UnstyledLink = styled(Link)({
   color: 'inherit',

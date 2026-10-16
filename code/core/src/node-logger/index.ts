@@ -11,7 +11,8 @@ export { protectUrls, createHyperlink } from './wrap-utils.ts';
 export { CLI_COLORS } from './logger/colors.ts';
 export { ConsoleLogger, StyledConsoleLogger } from './logger/console.ts';
 
-export type { LogLevel } from './logger/logger.ts';
+export type { BoxOptions, LogLevel } from './logger/logger.ts';
+export type { LogMessageOptions } from '@clack/prompts';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621

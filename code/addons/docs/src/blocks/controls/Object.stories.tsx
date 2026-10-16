@@ -1,6 +1,8 @@
+import React, { useEffect, useState } from 'react';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fn, waitFor } from 'storybook/test';
 
 import { ObjectControl } from './Object';
 
@@ -61,6 +63,35 @@ export const Null: Story = {
 export const Undefined: Story = {
   args: {
     value: undefined,
+  },
+};
+
+export const DelayedObject: Story = {
+  render: (args) => {
+    const [value, setValue] = useState<object | undefined>(undefined);
+
+    useEffect(() => {
+      setTimeout(() => {
+        setValue({
+          name: 'Michael',
+          nested: { someBool: true, someNumber: 22 },
+        });
+      }, 1_000);
+    }, []);
+
+    return <ObjectControl {...args} value={value} />;
+  },
+  parameters: {
+    withRawArg: false,
+  },
+  play: async ({ canvas }) => {
+    // The value renders after a 1s delay, which races findByText's default 1s timeout
+    await canvas.findByText('"Michael"', undefined, { timeout: 5000 });
+    await waitFor(() => {
+      expect(
+        canvas.queryByRole('textbox', { name: 'Edit object as JSON' })
+      ).not.toBeInTheDocument();
+    });
   },
 };
 

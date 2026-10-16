@@ -2,6 +2,9 @@
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
 
+import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
+import * as legacyDefault from './__testfixtures__/legacy-preview-default.ts';
+import * as legacyNamed from './__testfixtures__/legacy-preview-named.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 import type { Tag } from './story.ts';
 
@@ -36,15 +39,131 @@ test('addon parameters are inferred', () => {
     },
   });
   const MyStory2 = meta.story({
-    // @ts-expect-error can not assign numbers to strings
     parameters: {
       foo: {
+        // @ts-expect-error can not assign numbers to strings
         value: 1,
       },
       bar: {
+        // @ts-expect-error can not assign numbers to strings
         value: 1,
       },
     },
+  });
+});
+
+describe('legacy preview annotation namespaces', () => {
+  test('keep factory addon types when mixed with factory addons', () => {
+    const mixedPreview = definePreview({
+      addons: [legacyDefault, legacyNamed, addon],
+      renderToCanvas: () => {},
+    });
+    const mixedMeta = mixedPreview.meta({ parameters: { foo: { value: 'typed' } } });
+
+    mixedMeta.story({
+      parameters: {
+        foo: {
+          // @ts-expect-error factory addon parameter types remain enforced
+          value: 1,
+        },
+      },
+    });
+
+    expect(mixedPreview.composed.parameters).toMatchObject({
+      legacyDefault: true,
+      legacyNamed: true,
+    });
+  });
+
+  test('do not collapse preview types when used without factory addons', () => {
+    const legacyPreview = definePreview({
+      addons: [legacyDefault],
+      renderToCanvas: () => {},
+    });
+
+    legacyPreview.meta({ parameters: { layout: 'centered' } });
+  });
+
+  test('uncalled addon factories are rejected', () => {
+    definePreview({
+      // @ts-expect-error the factory must be called
+      addons: [() => addon],
+      renderToCanvas: () => {},
+    });
+  });
+});
+
+interface GlobalsAddonTypes {
+  globals: { theme: 'light' | 'dark'; locale: 'en' | 'fr' };
+}
+
+const globalsAddon = definePreviewAddon<GlobalsAddonTypes>({});
+const globalsPreview = definePreview({ addons: [globalsAddon], renderToCanvas: () => {} });
+const globalsMeta = globalsPreview.type<{ args: { label: string } }>().meta({
+  args: { label: 'foo' },
+  render: ({ label }) => 'hello' + label,
+});
+
+test('globals overrides may be partial, mirroring args', () => {
+  // A story may override a subset of the typed globals (here `theme` without `locale`).
+  globalsMeta.story({ globals: { theme: 'dark' } });
+
+  // The same applies to component-level (meta) overrides.
+  globalsPreview.type<{ args: { label: string } }>().meta({
+    args: { label: 'foo' },
+    render: ({ label }) => 'hello' + label,
+    globals: { locale: 'fr' },
+  });
+
+  // Only the keys become optional — values stay type-checked.
+  globalsPreview.type<{ args: { label: string } }>().meta({
+    args: { label: 'foo' },
+    render: ({ label }) => 'hello' + label,
+    // @ts-expect-error theme must be 'light' | 'dark'
+    globals: { theme: 'blue' },
+  });
+});
+
+describe('meta.type<>()', () => {
+  test('returns the meta itself', () => {
+    expect(meta.type<{ args: { count: number } }>()).toBe(meta);
+  });
+
+  test('adds types to the stories created from it', () => {
+    const typed = meta.type<{
+      args: { count: number };
+      parameters: { baz?: { value: string } };
+      globals: { tone: 'warm' | 'cool' };
+      tags: Array<'a' | 'b'>;
+    }>();
+
+    const MyStory = typed.story({
+      args: { count: 1 },
+      parameters: { foo: { value: '1' }, baz: { value: '1' } },
+      globals: { tone: 'warm' },
+      tags: ['a'],
+      render: ({ label, count }) => {
+        expectTypeOf(label).toEqualTypeOf<string>();
+        expectTypeOf(count).toEqualTypeOf<number>();
+        return label + count;
+      },
+    });
+    expect(MyStory.composed.args).toEqual({ label: 'foo', count: 1 });
+
+    // @ts-expect-error count is required
+    typed.story({ args: { label: 'bar' } });
+    // @ts-expect-error can not assign numbers to strings
+    typed.story({ args: { count: 1 }, parameters: { baz: { value: 1 } } });
+    // @ts-expect-error tone must be 'warm' | 'cool'
+    typed.story({ args: { count: 1 }, globals: { tone: 'hot' } });
+    // @ts-expect-error tags must be 'a' | 'b'
+    typed.story({ args: { count: 1 }, tags: ['c'] });
+  });
+
+  test('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error label is required, the meta sets it to 'foo'
+    meta.type<{ args: { label: 'bar' } }>().story({ args: {} });
+    meta.type<{ args: { label: 'bar' } }>().story({ args: { label: 'bar' } });
   });
 });
 
@@ -79,6 +198,22 @@ describe('test function', () => {
   });
 });
 
+describe('definePreview composed', () => {
+  test('composes the core annotations exactly once and marks the result', () => {
+    const previewFactory = definePreview({ renderToCanvas: () => {} });
+    const { composed } = previewFactory;
+
+    // The composed result must be flagged so that the StoryStore / portable setProjectAnnotations
+    // do not prepend the core annotations a second time (which would double decorators/loaders).
+    expect(hasCoreAnnotations(composed)).toBe(true);
+
+    // The core annotations are present (the actions/test addons contribute loaders unconditionally).
+    const coreLoaderCount = getCoreAnnotations().flatMap((it) => (it as any).loaders ?? []).length;
+    expect(coreLoaderCount).toBeGreaterThan(0);
+    expect(composed.loaders).toHaveLength(coreLoaderCount);
+  });
+});
+
 describe('customize tags type', () => {
   // Customizing tags type enables autocompletion of tags.
   test('with addon', () => {
@@ -95,13 +230,13 @@ describe('customize tags type', () => {
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Tag[]
@@ -122,13 +257,13 @@ describe('customize tags type', () => {
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Array<'foo' | 'bar' | (string & {})>
     >(true);
     testType.canAssign<
-      Parameters<typeof meta.story>[0] extends Object
+      Parameters<typeof meta.story>[0] extends object
         ? Parameters<typeof meta.story>[0]['tags']
         : never,
       Tag[]

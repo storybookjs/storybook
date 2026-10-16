@@ -1,0 +1,7 @@
+{
+  "name": "807-docs-request",
+  "type": "module",
+  "evals": {
+    "template": "reshaped-storybook"
+  }
+}

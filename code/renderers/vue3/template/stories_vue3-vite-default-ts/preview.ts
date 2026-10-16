@@ -5,7 +5,6 @@ declare module 'vue' {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var Components: Record<string, any>;
 }
 

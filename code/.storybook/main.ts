@@ -14,6 +14,7 @@ const currentDirPath = dirname(currentFilePath);
 
 const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
 const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const previewApiPath = join(currentDirPath, '../core/src/preview-api/index.ts');
 const themingCreatePath = join(currentDirPath, '../core/src/theming/create.ts');
 const themingPath = join(currentDirPath, '../core/src/theming/index.ts');
 const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
@@ -36,6 +37,10 @@ const config = defineMain({
     {
       directory: '../core/src/preview',
       titlePrefix: 'preview',
+    },
+    {
+      directory: '../core/src/shared',
+      titlePrefix: 'core/shared',
     },
     {
       directory: '../core/src/components/brand',
@@ -109,6 +114,11 @@ const config = defineMain({
       titlePrefix: 'addons/vitest',
       files: 'stories.tsx',
     },
+    {
+      directory: '../renderers/react/src/__test__',
+      titlePrefix: 'renderer/react',
+      files: '@(ReactDomClient|RenderToCanvas).stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-onboarding',
@@ -147,12 +157,12 @@ const config = defineMain({
   },
   core: {
     disableTelemetry: true,
-    changeDetection: true,
   },
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    changeDetection: true,
+    experimentalReactComponentMeta: true,
+    experimentalSearchDocsHeadings: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {
@@ -165,12 +175,17 @@ const config = defineMain({
             ? {
                 'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
+                'storybook/preview-api': previewApiPath,
                 'storybook/theming/create': themingCreatePath,
                 'storybook/theming': themingPath,
                 'sb-original/image-context': imageContextPath,
               }
             : {
+                // The components dist bundle inlines react-aria; resolving to source keeps the
+                // preview on a single react-aria copy so FocusScopes can nest across modules.
+                'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
+                'storybook/preview-api': previewApiPath,
               },
       },
       plugins: [react()],
@@ -182,7 +197,13 @@ const config = defineMain({
       server: {
         watch: {
           // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
-          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+          ignored: [
+            '**/.nx/cache/**',
+            '**/tsconfig.json',
+            // Internal e2e writes traces under code/playwright-results while the dev server is running.
+            '**/playwright-results/**',
+            '**/playwright-report/**',
+          ],
         },
       },
     } satisfies typeof viteConfig);

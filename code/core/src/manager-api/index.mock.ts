@@ -5,8 +5,8 @@ export { Tag } from '../shared/constants/tags.ts';
 
 export const openInEditor = fn();
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager.ts';
+export { UniversalStore as internal_UniversalStore } from '../shared/universal-store/index.ts';
+export { useUniversalStore as internal_useUniversalStore } from '../shared/universal-store/use-universal-store-manager.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
 
 export {
@@ -21,3 +21,11 @@ export {
   fullTestProviderStore as internal_fullTestProviderStore,
   universalTestProviderStore as internal_universalTestProviderStore,
 } from './stores/__mocks__/test-provider.ts';
+
+/** Real open-service surface — not mocked; used by the internal sync-test demo. */
+export {
+  getService,
+  registerService,
+  useServiceCommand,
+  useServiceQuery,
+} from '../shared/open-service/manager.ts';

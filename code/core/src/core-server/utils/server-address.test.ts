@@ -1,11 +1,28 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import detectPort from 'detect-port';
 
-import { getServerAddresses, getServerChannelUrl, getServerPort } from './server-address.ts';
+import {
+  getReachableNetworkAddresses,
+  getServerAddresses,
+  getServerChannelUrl,
+  getServerPort,
+} from './server-address.ts';
 
 vi.mock('node:os', () => ({
-  default: { release: () => '' },
+  default: {
+    release: () => '',
+    networkInterfaces: () => ({
+      lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+      eth0: [
+        { address: '192.168.1.100', family: 'IPv4', internal: false },
+        { address: 'fe80::1', family: 'IPv6', internal: false },
+      ],
+      wlan0: [{ address: '192.130.20.4', family: 'IPv4', internal: false }],
+    }),
+  },
   platform: 'darwin',
   constants: {
     signals: {},
@@ -20,7 +37,7 @@ describe('getServerAddresses', () => {
   const proto = 'http';
 
   it('should return server addresses without initial path by default', () => {
-    const expectedAddress = `${proto}://localhost:${port}/`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/`;
 
     const result = getServerAddresses(port, host, proto);
@@ -32,7 +49,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path', () => {
     const initialPath = '/foo/bar';
 
-    const expectedAddress = `${proto}://localhost:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -44,7 +61,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path and add slash if missing', () => {
     const initialPath = 'foo/bar';
 
-    const expectedAddress = `${proto}://localhost:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -52,6 +69,22 @@ describe('getServerAddresses', () => {
     expect(result.address).toBe(expectedAddress);
     expect(result.networkAddress).toBe(expectedNetworkAddress);
   });
+});
+
+describe('getReachableNetworkAddresses', () => {
+  it('lists every external IPv4 address of the machine when the host is 0.0.0.0', () => {
+    expect(getReachableNetworkAddresses('http://0.0.0.0:6006/?path=/foo/bar')).toEqual([
+      'http://192.168.1.100:6006/?path=/foo/bar',
+      'http://192.130.20.4:6006/?path=/foo/bar',
+    ]);
+  });
+
+  it.each(['http://192.168.1.100:6006/', 'https://my-host.com:6006/'])(
+    'keeps %s as it is',
+    (networkAddress) => {
+      expect(getReachableNetworkAddresses(networkAddress)).toEqual([networkAddress]);
+    }
+  );
 });
 
 describe('getServerPort', () => {
@@ -66,13 +99,53 @@ describe('getServerPort', () => {
 
     expect(result).toBe(expectedFreePort);
   });
+
+  it('should reject with an actionable error when no port can be bound', async () => {
+    // detect-port resolves `undefined` instead of rejecting when the environment
+    // refuses every bind attempt (e.g. sandboxed shells).
+    vi.mocked(detectPort).mockResolvedValue(undefined as unknown as number);
+
+    await expect(getServerPort(port)).rejects.toThrow(
+      "Unable to find a free port for Storybook's dev server"
+    );
+  });
+
+  it('should log an error and exit when the port is taken and exactPort is set', async () => {
+    vi.mocked(detectPort).mockResolvedValue(4000);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
+
+    try {
+      await getServerPort(port, { exactPort: true });
+
+      expect(logger.error).toHaveBeenCalledWith(
+        `Port ${port} is not available. Exiting because --exact-port was provided.`
+      );
+      expect(exit).toHaveBeenCalledWith(-1);
+    } finally {
+      exit.mockRestore();
+    }
+  });
+
+  it('should not exit for exactPort when no port was requested', async () => {
+    vi.mocked(detectPort).mockResolvedValue(4000);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
+
+    try {
+      const result = await getServerPort(undefined, { exactPort: true });
+
+      expect(result).toBe(4000);
+      expect(exit).not.toHaveBeenCalled();
+    } finally {
+      exit.mockRestore();
+    }
+  });
 });
 
 describe('getServerChannelUrl', () => {
   const port = 3000;
   it('should return WebSocket URL with HTTP', () => {
     const options = { https: false };
-    const expectedUrl = `ws://localhost:${port}/storybook-server-channel`;
+    const expectedUrl = `ws://127.0.0.1:${port}/storybook-server-channel`;
 
     const result = getServerChannelUrl(port, options);
 
@@ -81,7 +154,7 @@ describe('getServerChannelUrl', () => {
 
   it('should return WebSocket URL with HTTPS', () => {
     const options = { https: true };
-    const expectedUrl = `wss://localhost:${port}/storybook-server-channel`;
+    const expectedUrl = `wss://127.0.0.1:${port}/storybook-server-channel`;
 
     const result = getServerChannelUrl(port, options);
 

@@ -12,6 +12,7 @@ export type {
   ArgTypes,
   ArgTypesEnhancer,
   BaseAnnotations,
+  ProjectAnnotations as BaseProjectAnnotations,
   BeforeAll,
   BeforeEach,
   Canvas,
@@ -32,10 +33,8 @@ export type {
   LoaderFunction,
   Parameters,
   PartialStoryFn,
-  TestFunction,
   PlayFunction,
   PlayFunctionContext,
-  ProjectAnnotations as BaseProjectAnnotations,
   Renderer,
   SBArrayType,
   SBEnumType,
@@ -54,6 +53,7 @@ export type {
   StoryContext,
   StoryContextForEnhancers,
   StoryContextForLoaders,
+  StoryContextForRender,
   StoryContextUpdate,
   StoryFn,
   StoryId,
@@ -64,6 +64,7 @@ export type {
   StrictArgTypes,
   StrictInputType,
   Tag,
+  TestFunction,
 } from 'storybook/internal/csf';
 
 type OrString<T extends string> = T | (string & {});
@@ -80,6 +81,13 @@ export interface StorybookParameters {
    * If you pass `none`, no styles are applied.
    */
   layout?: Layout;
+  /**
+   * The BCP-47 language tag applied to the rendered story.
+   *
+   * In story view, this sets lang` on the story root element; in docs view it sets `lang` on the
+   * embedded story canvas. When unset, no `lang` attribute is applied. Inherited project → meta → story.
+   */
+  htmlLang?: string;
 }
 
 export interface StorybookTypes {

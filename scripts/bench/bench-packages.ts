@@ -132,9 +132,21 @@ export const benchPackage = async (packageName: PackageName) => {
     }
   );
 
-  const { added } = JSON.parse(npmInstallResult.stdout) as { added: number };
+  // npm reports a failed install as JSON on stdout and leaves no node_modules behind, which used
+  // to surface as an ENOENT from the size measurement below, without npm's own error.
+  const installOutput = JSON.parse(npmInstallResult.stdout || '{}') as {
+    added?: number;
+    error?: { code?: string; summary?: string; detail?: string };
+  };
+  if (npmInstallResult.exitCode !== 0 || typeof installOutput.added !== 'number') {
+    const { exitCode, stdout, stderr } = npmInstallResult;
+    const report = installOutput.error ? JSON.stringify(installOutput.error, null, 2) : stdout;
+    throw new Error(dedent`npm install of ${packageName} failed (exit code ${exitCode})
+      ${report}
+      ${stderr}`);
+  }
   // -1 of reported packages added because we shouldn't count the actual package as a dependency
-  const dependencyCount = added - 1;
+  const dependencyCount = installOutput.added - 1;
 
   const getDirSize = async (dirPath: string) => {
     const entities = await readdir(dirPath, {
@@ -498,7 +510,7 @@ const run = async () => {
     await uploadToBigQuery({ results, branch: headBranch, commit, benchmarkedAt });
   }
 
-  if (options.baseBranch) {
+  if (typeof options.baseBranch === 'string') {
     const comparisonResults = await compareResults({ results, baseBranch: options.baseBranch });
     const resultsAboveThreshold = filterResultsByThresholds(comparisonResults);
     if (typeof options.pullRequest === 'number') {

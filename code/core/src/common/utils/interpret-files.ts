@@ -1,9 +1,15 @@
 import { existsSync } from 'node:fs';
 import { extname } from 'node:path';
 
-import { ResolverFactory } from 'oxc-resolver';
-
 import { storybookConfigExtensions } from '../../shared/constants/extensions.ts';
+import { createModuleResolver } from './module-resolver.ts';
+
+const typescriptFallbackExtensions: Record<string, string[]> = {
+  '.js': ['.ts', '.tsx'],
+  '.mjs': ['.mts'],
+  '.cjs': ['.cts'],
+  '.jsx': ['.tsx'],
+};
 
 export const supportedExtensions = storybookConfigExtensions;
 
@@ -13,7 +19,7 @@ export function getInterpretedFile(pathToFile: string) {
     .find((candidate) => existsSync(candidate));
 }
 
-const importResolver = new ResolverFactory({
+const importResolver = createModuleResolver({
   extensions: [...supportedExtensions],
   mainFields: ['module', 'main'],
 });
@@ -32,23 +38,27 @@ export function resolveImport(id: string, options: ResolveImportOptions): string
     // a TypeScript file. This can happen in ES modules as TypeScript requires to import other
     // TypeScript files with .js extensions
     // https://www.typescriptlang.org/docs/handbook/esm-node.html#type-in-packagejson-and-new-extensions
-    const newId = ['.js', '.mjs', '.cjs'].includes(ext)
-      ? `${id.slice(0, -2)}ts`
-      : ext === '.jsx'
-        ? `${id.slice(0, -3)}tsx`
-        : null;
+    const fallbackExtensions = typescriptFallbackExtensions[ext];
 
-    if (!newId) {
+    if (!fallbackExtensions) {
       throw error;
     }
-    return resolveSync(newId, options.basedir);
+
+    let fallbackError: unknown = error;
+    const baseId = id.slice(0, -ext.length);
+
+    for (const fallbackExtension of fallbackExtensions) {
+      try {
+        return resolveSync(`${baseId}${fallbackExtension}`, options.basedir);
+      } catch (err) {
+        fallbackError = err;
+      }
+    }
+
+    throw fallbackError;
   }
 }
 
 function resolveSync(id: string, basedir: string): string {
-  const result = importResolver.sync(basedir, id);
-  if (result.path) {
-    return result.path;
-  }
-  throw new Error(result.error ?? `Cannot resolve module '${id}' from '${basedir}'`);
+  return importResolver.resolveSync(basedir, id);
 }

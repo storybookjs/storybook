@@ -1,9 +1,20 @@
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
-import { HandledError, JsPackageManager, normalizeStories } from 'storybook/internal/common';
-import { getProjectRoot, isSatelliteAddon, versions } from 'storybook/internal/common';
-import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
+import {
+  HandledError,
+  JsPackageManager,
+  getPkgPrNewPackageSpecifier,
+  getProjectRoot,
+  isPkgPrNewVersionSpecifier,
+  isSatelliteAddon,
+  versions,
+} from 'storybook/internal/common';
+import {
+  experimental_loadStorybook,
+  getStoriesPathsFromConfig,
+} from 'storybook/internal/core-server';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import {
+  UpgradeStorybookConfigDirNotFoundError,
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
@@ -13,18 +24,22 @@ import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
-import { lt, prerelease } from 'semver';
+import { lt, prerelease, rsort } from 'semver';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import { type UpgradeOptions } from './upgrade.ts';
 
+export { getStoriesPathsFromConfig };
+
 // ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
 
 /** Configuration for upgrading Storybook dependencies */
+type DependencyType = 'dependencies' | 'devDependencies' | 'peerDependencies';
+
 interface UpgradeConfig {
   readonly packageManager: JsPackageManager;
   readonly isCanary: boolean;
@@ -32,6 +47,7 @@ interface UpgradeConfig {
   readonly isCLIPrerelease: boolean;
   readonly isCLIExactPrerelease: boolean;
   readonly isCLIExactLatest: boolean;
+  readonly storybookVersionSpecifier?: string;
 }
 
 /** Result of successfully collecting project data */
@@ -43,10 +59,9 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly isUpgrade: boolean;
   readonly beforeVersion: string;
   readonly currentCLIVersion: string;
-  readonly latestCLIVersionOnNPM: string;
+  readonly latestCLIVersionOnNPM: string | null;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
-  readonly hasCsfFactoryPreview: boolean;
 }
 
 /** Result when project collection fails */
@@ -140,7 +155,10 @@ const getVersionModifier = (versionSpecifier: string): VersionModifier => {
  * @returns True if the version is a canary release
  */
 const isCanaryVersion = (version: string): boolean =>
-  version.startsWith('0.0.0') || version.startsWith('portal:') || version.startsWith('workspace:');
+  version.startsWith('0.0.0') ||
+  version.startsWith('portal:') ||
+  version.startsWith('workspace:') ||
+  isPkgPrNewVersionSpecifier(version);
 
 /**
  * Validates that a version string is not empty or undefined
@@ -200,20 +218,15 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       cwd,
       dot: true,
       gitignore: true,
+      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
+      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      ignore: ['**/node_modules/**'],
       absolute: true,
       onlyDirectories: true,
       followSymbolicLinks: false,
     });
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
-
-    if (storybookDirs.length === 0) {
-      const answer = await prompt.text({
-        message:
-          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
-      });
-      return [answer];
-    }
 
     return storybookDirs;
   } catch (error) {
@@ -291,14 +304,17 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
+      versionSpecifier,
       versionInstalled,
-      hasCsfFactoryPreview,
-    } = await getStorybookData({ configDir });
+    } = await getStorybookData({ configDir, packageManagerName: options.packageManager });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${versionInstalled}`);
     validateVersion(versionInstalled);
-    const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(versionInstalled);
+    const isCanary =
+      isCanaryVersion(currentCLIVersion) ||
+      isCanaryVersion(versionInstalled) ||
+      isPkgPrNewVersionSpecifier(versionSpecifier);
     logger.debug(`${name} - Validating upgrade compatibility...`);
     validateUpgradeCompatibility(currentCLIVersion, versionInstalled, isCanary);
 
@@ -309,8 +325,15 @@ const processProject = async ({
       packageManager.latestVersion('storybook@next'),
     ]);
 
+    if (latestCLIVersionOnNPM == null) {
+      logger.debug(
+        `${name} - Could not determine the latest Storybook version from the registry; skipping the outdated-version check.`
+      );
+    }
+
     // Calculate version flags
-    const isCLIOutdated = lt(currentCLIVersion, latestCLIVersionOnNPM!);
+    const isCLIOutdated =
+      latestCLIVersionOnNPM != null && lt(currentCLIVersion, latestCLIVersionOnNPM);
     const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
     const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
     const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
@@ -345,12 +368,12 @@ const processProject = async ({
       isUpgrade,
       beforeVersion: versionInstalled,
       currentCLIVersion,
-      latestCLIVersionOnNPM: latestCLIVersionOnNPM!,
+      latestCLIVersionOnNPM,
       isCLIExactPrerelease,
+      storybookVersionSpecifier: versionSpecifier,
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
-      hasCsfFactoryPreview,
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));
@@ -420,6 +443,7 @@ export const generateUpgradeSpecs = async (
     isCLIExactPrerelease,
     isCLIExactLatest,
   } = config;
+  const prereleaseModifier = isCLIExactPrerelease && !isCanary ? '^' : '';
 
   // Filter for monorepo dependencies
   const monorepoDependencies = Object.keys(dependencies).filter(
@@ -430,15 +454,26 @@ export const generateUpgradeSpecs = async (
   const storybookCoreUpgrades = monorepoDependencies.map((dependency) => {
     const versionSpec = dependencies[dependency];
 
+    const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+      dependency,
+      config.storybookVersionSpecifier
+    );
+
+    if (pkgPrNewSpecifier) {
+      return `${dependency}@${pkgPrNewSpecifier}`;
+    }
+
     if (!versionSpec) {
       return `${dependency}@${versions[dependency]}`;
     }
 
     const { modifier } = getVersionModifier(versionSpec);
 
-    // Use fixed version for outdated CLI or canary versions
-    const shouldUseFixed = isCLIOutdated || isCanary;
-    const finalModifier = shouldUseFixed ? '' : modifier;
+    const finalModifier = isCLIPrerelease
+      ? prereleaseModifier
+      : isCLIOutdated || isCanary
+        ? ''
+        : modifier;
 
     return `${dependency}@${finalModifier}${versions[dependency]}`;
   });
@@ -446,19 +481,27 @@ export const generateUpgradeSpecs = async (
   // Generate satellite addon upgrades if applicable
   let storybookSatelliteUpgrades: string[] = [];
   if (isCLIExactPrerelease || isCLIExactLatest) {
-    const satelliteDependencies = Object.keys(dependencies).filter(isSatelliteAddon);
+    const satelliteDependencies = Object.keys(dependencies).filter(
+      (dependency) =>
+        isSatelliteAddon(dependency) && !dependencies[dependency]?.startsWith('workspace:')
+    );
 
     if (satelliteDependencies.length > 0) {
       try {
         const upgradePromises = satelliteDependencies.map(async (dependency) => {
           try {
-            const packageName = isCLIPrerelease ? `${dependency}@next` : dependency;
-            const mostRecentVersion = (await packageManager.latestVersion(packageName))!;
+            const tags = isCLIPrerelease ? [dependency, `${dependency}@next`] : [dependency];
+            const versions = await Promise.all(
+              tags.map((tag) => packageManager.latestVersion(tag))
+            );
+            const [mostRecentVersion] = rsort(versions.filter((version) => version !== null));
             if (!mostRecentVersion) {
               return null;
             }
             const { modifier } = getVersionModifier(dependencies[dependency] ?? '');
-            return `${dependency}@${modifier}${mostRecentVersion}`;
+            const finalModifier =
+              isCLIPrerelease && prerelease(mostRecentVersion) ? prereleaseModifier : modifier;
+            return `${dependency}@${finalModifier}${mostRecentVersion}`;
           } catch {
             return null;
           }
@@ -511,32 +554,26 @@ export const upgradeStorybookDependencies = async (config: UpgradeConfig): Promi
     logger.debug(JSON.stringify({ upgradedDevDependencies }, null, 2));
     logger.debug(JSON.stringify({ upgradedPeerDependencies }, null, 2));
 
-    await packageManager.addDependencies(
-      {
-        type: 'dependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDependencies
-    );
+    const upgrades: [DependencyType, string[]][] = [
+      ['dependencies', upgradedDependencies],
+      ['devDependencies', upgradedDevDependencies],
+      ['peerDependencies', upgradedPeerDependencies],
+    ];
 
-    await packageManager.addDependencies(
-      {
-        type: 'devDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedDevDependencies
-    );
-
-    await packageManager.addDependencies(
-      {
-        type: 'peerDependencies',
-        skipInstall: true,
-        packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
-      },
-      upgradedPeerDependencies
-    );
+    for (const [type, specifiers] of upgrades) {
+      const directSpecifiers = packageManager.writeCatalogUpgrades(
+        specifiers,
+        packageJson[type] ?? {}
+      );
+      await packageManager.addDependencies(
+        {
+          type,
+          skipInstall: true,
+          packageJsonInfo: JsPackageManager.getPackageJsonInfo(packageJsonPath),
+        },
+        directSpecifiers
+      );
+    }
   }
 };
 
@@ -676,6 +713,18 @@ export const getProjects = async (
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
     }
+    if (detectedConfigDirs.length === 0) {
+      task.stop('No .storybook directory found');
+      if (options.yes) {
+        throw new UpgradeStorybookConfigDirNotFoundError();
+      }
+      const configDir = await prompt.text({
+        message:
+          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
+      });
+      detectedConfigDirs = [configDir];
+      task.start('Detecting projects...');
+    }
 
     let count = 0;
     const projects = await collectProjects(options, detectedConfigDirs, () =>
@@ -719,7 +768,9 @@ export const getProjects = async (
 
     return selectedProjects ? { allProjects: validProjects, selectedProjects } : undefined;
   } catch (error) {
-    if (!(error instanceof HandledError)) {
+    if (
+      !(error instanceof HandledError || error instanceof UpgradeStorybookConfigDirNotFoundError)
+    ) {
       logger.error('Failed to get projects');
     }
 
@@ -731,13 +782,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(
-      ...globbySync(matchers, {
-        gitignore: true,
-        absolute: true,
-        cwd: directory,
-      })
-    );
+    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
+    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
+    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;
@@ -775,48 +822,4 @@ export const getEvaluatedStoryPaths = async (
     configDir,
     workingDir,
   });
-};
-
-/**
- * Gets story file paths from a Storybook configuration directory
- *
- * @example
- *
- * ```typescript
- * const storiesPaths = await getStoriesPathsFromConfigWithoutEvaluating({
- *   stories: ['src\/**\/*.stories.tsx'],
- *   configDir: '/path/to/.storybook',
- *   workingDir: '/path/to/project',
- * });
- * ```
- */
-export const getStoriesPathsFromConfig = async ({
-  stories,
-  configDir,
-  workingDir,
-}: {
-  stories: StorybookConfigRaw['stories'];
-  configDir: string;
-  workingDir: string;
-}) => {
-  if (stories.length === 0) {
-    return [];
-  }
-
-  const normalizedStories = normalizeStories(stories, {
-    configDir,
-    workingDir,
-  });
-
-  const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
-    normalizedStories,
-    workingDir,
-    true
-  );
-
-  const storiesPaths = matchingStoryFiles.flatMap(([specifier, cache]) => {
-    return StoryIndexGenerator.storyFileNames(new Map([[specifier, cache]]));
-  });
-
-  return storiesPaths;
 };

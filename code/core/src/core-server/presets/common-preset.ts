@@ -1,47 +1,80 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  STORY_FILE_TEST_REGEXP,
+  getBabelPresetEnvMajor,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
   loadEnvs,
+  normalizeStories,
+  optionalEnvToBoolean,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
 import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
-import type {
-  CoreConfig,
-  Indexer,
-  Options,
-  PresetProperty,
-  PresetPropertyFn,
-  StorybookConfigRaw,
+import {
+  type CoreConfig,
+  type DocgenProviderDescriptor,
+  type Indexer,
+  type Options,
+  type PresetProperty,
+  type PresetPropertyFn,
+  type StoryDocsProvider,
+  type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
+import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
+import {
+  registerDocgenService,
+  subscribeDocgenToModuleGraphChanges,
+} from '../../shared/open-service/services/docgen/server.ts';
+import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
+import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
+import {
+  registerReviewService,
+  subscribeReviewToModuleGraphChanges,
+} from '../../shared/open-service/services/review/server.ts';
+import {
+  registerStoryDocsService,
+  subscribeStoryDocsToModuleGraphChanges,
+} from '../../shared/open-service/services/story-docs/server.ts';
+import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
+import { sourceUrlManifestProvider } from '../../shared/open-service/toolsets/docs/access-provider.ts';
+import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
+import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
+import { createCompositionDocsSources } from '../../shared/open-service/toolsets/docs/multi-source.ts';
+import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
+import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
+import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
+import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
+import { getSyncedStatuses } from '../stores/status.ts';
+import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
+import { getPreviewBuilder } from '../utils/get-builders.ts';
+import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
+import { loadManifests } from '../utils/manifests/manifests.ts';
+
 import * as pathe from 'pathe';
+import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { resolvePackageDir } from '../../shared/utils/module.ts';
-import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel.ts';
-import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
+import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
 import { initializeSaveStory } from '../utils/save-story/save-story.ts';
-import { parseStaticDir } from '../utils/server-statics.ts';
+import { mapStaticDir, parseStaticDir } from '../utils/server-statics.ts';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new.ts';
 import { getWsToken } from './wsToken.ts';
-import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -110,6 +143,24 @@ export const babel = async (_: unknown, options: Options) => {
     string,
     any
   >;
+
+  const presetConfig: Record<string, unknown> = {
+    targets: {
+      // This is the same browser supports that we use to bundle our manager and preview code.
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
+  };
+
+  const shouldRemoveBugfixes =
+    options?.features &&
+    'babelRemoveBugfixes' in options.features &&
+    options.features.babelRemoveBugfixes;
+  if (!shouldRemoveBugfixes) {
+    presetConfig.bugfixes = true;
+  }
+
   return {
     ...babelDefault,
     // This override makes sure that we will never transpile babel further down then the browsers that storybook supports.
@@ -119,20 +170,7 @@ export const babel = async (_: unknown, options: Options) => {
       ...(babelDefault?.overrides ?? []),
       {
         include: /\.(story|stories)\.[cm]?[jt]sx?$/,
-        presets: [
-          [
-            '@babel/preset-env',
-            {
-              bugfixes: true,
-              targets: {
-                // This is the same browser supports that we use to bundle our manager and preview code.
-                chrome: 100,
-                safari: 15,
-                firefox: 91,
-              },
-            },
-          ],
-        ],
+        presets: [['@babel/preset-env', presetConfig]],
       },
     ],
   };
@@ -202,26 +240,30 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
 
-export const features: PresetProperty<'features'> = async (existing) => ({
+const babelPresetEnvMajor = getBabelPresetEnvMajor();
+
+export const features: PresetProperty<'features'> = async (existing, options) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
+  babelRemoveBugfixes: babelPresetEnvMajor ? babelPresetEnvMajor >= 8 : false,
   backgrounds: true,
-  changeDetection: true,
   componentsManifest: false,
+  experimentalChunkedPreviewRuntime: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
+  docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),
   highlight: true,
   interactions: true,
-  legacyDecoratorFileOrder: false,
   measure: true,
   outline: true,
+  menuOnboardingChecklist: true,
   sidebarOnboardingChecklist: true,
   viewport: true,
 });
 
 export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
+  test: STORY_FILE_TEST_REGEXP,
   createIndex: async (fileName, options) => {
     const code = (await readFile(fileName, 'utf-8')).toString();
     if (code.trim().length === 0) {
@@ -276,8 +318,6 @@ export const experimental_serverChannel = async (
   initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
-  initFileSearchChannel(channel, options);
-  initCreateNewStoryChannel(channel, options);
   initGhostStoriesChannel(channel, options);
   initOpenInEditorChannel(channel);
   initTelemetryChannel(channel);
@@ -310,14 +350,159 @@ export const managerEntries = async (existing: any) => {
   ];
 };
 
+async function getHeadlessChangeDetectionAdapter(options: Options) {
+  try {
+    const core = await options.presets.apply<CoreConfig>('core', {});
+    if (!core?.builder) {
+      return undefined;
+    }
+    const resolvedPreviewBuilder =
+      typeof core.builder === 'string' ? core.builder : core.builder.name;
+    const previewBuilder = await getPreviewBuilder(resolvedPreviewBuilder);
+    return await previewBuilder.changeDetectionAdapter?.(options);
+  } catch (error) {
+    logger.warn('Change detection: adapter initialisation failed');
+    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+    return undefined;
+  }
+}
+
+// Started from `experimental_devServer`: the attached tools CLI also applies `services`.
+const devServerSubscriptions: Array<() => void> = [];
+
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
-export const services = async () => {
+
+export const services = async (_value: void, options: Options): Promise<void> => {
   if (globalThis.STORYBOOK_SERVICES_LOADED) {
-    throw new Error(
-      'The "services" preset property was applied twice, but should only be applied once. Multiple code paths applying it will cause service registration to fail.'
-    );
+    throw new OpenServiceServicesAppliedTwiceError();
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
+
+  const getIndex = () =>
+    options.presets
+      .apply<StoryIndexGenerator>('storyIndexGenerator')
+      .then((generator) => generator.getIndex());
+
+  registerModuleGraphService({
+    channel: options.channel,
+    getIndex,
+    workingDir: process.cwd(),
+    presets: options.presets,
+    getAdapter: () => getHeadlessChangeDetectionAdapter(options),
+    getChangeDetectionReadiness,
+  });
+
+  const features = await options.presets.apply('features');
+
+  // Toolsets register imperatively alongside their services: addons contribute both from their own
+  // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
+  const storyIndex = { getIndex };
+  const gitDiffProvider = new GitDiffProvider(process.cwd());
+
+  registerToolset(
+    createStoriesToolset({
+      storyIndex,
+      git: {
+        getRepoRoot: () => gitDiffProvider.getRepoRoot(),
+        getChangedFiles: () => gitDiffProvider.getChangedFiles(),
+      },
+      changeStatuses: { getAll: getSyncedStatuses },
+      // Real paths, because git reports the repo root as one; on Windows the cwd can differ in case.
+      storybookDirs: {
+        configDir: realpathSync.native(pathe.resolve(options.configDir)),
+        getStaticDirs: async () =>
+          ((await options.presets.apply('staticDirs')) ?? []).flatMap((staticDir) => {
+            try {
+              return [realpathSync.native(mapStaticDir(staticDir, options.configDir).staticPath)];
+            } catch {
+              // A missing directory throws here, and holds no changed files anyway.
+              return [];
+            }
+          }),
+      },
+    })
+  );
+
+  registerReviewService({
+    getIndex,
+  });
+  devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
+  registerToolset(reviewToolset);
+
+  if (features?.docgenServer) {
+    const [docgenDescriptors, storyDocsProvider] = await Promise.all([
+      options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
+      options.presets.apply<StoryDocsProvider>(
+        'experimental_storyDocsProvider',
+        async () => undefined
+      ),
+    ]);
+
+    // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
+    // the dev-server event loop. The worker composes the descriptor chain; here we forward one
+    // component to it. When the compiled worker script is unavailable (e.g. running from source
+    // without a build) the client is undefined and we skip docgen registration rather than
+    // extracting on the main thread.
+    const docgenWorker =
+      docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
+
+    if (docgenWorker) {
+      registerDocgenService({
+        getIndex,
+        docgenProvider: (input) => docgenWorker.extract(input.entry),
+      });
+      devServerSubscriptions.push(() =>
+        subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+      );
+    }
+
+    // Story-docs registers whenever this block runs, docgen only when a worker is available, so
+    // docgen registered ⇒ story-docs registered. `createLocalDocsAccess` requires both before
+    // reading from the services and degrades to the manifests otherwise, so reordering or gating
+    // these registrations cannot make the docs toolset throw — only fall back.
+    registerStoryDocsService({
+      getIndex,
+      storyDocsProvider,
+    });
+    devServerSubscriptions.push(() =>
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+    );
+  }
+
+  // Registration-based selection between the docgen services and the inline manifests, shared
+  // with addon-mcp's composed local source so both read this Storybook the same way.
+  const localDocsAccess = createLocalDocsAccess({
+    storyIndex,
+    getManifests: () => loadManifests(options.presets),
+  });
+
+  // Composed here, not only per MCP request in addon-mcp, so the tools CLI lists every source too.
+  const refs = await getRefsFromConfig(options);
+  registerToolset(
+    createDocsToolset(
+      refs.length > 0
+        ? {
+            sources: createCompositionDocsSources({
+              sources: [{ id: 'local', title: 'Local' }, ...refs],
+              manifestProvider: sourceUrlManifestProvider,
+              localAccess: localDocsAccess,
+            }),
+          }
+        : { docsAccess: localDocsAccess }
+    )
+  );
+};
+
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
+  app,
+  options
+) => {
+  await applyServicesPresetOnce(options.presets);
+  for (const subscribe of devServerSubscriptions.splice(0)) {
+    subscribe();
+  }
+
+  return app;
 };
 
 // Store the promise (not the result) to prevent race conditions.
@@ -341,9 +526,10 @@ export const storyIndexGenerator: PresetPropertyFn<
       workingDir,
     });
 
-    const [indexers, docs] = await Promise.all([
+    const [indexers, docs, features] = await Promise.all([
       options.presets.apply('experimental_indexers', []),
       options.presets.apply('docs'),
+      options.presets.apply('features'),
     ]);
 
     const generator = new StoryIndexGenerator(normalizedStories, {
@@ -351,6 +537,8 @@ export const storyIndexGenerator: PresetPropertyFn<
       configDir,
       indexers,
       docs,
+      features,
+      storySorts: await options.presets.apply('storySorts', []),
     });
     await generator.initialize();
     return generator;

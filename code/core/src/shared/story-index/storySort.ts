@@ -1,10 +1,48 @@
 import type {
   Addon_StorySortComparatorV7,
   Addon_StorySortObjectParameter,
+  Addon_StorySortOrder,
 } from 'storybook/internal/types';
 import type { IndexEntry } from 'storybook/internal/types';
 
 const STORY_KIND_PATH_SEPARATOR = /\s*\/\s*/;
+
+// The `order` array outranks any method: look the two names up in the current
+// order list and return their relative positions, or undefined when the list
+// decides nothing for this pair.
+const compareByOrder = (
+  order: Addon_StorySortOrder,
+  nameA: string,
+  nameB: string
+): number | undefined => {
+  let indexA = order.indexOf(nameA);
+  let indexB = order.indexOf(nameB);
+  if (indexA === -1 && indexB === -1) {
+    return undefined;
+  }
+
+  // If one of the names is not found and there is a wildcard, insert it at the wildcard position.
+  // Otherwise, list it last.
+  const indexWildcard = order.indexOf('*');
+  if (indexA === -1) {
+    indexA = indexWildcard !== -1 ? indexWildcard : order.length;
+  }
+  if (indexB === -1) {
+    indexB = indexWildcard !== -1 ? indexWildcard : order.length;
+  }
+
+  return indexA - indexB;
+};
+
+// If a nested array is provided for a name, use it for ordering.
+const nextOrderList = (order: Addon_StorySortOrder, name: string): Addon_StorySortOrder => {
+  let index = order.indexOf(name);
+  if (index === -1) {
+    index = order.indexOf('*');
+  }
+  const next = order[index + 1];
+  return index !== -1 && Array.isArray(next) ? next : [];
+};
 
 export const storySort =
   (options: Addon_StorySortObjectParameter = {}): Addon_StorySortComparatorV7 =>
@@ -18,11 +56,16 @@ export const storySort =
 
     // Get the StorySortParameter options.
     const method = options.method || 'configure';
+    // 'alphabetical-by-kind': at every level of the title tree, folders sort
+    // before files, which sort before story names.
+    const groupsFirst = method === 'alphabetical-by-kind';
     let order = options.order || [];
 
     // Examine each part of the story title in turn.
     const storyTitleA = a.title.trim().split(STORY_KIND_PATH_SEPARATOR);
     const storyTitleB = b.title.trim().split(STORY_KIND_PATH_SEPARATOR);
+    const lastTitleDepthA = storyTitleA.length - 1;
+    const lastTitleDepthB = storyTitleB.length - 1;
     if (options.includeNames) {
       storyTitleA.push(a.name);
       storyTitleB.push(b.name);
@@ -30,6 +73,18 @@ export const storySort =
 
     let depth = 0;
     while (storyTitleA[depth] || storyTitleB[depth]) {
+      // Grouping folders first puts a continuing title ('a / b') before one that
+      // ends here ('a'). This runs before `order` so an appended story name is
+      // never weighed against a title segment: names compare only once both
+      // titles have ended.
+      if (groupsFirst) {
+        const titleEndedA = depth > lastTitleDepthA;
+        const titleEndedB = depth > lastTitleDepthB;
+        if (titleEndedA !== titleEndedB) {
+          return titleEndedA ? 1 : -1;
+        }
+      }
+
       // Stories with a shorter depth should go first.
       if (!storyTitleA[depth]) {
         return -1;
@@ -42,35 +97,21 @@ export const storySort =
       const nameA = storyTitleA[depth];
       const nameB = storyTitleB[depth];
       if (nameA !== nameB) {
-        // Look for the names in the given `order` array.
-        let indexA = order.indexOf(nameA);
-        let indexB = order.indexOf(nameB);
-        const indexWildcard = order.indexOf('*');
-
-        // If at least one of the names is found, sort by the `order` array.
-        if (indexA !== -1 || indexB !== -1) {
-          // If one of the names is not found and there is a wildcard, insert it at the wildcard position.
-          // Otherwise, list it last.
-          if (indexA === -1) {
-            if (indexWildcard !== -1) {
-              indexA = indexWildcard;
-            } else {
-              indexA = order.length;
-            }
-          }
-          if (indexB === -1) {
-            if (indexWildcard !== -1) {
-              indexB = indexWildcard;
-            } else {
-              indexB = order.length;
-            }
-          }
-
-          return indexA - indexB;
+        const byOrder = compareByOrder(order, nameA, nameB);
+        if (byOrder !== undefined) {
+          return byOrder;
         }
 
-        // Use the default configure() order.
-        if (method === 'configure') {
+        // Rank the segment by its position in its own entry: folder (-1), the
+        // title's last segment (0), or an appended story name (1). Names only
+        // meet names here, since the title-ended check above already decided.
+        if (groupsFirst) {
+          const byRank = Math.sign(depth - lastTitleDepthA) - Math.sign(depth - lastTitleDepthB);
+          if (byRank !== 0) {
+            return byRank;
+          }
+        } else if (method === 'configure') {
+          // Use the default configure() order.
           return 0;
         }
 
@@ -81,14 +122,7 @@ export const storySort =
         });
       }
 
-      // If a nested array is provided for a name, use it for ordering.
-      let index = order.indexOf(nameA);
-
-      if (index === -1) {
-        index = order.indexOf('*');
-      }
-      const nestedOrder = order[index + 1];
-      order = index !== -1 && Array.isArray(nestedOrder) ? nestedOrder : [];
+      order = nextOrderList(order, nameA);
 
       // We'll need to look at the next part of the name.
       depth += 1;

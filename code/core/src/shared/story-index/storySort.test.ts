@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
+import type { DocsIndexEntry, StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
 import { storySort } from './storySort.ts';
 
@@ -24,10 +24,27 @@ describe('preview.storySort', () => {
       c_b__b: { title: 'c / b', name: 'b' },
       c_b__c: { title: 'c / b', name: 'c' },
       c__c: { title: 'c', name: 'c' },
+      actions: { title: 'Actions' },
+      api: { title: 'Api' },
+      api_overview: { title: 'Api / Overview' },
+      components_aaa: { title: 'Components / AAA' },
+      components_actions_login: { title: 'Components / Actions / Login' },
+      components_actions_logout: { title: 'Components / Actions / Logout' },
+      g_v2: { title: 'g / v2' },
+      g_v10: { title: 'g / v10' },
+      v2: { title: 'v2' },
+      v10: { title: 'v10' },
     }).map(([id, entry]) => [
       id,
       { type: 'story', subtype: 'story', name: 'name', ...entry, id, importPath: id },
     ])
+  );
+
+  const docsFixture: Record<string, DocsIndexEntry> = Object.fromEntries(
+    Object.entries({
+      docs_api: { title: 'Api', storiesImports: [] },
+      docs_api_overview: { title: 'Api / Overview', storiesImports: [] },
+    }).map(([id, entry]) => [id, { type: 'docs', name: 'Docs', ...entry, id, importPath: id }])
   );
 
   it('uses configure order by default', () => {
@@ -147,5 +164,115 @@ describe('preview.storySort', () => {
     expect(sortFn(fixture.a_a, fixture.a_c)).toBeGreaterThan(0);
     expect(sortFn(fixture.a_b, fixture.a_c)).toBeGreaterThan(0);
     expect(sortFn(fixture.a_a, fixture.a_a)).toBe(0);
+  });
+
+  describe("method: 'alphabetical-by-kind'", () => {
+    it('sorts folders before files at the same depth, regardless of names', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind' });
+
+      expect(sortFn(fixture.components_actions_login, fixture.components_aaa)).toBeLessThan(0);
+      expect(sortFn(fixture.components_aaa, fixture.components_actions_login)).toBeGreaterThan(0);
+
+      expect(sortFn(fixture.components_aaa, fixture.actions)).toBeLessThan(0);
+      expect(sortFn(fixture.actions, fixture.components_actions_login)).toBeGreaterThan(0);
+    });
+
+    it('keeps alphabetical order within each class, including numeric and accent behavior', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind' });
+
+      expect(sortFn(fixture.v2, fixture.v10)).toBeLessThan(0);
+      expect(sortFn(fixture.v10, fixture.v2)).toBeGreaterThan(0);
+      expect(sortFn(fixture.g_v2, fixture.g_v10)).toBeLessThan(0);
+      expect(sortFn(fixture.g_v10, fixture.g_v2)).toBeGreaterThan(0);
+
+      expect(
+        sortFn(fixture.components_actions_login, fixture.components_actions_logout)
+      ).toBeLessThan(0);
+      expect(
+        sortFn(fixture.components_actions_logout, fixture.components_actions_login)
+      ).toBeGreaterThan(0);
+
+      expect(sortFn(fixture.a, fixture.A)).toBe(0);
+      expect(sortFn(fixture.a, fixture.á)).toBeLessThan(0);
+      expect(sortFn(fixture.á, fixture.a)).toBeGreaterThan(0);
+    });
+
+    it('sorts a folder before a file when they share a name', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind' });
+
+      expect(sortFn(fixture.a_a, fixture.a)).toBeLessThan(0);
+      expect(sortFn(fixture.a, fixture.a_a)).toBeGreaterThan(0);
+      expect(sortFn(fixture.api_overview, fixture.api)).toBeLessThan(0);
+      expect(sortFn(fixture.api, fixture.api_overview)).toBeGreaterThan(0);
+    });
+
+    it('compares story names only when both titles fully match', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind', includeNames: true });
+
+      expect(sortFn(fixture.c_b__a, fixture.c__a)).toBeLessThan(0);
+      expect(sortFn(fixture.c__a, fixture.c_b__a)).toBeGreaterThan(0);
+
+      expect(sortFn(fixture.c__a, fixture.c__c)).toBeLessThan(0);
+      expect(sortFn(fixture.c__c, fixture.c__a)).toBeGreaterThan(0);
+    });
+
+    it('never lets a story name promote its component into folder behavior', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind', includeNames: true });
+
+      expect(sortFn(fixture.c_b__c, fixture.c__a)).toBeLessThan(0);
+      expect(sortFn(fixture.c__a, fixture.c_b__c)).toBeGreaterThan(0);
+    });
+
+    it('lets the order array outrank the method', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind', order: ['Actions'] });
+
+      expect(sortFn(fixture.actions, fixture.components_aaa)).toBeLessThan(0);
+      expect(sortFn(fixture.components_aaa, fixture.actions)).toBeGreaterThan(0);
+    });
+
+    it('lets a nested order array outrank the method', () => {
+      const sortFn = storySort({
+        method: 'alphabetical-by-kind',
+        order: ['Components', ['AAA', 'Actions']],
+      });
+
+      expect(sortFn(fixture.components_aaa, fixture.components_actions_login)).toBeLessThan(0);
+      expect(sortFn(fixture.components_actions_login, fixture.components_aaa)).toBeGreaterThan(0);
+    });
+
+    it('sorts alphabetically using the given locales', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind', locales: 'ru-RU' });
+
+      expect(sortFn(fixture.locale1, fixture.locale2)).toBeLessThan(0);
+      expect(sortFn(fixture.locale2, fixture.locale1)).toBeGreaterThan(0);
+    });
+
+    it('sorts docs entries like any other entry', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind' });
+
+      expect(sortFn(fixture.api, docsFixture.docs_api)).toBe(0);
+      expect(sortFn(docsFixture.docs_api, fixture.api)).toBe(0);
+
+      expect(sortFn(docsFixture.docs_api_overview, fixture.api)).toBeLessThan(0);
+      expect(sortFn(fixture.api, docsFixture.docs_api_overview)).toBeGreaterThan(0);
+    });
+
+    it('matches the specification worked example end to end', () => {
+      const sortFn = storySort({ method: 'alphabetical-by-kind' });
+
+      const sorted = [
+        fixture.components_aaa,
+        fixture.actions,
+        fixture.components_actions_login,
+        fixture.components_actions_logout,
+      ].sort(sortFn as (a: StoryIndexEntry, b: StoryIndexEntry) => number);
+
+      expect(sorted).toEqual([
+        fixture.components_actions_login,
+        fixture.components_actions_logout,
+        fixture.components_aaa,
+        fixture.actions,
+      ]);
+    });
   });
 });

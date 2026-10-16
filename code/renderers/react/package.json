@@ -37,6 +37,11 @@
       "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
+    },
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "code": "./src/theming.ts",
+      "default": "./dist/theming.js"
     }
   },
   "files": [
@@ -53,6 +58,10 @@
     "react-docgen-typescript": "^2.2.2"
   },
   "devDependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/is-prop-valid": "^1.3.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
     "@types/estree": "^1.0.6",
@@ -64,12 +73,15 @@
     "acorn-walk": "^7.2.0",
     "babel-plugin-react-docgen": "^4.2.1",
     "comment-parser": "^1.4.1",
+    "deep-object-diff": "^1.1.0",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
     "escodegen": "^2.1.0",
     "expect-type": "^0.15.0",
     "html-tags": "^3.1.0",
     "memfs": "^4.11.1",
+    "memoizerific": "^1.11.3",
+    "polished": "^4.2.2",
     "prop-types": "^15.7.2",
     "react-element-to-jsx-string": "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch",
     "require-from-string": "^2.0.2",

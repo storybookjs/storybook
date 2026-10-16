@@ -7,6 +7,7 @@
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
+  - [React preview code: `storybook/theming` and `withThemeFromJSXProvider` moved to the React renderer](#react-preview-code-storybooktheming-and-withthemefromjsxprovider-moved-to-the-react-renderer)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -762,6 +763,26 @@ See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-typ
 ```
 
 Keep any existing precedence between the theme parameters and your selected theme global. Rebuild your Storybook and check the decorator in both development and a served static build. See the [addon migration guide](docs/addons/addon-migration-guide.mdx#usethemeparameters-removal) for the replacement.
+
+### React preview code: `storybook/theming` and `withThemeFromJSXProvider` moved to the React renderer
+
+The `storybook` package and `@storybook/addon-themes` do not declare React as a dependency, so that non-React projects never install it. Their code that imports React (`storybook/theming` is built on Emotion, and `withThemeFromJSXProvider` renders JSX) therefore cannot be resolved from the preview under strict package layouts such as pnpm's global virtual store (`enableGlobalVirtualStore: true`), where the build fails with `Rollup failed to resolve import "react" from .../storybook/dist/theming/index.js`.
+
+Both are now published from the React renderer, which does declare React, and re-exported by every React framework package:
+
+```diff
+// .storybook/preview.tsx, *.stories.tsx
+-import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+-import { ThemeProvider, themes } from 'storybook/theming';
++import { withThemeFromJSXProvider } from '@storybook/react-vite'; // or your React framework package
++import { ThemeProvider, themes } from '@storybook/react-vite/theming';
+```
+
+`@storybook/addon-themes` no longer exports `withThemeFromJSXProvider`. `withThemeByClassName`, `withThemeByDataAttribute` and `DecoratorHelpers` are unchanged.
+
+Keep `storybook/theming` in manager code (`.storybook/manager.ts`, addon panels) and in stories that render Storybook's own UI components, such as `@storybook/addon-docs/blocks`: those components read the theme from the Emotion instance inside `storybook`, which `@storybook/react/theming` does not share. For `parameters.docs.theme`, `storybook/theming/create` exports `themes` and `create` without React in any renderer.
+
+The `react-theming-imports` automigration rewrites these imports in your preview file and story files of React projects: `npx storybook automigrate react-theming-imports`.
 
 ### `storybook dev` no longer opens a browser by default
 

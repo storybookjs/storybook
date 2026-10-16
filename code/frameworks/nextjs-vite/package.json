@@ -70,6 +70,11 @@
       "code": "./src/export-mocks/router/index.ts",
       "default": "./dist/export-mocks/router/index.js"
     },
+    "./theming": {
+      "types": "./dist/theming.d.ts",
+      "code": "./src/theming.ts",
+      "default": "./dist/theming.js"
+    },
     "./vite-plugin": {
       "types": "./dist/vite-plugin/index.d.ts",
       "code": "./src/vite-plugin/index.ts",

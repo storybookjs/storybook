@@ -30,6 +30,8 @@ Here's how you'd specify the same theme for docs in [`.storybook/preview.js`](..
 
 <CodeSnippets path="storybook-preview-docs-dark-theme.md" />
 
+Preview code imports the built-in themes from `storybook/theming/create`, which does not depend on React. The full `storybook/theming` module is for manager code; React projects that need its Emotion exports (`ThemeProvider`, `styled`, `ensure`, …) inside stories or decorators import them from their framework package instead, for example `@storybook/react-vite/theming`.
+
 Continue to read if you want to learn how to create your theme.
 
 ## Create a theme quickstart

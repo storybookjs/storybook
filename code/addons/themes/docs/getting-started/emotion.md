@@ -43,9 +43,8 @@ Finally, provide your theme(s) and global styles component to your stories with 
 Make the following changes to your `.storybook/preview.js`:
 
 ```diff
--import { Preview } from '@storybook/your-renderer';
-+import { Preview, Renderer } from '@storybook/your-renderer';
-+import { withThemeFromJSXProvider } from '@storybook/addon-themes';
+-import { Preview } from '@storybook/your-framework';
++import { Preview, Renderer, withThemeFromJSXProvider } from '@storybook/your-framework';
 +import { ThemeProvider } from '@emotion/react';
 +import { GlobalStyles, lightTheme, darkTheme } from '../src/themes'; // Import your custom theme configs
 

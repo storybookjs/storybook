@@ -12,6 +12,10 @@ const config: BuildEntries = {
         entryPoint: './src/preview.tsx',
       },
       {
+        exportEntries: ['./theming'],
+        entryPoint: './src/theming.ts',
+      },
+      {
         exportEntries: ['./entry-preview'],
         entryPoint: './src/entry-preview.tsx',
         dts: false,

@@ -7,9 +7,13 @@ import {
   isValidIdentifier,
   walk,
 } from '../../../csf-tools/estree/ast.ts';
-import { appendMembers, prependMembers, replaceValue } from '../../../csf-tools/estree/editor.ts';
+import {
+  appendMembers,
+  prependMembers,
+  printMembers,
+  replaceValue,
+} from '../../../csf-tools/estree/editor.ts';
 import { SaveStoryError } from './utils.ts';
-import { printMembers } from 'storybook/internal/csf-tools';
 
 import { valueToSource } from './valueToSource.ts';
 

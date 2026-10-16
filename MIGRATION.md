@@ -641,6 +641,11 @@ Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`
 
 `Button.ariaLabel` is now required. Use an action label for icon-only buttons or buttons whose text depends on visual context. Use `ariaLabel={false}` only when the visible text already names the action. `Modal.ariaLabel` and `PopoverProvider.ariaLabel` are also required and must describe the dialog's purpose.
 
+Addons that also support Storybook 10 can adopt these replacements before upgrading.
+`TooltipProvider`, `Tooltip`, `PopoverProvider`, `ActionList`, `TabsView`, `TabList`, `TabPanel`, `ToggleButton`, `Button.ariaLabel`, and `Bar.innerStyle` are available from Storybook 10.1.
+From Storybook 10.3, `Link` renders a button when `href` is absent and `PopoverProvider` accepts `ariaLabel`.
+Storybook 10.1 and 10.2 ignore `PopoverProvider.ariaLabel` and render `Link` without `href` as a plain anchor.
+
 ```tsx
 import { Button, ToggleButton } from 'storybook/internal/components';
 import { RefreshIcon } from '@storybook/icons';

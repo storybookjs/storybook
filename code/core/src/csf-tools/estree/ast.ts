@@ -79,7 +79,7 @@ export const parseModule = (code: string, fileName?: string): ParsedModule => {
   if ('module' in attempt) {
     return attempt.module;
   }
-  throw FLOW_PRAGMA.test(code)
+  throw hasFlowPragma(code)
     ? new EstreeParseError(
         `Flow syntax is no longer supported, parse failed with: ${attempt.error.message}`,
         fileName,
@@ -88,7 +88,11 @@ export const parseModule = (code: string, fileName?: string): ParsedModule => {
     : attempt.error;
 };
 
-const FLOW_PRAGMA = /^\s*(?:\/\/|\/\*)\s*@flow\b/;
+// The comments before the first statement: a license header, a docblock or `// @flow` lines.
+const LEADING_COMMENTS = /^(?:\s*(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/))*/;
+
+// Flow reads its pragma from any comment in the file's header, including `/** @flow */` docblocks.
+const hasFlowPragma = (code: string) => /@flow\b/.test(LEADING_COMMENTS.exec(code)?.[0] ?? '');
 
 const parseUnnamed = (code: string): ParseAttempt => {
   const tsx = parseWith(code, undefined, 'tsx');

@@ -1,6 +1,7 @@
 /// <reference path="./typings.d.ts" />
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/client-logger';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import {
@@ -65,14 +66,15 @@ export const useHighlights = (channel: Channel) => {
 
   // Update tracked elements when highlights change or the DOM tree changes
   highlights.subscribe((value) => {
-    const storybookRoot = document.getElementById(storybookRootId)!;
-    if (!storybookRoot) {
-      return;
-    }
+    const storybookRoot = document.getElementById(storybookRootId) ?? document.body;
 
     elements.set(mapElements(value));
 
-    const observer = new MutationObserver(() => elements.set(mapElements(value)));
+    const observer = new MutationObserver((records) => {
+      if (records.some((record) => !root?.contains(record.target))) {
+        elements.set(mapElements(value));
+      }
+    });
     observer.observe(storybookRoot, { subtree: true, childList: true });
 
     return () => {
@@ -352,7 +354,12 @@ export const useHighlights = (channel: Channel) => {
       : undefined;
 
     channel.emit(HIGHLIGHT_MENU, {
-      targets: targetList.map((box) => ({ menu: box.menu, details: getEventDetails(box) })),
+      targets: targetList.map((box) => ({
+        id: box.id,
+        html: box.element.outerHTML,
+        menu: box.menu,
+        details: getEventDetails(box),
+      })),
       selected: selectedIndex !== undefined && selectedIndex >= 0 ? selectedIndex : null,
       coords: coords ?? null,
     });
@@ -399,9 +406,13 @@ export const useHighlights = (channel: Channel) => {
   //
 
   const addHighlight = (highlight: HighlightOptions) => {
-    const info = normalizeOptions(highlight);
+    const info = highlight && normalizeOptions(highlight);
+    if (typeof info?.id !== 'string' || !info.id) {
+      logger.warn('Ignoring highlight without an id', highlight);
+      return;
+    }
     highlights.set((value) => {
-      const others = info.id ? value.filter((h) => h.id !== info.id) : value;
+      const others = value.filter((h) => h.id !== info.id);
       return info.selectors?.length ? [...others, info] : others;
     });
   };
@@ -433,7 +444,7 @@ export const useHighlights = (channel: Channel) => {
 
     const element = document.querySelector(target);
     if (!element) {
-      console.warn(`Cannot scroll into view: ${target} not found`);
+      logger.warn(`Cannot scroll into view: ${target} not found`);
       return;
     }
 

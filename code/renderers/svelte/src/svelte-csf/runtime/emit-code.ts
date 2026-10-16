@@ -130,7 +130,7 @@ const getFunctionName = (fn: MockableFunction) => {
  * convert a value to a stringified version
  */
 const valueToString = (value: any): string => {
-  if (typeof value === 'object' && value[Symbol.for('svelte.snippet')]) {
+  if (typeof value === 'object' && value !== null && value[Symbol.for('svelte.snippet')]) {
     return 'snippet';
   }
 

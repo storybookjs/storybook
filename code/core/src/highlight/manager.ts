@@ -2,7 +2,12 @@
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
 
-import { HIGHLIGHT_MENU, HIGHLIGHT_MENU_INTERACTION, MAX_Z_INDEX } from './constants.ts';
+import {
+  HIGHLIGHT_MENU,
+  HIGHLIGHT_MENU_CLICK,
+  HIGHLIGHT_MENU_INTERACTION,
+  MAX_Z_INDEX,
+} from './constants.ts';
 import type { HighlightMenuInteraction, HighlightMenuState } from './types.ts';
 import {
   clampToRect,
@@ -273,7 +278,7 @@ export const useHighlightMenu = (channel: Channel) => {
             return createElement('li', props, [
               createElement(asButton ? 'button' : 'div', asButton ? { type: 'button' } : {}, [
                 selectedTarget ? createIcon('chevronLeft') : null,
-                createElement('code', {}, [target.details.element.outerHTML]),
+                createElement('code', {}, [target.html]),
                 selectable ? createIcon('chevronRight') : null,
               ]),
             ]);
@@ -300,9 +305,11 @@ export const useHighlightMenu = (channel: Channel) => {
                 createElement(
                   'ul',
                   { class: 'menu-items' },
-                  menuItems.map(({ id, title, description, iconLeft, iconRight, clickEvent }) => {
+                  menuItems.map(({ id, title, description, iconLeft, iconRight, clickable }) => {
                     const onClick =
-                      clickEvent && (() => channel.emit(clickEvent, id, menuTarget.details));
+                      clickable &&
+                      (() =>
+                        channel.emit(HIGHLIGHT_MENU_CLICK, menuTarget.id, id, menuTarget.details));
                     return createElement('li', {}, [
                       createElement(
                         onClick ? 'button' : 'div',

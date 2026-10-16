@@ -32,15 +32,18 @@ export interface HighlightMenuItem {
   iconLeft?: IconName;
   /** Icon for the menu item, right side */
   iconRight?: IconName;
-  /** Name for a channel event to trigger when the menu item is clicked */
-  clickEvent?: string;
+  /**
+   * Render the item as a button. Clicking it emits `HIGHLIGHT_MENU_CLICK` with the highlight `id`,
+   * the item `id` and the `ClickEventDetails` of the clicked element.
+   */
+  clickable?: boolean;
   /** HTML selectors for which this menu item should show (subset of `selectors`) */
   selectors?: HighlightOptions['selectors'];
 }
 
 export interface HighlightOptions {
-  /** Unique identifier for the highlight, required if you want to remove the highlight later */
-  id?: string;
+  /** Unique identifier for the highlight, used to remove it later and to attribute menu clicks */
+  id: string;
   /** HTML selectors of the elements */
   selectors: string[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
@@ -64,15 +67,13 @@ export interface ClickEventDetails {
   height: number;
   selectors: string[];
   element: {
-    attributes: Record<string, string>;
     localName: string;
     tagName: string;
-    outerHTML: string;
   };
 }
 
 export type Highlight = {
-  id?: string;
+  id: string;
   priority: number;
   selectors: string[];
   styles: Record<string, string>;
@@ -83,6 +84,7 @@ export type Highlight = {
 
 export type Box = {
   element: HTMLElement;
+  id: Highlight['id'];
   selectors: Highlight['selectors'];
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];
@@ -96,6 +98,10 @@ export type Box = {
 
 /** A single clickable target in the highlight menu, as sent from the preview to the manager. */
 export type HighlightMenuTarget = {
+  /** The id of the highlight the target belongs to, used to attribute `HIGHLIGHT_MENU_CLICK`s */
+  id: Highlight['id'];
+  /** The element's HTML, rendered as text in the manager menu's element list */
+  html: string;
   details: ClickEventDetails;
   menu?: Highlight['menu'];
 };

@@ -10,8 +10,6 @@ export * from './DocsContext';
 export * from './DocsPage';
 export * from './DocsContainer';
 export * from './DocsStory';
-export * from './external/ExternalDocs';
-export * from './external/ExternalDocsContainer';
 export * from './Heading';
 export * from './Markdown';
 export * from './Meta';

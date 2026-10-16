@@ -102,7 +102,7 @@ describe('useHighlights', () => {
     channel.emit(HIGHLIGHT, {
       id: 'h1',
       selectors: ['#target'],
-      menu: [[{ id: 'item-1', title: 'Open docs', clickEvent: 'my-click-event' }]],
+      menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
     });
     flushFrames();
   });
@@ -123,7 +123,7 @@ describe('useHighlights', () => {
 
     expect(lastMenuState).toBeDefined();
     expect(lastMenuState!.targets).toHaveLength(1);
-    expect(lastMenuState!.targets[0]!.details.element.outerHTML).toContain('id="target"');
+    expect(lastMenuState!.targets[0]!.html).toContain('id="target"');
     expect(lastMenuState!.targets[0]!.menu).toHaveLength(1);
     expect(lastMenuState!.selected).toBeNull();
     expect(lastMenuState!.coords).toEqual({ x: 30, y: 30 });

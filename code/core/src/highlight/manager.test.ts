@@ -3,7 +3,7 @@ import { Channel } from 'storybook/internal/channels';
 import type { ChannelEvent } from 'storybook/internal/channels';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { HIGHLIGHT_MENU, HIGHLIGHT_MENU_INTERACTION } from './constants.ts';
+import { HIGHLIGHT_MENU, HIGHLIGHT_MENU_CLICK, HIGHLIGHT_MENU_INTERACTION } from './constants.ts';
 import { useHighlightMenu } from './manager.ts';
 import type { ClickEventDetails, HighlightMenuState, HighlightMenuTarget } from './types.ts';
 
@@ -16,17 +16,17 @@ const makeDetails = (overrides: Partial<ClickEventDetails> = {}): ClickEventDeta
   height: 50,
   selectors: ['#target'],
   element: {
-    attributes: { id: 'target' },
     localName: 'div',
     tagName: 'DIV',
-    outerHTML: '<div id="target"></div>',
   },
   ...overrides,
 });
 
 const makeTarget = (overrides: Partial<HighlightMenuTarget> = {}): HighlightMenuTarget => ({
+  id: 'h1',
+  html: '<div id="target"></div>',
   details: makeDetails(),
-  menu: [[{ id: 'item-1', title: 'Open docs', clickEvent: 'my-click-event' }]],
+  menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
   ...overrides,
 });
 
@@ -148,13 +148,13 @@ describe('useHighlightMenu', () => {
   it('renders a selectable element list for multiple targets and forwards interactions', () => {
     const emitSpy = vi.spyOn(channel, 'emit');
     const second = makeTarget({
+      id: 'h2',
+      html: '<span id="other"></span>',
       details: makeDetails({
         selectors: ['#other'],
         element: {
-          attributes: { id: 'other' },
           localName: 'span',
           tagName: 'SPAN',
-          outerHTML: '<span id="other"></span>',
         },
       }),
     });
@@ -189,19 +189,19 @@ describe('useHighlightMenu', () => {
     expect(menuItem.textContent).toBe('Open docs');
 
     menuItem.click();
-    expect(emitSpy).toHaveBeenCalledWith('my-click-event', 'item-1', target.details);
+    expect(emitSpy).toHaveBeenCalledWith(HIGHLIGHT_MENU_CLICK, 'h1', 'item-1', target.details);
   });
 
   it('renders the selected target with a back button which deselects it', () => {
     const emitSpy = vi.spyOn(channel, 'emit');
     const second = makeTarget({
+      id: 'h2',
+      html: '<span id="other"></span>',
       details: makeDetails({
         selectors: ['#other'],
         element: {
-          attributes: { id: 'other' },
           localName: 'span',
           tagName: 'SPAN',
-          outerHTML: '<span id="other"></span>',
         },
       }),
     });

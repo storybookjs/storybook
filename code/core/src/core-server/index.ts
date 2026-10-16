@@ -122,6 +122,7 @@ export { ChangeDetectionService } from './change-detection/change-detection-serv
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
 export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
+export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,

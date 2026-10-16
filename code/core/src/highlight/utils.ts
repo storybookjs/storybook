@@ -64,7 +64,6 @@ export const createIcon = (name: IconName) =>
 export const normalizeOptions = (options: HighlightOptions): Highlight => {
   const { menu, ...rest } = options;
   return {
-    id: undefined,
     priority: 0,
     styles: {
       outline: '2px dashed #029cfd',
@@ -155,11 +154,12 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
+    .map<Box>(([element, { id, selectors, styles, hoverStyles, focusStyles, menu }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const { position } = getComputedStyle(element);
       return {
         element,
+        id,
         selectors,
         styles,
         hoverStyles,
@@ -250,11 +250,7 @@ export const getEventDetails = (target: Box): ClickEventDetails => ({
   height: target.height,
   selectors: target.selectors,
   element: {
-    attributes: Object.fromEntries(
-      Array.from(target.element.attributes).map((attr) => [attr.name, attr.value])
-    ),
     localName: target.element.localName,
     tagName: target.element.tagName,
-    outerHTML: target.element.outerHTML,
   },
 });

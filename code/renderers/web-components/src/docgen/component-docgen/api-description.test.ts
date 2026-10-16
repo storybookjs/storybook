@@ -3,8 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { ManifestDeclaration, ManifestEvent } from './manifest/types.ts';
 import { buildApiDescription } from './api-description.ts';
 
-const TYPE_PROPERTY = 'parsedType';
-
 const declaration = (value: Partial<ManifestDeclaration>): ManifestDeclaration => ({
   customElement: true,
   kind: 'class',
@@ -90,8 +88,7 @@ describe('buildApiDescription', () => {
           ] as ManifestDeclaration['cssProperties'],
           cssParts: [{ name: 'base' }],
           cssStates: [{ name: 'active' }],
-        }),
-        TYPE_PROPERTY
+        })
       )
     ).toMatchInlineSnapshot(`
       "## Attributes
@@ -180,8 +177,7 @@ describe('buildApiDescription', () => {
               default: "'A  B'",
             },
           ],
-        }),
-        TYPE_PROPERTY
+        })
       )
     ).toMatchInlineSnapshot(`
       "## Properties
@@ -204,8 +200,7 @@ describe('buildApiDescription', () => {
             { name: 'disabled', type: { text: 'boolean' } },
             { name: 'label', type: { text: 'string' } },
           ],
-        }),
-        TYPE_PROPERTY
+        })
       )
     ).toMatchInlineSnapshot(`
       "## Attributes
@@ -244,8 +239,7 @@ describe('buildApiDescription', () => {
             },
             { kind: 'method', name: 'all', static: true, return: { type: { text: 'void' } } },
           ],
-        }),
-        TYPE_PROPERTY
+        })
       )
     ).toMatchInlineSnapshot(`
       "## Attributes
@@ -275,6 +269,6 @@ describe('buildApiDescription', () => {
   });
 
   it('returns undefined for an empty declaration', () => {
-    expect(buildApiDescription(declaration({}), TYPE_PROPERTY)).toMatchInlineSnapshot(`undefined`);
+    expect(buildApiDescription(declaration({}))).toMatchInlineSnapshot(`undefined`);
   });
 });

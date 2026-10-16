@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
 import { parser, traverse } from 'storybook/internal/babel';
-import { printCsf, readCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
@@ -506,6 +506,59 @@ describe('success', () => {
         "
     `);
   });
+  describe.each([
+    ['without args', '{}'],
+    ['with args', '{ args: { label: "keep", "data-testid": "before", 123: "before" } }'],
+  ])('plain annotated story %s', (_, object) => {
+    test.each([
+      'data-testid',
+      'aria-label',
+      '123',
+      'default',
+      '123abc',
+      'a: 1}); globalThis.pwned = 1; ({b',
+      'x = alert(1)',
+    ])('saves key %s as data', async (key) => {
+      const csf = loadCsf(
+        `
+        export default { title: 'Example' };
+        export const Example: Story = ${object};
+      `,
+        { makeTitle }
+      ).parse();
+
+      await updateArgsInCsfFile(csf.getStoryExport('Example'), { [key]: 'after' });
+
+      const code = printCsf(csf).code;
+      const ast = parser.parse(code, { sourceType: 'module', plugins: ['typescript'] });
+      const identifiers = new Set<string>();
+      const savedValues: string[] = [];
+      traverse(ast, {
+        Identifier(path) {
+          identifiers.add(path.node.name);
+        },
+        ObjectProperty(path) {
+          const property = path.node;
+          const name =
+            property.key.type === 'Identifier'
+              ? property.key.name
+              : property.key.type === 'StringLiteral' || property.key.type === 'NumericLiteral'
+                ? String(property.key.value)
+                : null;
+          if (name === key && property.value.type === 'StringLiteral') {
+            savedValues.push(property.value.value);
+          }
+        },
+      });
+      expect(savedValues).toEqual(['after']);
+      expect(identifiers.has('alert')).toBe(false);
+      expect(identifiers.has('pwned')).toBe(false);
+      if (object !== '{}') {
+        expect(await format(code, { parser: 'typescript' })).toContain('label: "keep"');
+      }
+    });
+  });
+
   test('Data Variances', async () => {
     const newArgs = {
       myArray: ['FOO', 'BAR'],

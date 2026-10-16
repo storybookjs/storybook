@@ -21,8 +21,51 @@ const argKeyName = (key: t.ObjectProperty['key']): string | null => {
   return null;
 };
 
+const updateArgsObject = (obj: t.ObjectExpression, args: Record<string, t.Expression>) => {
+  const properties = obj.properties;
+  const argsProperty = properties.find((property) => {
+    if (t.isObjectProperty(property)) {
+      const key = property.key;
+      return t.isIdentifier(key) && key.name === 'args';
+    }
+    return false;
+  });
+
+  if (argsProperty) {
+    if (t.isObjectProperty(argsProperty)) {
+      const a = argsProperty.value;
+      if (t.isObjectExpression(a)) {
+        a.properties.forEach((p) => {
+          if (t.isObjectProperty(p)) {
+            const keyName = argKeyName(p.key);
+            if (keyName !== null && keyName in args) {
+              p.value = args[keyName];
+              delete args[keyName];
+            }
+          }
+        });
+
+        const remainder = Object.entries(args);
+        if (Object.keys(args).length) {
+          remainder.forEach(([key, value]) => {
+            a.properties.push(t.objectProperty(argKey(key), value));
+          });
+        }
+      }
+    }
+  } else {
+    properties.unshift(
+      t.objectProperty(
+        t.identifier('args'),
+        t.objectExpression(
+          Object.entries(args).map(([key, value]) => t.objectProperty(argKey(key), value))
+        )
+      )
+    );
+  }
+};
+
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
-  let found = false;
   const args = Object.fromEntries(
     Object.entries(input).map(([k, v]) => {
       return [k, valueToAST(v)];
@@ -41,102 +84,15 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
   }
 
   if (t.isObjectExpression(node)) {
-    const properties = node.properties;
-    const argsProperty = properties.find((property) => {
-      if (t.isObjectProperty(property)) {
-        const key = property.key;
-        return t.isIdentifier(key) && key.name === 'args';
-      }
-      return false;
-    });
-
-    if (argsProperty) {
-      if (t.isObjectProperty(argsProperty)) {
-        const a = argsProperty.value;
-        if (t.isObjectExpression(a)) {
-          a.properties.forEach((p) => {
-            if (t.isObjectProperty(p)) {
-              const keyName = argKeyName(p.key);
-              if (keyName !== null && keyName in args) {
-                p.value = args[keyName];
-                delete args[keyName];
-              }
-            }
-          });
-
-          const remainder = Object.entries(args);
-          if (Object.keys(args).length) {
-            remainder.forEach(([key, value]) => {
-              a.properties.push(t.objectProperty(argKey(key), value));
-            });
-          }
-        }
-      }
-    } else {
-      properties.unshift(
-        t.objectProperty(
-          t.identifier('args'),
-          t.objectExpression(
-            Object.entries(args).map(([key, value]) => t.objectProperty(argKey(key), value))
-          )
-        )
-      );
-    }
+    updateArgsObject(node, args);
     return;
   }
 
   traverse(node, {
     ObjectExpression(path) {
-      if (found) {
-        return;
-      }
-
-      found = true;
-      const properties = path.get('properties');
-      const argsProperty = properties.find((property) => {
-        if (property.isObjectProperty()) {
-          const key = property.get('key');
-          return key.isIdentifier() && key.node.name === 'args';
-        }
-        return false;
-      });
-
-      if (argsProperty) {
-        if (argsProperty.isObjectProperty()) {
-          const a = argsProperty.get('value');
-          if (a.isObjectExpression()) {
-            // only direct properties, so nested keys cannot consume args meant for the top level
-            a.get('properties').forEach((p) => {
-              if (p.isObjectProperty()) {
-                const keyName = argKeyName(p.node.key);
-                if (keyName !== null && keyName in args) {
-                  p.get('value').replaceWith(args[keyName]);
-                  delete args[keyName];
-                }
-              }
-            });
-
-            const remainder = Object.entries(args);
-            if (Object.keys(args).length) {
-              remainder.forEach(([key, value]) => {
-                a.pushContainer('properties', t.objectProperty(argKey(key), value));
-              });
-            }
-          }
-        }
-      } else {
-        path.unshiftContainer(
-          'properties',
-          t.objectProperty(
-            t.identifier('args'),
-            t.objectExpression(
-              Object.entries(args).map(([key, value]) => t.objectProperty(argKey(key), value))
-            )
-          )
-        );
-      }
+      updateArgsObject(path.node, args);
+      path.stop();
     },
-
     noScope: true,
   });
 };

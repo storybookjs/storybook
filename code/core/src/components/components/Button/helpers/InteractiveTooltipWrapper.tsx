@@ -37,7 +37,7 @@ export const InteractiveTooltipWrapper: React.FC<{
     <TooltipProvider
       placement={tooltipPlacement}
       tooltip={<TooltipNote note={tooltip} shortcut={shortcutLabel} />}
-      visible={!disableAllTooltips ? undefined : false}
+      disabled={disableAllTooltips}
     >
       {children}
     </TooltipProvider>

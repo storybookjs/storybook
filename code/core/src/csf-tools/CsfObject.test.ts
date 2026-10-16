@@ -134,6 +134,33 @@ describe('CsfObject', () => {
     expect(csf.changed).toBe(false);
   });
 
+  it('rejects AST-like nodes that did not come from this API and prints plain data', () => {
+    const csf = parse(`export default { title: 'X' };`);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(() => meta.set(['framework'], { type: 'StringLiteral', value: 'x' } as any)).toThrow(
+      'StringLiteral node'
+    );
+    expect(meta.set(['control'], { type: 'button', label: 'Save' })).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain(`control: { type: 'button', label: 'Save' }`);
+  });
+
+  it('places copied expressions so the surrounding code survives', () => {
+    const csf = parse(`export default { a: (1, 2) };\nexport const B = { b: 0 };`);
+    const [meta, story] = csf.objects();
+
+    story.set(['b'], meta.get(['a'])!);
+    expect(story.set(['c'], parseExpression('1 //x'))).toEqual({ ok: true, changed: true });
+
+    const [, again] = parse(printCsf(csf).code).objects();
+    expect(printExpression(again.get(['b'])!)).toBe('1, 2');
+    expect(again.getValue(['c'])).toBe(1);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('edits a local object referenced by a story and cleans up the empty parent', () => {
     const csf = parse(
       `const a11y = { element: '#root' }; export default {}; export const Story = { parameters: { a11y } };`

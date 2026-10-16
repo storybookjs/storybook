@@ -4,9 +4,11 @@ import {
   type Property,
   type SourceLocation,
   isIdentifier,
+  isNode,
   isNumericLiteral,
   locationOf,
   expressionFromSource,
+  parseModule,
   staticKey,
   textOf,
   unwrapExpression,
@@ -27,6 +29,8 @@ import {
   replaceValue,
   separatorBefore,
 } from './estree/editor.ts';
+
+import { visitorKeys } from 'oxc-parser';
 
 export type CsfObjectTarget =
   | { kind: 'config' }
@@ -89,6 +93,21 @@ export type CsfExpression = E.Expression;
  * ```
  */
 export const parseExpression = (code: string): CsfExpression => expressionFromSource(code);
+
+// An object that looks like an AST node rather than data: a node type Babel or ESTree would produce.
+const AST_TYPE =
+  /^(?:TS|JSX)?[A-Z]\w*(?:Expression|Literal|Statement|Declaration|Identifier|Pattern|Property|Specifier|Element|Fragment|Template|Block)$/;
+
+const isAstLike = (value: unknown): value is Node =>
+  isNode(value) && (value.type in visitorKeys || AST_TYPE.test(value.type));
+
+// Source text ready to be placed as a value: a comma expression keeps its parentheses, and a
+// trailing line comment ends its line so the code after it survives.
+const placeableSource = (source: string, type: string) => {
+  const text = type === 'SequenceExpression' && !source.startsWith('(') ? `(${source})` : source;
+  const lastComment = parseModule(`(${text}\n)`).comments.at(-1);
+  return lastComment?.type === 'Line' && lastComment.end === text.length + 1 ? `${text}\n` : text;
+};
 
 /** Source of an expression returned by `get` or `parseExpression`, or of any node inside one. */
 export const printExpression = (node: Node): string => {
@@ -508,12 +527,18 @@ class CsfObjectEditor implements CsfObject {
   }
 
   private sourceFor(value: CsfValue | CsfExpression) {
-    if (!isSpan(value)) {
-      return printValue(value, this.editor.quote);
+    if (isSpan(value)) {
+      // Registers the source of this file's nodes, so a node read from the file prints as written.
+      const node = value as Node;
+      this.editor.parentOf(node);
+      return placeableSource(printExpression(node), node.type);
     }
-    // Registers the source of this file's nodes, so a node read from the file prints as written.
-    this.editor.parentOf(value as Node);
-    return printExpression(value as Node);
+    if (isAstLike(value)) {
+      throw new Error(
+        `CsfObject: expressions must come from \`get\`, \`transform\` or \`parseExpression\`, not a ${value.type} node`
+      );
+    }
+    return printValue(value, this.editor.quote);
   }
 
   set(path: readonly string[], value: CsfValue | CsfExpression): CsfMutationResult {

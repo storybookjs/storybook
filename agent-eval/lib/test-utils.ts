@@ -125,8 +125,35 @@ export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
 
 export function expectWorkflowCalls(expectedNames: string[]): void {
   for (const name of expectedNames) {
-    expect(getWorkflowCalls(name).length, `Expected ${name} to be called`).toBeGreaterThan(0);
+    const count = getWorkflowCalls(name).length;
+    expect(
+      count,
+      `Expected ${name} to be called${count === 0 ? describeIgnoredCodexSettings() : ''}`
+    ).toBeGreaterThan(0);
   }
+}
+
+// Codex runs on when it does not know a config setting, and only reports it in an error item. When
+// that setting is the `model_instructions_file` of the Luna experiments, Luna skips the tests, which
+// would look like a regression in the skills.
+function describeIgnoredCodexSettings(): string {
+  let raw = '';
+  try {
+    raw = readFileSync(TRANSCRIPT_PATH, 'utf8');
+  } catch {
+    return '';
+  }
+  const messages = raw.split('\n').flatMap((line) => {
+    const event = parseJson(line);
+    const item = isRecord(event) ? event.item : undefined;
+    return isRecord(item) &&
+      item.type === 'error' &&
+      typeof item.message === 'string' &&
+      item.message.includes('configuration setting')
+      ? [item.message]
+      : [];
+  });
+  return messages.length > 0 ? `. Codex reported: ${messages.join(' ')}` : '';
 }
 
 export function expectFinalResponseContains(substrings: string[]): void {

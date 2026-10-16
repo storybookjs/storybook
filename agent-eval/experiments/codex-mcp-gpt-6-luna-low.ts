@@ -24,7 +24,7 @@ export default {
     await writeCodexMcpConfig(sandbox);
     await writeCodexInAppBrowserMock(sandbox);
     await writeMcpAgentInstructions(sandbox);
-    await writeCodexLunaTestRules(sandbox);
+    await writeCodexLunaTestRules(sandbox, model);
     await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

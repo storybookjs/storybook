@@ -372,6 +372,21 @@ describe('expectStoryTestsRanAndPassed', () => {
     vi.mocked(execFile).mockRestore();
   });
 
+  test('names the Codex settings that Codex ignored when the agent never ran the tests', async () => {
+    const ignored =
+      'Codex is ignoring 1 unrecognized configuration setting: model_instructions_file is ignored.';
+    givenRun({
+      commands: [],
+      stdout: '',
+      transcript: `${JSON.stringify({ type: 'item.completed', item: { type: 'error', message: ignored } })}\n`,
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(
+      `Expected test-run to be called. Codex reported: ${ignored}`
+    );
+  });
+
   test('judges the tests by a run in the sandbox, not by the tail-cut transcript output', async () => {
     givenRun({
       commands: [tailCutTestRun],

@@ -227,33 +227,49 @@ describe('writeClaudeInAppBrowserMock', () => {
 });
 
 describe('writeCodexLunaTestRules', () => {
+  const instructionsFile = '/home/user/.codex/storybook-eval-instructions.md';
+
+  function createCodexSandbox(files: Record<string, string>, nodeExitCode = 0) {
+    const sandbox = createSandbox(files);
+    const commands: string[][] = [];
+    sandbox.runCommand = async (command: string, args: string[] = []) => {
+      commands.push([command, ...args]);
+      const node = command === 'node';
+      return {
+        stdout: node && nodeExitCode === 0 ? instructionsFile : '',
+        stderr: node && nodeExitCode !== 0 ? 'do not have the line' : '',
+        exitCode: node ? nodeExitCode : 0,
+      };
+    };
+    return { sandbox, commands };
+  }
+
   it('points the Codex config at the instructions it writes, above the tables', async () => {
     const files: Record<string, string> = {};
     await writeCodexInAppBrowserMock(createSandbox(files));
-    const sandbox = createSandbox(files);
-    sandbox.runCommand = async (command: string) => ({
-      stdout: command === 'node' ? '/home/user/.codex/storybook-eval-luna-instructions.md' : '',
-      stderr: '',
-      exitCode: 0,
-    });
+    const { sandbox, commands } = createCodexSandbox(files);
 
-    await writeCodexLunaTestRules(sandbox);
+    await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
+    await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
 
-    expect(files['.codex/config.toml']).toMatch(
-      /^model_instructions_file = "\/home\/user\/\.codex\/storybook-eval-luna-instructions\.md"\n\n\[mcp_servers\.node_repl\]\n/
-    );
+    expect(commands[1]?.slice(0, 2)).toEqual(['node', '-e']);
+    expect(commands[1]?.[3]).toBe('gpt-6-luna');
+    const config = files['.codex/config.toml'] ?? '';
+    expect(
+      config.startsWith(
+        `model_instructions_file = "${instructionsFile}"\n\n[mcp_servers.node_repl]\n`
+      )
+    ).toBe(true);
+    expect(config.match(/model_instructions_file/g)).toHaveLength(1);
   });
 
   it('fails when the script cannot write the instructions', async () => {
     const files: Record<string, string> = {};
-    const sandbox = createSandbox(files);
-    sandbox.runCommand = async () => ({
-      stdout: '',
-      stderr: 'The Codex catalog no longer has the test rules',
-      exitCode: 1,
-    });
+    const { sandbox } = createCodexSandbox(files, 1);
 
-    await expect(writeCodexLunaTestRules(sandbox)).rejects.toThrow('no longer has the test rules');
+    await expect(writeCodexLunaTestRules(sandbox, 'gpt-6-luna')).rejects.toThrow(
+      'Failed to write the gpt-6-luna instructions: do not have the line'
+    );
     expect(files).toEqual({});
   });
 });

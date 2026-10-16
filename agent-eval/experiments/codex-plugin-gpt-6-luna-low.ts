@@ -22,7 +22,7 @@ export default {
     await writeCodexPluginSkills(sandbox);
     await writeCodexInAppBrowserMock(sandbox);
     await writeStorybookAgentInstructions(sandbox);
-    await writeCodexLunaTestRules(sandbox);
+    await writeCodexLunaTestRules(sandbox, model);
     await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

@@ -171,7 +171,7 @@ These four are the default set: a bare `yarn eval`, which is what CI runs, runs 
 - `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
 - `codex-plugin-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort).
-- `codex-mcp-gpt-6.1-sol-low` and `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort), with its own system prompt.
+- `codex-mcp-gpt-6.1-sol-low` and `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort, with its own system prompt), set up like the two Luna experiments: MCP config and server instructions, or plugin skills.
 
 ## Running evals in CI
 

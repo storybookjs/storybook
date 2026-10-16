@@ -759,6 +759,25 @@ const source = (csfExport: string) => {
 };
 
 describe('extractSource', () => {
+  it('normalizes CRLF line endings in the source and descriptions', async () => {
+    const code = [
+      "export default { title: 'Button' };",
+      '/**',
+      ' * Line one',
+      ' *',
+      ' * Line two',
+      ' */',
+      'export const Basic = {',
+      '  args: { a: 1 },',
+      '};',
+    ].join('\r\n');
+
+    const result = await enrich(code, code);
+
+    expect(result).toContain(`originalSource: "{\\n  args: { a: 1 },\\n}"`);
+    expect(result).toContain(`story: "Line one\\n\\nLine two"`);
+  });
+
   it('csf1', () => {
     expect(
       source(dedent`

@@ -117,13 +117,14 @@ export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: Enri
   });
 };
 
-// The story's own source text: the initializer of `const X = …`, or the function itself.
+// The story's own source text: the initializer of `const X = …`, or the function itself. Line
+// endings are normalized, so a CRLF checkout documents the same source as an LF one.
 export const extractSource = (node: Node, code: string) => {
   const src = (node?.type === 'VariableDeclarator' ? node.init : node) as
     | { start: number; end: number }
     | null
     | undefined;
-  return src ? code.slice(src.start, src.end) : '';
+  return src ? code.slice(src.start, src.end).replace(/\r\n/g, '\n') : '';
 };
 
 export const leadingComments = (node: Node | undefined, editor: SourceEditor) => {
@@ -155,7 +156,7 @@ export const extractDescription = (node: Node | undefined, editor: SourceEditor)
       }
       return (
         comment.value
-          .split('\n')
+          .split(/\r?\n/)
           // remove leading *'s and spaces from the beginning of each line
           .map((line) => line.replace(/^(\s+)?(\*+)?(\s)?/, ''))
           .join('\n')

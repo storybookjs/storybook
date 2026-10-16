@@ -142,6 +142,21 @@ describe('updateConfigFile statements', () => {
     expect(code.replaceAll('\r\n', '')).not.toContain('\n');
   });
 
+  it('does not declare a name the config already declares as a function or class', () => {
+    const target = new SourceEditor(dedent`
+      function fileURLToPath() {}
+      class dirname {}
+      export default defineConfig({ test: {} });
+    `);
+
+    expect(updateConfigFile(template, target)).toBe(true);
+    const code = target.toString();
+    expect(code).not.toContain('import { fileURLToPath }');
+    expect(code).not.toContain('import { dirname }');
+    expect(code).not.toContain('const dirname');
+    expect(() => new SourceEditor(code)).not.toThrow();
+  });
+
   it('does not declare a name the config already imports', () => {
     const target = new SourceEditor(dedent`
       import { dirname } from 'node:path';

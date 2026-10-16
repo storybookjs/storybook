@@ -300,31 +300,20 @@ const findWritableConfigObject = (
 };
 
 // Template imports and variables the target lacks, each with the comments that follow it.
-const missingStatements = (source: SourceEditor, target: E.Program) => {
+const missingStatements = (source: SourceEditor, target: SourceEditor) => {
   const { body } = source.program;
-  const declaresImport = (name: string) =>
-    target.body.some(
-      (node) =>
-        node.type === 'ImportDeclaration' &&
-        node.specifiers.some((specifier) => specifier.local.name === name)
-    );
-  // Any top-level binding counts, so a name the config imports is not declared a second time.
-  const declaresVariable = (name: string) =>
-    declaresImport(name) ||
-    target.body.some(
-      (node) =>
-        node.type === 'VariableDeclaration' &&
-        node.declarations.some((d) => d.id.type === 'Identifier' && d.id.name === name)
-    );
+  // Any top-level binding counts, so a name the config declares in another form is not declared
+  // a second time.
+  const declared = (name: string) => target.scopes.program.bindings.has(name);
   return body.flatMap((node, index) => {
     const text = source.code.slice(node.start, body[index + 1]?.start ?? source.code.length).trim();
     if (node.type === 'ImportDeclaration') {
       const name = node.specifiers[0]?.local.name;
-      return name && !declaresImport(name) ? [text] : [];
+      return name && !declared(name) ? [text] : [];
     }
     if (node.type === 'VariableDeclaration') {
       const id = node.declarations[0]?.id;
-      return id?.type === 'Identifier' && !declaresVariable(id.name) ? [text] : [];
+      return id?.type === 'Identifier' && !declared(id.name) ? [text] : [];
     }
     return [];
   });
@@ -379,7 +368,7 @@ export const updateConfigFile = (sourceCode: string, target: SourceEditor): bool
     return false;
   }
 
-  const statements = missingStatements(source, target.program);
+  const statements = missingStatements(source, target);
   if (statements.length > 0) {
     insertStatements(target, statements.join('\n'));
   }

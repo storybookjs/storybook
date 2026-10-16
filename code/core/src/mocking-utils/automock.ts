@@ -10,7 +10,8 @@ import MagicString from 'magic-string';
 
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
 
-type ParseFn = (code: string) => Program;
+// An ESTree program; OXC's own `Program` type is structurally compatible with what is read here.
+type ParseFn = (code: string) => unknown;
 
 export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 

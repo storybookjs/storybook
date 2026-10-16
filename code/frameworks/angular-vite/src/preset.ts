@@ -608,7 +608,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           return null;
         }
         try {
-          const automocked = getAutomockCode(code, a.spy, parseModuleAst as any);
+          const automocked = getAutomockCode(code, a.spy, (source) => parseModuleAst(source, id));
           return {
             code: automocked.toString(),
             map: automocked.generateMap(),

@@ -149,7 +149,9 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = getAutomockCode(code, call.spy, parseModuleAst as any);
+                const automockedCode = getAutomockCode(code, call.spy, (source) =>
+                  parseModuleAst(source, id)
+                );
 
                 return {
                   code: automockedCode.toString(),
@@ -172,7 +174,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         handler(code, id) {
           if (id === normalizedPreviewConfigPath) {
             try {
-              return rewriteSbMockImportCalls(code);
+              return rewriteSbMockImportCalls(code, id);
             } catch (e) {
               logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
               return null;

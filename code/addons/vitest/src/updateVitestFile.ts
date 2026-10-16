@@ -11,6 +11,7 @@ import {
   appendToList,
   arrayList,
   itemText,
+  reindent,
   objectList,
   prependToList,
 } from 'storybook/internal/csf-tools';
@@ -68,7 +69,7 @@ const elementTexts = (editor: SourceEditor, array: E.ArrayExpression) =>
     itemText(editor, arrayList(editor, array), element)
   );
 
-const indent = (text: string, prefix: string) => prefix + text.replaceAll('\n', `\n${prefix}`);
+const indent = (text: string, prefix: string) => prefix + reindent(text, '', prefix);
 
 const lineIndentAt = (code: string, index: number) =>
   /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n', index - 1) + 1))![0];
@@ -307,7 +308,9 @@ const missingStatements = (source: SourceEditor, target: E.Program) => {
         node.type === 'ImportDeclaration' &&
         node.specifiers.some((specifier) => specifier.local.name === name)
     );
+  // Any top-level binding counts, so a name the config imports is not declared a second time.
   const declaresVariable = (name: string) =>
+    declaresImport(name) ||
     target.body.some(
       (node) =>
         node.type === 'VariableDeclaration' &&
@@ -347,7 +350,13 @@ export const updateConfigFile = (sourceCode: string, target: SourceEditor): bool
   if (statements.length > 0) {
     const lastImport = target.program.body.findLast((node) => node.type === 'ImportDeclaration');
     if (lastImport) {
-      target.edits.appendLeft(lastImport.end, `\n${statements.join('\n')}`);
+      // On the line after the import, so code and comments sharing its line stay where they are.
+      const lineEnd = target.code.indexOf('\n', lastImport.end);
+      if (lineEnd === -1) {
+        target.edits.append(`\n${statements.join('\n')}`);
+      } else {
+        target.edits.appendLeft(lineEnd + 1, `${statements.join('\n')}\n`);
+      }
     } else {
       target.edits.appendLeft(target.program.body[0].start, `${statements.join('\n')}\n\n`);
     }

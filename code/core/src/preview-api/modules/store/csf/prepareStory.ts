@@ -1,4 +1,8 @@
-import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
+import {
+  type CleanupCallback,
+  combineFinalTags,
+  includeConditionalArg,
+} from 'storybook/internal/csf';
 import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -198,7 +202,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
    */
   const overrideTags = storyAnnotations?.tags?.includes(Tag.TEST_FN) ? [`!${Tag.AUTODOCS}`] : [];
 
-  const tags = combineTags(
+  const tags = combineFinalTags(
     ...defaultTags,
     ...extraTags,
     ...(projectAnnotations.tags ?? []),

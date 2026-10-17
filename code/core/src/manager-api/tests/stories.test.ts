@@ -18,7 +18,11 @@ import {
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/client-logger';
-import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
+import {
+  type API_ComposedRef,
+  type API_StoryEntry,
+  type StoryIndex,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -814,6 +818,15 @@ describe('stories API', () => {
       const { provider, store } = moduleArgs;
 
       api.setIndex({ v: 5, entries: preparedEntries });
+      const externalEvent = {
+        source: '',
+        sourceType: 'external' as const,
+        sourceLocation: '',
+        refId: undefined,
+        ref: undefined,
+        type: '',
+      };
+      getEventMetadata.mockReturnValueOnce(externalEvent).mockReturnValueOnce(externalEvent);
 
       // The channel drops function values; they arrive as `{ __function__: { name } }` markers.
       provider.channel.emit(STORY_PREPARED, {
@@ -840,7 +853,15 @@ describe('stories API', () => {
     });
     it('changes reffed args properly, per story when receiving STORY_ARGS_UPDATED', () => {
       const fullAPI = { updateRef: vi.fn() };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
+      const ref = {
+        id: 'refId',
+        index: { 'a--1': { args: { a: 'b' } } },
+        filteredIndex: { 'a--1': { args: { a: 'b' } } },
+      } as unknown as API_ComposedRef;
+      const moduleArgs = createMockModuleArgs({
+        fullAPI,
+        initialState: { refs: { refId: ref } },
+      });
       initStories(moduleArgs as unknown as ModuleArgs);
       const { provider } = moduleArgs;
 
@@ -850,11 +871,7 @@ describe('stories API', () => {
         source: '',
         sourceLocation: '',
         type: '',
-        ref: {
-          id: 'refId',
-          index: { 'a--1': { args: { a: 'b' } } },
-          filteredIndex: { 'a--1': { args: { a: 'b' } } },
-        } as any,
+        ref,
       });
       provider.channel.emit(STORY_ARGS_UPDATED, { storyId: 'a--1', args: { foo: 'bar' } });
       expect(fullAPI.updateRef).toHaveBeenCalledWith('refId', {
@@ -907,7 +924,7 @@ describe('stories API', () => {
         },
       });
     });
-    it('updateStoryArgs sends function values as markers, keeping their slots alive (#29207)', () => {
+    it('updateStoryArgs keeps live functions for local listeners (#29207)', () => {
       const fullAPI = { updateRef: vi.fn() };
       const moduleArgs = createMockModuleArgs({ fullAPI });
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -917,10 +934,9 @@ describe('stories API', () => {
       provider.channel.on(UPDATE_STORY_ARGS, listener);
 
       api.setIndex({ v: 5, entries: preparedEntries });
-      // A sibling edit in Controls sends the whole object; the function slot holds the manager's
-      // revived placeholder. The channel would drop a function value outright.
+      const onClick = function onClick() {};
       api.updateStoryArgs({ id: 'a--1' } as API_StoryEntry, {
-        link: { href: 'https://example.com', onClick: function onClick() {} },
+        link: { href: 'https://example.com', onClick },
       });
 
       expect(listener).toHaveBeenCalledWith({
@@ -928,7 +944,7 @@ describe('stories API', () => {
         updatedArgs: {
           link: {
             href: 'https://example.com',
-            onClick: { __function__: { name: 'onClick' } },
+            onClick,
           },
         },
         options: { target: undefined },

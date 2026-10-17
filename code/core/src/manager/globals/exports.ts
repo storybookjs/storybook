@@ -497,6 +497,7 @@ export default {
     'ensureChannel',
     'getChannel',
     'installNoopChannel',
+    'isTransportedChannelValue',
     'requireChannel',
     'setChannel',
   ],

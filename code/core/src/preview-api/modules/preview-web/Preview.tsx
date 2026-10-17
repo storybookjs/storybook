@@ -1,4 +1,4 @@
-import type { Channel } from 'storybook/internal/channels';
+import { isTransportedChannelValue, type Channel } from 'storybook/internal/channels';
 import { deprecate, logger } from 'storybook/internal/client-logger';
 import {
   ARGTYPES_INFO_REQUEST,
@@ -45,7 +45,7 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { reviveArgFunctions, serializeArgFunctions } from '../../../shared/utils/function-args.ts';
+import { reviveArgFunctions } from '../../../shared/utils/function-args.ts';
 import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
@@ -145,7 +145,9 @@ export class Preview<TRenderer extends Renderer> {
   setupListeners() {
     this.channel.on(STORY_INDEX_INVALIDATED, this.onStoryIndexChanged.bind(this));
     this.channel.on(UPDATE_GLOBALS, this.onUpdateGlobals.bind(this));
-    this.channel.on(UPDATE_STORY_ARGS, this.onUpdateArgs.bind(this));
+    this.channel.on(UPDATE_STORY_ARGS, (payload) =>
+      this.onUpdateArgs(payload, isTransportedChannelValue(payload))
+    );
     this.channel.on(ARGTYPES_INFO_REQUEST, this.onRequestArgTypesInfo.bind(this));
     this.channel.on(RESET_STORY_ARGS, this.onResetArgs.bind(this));
     this.channel.on(FORCE_RE_RENDER, this.onForceReRender.bind(this));
@@ -348,16 +350,17 @@ export class Preview<TRenderer extends Renderer> {
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
   }
 
-  async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
+  async onUpdateArgs(
+    { storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args },
+    transported = false
+  ) {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateArgs' });
     }
-    // Markers stand for functions the channel dropped; resolving them against the live args
-    // keeps the original callback in place when a sibling key of the same object was edited.
-    this.storyStoreValue.args.update(
-      storyId,
-      reviveArgFunctions(updatedArgs, this.storyStoreValue.args.get(storyId))
-    );
+    const nextArgs = transported
+      ? reviveArgFunctions(updatedArgs, this.storyStoreValue.args.get(storyId))
+      : updatedArgs;
+    this.storyStoreValue.args.update(storyId, nextArgs);
 
     await Promise.all(
       this.storyRenders
@@ -368,9 +371,10 @@ export class Preview<TRenderer extends Renderer> {
           r.story && r.story.usesMount ? r.remount() : r.rerender()
         )
     );
+
     this.channel.emit(STORY_ARGS_UPDATED, {
       storyId,
-      args: serializeArgFunctions(this.storyStoreValue.args.get(storyId)),
+      args: this.storyStoreValue.args.get(storyId),
     });
   }
 

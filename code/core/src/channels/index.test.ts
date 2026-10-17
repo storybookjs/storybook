@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { UPDATE_STORY_ARGS } from '../core-events/index.ts';
 
-import type { ChannelTransport, Listener } from './index.ts';
-import { Channel, WebsocketTransport } from './index.ts';
+import type { ChannelEvent, ChannelTransport, Listener } from './index.ts';
+import { Channel, WebsocketTransport, isTransportedChannelValue } from './index.ts';
 
 const MockedWebsocket = vi.hoisted(() => {
   const ref = { current: undefined as unknown as InstanceType<typeof MyMockedWebsocket> };
@@ -140,6 +141,56 @@ describe('Channel', () => {
       channel.emit(eventName, ...listenerInputData);
       expect(listenerOutputData).toEqual(listenerInputData);
       expect(sendSpy.mock.calls[0][1]).toEqual({ depth: 1 });
+    });
+
+    it('serializes args for transports without changing local delivery', () => {
+      const onClick = function onClick() {};
+      const payload = { storyId: 'example--story', updatedArgs: { link: { onClick } } };
+      const listener = vi.fn();
+      channel.on(UPDATE_STORY_ARGS, listener);
+
+      channel.emit(UPDATE_STORY_ARGS, payload);
+
+      expect(listener).toHaveBeenCalledWith(payload);
+      expect(transport.send).toHaveBeenCalledWith(
+        {
+          type: UPDATE_STORY_ARGS,
+          args: [
+            {
+              storyId: 'example--story',
+              updatedArgs: { link: { onClick: { __function__: { name: onClick.name } } } },
+            },
+          ],
+          from: expect.any(String),
+        },
+        {}
+      );
+    });
+
+    it('identifies values received from a transport', () => {
+      let transported = false;
+      channel.on(UPDATE_STORY_ARGS, function handleUpdate(this: object, payload) {
+        transported = isTransportedChannelValue(this) && isTransportedChannelValue(payload);
+      });
+      const receive = vi.mocked(transport.setHandler).mock.calls[0][0];
+
+      receive({
+        type: UPDATE_STORY_ARGS,
+        args: [{ storyId: 'example--story', updatedArgs: {} }],
+        from: 'manager',
+      });
+
+      expect(transported).toBe(true);
+    });
+
+    it('delivers transported events without args', () => {
+      const listener = vi.fn();
+      channel.on('event-without-args', listener);
+      const receive = vi.mocked(transport.setHandler).mock.calls[0][0];
+
+      receive({ type: 'event-without-args', from: 'manager' } as ChannelEvent);
+
+      expect(listener).toHaveBeenCalledWith();
     });
 
     it('should use setImmediate if async is true', () => {

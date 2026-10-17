@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parse, stringify } from 'telejson';
+import type { Args } from 'storybook/internal/types';
 
 import {
   createArgFunctionReviver,
@@ -88,8 +89,8 @@ describe('serializeArgFunctions', () => {
     });
   });
 
-  it('stops at the transport max depth instead of recursing forever', () => {
-    const circular: any = { name: 'value' };
+  it('terminates on circular references', () => {
+    const circular: Record<string, unknown> = { name: 'value' };
     circular.self = circular;
 
     expect(() => serializeArgFunctions(circular)).not.toThrow();
@@ -99,7 +100,7 @@ describe('serializeArgFunctions', () => {
     const shared = { onClick: function handleShared() {}, href: '#' };
     const args = { first: shared, second: shared };
 
-    const wire = overTheWire(serializeArgFunctions(args));
+    const wire = overTheWire(serializeArgFunctions(args)) as Args;
 
     const marker = { __function__: { name: 'handleShared' } };
     expect(wire.first).toEqual({ onClick: marker, href: '#' });
@@ -128,8 +129,8 @@ describe('reviveArgFunctions', () => {
 
   it('resolves a marker against the function stored at the same path', () => {
     const realCallback = function onClick() {};
-    const current = { link: { href: '#', onClick: realCallback } };
-    const incoming = {
+    const current: Args = { link: { href: '#', onClick: realCallback } };
+    const incoming: Args = {
       link: { href: 'https://example.com', onClick: { __function__: { name: 'onClick' } } },
     };
 
@@ -141,7 +142,7 @@ describe('reviveArgFunctions', () => {
   });
 
   it('falls back to a fresh function when the stored value is not a matching function', () => {
-    const current = { onDelete: () => {} };
+    const current: Args = { onDelete: () => {} };
 
     const revived = reviveArgFunctions(
       { onDelete: { __function__: { name: 'handleDelete' } } },
@@ -149,17 +150,17 @@ describe('reviveArgFunctions', () => {
     );
 
     expect(typeof revived.onDelete).toBe('function');
-    expect((revived.onDelete as () => void).name).toBe('handleDelete');
+    expect(revived.onDelete.name).toBe('handleDelete');
     expect(revived.onDelete).not.toBe(current.onDelete);
   });
 
   it('returns marker-shaped user data untouched, over the wire and back', () => {
-    const args = { meta: { __function__: { name: 'not-a-function' } } };
+    const args: Args = { meta: { __function__: { name: 'not-a-function' } } };
 
     const roundTripped = reviveArgFunctions(overTheWire(serializeArgFunctions(args)));
 
     expect(roundTripped).toEqual(args);
-    expect(typeof (roundTripped.meta as Record<string, unknown>).__function__).toBe('object');
+    expect(typeof roundTripped.meta.__function__).toBe('object');
   });
 
   it('returns escape-shaped user data untouched', () => {
@@ -205,11 +206,9 @@ describe('reviveArgFunctions', () => {
 
     const revived = reviveArgFunctions({ first: shared, second: shared });
 
-    expect(typeof (revived.first as Record<string, unknown>).onClick).toBe('function');
-    expect(typeof (revived.second as Record<string, unknown>).onClick).toBe('function');
-    expect(((revived.second as Record<string, unknown>).onClick as () => void).name).toBe(
-      'handleShared'
-    );
+    expect(typeof revived.first.onClick).toBe('function');
+    expect(typeof revived.second.onClick).toBe('function');
+    expect(revived.second.onClick.name).toBe('handleShared');
   });
 
   it('still terminates on circular references', () => {

@@ -1,3 +1,4 @@
+import { isTransportedChannelValue } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/client-logger';
 import {
   CONFIG_ERROR,
@@ -54,11 +55,7 @@ import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
-import {
-  createArgFunctionReviver,
-  reviveArgFunctions,
-  serializeArgFunctions,
-} from '../../shared/utils/function-args.ts';
+import { createArgFunctionReviver, reviveArgFunctions } from '../../shared/utils/function-args.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
@@ -764,9 +761,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const { id: storyId, refId } = story;
       provider.channel?.emit(UPDATE_STORY_ARGS, {
         storyId,
-        // The manager's args hold revived placeholder functions; send them back as markers so
-        // the preview can restore the live callbacks (a sibling edit must not drop them).
-        updatedArgs: serializeArgFunctions(updatedArgs),
+        updatedArgs,
         options: { target: refId },
       });
     },
@@ -1211,20 +1206,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
       const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
-      const current = (ref?.index ?? store.getState().index)?.[id] as
-        | { args?: Args; initialArgs?: Args }
-        | undefined;
+      const transported = isTransportedChannelValue(this) || sourceType === 'external';
+      const current = api.getData(id, ref?.id);
+      const currentArgs = current?.type === 'story' ? current.args : undefined;
+      const currentInitialArgs = current?.type === 'story' ? current.initialArgs : undefined;
       const revive = createArgFunctionReviver();
       api.updateStory(
         id,
         {
           ...update,
-          // Function-valued args arrive as `{ __function__: { name } }` markers; the channel drops
-          // functions outright, which is why object args lose their function keys in Controls.
-          // One reviver for the pair: unchanged functions keep one identity across `args` and
-          // `initialArgs`, and successive events resolve against the stored value at each path.
-          args: revive.revive(update.args, current?.args),
-          initialArgs: revive.revive(update.initialArgs, current?.initialArgs),
+          args: transported ? revive.revive(update.args, currentArgs) : update.args,
+          initialArgs: transported
+            ? revive.revive(update.initialArgs, currentInitialArgs)
+            : update.initialArgs,
           prepared: true,
         },
         ref
@@ -1329,11 +1323,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       this: any,
       { storyId, args }: { storyId: StoryId; args: Args }
     ) {
-      const { ref } = getEventMetadata(this, fullAPI)!;
-      const current = (ref?.index ?? store.getState().index)?.[storyId] as
-        | { args?: Args }
-        | undefined;
-      api.updateStory(storyId, { args: reviveArgFunctions(args, current?.args) }, ref);
+      const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
+      const transported = isTransportedChannelValue(this) || sourceType === 'external';
+      const current = api.getData(storyId, ref?.id);
+      const currentArgs = current?.type === 'story' ? current.args : undefined;
+      api.updateStory(
+        storyId,
+        { args: transported ? reviveArgFunctions(args, currentArgs) : args },
+        ref
+      );
     }
   );
 

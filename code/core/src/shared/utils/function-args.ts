@@ -1,3 +1,5 @@
+import type { Args } from 'storybook/internal/types';
+
 /**
  * Functions cannot cross the channel: `telejson.stringify` drops function-typed values (as
  * `JSON.stringify` does), so any function nested in an args payload disappears before the other
@@ -30,9 +32,6 @@ const FUNCTION_MARKER = '__function__';
  */
 const ESCAPE_MARKER = '__sb_function_escape__';
 
-/** The channel serializes with telejson's default `maxDepth` of 25; never walk deeper than that. */
-const MAX_DEPTH = 25;
-
 type PlainObject = Record<string, unknown>;
 
 type Path = (string | number)[];
@@ -50,26 +49,21 @@ function hasOwn(value: object, key: string): boolean {
 }
 
 /**
- * Replaces every function in `value` (at any depth, up to the transport's max depth) with a
- * `{ __function__: { name } }` marker, and escapes marker-shaped plain objects. Returns a new
- * structure; the input is never mutated, because the preview keeps living references to these
- * args objects. Non-plain objects (class instances, Dates, RegExps, ...) are passed through
- * untouched and left to the transport, exactly as today.
+ * Replaces every function in `value` with a `{ __function__: { name } }` marker, and escapes
+ * marker-shaped plain objects. Returns a new structure; the input is never mutated, because the
+ * preview keeps living references to these args objects. Non-plain objects (class instances,
+ * Dates, RegExps, ...) are passed through untouched and left to the transport, exactly as today.
  */
-export function serializeArgFunctions<T>(value: T, depth = 0, seen = new WeakSet<object>()): T {
+function serializeNode(value: unknown, seen: WeakSet<object>): unknown {
   if (typeof value === 'function') {
-    const name = value.name;
-    return { [FUNCTION_MARKER]: { name: typeof name === 'string' ? name : '' } } as T;
+    return { [FUNCTION_MARKER]: { name: value.name } };
   }
-  if (depth >= MAX_DEPTH || seen.has(value as object)) {
+  if (value === null || typeof value !== 'object' || seen.has(value)) {
     return value;
   }
   if (Array.isArray(value)) {
     seen.add(value);
-    // `map` keeps sparse-array holes intact, unlike an index-by-index copy.
-    const copy = value.map((element) => serializeArgFunctions(element, depth + 1, seen)) as T;
-    // `seen` is the current ancestor chain, not every object visited: an object shared by two
-    // sibling paths is serialized at both, while a cycle still stops at the second visit.
+    const copy = value.map((element) => serializeNode(element, seen));
     seen.delete(value);
     return copy;
   }
@@ -79,15 +73,17 @@ export function serializeArgFunctions<T>(value: T, depth = 0, seen = new WeakSet
   seen.add(value);
   const copy: Record<string, unknown> = {};
   for (const key of Object.keys(value)) {
-    copy[key] = serializeArgFunctions(value[key], depth + 1, seen);
+    copy[key] = serializeNode(value[key], seen);
   }
   seen.delete(value);
   if (hasOwn(value, FUNCTION_MARKER) || hasOwn(value, ESCAPE_MARKER)) {
-    // User data that looks like a marker (or like the escape wrapper) must survive the round
-    // trip as data; brand it so the reviver takes the branch below instead of the marker branch.
-    return { [ESCAPE_MARKER]: copy } as T;
+    return { [ESCAPE_MARKER]: copy };
   }
-  return copy as T;
+  return copy;
+}
+
+export function serializeArgFunctions(value: unknown): unknown {
+  return serializeNode(value, new WeakSet());
 }
 
 /** A named empty function; `{ [name]: fn }[name]` gives the anonymous function its `name`. */
@@ -102,7 +98,7 @@ function namedFunction(name: string): () => void {
  * fresh reviver and regain stability by resolving against the stored value at each path.
  */
 export function createArgFunctionReviver(): {
-  revive<T>(value: T, current?: unknown): T;
+  revive(value: unknown, current?: Args): Args;
 } {
   const resolvedByPath = new Map<string, () => void>();
 
@@ -127,10 +123,9 @@ export function createArgFunctionReviver(): {
     current: unknown,
     path: Path,
     escaped: boolean,
-    depth: number,
     seen: WeakSet<object>
   ): unknown => {
-    if (depth >= MAX_DEPTH || value === null || typeof value !== 'object') {
+    if (value === null || typeof value !== 'object') {
       return value;
     }
     if (seen.has(value)) {
@@ -140,10 +135,8 @@ export function createArgFunctionReviver(): {
       seen.add(value);
       const currentArray = Array.isArray(current) ? current : undefined;
       const copy = value.map((element, index) =>
-        reviveNode(element, currentArray?.[index], [...path, index], false, depth + 1, seen)
+        reviveNode(element, currentArray?.[index], [...path, index], false, seen)
       );
-      // Ancestor chain, same as in `serializeArgFunctions`: sibling paths share nothing, cycles
-      // still stop at the second visit.
       seen.delete(value);
       return copy;
     }
@@ -157,10 +150,8 @@ export function createArgFunctionReviver(): {
       keys[0] === ESCAPE_MARKER &&
       isPlainObject(value[ESCAPE_MARKER])
     ) {
-      // Our escape wrapper: the object inside is literal user data, so its own `__function__` key
-      // must not be treated as a marker, while its children get normal codec treatment.
       seen.add(value);
-      const revived = reviveNode(value[ESCAPE_MARKER], current, path, true, depth + 1, seen);
+      const revived = reviveNode(value[ESCAPE_MARKER], current, path, true, seen);
       seen.delete(value);
       return revived;
     }
@@ -172,22 +163,15 @@ export function createArgFunctionReviver(): {
       current !== null && typeof current === 'object' ? (current as PlainObject) : undefined;
     const copy: Record<string, unknown> = {};
     for (const key of keys) {
-      copy[key] = reviveNode(
-        value[key],
-        currentObject?.[key],
-        [...path, key],
-        false,
-        depth + 1,
-        seen
-      );
+      copy[key] = reviveNode(value[key], currentObject?.[key], [...path, key], false, seen);
     }
     seen.delete(value);
     return copy;
   };
 
   return {
-    revive: <T>(value: T, current?: unknown): T =>
-      reviveNode(value, current, [], false, 0, new WeakSet()) as T,
+    revive: (value: unknown, current?: Args): Args =>
+      reviveNode(value, current, [], false, new WeakSet()) as Args,
   };
 }
 
@@ -196,6 +180,6 @@ export function createArgFunctionReviver(): {
  * against `current` (the value stored at the same path) when it is a function with the same
  * name. Returns a new structure; the input is never mutated.
  */
-export function reviveArgFunctions<T>(value: T, current?: unknown): T {
+export function reviveArgFunctions(value: unknown, current?: Args): Args {
   return createArgFunctionReviver().revive(value, current);
 }

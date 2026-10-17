@@ -1,3 +1,4 @@
+import { isTransportedChannelValue } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/client-logger';
 import {
   CONFIG_ERROR,
@@ -54,6 +55,7 @@ import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
+import { createArgFunctionReviver, reviveArgFunctions } from '../../shared/utils/function-args.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
@@ -1193,7 +1195,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
       const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
-      api.updateStory(id, { ...update, prepared: true }, ref);
+      const transported = isTransportedChannelValue(this) || sourceType === 'external';
+      const current = api.getData(id, ref?.id);
+      const currentArgs = current?.type === 'story' ? current.args : undefined;
+      const currentInitialArgs = current?.type === 'story' ? current.initialArgs : undefined;
+      const revive = createArgFunctionReviver();
+      api.updateStory(
+        id,
+        {
+          ...update,
+          args: transported ? revive.revive(update.args, currentArgs) : update.args,
+          initialArgs: transported
+            ? revive.revive(update.initialArgs, currentInitialArgs)
+            : update.initialArgs,
+          prepared: true,
+        },
+        ref
+      );
 
       if (!ref) {
         if (!store.getState().hasCalledSetOptions) {
@@ -1294,8 +1312,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       this: any,
       { storyId, args }: { storyId: StoryId; args: Args }
     ) {
-      const { ref } = getEventMetadata(this, fullAPI)!;
-      api.updateStory(storyId, { args }, ref);
+      const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
+      const transported = isTransportedChannelValue(this) || sourceType === 'external';
+      const current = api.getData(storyId, ref?.id);
+      const currentArgs = current?.type === 'story' ? current.args : undefined;
+      api.updateStory(
+        storyId,
+        { args: transported ? reviveArgFunctions(args, currentArgs) : args },
+        ref
+      );
     }
   );
 

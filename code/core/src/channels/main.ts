@@ -1,3 +1,6 @@
+import { STORY_ARGS_UPDATED, STORY_PREPARED, UPDATE_STORY_ARGS } from '../core-events/index.ts';
+import { serializeArgFunctions } from '../shared/utils/function-args.ts';
+
 import type {
   ChannelArgs,
   ChannelArgsMulti,
@@ -8,6 +11,30 @@ import type {
   EventsKeyValue,
   Listener,
 } from './types.ts';
+const transportedValues = new WeakSet<object>();
+
+const argFieldsByEvent: Record<string, string[]> = {
+  [STORY_PREPARED]: ['args', 'initialArgs'],
+  [STORY_ARGS_UPDATED]: ['args'],
+  [UPDATE_STORY_ARGS]: ['updatedArgs'],
+};
+
+const serializeEventArgs = (event: ChannelEvent): ChannelEvent => {
+  const fields = argFieldsByEvent[event.type];
+  const payload = event.args[0];
+  if (!fields || payload === null || typeof payload !== 'object') {
+    return event;
+  }
+
+  const serialized = { ...payload };
+  for (const field of fields) {
+    serialized[field] = serializeArgFunctions(payload[field]);
+  }
+  return { ...event, args: [serialized, ...event.args.slice(1)] };
+};
+
+export const isTransportedChannelValue = (value: unknown): boolean =>
+  value !== null && typeof value === 'object' && transportedValues.has(value);
 
 const isMulti = (args: ChannelArgs): args is ChannelArgsMulti => {
   // @ts-expect-error (we guard against this right here)
@@ -35,18 +62,14 @@ export class Channel implements ChannelLike {
   constructor(input: ChannelArgs = {}) {
     this.isAsync = input.async || false;
 
-    if (isMulti(input)) {
-      this.transports = input.transports || [];
+    this.transports = isMulti(input)
+      ? input.transports || []
+      : input.transport
+        ? [input.transport]
+        : [];
 
-      this.transports.forEach((t) => {
-        t.setHandler((event) => this.handleEvent(event));
-      });
-    } else {
-      this.transports = input.transport ? [input.transport] : [];
-    }
-
-    this.transports.forEach((t) => {
-      t.setHandler((event) => this.handleEvent(event));
+    this.transports.forEach((transport) => {
+      transport.setHandler((event) => this.handleEvent(event, true));
     });
   }
 
@@ -67,8 +90,9 @@ export class Channel implements ChannelLike {
     }
 
     const handler = () => {
-      this.transports.forEach((t) => {
-        t.send(event, options);
+      const transportedEvent = serializeEventArgs(event);
+      this.transports.forEach((transport) => {
+        transport.send(transportedEvent, options);
       });
       this.handleEvent(event);
     };
@@ -131,10 +155,18 @@ export class Channel implements ChannelLike {
    * Deliver an event to local listeners without sending it to this channel's transports.
    */
   receive(event: ChannelEvent) {
-    this.handleEvent(event);
+    this.handleEvent(event, true);
   }
 
-  private handleEvent(event: ChannelEvent) {
+  private handleEvent(event: ChannelEvent, transported = false) {
+    if (transported) {
+      transportedValues.add(event);
+      event.args?.forEach((value) => {
+        if (value !== null && typeof value === 'object') {
+          transportedValues.add(value);
+        }
+      });
+    }
     const listeners = this.listeners(event.type);
     if (listeners && listeners.length) {
       listeners.forEach((fn) => {

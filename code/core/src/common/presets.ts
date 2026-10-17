@@ -1,5 +1,8 @@
 import { logger } from 'storybook/internal/node-logger';
-import { CriticalPresetLoadError } from 'storybook/internal/server-errors';
+import {
+  CommonJsGlobalInEsmError,
+  CriticalPresetLoadError,
+} from 'storybook/internal/server-errors';
 import type {
   BuilderOptions,
   CLIOptions,
@@ -19,6 +22,7 @@ import { dedent } from 'ts-dedent';
 
 import type { ChannelLike } from '../channels/index.ts';
 import { importModule, safeResolveModule } from '../shared/utils/module.ts';
+import { toCommonJsGlobalInEsmError } from './utils/cjs-global-in-esm.ts';
 import { getInterpretedFile } from './utils/interpret-files.ts';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path.ts';
 import { validateConfigurationFiles } from './utils/validate-configuration-files.ts';
@@ -255,11 +259,22 @@ export async function loadPreset(
       ${input} is not a valid preset
     `);
   } catch (error: any) {
+    // Keep a migration error from a nested preset as-is instead of relabeling it below.
+    if (error instanceof CommonJsGlobalInEsmError) {
+      throw error;
+    }
+    // A CommonJS global in an ESM config/preset file is a migration problem, not a broken setup,
+    // so it gets its own error with guidance instead of the generic preset failure.
+    const cjsGlobalError = toCommonJsGlobalInEsmError(error, { location: presetName });
+
     if (storybookOptions?.isCritical) {
-      throw new CriticalPresetLoadError({
-        error,
-        presetName,
-      });
+      throw (
+        cjsGlobalError ??
+        new CriticalPresetLoadError({
+          error,
+          presetName,
+        })
+      );
     }
 
     const warning =
@@ -268,7 +283,7 @@ export async function loadPreset(
         : `  Failed to load preset: ${JSON.stringify(input)}`;
 
     logger.warn(warning);
-    logger.error(error);
+    logger.error(cjsGlobalError ?? error);
     return [];
   }
 }
@@ -306,7 +321,7 @@ function applyPresets(
     return presetResult;
   }
 
-  return presets.reduce((accumulationPromise: Promise<unknown>, { preset, options }) => {
+  return presets.reduce((accumulationPromise: Promise<unknown>, { name, preset, options }) => {
     const change = preset[extension];
 
     if (!change) {
@@ -329,9 +344,15 @@ function applyPresets(
         },
       };
 
-      return accumulationPromise.then((newConfig) =>
-        extensionFn.call(context.preset, newConfig, context.combinedOptions)
-      );
+      return accumulationPromise.then(async (newConfig) => {
+        try {
+          return await extensionFn.call(context.preset, newConfig, context.combinedOptions);
+        } catch (error) {
+          // A CommonJS global used only inside a hook throws here when the hook runs, not while
+          // loading the file, so it is not covered by the loader's polyfill.
+          throw toCommonJsGlobalInEsmError(error, { location: name, hook: extension }) ?? error;
+        }
+      });
     }
 
     return accumulationPromise.then((newConfig) => {

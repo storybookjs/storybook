@@ -226,7 +226,7 @@ describe('extractMockCalls', () => {
         `import 'a';\r\n\r\nsb.mock(import('./bar/baz'), { spy: true });\r\n`,
         'preview.ts'
       );
-      expect(result.code).toBe(`import 'a';\n\nsb.mock("./bar/baz", { spy: true });\n`);
+      expect(result.code).toBe(`import 'a';\r\n\r\nsb.mock("./bar/baz", { spy: true });\r\n`);
     });
 
     it('names the file in the map and returns no map when nothing changed', () => {

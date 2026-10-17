@@ -70,7 +70,7 @@ describe('ConfigFile mutations', () => {
     }
   );
 
-  it('infers quotes and prints LF output for CRLF sources', () => {
+  it('infers quotes and keeps the line endings of CRLF sources', () => {
     const source = [
       "import { definePreview } from '@storybook/react';",
       '',
@@ -79,12 +79,13 @@ describe('ConfigFile mutations', () => {
     const config = loadConfig(source).parse();
     expect(config.set(['tags'], ['autodocs']).ok).toBe(true);
 
-    const result = printConfig(config);
-    expect(result.code).not.toContain('\r');
-    // Freshly generated nodes must reuse the source's quote style, which is
-    // only inferable when token offsets align with the original code.
-    expect(result.code).toContain("'autodocs'");
-    expect(result.code).not.toContain('"autodocs"');
+    expect(printConfig(config).code).toBe(
+      [
+        "import { definePreview } from '@storybook/react';",
+        '',
+        "export default definePreview({ tags: ['autodocs'] });",
+      ].join('\r\n')
+    );
   });
 
   it('keeps an empty parent that shadows an earlier spread', () => {

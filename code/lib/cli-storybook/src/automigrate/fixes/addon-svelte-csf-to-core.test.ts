@@ -247,7 +247,7 @@ describe('addon-svelte-csf-to-core', () => {
       expect(files[STORY]).toContain("import { defineMeta } from '@storybook/sveltekit';");
     });
 
-    it('merges imports in a CRLF file and writes it with LF line endings', async () => {
+    it('merges imports in a CRLF file and writes it with CRLF line endings', async () => {
       write(
         STORY,
         "<script module>\r\n  import { defineMeta } from '@storybook/addon-svelte-csf';\r\n  import { type StoryObj } from '@storybook/sveltekit';\r\n</script>\r\n"
@@ -256,7 +256,7 @@ describe('addon-svelte-csf-to-core', () => {
       const files = await migrate();
 
       expect(files[STORY]).toBe(
-        "<script module>\n  import { defineMeta, type StoryObj } from '@storybook/sveltekit';\n</script>\n"
+        "<script module>\r\n  import { defineMeta, type StoryObj } from '@storybook/sveltekit';\r\n</script>\r\n"
       );
     });
 

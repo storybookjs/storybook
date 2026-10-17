@@ -77,7 +77,7 @@ describe('createFixFiles', () => {
     ).toEqual([story]);
   });
 
-  it('reads a CRLF file with LF line endings, so only a real edit rewrites it', async () => {
+  it('reads a CRLF file with LF line endings and writes it back with CRLF', async () => {
     const { files, commit } = createFixFiles();
     fs.writeFileSync(main, "export default {\r\n  addons: ['a'],\r\n};\r\n");
 
@@ -86,7 +86,7 @@ describe('createFixFiles', () => {
     await commit();
 
     expect(fs.readFileSync(main, 'utf8')).toBe(
-      "export default {\n  addons: ['a'],\n  framework: 'x',\n};\n"
+      "export default {\r\n  addons: ['a'],\r\n  framework: 'x',\r\n};\r\n"
     );
   });
 

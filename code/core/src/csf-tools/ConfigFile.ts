@@ -1204,8 +1204,8 @@ export const formatConfig = (config: ConfigFile): string => {
 };
 
 /**
- * Print the config with its edits and `\n` line endings; untouched code is otherwise preserved
- * byte for byte.
+ * Print the config with its edits. Untouched code is preserved byte for byte, and a file whose
+ * first line ends in CRLF is printed with CRLF line endings.
  */
 export const printConfig = (config: ConfigFile): PrintResultType => {
   const code = config._editor.toString();

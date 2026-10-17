@@ -21,7 +21,7 @@ beforeEach(() => {
 });
 
 describe('writeCsf', () => {
-  it('writes an edited CRLF file back to the file it was loaded from, with LF', async () => {
+  it('writes an edited CRLF file back to the file it was loaded from, with CRLF', async () => {
     const csf = loadCsf(source, { fileName, makeTitle: (title) => title ?? 'Untitled' }).parse();
     const [story] = csf.objects({ meta: false });
     story.set(['args', 'label'], 'Hi');
@@ -29,7 +29,7 @@ describe('writeCsf', () => {
     await writeCsf(csf);
 
     expect(fs.readFileSync(fileName, 'utf8')).toBe(
-      "export default { title: 'Button' };\nexport const Primary = { args: { label: 'Hi' } };\n"
+      "export default { title: 'Button' };\r\nexport const Primary = { args: { label: 'Hi' } };\r\n"
     );
   });
 });

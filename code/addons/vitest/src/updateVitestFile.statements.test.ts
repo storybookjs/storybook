@@ -158,13 +158,13 @@ describe('updateConfigFile statements', () => {
     `);
   });
 
-  it('writes a CRLF config with LF line endings', () => {
+  it('writes a CRLF config with CRLF line endings', () => {
     const code = update(
       `import react from '@vitejs/plugin-react';\r\nexport default defineConfig({ test: {} });\r\n`
     );
 
     expect(code).toContain('const dirname');
-    expect(code).not.toContain('\r');
+    expect(code.replaceAll('\r\n', '')).not.toMatch(/[\r\n]/);
   });
 
   it.each([

@@ -345,7 +345,7 @@ describe('edit hooks', () => {
     expect(outcomes.get('b')).toEqual({ changed: [mainConfigPath], errors: [] });
   });
 
-  it('sees no change in a CRLF file that an edit leaves alone, and writes LF when it changes it', async () => {
+  it('sees no change in a CRLF file that an edit leaves alone, and keeps CRLF when it changes it', async () => {
     vol.fromJSON({ [mainConfigPath]: 'export default {\r\n  features: {},\r\n};\r\n' });
     const untouched = { filter: { kind: ['main'] as const }, editConfig: () => {} };
 
@@ -356,7 +356,7 @@ describe('edit hooks', () => {
 
     expect(detection.get('noop')).toEqual({ changed: [], errors: [] });
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe(
-      'export default {\n  features: { a: true },\n};\n\n// formatted'
+      'export default {\r\n  features: { a: true },\r\n};\r\n\n// formatted'
     );
   });
 

@@ -79,6 +79,15 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
 export const normalizeLineEndings = (code: string) => code.replace(/\r\n?/g, '\n');
 
 /**
+ * Give `\n` code the line endings of the code it was normalized from: CRLF when the first line
+ * break of `original` is one, as Prettier's `endOfLine: 'auto'` decides.
+ */
+export const restoreLineEndings = (code: string, original: string) => {
+  const lineBreak = original.indexOf('\n');
+  return lineBreak > 0 && original[lineBreak - 1] === '\r' ? code.replaceAll('\n', '\r\n') : code;
+};
+
+/**
  * Parse a module. Without a TS or JS file extension there is no grammar to pick: TSX accepts the
  * most, but rejects generic arrows and `<T>value` assertions that `.ts` allows, so TS is tried next
  * and the error of the parse that got further is reported.

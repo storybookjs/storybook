@@ -1152,7 +1152,7 @@ describe('ConfigFile', () => {
   });
 
   describe('quote inference under EOL reconstruction', () => {
-    it('infers quotes and prints LF output for CRLF sources', () => {
+    it('infers quotes and keeps the line endings of CRLF sources', () => {
       const source = [
         "import { addons } from 'storybook/manager-api';",
         '',
@@ -1161,10 +1161,13 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
       config.set(['tags'], ['autodocs']);
 
-      const printed = printConfig(config).code;
-      expect(printed).not.toContain('\r');
-      expect(printed).toContain("'autodocs'");
-      expect(printed).not.toContain('"autodocs"');
+      expect(printConfig(config).code).toBe(
+        [
+          "import { addons } from 'storybook/manager-api';",
+          '',
+          "export const tags = ['autodocs'];",
+        ].join('\r\n')
+      );
     });
   });
 

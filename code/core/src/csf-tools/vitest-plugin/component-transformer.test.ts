@@ -355,13 +355,13 @@ describe('component transformer', () => {
     `);
   });
 
-  it('writes a CRLF component file and its generated tests with LF line endings', async () => {
+  it('writes a CRLF component file and its generated tests with CRLF line endings', async () => {
     const code = `export const Badge = () => <div />;\r\nexport default () => <span />;`;
 
     const result = await transform({ code });
 
     expect(result.code).toContain('_test("Badge"');
-    expect(result.code).not.toContain('\r');
+    expect(result.code.replaceAll('\r\n', '')).not.toMatch(/[\r\n]/);
   });
 
   it('correctly handles aliased function and class exports', async () => {

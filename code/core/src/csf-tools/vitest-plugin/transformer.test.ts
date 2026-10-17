@@ -49,13 +49,13 @@ const transform = async ({
 };
 
 describe('transformer', () => {
-  it('writes a CRLF story file and its generated tests with LF line endings', async () => {
+  it('writes a CRLF story file and its generated tests with CRLF line endings', async () => {
     const code = `export default { title: 'Button' };\r\nexport const Primary = {};`;
 
     const result = await transform({ code });
 
     expect(result.code).toContain('_test("Primary"');
-    expect(result.code).not.toContain('\r');
+    expect(result.code.replaceAll('\r\n', '')).not.toMatch(/[\r\n]/);
   });
 
   describe('CSF v1/v2/v3', () => {

@@ -26,6 +26,7 @@ export {
   outerSpan,
   parseModule,
   placeableTextOf,
+  restoreLineEndings,
   staticKey,
   textOf,
   unwrapExpression,

@@ -10,6 +10,7 @@ import {
   loadCsf,
   normalizeLineEndings,
   printCsf,
+  restoreLineEndings,
 } from 'storybook/internal/csf-tools';
 
 import { createFixFiles } from './fix-files.ts';
@@ -221,7 +222,7 @@ export const runTransforms = async (
       continue;
     }
 
-    // Printers emit `\n`, so a CRLF file would otherwise always look changed.
+    // Hooks chain on `\n` text, whatever the file uses; its line endings come back on write.
     const source = normalizeLineEndings(raw);
     let code = source;
     // Kept across consecutive edits; dropped when a handler rewrites the text or an edit fails, so
@@ -257,7 +258,8 @@ export const runTransforms = async (
 
     if (write && code !== source) {
       try {
-        const output = printed ? await formatExistingFile(context.id, code) : code;
+        const restored = restoreLineEndings(code, raw);
+        const output = printed ? await formatExistingFile(context.id, restored) : restored;
         await writeFile(context.id, output);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {

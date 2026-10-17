@@ -36,7 +36,7 @@ const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) =
 };
 
 describe('CsfFile', () => {
-  it('prints an edited CRLF source with LF line endings', () => {
+  it('prints an edited CRLF source with CRLF line endings', () => {
     const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
       '\r\n'
     );
@@ -44,7 +44,7 @@ describe('CsfFile', () => {
     const [story] = csf.objects({ meta: false });
     story.set(['args', 'label'], 'Hi');
     expect(printCsf(csf).code).toBe(
-      'export default { title: "foo/bar" };\n\nexport const Story = { args: { label: "Hi" } };'
+      'export default { title: "foo/bar" };\r\n\r\nexport const Story = { args: { label: "Hi" } };'
     );
   });
 

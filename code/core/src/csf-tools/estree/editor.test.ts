@@ -334,7 +334,7 @@ describe('removeFromList', () => {
       const array = (editor.program.body[0] as E.ExportDefaultDeclaration)
         .declaration as E.ArrayExpression;
       removeFromList(editor, arrayList(editor, array), array.elements.slice(1, 3) as E.Node[]);
-      expect(editor.toString()).toBe(`export default [1, /* k */ // k\n 4,\n];`);
+      expect(editor.toString()).toBe(`export default [1, /* k */ // k${eol} 4,${eol}];`);
     }
   );
 });
@@ -417,7 +417,7 @@ describe('removeStatement', () => {
       "import a from 'a';\r\n\r\n\r\nconst b = 1;\r\nconst c = 2;\r\n"
     );
     removeStatement(editor, editor.program.body[1]);
-    expect(editor.toString()).toBe("import a from 'a';\nconst c = 2;\n");
+    expect(editor.toString()).toBe("import a from 'a';\r\nconst c = 2;\r\n");
   });
 
   it('removes every comment that trails the statement on its line', () => {
@@ -746,13 +746,31 @@ describe('parenthesized default exports', () => {
 });
 
 describe('line endings', () => {
-  it.each(['\r\n', '\r'])('prints a file with %j line endings with LF only', (eol) => {
+  const edited = (eol: string) => {
     const csf = parse(['export default {', '  title: "A",', '};', ''].join(eol));
     const [meta] = csf.objects({ stories: false });
     meta.set(['parameters', 'layout'], 'centered');
-    expect(csf._editor.toString()).toBe(
-      'export default {\n  title: "A",\n  parameters: { layout: "centered" },\n};\n'
-    );
+    return csf._editor.toString();
+  };
+  const expected = [
+    'export default {',
+    '  title: "A",',
+    '  parameters: { layout: "centered" },',
+    '};',
+    '',
+  ];
+
+  it('prints a CRLF file with CRLF line endings, edits included', () => {
+    expect(edited('\r\n')).toBe(expected.join('\r\n'));
+  });
+
+  it('prints a file with lone CR line endings with LF', () => {
+    expect(edited('\r')).toBe(expected.join('\n'));
+  });
+
+  it('takes the line ending of the first line for a file that mixes them', () => {
+    const editor = new SourceEditor('const a = 1;\r\nconst b = 2;\nconst c = 3;\n');
+    expect(editor.toString()).toBe('const a = 1;\r\nconst b = 2;\r\nconst c = 3;\r\n');
   });
 });
 

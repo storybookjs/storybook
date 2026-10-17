@@ -7,6 +7,7 @@ import {
   formatConfig,
   loadConfig,
   normalizeLineEndings,
+  restoreLineEndings,
 } from 'storybook/internal/csf-tools';
 
 import { editParsedFile } from './helpers/edit-parsed-file.ts';
@@ -26,7 +27,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  * refuses to overwrite a file that something else (such as `add()`) changed after the fix read it.
  */
 export interface FixFiles {
-  /** Read a file with `\n` line endings, including edits staged earlier by the same fix. */
+  /**
+   * Read a file with `\n` line endings, including edits staged earlier by the same fix. The commit
+   * writes the file back with the line endings it had.
+   */
   read(path: string): Promise<string>;
   /** Stage the complete contents of a file. */
   write(path: string, content: string): void;
@@ -141,8 +145,11 @@ export const createFixFiles = () => {
         `These files changed on disk after the migration read them, so nothing was written:\n${overwritten.join('\n')}`
       );
     }
-    for (const { path, content } of staged.values()) {
-      await (content === null ? unlink(path) : writeFile(path, content));
+    for (const [key, { path, content }] of staged) {
+      const original = originals.get(key);
+      await (content === null
+        ? unlink(path)
+        : writeFile(path, original ? restoreLineEndings(content, original) : content));
     }
   };
 

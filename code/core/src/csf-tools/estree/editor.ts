@@ -15,6 +15,7 @@ import {
   outerSpan,
   parseModule,
   parsePrintable,
+  restoreLineEndings,
   sourceOf,
   walk,
 } from './ast.ts';
@@ -48,7 +49,7 @@ export type InputSourceMap =
  * byte-identical; `commit()` applies them, parses the result again and calls `onCommit`, so whoever
  * derived state from the old tree derives it again. Nodes of an earlier parse index code that is
  * gone: `source()` and the editing functions throw for them. Line endings are normalized to `\n`,
- * so `code`, node offsets and `toString()` all use `\n`.
+ * so `code`, node offsets and `edits` use `\n`; `toString()` restores CRLF for a CRLF file.
  */
 export class SourceEditor {
   _module: ParsedModule;
@@ -213,7 +214,7 @@ export class SourceEditor {
   }
 
   toString() {
-    return this._edits.toString();
+    return restoreLineEndings(this._edits.toString(), this._originalCode);
   }
 
   /** Quote for generated strings: the one most string literals of the file use. */

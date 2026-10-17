@@ -200,6 +200,20 @@ describe('updateConfigFile statements', () => {
     expect(code).toContain("path.join(import.meta.dirname, '.storybook')");
   });
 
+  it('reuses a default import of path written as a named import', async () => {
+    const target = new SourceEditor(dedent`
+      import { default as path } from 'node:path';
+      export default defineConfig({ test: {} });
+    `);
+
+    expect(updateConfigFile(await realTemplate(), target)).toBe(true);
+    const code = target.toString();
+    expect(code.match(/^import .* from '(node:)?path';$/gm)).toEqual([
+      "import { default as path } from 'node:path';",
+    ]);
+    expect(code).toContain("path.join(import.meta.dirname, '.storybook')");
+  });
+
   it('adds the path import next to named imports from node:path', async () => {
     const target = new SourceEditor(dedent`
       import { join } from 'node:path';

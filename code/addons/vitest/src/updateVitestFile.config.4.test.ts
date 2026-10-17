@@ -1164,6 +1164,465 @@ describe('updateConfigFile', () => {
     `);
   });
 
+  it('appends storybook project when test.projects is bound to an identifier', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      const workspaceProjects = [
+        { extends: true, test: { name: 'client' } },
+        { extends: true, test: { name: 'server' } },
+      ]
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: workspaceProjects,
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the reference is statically proven to be an
+    // array, so it spreads plain and the storybook project is a sibling entry in the same
+    // array. Wrapping the reference inside a project entry would bury it: a `projects` key
+    // inside a project entry is not a project list, so the original list would stop applying.
+    expect(after).toContain('projects: [...workspaceProjects, {');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { defineConfig } from 'vitest/config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const workspaceProjects = [{
+          extends: true,
+          test: {
+            name: 'client'
+      ...
+        export default defineConfig({
+          test: {
+            globals: true,
+        
+      -     projects: workspaceProjects
+      - 
+      +     projects: [...workspaceProjects, {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });"
+    `);
+  });
+
+  it('appends storybook project when test.projects is a computed expression', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { getWorkspaceProjects } from './vitest.projects'
+
+      export default {
+        test: {
+          globals: true,
+          projects: getWorkspaceProjects(),
+        },
+      }
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — a call result cannot be statically proven
+    // non-nullish, so the spread coalesces to an `{ extends: true }` project that reproduces
+    // the root config: in Vitest 5 an absent list means "no workspace, root config runs as the
+    // default project", and an empty-array fallback would instead declare an empty workspace
+    // that silently stops the user's own tests. The storybook project is a sibling entry in
+    // the same array.
+    expect(after).toContain('projects: [...(getWorkspaceProjects() ?? [{');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { getWorkspaceProjects } from './vitest.projects';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { defineConfig } from 'vitest/config';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        export default {
+          test: {
+            globals: true,
+        
+      -     projects: getWorkspaceProjects()
+      - 
+      +     projects: [...(getWorkspaceProjects() ?? [{
+      +       extends: true
+      +     }]), {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        };"
+    `);
+  });
+
+  it('appends storybook project when a mergeConfig export binds test.projects to an identifier', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { mergeConfig, defineConfig } from 'vitest/config'
+      import viteConfig from './vite.config'
+
+      const workspaceProjects = [
+        { extends: true, test: { name: 'client' } },
+      ]
+
+      export default mergeConfig(
+        viteConfig,
+        defineConfig({
+          test: {
+            projects: workspaceProjects,
+          },
+        })
+      )
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the reference is statically proven to be an
+    // array, so it spreads plain and the storybook project is a sibling entry in the same array
+    expect(after).toContain('projects: [...workspaceProjects, {');
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { mergeConfig, defineConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const workspaceProjects = [{
+          extends: true,
+          test: {
+            name: 'client'
+          }
+        }];
+        export default mergeConfig(viteConfig, defineConfig({
+          test: {
+        
+      -     projects: workspaceProjects
+      - 
+      +     projects: [...workspaceProjects, {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        }));"
+    `);
+  });
+
+  it('appends storybook project when test.projects is a single string glob', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: './packages/*/vitest.config.ts',
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — the original glob keeps applying as a string
+    // entry and the storybook project is a sibling entry in the same array
+    expect(after).toContain("projects: ['./packages/*/vitest.config.ts', {");
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { defineConfig } from 'vitest/config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        export default defineConfig({
+          test: {
+            globals: true,
+        
+      -     projects: './packages/*/vitest.config.ts'
+      - 
+      +     projects: ['./packages/*/vitest.config.ts', {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });"
+    `);
+  });
+
+  it('appends storybook project when test.projects is a template-literal glob', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: \`./packages/*/vitest.config.ts\`,
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — a template-literal glob wraps into a
+    // single-entry array exactly like a string literal, keeping the glob applying with the
+    // storybook project as a sibling. Without this arm the template literal would fall
+    // through to the spread and become one entry per character.
+    expect(after).toContain('projects: [`./packages/*/vitest.config.ts`, {');
+  });
+
+  it('appends storybook project when test.projects is conditionally undefined', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      import { defineConfig } from 'vitest/config'
+
+      const workspaceProjects = [
+        { extends: true, test: { name: 'client' } },
+      ]
+
+      export default defineConfig({
+        test: {
+          globals: true,
+          projects: process.env.CI ? workspaceProjects : undefined,
+        },
+      })
+    `);
+
+    const before = babel.generate(target).code;
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const after = babel.generate(target).code;
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly — an absent project list must not be spread
+    // bare (spreading undefined throws) and must not degrade to `[]` either: in Vitest 5 an
+    // undefined list means "no workspace", so the root config runs as the default project,
+    // while an empty array declares an empty workspace and silently stops the user's own
+    // tests. The `{ extends: true }` fallback reproduces the root project, keeping the
+    // user's tests and the storybook project both running outside CI.
+    expect(after).toContain(
+      'projects: [...((process.env.CI ? workspaceProjects : undefined) ?? [{'
+    );
+
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  import { defineConfig } from 'vitest/config';
+        
+      + import path from 'node:path';
+      + import { fileURLToPath } from 'node:url';
+      + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      + import { playwright } from '@vitest/browser-playwright';
+      + const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+      + 
+      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      + 
+        const workspaceProjects = [{
+          extends: true,
+          test: {
+            name: 'client'
+      ...
+        export default defineConfig({
+          test: {
+            globals: true,
+        
+      -     projects: process.env.CI ? workspaceProjects : undefined
+      - 
+      +     projects: [...((process.env.CI ? workspaceProjects : undefined) ?? [{
+      +       extends: true
+      +     }]), {
+      +       extends: true,
+      +       plugins: [
+      +       // The plugin will run tests for the stories defined in your Storybook config
+      +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+      +       storybookTest({
+      +         configDir: path.join(dirname, '.storybook')
+      +       })],
+      +       test: {
+      +         name: 'storybook',
+      +         browser: {
+      +           enabled: true,
+      +           headless: true,
+      +           provider: playwright({}),
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
+      +         }
+      +       }
+      +     }]
+      + 
+          }
+        });"
+    `);
+  });
+
   it('extracts coverage config and keeps it at top level when using workspace', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.4.template', {

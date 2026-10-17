@@ -10,6 +10,10 @@ import type ts from 'typescript';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import {
+  loadTypeScript as loadTypeScriptCompilerApi,
+  shareReactDocgenTypescript,
+} from './componentMeta/loadTypeScript.ts';
 import { asyncCache, cached, findTsconfigPath } from './utils.ts';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
@@ -21,10 +25,17 @@ let typeScriptPromise: Promise<TypeScriptRuntime> | undefined;
 let reactDocgenTypescriptPromise: Promise<ReactDocgenTypescriptRuntime> | undefined;
 
 const loadTypeScript = () =>
-  (typeScriptPromise ??= import('typescript').then((ts) => ts.default ?? ts));
+  (typeScriptPromise ??= loadTypeScriptCompilerApi().then((typescript) => {
+    if (!typescript) {
+      throw new Error('react-docgen-typescript needs a TypeScript version with the compiler API.');
+    }
+    return typescript;
+  }));
 
 const loadReactDocgenTypescript = () =>
-  (reactDocgenTypescriptPromise ??= import('react-docgen-typescript'));
+  (reactDocgenTypescriptPromise ??= shareReactDocgenTypescript().then(
+    () => import('react-docgen-typescript')
+  ));
 
 /**
  * Auto-detect bulk props contributed by a single non-user source file and filter them out.

@@ -11,6 +11,8 @@ import type {
 } from 'react-docgen';
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
+import { loadTypeScript } from '../componentMeta/loadTypeScript.ts';
+
 export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
 
 export type GetArgTypesDataOptions = {
@@ -129,8 +131,10 @@ export function mapCommonTypes(typeName: string): SBType | null {
 
 export const getTsConfig = async (componentFilePath?: string) => {
   try {
-    const imported = await import('typescript');
-    const ts = imported.default ?? imported;
+    const ts = await loadTypeScript();
+    if (!ts) {
+      return {};
+    }
     const tsconfigPath = componentFilePath
       ? findTsconfigPathForFile(dirname(componentFilePath), componentFilePath)
       : ts.findConfigFile(process.cwd(), ts.sys.fileExists);

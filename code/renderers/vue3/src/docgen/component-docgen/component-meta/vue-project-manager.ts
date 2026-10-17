@@ -16,7 +16,7 @@
  *   does not resolve tsconfig project references.
  */
 import { readFileSync, statSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, posix } from 'node:path';
 
 import { getProjectRoot, slash } from 'storybook/internal/common';
 import {
@@ -26,9 +26,18 @@ import {
   type FileChange,
 } from 'storybook/internal/component-meta';
 
-import { createParsedCommandLine, getAllExtensions } from '@vue/language-core';
+import {
+  type ParsedCommandLine as VueParsedCommandLine,
+  type VueCompilerOptions,
+  createParsedCommandLine,
+  createParsedCommandLineByJson,
+  getAllExtensions,
+} from '@vue/language-core';
 import type ts from 'typescript';
 import { type ComponentMetaChecker, createChecker, createCheckerByJson } from 'vue-component-meta';
+import type { createCheckerBase } from 'vue-component-meta/lib/checker.js';
+
+export type CreateCheckerBase = typeof createCheckerBase;
 
 import { CHECKER_OPTIONS } from './component-meta.ts';
 
@@ -196,37 +205,99 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
   }
 }
 
+const vueFileExtensions = (typescript: typeof ts, vueOptions: VueCompilerOptions) =>
+  getAllExtensions(vueOptions).map((extension) => ({
+    extension: extension.slice(1),
+    isMixedContent: true,
+    scriptKind: typescript.ScriptKind.Deferred,
+  }));
+
+/**
+ * Mirrors vue-component-meta's own config loading
+ *
+ * Matching the checker's recipe exactly means the manager matches files against the same set the
+ * checker's program will contain — a plain TS parse would never list `.vue` files and every SFC
+ * would fall through direct-include matching.
+ *
+ * @see https://github.com/vuejs/language-tools/blob/v3.3.2/packages/component-meta/index.ts — the
+ *   two-step parse this reproduces.
+ * @see https://github.com/vuejs/language-tools/blob/v3.3.8/packages/language-core/lib/compilerOptions.ts
+ *   — `createParsedCommandLine` and its `readDirectory` stub.
+ */
+function readVueTsconfig(
+  typescript: typeof ts,
+  tsconfig: string
+): [commandLine: VueParsedCommandLine, fileNames: string[]] {
+  const commandLine = createParsedCommandLine(typescript, typescript.sys, tsconfig);
+  const { fileNames } = typescript.parseJsonSourceFileConfigFileContent(
+    typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile),
+    typescript.sys,
+    dirname(tsconfig),
+    {},
+    tsconfig,
+    undefined,
+    vueFileExtensions(typescript, commandLine.vueOptions)
+  );
+  return [commandLine, fileNames];
+}
+
+function readInferredConfig(
+  typescript: typeof ts,
+  rootDir: string
+): [commandLine: VueParsedCommandLine, fileNames: string[]] {
+  const json = { compilerOptions: INFERRED_COMPILER_OPTIONS, include: [] };
+  const commandLine = createParsedCommandLineByJson(typescript, typescript.sys, rootDir, json);
+  const { fileNames } = typescript.parseJsonConfigFileContent(
+    json,
+    typescript.sys,
+    rootDir,
+    {},
+    undefined,
+    undefined,
+    vueFileExtensions(typescript, commandLine.vueOptions)
+  );
+  return [commandLine, fileNames];
+}
+
 function createVueProjectFactory(
-  typescript: typeof ts
+  typescript: typeof ts,
+  createCheckerBase: CreateCheckerBase | undefined
 ): ComponentMetaProjectFactory<VueComponentMetaProject, ts.ParsedCommandLine> {
-  return {
-    /**
-     * Mirrors vue-component-meta's own config loading
-     *
-     * Matching the checker's recipe exactly means the manager matches files against the same set
-     * the checker's program will contain — a plain TS parse would never list `.vue` files and every
-     * SFC would fall through direct-include matching.
-     *
-     * @see https://github.com/vuejs/language-tools/blob/v3.3.2/packages/component-meta/index.ts —
-     *   the two-step parse this reproduces.
-     * @see https://github.com/vuejs/language-tools/blob/v3.3.8/packages/language-core/lib/compilerOptions.ts
-     *   — `createParsedCommandLine` and its `readDirectory` stub.
-     */
-    parseCommandLine: (tsconfig) => {
-      const commandLine = createParsedCommandLine(typescript, typescript.sys, tsconfig);
-      const { fileNames } = typescript.parseJsonSourceFileConfigFileContent(
-        typescript.readJsonConfigFile(tsconfig, typescript.sys.readFile),
-        typescript.sys,
-        dirname(tsconfig),
-        {},
-        tsconfig,
-        undefined,
-        getAllExtensions(commandLine.vueOptions).map((extension) => ({
-          extension: extension.slice(1),
-          isMixedContent: true,
-          scriptKind: typescript.ScriptKind.Deferred,
-        }))
+  // `createChecker` and `createCheckerByJson` load the project's own `typescript`, which has no
+  // compiler API on TypeScript 7, so prefer the base function that takes the module as an argument.
+  const createTsconfigChecker = (tsconfig: string): ComponentMetaChecker => {
+    if (!createCheckerBase) {
+      return createChecker(tsconfig, CHECKER_OPTIONS);
+    }
+    const configPath = slash(tsconfig);
+    return createCheckerBase(
+      typescript,
+      () => readVueTsconfig(typescript, configPath),
+      CHECKER_OPTIONS,
+      posix.dirname(configPath)
+    );
+  };
+
+  const createInferredChecker = (): ComponentMetaChecker => {
+    if (!createCheckerBase) {
+      return createCheckerByJson(
+        getProjectRoot(),
+        { compilerOptions: INFERRED_COMPILER_OPTIONS, include: [] },
+        CHECKER_OPTIONS
       );
+    }
+    const rootDir = slash(getProjectRoot());
+    return createCheckerBase(
+      typescript,
+      () => readInferredConfig(typescript, rootDir),
+      CHECKER_OPTIONS,
+      rootDir
+    );
+  };
+
+  return {
+    parseCommandLine: (tsconfig) => {
+      const [commandLine, fileNames] = readVueTsconfig(typescript, tsconfig);
       return {
         ...commandLine,
         // Same workaround as React's `parseTsconfigCommandLine`: neutralize outDir, then normalize
@@ -239,18 +310,14 @@ function createVueProjectFactory(
     },
     createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
       new VueComponentMetaProject(
-        createChecker(tsconfig, CHECKER_OPTIONS),
+        createTsconfigChecker(tsconfig),
         commandLine,
         tsconfig,
         getCommandLine
       ),
     createInferredProject: () =>
       new VueComponentMetaProject(
-        createCheckerByJson(
-          getProjectRoot(),
-          { compilerOptions: INFERRED_COMPILER_OPTIONS, include: [] },
-          CHECKER_OPTIONS
-        ),
+        createInferredChecker(),
         { options: {}, fileNames: [], errors: [] },
         undefined
       ),
@@ -261,9 +328,12 @@ export class VueComponentMetaManager extends ComponentMetaManager<
   VueComponentMetaProject,
   ts.ParsedCommandLine
 > {
-  constructor(public readonly typeScriptModule: typeof ts) {
+  constructor(
+    public readonly typeScriptModule: typeof ts,
+    createCheckerBase?: CreateCheckerBase
+  ) {
     const typescript = typeScriptModule;
-    super(typescript, createVueProjectFactory(typescript));
+    super(typescript, createVueProjectFactory(typescript, createCheckerBase));
   }
 
   /**

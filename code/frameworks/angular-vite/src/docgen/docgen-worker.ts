@@ -1,8 +1,10 @@
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import { loadTypeScriptCompilerApi } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
 import type { ParsingLogger } from '@storybook/angular-cm';
+import type ts from 'typescript';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
@@ -16,8 +18,14 @@ const createManager = async (): Promise<AngularComponentMetaManager | undefined>
   try {
     // Imported at first use so the analyzer sees the TypeScript version the project builds with,
     // which this package deliberately does not ship.
-    const typescript = await import('typescript');
-    const manager = new AngularComponentMetaManager(typescript.default ?? typescript);
+    const typescript = await loadTypeScriptCompilerApi<typeof ts>({
+      typescript: () => import('typescript'),
+      typescript6: () => import('@typescript/typescript6'),
+    });
+    if (!typescript) {
+      return undefined;
+    }
+    const manager = new AngularComponentMetaManager(typescript);
     manager.startWatching();
     return manager;
   } catch (error) {

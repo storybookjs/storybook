@@ -16,6 +16,7 @@ import {
   appendStatement,
   appendToList,
   arrayList,
+  insertAfterImports,
   prependStatement,
   prependToList,
   printMembers,
@@ -396,6 +397,30 @@ describe('prependStatement', () => {
     expect(editor.toString()).toBe(
       `// Copyright Storybook\nimport x from 'x'; /* x\n y */\nimport z from 'z';`
     );
+  });
+});
+
+describe('insertAfterImports', () => {
+  const insert = (code: string) => {
+    const editor = new SourceEditor(code);
+    insertAfterImports(editor, `const b = 2;`);
+    return editor.toString();
+  };
+
+  it('leaves a next-line directive beside the last import above the line it is about', () => {
+    expect(insert(`import a from 'a'; // @ts-expect-error\nfoo();`)).toBe(
+      `import a from 'a';\nconst b = 2;\n// @ts-expect-error\nfoo();`
+    );
+  });
+
+  it('moves code sharing the line of the last import below the statement', () => {
+    expect(insert(`import a from 'a'; /* a */ foo();`)).toBe(
+      `import a from 'a'; /* a */\nconst b = 2;\nfoo();`
+    );
+  });
+
+  it('inserts as the first statement without imports', () => {
+    expect(insert(`'use client';\nfoo();`)).toBe(`'use client';\nconst b = 2;\nfoo();`);
   });
 });
 

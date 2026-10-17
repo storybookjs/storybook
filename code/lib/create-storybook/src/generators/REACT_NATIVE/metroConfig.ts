@@ -6,6 +6,7 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   SourceEditor,
+  insertStatementAfter,
   isStringLiteral,
   parseModule,
   walk,
@@ -206,7 +207,7 @@ const injectWithStorybookImport = (editor: SourceEditor, useEsmImport: boolean) 
   const { body } = editor.program;
   const lastImport = body.findLast((statement) => statement.type === 'ImportDeclaration');
   if (useEsmImport && lastImport) {
-    editor.edits.appendLeft(lastImport.end, `\n${WITH_STORYBOOK_IMPORT}`);
+    insertStatementAfter(editor, lastImport, WITH_STORYBOOK_IMPORT);
     return;
   }
 

@@ -154,8 +154,7 @@ describe('updateConfigFile statements', () => {
       import { fileURLToPath } from 'node:url';
       import { dirname } from 'node:path';
       // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      const dirname = fileURLToPath(new URL('.', import.meta.url));
-      "
+      const dirname = fileURLToPath(new URL('.', import.meta.url));"
     `);
   });
 

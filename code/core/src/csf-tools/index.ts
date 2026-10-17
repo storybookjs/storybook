@@ -39,6 +39,8 @@ export {
   appendToList,
   arrayList,
   headerComments,
+  insertAfterImports,
+  insertStatementAfter,
   itemText,
   lineIndent,
   objectList,
@@ -55,5 +57,4 @@ export {
   removeStatements,
   setImportSpecifiers,
   specifierList,
-  statementEnd,
 } from './estree/editor.ts';

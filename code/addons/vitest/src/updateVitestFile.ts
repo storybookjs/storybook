@@ -11,12 +11,12 @@ import {
   SourceEditor,
   appendToList,
   arrayList,
+  insertAfterImports,
   itemText,
   lineIndent,
   reindent,
   objectList,
   prependToList,
-  statementEnd,
 } from 'storybook/internal/csf-tools';
 
 import { normalize } from 'pathe';
@@ -351,29 +351,6 @@ const missingStatements = (source: SourceEditor, target: SourceEditor) => {
   });
 };
 
-// Insert the statements on the line after the last import and the comments it owns there. What
-// else shares that line moves below them, so the config never reads a variable before it is
-// declared.
-const insertStatements = (target: SourceEditor, text: string) => {
-  const { code, program } = target;
-  const index = program.body.findLastIndex((node) => node.type === 'ImportDeclaration');
-  if (index === -1) {
-    target.edits.appendLeft(program.body[0].start, `${text}\n\n`);
-    return;
-  }
-  const end = statementEnd(target, program.body[index]);
-  const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
-  if (next === code.length) {
-    target.edits.append(`\n${text}\n`);
-  } else if (code[next] === '\n') {
-    target.edits.appendLeft(next + 1, `${text}\n`);
-  } else if (next > end) {
-    target.edits.overwrite(end, next, `\n${text}\n`);
-  } else {
-    target.edits.appendLeft(next, `\n${text}\n`);
-  }
-};
-
 // Returns whether the config was updated; the edits are committed to `target` only when it was.
 export const updateConfigFile = (sourceCode: string, target: SourceEditor): boolean => {
   const source = new SourceEditor(sourceCode);
@@ -392,7 +369,8 @@ export const updateConfigFile = (sourceCode: string, target: SourceEditor): bool
 
   const statements = missingStatements(source, target);
   if (statements.length > 0) {
-    insertStatements(target, statements.join('\n'));
+    // After the imports, so the config never reads a variable before it is declared.
+    insertAfterImports(target, statements.join('\n'));
   }
 
   mergeTemplateIntoConfigObject({ source, target }, targetConfig, () => templateConfig()!);

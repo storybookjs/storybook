@@ -2,6 +2,7 @@ import {
   type ESTree as E,
   SourceEditor,
   arrayList,
+  insertAfterImports,
   prependToList,
   walk,
 } from 'storybook/internal/csf-tools';
@@ -110,12 +111,7 @@ export function injectAngularVitestIntoEditor(editor: SourceEditor): boolean {
 
   if (!hasAngularVitestImport(program)) {
     const statement = `import { ${ANGULAR_VITEST_PLUGIN_CALL} } from ${editor.quote}${ANGULAR_VITEST_IMPORT_SOURCE}${editor.quote};`;
-    const lastImport = program.body.findLast((node) => node.type === 'ImportDeclaration');
-    if (lastImport) {
-      editor.edits.appendLeft(lastImport.end, `\n${statement}`);
-    } else {
-      editor.edits.appendLeft(program.body[0].start, `${statement}\n`);
-    }
+    insertAfterImports(editor, statement);
   }
   return true;
 }

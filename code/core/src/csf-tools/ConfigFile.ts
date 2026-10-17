@@ -33,6 +33,7 @@ import {
   appendStatement,
   appendToList,
   arrayList,
+  insertStatementAfter,
   objectList,
   prependStatement,
   printString,
@@ -40,7 +41,6 @@ import {
   removeFromList,
   removeStatement,
   setImportSpecifiers,
-  statementEnd,
 } from './estree/editor.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
@@ -979,10 +979,7 @@ export class ConfigFile implements CsfObject {
       } else if (merged) {
         setImportSpecifiers(editor, importDeclaration, importDeclaration.specifiers, merged);
       } else {
-        editor.edits.appendLeft(
-          statementEnd(editor, importDeclaration),
-          `\nimport ${clause} from ${source};`
-        );
+        insertStatementAfter(editor, importDeclaration, `import ${clause} from ${source};`);
       }
     };
 

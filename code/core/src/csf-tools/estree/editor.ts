@@ -767,14 +767,45 @@ export const headerComments = (editor: SourceEditor): E.Comment[] => {
 
 /**
  * The end of a statement past the comments that follow it on its line, even when another statement
- * follows them. A JSDoc block that runs onto later lines documents the statement below instead.
+ * follows them. A next-line directive, or a JSDoc block that runs onto later lines, is about the
+ * code below instead, and so is everything after it.
  */
 export const statementEnd = (editor: SourceEditor, statement: Span) => {
   const { comments } = commentsBeside(editor, statement.end);
-  const docs = comments.findIndex(
-    (comment) => isJSDoc(comment) && editor.source(comment).includes('\n')
+  const below = comments.findIndex(
+    (comment) =>
+      NEXT_LINE_DIRECTIVE.test(comment.value) ||
+      (isJSDoc(comment) && editor.source(comment).includes('\n'))
   );
-  return (docs === -1 ? comments : comments.slice(0, docs)).at(-1)?.end ?? statement.end;
+  return (below === -1 ? comments : comments.slice(0, below)).at(-1)?.end ?? statement.end;
+};
+
+/**
+ * Insert a statement on its own line right after a statement and the comments it owns. What else
+ * shares that line moves below the inserted statement.
+ */
+export const insertStatementAfter = (editor: SourceEditor, statement: Span, text: string) => {
+  const { code, edits } = editor;
+  const end = statementEnd(editor, statement);
+  const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
+  if (next === code.length || code[next] === '\n') {
+    edits.appendLeft(end, `\n${text}`);
+    return;
+  }
+  if (next > end) {
+    edits.remove(end, next);
+  }
+  edits.appendLeft(end, `\n${text}\n`);
+};
+
+/** Insert a statement after the last import, or as the first statement when there is none. */
+export const insertAfterImports = (editor: SourceEditor, text: string) => {
+  const lastImport = editor.program.body.findLast((node) => node.type === 'ImportDeclaration');
+  if (lastImport) {
+    insertStatementAfter(editor, lastImport, text);
+  } else {
+    prependStatement(editor, text);
+  }
 };
 
 // A statement leads with the comments between it and the end of the statement before it. The
@@ -808,7 +839,7 @@ export const prependStatement = (editor: SourceEditor, text: string) => {
     const imports = statements.findIndex((statement) => statement.type !== 'ImportDeclaration');
     const lastImport = imports === -1 ? statements.at(-1) : statements[imports - 1];
     if (lastImport) {
-      editor.edits.appendLeft(statementEnd(editor, lastImport), `\n${text}`);
+      insertStatementAfter(editor, lastImport, text);
       return;
     }
     const headerEnd = header.at(-1)!.end;
@@ -828,7 +859,7 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     );
     return;
   }
-  editor.edits.appendLeft(statementEnd(editor, last), `\n${text}`);
+  insertStatementAfter(editor, last, text);
 };
 
 /** Remove a statement with the comments it owns, and its lines when nothing else shares them. */

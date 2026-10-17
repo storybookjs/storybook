@@ -4,6 +4,7 @@ import {
   type ESTreeNode as Node,
   type SourceEditor,
   generateUid,
+  insertAfterImports,
   walk,
   setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
@@ -204,13 +205,10 @@ export function wrapArgsMocks(editor: SourceEditor) {
     if (namedImport) {
       setImportSpecifiers(editor, namedImport, namedImport.specifiers, { named: [specifier] });
     } else {
-      const lastImport = program.body.findLast((node) => node.type === 'ImportDeclaration');
-      const declaration = `import { ${specifier} } from ${editor.quote}storybook/test${editor.quote};`;
-      if (lastImport) {
-        editor.edits.appendLeft(lastImport.end, `\n${declaration}`);
-      } else {
-        editor.edits.prepend(`${declaration}\n`);
-      }
+      insertAfterImports(
+        editor,
+        `import { ${specifier} } from ${editor.quote}storybook/test${editor.quote};`
+      );
     }
   }
 

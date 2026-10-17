@@ -38,7 +38,7 @@ export const TableWrapper = styled.table<{
 
     fontSize: theme.typography.size.s2 - 1,
     lineHeight: '19px',
-    textAlign: 'left',
+    textAlign: 'start',
     width: '100%',
 
     // Margin collapse
@@ -51,7 +51,7 @@ export const TableWrapper = styled.table<{
     },
 
     'th:first-of-type, td:first-of-type': {
-      paddingLeft: 20,
+      paddingInlineStart: 20,
     },
 
     'th:nth-of-type(2), td:nth-of-type(2)': {
@@ -73,7 +73,7 @@ export const TableWrapper = styled.table<{
     },
 
     'th:last-of-type, td:last-of-type': {
-      paddingRight: 20,
+      paddingInlineEnd: 20,
       ...(compact
         ? null
         : {
@@ -86,8 +86,7 @@ export const TableWrapper = styled.table<{
       color: theme.textMutedColor,
       paddingTop: 10,
       paddingBottom: 10,
-      paddingLeft: 15,
-      paddingRight: 15,
+      paddingInline: 15,
     },
 
     td: {
@@ -95,12 +94,11 @@ export const TableWrapper = styled.table<{
       paddingBottom: '10px',
 
       '&:not(:first-of-type)': {
-        paddingLeft: 15,
-        paddingRight: 15,
+        paddingInline: 15,
       },
 
       '&:last-of-type': {
-        paddingRight: 20,
+        paddingInlineEnd: 20,
       },
     },
 
@@ -147,16 +145,16 @@ export const TableWrapper = styled.table<{
 
             // Thank you, Safari, for making me write code like this.
             '> tr:first-of-type > td:first-of-type': {
-              borderTopLeftRadius: theme.appBorderRadius,
+              borderStartStartRadius: theme.appBorderRadius,
             },
             '> tr:first-of-type > td:last-of-type': {
-              borderTopRightRadius: theme.appBorderRadius,
+              borderStartEndRadius: theme.appBorderRadius,
             },
             '> tr:last-of-type > td:first-of-type': {
-              borderBottomLeftRadius: theme.appBorderRadius,
+              borderEndStartRadius: theme.appBorderRadius,
             },
             '> tr:last-of-type > td:last-of-type': {
-              borderBottomRightRadius: theme.appBorderRadius,
+              borderEndEndRadius: theme.appBorderRadius,
             },
           }),
     },

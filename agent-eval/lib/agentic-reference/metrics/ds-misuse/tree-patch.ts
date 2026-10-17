@@ -51,18 +51,38 @@ interface BlockPaths {
   after: string;
 }
 
+/** git echoes diff paths in the spelling of its arguments; feed it `/` so
+ * Windows paths come back unquoted, and match roots in the same spelling. */
+function toGitPath(dir: string): string {
+  return dir.replaceAll('\\', '/');
+}
+
+/** git C-quotes header paths carrying special characters (a Windows `\`, a
+ * space): `diff --git "a/C:\\Temp\\x" "b/C:\\Temp\\y"`. Un-escapes the
+ * C-style quoting of a parsed path (`\\` -> `\`, `\"` -> `"`). */
+function unquoteGitPath(path: string): string {
+  const unquoted = /^"(.*)"$/.exec(path)?.[1];
+  return unquoted === undefined ? path : unquoted.replace(/\\(.)/g, '$1');
+}
+
 /**
  * The pre- and post-image paths a `diff --git a/<x> b/<y>` header names, or
  * null if unparseable. Equal for every block but a rename, where the agent
- * left a file under a different path than it started at.
+ * left a file under a different path than it started at. Tolerates the quoted
+ * spelling git uses when the paths carry special characters: an unparseable
+ * header would drop the block, reading as "the run wrote nothing".
  */
 function pathsOfBlock(block: string): BlockPaths | null {
-  const header = /^diff --git a\/(\S+) b\/(\S+)/.exec(block);
+  const [firstLine] = block.split('\n');
+  if (firstLine === undefined) return null;
+  const header =
+    /^diff --git "a\/(.+?)" "b\/(.+?)"$/.exec(firstLine) ??
+    /^diff --git a\/(\S+) b\/(\S+)/.exec(firstLine);
   if (header === null) return null;
   const before = header[1];
   const after = header[2];
   if (before === undefined || after === undefined) return null;
-  return { before, after };
+  return { before: unquoteGitPath(before), after: unquoteGitPath(after) };
 }
 
 function isJudgeable(path: string): boolean {
@@ -81,7 +101,7 @@ function isJudgeable(path: string): boolean {
 function stripRoots(text: string, roots: string[]): string {
   return (
     roots
-      .map((root) => root.replace(/^\/+/, ''))
+      .map((root) => toGitPath(root).replace(/^\/+/, ''))
       // Longest first, so a root that prefixes the other cannot leave a fragment.
       .sort((a, b) => b.length - a.length)
       .reduce((stripped, root) => stripped.split(`${root}/`).join(''), text)
@@ -110,11 +130,15 @@ export function treePatch(
 
   let raw = '';
   try {
-    raw = execFileSync('git', ['diff', '--no-index', '--no-color', '--', baselineDir, projectDir], {
-      encoding: 'utf8',
-      maxBuffer: 256 * 1024 * 1024,
-      timeout: DIFF_TIMEOUT_SECONDS * 1000,
-    });
+    raw = execFileSync(
+      'git',
+      ['diff', '--no-index', '--no-color', '--', toGitPath(baselineDir), toGitPath(projectDir)],
+      {
+        encoding: 'utf8',
+        maxBuffer: 256 * 1024 * 1024,
+        timeout: DIFF_TIMEOUT_SECONDS * 1000,
+      }
+    );
   } catch (error) {
     // Exit 1 is "the trees differ", which is the normal case here.
     const failure = error as { status?: number; stdout?: string; stderr?: string };

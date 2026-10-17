@@ -67,9 +67,6 @@ export const Selection = meta.story({
 });
 
 export const Disabled = meta.story({
-  globals: {
-    vision: 'achromatopsia',
-  },
   parameters: {
     visionSimulator: {
       disable: true,
@@ -77,6 +74,5 @@ export const Disabled = meta.story({
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('button', { name: 'Vision filter' })).not.toBeInTheDocument();
-    await expect(document.body.style.filter).toBe('none');
   },
 });

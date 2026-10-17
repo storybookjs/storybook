@@ -10,9 +10,7 @@
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-docs": "workspace:*",
-    "@storybook/addon-mcp": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
-    "@storybook/mcp": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "@vitest/browser-playwright": "4.0.6",

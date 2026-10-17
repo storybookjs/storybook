@@ -143,7 +143,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       void runtime.commands._applyGraphSnapshot({ storiesByFile });
     },
     onIndex: (storiesByFile) => indexRuntime.commands._applyIndex({ storiesByFile }),
-    onBump: (bumpedStoryFiles) => runtime.commands._applyGraphUpdate({ bumpedStoryFiles }),
+    onBump: (bumpedStoryFiles, changedAt) =>
+      runtime.commands._applyGraphUpdate({ bumpedStoryFiles, changedAt }),
     onError: (error) => {
       void runtime.commands._setStatus({ value: 'error', error: errorToErrorLike(error) });
     },

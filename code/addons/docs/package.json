@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.6",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",
@@ -90,7 +90,7 @@
     "@storybook/icons": "^2.0.2",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "ts-dedent": "^2.0.0",
+    "ts-dedent": "^2.2.0",
     "unplugin": "^2.3.5"
   },
   "devDependencies": {

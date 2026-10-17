@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { WebView } from './WebView.ts';

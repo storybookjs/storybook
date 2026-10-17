@@ -99,10 +99,14 @@ function generateServerCode({
   code,
   args,
   omitDefaults,
+  expressions,
+  spreadOmissions,
 }: {
   code: string;
   args: Record<string, unknown>;
   omitDefaults: Record<string, unknown>;
+  expressions: Record<string, string>;
+  spreadOmissions: readonly ReadonlySet<string>[];
 }): string {
   const props = Object.entries(args)
     .filter(([key, value]) => {
@@ -111,9 +115,30 @@ function generateServerCode({
       }
       return !(key in omitDefaults) || !isEqual(value, omitDefaults[key]);
     })
-    .map(([key, value]) => argsToProps(key, value))
-    .filter(Boolean);
-  const spread = props.join(' ').length > 50 ? `\n  ${props.join('\n  ')}\n` : props.join(' ');
+    .map(([key, value]) => ({
+      key,
+      value:
+        typeof value === 'string' && /[{}<>"\\&\r\n\t]/.test(value)
+          ? `${key}={${JSON.stringify(value)}}`
+          : argsToProps(key, value),
+    }))
+    .filter((prop) => prop.value !== null);
+  for (const [key, expression] of Object.entries(expressions)) {
+    if (key !== 'children' || !/\bargs\??\.children\b/.test(code)) {
+      props.push({ key, value: `${key}={${expression}}` });
+    }
+  }
+  const printSpread = (omissions: ReadonlySet<string> = new Set()) => {
+    const values = props.filter((prop) => !omissions.has(prop.key)).map((prop) => prop.value);
+    return values.join(' ').length > 50 ? `\n  ${values.join('\n  ')}\n` : values.join(' ');
+  };
+  let spreadIndex = 0;
+  const spread = printSpread();
+  const expressionForPath = (argPath: string) => {
+    const match = /^args(?:\??\.([\w$]+)|\[['"]([^'"]+)['"]\])(.*)$/.exec(argPath);
+    const key = match?.[1] ?? match?.[2];
+    return match && key && key in expressions ? `(${expressions[key]})${match[3]}` : undefined;
+  };
   const path = 'args(?:[\\w\\d_$.?[\\]"\\\'])+';
   const pattern = new RegExp(
     `\\{\\.\\.\\.args\\}|="[^"\\n]*"|='[^'\\n]*'|=\\{\\s*(${path})\\s*\\}|\\{\\s*(${path})\\s*\\}|${path}`,
@@ -127,9 +152,11 @@ function generateServerCode({
           .replace(/[ \t]*\{\.\.\.args\}[ \t]*/g, ' ')
   )
     .replace(pattern, (match, attributePath?: string, textPath?: string) => {
-      if (match === '{...args}') return spread;
+      if (match === '{...args}') return printSpread(spreadOmissions[spreadIndex++]);
       if (match.startsWith('="') || match.startsWith("='")) {
         return match.replace(new RegExp(`\\{\\s*(${path})\\s*\\}`, 'g'), (_, argPath: string) => {
+          const expression = expressionForPath(argPath);
+          if (expression) return `{${expression}}`;
           const value = get({ args }, argPath.replaceAll('?', ''));
           return String(value ?? '')
             .replaceAll('&', '&amp;')
@@ -138,6 +165,10 @@ function generateServerCode({
         });
       }
       const argPath = attributePath ?? textPath ?? match;
+      const expression = expressionForPath(argPath);
+      if (expression) {
+        return attributePath ? `={${expression}}` : textPath ? `{${expression}}` : expression;
+      }
       const value = get({ args }, argPath.replaceAll('?', ''));
       const printed = value === null ? 'null' : (valueToString(value) ?? 'undefined');
       if (attributePath) return `={${printed}}`;
@@ -153,12 +184,16 @@ export function generateCodeToEmit(params: {
   args: StoryObj['args'];
   omitDefaults?: Record<string, unknown>;
   textSubstitution?: 'raw';
+  expressions?: Record<string, string>;
+  spreadOmissions?: readonly ReadonlySet<string>[];
 }): string {
   return params.textSubstitution === 'raw'
     ? generateServerCode({
         code: params.code,
         args: params.args ?? {},
         omitDefaults: params.omitDefaults ?? {},
+        expressions: params.expressions ?? {},
+        spreadOmissions: params.spreadOmissions ?? [],
       })
     : generateLegacyCode(params);
 }

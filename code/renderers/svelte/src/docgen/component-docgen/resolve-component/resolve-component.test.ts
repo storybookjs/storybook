@@ -44,26 +44,29 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('resolves a SvelteKit alias from an extended tsconfig', async () => {
-  vol.fromJSON(
-    {
-      'tsconfig.json': JSON.stringify({ extends: './.svelte-kit/tsconfig.json' }),
-      '.svelte-kit/tsconfig.json': JSON.stringify({
-        compilerOptions: { paths: { '$lib/*': ['../src/lib/*'] } },
-      }),
-      'Button.stories.ts':
-        "import Button from '$lib/Button.svelte'; export default { component: Button }; export const Primary = {};",
-      'src/lib/Button.svelte': '<button>Save</button>',
-    },
-    resolve('/project')
-  );
+it.each(['tsconfig.json', 'jsconfig.json'])(
+  'resolves a SvelteKit alias from an extended %s',
+  async (configFile) => {
+    vol.fromJSON(
+      {
+        [configFile]: JSON.stringify({ extends: './.svelte-kit/tsconfig.json' }),
+        '.svelte-kit/tsconfig.json': JSON.stringify({
+          compilerOptions: { paths: { '$lib/*': ['../src/lib/*'] } },
+        }),
+        'Button.stories.ts':
+          "import Button from '$lib/Button.svelte'; export default { component: Button }; export const Primary = {};",
+        'src/lib/Button.svelte': '<button>Save</button>',
+      },
+      resolve('/project')
+    );
 
-  expect(await resolveStoryComponent(entry)).toEqual({
-    componentPath: resolve('/project/src/lib/Button.svelte'),
-    exportName: 'default',
-    name: 'Button',
-  });
-});
+    expect(await resolveStoryComponent(entry)).toEqual({
+      componentPath: resolve('/project/src/lib/Button.svelte'),
+      exportName: 'default',
+      name: 'Button',
+    });
+  }
+);
 
 it('reports an unresolved component import', async () => {
   vol.fromJSON(

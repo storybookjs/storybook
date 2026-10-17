@@ -196,6 +196,8 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       for (const node of nodes) {
         if (node.type === 'Component') {
           visit(node, state);
+        } else if (node.type === 'RegularElement') {
+          visit(node.fragment, state);
         }
       }
     },

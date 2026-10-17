@@ -19,6 +19,18 @@
       "required": true,
     },
   },
+  "event_change": {
+    "action": "change",
+    "control": false,
+    "description": undefined,
+    "name": "change",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "CustomEvent<string>",
+      },
+    },
+  },
   "label": {
     "control": {
       "type": "text",
@@ -37,6 +49,28 @@
     "type": {
       "name": "string",
       "required": false,
+    },
+  },
+  "slot_default": {
+    "control": false,
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+  },
+  "slot_footer": {
+    "control": false,
+    "description": undefined,
+    "name": "footer",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
     },
   },
 }

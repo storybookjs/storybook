@@ -31,8 +31,9 @@ function storybookType(type: Type | undefined): SBType {
     }
     case 'array':
     case 'object':
-    case 'function':
       return { name: 'other', value: type.text === '{}' ? 'object' : type.text };
+    case 'function':
+      return { name: 'function', raw: type.text };
     case 'literal':
       return { name: 'literal', value: type.value };
     case 'any':
@@ -68,7 +69,11 @@ export function createServerArgTypes(docgen: Docgen): StrictArgTypes {
       name: prop.name,
       description: prop.description,
       type: {
-        ...(enumValues ? { name: 'enum', value: enumValues } : storybookType(prop.type)),
+        ...(enumValues
+          ? { name: 'enum', value: enumValues }
+          : slot
+            ? { name: 'other', value: typeSummary ?? 'unknown' }
+            : storybookType(prop.type)),
         required: prop.optional === false && defaultValue === undefined,
       },
       control:
@@ -98,6 +103,20 @@ export function createServerArgTypes(docgen: Docgen): StrictArgTypes {
         ...(Object.keys(jsDocTags).length > 0 ? { jsDocTags } : {}),
       },
     };
+  }
+  for (const [category, members] of [
+    ['events', docgen.events],
+    ['slots', docgen.slots],
+  ] as const) {
+    for (const member of members ?? []) {
+      argTypes[`${category === 'events' ? 'event' : 'slot'}_${member.name}`] = {
+        name: member.name,
+        description: member.description,
+        control: false,
+        ...(category === 'events' ? { action: member.name } : {}),
+        table: { category, type: { summary: member.typeText } },
+      };
+    }
   }
   return argTypes;
 }

@@ -649,27 +649,33 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
     }
     return;
   }
-  const lastKept = items.findLastIndex((item) => !removed.has(item));
-  items.forEach((item, index) => {
-    if (!removed.has(item)) {
-      return;
+  // Each run of adjacent removed items goes as one span, so what the run leaves joined is judged
+  // once, for the whole run.
+  for (let first = 0; first < items.length; first++) {
+    if (!removed.has(items[first])) {
+      continue;
     }
-    if (index > lastKept && separatorAfter(editor, item) === undefined) {
-      // Trailing item without a comma: drop the comma of the last kept item instead, unless that
+    let last = first;
+    while (removed.has(items[last + 1])) {
+      last++;
+    }
+    if (last === items.length - 1 && separatorAfter(editor, items[last]) === undefined) {
+      // Trailing run without a comma: drop the comma of the last kept item instead, unless that
       // comma writes a hole.
-      const previous = items[lastKept];
+      const previous = items[first - 1];
       if (!isHole(previous)) {
         edits.remove(previous.end, separatorAfter(editor, previous)!);
       }
     }
-    const start = itemStart(editor, list, index);
-    const end = itemEnd(editor, list, index);
-    // Code after the item on its line must not join the line of a line comment before it.
+    const start = itemStart(editor, list, first);
+    const end = itemEnd(editor, list, last);
+    // Code after the run on its line must not join the line of a line comment before it.
     const joins =
       commentAt(editor, start, 'end')?.type === 'Line' &&
       code.slice(end, lineEnd(code, end)).trim();
     edits.remove(joins ? lineEnd(code, start) + 1 : start, end);
-  });
+    first = last;
+  }
 };
 
 export const appendMembers = (editor: SourceEditor, object: E.ObjectExpression, texts: string[]) =>

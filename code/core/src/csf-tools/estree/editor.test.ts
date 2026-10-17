@@ -217,6 +217,17 @@ describe('removeFromList', () => {
       `export default { addons: ['a' // l\n] };`
     );
   });
+
+  it.each(['\n', '\r\n'])(
+    'keeps what follows adjacent removed items off the line of the comment before them',
+    (eol) => {
+      const editor = new SourceEditor(`export default [1, /* k */ // k${eol}2,${eol}3, 4,${eol}];`);
+      const array = (editor.program.body[0] as E.ExportDefaultDeclaration)
+        .declaration as E.ArrayExpression;
+      removeFromList(editor, arrayList(editor, array), array.elements.slice(1, 3) as E.Node[]);
+      expect(editor.toString()).toBe(`export default [1, /* k */ // k\n 4,\n];`);
+    }
+  );
 });
 
 describe('removeStatement', () => {

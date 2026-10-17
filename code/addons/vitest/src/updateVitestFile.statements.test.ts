@@ -95,6 +95,30 @@ describe('updateConfigFile statements', () => {
     `);
   });
 
+  it('inserts the template statements above a JSDoc block starting on the last import line', () => {
+    const code = update(
+      `import react from '@vitejs/plugin-react'; /**\n * Config\n */\nexport default defineConfig({ test: {} })\n`
+    );
+
+    expect(code).toMatchInlineSnapshot(`
+      "import react from '@vitejs/plugin-react';
+      import { fileURLToPath } from 'node:url';
+      import { dirname } from 'node:path';
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      const dirname = fileURLToPath(new URL('.', import.meta.url));
+      /**
+       * Config
+       */
+      export default defineConfig({ test: {
+        projects: [{
+      extends: true,
+      test: {},
+      }, { extends: true, test: { name: 'storybook' } }],
+      } })
+      "
+    `);
+  });
+
   it('keeps a line comment trailing the last import in place', () => {
     const code = update(
       `import react from '@vitejs/plugin-react' // plugins\nexport default defineConfig({ test: {} })\n`

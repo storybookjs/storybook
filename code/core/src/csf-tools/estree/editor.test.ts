@@ -13,6 +13,7 @@ import type { E } from './ast.ts';
 import { parseModule } from './ast.ts';
 import {
   SourceEditor,
+  appendStatement,
   appendToList,
   arrayList,
   prependStatement,
@@ -195,6 +196,24 @@ describe('array holes', () => {
   });
 });
 
+describe('removeFromList', () => {
+  const removeElement = (code: string, index: number) => {
+    const editor = new SourceEditor(code);
+    const array = defaultExportArray(editor);
+    removeFromList(editor, arrayList(editor, array), [array.elements[index]!]);
+    return editor.toString();
+  };
+
+  it('keeps what follows a removed item off the line of the comment before it', () => {
+    expect(removeElement(`export default { addons: ['a', /* x */ // l\n  'b', 'c'] };`, 1)).toBe(
+      `export default { addons: ['a', /* x */ // l\n 'c'] };`
+    );
+    expect(removeElement(`export default { addons: ['a', // l\n  'b'] };`, 1)).toBe(
+      `export default { addons: ['a' // l\n] };`
+    );
+  });
+});
+
 describe('removeStatement', () => {
   it('removes the leading comments with the statement', () => {
     const editor = new SourceEditor(dedent`
@@ -275,6 +294,41 @@ describe('removeStatement', () => {
     removeStatement(editor, editor.program.body[1]);
     expect(editor.toString()).toBe("import a from 'a';\r\nconst c = 2;\r\n");
   });
+
+  it('removes every comment that trails the statement on its line', () => {
+    const editor = new SourceEditor(`import a from 'a'; /* a */ // why\nimport b from 'b';`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`import b from 'b';`);
+  });
+
+  it('removes a block comment that starts beside the statement', () => {
+    const editor = new SourceEditor(`const a = 1; /* a\n   continued */\nconst b = 2;`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`const b = 2;`);
+  });
+
+  it('leaves a JSDoc block that starts beside the statement to the statement below', () => {
+    const code = `const a = 1; /**\n * Docs for B\n */\nexport const B = 2;`;
+    const first = new SourceEditor(code);
+    removeStatement(first, first.program.body[0]);
+    expect(first.toString()).toBe(` /**\n * Docs for B\n */\nexport const B = 2;`);
+
+    const second = new SourceEditor(code);
+    removeStatement(second, second.program.body[1]);
+    expect(second.toString()).toBe(`const a = 1; `);
+  });
+
+  it('removes a statement below a blank first line', () => {
+    const editor = new SourceEditor(`\nconst a = 1;\nconst b = 2;`);
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe(`const b = 2;`);
+  });
+
+  it('leaves the comment trailing the previous statement on a shared last line', () => {
+    const editor = new SourceEditor(`import a from 'a'; /* a */ import b from 'b';`);
+    removeStatement(editor, editor.program.body[1]);
+    expect(editor.toString()).toBe(`import a from 'a'; /* a */ `);
+  });
 });
 
 describe('prependStatement', () => {
@@ -308,6 +362,32 @@ describe('prependStatement', () => {
     const editor = new SourceEditor(`/** @license MIT */\nconst a = 1;`);
     prependStatement(editor, `import b from 'b';`);
     expect(editor.toString()).toBe(`/** @license MIT */\nimport b from 'b';\n\nconst a = 1;`);
+  });
+
+  it('inserts below the comment trailing the last import under a file header', () => {
+    const editor = new SourceEditor(
+      `// Copyright Storybook\nimport x from 'x'; // x\nconst b = 1;`
+    );
+    prependStatement(editor, `import z from 'z';`);
+    expect(editor.toString()).toBe(
+      `// Copyright Storybook\nimport x from 'x'; // x\nimport z from 'z';\nconst b = 1;`
+    );
+  });
+
+  it('inserts below a block comment that starts beside the last import', () => {
+    const editor = new SourceEditor(`// Copyright Storybook\nimport x from 'x'; /* x\n y */`);
+    prependStatement(editor, `import z from 'z';`);
+    expect(editor.toString()).toBe(
+      `// Copyright Storybook\nimport x from 'x'; /* x\n y */\nimport z from 'z';`
+    );
+  });
+});
+
+describe('appendStatement', () => {
+  it('appends below the comments trailing the last statement', () => {
+    const editor = new SourceEditor(`export const a = 1; /* a */ // a`);
+    appendStatement(editor, `export const b = 2;`);
+    expect(editor.toString()).toBe(`export const a = 1; /* a */ // a\nexport const b = 2;`);
   });
 });
 
@@ -411,6 +491,13 @@ describe('trailing comments', () => {
         },
       };
     `);
+  });
+
+  it('removes a member with every comment that trails it on its line', () => {
+    const csf = parse(`export default {\n  a: 1, /* a */ // why\n  b: 2,\n};`);
+    const [meta] = csf.objects({ stories: false });
+    meta.remove(['a']);
+    expect(printCsf(csf).code).toBe(`export default {\n  b: 2,\n};`);
   });
 
   it('groups members with the comments that trail them', () => {

@@ -11,6 +11,7 @@ import {
   createStoryArgsResolver,
   isCanonicalCsf2BindCall,
   isStringLiteral,
+  lineIndent,
   metaObject,
   normalizeStoryDeclaration,
   parseModule,
@@ -228,9 +229,7 @@ function printRange(code: string, range: { start: number; end: number }, edits: 
   }
   text += code.slice(cursor, range.end);
 
-  const lineStart = code.lastIndexOf('\n', range.start - 1) + 1;
-  const indent = /^[ \t]*/.exec(code.slice(lineStart))?.[0] ?? '';
-  return reindent(text, indent, '');
+  return reindent(text, lineIndent(code, range.start), '');
 }
 
 // Whether code still reads the `args` parameter, so the snippet has to keep declaring it.

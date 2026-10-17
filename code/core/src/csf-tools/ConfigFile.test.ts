@@ -1431,6 +1431,17 @@ describe('ConfigFile', () => {
       `);
     });
 
+    it('adds an import below the comment trailing the last import under a license header', () => {
+      const config = loadConfig(
+        `// Copyright Example\nimport a from 'a'; // a\nexport default {};`
+      ).parse();
+      config.setImport(['b'], 'b');
+
+      expect(printConfig(config).code).toBe(
+        `// Copyright Example\nimport a from 'a'; // a\nimport { b } from 'b';\nexport default {};`
+      );
+    });
+
     it('keeps a directive on its statement when moving the license header', () => {
       const source = dedent`
         // Copyright Example
@@ -1597,6 +1608,11 @@ describe('ConfigFile', () => {
         source: `import * as ns from 'x'; // why`,
         specifier: ['a'],
         output: `import * as ns from 'x'; // why\nimport { a } from 'x';`,
+      },
+      {
+        source: `import * as ns from 'x'; /* a */ // why`,
+        specifier: ['a'],
+        output: `import * as ns from 'x'; /* a */ // why\nimport { a } from 'x';`,
       },
       {
         source: `import foo from 'x';`,

@@ -10,7 +10,6 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   SourceEditor,
-  headerComments,
   walk,
   removeStatements,
   setImportSpecifiers,
@@ -498,17 +497,6 @@ export function transformSetupFile(
   for (const [declaration, kept] of keptSpecifiers) {
     if (kept.length > 0) {
       setImportSpecifiers(editor, declaration, kept);
-    }
-  }
-  const [first] = program.body;
-  if (removedStatements.has(first)) {
-    // Comments below the file header, such as `eslint-disable-next-line`, apply to the removed statement
-    const header = new Set(headerComments(editor));
-    const leading = editor.comments.find(
-      (comment) => comment.end <= first.start && !header.has(comment)
-    );
-    if (leading) {
-      editor.edits.remove(leading.start, first.start);
     }
   }
   removeStatements(editor, removedStatements);

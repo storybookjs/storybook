@@ -7,6 +7,7 @@ import {
   appendMembers,
   appendStatement,
   prependMembers,
+  triviaBefore,
 } from './estree/editor.ts';
 
 export interface EnrichCsfOptions {
@@ -129,23 +130,7 @@ export const extractSource = (node: Node, code: string) => {
 
 export const leadingComments = (node: Node | undefined, editor: SourceEditor) => {
   const start = (node as { start?: number } | undefined)?.start;
-  if (start === undefined) {
-    return [];
-  }
-  const comments: E.Comment[] = [];
-  let position = start;
-  for (let index = editor.comments.length - 1; index >= 0; index--) {
-    const comment = editor.comments[index];
-    if (comment.end > position) {
-      continue;
-    }
-    if (editor.code.slice(comment.end, position).trim()) {
-      break;
-    }
-    comments.unshift(comment);
-    position = comment.start;
-  }
-  return comments;
+  return start === undefined ? [] : triviaBefore(editor, start).comments;
 };
 
 export const extractDescription = (node: Node | undefined, editor: SourceEditor) => {

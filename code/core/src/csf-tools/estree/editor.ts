@@ -275,28 +275,82 @@ export const printValue = (
   throw new Error(`Cannot print value of type ${typeof value}`);
 };
 
-// Index just past the next `token` at or after `from`, skipping whitespace and comments.
-const scanFor = (code: string, from: number, until: number, token: string): number | undefined => {
-  let index = from;
-  while (index < until) {
-    const char = code[index];
-    if (char === token) {
-      return index + 1;
+const lineStart = (code: string, index: number) =>
+  index > 0 ? code.lastIndexOf('\n', index - 1) + 1 : 0;
+
+const lineEnd = (code: string, index: number) => {
+  const lineBreak = code.indexOf('\n', index);
+  return lineBreak === -1 ? code.length : lineBreak;
+};
+
+// Comments are sorted and never overlap, so they are sorted by their ends too.
+const commentAt = (editor: SourceEditor, index: number, edge: 'start' | 'end') => {
+  const { comments } = editor;
+  let low = 0;
+  let high = comments.length - 1;
+  while (low <= high) {
+    const middle = (low + high) >> 1;
+    const position = comments[middle][edge];
+    if (position === index) {
+      return comments[middle];
     }
-    if (code.startsWith('//', index)) {
-      const end = code.indexOf('\n', index);
-      index = end === -1 ? until : end + 1;
-    } else if (code.startsWith('/*', index)) {
-      const end = code.indexOf('*/', index + 2);
-      index = end === -1 ? until : end + 2;
-    } else if (/\s/.test(char)) {
-      index++;
+    if (position < index) {
+      low = middle + 1;
     } else {
-      return undefined;
+      high = middle - 1;
     }
   }
   return undefined;
 };
+
+const SPACE = /\s/;
+const SPACE_ON_LINE = /[^\S\n]/;
+
+// The comments from `index` on with only `space` around them, and the end of that run.
+const triviaAfter = (editor: SourceEditor, index: number, space = SPACE) => {
+  const { code } = editor;
+  const comments: E.Comment[] = [];
+  let end = index;
+  while (end < code.length) {
+    const comment = commentAt(editor, end, 'start');
+    if (comment) {
+      comments.push(comment);
+      end = comment.end;
+    } else if (space.test(code[end])) {
+      end++;
+    } else {
+      break;
+    }
+  }
+  return { comments, end };
+};
+
+// The comments up to `index` with only whitespace around them, and the start of that run.
+export const triviaBefore = (editor: SourceEditor, index: number) => {
+  const { code } = editor;
+  const comments: E.Comment[] = [];
+  let start = index;
+  while (start > 0) {
+    const comment = commentAt(editor, start, 'end');
+    if (comment) {
+      comments.unshift(comment);
+      start = comment.start;
+    } else if (SPACE.test(code[start - 1])) {
+      start--;
+    } else {
+      break;
+    }
+  }
+  return { comments, start };
+};
+
+const nextTokenStart = (editor: SourceEditor, index: number) => triviaAfter(editor, index).end;
+
+const previousTokenEnd = (editor: SourceEditor, index: number) => triviaBefore(editor, index).start;
+
+// The comments after `index` on its line; a block comment may carry the run onto a later line.
+const commentsBeside = (editor: SourceEditor, index: number) =>
+  triviaAfter(editor, index, SPACE_ON_LINE);
 
 /**
  * A comma-separated list in the source: object members, array elements, import specifiers. `open`
@@ -308,49 +362,19 @@ export interface List {
   items: readonly Span[];
 }
 
-const nextTokenStart = (code: string, comments: readonly Span[], index: number) => {
-  let next = index;
-  while (next < code.length) {
-    const comment = comments.find((candidate) => candidate.start === next);
-    if (comment) {
-      next = comment.end;
-    } else if (/\s/.test(code[next])) {
-      next++;
-    } else {
-      break;
-    }
-  }
-  return next;
-};
-
-const previousTokenEnd = (code: string, comments: readonly Span[], index: number) => {
-  let previous = index;
-  while (previous > 0) {
-    const comment = comments.find((candidate) => candidate.end === previous);
-    if (comment) {
-      previous = comment.start;
-    } else if (/\s/.test(code[previous - 1])) {
-      previous--;
-    } else {
-      break;
-    }
-  }
-  return previous;
-};
-
 /** The `{ … }` of an import or export with at least one named specifier. */
 export const specifierList = (
   editor: SourceEditor,
   declaration: E.ImportDeclaration | E.ExportNamedDeclaration
 ): List => {
-  const { code, comments } = editor;
+  const { code } = editor;
   const items = declaration.specifiers.filter(
     (specifier) => specifier.type === 'ImportSpecifier' || specifier.type === 'ExportSpecifier'
   );
-  const afterLast = nextTokenStart(code, comments, items.at(-1)!.end);
+  const afterLast = nextTokenStart(editor, items.at(-1)!.end);
   return {
-    open: previousTokenEnd(code, comments, items[0].start),
-    close: code[afterLast] === ',' ? nextTokenStart(code, comments, afterLast + 1) : afterLast,
+    open: previousTokenEnd(editor, items[0].start),
+    close: code[afterLast] === ',' ? nextTokenStart(editor, afterLast + 1) : afterLast,
     items,
   };
 };
@@ -366,7 +390,6 @@ const isHole = (item: Span) => item.start === item.end;
 
 // An element's item spans the parentheses around it.
 export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => {
-  const { code, comments } = editor;
   const open = array.start + 1;
   const close = array.end - 1;
   let cursor = open;
@@ -375,27 +398,24 @@ export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List 
     if (element) {
       item = outerSpan(element);
     } else {
-      const comma = nextTokenStart(code, comments, cursor);
+      const comma = nextTokenStart(editor, cursor);
       item = { start: comma, end: comma };
     }
-    const next = nextTokenStart(code, comments, item.end);
-    cursor = code[next] === ',' ? next + 1 : next;
+    cursor = separatorAfter(editor, item) ?? item.end;
     return item;
   });
   return { open, close, items };
 };
 
 // Position right after the comma that follows an item, if it has one.
-const separatorAfter = (code: string, list: List, index: number) => {
-  const item = list.items[index];
-  const until = list.items[index + 1]?.start ?? list.close;
-  return scanFor(code, item.end, until, ',');
+const separatorAfter = (editor: SourceEditor, item: Span) => {
+  const next = nextTokenStart(editor, item.end);
+  return editor.code[next] === ',' ? next + 1 : undefined;
 };
 
-export const lineIndent = (code: string, index: number) => {
-  const lineStart = code.lastIndexOf('\n', index - 1) + 1;
-  return /^[ \t]*/.exec(code.slice(lineStart))![0];
-};
+/** Leading whitespace of the line that `index` is on. */
+export const lineIndent = (code: string, index: number) =>
+  /^[ \t]*/.exec(code.slice(lineStart(code, index)))![0];
 
 /** Indent step of the file: from an object's line to its first member's, else two spaces. */
 export const indentUnit = (code: string, object: E.ObjectExpression | undefined) => {
@@ -489,26 +509,21 @@ const dedentSource = (editor: SourceEditor, start: number, end: number, from: st
     : reindentLines(text, from, '', literalSpans(editor.program, { start, end }));
 };
 
-// The comment after `index` on its line, when nothing else follows it there.
-const trailingComment = (editor: SourceEditor, index: number) => {
-  const { code } = editor;
-  const lineBreak = code.indexOf('\n', index);
-  const lineEnd = lineBreak === -1 ? code.length : lineBreak;
-  const comment = editor.comments.find(
-    (candidate) => candidate.start >= index && candidate.end <= lineEnd
-  );
-  const alone =
-    comment && !code.slice(index, comment.start).trim() && !code.slice(comment.end, lineEnd).trim();
-  return alone ? comment : undefined;
+// An item owns the comments after its separator when they end the line. Followed by code on that
+// line, they lead the next item instead.
+const trailingComments = (editor: SourceEditor, separatorEnd: number) => {
+  const { comments, end } = commentsBeside(editor, separatorEnd);
+  return end === editor.code.length || editor.code[end] === '\n' ? comments : [];
 };
 
-// End of an item with its separator and the comment that trails them on their line.
+// End of an item with its separator and the comments that trail them.
 const itemEnd = (editor: SourceEditor, list: List, index: number) => {
-  const end = separatorAfter(editor.code, list, index) ?? list.items[index].end;
-  return trailingComment(editor, end)?.end ?? end;
+  const item = list.items[index];
+  const end = separatorAfter(editor, item) ?? item.end;
+  return trailingComments(editor, end).at(-1)?.end ?? end;
 };
 
-// Start of what an item owns: after the separator before it and the comment trailing that.
+// Start of what an item owns: after the separator before it and the comments trailing that.
 const itemStart = (editor: SourceEditor, list: List, index: number) =>
   index === 0 ? list.open : itemEnd(editor, list, index - 1);
 
@@ -523,14 +538,15 @@ const itemTextWith = (
   const item = list.items[index];
   const from = itemStart(editor, list, index);
   const text = print(from + /^\s*/.exec(code.slice(from, item.start))![0].length);
-  const end = separatorAfter(code, list, index) ?? item.end;
-  const comment = trailingComment(editor, end);
-  return comment ? `${editor.source(comment)}\n${text}` : text;
+  const trailing = trailingComments(editor, separatorAfter(editor, item) ?? item.end);
+  return trailing.length > 0
+    ? `${code.slice(trailing[0].start, trailing.at(-1)!.end)}\n${text}`
+    : text;
 };
 
 /**
- * Text of an item including the comments that lead it, with continuation lines dedented. A
- * comment that trails the item on its line moves above it, so a comma can follow the text.
+ * Text of an item including the comments that lead it, with continuation lines dedented. The
+ * comments that trail the item on its line move above it, so a comma can follow the text.
  */
 export const itemText = (editor: SourceEditor, list: List, item: Span) =>
   itemTextWith(editor, list, list.items.indexOf(item), (start) =>
@@ -577,7 +593,7 @@ export const appendToList = (
     return;
   }
   const last = items.at(-1)!;
-  const comma = separatorAfter(code, list, items.length - 1);
+  const comma = separatorAfter(editor, last);
   // The comma of a hole writes the hole, so it is no trailing comma to keep.
   const trailingComma = comma === undefined || isHole(last) ? '' : ',';
   if (isMultiline(code, list)) {
@@ -635,15 +651,21 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
     if (!removed.has(item)) {
       return;
     }
-    if (index > lastKept && separatorAfter(code, list, index) === undefined) {
+    if (index > lastKept && separatorAfter(editor, item) === undefined) {
       // Trailing item without a comma: drop the comma of the last kept item instead, unless that
       // comma writes a hole.
       const previous = items[lastKept];
       if (!isHole(previous)) {
-        edits.remove(previous.end, separatorAfter(code, list, lastKept)!);
+        edits.remove(previous.end, separatorAfter(editor, previous)!);
       }
     }
-    edits.remove(itemStart(editor, list, index), itemEnd(editor, list, index));
+    const start = itemStart(editor, list, index);
+    const end = itemEnd(editor, list, index);
+    // Code after the item on its line must not join the line of a line comment before it.
+    const joins =
+      commentAt(editor, start, 'end')?.type === 'Line' &&
+      code.slice(end, lineEnd(code, end)).trim();
+    edits.remove(joins ? lineEnd(code, start) + 1 : start, end);
   });
 };
 
@@ -665,8 +687,8 @@ export const groupMembers = (
   const first = list.items.indexOf(members[0]);
   const multiline = editor.code.slice(object.start, object.end).includes('\n');
   removeMembers(editor, object, members.slice(1));
-  const before = editor.code.slice(0, members[0].start);
-  const indent = /[ \t]*$/.exec(before.slice(before.lastIndexOf('\n') + 1))![0];
+  const { start } = members[0];
+  const indent = /[ \t]*$/.exec(editor.code.slice(lineStart(editor.code, start), start))![0];
   const inner = multiline
     ? reindent(printMembers(texts, indentUnit(editor.code, object)), '', indent)
     : `{ ${texts.join(', ')} }`;
@@ -677,7 +699,7 @@ export const groupMembers = (
     members[0].end,
     `${lead}${printKey(key, editor.quote)}: ${inner}`
   );
-  const comma = separatorAfter(editor.code, list, first) ?? members[0].end;
+  const comma = separatorAfter(editor, members[0]) ?? members[0].end;
   if (itemEnd(editor, list, first) > comma) {
     editor.edits.remove(comma, itemEnd(editor, list, first));
   }
@@ -735,6 +757,29 @@ export const headerComments = (editor: SourceEditor): E.Comment[] => {
 };
 
 /**
+ * The end of a statement past the comments that follow it on its line, even when another statement
+ * follows them. A JSDoc block that runs onto later lines documents the statement below instead.
+ */
+export const statementEnd = (editor: SourceEditor, statement: Span) => {
+  const { comments } = commentsBeside(editor, statement.end);
+  const docs = comments.findIndex(
+    (comment) => isJSDoc(comment) && editor.source(comment).includes('\n')
+  );
+  return (docs === -1 ? comments : comments.slice(0, docs)).at(-1)?.end ?? statement.end;
+};
+
+// A statement leads with the comments between it and the end of the statement before it. The
+// file header above the first statement is not part of it.
+const leadingComments = (editor: SourceEditor, statement: Span): E.Comment[] => {
+  const previous = editor.program.body.findLast((node) => node.end <= statement.start);
+  const from = previous ? statementEnd(editor, previous) : 0;
+  const header = new Set(previous ? [] : headerComments(editor));
+  return editor.comments.filter(
+    (comment) => comment.start >= from && comment.end <= statement.start && !header.has(comment)
+  );
+};
+
+/**
  * Insert a statement before the first non-directive statement, above its leading comments. A file
  * header stays first: the statement goes below the leading imports, or below the header itself.
  */
@@ -754,7 +799,7 @@ export const prependStatement = (editor: SourceEditor, text: string) => {
     const imports = statements.findIndex((statement) => statement.type !== 'ImportDeclaration');
     const lastImport = imports === -1 ? statements.at(-1) : statements[imports - 1];
     if (lastImport) {
-      editor.edits.appendLeft(lastImport.end, `\n${text}`);
+      editor.edits.appendLeft(statementEnd(editor, lastImport), `\n${text}`);
       return;
     }
     const headerEnd = header.at(-1)!.end;
@@ -774,67 +819,28 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
     );
     return;
   }
-  editor.edits.appendLeft(last.end, `\n${text}`);
+  editor.edits.appendLeft(statementEnd(editor, last), `\n${text}`);
 };
 
-/**
- * Comments that lead a statement on their own lines, above it. The file header stays when the
- * first statement is removed.
- */
-export const leadingComments = (editor: SourceEditor, statement: Span): E.Comment[] => {
-  const { code, comments } = editor;
-  const previous = editor.program.body.filter((node) => node.end <= statement.start).at(-1);
-  const previousLineEnd = previous ? code.indexOf('\n', previous.end) : -1;
-  const from = previousLineEnd === -1 && previous ? previous.end : previousLineEnd + 1;
-  const header = new Set(previous ? [] : headerComments(editor));
-  return comments.filter(
-    (comment) => comment.start >= from && comment.end <= statement.start && !header.has(comment)
-  );
-};
-
-/**
- * Remove a statement with the comments that lead it and the comment that trails it on its line,
- * and the line itself when nothing else shares it.
- */
-/** The end of a statement, past a comment that trails it on the same line. */
-export const statementEnd = (editor: SourceEditor, statement: Span) => {
-  const { code } = editor;
-  const lineEnd = code.indexOf('\n', statement.end);
-  const trailing = editor.comments.find(
-    (comment) =>
-      comment.start >= statement.end &&
-      (lineEnd === -1 || comment.start < lineEnd) &&
-      !code.slice(statement.end, comment.start).trim()
-  );
-  return trailing && (lineEnd === -1 || trailing.end <= lineEnd) ? trailing.end : statement.end;
-};
-
+/** Remove a statement with the comments it owns, and its lines when nothing else shares them. */
 export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
   const { code } = editor;
-  const first = leadingComments(editor, statement)[0];
-  const start = (first ?? statement).start;
-  const lineStart = code.lastIndexOf('\n', start - 1) + 1;
-  const lineEnd = code.indexOf('\n', statement.end);
+  const start = (leadingComments(editor, statement)[0] ?? statement).start;
   const end = statementEnd(editor, statement);
-  const before = code.slice(lineStart, start);
-  const after = code.slice(end, lineEnd === -1 ? code.length : lineEnd);
-  if (before.trim() || after.trim()) {
+  const lineBreak = lineEnd(code, end);
+  let from = lineStart(code, start);
+  if (code.slice(from, start).trim() || code.slice(end, lineBreak).trim()) {
     editor.edits.remove(start, end);
     return;
   }
   // The statement takes the blank lines above it, so none are left behind; at the top of the
   // file it takes the ones below instead.
-  const top = atTop ?? lineStart === 0;
-  let from = lineStart;
-  let to = lineEnd === -1 ? code.length : lineEnd + 1;
-  if (top) {
+  let to = Math.min(lineBreak + 1, code.length);
+  if (atTop ?? from === 0) {
     to += /^\s*/.exec(code.slice(to))![0].length;
   } else {
-    while (
-      from > 0 &&
-      /^[ \t]*\r?\n$/.test(code.slice(code.lastIndexOf('\n', from - 2) + 1, from))
-    ) {
-      from = code.lastIndexOf('\n', from - 2) + 1;
+    while (from > 0 && !code.slice(lineStart(code, from - 1), from).trim()) {
+      from = lineStart(code, from - 1);
     }
   }
   editor.edits.remove(from, to);
@@ -926,11 +932,10 @@ const keyRange = (editor: SourceEditor, member: Property): Span => {
   if (!member.computed) {
     return member.key;
   }
-  const { code, comments } = editor;
   const key = outerSpan(member.key);
   return {
-    start: previousTokenEnd(code, comments, key.start) - 1,
-    end: nextTokenStart(code, comments, key.end) + 1,
+    start: previousTokenEnd(editor, key.start) - 1,
+    end: nextTokenStart(editor, key.end) + 1,
   };
 };
 

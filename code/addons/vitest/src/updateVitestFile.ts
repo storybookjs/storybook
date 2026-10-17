@@ -12,9 +12,11 @@ import {
   appendToList,
   arrayList,
   itemText,
+  lineIndent,
   reindent,
   objectList,
   prependToList,
+  statementEnd,
 } from 'storybook/internal/csf-tools';
 
 import { normalize } from 'pathe';
@@ -72,9 +74,6 @@ const elementTexts = (editor: SourceEditor, array: E.ArrayExpression) =>
 
 const indent = (text: string, prefix: string) => prefix + reindent(text, '', prefix);
 
-const lineIndentAt = (code: string, index: number) =>
-  /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n', index - 1) + 1))![0];
-
 // `appendToList` re-indents multi-line items only when the list itself spans lines.
 const appendItems = (
   editor: SourceEditor,
@@ -83,7 +82,7 @@ const appendItems = (
   padding?: string
 ) => {
   const inline = list.items.length > 0 && !editor.code.slice(list.open, list.close).includes('\n');
-  const continuation = `\n${lineIndentAt(editor.code, list.open)}`;
+  const continuation = `\n${lineIndent(editor.code, list.open)}`;
   appendToList(
     editor,
     list,
@@ -237,11 +236,14 @@ const wrapTestConfigAsProject = (
 
   const config = templateConfig();
   const templateTest = findNamedProp(config.properties, 'test')!;
-  const lineIndent = lineIndentAt(target.code, existingTest.start);
   target.edits.overwrite(
     existingTest.start,
     existingTest.end,
-    reindent(itemText(source, objectList(config), templateTest), '', lineIndent)
+    reindent(
+      itemText(source, objectList(config), templateTest),
+      '',
+      lineIndent(target.code, existingTest.start)
+    )
   );
   mergeProperties(
     merge,
@@ -349,11 +351,9 @@ const missingStatements = (source: SourceEditor, target: SourceEditor) => {
   });
 };
 
-/**
- * Insert the statements on the line after the last import, keeping the comments that share its
- * line with it. A statement sharing that line moves below them instead, so the config is never
- * evaluated before the variables it reads.
- */
+// Insert the statements on the line after the last import and the comments it owns there. What
+// else shares that line moves below them, so the config never reads a variable before it is
+// declared.
 const insertStatements = (target: SourceEditor, text: string) => {
   const { code, program } = target;
   const index = program.body.findLastIndex((node) => node.type === 'ImportDeclaration');
@@ -361,24 +361,16 @@ const insertStatements = (target: SourceEditor, text: string) => {
     target.edits.appendLeft(program.body[0].start, `${text}\n\n`);
     return;
   }
-  let end = program.body[index].end;
-  for (const comment of target.comments) {
-    if (comment.start >= end && !code.slice(end, comment.start).includes('\n')) {
-      end = comment.end;
-    }
-  }
-  const next = program.body[index + 1];
-  const lineEnd = code.indexOf('\n', end);
-  if (next && (lineEnd === -1 || next.start < lineEnd)) {
-    if (next.start > end) {
-      target.edits.overwrite(end, next.start, `\n${text}\n`);
-    } else {
-      target.edits.appendLeft(next.start, `\n${text}\n`);
-    }
-  } else if (lineEnd === -1) {
+  const end = statementEnd(target, program.body[index]);
+  const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
+  if (next === code.length) {
     target.edits.append(`\n${text}\n`);
+  } else if (code[next] === '\n') {
+    target.edits.appendLeft(next + 1, `${text}\n`);
+  } else if (next > end) {
+    target.edits.overwrite(end, next, `\n${text}\n`);
   } else {
-    target.edits.appendLeft(lineEnd + 1, `${text}\n`);
+    target.edits.appendLeft(next, `\n${text}\n`);
   }
 };
 

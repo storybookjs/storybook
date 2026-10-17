@@ -39,6 +39,7 @@ export {
   arrayList,
   headerComments,
   itemText,
+  lineIndent,
   objectList,
   prependMembers,
   prependStatement,
@@ -53,4 +54,5 @@ export {
   removeStatements,
   setImportSpecifiers,
   specifierList,
+  statementEnd,
 } from './estree/editor.ts';

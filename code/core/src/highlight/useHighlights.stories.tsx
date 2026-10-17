@@ -3,6 +3,7 @@ import React from 'react';
 import { addons, useChannel } from 'storybook/preview-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
+import { isChromatic } from '../../../.storybook/isChromatic.ts';
 import preview from '../../../.storybook/preview.tsx';
 import { StoryContent } from './StoryContent.tsx';
 import {
@@ -14,20 +15,21 @@ import {
 import { useHighlightMenu } from './manager.ts';
 
 /**
- * The highlight menu is rendered by the manager, positioned over the preview iframe. Under Vitest
- * there is no manager, so boot the manager-side menu on the same (local) channel to exercise the
- * full preview → manager flow in a single document. Run it from a decorator (not the play
- * function) so the menu is listening before the highlights decorator emits its `HIGHLIGHT`
- * events, which populate the manager-side registry the menu renders from.
+ * The highlight menu is rendered by the manager, positioned over the preview iframe. Neither
+ * Vitest nor Chromatic loads the manager, so boot the manager-side menu on the same (local)
+ * channel to exercise the full preview → manager flow in a single document. Run it from a
+ * decorator (not the play function) so the menu is listening before the highlights decorator emits
+ * its `HIGHLIGHT` events, which populate the manager-side registry the menu renders from.
  */
 const setupHighlightMenu = () => {
-  if (!(globalThis as { __vitest_browser__?: boolean }).__vitest_browser__) {
+  const isVitest = (globalThis as { __vitest_browser__?: boolean }).__vitest_browser__;
+  if (!isVitest && !isChromatic()) {
     return;
   }
   useHighlightMenu(addons.getChannel());
 };
 
-/** The menu is rendered in the manager document, except under Vitest where it is local. */
+/** The menu is rendered in the manager document, except in Vitest and Chromatic where it is local. */
 const getHighlightMenu = () => {
   const local = document.getElementById('storybook-highlights-menu');
   if (local) {

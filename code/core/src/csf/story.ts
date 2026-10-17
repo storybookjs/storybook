@@ -173,7 +173,8 @@ export interface GlobalTypes {
 }
 
 /**
- * AddonTypes allows addons to extend the type system with additional args, parameters, and globals.
+ * AddonTypes allows addons to extend the type system with additional tags, args, parameters, and
+ * globals.
  *
  * Addons can use `definePreviewAddon<AddonTypes>()` to declare additional types that will be merged
  * into the story context. For example, an addon that provides a `theme` arg could declare:
@@ -186,9 +187,16 @@ export interface GlobalTypes {
  *
  * When users include this addon in their preview config, the `theme` arg becomes available and
  * type-checked across all stories.
+ *
+ * Addons can also narrow `tags` to enable autocompletion. Include `(string & {})` to keep accepting
+ * any other tag:
+ *
+ * ```ts
+ * const tagsAddon = definePreviewAddon<{ tags: Array<'a' | 'b' | (string & {})> }>({});
+ * ```
  */
 export interface AddonTypes {
-  tags?: Tag[] | undefined;
+  tags?: unknown;
   args?: unknown;
   parameters?: Record<string, any>;
   globals?: Record<string, any>;

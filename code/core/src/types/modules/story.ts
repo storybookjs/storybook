@@ -47,10 +47,11 @@ export interface ProjectAnnotations<
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
   /**
-   * Load a file of the story index, for a framework whose story files cannot be imported as is.
+   * Load a CSF or MDX file of the index in the preview, for framework authors.
    *
-   * The store caches a CSF file by the identity of the returned exports, so return the same object
-   * for the same module.
+   * Return the same object for the same module, e.g. keyed by the module `importFn` returned (a
+   * WeakMap). An MDX file that imports a story file must see the object the hook returns for that
+   * file.
    */
   experimental_loadStoryFile?: (
     importPath: Path,

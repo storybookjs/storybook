@@ -100,10 +100,14 @@ export function readStaticArgs(
   const snippets: Record<string, string> = {};
   const unresolved: string[] = [];
   for (const [key, node] of Object.entries(nodes)) {
+    let mock = unwrapExpression(node);
+    while (t.isCallExpression(mock) && t.isMemberExpression(mock.callee)) {
+      mock = unwrapExpression(mock.callee.object);
+    }
     if (
-      t.isCallExpression(node) &&
-      t.isIdentifier(node.callee) &&
-      mockFactories.has(node.callee.name)
+      t.isCallExpression(mock) &&
+      t.isIdentifier(mock.callee) &&
+      mockFactories.has(mock.callee.name)
     )
       continue;
     const snippet = readStaticSnippet(node, snippetFactories);

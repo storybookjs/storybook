@@ -95,3 +95,40 @@ it('warns about an unknown identifier in the final markup', async () => {
   );
   expect(payload?.stories['example--default']?.warning).toBe('Identifier not resolved: `missing`.');
 });
+
+it.each([
+  ['native', '', '<button {...args}>Save</button>', '<button >Save</button>'],
+  ['component', "import Button from './Button.svelte';", '<Button {...args} />', '<Button />'],
+])('omits chained mocks from a %s Svelte CSF snippet', async (_, imports, markup, expected) => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+      import { defineMeta } from '@storybook/svelte';
+      import { fn as mock } from 'storybook/test';
+      ${imports}
+      const { Story } = defineMeta({ title: 'Example', args: { x: mock().mockName('x').mockReturnValue(1) } });
+    </script>
+    <Story name="Default" asChild>${markup}</Story>`,
+  });
+  const payload = await buildStoryDocsPayload(
+    { entry: svelteEntry },
+    { readDocgen: async () => undefined }
+  );
+  const snippet = payload?.stories['example--default']?.snippet;
+  expect(snippet).toContain(expected);
+  expect(snippet).not.toContain('x=');
+  expect(snippet).not.toContain('storybook/test');
+  expect(snippet).not.toContain('mock');
+});
+
+it('preserves a chained factory that is not a storybook mock', async () => {
+  vol.fromJSON({
+    [entry.importPath]: `import Button from './Button.svelte';
+import { fn } from 'custom-factory';
+export default { title: 'Example', component: Button };
+export const Default = { args: { x: fn().mockName('x') } };`,
+  });
+  const payload = await buildStoryDocsPayload({ entry }, { readDocgen: async () => undefined });
+  expect(payload?.stories['example--default']?.snippet).toContain("x={fn().mockName('x')}");
+  expect(payload?.stories['example--default']?.snippet).toContain("from 'custom-factory'");
+});

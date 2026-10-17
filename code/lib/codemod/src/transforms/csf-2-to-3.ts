@@ -13,10 +13,10 @@ import {
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { API, FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
 import invariant from 'tiny-invariant';
 
+import type { TransformFile } from '../lib/utils.ts';
 import { upgradeDeprecatedTypes } from './upgrade-deprecated-types.ts';
 
 const renameAnnotation = (annotation: string) => {
@@ -135,7 +135,7 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
   editor.commit();
 }
 
-export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: TransformFile) {
   const makeTitle = (userTitle?: string) => {
     return userTitle || 'FIXME';
   };

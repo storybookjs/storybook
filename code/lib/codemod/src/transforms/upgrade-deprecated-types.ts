@@ -10,8 +10,9 @@ import {
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { API, FileInfo } from 'jscodeshift';
 import prettier from 'prettier';
+
+import type { TransformFile } from '../lib/utils.ts';
 
 const deprecatedTypes = [
   'ComponentStory',
@@ -28,7 +29,7 @@ function migrateType(oldType: string) {
   return oldType.replace('Component', '');
 }
 
-export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: TransformFile) {
   // TODO what do I need to with the title?
   const csf = loadCsf(info.source, { makeTitle: (title) => title, fileName: info.path });
 

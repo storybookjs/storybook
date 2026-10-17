@@ -7,7 +7,7 @@ import {
   walk,
 } from 'storybook/internal/csf-tools';
 
-import type { FileInfo } from 'jscodeshift';
+import type { TransformFile } from '../lib/utils.ts';
 
 function findImplicitSpies(editor: SourceEditor, node: Node, keys: string[]) {
   walk(node, (identifier) => {
@@ -66,7 +66,7 @@ function findAnnotations(program: E.Program, storyName: string, annotationName: 
   return values;
 }
 
-export default async function transform(info: FileInfo) {
+export default async function transform(info: TransformFile) {
   const csf = loadCsf(info.source, { makeTitle: (title) => title, fileName: info.path });
   csf.parse();
   const editor = csf._editor;

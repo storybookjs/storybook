@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import ansiRegex from 'ansi-regex';
-import type { API } from 'jscodeshift';
 import { dedent } from 'ts-dedent';
 
 import _transform from '../upgrade-deprecated-types.ts';
@@ -12,11 +11,7 @@ expect.addSnapshotSerializer({
 });
 
 const tsTransform = async (source: string) =>
-  (
-    await _transform({ source, path: 'Component.stories.tsx' }, {} as API, {
-      parser: 'tsx',
-    })
-  ).trim();
+  (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('upgrade-deprecated-types', () => {
   describe('typescript', () => {

@@ -125,6 +125,7 @@ export default definePreview({
       template: '<div style="margin: 3em;"><story /></div>',
     }),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -140,6 +141,7 @@ export default definePreview({
       template: '<div style="margin: 3em;"><story /></div>',
     }),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -148,6 +150,7 @@ import { componentWrapperDecorator, definePreview } from '@storybook/angular';
 
 export default definePreview({
   decorators: [componentWrapperDecorator((story) => `<div style="margin: 3em">${story}</div>`)],
+  addons: [/* ... */],
 });
 ```
 
@@ -186,6 +189,7 @@ export default definePreview({
       </div>
     ),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -206,6 +210,7 @@ export default definePreview({
       </div>
     ),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -216,6 +221,7 @@ import { html } from 'lit';
 
 export default definePreview({
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+  addons: [/* ... */],
 });
 ```
 
@@ -228,5 +234,6 @@ import { html } from 'lit';
 
 export default definePreview({
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
+  addons: [/* ... */],
 });
 ```

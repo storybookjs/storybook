@@ -27,6 +27,7 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -40,6 +41,7 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -50,6 +52,7 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -62,6 +65,7 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -72,6 +76,7 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -82,6 +87,7 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```
 
@@ -94,5 +100,6 @@ export default definePreview({
   parameters: {
     layout: 'centered',
   },
+  addons: [/* ... */],
 });
 ```

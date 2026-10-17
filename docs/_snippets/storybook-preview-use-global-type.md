@@ -27,6 +27,7 @@ export default definePreview({
       },
     ),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -169,6 +170,7 @@ export default definePreview({
       };
     },
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -202,6 +204,7 @@ export default definePreview({
       };
     },
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -224,6 +227,7 @@ export default definePreview({
       );
     },
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -247,6 +251,7 @@ export default definePreview({
       );
     },
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -262,6 +267,7 @@ export default definePreview({
       return html`<div class=${theme}>${story()}</div>`;
     },
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -279,5 +285,6 @@ export default definePreview({
       return html`<div class=${theme}>${story()}</div>`;
     },
   ],
+  addons: [/* ... */],
 });
 ```

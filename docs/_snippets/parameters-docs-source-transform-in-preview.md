@@ -66,6 +66,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;
@@ -94,6 +95,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;
@@ -119,6 +121,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;
@@ -146,6 +149,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;
@@ -171,6 +175,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;
@@ -196,6 +201,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;
@@ -223,6 +229,7 @@ const preview = definePreview({
       },
     },
   },
+  addons: [/* ... */],
 });
 
 export default preview;

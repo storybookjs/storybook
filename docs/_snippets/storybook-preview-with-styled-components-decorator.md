@@ -437,6 +437,7 @@ export default definePreview({
       </ThemeProvider>
     ),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -459,6 +460,7 @@ export default definePreview({
       </ThemeProvider>
     ),
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -492,6 +494,7 @@ export default definePreview({
       };
     },
   ],
+  addons: [/* ... */],
 });
 ```
 
@@ -527,5 +530,6 @@ export default definePreview({
       };
     },
   ],
+  addons: [/* ... */],
 });
 ```

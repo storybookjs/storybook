@@ -219,6 +219,12 @@ describe('removeFromList', () => {
     );
   });
 
+  it('removes only the comma of the last kept item before a removed trailing run', () => {
+    expect(removeElement(`export default { addons: [1 // one\n, 2 // two\n, 3] };`, 2)).toBe(
+      `export default { addons: [1 // one\n, 2 // two\n] };`
+    );
+  });
+
   it.each(['\n', '\r\n'])(
     'keeps what follows adjacent removed items off the line of the comment before them',
     (eol) => {
@@ -328,11 +334,21 @@ describe('removeStatement', () => {
     const code = `const a = 1; /**\n * Docs for B\n */\nexport const B = 2;`;
     const first = new SourceEditor(code);
     removeStatement(first, first.program.body[0]);
-    expect(first.toString()).toBe(` /**\n * Docs for B\n */\nexport const B = 2;`);
+    expect(first.toString()).toBe(`/**\n * Docs for B\n */\nexport const B = 2;`);
 
     const second = new SourceEditor(code);
     removeStatement(second, second.program.body[1]);
-    expect(second.toString()).toBe(`const a = 1; `);
+    expect(second.toString()).toBe(`const a = 1;`);
+  });
+
+  it('takes the spaces between it and the code it shares its line with', () => {
+    const before = new SourceEditor(`foo(); // @ts-expect-error\nbar();`);
+    removeStatement(before, before.program.body[0]);
+    expect(before.toString()).toBe(`// @ts-expect-error\nbar();`);
+
+    const after = new SourceEditor(`foo(); bar();\nbaz();`);
+    removeStatement(after, after.program.body[1]);
+    expect(after.toString()).toBe(`foo();\nbaz();`);
   });
 
   it('removes a statement below a blank first line', () => {
@@ -344,7 +360,7 @@ describe('removeStatement', () => {
   it('leaves the comment trailing the previous statement on a shared last line', () => {
     const editor = new SourceEditor(`import a from 'a'; /* a */ import b from 'b';`);
     removeStatement(editor, editor.program.body[1]);
-    expect(editor.toString()).toBe(`import a from 'a'; /* a */ `);
+    expect(editor.toString()).toBe(`import a from 'a'; /* a */`);
   });
 });
 
@@ -417,6 +433,34 @@ describe('insertAfterImports', () => {
     expect(insert(`import a from 'a'; /* a */ foo();`)).toBe(
       `import a from 'a'; /* a */\nconst b = 2;\nfoo();`
     );
+  });
+
+  it('inserts below the comments the last import owns', () => {
+    expect(insert(`import x from 'x'; // x\nfoo();`)).toBe(
+      `import x from 'x'; // x\nconst b = 2;\nfoo();`
+    );
+    expect(insert(`import x from 'x'; /* x\n y */`)).toBe(
+      `import x from 'x'; /* x\n y */\nconst b = 2;`
+    );
+  });
+
+  it('keeps the spaces ending the line of the last import on that line', () => {
+    expect(insert(`import a from 'a';   \nfoo();`)).toBe(
+      `import a from 'a';   \nconst b = 2;\nfoo();`
+    );
+  });
+
+  it('inserts several statements in order, with one line break before the code moved below', () => {
+    const editor = new SourceEditor(`import a from 'a'; foo();`);
+    insertAfterImports(editor, `const b = 2;`);
+    insertAfterImports(editor, `const c = 3;`);
+    expect(editor.toString()).toBe(`import a from 'a';\nconst b = 2;\nconst c = 3;\nfoo();`);
+  });
+
+  it('separates a statement that would continue the one before it', () => {
+    const editor = new SourceEditor(`import a from 'a'\nfoo()`);
+    insertAfterImports(editor, `[1, 2].forEach(a);`);
+    expect(editor.toString()).toBe(`import a from 'a'\n;[1, 2].forEach(a);\nfoo()`);
   });
 
   it('inserts as the first statement without imports', () => {

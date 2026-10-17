@@ -661,10 +661,11 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
     }
     if (last === items.length - 1 && separatorAfter(editor, items[last]) === undefined) {
       // Trailing run without a comma: drop the comma of the last kept item instead, unless that
-      // comma writes a hole.
+      // comma writes a hole. Only the comma: the comments around it stay with the kept item.
       const previous = items[first - 1];
       if (!isHole(previous)) {
-        edits.remove(previous.end, separatorAfter(editor, previous)!);
+        const comma = separatorAfter(editor, previous)!;
+        edits.remove(comma - 1, comma);
       }
     }
     const start = itemStart(editor, list, first);
@@ -780,22 +781,29 @@ export const statementEnd = (editor: SourceEditor, statement: Span) => {
   return (below === -1 ? comments : comments.slice(0, below)).at(-1)?.end ?? statement.end;
 };
 
+// Text that would continue a statement not ended by `;` on the line before, such as `[1].map(f)`.
+const CONTINUES_STATEMENT = /^[([`+\-/]/;
+
 /**
  * Insert a statement on its own line right after a statement and the comments it owns. What else
- * shares that line moves below the inserted statement.
+ * shares that line moves below the inserted statements.
  */
 export const insertStatementAfter = (editor: SourceEditor, statement: Span, text: string) => {
   const { code, edits } = editor;
   const end = statementEnd(editor, statement);
   const next = end + /^[^\S\n]*/.exec(code.slice(end))![0].length;
+  const separator = code[statement.end - 1] !== ';' && CONTINUES_STATEMENT.test(text) ? ';' : '';
   if (next === code.length || code[next] === '\n') {
-    edits.appendLeft(end, `\n${text}`);
+    edits.appendLeft(next, `\n${separator}${text}`);
     return;
   }
+  edits.appendLeft(end, `\n${separator}${text}`);
+  // The same line break for every statement inserted here.
   if (next > end) {
-    edits.remove(end, next);
+    edits.overwrite(end, next, '\n');
+  } else {
+    edits.appendRight(next, '\n');
   }
-  edits.appendLeft(end, `\n${text}\n`);
 };
 
 /** Insert a statement after the last import, or as the first statement when there is none. */
@@ -869,8 +877,14 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
   const end = statementEnd(editor, statement);
   const lineBreak = lineEnd(code, end);
   let from = lineStart(code, start);
-  if (code.slice(from, start).trim() || code.slice(end, lineBreak).trim()) {
-    editor.edits.remove(start, end);
+  if (code.slice(end, lineBreak).trim()) {
+    // Code stays after it on the line: take the spaces before that code.
+    editor.edits.remove(start, end + /^[^\S\n]*/.exec(code.slice(end))![0].length);
+    return;
+  }
+  if (code.slice(from, start).trim()) {
+    // Code stays before it on the line: take the spaces after that code.
+    editor.edits.remove(start - /[^\S\n]*$/.exec(code.slice(from, start))![0].length, end);
     return;
   }
   // The statement takes the blank lines above it, so none are left behind; at the top of the

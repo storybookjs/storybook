@@ -1,6 +1,7 @@
 import { formatFileContent } from 'storybook/internal/common';
 import {
   type ESTree as E,
+  appendStatement,
   type ESTreeNode as Node,
   loadConfig,
   printConfig,
@@ -189,9 +190,7 @@ export async function configToCsfFactory(
      * This is needed because story files using CSF factories import from preview, so the preview
      * file must have a default export.
      */
-    editor.edits.append(
-      `${editor.code && !editor.code.endsWith('\n') ? '\n' : ''}export default ${methodName}({});`
-    );
+    appendStatement(editor, `export default ${methodName}({});`);
   }
   config._commit();
 

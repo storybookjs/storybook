@@ -41,6 +41,7 @@ import {
   type InputSourceMap,
   SourceEditor,
   appendStatement,
+  insertStatementAfter,
 } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
@@ -645,7 +646,7 @@ export class CsfFile {
         outerSpan(declaration).start,
         `const ${metaName} = `
       );
-      this._editor.edits.appendLeft(node.end, `\nexport default ${metaName};`);
+      insertStatementAfter(this._editor, node, `export default ${metaName};`);
       this._metaStatement = node;
       decl = declaration;
     } else if (isVariableReference) {

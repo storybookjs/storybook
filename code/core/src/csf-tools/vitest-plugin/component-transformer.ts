@@ -10,6 +10,7 @@ import { type E, type Node, outerSpan, unwrapExpression, walk } from '../estree/
 import {
   SourceEditor,
   appendToList,
+  insertStatementAfter,
   prependStatement,
   printKey,
   printValue,
@@ -164,7 +165,7 @@ const collectComponentExports = (editor: SourceEditor, fileName: string) => {
         const identifierName = createComponentNameFromFileName(fileName);
         const identifier = generateUid(scopes, identifierName);
         editor.edits.overwrite(node.start, outerSpan(declaration).start, `const ${identifier} = `);
-        editor.edits.appendLeft(node.end, `\nexport default ${identifier};`);
+        insertStatementAfter(editor, node, `export default ${identifier};`);
 
         if (declaration.type === 'CallExpression') {
           // Assume wrapped exports are components without detecting JSX to filter out. We can do that if needed in the future based on feedback.

@@ -40,7 +40,6 @@ export {
   arrayList,
   headerComments,
   insertAfterImports,
-  insertStatementAfter,
   itemText,
   lineIndent,
   objectList,

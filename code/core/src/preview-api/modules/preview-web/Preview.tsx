@@ -56,10 +56,13 @@ const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
 
 function resolveStoryIndexUrl() {
+  // No document to resolve against, like in React Native
+  if (typeof document === 'undefined') {
+    return STORY_INDEX_PATH;
+  }
   try {
-    return new URL(STORY_INDEX_PATH, globalThis.document.baseURI).href;
+    return new URL(STORY_INDEX_PATH, document.baseURI).href;
   } catch {
-    // No document to resolve against, like in React Native
     return STORY_INDEX_PATH;
   }
 }

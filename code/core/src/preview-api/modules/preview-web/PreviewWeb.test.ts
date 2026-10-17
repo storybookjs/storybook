@@ -36,6 +36,7 @@ import { toMerged } from 'es-toolkit/object';
 
 import { addons } from '../addons/index.ts';
 import type { StoryStore } from '../store/index.ts';
+import { Preview } from './Preview.tsx';
 import { PreviewWeb } from './PreviewWeb.tsx';
 import {
   componentOneExports,
@@ -2901,6 +2902,16 @@ describe('PreviewWeb', () => {
       await preview.getStoryIndexFromServer();
 
       expect(global.fetch).toHaveBeenLastCalledWith('http://localhost:6006/index.json');
+    });
+
+    it('fetches the relative index path without a document', async () => {
+      vi.stubGlobal('document', undefined);
+      const preview = new Preview(importFn, getProjectAnnotations, undefined, false);
+      vi.unstubAllGlobals();
+
+      await preview.getStoryIndexFromServer();
+
+      expect(global.fetch).toHaveBeenLastCalledWith('./index.json');
     });
   });
 

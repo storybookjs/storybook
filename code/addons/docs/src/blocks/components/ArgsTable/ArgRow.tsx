@@ -78,7 +78,7 @@ const TypeWithJsDoc = styled.div<{ hasDescription: boolean }>(({ theme, hasDescr
 }));
 
 const StyledTd = styled.td<{ expandable: boolean }>(({ expandable }) => ({
-  paddingLeft: expandable ? '40px !important' : '20px !important',
+  paddingInlineStart: expandable ? '40px !important' : '20px !important',
 }));
 
 // When a row has no usable control, the "Setup controls" link is hidden and a placeholder dash is

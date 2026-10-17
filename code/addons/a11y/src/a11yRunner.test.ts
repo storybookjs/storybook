@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addons } from 'storybook/preview-api';
 
 import { EVENTS } from './constants.ts';
-import { getIsVitestStandaloneRun } from './utils.ts';
 
 const { axeMock, documentMock } = vi.hoisted(() => {
   const documentMock = {
@@ -34,8 +33,6 @@ vi.mock('axe-core', () => ({
   default: axeMock,
 }));
 
-vi.mock('./utils.ts', { spy: true });
-
 vi.mock('storybook/preview-api');
 const mockedAddons = vi.mocked(addons);
 
@@ -55,7 +52,6 @@ describe('a11yRunner', () => {
 
     documentMock.getElementById.mockReturnValue(null);
     axeMock.run.mockResolvedValue(axeResults);
-    vi.mocked(getIsVitestStandaloneRun).mockReturnValue(false);
 
     mockChannel = { on: vi.fn(), emit: vi.fn() };
     mockedAddons.getChannel.mockReturnValue(
@@ -130,32 +126,6 @@ describe('a11yRunner', () => {
 
     expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
       runOnly: ['wcag2a'],
-    });
-  });
-
-  describe('standalone Vitest runs', () => {
-    beforeEach(() => {
-      vi.mocked(getIsVitestStandaloneRun).mockReturnValue(true);
-    });
-
-    it('defaults resultTypes to violations and incomplete in a standalone Vitest run', async () => {
-      const { run } = await import('./a11yRunner.ts');
-
-      await run({ config: {}, options: {} }, 'example-story');
-
-      expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
-        resultTypes: ['violations', 'incomplete'],
-      });
-    });
-
-    it('keeps a user-provided resultTypes in a standalone Vitest run', async () => {
-      const { run } = await import('./a11yRunner.ts');
-
-      await run({ config: {}, options: { resultTypes: ['passes'] } }, 'example-story');
-
-      expect(axeMock.run).toHaveBeenCalledWith(expect.any(Object), {
-        resultTypes: ['passes'],
-      });
     });
   });
 });

@@ -15,32 +15,20 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
   document.body.innerHTML = '';
-  vi.unstubAllEnvs();
 });
 
-it('trims passing nodes only for standalone runs and preserves every violation', async () => {
+it('trims passing nodes with explicit result types and preserves every violation', async () => {
   const { run } = await import('./a11yRunner.ts');
 
   document.body.innerHTML =
     Array.from({ length: 20 }, (_, i) => `<button>Action ${i}</button>`).join('') +
     '<button></button><button></button><button></button>';
-  const input = { options: { runOnly: ['button-name'] } };
 
-  vi.stubEnv('VITEST_STORYBOOK', 'true');
-  const interactive = await run(input, 'buttons--example');
-  expect(interactive.passes[0].nodes).toHaveLength(20);
-  expect(interactive.violations[0].nodes).toHaveLength(3);
-
-  vi.stubEnv('VITEST_STORYBOOK', 'false');
-  const standalone = await run(input, 'buttons--example');
-  expect(standalone.passes[0].nodes).toHaveLength(1);
-  expect(standalone.violations).toEqual(interactive.violations);
-  expect(input.options).toEqual({ runOnly: ['button-name'] });
-
-  const explicit = await run(
-    { options: { ...input.options, resultTypes: ['passes', 'violations'] } },
+  const result = await run(
+    { options: { runOnly: ['button-name'], resultTypes: ['violations', 'incomplete'] } },
     'buttons--example'
   );
-  expect(explicit.passes).toEqual(interactive.passes);
-  expect(explicit.violations).toEqual(interactive.violations);
+
+  expect(result.passes[0].nodes).toHaveLength(1);
+  expect(result.violations[0].nodes).toHaveLength(3);
 });

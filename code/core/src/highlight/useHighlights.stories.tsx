@@ -254,6 +254,14 @@ export const Menu = meta.story({
       expect(element.querySelector('.element-list button')).not.toBeNull();
       return element;
     });
+
+    // Chromatic does not load the manager, so the menu booted into the preview can open but its
+    // clicks would also be handled by the preview's own click listener. Stop after opening the
+    // menu so the snapshot captures it, and let Vitest run the interaction to completion instead.
+    if (isChromatic()) {
+      return;
+    }
+
     await clickAt(menu.querySelector('.element-list button')!);
 
     const menuItem = await waitFor(() => within(menu).getByText('Insufficient color contrast'));

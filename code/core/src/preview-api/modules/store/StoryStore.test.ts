@@ -194,6 +194,79 @@ describe('StoryStore', () => {
     });
   });
 
+  describe('experimental_loadStoryFile', () => {
+    const clientExports = {
+      default: { title: 'Component One' },
+      a: { args: { foo: 'from the hook' } },
+    };
+
+    it('loads the CSF file of a story through the hook of the project annotations', async () => {
+      const experimental_loadStoryFile = vi.fn(async () => clientExports);
+      const store = new StoryStore(
+        storyIndex,
+        importFn,
+        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
+      );
+
+      const story = await store.loadStory({ storyId: 'component-one--a' });
+
+      expect(experimental_loadStoryFile).toHaveBeenCalledWith(
+        './src/ComponentOne.stories.js',
+        importFn
+      );
+      expect(story.initialArgs).toEqual({ foo: 'from the hook' });
+      expect(story.moduleExport).toBe(clientExports.a);
+    });
+
+    it('loads the file of a docs entry through the hook', async () => {
+      const experimental_loadStoryFile = vi.fn(async () => clientExports);
+      const store = new StoryStore(
+        {
+          v: 5,
+          entries: {
+            ...storyIndex.entries,
+            'component-one--docs': {
+              type: 'docs',
+              id: 'component-one--docs',
+              title: 'Component One',
+              name: 'Docs',
+              importPath: './src/ComponentOne.stories.js',
+              storiesImports: ['./src/ComponentTwo.stories.js'],
+              tags: ['autodocs'],
+            },
+          },
+        },
+        importFn,
+        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
+      );
+
+      const { entryExports, csfFiles } = await store.loadEntry('component-one--docs');
+
+      expect(experimental_loadStoryFile).toHaveBeenCalledWith(
+        './src/ComponentOne.stories.js',
+        importFn
+      );
+      expect(experimental_loadStoryFile).toHaveBeenCalledWith(
+        './src/ComponentTwo.stories.js',
+        importFn
+      );
+      expect(entryExports).toBe(clientExports);
+      expect(csfFiles[0].moduleExports).toBe(clientExports);
+    });
+
+    it('uses the hook set by setProjectAnnotations', async () => {
+      const store = new StoryStore(storyIndex, importFn, projectAnnotations);
+      const experimental_loadStoryFile = vi.fn(async () => clientExports);
+
+      store.setProjectAnnotations(
+        composeConfigs([projectAnnotations, { experimental_loadStoryFile }])
+      );
+      const story = await store.loadStory({ storyId: 'component-one--a' });
+
+      expect(story.moduleExport).toBe(clientExports.a);
+    });
+  });
+
   describe('setProjectAnnotations', () => {
     it('busts the loadStory cache', async () => {
       const store = new StoryStore(storyIndex, importFn, projectAnnotations);

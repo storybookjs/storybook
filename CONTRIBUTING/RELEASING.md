@@ -653,13 +653,13 @@ gitGraph
     commit
     checkout next
     merge new-feature type: HIGHLIGHT
-    branch some-simultanous-bugfix
+    branch some-simultaneous-bugfix
     commit
     checkout next
     branch version-non-patch-from-7.1.0-alpha.28
     commit id: "write changelog"
     checkout next
-    merge some-simultanous-bugfix id: "whoops!"
+    merge some-simultaneous-bugfix id: "whoops!"
     checkout next-release
     merge version-non-patch-from-7.1.0-alpha.28
     commit id: "bump versions" tag: "v7.1.0-alpha.29"

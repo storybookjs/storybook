@@ -81,7 +81,7 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     expectStoryDiscoveryBeforeReview();
   });
 
-  test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-    expectSkillInvoked('stories');
+  test.skipIf(getEvalContext().integration === 'mcp')('invokes the ui-workflow skill', () => {
+    expectSkillInvoked('ui-workflow');
   });
 });

@@ -1683,6 +1683,54 @@ describe('PreviewWeb', () => {
     });
   });
 
+  describe('concurrent renderSelection calls', () => {
+    it('does not render a replacement before it has been prepared', async () => {
+      const [teardownGate, openTeardownGate] = createGate();
+      const [replacementGate, openReplacementGate] = createGate();
+      let replacementLoadStarted = () => {};
+      const replacementStarted = new Promise<void>((resolve) => {
+        replacementLoadStarted = resolve;
+      });
+
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+
+      teardownrenderToCanvas.mockImplementationOnce(async () => teardownGate);
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--b',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionB = preview.renderSelection();
+      await vi.waitFor(() => expect(teardownrenderToCanvas).toHaveBeenCalledOnce());
+
+      componentOneExports.default.loaders[0].mockImplementationOnce(async () => {
+        replacementLoadStarted();
+        return replacementGate;
+      });
+      preview.selectionStore.setSelection({
+        storyId: 'component-one--a',
+        viewMode: 'story',
+      });
+      // @ts-expect-error Ignore protected method
+      const selectionA = preview.renderSelection();
+      await replacementStarted;
+
+      mockChannel.emit.mockClear();
+      openTeardownGate();
+      await selectionB;
+
+      expect(mockChannel.emit).not.toHaveBeenCalledWith(
+        STORY_PREPARED,
+        expect.objectContaining({ id: 'component-one--b' })
+      );
+      expect(projectAnnotations.renderToCanvas).toHaveBeenCalledOnce();
+
+      openReplacementGate({ l: 9 });
+      await selectionA;
+    });
+  });
+
   describe('onSetCurrentStory', () => {
     beforeEach(() => {
       vi.useFakeTimers();

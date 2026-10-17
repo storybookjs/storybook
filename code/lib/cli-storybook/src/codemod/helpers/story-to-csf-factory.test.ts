@@ -1154,6 +1154,21 @@ describe('stories codemod', () => {
         ).resolves.toContain('meta.type<{ args: (Small | Wide) & Themed }>().story()');
       });
 
+      it('puts a conditional type in parentheses when it is intersected', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { Small, Themed } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const Default: StoryObj<typeof Button> = {};
+            export const Sized: StoryObj<Small extends Themed ? Small : never> = {} satisfies StoryObj<Themed>;
+          `)
+        ).resolves.toContain('.type<{ args: (Small extends Themed ? Small : never) & Themed }>()');
+      });
+
       it('leaves out of the custom args type of a story what the meta already has', async () => {
         await expect(
           transform(dedent`

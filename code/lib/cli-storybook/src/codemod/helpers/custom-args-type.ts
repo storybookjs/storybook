@@ -3,6 +3,14 @@ import type { ESTree as E, ESTreeNode as Node, SourceEditor } from 'storybook/in
 // `ComponentMeta` and `ComponentStory` are left out: their type argument is always a component.
 const argsTypeNames = new Set(['Meta', 'MetaObj', 'Story', 'StoryFn', 'StoryObj']);
 
+// Types that `&` binds tighter than, so they need parentheses in an intersection.
+const LOOSER_THAN_INTERSECTION = new Set([
+  'TSUnionType',
+  'TSFunctionType',
+  'TSConstructorType',
+  'TSConditionalType',
+]);
+
 // The component is never a custom args type: `preview.meta()` infers its args from `component`.
 export function customArgsTypes(editor: SourceEditor, component: Node | undefined) {
   const argsTypeLocalNames = new Set<string>();
@@ -125,7 +133,7 @@ export function customArgsTypes(editor: SourceEditor, component: Node | undefine
         types.length > 1
           ? types
               .map((type) =>
-                type.type === 'TSUnionType' || type.type === 'TSFunctionType'
+                LOOSER_THAN_INTERSECTION.has(type.type)
                   ? `(${editor.source(type)})`
                   : editor.source(type)
               )

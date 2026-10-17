@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-non-standalone--primary": {
+      "argCode": {},
       "id": "storydocs-non-standalone--primary",
       "name": "Primary",
       "snippet": "import { Component } from '@angular/core';
@@ -16,6 +17,17 @@
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "template": "import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-demo',
+  imports: [],
+  template: `<sb-non-standalone ⟦props = label⟧ (pressed)="pressed($event)" />`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
+      "templateWarning": "NonStandaloneComponent is declared with `standalone: false`, so it cannot be listed in the host component's `imports`. Add the NgModule that declares and exports NonStandaloneComponent to `imports` to make this snippet compile.",
       "warning": "NonStandaloneComponent is declared with `standalone: false`, so it cannot be listed in the host component's `imports`. Add the NgModule that declares and exports NonStandaloneComponent to `imports` to make this snippet compile.",
     },
   },

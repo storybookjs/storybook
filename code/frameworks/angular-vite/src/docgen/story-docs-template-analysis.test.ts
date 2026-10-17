@@ -17,6 +17,7 @@ describe('analyzeStoryTemplate', () => {
     ).toMatchInlineSnapshot(`
       {
         "boundOutputs": [],
+        "calledNames": [],
         "kind": "resolved",
         "markup": "<section title="plain text">
         @if ({ value: label }.value) {
@@ -45,6 +46,9 @@ describe('analyzeStoryTemplate', () => {
         "boundOutputs": [
           "pressed",
         ],
+        "calledNames": [
+          "select",
+        ],
         "kind": "resolved",
         "markup": "@let display = label;
       <button #trigger (pressed)="select(display, $event)">{{ display }}</button>
@@ -72,6 +76,7 @@ describe('analyzeStoryTemplate', () => {
     ).toMatchInlineSnapshot(`
       {
         "boundOutputs": [],
+        "calledNames": [],
         "kind": "resolved",
         "markup": "@for (item of items; track item.id; let row = $index) {
         <span [title]="item.owner?.name">{{ row }} {{ suffix }}</span>
@@ -91,6 +96,7 @@ describe('analyzeStoryTemplate', () => {
       .toMatchInlineSnapshot(`
         {
           "boundOutputs": [],
+          "calledNames": [],
           "kind": "resolved",
           "markup": "<span>{{ this.label }} {{ this['detail'] }}</span>",
           "referencedNames": [
@@ -106,6 +112,9 @@ describe('analyzeStoryTemplate', () => {
       .toMatchInlineSnapshot(`
         {
           "boundOutputs": [],
+          "calledNames": [
+            "$any",
+          ],
           "kind": "resolved",
           "markup": "<span>{{ $any(label) }} {{ this.$any(detail) }}</span>",
           "referencedNames": [
@@ -145,6 +154,9 @@ describe('analyzeStoryTemplate', () => {
           "pressed",
           "valueChange",
         ],
+        "calledNames": [
+          "onPressed",
+        ],
         "kind": "resolved",
         "markup": "<sb-button
         label="static"
@@ -183,6 +195,9 @@ describe('analyzeStoryTemplate', () => {
         "boundOutputs": [
           "pressed",
         ],
+        "calledNames": [
+          "outer",
+        ],
         "kind": "resolved",
         "markup": "<div (pressed)="outer($event)" [label]="'Save'"></div><sb-button (pressed)="pressed($event)"></sb-button>",
         "referencedNames": [
@@ -210,6 +225,9 @@ describe('analyzeStoryTemplate', () => {
         "boundOutputs": [
           "pressed",
         ],
+        "calledNames": [
+          "manual",
+        ],
         "kind": "resolved",
         "markup": "<sb-button title="> (pressed)=" (pressed)="manual($event)"></sb-button>",
         "referencedNames": [
@@ -235,6 +253,7 @@ describe('analyzeStoryTemplate', () => {
         "boundOutputs": [
           "valueChange",
         ],
+        "calledNames": [],
         "kind": "resolved",
         "markup": "<input [(value)]="value">",
         "referencedNames": [
@@ -260,6 +279,9 @@ describe('analyzeStoryTemplate', () => {
       {
         "boundOutputs": [
           "pressed",
+        ],
+        "calledNames": [
+          "manual",
         ],
         "kind": "resolved",
         "markup": "<button *ngIf="ready" [label]="'Save'" (pressed)="manual($event)"></button>",

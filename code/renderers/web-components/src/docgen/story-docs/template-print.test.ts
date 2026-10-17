@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   createStoryArgsResolver,
+  fillWithStoryArgs,
   loadCsf,
   normalizeStoryDeclaration,
   resolveRenderFunction,
 } from 'storybook/internal/csf-tools';
 
+import { fillTemplate } from '../../docs/fill-template.ts';
 import type {
   ManifestClassField,
   ManifestDeclaration,
@@ -65,7 +67,10 @@ const renderTemplate = (storySource: string) => {
   }
   const template = resolveHtmlTemplate(render.path, csf);
   expect(template).toBeDefined();
-  return printHtmlTemplate(template!, resolver.resolve(story).args, declaration);
+  const { args } = resolver.resolve(story);
+  // The snippet is the template filled with the story's own args.
+  const { template: printed, ...rest } = printHtmlTemplate(template!, args, declaration);
+  return { ...rest, snippet: fillWithStoryArgs(printed, args, fillTemplate) };
 };
 
 describe('html template story snippets', () => {

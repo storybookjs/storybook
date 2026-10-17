@@ -12,6 +12,7 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
+import { fillTemplate } from '../../docs/fill-template.ts';
 import { buildStoryDocsPayload, type BuildStoryDocsContext } from './build-story-docs.ts';
 
 const declaration = {
@@ -107,7 +108,12 @@ const writeFixture = (source: string, files: Record<string, string> = {}) => {
   return { dir, storyPath };
 };
 
-const firstStory = async (
+const firstStory = async (...args: Parameters<typeof firstStoryWithTemplate>) => {
+  const { template: _template, argCode: _argCode, ...doc } = await firstStoryWithTemplate(...args);
+  return doc;
+};
+
+const firstStoryWithTemplate = async (
   source: string,
   options: {
     files?: Record<string, string>;
@@ -125,6 +131,372 @@ const firstStory = async (
   expect(result).toBeDefined();
   return Object.values(result!.stories)[0];
 };
+
+const story = (body: string) => `
+  import { html } from 'lit';
+  export default { title: 'Example/TestElement', component: 'test-element' };
+  export const Primary = ${body};
+`;
+
+const template = async (body: string) => (await firstStoryWithTemplate(story(body))).template;
+
+describe('buildStoryDocsPayload template', () => {
+  it('is the element next prints for a story without a render, with a hole for each arg it prints', async () => {
+    const { template: written, snippet } = await firstStoryWithTemplate(
+      story(`{ args: { label: 'Hi', isOpen: true, items: [1] } }`)
+    );
+    expect(written).toMatchInlineSnapshot(
+      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr label label field⟧ ⟦attr is-open isOpen field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
+    );
+    expect(snippet).toBe(fillTemplate(written!, { label: 'Hi', isOpen: true, items: [1] }));
+    expect(fillTemplate(written!, { label: '', '--accent': 'red', variant: 'a' })).toBe(
+      '<test-element label="" variant="a" style="--accent: red;"></test-element>'
+    );
+  });
+
+  it('writes a listener the story writes as the script next prints after the element', async () => {
+    const { template: written } = await firstStoryWithTemplate(
+      story(`{ args: { 'shape-change-event': (event) => event.preventDefault() } }`)
+    );
+    expect(written).toMatchInlineSnapshot(`
+      "⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr is-open isOpen field⟧ ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', event => event.preventDefault());
+        }
+      </script>"
+    `);
+  });
+
+  it('is the element next prints for a render it cannot read, also one that reads the story context', async () => {
+    const source = `import { html } from './own.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Hi' },
+        render: (args, context) => {
+          const open = context.viewMode !== 'docs';
+          return html\`<test-element ?open=\${open} label=\${args.label}></test-element>\`;
+        },
+      };`;
+    const doc = await firstStoryWithTemplate(source, {
+      files: { 'own.ts': 'export const html = (strings) => strings.join("");' },
+    });
+    expect(doc).toMatchObject({ snippet: '<test-element label="Hi"></test-element>' });
+    expect(doc.template).toMatchInlineSnapshot(
+      `"⟦style test-element ::part(panel)=panel-part :state(active)=active-state⟧<test-element ⟦attr label label field⟧ ⟦attr is-open isOpen field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>"`
+    );
+  });
+
+  it('writes slot content as html and part and state styles as a style element', async () => {
+    const written = (await template(`{ args: { 'default-slot': 'Body' } }`))!;
+    expect(
+      fillTemplate(written, {
+        'default-slot': '<b>Body</b>',
+        'actions-slot': 'Go',
+        'panel-part': 'color: red;',
+        'active-state': 'outline: none;',
+      })
+    ).toMatchInlineSnapshot(`
+      "<style>
+        test-element::part(panel) { color: red; }
+        test-element:state(active) { outline: none; }
+      </style>
+      <test-element><b>Body</b><span slot="actions">Go</span></test-element>"
+    `);
+  });
+
+  it('is the html next prints of a render, with a hole wherever it prints an arg', async () => {
+    const { template: written, snippet } = await firstStoryWithTemplate(
+      story(`{
+        args: { label: 'a < b', disabled: true, heading: 'H', items: [1] },
+        render: ({ label, disabled, heading, items }) => {
+          return html\`
+            <test-element
+              label="\${label}"
+              ?disabled=\${disabled}
+              .heading=\${heading}
+              @shape-change=\${() => console.log(label)}
+            >
+              <span>\${label} \\u2014 \${items.map((item) => html\`<i>\${item}</i>\`)}</span>
+            </test-element>
+          \`;
+        },
+      }`)
+    );
+    expect(written).toMatchInlineSnapshot(`
+      "<test-element label="⟦quoted label⟧" ⟦bool disabled disabled⟧ ⟦attr heading heading field⟧>
+        <span>⟦text label⟧ \\u2014</span>
+      </test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', () => console.log(label));
+        }
+      </script>"
+    `);
+    expect(snippet).toMatchInlineSnapshot(`
+      "<test-element label="a &lt; b" disabled heading="H">
+        <span>a &lt; b \\u2014</span>
+      </test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', () => console.log(label));
+        }
+      </script>"
+    `);
+    expect(fillTemplate(written!, { label: 'Hi', disabled: false })).toMatchInlineSnapshot(`
+      "<test-element label="Hi">
+        <span>Hi \\u2014</span>
+      </test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('shape-change', () => console.log(label));
+        }
+      </script>"
+    `);
+  });
+
+  it('emits the code the story writes each arg with that a hole prints as code', async () => {
+    const { template, argCode, snippet } = await firstStoryWithTemplate(
+      story(`{
+        args: { label: 'Hi', count: 2, items: [new Date(0)], heading: shout, onShapeChange: () => {} },
+        render: ({ label, count, items, heading }) =>
+          html\`<test-element label=\${label} .count=\${count}>\${items} \${heading}</test-element>\`,
+      }`)
+    );
+    expect(argCode).toEqual({
+      items: '[new Date(0)]',
+      heading: 'shout',
+      onShapeChange: '() => {}',
+    });
+    expect(template).toMatchInlineSnapshot(`
+      "<test-element label="⟦quoted label⟧" ⟦attr count count field⟧>
+        ⟦text items⟧
+        ⟦text heading⟧
+      </test-element>"
+    `);
+    expect(snippet).toMatchInlineSnapshot(`
+      "<test-element label="Hi" count="2">
+        \${[new Date(0)]}
+        \${shout}
+      </test-element>"
+    `);
+  });
+
+  it("lays the html out as next does with the story's own args", async () => {
+    const written = await template(`{
+      args: { label: 'A label long enough that the start tag wraps', variant: 'primary' },
+      render: (args) => html\`<div><test-element label=\${args.label} variant=\${args.variant}>\${args.heading}</test-element></div>\`,
+    }`);
+    expect(written).toMatchInlineSnapshot(`
+      "<div>
+        <test-element
+          label="⟦quoted label⟧"
+          variant="⟦quoted variant⟧"
+        >⟦text heading⟧</test-element>
+      </div>"
+    `);
+    expect(fillTemplate(written!, { label: 'Hi', variant: 'a', heading: 'Go' }))
+      .toMatchInlineSnapshot(`
+      "<div>
+        <test-element label="Hi" variant="a">Go</test-element>
+      </div>"
+    `);
+  });
+
+  it('is the snippet, without a hole, for a render that reads no args', async () => {
+    const doc = await firstStoryWithTemplate(
+      story('{ args: { label: "Hi" }, render: () => html`<test-element></test-element>` }')
+    );
+    expect(doc).toMatchObject({
+      snippet: '<test-element></test-element>',
+      template: '<test-element></test-element>',
+    });
+  });
+
+  it.each([
+    [
+      'a string template, whose arg text is html',
+      '(args) => `<test-element label="${args.label}">${args.heading}</test-element>`',
+      '<test-element label="⟦quoted label⟧">⟦slot default heading⟧</test-element>',
+      '<test-element label="Hi"></test-element>',
+    ],
+    [
+      'an ifDefined attribute',
+      '(args) => html`<p title=${ifDefined(args.label)}></p>`',
+      '<p ⟦attr title label defined⟧></p>',
+      '<p title="Hi"></p>',
+    ],
+    [
+      'a conditional, whose branch the story args choose',
+      '(args) => html`<p>${args.open ? html`<b>${args.label}</b>` : nothing}</p>`',
+      '<p>\n  <b>⟦text label⟧</b>\n</p>',
+      '<p>\n  <b>Hi</b>\n</p>',
+    ],
+    [
+      'an arg read on, which next does not print',
+      "(args) => html`<p title=${args.label.toUpperCase()} lang=${args.heading ?? 'en'}></p>`",
+      '<p></p>',
+      '<p></p>',
+    ],
+    [
+      'an arg whose name is no hole word',
+      "(args) => html`<p>${args['my label']}</p>`",
+      '<p>⟦text %my%20label⟧</p>',
+      '<p></p>',
+    ],
+  ])('prints %s as next does', async (_, render, written, snippet) => {
+    const source = `
+      import { html, nothing } from 'lit';
+      import { ifDefined } from 'lit/directives/if-defined.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Hi', open: true }, render: ${render} };
+    `;
+    expect(await firstStoryWithTemplate(source)).toMatchObject({ template: written, snippet });
+  });
+
+  it.each([
+    ['a call of a function with the args', '(args) => Card(args)'],
+    ['a copy of the args with an entry', "(args) => Card({ ...args, size: 's' })"],
+    ['a toolkit template', '(args) => template(args)'],
+    [
+      'a render with statements',
+      '(args) => { const upper = args.label.toUpperCase(); return html`<p>${upper}</p>`; }',
+    ],
+  ])('is the element next prints for %s, not the render as written', async (_, render) => {
+    const { template: written, snippet } = await firstStoryWithTemplate(
+      story(`{ args: { label: 'Hi' }, render: ${render} }`)
+    );
+    expect(written).toMatch(/^⟦style test-element .*⟧<test-element ⟦attr label label field⟧ /);
+    expect(snippet).toBe('<test-element label="Hi"></test-element>');
+  });
+
+  it('is not there where next shows no snippet', async () => {
+    const doc = await firstStoryWithTemplate(
+      story(`{ args: { a: 1 }, render: ({ a }) => html\`\${JSON.stringify({ a })}\` }`)
+    );
+    expect(doc.snippet).toBeUndefined();
+    expect(doc.template).toBeUndefined();
+  });
+
+  it('has no hole for args a helper takes whole, which next does not print', async () => {
+    const doc = await firstStoryWithTemplate(
+      story('{ args: { label: "Hi" }, render: (args) => html`<div>${card(args)}</div>` }')
+    );
+    expect(doc).toMatchObject({ snippet: '<div></div>', template: '<div></div>' });
+  });
+
+  it('writes a listener as next does, also one that reads the args', async () => {
+    expect(
+      await template(
+        '{ render: (args) => html`<test-element @change=${track(args)} label=${args.label}></test-element>` }'
+      )
+    ).toMatchInlineSnapshot(`
+      "<test-element label="⟦quoted label⟧"></test-element>
+      <script>
+        {
+          const host = document.currentScript.previousElementSibling;
+          host.addEventListener('change', () => {});
+        }
+      </script>"
+    `);
+  });
+
+  it('reads the html tag of lit-html', async () => {
+    const source = `import { html } from 'lit-html';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { render: (args) => html\`<p>\${args.label}</p>\` };`;
+    expect((await firstStoryWithTemplate(source)).template).toBe('<p>⟦text label⟧</p>');
+  });
+
+  it('is the element next prints for a html tag that is not lit', async () => {
+    const source = `import { html } from './own.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Hi' }, render: (args) => html\`<p>\${args.label}</p>\` };`;
+    const doc = await firstStoryWithTemplate(source, {
+      files: { 'own.ts': 'export const html = (strings) => strings.join("");' },
+    });
+    expect(doc.template).toMatch(/^⟦style test-element .*⟧<test-element ⟦attr label label field⟧ /);
+    expect(doc.snippet).toBe('<test-element label="Hi"></test-element>');
+  });
+});
+
+describe('buildStoryDocsPayload static snippet from the template', () => {
+  it('names what the code of an arg it prints reads', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      const ITEMS = ['a'];
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { items: [ITEMS[0], new Date(0)] },
+        render: (args) => html\`<test-element>\${args.items}</test-element>\`,
+      };`
+    );
+    expect(doc).toMatchObject({
+      snippet: '<test-element>${[ITEMS[0], new Date(0)]}</test-element>',
+      warning: 'Incomplete snippet: names the snippet does not import or declare: `ITEMS`.',
+    });
+  });
+
+  it("does not name lit's own names in the code of an arg", async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { icon: html\`<b>Go</b>\` },
+        render: (args) => html\`<p>\${args.icon}</p>\`,
+      };`
+    );
+    expect(doc.snippet).toBe('<p>${html`<b>Go</b>`}</p>');
+    expect(doc.warning).toBeUndefined();
+  });
+
+  it('prints the code of an arg it cannot read, and names what the snippet does not declare', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      import { label } from './label.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label }, render: (args) => html\`<p>\${args.label}</p>\` };`,
+      { files: { 'label.ts': 'export const label = String(Date.now());' } }
+    );
+    expect(doc.template).toBe('<p>⟦text label⟧</p>');
+    expect(doc.snippet).toBe('<p>${label}</p>');
+    expect(doc.warning).toBe(
+      'Incomplete snippet: names the snippet does not import or declare: `label`.'
+    );
+  });
+
+  it('fills the template with the args it can read while a spread it cannot read may set an arg it reads', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      import { baseArgs } from 'some-package';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { ...baseArgs, label: 'Hi' },
+        render: (args) => html\`<p>\${args.variant} \${args.label}</p>\`,
+      };`
+    );
+    expect(doc.snippet).toBe('<p>\n  Hi\n</p>');
+    expect(doc.snippet).toBe(fillTemplate(doc.template!, { label: 'Hi' }));
+    expect(doc.warning).toContain('`...baseArgs`');
+  });
+
+  it('shows no element the story never renders', async () => {
+    const doc = await firstStoryWithTemplate(
+      `import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Hi', count: 2 },
+        render: () => html\`\${['a', 'b'].map((s) => html\`<other-el size=\${s}></other-el>\`)}\`,
+      };`
+    );
+    expect(doc.snippet).toBeUndefined();
+    expect(doc.template).toBeUndefined();
+  });
+});
 
 describe('buildStoryDocsPayload', () => {
   it.each([
@@ -274,23 +646,6 @@ describe('buildStoryDocsPayload', () => {
         id: 'example-testelement--primary',
         name: 'Primary',
         snippet: '<test-element label="csf2"></test-element>',
-      },
-    },
-    {
-      name: 'unbound args warning for render template',
-      source: `
-        import { html } from 'lit';
-        export default { title: 'Example/TestElement', component: 'test-element' };
-        export const Primary = {
-          args: { label: 'Bound', count: 2 },
-          render: (args) => html\`<test-element label=\${args.label}></test-element>\`,
-        };
-      `,
-      expected: {
-        id: 'example-testelement--primary',
-        name: 'Primary',
-        snippet: '<test-element label="Bound"></test-element>',
-        warning: 'Incomplete snippet: args not bound by the render template: `count`.',
       },
     },
     {

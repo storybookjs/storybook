@@ -4,6 +4,9 @@
   "path": "__PATH__",
   "stories": {
     "forms-type-intersection--props-as-written": {
+      "argCode": {
+        "mixed": "{ label: 'Intersected', count: 2, extra: true }",
+      },
       "description": undefined,
       "id": "forms-type-intersection--props-as-written",
       "name": "Props As Written",
@@ -17,6 +20,15 @@ const mixed = { label: 'Intersected', count: 2, extra: true };
   <IntersectionProps :mixed="mixed" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import IntersectionProps from './IntersectionProps.vue';
+
+const mixed = ⟦value mixed script⟧;
+</script>
+
+<template>
+  <IntersectionProps :mixed="mixed" ⟦props -mixed⟧⟦slots IntersectionProps⟧
+</template>",
     },
   },
 }

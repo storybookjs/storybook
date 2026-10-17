@@ -4,6 +4,9 @@
   "path": "__PATH__",
   "stories": {
     "forms-function-slot--primary": {
+      "argCode": {
+        "default": "<ChildButton label="Click me" />",
+      },
       "description": undefined,
       "id": "forms-function-slot--primary",
       "name": "Primary",
@@ -18,6 +21,14 @@ import FunctionSlotPanel from './FunctionSlotPanel.vue';
   </FunctionSlotPanel>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ChildButton from './ChildButton.vue';
+import FunctionSlotPanel from './FunctionSlotPanel.vue';
+</script>
+
+<template>
+  <FunctionSlotPanel ⟦props -default⟧⟦slots FunctionSlotPanel default⟧
+</template>",
     },
   },
 }

@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "storydocs-csf1-legacy--bound": {
+      "argCode": {},
       "description": "Bound from a shared template.",
       "id": "storydocs-csf1-legacy--bound",
       "name": "Bound",
@@ -14,6 +15,15 @@ import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';
   selector: 'app-demo',
   imports: [CsfOneLegacyComponent],
   template: `<sb-csf1-legacy [label]="'Bound'" [count]="2" />`,
+})
+export class DemoComponent {}",
+      "template": "import { Component } from '@angular/core';
+import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [CsfOneLegacyComponent],
+  template: `<sb-csf1-legacy ⟦props = label count⟧ />`,
 })
 export class DemoComponent {}",
     },

@@ -33,7 +33,12 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): StoryDoc | und
   if (story?.snippet === undefined) {
     return story;
   }
-  return { ...story, snippet: prependImportToSnippet(result.value?.import, story.snippet) };
+  const withImport = (code: string) => prependImportToSnippet(result.value?.import, code);
+  return {
+    ...story,
+    snippet: withImport(story.snippet),
+    ...(story.template !== undefined && { template: withImport(story.template) }),
+  };
 }
 
 // CSF files that share a title share a component id, but `entry` stands for only one of them.

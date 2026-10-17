@@ -449,7 +449,10 @@ export function buildReactComponentDocgenFromResolved({
   return {
     ...componentDocgen,
     // Legacy inline manifests keep CSF-ordered arrays; story-docs open-service payloads use Records.
-    stories: Object.values(storyDocs.stories),
+    // Their consumers have no args to fill a template with.
+    stories: Object.values(storyDocs.stories).map(
+      ({ template: _, argCode: __, templateWarning: ___, ...story }) => story
+    ),
     ...(storyDocs.import ? { import: storyDocs.import } : {}),
   };
 }

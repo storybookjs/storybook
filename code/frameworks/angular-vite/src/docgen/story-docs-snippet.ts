@@ -1,7 +1,6 @@
 // Wraps a story's template in the host component a reader would have to write to run it, so the
-// snippet is copy-pasteable on its own. Server-side only: the preview renderer still emits the bare
-// template, which is what the legacy runtime generator produced.
-import { isValidIdentifier } from '../template-grammar.ts';
+// snippet is copy-pasteable on its own.
+import { escapeTemplateLiteral, isValidIdentifier } from '../template-grammar.ts';
 
 const HOST_SELECTOR = 'app-demo';
 const HOST_CLASS = 'DemoComponent';
@@ -26,18 +25,21 @@ export interface HostComponentSnippetInput {
   outputs: string[];
   /** Args the template refers to by name, which the story supplied through `props: args`. */
   fields?: { name: string; value: string }[];
+  /** Import statements the fields need, as the story file imports what they name. */
+  imports?: string[];
 }
 
 export interface HostComponentSnippet {
   snippet: string;
   /** Why the snippet does not compile as written; see `StoryDoc.warning`. */
   warning?: string;
+  /** The snippet with a hole where it binds the args, for the preview to fill; see `StoryDoc.template`. */
+  template?: string;
+  /** The code the story writes the args the holes print with; see `StoryDoc.argCode`. */
+  argCode?: Record<string, string>;
+  /** The warning that still holds for the filled template; see `StoryDoc.templateWarning`. */
+  templateWarning?: string;
 }
-
-// A template literal is the only quoting that survives a multi-line template carrying both quote
-// characters, so the three sequences that would end or escape it are neutralized.
-const escapeTemplateLiteral = (template: string): string =>
-  template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 
 const unescapeTemplateLiteral = (template: string): string =>
   template
@@ -114,6 +116,7 @@ export const buildHostComponentSnippet = ({
   ngModules,
   outputs,
   fields = [],
+  imports: fieldImports = [],
 }: HostComponentSnippetInput): HostComponentSnippet => {
   // A `standalone: false` component is only reachable through its declaring NgModule, which static
   // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
@@ -127,6 +130,7 @@ export const buildHostComponentSnippet = ({
     ...(componentImport && importable ? [componentImport] : []),
     ...(moduleNames.length > 0 ? (ngModules?.importStatements ?? []) : []),
   ];
+  imports.push(...fieldImports.filter((statement) => !imports.includes(statement)));
 
   // Under `*ngComponentOutlet` the component is referenced as a value, not matched as an element,
   // so the directive is what the host declares and the class has to be reachable from the template.

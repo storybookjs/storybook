@@ -8,9 +8,10 @@
       "id": "forms-slots-options-api--scoped-bindings",
       "name": "Scoped Bindings",
       "summary": undefined,
-      "warning": "No static snippet: a slot function could not be resolved statically.",
+      "warning": "No static snippet: an arg could not be printed in the snippet.",
     },
     "forms-slots-options-api--string-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots-options-api--string-child",
       "name": "String Child",
@@ -27,6 +28,13 @@ import OptionsApiSlots from './OptionsApiSlots.vue';
   </OptionsApiSlots>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import OptionsApiSlots from './OptionsApiSlots.vue';
+</script>
+
+<template>
+  <OptionsApiSlots ⟦attr heading heading⟧ ⟦props -default -header -item -heading⟧⟦slots OptionsApiSlots default header item⟧
+</template>",
     },
   },
 }

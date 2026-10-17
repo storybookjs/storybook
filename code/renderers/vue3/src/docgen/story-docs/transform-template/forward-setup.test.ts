@@ -378,7 +378,7 @@ export const Primary = {
     );
   });
 
-  it('bails when a statement reads a model arg, which the snippet turns into a ref', async () => {
+  it('fills a statement that reads a model arg with its value', async () => {
     const story = await primaryStory(`
 export const Primary = {
   args: { modelValue: 'Typed' },
@@ -393,9 +393,7 @@ export const Primary = {
 };
 `);
 
-    expect(story?.snippet).toBeUndefined();
-    expect(story?.warning).toBe(
-      'No static snippet: the story template could not be resolved statically.'
-    );
+    expect(story?.snippet).toContain("const initial = 'Typed';");
+    expect(story?.warning).toBeUndefined();
   });
 });

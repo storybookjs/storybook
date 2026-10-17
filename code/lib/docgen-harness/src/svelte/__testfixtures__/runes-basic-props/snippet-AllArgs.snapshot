@@ -1,6 +1,1 @@
-<Panel 
-  label="All values"
-  count={3}
-  primary
-  title="Panel title"
- />
+<Panel label="All values" count={3} primary title="Panel title" />

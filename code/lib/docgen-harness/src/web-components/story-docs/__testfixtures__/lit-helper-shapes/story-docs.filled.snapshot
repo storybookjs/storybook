@@ -1,0 +1,10 @@
+{
+  "BranchingHelper": "<lit-template-shapes label="Alpha" disabled></lit-template-shapes>",
+  "Csf2Helper": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+  "HelperCall": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+  "HelperDefaults": "<lit-template-shapes heading="Head"></lit-template-shapes>",
+  "HelperInHtml": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
+  "ReExportedHtml": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
+  "SpreadDirective": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
+  "SpreadNextToAttribute": "<lit-template-shapes count="2"></lit-template-shapes>",
+}

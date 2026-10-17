@@ -2,6 +2,5 @@
   lit-slots-and-css::part(panel) { color: rebeccapurple; }
 </style>
 <lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">
-  Body <b>text</b>
-  <button slot="actions">Confirm</button>
+  Body <b>text</b><span slot="actions"><button>Confirm</button></span>
 </lit-slots-and-css>

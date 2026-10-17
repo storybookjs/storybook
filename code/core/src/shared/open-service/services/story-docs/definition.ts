@@ -12,10 +12,15 @@ const storyDocsErrorSchema = v.object({
   message: v.string(),
 });
 
+// The query output is parsed with these schemas, which drop every key they don't list; the type
+// test next to this file keeps them equal to the hand-written types in `types.ts`.
 const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
   snippet: v.optional(v.string()),
+  template: v.optional(v.string()),
+  argCode: v.optional(v.record(v.string(), v.string())),
+  templateWarning: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
@@ -55,10 +60,12 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) =>
-        Object.hasOwn(ctx.self.state.components, input.id)
-          ? ctx.self.state.components[input.id]
-          : undefined,
+      handler: (input, ctx) => {
+        // Reading the key subscribes to it, so a payload stored after this read reaches its
+        // subscribers; `Object.hasOwn` alone is not tracked.
+        const payload = ctx.self.state.components[input.id];
+        return Object.hasOwn(ctx.self.state.components, input.id) ? payload : undefined;
+      },
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },

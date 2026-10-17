@@ -23,12 +23,35 @@ export interface StoryDoc {
   id: string;
   name: string;
   snippet?: string;
+  /**
+   * The story's code with a hole, `⟦kind word…⟧`, wherever it reads an arg, such as
+   * `<Button ⟦attr label label⟧ />`; see `FillSnippetTemplate`. Once the args differ from the story's initial
+   * args, the preview fills it through the renderer's `parameters.docs.source.fillTemplate`, so the
+   * snippet follows the controls. Set only when every arg read is a hole.
+   */
+  template?: string;
+  /**
+   * The code the story writes each arg with, such as `shout`, `fn((o) => o.name)` or `MB * 5`,
+   * from `argCode` in `storybook/internal/csf-tools`: every arg but a plain string, number,
+   * boolean, `null` or `undefined`. The preview fills an arg that still holds the value the story is
+   * written with as this code, so the filled snippet keeps it as written; an arg a control changed
+   * prints its value.
+   */
+  argCode?: Record<string, string>;
+  /**
+   * What the filled `template` still leaves out, such as an `NgModule` the component needs, shown
+   * with it in place of `warning`. The provider chooses it, as it knows which parts of `warning`
+   * are about arg values, which the filled snippet has.
+   */
+  templateWarning?: string;
   description?: string;
   summary?: string;
   /**
    * What a static pass could not resolve, in the source text it was written as. Next to a
    * `snippet` it marks the example as partial; on its own it says why no static snippet could be
-   * produced at all. An `error` means the provider itself failed.
+   * produced at all. It belongs to the static snippet, which reads arg values from the source: a
+   * filled `template` has the runtime values instead, and `templateWarning` says what it leaves
+   * out. An `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;

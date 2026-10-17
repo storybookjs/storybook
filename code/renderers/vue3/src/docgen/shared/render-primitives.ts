@@ -6,7 +6,6 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type {
-  ClassifiedArg,
   ClassifiedPropLikeArg,
   ClassifiedSlotArg,
   RenderableValuePlan,
@@ -60,29 +59,6 @@ export interface RenderedProp {
 }
 
 const VUE_PACKAGE = 'vue';
-
-/**
- * Split classified args by role, each group sorted in stable attribute order.
- *
- * Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
- */
-function partitionArgsByRole(args: ClassifiedArg[]): {
-  props: ClassifiedPropLikeArg[];
-  events: ClassifiedPropLikeArg[];
-  slots: ClassifiedSlotArg[];
-} {
-  return {
-    props: args
-      .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'model' || arg.role === 'prop')
-      .sort((a, b) => a.name.localeCompare(b.name)),
-    events: args
-      .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'event')
-      .sort((a, b) => a.name.localeCompare(b.name)),
-    slots: args
-      .filter((arg): arg is ClassifiedSlotArg => arg.role === 'slot')
-      .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name))),
-  };
-}
 
 /** Create an isolated hoist context for one generated snippet. */
 export function createRenderContext(): RenderContext {
@@ -159,7 +135,7 @@ function hoistedProp(
 }
 
 function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
-  const bindingName = hoistModelRef(arg.name, arg.value, ctx);
+  const bindingName = hoistModelRef(arg.name, printValue(unwrapExpression(arg.value)), ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
 }
@@ -262,7 +238,7 @@ function allocateBindingName(name: string, ctx: RenderContext): string {
 }
 
 /** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
-function quoteAttributeValue(value: string): string | undefined {
+export function quoteAttributeValue(value: string): string | undefined {
   // Attribute values are entity-decoded on re-parse, so an `&` would come back as a different
   // string than the story set. Text content escapes instead; an attribute has to hoist.
   if (value.includes('&')) {
@@ -291,78 +267,8 @@ export function formatRenderedProp(prop: RenderedProp): string {
   return `${prop.attrName}="${prop.value}"`;
 }
 
-export interface ArgsBindingExpansion {
-  /** Formatted attribute text for each expanded prop, model, and event arg. */
-  attributes: string[];
-  /** Wrapped slot children for each expanded slot arg, in stable slot order. */
-  slotChildren: string[];
-}
-
-export interface RenderArgsBindingExpansionOptions {
-  /** Upgrade model args to `v-model` bindings and slot args to slot children (story tag only). */
-  roleAware: boolean;
-  /** Renders one slot arg's children; `undefined` content bails the whole expansion. */
-  renderSlotArg?: (arg: ClassifiedSlotArg) => string | undefined;
-}
-
-/**
- * Expanded `v-bind="args"` attributes and slot children, or `undefined` when no faithful
- * expansion exists.
- *
- * On the story tag the expansion is role-aware, showing what the args mean to the component:
- * model args become `v-model` bindings and slot args become slot children. Any other tag spreads
- * one-way props and listeners only, which is all `v-bind` does for it at runtime, so its slot
- * args bail.
- */
-export function renderArgsBindingExpansion(
-  args: ClassifiedArg[],
-  ctx: RenderContext,
-  options: RenderArgsBindingExpansionOptions
-): ArgsBindingExpansion | undefined {
-  const partitioned = partitionArgsByRole(args);
-  if (partitioned.slots.length > 0 && !options.roleAware) {
-    return undefined;
-  }
-
-  const props = partitioned.props.map((arg) =>
-    options.roleAware
-      ? renderPropLikeArg(arg, ctx)
-      : renderPropValue(
-          { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
-          ctx
-        )
-  );
-  const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
-
-  const slotChildren: string[] = [];
-  for (const slot of partitioned.slots) {
-    const content = options.renderSlotArg?.(slot);
-    if (content === undefined) {
-      return undefined;
-    }
-    slotChildren.push(wrapSlotContent(slot.name, content));
-  }
-
-  return { attributes: [...props, ...events].map(formatRenderedProp), slotChildren };
-}
-
-/** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
-export function renderBoundArgAttribute(
-  attributeName: string,
-  arg: ClassifiedPropLikeArg,
-  ctx: RenderContext
-): string {
-  return formatRenderedProp(
-    renderPropValue(
-      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
-      ctx
-    )
-  );
-}
-
-/** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
-export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): string {
-  const source = printValue(unwrapExpression(value));
+/** Hoist `source`, the code of an arg's value, and return the binding name that replaces it. */
+export function hoistArgCode(name: string, source: string, ctx: RenderContext): string {
   const existing = ctx.hoistedArgs.get(name);
   if (existing?.source === source) {
     return existing.binding;
@@ -374,11 +280,15 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
   return bindingName;
 }
 
-/** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
-export function hoistModelRef(name: string, value: t.Node | undefined, ctx: RenderContext): string {
+/** Hoist a `ref` for a `v-model` binding that starts as `initial`, the code of the arg's value. */
+export function hoistModelRef(
+  name: string,
+  initial: string | undefined,
+  ctx: RenderContext
+): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
+  ctx.variables.set(bindingName, `ref(${initial ?? ''})`);
   return bindingName;
 }
 
@@ -463,10 +373,6 @@ function normalizeTemplateBlock(source: string): string {
   }
 
   return lines.slice(start, end).join('\n');
-}
-
-function slotSortKey(name: string): string {
-  return name === 'default' ? '' : name;
 }
 
 function isVueExpressionAttribute(name: string): boolean {

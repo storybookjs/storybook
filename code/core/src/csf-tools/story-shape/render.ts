@@ -1,7 +1,8 @@
-import { type NodePath, type types as t } from 'storybook/internal/babel';
+import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from '../CsfFile.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
+import { resolveSpreadMeta } from './spread-meta.ts';
 import {
   type ReferenceContext,
   type ResolvedMembers,
@@ -133,7 +134,18 @@ export function resolveEffectiveRender(
   }
 
   const metaRender = readRender(metaObjectPath(csf), declaration, references);
-  return metaRender.kind === 'invalid' ? { kind: 'unresolved' } : metaRender;
+  // A meta that spreads another story file's meta renders with that one's render, read in its file.
+  const spreadMeta =
+    metaRender.kind === 'unresolved' && references ? resolveSpreadMeta(csf, references) : undefined;
+  const baseRender =
+    spreadMeta &&
+    !spreadMeta.own.properties.some(
+      (property) => !t.isSpreadElement(property) && keyOf(property) === 'render'
+    )
+      ? readRender(spreadMeta.path, spreadMeta.path, spreadMeta.ctx)
+      : undefined;
+  const render = baseRender ?? metaRender;
+  return render.kind === 'invalid' ? { kind: 'unresolved' } : render;
 }
 
 const normalizeStoryDeclarationForRender = normalizeStoryDeclaration;

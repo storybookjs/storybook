@@ -8,7 +8,7 @@
       "id": "forms-function-slot-bail--primary",
       "name": "Primary",
       "summary": undefined,
-      "warning": "No static snippet: a slot function could not be resolved statically.",
+      "warning": "No static snippet: an arg could not be printed in the snippet.",
     },
   },
 }

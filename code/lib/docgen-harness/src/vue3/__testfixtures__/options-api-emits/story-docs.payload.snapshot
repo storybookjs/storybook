@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-options-api-emits--stepper": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-options-api-emits--stepper",
       "name": "Stepper",
@@ -15,6 +16,13 @@ import OptionsApiEmits from './OptionsApiEmits.vue';
   <OptionsApiEmits :step="2" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import OptionsApiEmits from './OptionsApiEmits.vue';
+</script>
+
+<template>
+  <OptionsApiEmits ⟦attr step step⟧ ⟦props -step⟧⟦slots OptionsApiEmits⟧
+</template>",
     },
   },
 }

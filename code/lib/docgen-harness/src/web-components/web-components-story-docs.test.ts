@@ -4,10 +4,17 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import {
+  createStoryArgsResolver,
+  createStoryReferenceResolver,
+  fillWithStoryArgs,
+  loadCsf,
+} from 'storybook/internal/csf-tools';
+import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
+import { fillTemplate } from '../../../../renderers/web-components/src/docs/fill-template.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
@@ -50,26 +57,68 @@ const cases = [
   })),
 ];
 
-describe('web-components story-docs server snippets', () => {
-  it.each(cases)('$fixtureCase', async ({ fixtureCase, testDir, title, legacyParity }) => {
-    const storyPath = join(testDir, 'input.stories.ts');
-    const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
-    const storyExports = Object.entries(csf._stories);
-    expect(storyExports.length).toBeGreaterThan(0);
+type Case = (typeof cases)[number];
 
-    const entry: IndexEntry = {
-      id: storyExports[0][1].id,
-      name: storyExports[0][1].name ?? storyExports[0][0],
-      title,
-      type: 'story',
-      subtype: 'story',
-      importPath: storyPath,
-    };
-    const docgen = createFixtureDocgen(testDir);
-    const payload = await buildStoryDocsPayload(
-      { entry },
-      { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
-    );
+const built = new Map<string, ReturnType<typeof build>>();
+
+// Each fixture is built once, for its own test and for the count of filled templates.
+const buildOnce = (testCase: Case) => {
+  if (!built.has(testCase.fixtureCase)) {
+    built.set(testCase.fixtureCase, build(testCase));
+  }
+  return built.get(testCase.fixtureCase)!;
+};
+
+async function build({ testDir, title }: Case) {
+  const storyPath = join(testDir, 'input.stories.ts');
+  const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
+  const storyExports = Object.entries(csf._stories);
+  const entry: IndexEntry = {
+    id: storyExports[0]?.[1].id ?? '',
+    name: storyExports[0]?.[1].name ?? storyExports[0]?.[0] ?? '',
+    title,
+    type: 'story',
+    subtype: 'story',
+    importPath: storyPath,
+  };
+  const docgen = createFixtureDocgen(testDir);
+  const payload = await buildStoryDocsPayload(
+    { entry },
+    { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
+  );
+  // The args as the provider reads them, through the files the story imports.
+  const resolver = createStoryArgsResolver(csf, {
+    filePath: storyPath,
+    resolveModule: createStoryReferenceResolver()().resolveModule,
+  });
+  // Each template filled with the args of its story as the preview has them before a control
+  // changes, each written as its code, or the error that keeps the static snippet.
+  const filled: Record<string, string> = {};
+  for (const [exportName, story] of storyExports) {
+    const template = payload?.stories[story.id]?.template;
+    if (template !== undefined) {
+      try {
+        filled[exportName] = fillWithStoryArgs(
+          template,
+          resolver.resolve(exportName).args,
+          fillTemplate
+        );
+      } catch (error) {
+        if (!(error instanceof UnprintableArgError)) {
+          throw error;
+        }
+        filled[exportName] = `${error.name}: ${error.message}`;
+      }
+    }
+  }
+  return { storyExports, payload, filled };
+}
+
+describe('web-components story-docs server snippets', () => {
+  it.each(cases)('$fixtureCase', async (testCase) => {
+    const { fixtureCase, testDir, legacyParity } = testCase;
+    const { storyExports, payload, filled } = await buildOnce(testCase);
+    expect(storyExports.length).toBeGreaterThan(0);
     expect(payload).toBeDefined();
 
     for (const [exportName, story] of storyExports) {
@@ -87,6 +136,7 @@ describe('web-components story-docs server snippets', () => {
         recorded,
         legacyParity,
         declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${exportName}`],
+        ownCode: storyDoc?.snippet !== undefined && storyDoc.snippet === filled[exportName],
       });
     }
 
@@ -98,6 +148,15 @@ describe('web-components story-docs server snippets', () => {
 
     await expect({ ...payload, path: '__PATH__' }).toMatchFileSnapshot(
       join(testDir, 'story-docs.payload.snapshot')
+    );
+    await expect(filled).toMatchFileSnapshot(join(testDir, 'story-docs.filled.snapshot'));
+  });
+
+  it('fills a meaningful number of templates with their story args', async () => {
+    const results = await Promise.all(cases.map(buildOnce));
+    const filled = results.flatMap((result) => Object.values(result.filled));
+    expect(filled.filter((text) => !text.startsWith('UnprintableArgError')).length).toBeGreaterThan(
+      20
     );
   });
 });

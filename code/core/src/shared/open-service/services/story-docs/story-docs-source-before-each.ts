@@ -5,13 +5,24 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
+import { getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
+// The first render of each version of a story loads its component's story docs; the server keeps
+// them current after that. Keyed on the story's parameters, which an args change keeps and a hot
+// update replaces, so filling in new args needs no request.
+const loads = new WeakMap<object, Promise<unknown>>();
+
+// The latest emit of each story. Each emit waits for the one before it, so with an async
+// `transform` the Code panel, which shows the last one, ends on the newest args. None is skipped:
+// a docs page renders a story with its current and its initial args, and looks each one up.
+const emits = new Map<string, Promise<unknown>>();
+
 /**
- * Preview `beforeEach` hook that emits a static story-docs snippet to the manager Code panel via
- * {@link emitTransformCode}. Runs once per story invocation; the snippet itself is static.
+ * Preview `beforeEach` hook that emits a story-docs snippet to the manager Code panel via
+ * {@link emitTransformCode}. It runs again on every args change, which fills the story's `template`
+ * with the new args.
  */
 export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallback | void {
   if (!globalThis.FEATURES?.docgenServer) {
@@ -39,18 +50,34 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   // Do not await story-docs I/O here — story render should start immediately. Cleanup flips
   // `cancelled` so a slow load cannot emit after the story is torn down, then returns the chain
   // so navigation waits for in-flight work to settle.
-  const codePanelSnippetPromise = service.queries.storyDocs
-    .loaded({ id: componentId })
-    .then((payload) => {
+  const query = service.queries.storyDocs;
+  let load = loads.get(context.parameters);
+  if (!load) {
+    load = query.loaded({ id: componentId });
+    loads.set(context.parameters, load);
+    // A failed load is tried again on the next render.
+    load.catch(() => loads.delete(context.parameters));
+  }
+  const previous = emits.get(storyId);
+  const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, previous])
+    .then(() => {
       if (cancelled) {
         return;
       }
-      const snippet = selectSnippetForStory(payload, storyId);
+      const { snippet, warning } = selectLiveSnippetForStory(
+        query.get({ id: componentId }),
+        storyId,
+        {
+          args: context.args,
+          unmappedArgs: context.unmappedArgs,
+          initialArgs: context.initialArgs,
+        },
+        getFillTemplate(context.parameters)
+      );
       const source = snippet ?? context.parameters?.docs?.source?.originalSource;
       if (source === undefined) {
         return;
       }
-      const warning = selectWarningForStory(payload, storyId);
 
       return emitTransformCode(
         source,
@@ -63,6 +90,12 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     .catch((error: unknown) => {
       logger.debug(`Story docs snippet for ${storyId} unavailable: ${String(error)}`);
     });
+  emits.set(storyId, codePanelSnippetPromise);
+  void codePanelSnippetPromise.finally(() => {
+    if (emits.get(storyId) === codePanelSnippetPromise) {
+      emits.delete(storyId);
+    }
+  });
 
   return () => {
     cancelled = true;

@@ -8,9 +8,10 @@
       "id": "forms-slots--scoped-bindings",
       "name": "Scoped Bindings",
       "summary": undefined,
-      "warning": "No static snippet: a slot function could not be resolved statically.",
+      "warning": "No static snippet: an arg could not be printed in the snippet.",
     },
     "forms-slots--string-child": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots--string-child",
       "name": "String Child",
@@ -24,8 +25,19 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsShowcase from './SlotsShowcase.vue';
+</script>
+
+<template>
+  <SlotsShowcase ⟦attr heading heading⟧ ⟦props -default -header -item -heading⟧⟦slots SlotsShowcase default header item⟧
+</template>",
     },
     "forms-slots--v-node-child": {
+      "argCode": {
+        "default": "<p class="body">Body content</p>",
+        "header": "<strong>Header content</strong>",
+      },
       "description": undefined,
       "id": "forms-slots--v-node-child",
       "name": "V Node Child",
@@ -42,6 +54,13 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsShowcase from './SlotsShowcase.vue';
+</script>
+
+<template>
+  <SlotsShowcase ⟦attr heading heading⟧ ⟦props -default -header -item -heading⟧⟦slots SlotsShowcase default header item⟧
+</template>",
     },
   },
 }

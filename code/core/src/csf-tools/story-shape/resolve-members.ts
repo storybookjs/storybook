@@ -247,6 +247,63 @@ const spreadMembers = (
     : resolveReference(ctx, argument, spread.start ?? undefined, visited);
 };
 
+/** Whether a module exports a declaration of its own under `name`, as `export const name = …`. */
+const declaresExport = (ctx: ReferenceContext, name: string): boolean => {
+  const declaration = ctx.program.scope.getBinding(name)?.path;
+  const statement = declaration?.isVariableDeclarator()
+    ? declaration.parentPath.parentPath
+    : declaration?.parentPath;
+  return statement?.isExportNamedDeclaration() === true && statement.node.exportKind !== 'type';
+};
+
+/**
+ * The module an `export * from` hands `name` on from, for a module that exports no `name` of its
+ * own. `undefined` when none does, or when more than one may, as such a name is not exported.
+ */
+const starExport = (ctx: ReferenceContext, name: string): ReferenceContext | undefined => {
+  if (exportsExplicitly(ctx, name)) {
+    return undefined;
+  }
+  const candidates = starSources(ctx).filter(
+    (target) => target === undefined || mayExport(target, name, new Set([ctx.filePath]))
+  );
+  return candidates.length === 1 ? candidates[0] : undefined;
+};
+
+// The modules a module's `export * from` statements name, `undefined` for one that cannot be read.
+const starSources = (ctx: ReferenceContext): (ReferenceContext | undefined)[] =>
+  ctx.program.node.body
+    .filter(
+      (statement): statement is t.ExportAllDeclaration =>
+        t.isExportAllDeclaration(statement) && statement.exportKind !== 'type'
+    )
+    .map((statement) => resolveTargetModule(ctx, statement.source.value));
+
+// Whether a module may export `name`: it does, or a module it reads `export *` from may.
+const mayExport = (ctx: ReferenceContext, name: string, seen: Set<string>): boolean => {
+  if (seen.has(ctx.filePath)) {
+    return false;
+  }
+  seen.add(ctx.filePath);
+  return (
+    exportsExplicitly(ctx, name) ||
+    starSources(ctx).some((target) => target === undefined || mayExport(target, name, seen))
+  );
+};
+
+// Whether a module exports `name` by a statement of its own, which wins over any `export *`.
+const exportsExplicitly = (ctx: ReferenceContext, name: string): boolean =>
+  declaresExport(ctx, name) ||
+  ctx.program.node.body.some(
+    (statement) =>
+      t.isExportNamedDeclaration(statement) &&
+      statement.specifiers.some(
+        (specifier) =>
+          (t.isExportSpecifier(specifier) || t.isExportNamespaceSpecifier(specifier)) &&
+          importedName(specifier.exported) === name
+      )
+  );
+
 /** A member chain of statically-known keys, like `HeaderStories.LoggedIn.input.args`. */
 const memberChain = (node: t.Node): { root: string; path: string[] } | undefined => {
   const path: string[] = [];
@@ -760,6 +817,24 @@ const exportedBinding = (
   exportName: string,
   visited: Set<string>
 ): BoundMembers | undefined => {
+  // A re-export can lead back to itself, as `export { base } from './a'` in both `a` and `b` does.
+  const key = `export:${ctx.filePath}#${exportName}`;
+  if (visited.has(key)) {
+    return undefined;
+  }
+  visited.add(key);
+  try {
+    return unguardedExportedBinding(ctx, exportName, visited);
+  } finally {
+    visited.delete(key);
+  }
+};
+
+const unguardedExportedBinding = (
+  ctx: ReferenceContext,
+  exportName: string,
+  visited: Set<string>
+): BoundMembers | undefined => {
   const asExternal = (bound: BoundMembers | undefined) =>
     bound === undefined || bound.kind === 'namespace' ? bound : { ...bound, external: true };
 
@@ -798,8 +873,12 @@ const exportedBinding = (
     return target ? exportedBinding(target, specifier.local.name, visited) : undefined;
   }
 
-  // `export const X = …` binds `X` in module scope, so the local lookup is the export.
-  return exportName === 'default'
-    ? undefined
-    : asExternal(bindingMembers(ctx, exportName, undefined, visited));
+  if (exportName === 'default') {
+    return undefined;
+  }
+  if (declaresExport(ctx, exportName)) {
+    return asExternal(bindingMembers(ctx, exportName, undefined, visited));
+  }
+  const star = starExport(ctx, exportName);
+  return star && exportedBinding(star, exportName, visited);
 };

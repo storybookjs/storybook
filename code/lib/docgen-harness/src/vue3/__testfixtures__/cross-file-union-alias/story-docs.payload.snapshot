@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-cross-file-union-alias--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-cross-file-union-alias--props-as-written",
       "name": "Props As Written",
@@ -15,6 +16,13 @@ import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
   <CrossFileUnionAlias size="small" variant="danger" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
+</script>
+
+<template>
+  <CrossFileUnionAlias ⟦attr size size⟧ ⟦attr variant variant⟧ ⟦props -default -size -variant⟧⟦slots CrossFileUnionAlias default⟧
+</template>",
     },
   },
 }

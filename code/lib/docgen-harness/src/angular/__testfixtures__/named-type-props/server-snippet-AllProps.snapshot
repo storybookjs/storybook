@@ -6,11 +6,11 @@ import { NamedTypePropsComponent } from './named-type-props.component.ts';
   imports: [NamedTypePropsComponent],
   template: `
     <sb-named-type-props
-        [user]="{name: 'Ada Lovelace', age: 36}"
+        [user]="{ name: 'Ada Lovelace', age: 36 }"
         [status]="'green'"
-        [tree]="{label: 'root'}"
+        [tree]="{ label: 'root' }"
         [id]="'sb-1'"
-        [config]="{collapsed: false}"
+        [config]="{ collapsed: false }"
     />`,
 })
 export class DemoComponent {}

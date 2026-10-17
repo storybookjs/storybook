@@ -2,7 +2,10 @@ import type { types as t } from 'storybook/internal/babel';
 
 import { readFileSync } from 'node:fs';
 
-import { createModuleResolver } from '../../common/utils/module-resolver.ts';
+import {
+  createModuleResolver,
+  typeScriptExtensionAlias,
+} from '../../common/utils/module-resolver.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
 import { babelParseFile } from '../CsfFile.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
@@ -40,6 +43,7 @@ export function createStoryReferenceResolver(
     extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
     mainFields: ['module', 'main'],
     tsconfig: 'auto',
+    extensionAlias: typeScriptExtensionAlias,
   });
 
   return function openStoryReferences(): StoryReferenceResolver {

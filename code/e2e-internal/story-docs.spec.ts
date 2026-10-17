@@ -19,6 +19,7 @@ const codePanelStoryPath = join(
 /** Story id for the Default export in the Code Panel demo (see internal Storybook index). */
 const storyPath = '/story/addons-docs-codepanel--default';
 const docsPath = '/docs/addons-docs-codepanel--docs';
+const liveSourceDocsPath = '/docs/addons-docs-codepanel--live-source';
 const defaultStoryBlockId = 'story--addons-docs-codepanel--default';
 const primaryStoryBlockId = `${defaultStoryBlockId}--primary`;
 const componentId = 'addons-docs-codepanel';
@@ -181,6 +182,60 @@ test.describe('story-docs open service', () => {
       await expect(page.getByRole('tabpanel', { name: 'Code' })).not.toContainText(
         E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
       );
+    });
+  });
+
+  // Runs against the dev server and the static build: once the args change, the preview fills the
+  // snippet template with them, with no server round trip.
+  test.describe('live snippets', () => {
+    const LIVE_LABEL = 'e2eLiveSnippet';
+
+    test('the Code panel follows the controls', async ({ page }) => {
+      await gotoCodePanelStory(page);
+      await openCodePanel(page);
+      await expectCodePanelToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+      // A static build serves story docs as files; changing the args must not fetch them again.
+      const storyDocsRequests: string[] = [];
+      page.on('request', (request) => {
+        if (request.url().includes('/services/core/story-docs/')) {
+          storyDocsRequests.push(request.url());
+        }
+      });
+
+      await page.getByRole('tab', { name: 'Controls' }).click();
+      await page.locator('#storybook-panel-root textarea[name=label]').fill(LIVE_LABEL);
+      await expectPreviewButtonLabel(page, LIVE_LABEL);
+
+      await openCodePanel(page);
+      await expectCodePanelToContainLabel(page, LIVE_LABEL);
+      await expect(page.getByRole('tabpanel', { name: 'Code' })).not.toContainText(
+        E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
+      );
+      expect(storyDocsRequests).toStrictEqual([]);
+    });
+
+    test('autodocs Show code follows the controls', async ({ page }) => {
+      await gotoAutodocsPage(page);
+      await expectAutodocsDefaultSourceToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+
+      await previewFrame(page).locator('textarea[name=label]').fill(LIVE_LABEL);
+      const source = await autodocsDefaultSourceLocator(page);
+      await expect(source).toContainText(LIVE_LABEL);
+      await expect(source).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+    });
+
+    test('an MDX Source block follows the controls', async ({ page }) => {
+      await page.goto(`${storybookUrl}/?path=${liveSourceDocsPath}`);
+      await expectDocgenServer(page);
+      await waitForPreviewReady(page);
+      const source = previewFrame(page).locator('pre.prismjs');
+      await expect(source).toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE, {
+        timeout: PREVIEW_STORY_TIMEOUT,
+      });
+
+      await previewFrame(page).locator('textarea[name=label]').fill(LIVE_LABEL);
+      await expect(source).toContainText(LIVE_LABEL);
+      await expect(source).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
     });
   });
 

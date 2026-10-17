@@ -62,6 +62,7 @@ describe('isSelfContainedFunction', () => {
     ['() => 1', true],
     ['(value) => value.toUpperCase()', true],
     ['(payload) => console.log(payload)', true],
+    ['(done) => setTimeout(done, 100)', true],
     ['({ value }) => value', true],
     ['(a, ...rest) => rest.concat(a)', true],
     [`(mode = 'auto') => mode`, true],

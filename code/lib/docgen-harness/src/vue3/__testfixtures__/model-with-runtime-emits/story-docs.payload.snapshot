@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-model-with-runtime-emits--bound": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-model-with-runtime-emits--bound",
       "name": "Bound",
@@ -18,6 +19,16 @@ const modelValue = ref('draft');
   <ModelWithRuntimeEmits v-model="modelValue" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import ModelWithRuntimeEmits from './ModelWithRuntimeEmits.vue';
+
+const modelValue = ref(⟦value modelValue script ?⟧);
+</script>
+
+<template>
+  <ModelWithRuntimeEmits v-model="modelValue" ⟦props -modelValue⟧⟦slots ModelWithRuntimeEmits⟧
+</template>",
     },
   },
 }

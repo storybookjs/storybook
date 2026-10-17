@@ -1,1 +1,1 @@
-<GradioButton scale={0.5} />
+<GradioButton value={null} scale={0.5} />

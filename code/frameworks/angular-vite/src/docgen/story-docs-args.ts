@@ -1,6 +1,6 @@
 // Turns a resolved arg node into the Angular template expression a binding carries. Reading the args
 // themselves - following spreads and names - is the shared CSF pass in `story-shape`.
-import { babelPrint, types as t } from 'storybook/internal/babel';
+import { babelParse, babelPrint, types as t } from 'storybook/internal/babel';
 import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
@@ -43,6 +43,41 @@ export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string |
 
 export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
 
+/**
+ * The arg as the story writes it, but each part that evaluates, at any depth, as its value: an
+ * Angular binding reads neither the host's enums nor TypeScript, comments or numeric separators.
+ */
+export const writtenValue = (node: t.Node, enums: SnippetEnum[]): t.Node => {
+  const literal = evaluateArgLiteral(node, enums);
+  if (literal !== undefined) {
+    // Parsed, so recast prints the literal as it is written here.
+    const statement = babelParse(`[${literal}]`).program.body[0] as t.ExpressionStatement;
+    return (statement.expression as t.ArrayExpression).elements[0]!;
+  }
+  let copy: Record<string, unknown> | undefined;
+  // A tag reads its template literal, which is no value.
+  const keys = (t.VISITOR_KEYS[node.type] ?? []).filter(
+    (key) => !(t.isTaggedTemplateExpression(node) && key === 'quasi')
+  );
+  for (const key of keys) {
+    const child = (node as unknown as Record<string, unknown>)[key];
+    const written = Array.isArray(child)
+      ? child.map((item: t.Node | null) => item && writtenValue(item, enums))
+      : child && writtenValue(child as t.Node, enums);
+    const changed = Array.isArray(child)
+      ? (written as unknown[]).some((item, index) => item !== child[index])
+      : written !== child;
+    if (changed) {
+      // A copy keeps the node recast parsed it from, so recast reprints only what changed.
+      copy ??= Object.defineProperty({ ...node }, 'original', {
+        value: (node as { original?: unknown }).original,
+      });
+      copy[key] = written;
+    }
+  }
+  return (copy as unknown as t.Node | undefined) ?? node;
+};
+
 // recast reprints a node it parsed straight from the file's own text, comments and indentation
 // included. A clone drops the bookkeeping that path relies on and is formatted from the AST
 // instead, which is what leaves a binding holding the expression and nothing else.
@@ -56,8 +91,8 @@ const quoteExpressionString = (value: string): string =>
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')}'`;
 
-// Renders an evaluated arg as a template expression, in the same shape the runtime generator
-// prints, but losslessly for strings carrying quotes.
+// Renders an evaluated arg as a template expression, in the shape the live snippet's `printValue`
+// prints it, but losslessly for strings carrying quotes.
 const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
   if (typeof value === 'string') {
     return quoteExpressionString(value);
@@ -78,7 +113,7 @@ const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
       ([key, entryValue]) =>
         `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printExpressionValue(entryValue, seen)}`
     );
-  return `{${entries.join(', ')}}`;
+  return entries.length === 0 ? '{}' : `{ ${entries.join(', ')} }`;
 };
 
 const escapeAttributeExpression = (expression: string): string =>

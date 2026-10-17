@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-slots--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-slots--primary",
       "name": "Primary",
@@ -20,6 +21,13 @@ import SlotsPanel from './SlotsPanel.vue';
   </SlotsPanel>
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsPanel from './SlotsPanel.vue';
+</script>
+
+<template>
+  <SlotsPanel ⟦attr footer footer⟧ ⟦props -default -header -footer⟧⟦slots SlotsPanel default header⟧
+</template>",
     },
   },
 }

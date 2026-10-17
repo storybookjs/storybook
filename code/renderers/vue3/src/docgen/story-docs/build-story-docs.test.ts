@@ -4,11 +4,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { babelParseFile } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
-import type { DocgenPayload } from 'storybook/open-service';
+import { type DocgenPayload, selectLiveSnippetForStory } from 'storybook/open-service';
 
 import { vol } from 'memfs';
 
+import { fillTemplate } from '../../docs/fill-template.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
+import type { ClassifiedArg } from './classify-args/classify-args.ts';
+import type { ForwardableSetup } from './transform-template/forward-setup.ts';
+import { transformTemplate } from './transform-template/transform-template.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -18,8 +22,13 @@ const STORY_ID = 'example-mybutton--primary';
 const DOCGEN_CATEGORIES: Record<string, string> = {
   active: 'props',
   count: 'props',
+  formatter: 'props',
+  default: 'slots',
+  header: 'slots',
+  items: 'props',
   label: 'props',
   size: 'props',
+  when: 'props',
 };
 
 const docgen = (id: string): DocgenPayload => ({
@@ -236,3 +245,540 @@ export const Primary = {
     );
   });
 });
+
+describe('a meta that spreads the meta of another story file', () => {
+  it('documents the component and renders with the render of that meta', async () => {
+    vol.fromJSON({
+      [STORY_PATH]: `
+import meta from './base/Base.stories';
+export default { ...meta, title: 'Example/MyButton/Interactions' };
+export const Primary = { args: { label: 'Go' } };
+`,
+    });
+    const base = `
+import MyButton from '../MyButton.vue';
+export default {
+  component: MyButton,
+  args: { size: 'large' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label" :size="args.size" />',
+  }),
+};
+`;
+    const payload = await buildStoryDocsPayload(
+      { entry: ENTRY },
+      {
+        readDocgen: async (id) => docgen(id),
+        references: {
+          resolveModule: (_fromFile, specifier) =>
+            specifier === './base/Base.stories'
+              ? {
+                  program: babelParseFile({ code: base, filename: '/stories/base/Base.stories.ts' })
+                    .path,
+                  filePath: '/stories/base/Base.stories.ts',
+                }
+              : undefined,
+        },
+      }
+    );
+    const story = payload?.stories[STORY_ID];
+    expect(payload?.name).toBe('MyButton');
+    expect(story?.snippet).toBe(
+      [
+        '<script lang="ts" setup>',
+        "import MyButton from './MyButton.vue';",
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton label="Go" size="large" />',
+        '</template>',
+      ].join('\n')
+    );
+    expect(fillTemplate(story!.template!, { label: 'Hi', size: 'small' })).toContain(
+      '<MyButton label="Hi" size="small" />'
+    );
+  });
+});
+
+describe('a meta that spreads the meta of another story file importing a name differently', () => {
+  it('reads the render function with the imports of its own file', async () => {
+    vol.fromJSON({
+      [STORY_PATH]: `
+import MyButton from './MyButton.vue';
+import meta from './base/Base.stories';
+export default { ...meta, title: 'Example/MyButton' };
+export const Primary = { args: { label: 'Go' } };
+`,
+    });
+    const base = `
+import { MyButton } from '../index';
+export default {
+  component: MyButton,
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label" />',
+  }),
+};
+`;
+    const payload = await buildStoryDocsPayload(
+      { entry: ENTRY },
+      {
+        readDocgen: async (id) => docgen(id),
+        references: {
+          resolveModule: (_fromFile, specifier) =>
+            specifier === './base/Base.stories'
+              ? {
+                  program: babelParseFile({ code: base, filename: '/stories/base/Base.stories.ts' })
+                    .path,
+                  filePath: '/stories/base/Base.stories.ts',
+                }
+              : undefined,
+        },
+      }
+    );
+    const story = payload?.stories[STORY_ID];
+    expect(story?.warning).toBeUndefined();
+    expect(story?.snippet).toContain("import { MyButton } from './index';");
+    expect(fillTemplate(story!.template!, { label: 'Hi' })).toContain('<MyButton label="Hi" />');
+  });
+});
+
+describe('template', () => {
+  it('keeps an arg that still holds the value the story writes as written', async () => {
+    const story = await primaryStory(`
+const shout = (text: string) => text.toUpperCase();
+
+export const Primary = {
+  args: { label: 'Go', formatter: shout, when: new Date('2024-01-01'), items: [{ id: 1 }] },
+};
+`);
+    expect(story?.argCode).toEqual({
+      formatter: '(text: string) => text.toUpperCase()',
+      when: "new Date('2024-01-01')",
+      items: '[{ id: 1 }]',
+    });
+    const initialArgs = {
+      label: 'Go',
+      formatter: (text: string) => text.toUpperCase(),
+      when: new Date('2024-01-01'),
+      items: [{ id: 1 }],
+    };
+    const args = { ...initialArgs, label: 'Stop' };
+    const payload = { id: 'p', name: 'P', path: STORY_PATH, stories: { [STORY_ID]: story! } };
+    expect(
+      selectLiveSnippetForStory(
+        payload,
+        STORY_ID,
+        { args, unmappedArgs: args, initialArgs },
+        fillTemplate
+      ).snippet
+    ).toContain(`<MyButton :formatter="formatter" :items="items" label="Stop" :when="when" />`);
+  });
+
+  it('is filled with every arg the story writes, as an empty string or a function the component does not declare', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { label: '', size: 'sm', onHover: (x) => x } };`
+    );
+    expect(story?.argCode).toEqual({ onHover: '(x) => x' });
+    expect(story?.snippet).toContain('<MyButton label="" :onHover="(x) => x" size="sm" />');
+  });
+
+  it('prints an arg written with a name the snippet does not declare as written', async () => {
+    const story = await primaryStory(`
+import { fn } from 'storybook/test';
+import { LABELS } from './labels';
+
+export const Primary = { args: { label: LABELS.ok, size: 'sm', onClick: fn() } };
+`);
+    expect(story?.snippet).toContain('<MyButton :label="LABELS.ok" :onClick="fn()" size="sm" />');
+    expect(story?.warning).toContain('LABELS');
+  });
+
+  // The slot's content is what its function returns, printed once on the server as its argCode; a
+  // control sets the slot to a string, which prints as text.
+  it('has a hole at the content of a slot the story fills with a function', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { label: 'Go', default: () => 'Hello' } };`
+    );
+    expect(story?.template).toContain('⟦slots MyButton default header⟧');
+    expect(story?.argCode).toEqual({ default: 'Hello' });
+    expect(story?.snippet).toContain('<MyButton label="Go">\n    Hello\n  </MyButton>');
+    expect(fillTemplate(story!.template!, { label: 'Go', default: 'Bye' })).toContain(
+      '<MyButton label="Go">\n    Bye\n  </MyButton>'
+    );
+  });
+
+  it("is Storybook's render of the component, its slots as content, for a story without a render function", async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
+    expect(story?.template).toBe(
+      [
+        '<script lang="ts" setup>',
+        "import MyButton from './MyButton.vue';",
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton ⟦attr label label⟧ ⟦props -default -header -label⟧⟦slots MyButton default header⟧',
+        '</template>',
+      ].join('\n')
+    );
+    expect(fillTemplate(story!.template!, { label: 'Go', header: 'Title' })).toContain(
+      '  <MyButton label="Go">\n    <template #header>\n      Title\n    </template>\n  </MyButton>'
+    );
+  });
+
+  it('is the render template as written, with a hole for each arg it reads', async () => {
+    const story = await primaryStory(`
+import Icon from './Icon.vue';
+
+export const Primary = {
+  args: { label: 'Hi', active: true, size: 'sm' },
+  render: (args) => ({
+    components: { MyButton, Icon },
+    setup: () => ({ args }),
+    template: \`
+      <div v-if="args.active" :title="args.label + '!'">
+        <Icon :name="args.size" />
+        <MyButton v-bind="args">{{ args.label }}</MyButton>
+      </div>
+    \`,
+  }),
+};
+`);
+    expect(story?.template).toBe(
+      [
+        '<script lang="ts" setup>',
+        "import Icon from './Icon.vue';",
+        "import MyButton from './MyButton.vue';",
+        '</script>',
+        '',
+        '<template>',
+        '  <div v-if="⟦value active⟧" :title="⟦value label⟧ + \'!\'">',
+        '    <Icon ⟦attr name size⟧ />',
+        '    <MyButton ⟦attr active active⟧ ⟦attr label label⟧ ⟦attr size size⟧ ⟦props -default -header -active -label -size⟧>⟦text label⟧</MyButton>',
+        '  </div>',
+        '</template>',
+      ].join('\n')
+    );
+    expect(fillTemplate(story!.template!, { label: 'Go', active: false, size: 'lg' })).toContain(
+      [
+        '  <div v-if="false" :title="\'Go\' + \'!\'">',
+        '    <Icon name="lg" />',
+        '    <MyButton :active="false" label="Go" size="lg">Go</MyButton>',
+      ].join('\n')
+    );
+  });
+
+  it('keeps the statements of a setup as written, with a hole for each arg they read', async () => {
+    const story = await primaryStory(`
+import { computed, ref } from 'vue';
+
+export const Primary = {
+  args: { label: 'Hi', count: 2, size: 'sm' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const open = ref(false);
+      const title = computed(() => \`\${args.label} \${args.count.toFixed(1)}\`);
+      return { args, open, title };
+    },
+    template: '<MyButton :label="title" :size="args.size" @click="open = !open" />',
+  }),
+};
+`);
+    expect(story?.template).toBe(
+      [
+        '<script lang="ts" setup>',
+        'import { computed, ref } from "vue";',
+        "import MyButton from './MyButton.vue';",
+        '',
+        'const open = ref(false);',
+        'const title = computed(() => `${⟦value label script⟧} ${⟦operand count script⟧.toFixed(1)}`);',
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton :label="title" ⟦attr size size⟧ @click="open = !open" />',
+        '</template>',
+      ].join('\n')
+    );
+    const filled = fillTemplate(story!.template!, { label: '</script> & "it\'s"', count: 5 });
+    expect(filled).toContain(
+      `const title = computed(() => \`\${'<\\/script> & "it\\'s"'} \${(5).toFixed(1)}\`);`
+    );
+    expect(filled).toContain('<MyButton :label="title" @click="open = !open" />');
+  });
+
+  it('binds a v-model on an arg to a ref that starts as the arg', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-model:label.trim="args.label" />',
+  }),
+};
+`);
+    expect(story?.snippet).toContain("const label = ref('Hi');");
+    expect(story?.template).toBe(
+      [
+        '<script lang="ts" setup>',
+        'import { ref } from "vue";',
+        "import MyButton from './MyButton.vue';",
+        '',
+        'const label = ref(⟦value label script ?⟧);',
+        '</script>',
+        '',
+        '<template>',
+        '  <MyButton v-model:label.trim="label" />',
+        '</template>',
+      ].join('\n')
+    );
+    expect(fillTemplate(story!.template!, { label: 'a & "b"' })).toContain(
+      `const label = ref('a & "b"');`
+    );
+    expect(fillTemplate(story!.template!, {})).toContain('const label = ref();');
+  });
+
+  it('names the ref of a v-model past a setup binding and a v-for variable', () => {
+    const setup = { bindings: ['open'], imports: [], statements: [] };
+    const template = '<MyButton v-for="size in 3" v-model:open="args.open" v-model="args.size" />';
+    expect(templateOf(template, setup)).toContain(
+      '<MyButton v-for="size in 3" v-model:open="open2" v-model="size2" />'
+    );
+  });
+
+  it('is none for a setup binding or a v-for variable named args', () => {
+    const setup = { bindings: ['args'], imports: [], statements: [] };
+    expect(templateOf('<MyButton :label="args.label" />', setup)).toBe(undefined);
+    const template = '<MyButton v-for="args in items" :label="args.label" />';
+    expect(templateOf(template)).toBeUndefined();
+  });
+
+  it('binds a listener on an arg to a const that holds the arg, and none on an unset arg', () => {
+    const onClick = {
+      name: 'onClick',
+      value: {} as never,
+      role: 'event' as const,
+      eventName: 'click',
+      plan: { kind: 'inline' as const },
+    };
+    const code = templateOf('<MyButton @click="args.onClick" />', undefined, [onClick])!;
+    expect(code).toContain('const onClick = ⟦value onClick script⟧;');
+    expect(code).toContain('<MyButton @click="onClick" />');
+    expect(templateOf('<MyButton\n  @click="args.onClick"\n/>')).toContain('<MyButton\n  />');
+  });
+
+  it.each([
+    ['an event handler calling an arg', '<MyButton @click="args.onClick()" />'],
+    ['a v-model on part of an arg', '<MyButton v-model="args.item.label" />'],
+    ['the args passed whole', '<MyButton :item="args" />'],
+  ])('is none for %s', (_, template) => {
+    expect(templateOf(template)).toBeUndefined();
+  });
+
+  it('marks the attributes written before the args spread and leaves out those after it', () => {
+    const template = '<MyButton label="x" v-bind="args" :size="args.size" />';
+    expect(templateOf(template)).toContain(
+      '<MyButton label="x" ⟦props ^label -size⟧ ⟦attr size size⟧ />'
+    );
+  });
+
+  it('leaves out of the args spread a listener the element writes', () => {
+    const template = '<MyButton v-bind="args" @click="track" />';
+    expect(templateOf(template)).toContain(
+      '<MyButton ⟦props -onClick -on-click⟧ @click="track" />'
+    );
+  });
+
+  it('marks a hole in an interpolation', () => {
+    const template = '<MyButton>{{ args.label.trim() }}</MyButton>';
+    expect(templateOf(template)).toContain('<MyButton>{{ ⟦operand label {{⟧.trim() }}</MyButton>');
+  });
+
+  it('names an attribute around the args spread by the prop it sets', () => {
+    const template = '<MyButton max-count="3" v-bind="args" :is-open="args.open" />';
+    expect(templateOf(template)).toContain(
+      '<MyButton max-count="3" ⟦props ^max-count ^maxCount -is-open -isOpen⟧ ⟦attr is-open open⟧ />'
+    );
+  });
+
+  it('reads an arg named with a space, as one word', () => {
+    const template = `<MyButton :title="args['Button title']">{{ args['Button title'] }}</MyButton>`;
+    const code = templateOf(template)!;
+    expect(code).toContain(
+      '<MyButton ⟦attr title %Button%20title⟧>⟦text %Button%20title⟧</MyButton>'
+    );
+    expect(fillTemplate(code, { 'Button title': 'Go on' })).toContain(
+      '<MyButton title="Go on">Go on</MyButton>'
+    );
+  });
+
+  it('keeps a binding the element also writes as an attribute, or binds with a modifier', () => {
+    const template = '<MyButton class="a" :class="args.c" :label.prop="args.label" />';
+    expect(templateOf(template)).toContain(
+      '<MyButton class="a" :class="⟦value c⟧" :label.prop="⟦value label⟧" />'
+    );
+  });
+  it('reads an object arg through one const, as the static snippet does', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { items: [{ id: 1 }, { id: 2 }] },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      args.items.push({ id: 3 });
+      return { args };
+    },
+    template: '<p v-for="item in args.items">{{ item === args.items[0] }}</p><MyButton :items="args.items" />',
+  }),
+};
+`);
+    expect(story?.snippet).toContain(
+      'const items = [{ id: 1 }, { id: 2 }];\n\nitems.push({ id: 3 });'
+    );
+    expect(story?.template).toContain(
+      'const items = ⟦value items script⟧;\n\nitems.push({ id: 3 });'
+    );
+    expect(story?.template).toContain(
+      '<p v-for="item in items">{{ item === items[0] }}</p><MyButton :items="items" />'
+    );
+    expect(fillTemplate(story!.template!, { items: [{ id: 5 }] })).toContain(
+      'const items = [{ id: 5 }];'
+    );
+  });
+
+  it('has a hole at each read of a setup that writes to its args', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Go', count: 1 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      args.label = 'Fixed';
+      args.count++;
+      const text = args.label + args.count;
+      return { args, text };
+    },
+    template: '<MyButton :label="text" :count="args.count" />',
+  }),
+};
+`);
+    const written = "args.label = 'Fixed';\nargs.count++;\n";
+    expect(story?.template).toContain(
+      `${written}const text = ⟦value label script⟧ + ⟦value count script⟧;`
+    );
+    expect(story?.template).toContain('<MyButton :label="text" ⟦attr count count⟧ />');
+    expect(fillTemplate(story!.template!, { label: 'Stop', count: 2 })).toContain(
+      `${written}const text = 'Stop' + 2;`
+    );
+  });
+
+  it('binds an object arg a spread passes to its const', () => {
+    const args = [
+      {
+        name: 'items',
+        value: {} as never,
+        role: 'prop' as const,
+        plan: { kind: 'hoist' as const },
+      },
+    ];
+    const code = templateOf('<MyButton v-bind="args" :label="args.items[0]" />', undefined, args)!;
+    expect(code).toContain('const items = ⟦value items script⟧;');
+    expect(code).toContain('<MyButton :items="items" ⟦props -label -items⟧ :label="items[0]" />');
+    expect(fillTemplate(code, { items: ['a'], size: 'sm' })).toContain(
+      `<MyButton :items="items" size="sm" :label="items[0]" />`
+    );
+  });
+
+  it('starts a statement reading an arg with a `;` after one without', async () => {
+    const story = await primaryStory(`
+import { ref } from 'vue'
+
+export const Primary = {
+  args: { count: 1 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const digits = ref([])
+      args.count.toString().split('').forEach((digit) => digits.value.push(digit))
+      return { digits }
+    },
+    template: '<MyButton :label="digits.join()" />',
+  }),
+};
+`);
+    expect(story?.snippet).toContain('const digits = ref([])\n;(1).toString()');
+    expect(story?.template).toContain(
+      'const digits = ref([])\n⟦operand count script ;⟧.toString()'
+    );
+    expect(fillTemplate(story!.template!, { count: -1 })).toContain(
+      'const digits = ref([])\n;(-1).toString()'
+    );
+    expect(fillTemplate(story!.template!, { count: 'x' })).toContain(
+      "const digits = ref([])\n'x'.toString()"
+    );
+  });
+
+  it('reads an arg after a binary minus as an operand', async () => {
+    const story = await primaryStory(`
+import { computed } from 'vue';
+
+export const Primary = {
+  args: { count: 1 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const left = computed(() => 10 -args.count);
+      return { args, left };
+    },
+    template: '<MyButton :count="left" :label="10 -args.count" />',
+  }),
+};
+`);
+    const filled = fillTemplate(story!.template!, { count: -1 });
+    expect(filled).toContain('const left = computed(() => 10 -(-1));');
+    expect(filled).toContain('<MyButton :count="left" :label="10 -(-1)" />');
+  });
+
+  it('reads an arg the story writes as code next to an operator as an operand, but not data', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { onClick: () => null, count: 5 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const off = !args.onClick;
+      return { args, off };
+    },
+    template: '<MyButton :active="args.onClick || off" :count="args.count + 1" />',
+  }),
+};
+`);
+    expect(story?.snippet).toContain('const off = !(() => null);');
+    expect(story?.snippet).toContain('<MyButton :active="(() => null) || off" :count="5 + 1" />');
+  });
+
+  it('marks a hole in an attribute written in single quotes, and none in one without quotes', () => {
+    const code = templateOf(`<MyButton :label='args.label + "!"' />`)!;
+    expect(code).toContain(`<MyButton :label='⟦value label '⟧ + "!"' />`);
+    expect(fillTemplate(code, { label: `it's "x"` })).toContain(
+      `<MyButton :label='"it&#39;s \\"x\\"" + "!"' />`
+    );
+    expect(templateOf('<MyButton :label=args.label+1 />')).toBeUndefined();
+  });
+
+  it('leaves out an arg a spread passes under the other spelling of an attribute', () => {
+    const code = templateOf('<div v-bind="args" :aria-label="args.label" />')!;
+    expect(fillTemplate(code, { 'aria-label': 'x', ariaLabel: 'y', label: 'z' })).toContain(
+      '<div label="z" aria-label="z" />'
+    );
+  });
+});
+
+// The template of a render template, for a component without slots.
+function templateOf(template: string, setup?: ForwardableSetup, args: ClassifiedArg[] = []) {
+  return transformTemplate({ template, componentImports: new Map(), slots: [], setup, args });
+}

@@ -19,6 +19,7 @@ export async function recordServerSnippet({
   recorded,
   legacyParity,
   declaredOmissions,
+  ownCode,
 }: {
   testDir: string;
   exportName: string;
@@ -26,12 +27,18 @@ export async function recordServerSnippet({
   recorded: string;
   legacyParity: boolean;
   declaredOmissions?: readonly string[];
+  /**
+   * The snippet is the story's template filled with its args: the story's code as written, which no
+   * snippet of an element Storybook guessed is a measure of.
+   */
+  ownCode?: boolean;
 }): Promise<void> {
   const comparable = (text: string): string => text.replace(STYLE_BLOCK_REGEXP, '');
   const snippetPath = join(testDir, `server-snippet-${exportName}.snapshot`);
   const committedSnippet = readCommitted(snippetPath);
 
   if (
+    !ownCode &&
     committedSnippet !== undefined &&
     snippet !== undefined &&
     !committedSnippet.startsWith(NO_SNIPPET_PREFIX)
@@ -55,13 +62,15 @@ export async function recordServerSnippet({
     if (committedLegacySnippet === undefined) {
       return;
     }
-    expectCurrentOrBetter({
-      kind: 'snippet',
-      framework: 'web-components',
-      baseline: comparable(committedLegacySnippet),
-      candidate: comparable(snippet),
-      declaredOmissions,
-    });
+    if (!ownCode) {
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'web-components',
+        baseline: comparable(committedLegacySnippet),
+        candidate: comparable(snippet),
+        declaredOmissions,
+      });
+    }
   }
 
   await expect(recorded).toMatchFileSnapshot(snippetPath);

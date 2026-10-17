@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-as-cast--primary": {
+      "argCode": {},
       "description": "Cast story description.",
       "id": "forms-as-cast--primary",
       "name": "Primary",
@@ -15,6 +16,13 @@ import AsCastButton from './AsCastButton.vue';
   <AsCastButton label="Cast" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import AsCastButton from './AsCastButton.vue';
+</script>
+
+<template>
+  <AsCastButton ⟦attr label label⟧ ⟦props -label⟧⟦slots AsCastButton⟧
+</template>",
     },
   },
 }

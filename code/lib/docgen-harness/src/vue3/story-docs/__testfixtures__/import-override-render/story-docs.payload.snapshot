@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-import-override-render--primary": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-import-override-render--primary",
       "name": "Primary",
@@ -15,6 +16,13 @@ import { OverrideButton as ImportOverrideRenderButton } from 'my-design-system';
   <ImportOverrideRenderButton label="Override" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { OverrideButton as ImportOverrideRenderButton } from 'my-design-system';
+</script>
+
+<template>
+  <ImportOverrideRenderButton ⟦attr label label⟧ ⟦props -label⟧ />
+</template>",
     },
   },
 }

@@ -1,0 +1,10 @@
+{
+  "ArgsDefaultRender": "<stencil-props
+  value="1"
+  max="5"
+  variant="full"
+  aria-label-text="Default rating"
+></stencil-props>",
+  "DomNode": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+  "LitTemplate": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+}

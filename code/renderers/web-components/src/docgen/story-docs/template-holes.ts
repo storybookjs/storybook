@@ -279,7 +279,7 @@ const literalValue = (expression: t.Node): unknown => {
   return undefined;
 };
 
-const isIfDefinedCall = (
+export const isIfDefinedCall = (
   expression: t.Node,
   bindings: Map<string, ImportBinding>
 ): expression is t.CallExpression & { arguments: [t.Expression] } =>

@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-cross-file-imported-interface--props-as-written": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-cross-file-imported-interface--props-as-written",
       "name": "Props As Written",
@@ -15,6 +16,13 @@ import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
   <ImportedInterfaceProps :count="2" label="Imported" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ImportedInterfaceProps from './ImportedInterfaceProps.vue';
+</script>
+
+<template>
+  <ImportedInterfaceProps ⟦attr count count⟧ ⟦attr label label⟧ ⟦props -count -label⟧⟦slots ImportedInterfaceProps⟧
+</template>",
     },
   },
 }

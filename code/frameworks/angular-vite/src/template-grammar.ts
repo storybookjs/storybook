@@ -3,6 +3,15 @@
 
 export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
+// A template literal is the only quoting that survives a multi-line template carrying both quote
+// characters, so the three sequences that would end or escape it are neutralized.
+export const escapeTemplateLiteral = (template: string): string =>
+  template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
+// The first word of a props hole on a component's own element, which binds every input whose arg is
+// set, to `undefined` too, where `argsToTemplate` leaves an `undefined` arg out.
+export const BINDS_UNDEFINED = '=';
+
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 
@@ -95,6 +104,9 @@ export interface BuildTemplateInput {
   // line once it breaks -- void elements included. Off reproduces the legacy runtime generator's
   // output, which is what the preview renderer emits.
   selfClosing?: boolean;
+  // A hole written first among the bindings, laid out as the bindings it stands for, so filling it
+  // with them gives what `buildTemplate` gives for them.
+  hole?: { text: string; standsFor: string[] };
 }
 
 // A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.
@@ -114,12 +126,14 @@ const MAX_SINGLE_LINE = 80;
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
-  { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
+  { inputs, outputs, innerTemplate = '', selfClosing = false, hole }: BuildTemplateInput
 ) => {
-  const bindings = [
+  const written = [
     ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
     ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
   ];
+  const laidOut = hole ? [...hole.standsFor, ...written] : written;
+  const bindings = hole ? [hole.text, ...written] : written;
 
   const firstSelector = selector.split(',')[0];
   const withElement =
@@ -137,10 +151,12 @@ export const buildTemplate = (
     const closesItself =
       VOID_ELEMENTS.has(element) || (selfClosing && element.includes('-') && innerTemplate === '');
 
-    const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
-    const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
-    if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
-      return inline;
+    const inline = (list: string[]) => {
+      const inlineTag = `<${element}${attributes}${list.map((binding) => ` ${binding}`).join('')}`;
+      return closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
+    };
+    if (inline(laidOut).length <= MAX_SINGLE_LINE || laidOut.length === 0) {
+      return inline(bindings);
     }
 
     const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `    ${binding}`).join('\n')}`;
@@ -231,10 +247,30 @@ const parseMarkup = (markup: string): (MarkupElement | string)[] | undefined => 
 // An attribute name with an optional quoted or bare value; quoted values are skipped whole.
 const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?/g;
 
-const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean): string[] => {
+// Markers that stand for attributes, measured as those attributes when laying the markup out.
+type StandIns = ReadonlyMap<string, readonly string[]>;
+
+const measured = (text: string, standIns: StandIns) => {
+  let length = text.length;
+  for (const [marker, attributes] of standIns) {
+    if (text.includes(marker)) {
+      length +=
+        attributes.length === 0 ? -marker.length - 1 : attributes.join(' ').length - marker.length;
+    }
+  }
+  return length;
+};
+
+const openTagLines = (
+  node: MarkupElement,
+  pad: string,
+  forceAttrBreak: boolean,
+  standIns: StandIns
+): string[] => {
   const inlineOpen = `${pad}${node.rawOpen}`;
   const attrs = node.attrText.match(MARKUP_ATTRIBUTE) ?? [];
-  if ((inlineOpen.length <= MAX_SINGLE_LINE && !forceAttrBreak) || attrs.length === 0) {
+  const attrCount = attrs.reduce((count, attr) => count + (standIns.get(attr)?.length ?? 1), 0);
+  if ((measured(inlineOpen, standIns) <= MAX_SINGLE_LINE && !forceAttrBreak) || attrCount === 0) {
     return [inlineOpen];
   }
   const bracket = node.closed ? ' />' : '>';
@@ -246,24 +282,29 @@ const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean)
   ];
 };
 
-const printMarkup = (markup: string, node: MarkupElement | string, depth: number): string[] => {
+const printMarkup = (
+  markup: string,
+  node: MarkupElement | string,
+  depth: number,
+  standIns: StandIns
+): string[] => {
   const pad = INDENT.repeat(depth);
   if (typeof node === 'string') {
     return [`${pad}${node}`];
   }
   const hasElementChild = node.children.some((child) => typeof child !== 'string');
   const verbatim = markup.slice(node.start, node.end);
-  if (!hasElementChild && pad.length + verbatim.length <= MAX_SINGLE_LINE) {
+  if (!hasElementChild && pad.length + measured(verbatim, standIns) <= MAX_SINGLE_LINE) {
     return [`${pad}${verbatim}`];
   }
   // A childless element broke on length alone, so keeping its attribute run inline gains nothing.
-  const openLines = openTagLines(node, pad, !hasElementChild);
+  const openLines = openTagLines(node, pad, !hasElementChild, standIns);
   if (node.closed) {
     return openLines;
   }
   return [
     ...openLines,
-    ...node.children.flatMap((child) => printMarkup(markup, child, depth + 1)),
+    ...node.children.flatMap((child) => printMarkup(markup, child, depth + 1, standIns)),
     `${pad}</${node.tag}>`,
   ];
 };
@@ -273,10 +314,10 @@ const printMarkup = (markup: string, node: MarkupElement | string, depth: number
  * onto their own lines and an over-long attribute run breaks one binding per line. Nothing is
  * added, dropped or reordered, and markup this cannot follow is returned exactly as written.
  */
-export const formatTemplateMarkup = (markup: string): string => {
+export const formatTemplateMarkup = (markup: string, standIns: StandIns = new Map()): string => {
   const children = parseMarkup(markup);
   if (!children || children.length === 0) {
     return markup;
   }
-  return children.flatMap((child) => printMarkup(markup, child, 0)).join('\n');
+  return children.flatMap((child) => printMarkup(markup, child, 0, standIns)).join('\n');
 };

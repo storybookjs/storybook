@@ -134,7 +134,8 @@ const attributeDefault = (
 const eventForArg = (key: string, declaration: ManifestDeclaration): string | undefined => {
   const matches =
     declaration.events?.filter(
-      (event) => key === event.name || key === eventActionName(event.name)
+      // A hand-written manifest may hold an event without a name.
+      (event) => event.name && (key === event.name || key === eventActionName(event.name))
     ) ?? [];
   return matches.length === 1 ? matches[0].name : undefined;
 };

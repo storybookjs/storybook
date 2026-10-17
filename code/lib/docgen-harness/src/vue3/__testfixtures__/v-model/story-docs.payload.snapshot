@@ -4,6 +4,7 @@
   "path": "__PATH__",
   "stories": {
     "forms-v-model--v-model-binding": {
+      "argCode": {},
       "description": undefined,
       "id": "forms-v-model--v-model-binding",
       "name": "V Model Binding",
@@ -20,6 +21,18 @@ const modelValue = ref('typed text');
   <VModelInput v-model:checked="checked" v-model="modelValue" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import { ref } from "vue";
+import VModelInput from './VModelInput.vue';
+
+const checked = ref(⟦value checked script ?⟧);
+
+const modelValue = ref(⟦value modelValue script ?⟧);
+</script>
+
+<template>
+  <VModelInput v-model:checked="checked" v-model="modelValue" ⟦props -checked -modelValue⟧⟦slots VModelInput⟧
+</template>",
     },
   },
 }

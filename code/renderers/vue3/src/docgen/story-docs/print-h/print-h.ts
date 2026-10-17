@@ -116,7 +116,7 @@ const isComponentName = (name: string): boolean => /^[A-Z]/.test(name);
 
 /**
  * Prints a statically decidable `h()` tree as template markup, preserving story args as `args`
- * expressions for the template engine to substitute.
+ * expressions for `transformTemplate` to put a hole at.
  *
  * @example `h(C, { ...args, label: args.label })` → `<C v-bind="args" :label="args.label" />`
  */

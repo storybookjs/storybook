@@ -1,4 +1,4 @@
-import { type NodePath, recast, types as t } from 'storybook/internal/babel';
+import { types as t } from 'storybook/internal/babel';
 import { getPrettier } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 import type { PresetPropertyFn } from 'storybook/internal/types';
@@ -18,10 +18,10 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
         return;
       }
       const { format } = await getPrettier();
-      let node;
+      let code;
       let snippet;
       try {
-        node = getCodeSnippet(csfSource, key, csfSource._meta?.component).node;
+        code = getCodeSnippet(csfSource, key, csfSource._meta?.component).snippet;
       } catch (e) {
         if (!(e instanceof Error)) {
           return;
@@ -31,8 +31,8 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
 
       try {
         // TODO read the user config
-        if (!snippet && node) {
-          snippet = await format(recast.print(node).code, {
+        if (!snippet && code) {
+          snippet = await format(code, {
             filepath: join(process.cwd(), 'component.tsx'),
           });
         }

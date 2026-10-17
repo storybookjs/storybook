@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
+  "DomNode": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+  "LitTemplate": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+}

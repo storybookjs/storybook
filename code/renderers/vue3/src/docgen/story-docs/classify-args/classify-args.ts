@@ -69,11 +69,6 @@ export type ArgClassification =
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
   args: ClassifiedArg[];
-  /**
-   * Args explicitly set to undefined, rendered as if never written — bindings and collisions
-   * ignore them even where Vue itself would treat a present-but-undefined value differently.
-   */
-  unset: Set<string>;
   /** Source text of args dropped because their values do not resolve statically. */
   unresolved: string[];
 }
@@ -87,8 +82,8 @@ export interface ClassifyArgsResult {
  *   (functions passed as undeclared args, empty strings)
  * - named in `unresolved` — the value references something the snippet cannot declare; the caller
  *   decides whether that reads as a partial snippet or as no snippet at all
- * - forwarded as a `function-slot` plan — a slot receives function content only a
- *   render-tree-aware renderer can realize; rendering bails back to runtime source otherwise
+ * - forwarded as a `function-slot` plan — a slot receives function content, which the `h()`
+ *   printer renders when the tree writes it; an arg prints as the story writes it
  *
  * Function args matching a declared event render as listeners, and declared function props hoist.
  */
@@ -97,7 +92,6 @@ export function classifyArgs(
   docgen: VueDocgenArgInfo
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
-  const unset = new Set<string>();
   const unresolved: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
@@ -105,14 +99,12 @@ export function classifyArgs(
 
     if (result.kind === 'classified') {
       classified.push(result.arg);
-    } else if (result.kind === 'unset') {
-      unset.add(name);
     } else if (result.kind === 'unrepresentable') {
       unresolved.push(`${name}: ${printValue(value)}`);
     }
   }
 
-  return { args: classified, unset, unresolved };
+  return { args: classified, unresolved };
 }
 
 /**

@@ -1,0 +1,23 @@
+{
+  "ArgsDefaultRender": "<lit-toolkit-shapes size="small" level="3" tags=${['b']} label="Default render"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+  "DomNode": "<lit-toolkit-shapes size="large" level="2" tags=${['b']} label="Shaped"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+  "LitTemplate": "<lit-toolkit-shapes size="large" level="2" tags=${['b']} label="Shaped"></lit-toolkit-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('toolkit-resize', () => {});
+  }
+</script>",
+}

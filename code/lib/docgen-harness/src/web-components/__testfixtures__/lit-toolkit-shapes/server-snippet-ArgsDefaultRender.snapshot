@@ -1,9 +1,4 @@
-<lit-toolkit-shapes
-  size="small"
-  level="3"
-  tags="[&quot;b&quot;]"
-  label="Default render"
-></lit-toolkit-shapes>
+<lit-toolkit-shapes size="small" level="3" tags=${['b']} label="Default render"></lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

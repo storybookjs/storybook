@@ -27,6 +27,8 @@ export type StoryTemplateAnalysis =
       kind: 'resolved';
       markup: string;
       referencedNames: string[];
+      /** The referenced names the markup calls, which so hold a function. */
+      calledNames: string[];
       boundOutputs: string[];
     }
   | {
@@ -44,6 +46,7 @@ interface Replacement {
 
 class StoryTemplateVisitor extends CombinedRecursiveAstVisitor {
   readonly referencedNames = new Set<string>();
+  readonly calledNames = new Set<string>();
   readonly boundOutputs = new Set<string>();
   readonly errors = new Set<string>();
   readonly replacements: Replacement[] = [];
@@ -105,6 +108,14 @@ class StoryTemplateVisitor extends CombinedRecursiveAstVisitor {
   override visitCall(ast: Call): void {
     const previous = this.builtinAnyReceiver;
     this.builtinAnyReceiver = isBuiltinAnyCall(ast) ? ast.receiver : undefined;
+    if (
+      ast.receiver instanceof PropertyRead &&
+      ast.receiver !== this.builtinAnyReceiver &&
+      this.isComponentReceiver(ast.receiver.receiver) &&
+      this.target.getExpressionTarget(ast.receiver) === null
+    ) {
+      this.calledNames.add(ast.receiver.name);
+    }
     try {
       super.visitCall(ast, undefined);
     } finally {
@@ -222,6 +233,7 @@ export const analyzeStoryTemplate = (
       kind: 'resolved',
       markup: materializedMarkup,
       referencedNames: [...visitor.referencedNames],
+      calledNames: [...visitor.calledNames],
       boundOutputs: [...visitor.boundOutputs],
     };
   } catch (error) {

@@ -1,6 +1,8 @@
 import { escapeAttribute } from './print-element.ts';
 
 export interface HtmlAttribute {
+  /** The hole a template prints for the attribute, as it prints an arg. */
+  hole?: string;
   name: string;
   quoted?: boolean;
   value: string | undefined;
@@ -114,11 +116,18 @@ export function parseHtml(source: string): HtmlNode[] {
   return root.children;
 }
 
-export function printHtml(nodes: HtmlNode[]): string {
+/**
+ * Html laid out in 80 columns. `fill` fills the holes of a template with the story's own args, so
+ * the template is laid out as the html it fills to: a hole takes the room of its value, and is text
+ * while its value is.
+ */
+export function printHtml(nodes: HtmlNode[], fill: Fill = (text) => text): string {
   return printableChildren(nodes)
-    .map((node) => printNode(node, 0))
+    .map((node) => printNode(node, 0, fill))
     .join('\n');
 }
+
+type Fill = (text: string) => string;
 
 const current = (stack: ({ children: HtmlNode[] } | ElementNode)[]): { children: HtmlNode[] } =>
   stack[stack.length - 1];
@@ -225,17 +234,17 @@ const parseAttributes = (source: string): HtmlAttribute[] => {
   return attributes;
 };
 
-const printNode = (node: HtmlNode, depth: number): string => {
+const printNode = (node: HtmlNode, depth: number, fill: Fill): string => {
   const indent = INDENT.repeat(depth);
   switch (node.kind) {
     case 'comment':
       return `${indent}${node.text}`;
     case 'element':
-      return printElement(node, depth);
+      return printElement(node, depth, fill);
     case 'malformed':
       return node.text;
     case 'rawText':
-      return printRawTextElement(node, depth);
+      return printRawTextElement(node, depth, fill);
     case 'text':
       return `${indent}${collapseText(node.text)}`;
     default: {
@@ -245,9 +254,9 @@ const printNode = (node: HtmlNode, depth: number): string => {
   }
 };
 
-const printElement = (node: ElementNode, depth: number): string => {
+const printElement = (node: ElementNode, depth: number, fill: Fill): string => {
   const indent = INDENT.repeat(depth);
-  const startTag = printStartTag(node, depth);
+  const startTag = printStartTag(node, depth, fill);
   if (VOID_ELEMENTS.has(node.name.toLowerCase())) {
     return startTag;
   }
@@ -255,35 +264,37 @@ const printElement = (node: ElementNode, depth: number): string => {
     return `${startTag}</${node.name}>`;
   }
 
+  // Holes that fill to nothing are an empty element, so they go where its content would.
   const children = printableChildren(node.children);
-  if (children.length === 0) {
-    return node.closed ? `${startTag}</${node.name}>` : startTag;
+  const holes = children.map((child) => (child.kind === 'text' ? collapseText(child.text) : ''));
+  if (holes.every((hole) => hole !== '' && !collapseText(fill(hole)))) {
+    return `${startTag}${holes.join('')}${node.closed ? `</${node.name}>` : ''}`;
   }
 
-  const inline = inlineElementText(node, true)?.text;
+  const inline = inlineElementText(node, true, fill)?.text;
   if (inline) {
-    if (indent.length + inline.length <= INLINE_LIMIT) {
+    if (indent.length + fill(inline).length <= INLINE_LIMIT) {
       return `${indent}${inline}`;
     }
   }
 
-  const body = printChildLines(node.children, depth + 1).join('\n');
+  const body = printChildLines(node.children, depth + 1, fill).join('\n');
   return node.closed ? `${startTag}\n${body}\n${indent}</${node.name}>` : `${startTag}\n${body}`;
 };
 
-const printChildLines = (children: HtmlNode[], depth: number): string[] => {
+const printChildLines = (children: HtmlNode[], depth: number, fill: Fill): string[] => {
   const lines: string[] = [];
   let group: HtmlNode[] = [];
   const flushGroup = (): void => {
     if (group.length === 0) {
       return;
     }
-    const inline = inlineChildrenText(group);
+    const inline = inlineChildrenText(group, fill);
     const indent = INDENT.repeat(depth);
-    if (inline && inline.hasText && indent.length + inline.text.length <= INLINE_LIMIT) {
+    if (inline && inline.hasText && indent.length + fill(inline.text).length <= INLINE_LIMIT) {
       lines.push(`${indent}${inline.text}`);
     } else {
-      group.forEach((child) => lines.push(printNode(child, depth)));
+      group.forEach((child) => lines.push(printNode(child, depth, fill)));
     }
     group = [];
   };
@@ -293,18 +304,22 @@ const printChildLines = (children: HtmlNode[], depth: number): string[] => {
       flushGroup();
       continue;
     }
-    if (inlineChildText(child)) {
+    if (inlineChildText(child, fill)) {
       group.push(child);
       continue;
     }
     flushGroup();
-    lines.push(printNode(child, depth));
+    lines.push(printNode(child, depth, fill));
   }
   flushGroup();
   return lines;
 };
 
-const inlineElementText = (node: ElementNode, requireText = true): InlineText | undefined => {
+const inlineElementText = (
+  node: ElementNode,
+  requireText: boolean,
+  fill: Fill
+): InlineText | undefined => {
   const lowerName = node.name.toLowerCase();
   if (VOID_ELEMENTS.has(lowerName)) {
     return { hasText: false, text: printCompactStartTag(node) };
@@ -319,7 +334,7 @@ const inlineElementText = (node: ElementNode, requireText = true): InlineText | 
       : printCompactStartTag(node);
     return { hasText: false, text };
   }
-  const childrenText = inlineChildrenText(node.children);
+  const childrenText = inlineChildrenText(node.children, fill);
   return childrenText === undefined || (requireText && !childrenText.hasText)
     ? undefined
     : {
@@ -328,12 +343,12 @@ const inlineElementText = (node: ElementNode, requireText = true): InlineText | 
       };
 };
 
-const inlineChildrenText = (children: HtmlNode[]): InlineText | undefined => {
+const inlineChildrenText = (children: HtmlNode[], fill: Fill): InlineText | undefined => {
   const parts: string[] = [];
   let hasText = false;
   for (let index = 0; index < children.length; index += 1) {
     const child = children[index];
-    const part = inlineChildText(child);
+    const part = inlineChildText(child, fill);
     if (part === undefined) {
       return undefined;
     }
@@ -349,15 +364,19 @@ const inlineChildrenText = (children: HtmlNode[]): InlineText | undefined => {
   return { hasText, text: parts.join('') };
 };
 
-const inlineChildText = (node: HtmlNode): InlineText | undefined => {
+const inlineChildText = (node: HtmlNode, fill: Fill): InlineText | undefined => {
   switch (node.kind) {
-    case 'text':
-      return collapseText(node.text) === '' ? undefined : { hasText: true, text: node.text };
+    case 'text': {
+      const filled = collapseText(fill(node.text));
+      return collapseText(node.text) === ''
+        ? undefined
+        : { hasText: filled !== '' && !filled.startsWith('<'), text: node.text };
+    }
     case 'element': {
       if (!isInlineChildElement(node)) {
         return undefined;
       }
-      const inline = inlineElementText(node, false);
+      const inline = inlineElementText(node, false, fill);
       return inline ? { hasText: false, text: inline.text } : undefined;
     }
     case 'comment':
@@ -377,16 +396,21 @@ const isInlineChildElement = (node: ElementNode): boolean =>
 
 const printRawTextElement = (
   node: Extract<HtmlNode, { kind: 'rawText' }>,
-  depth: number
+  depth: number,
+  fill: Fill
 ): string => {
-  const startTag = printStartTag({ attributes: node.attributes, name: node.name }, depth);
+  const startTag = printStartTag({ attributes: node.attributes, name: node.name }, depth, fill);
   return node.closed ? `${startTag}${node.text}</${node.name}>` : `${startTag}${node.text}`;
 };
 
-const printStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>, depth: number): string => {
+const printStartTag = (
+  node: Pick<ElementNode, 'attributes' | 'name'>,
+  depth: number,
+  fill: Fill
+): string => {
   const indent = INDENT.repeat(depth);
   const compact = printCompactStartTag(node);
-  if (indent.length + compact.length <= INLINE_LIMIT) {
+  if (indent.length + fill(compact).length <= INLINE_LIMIT) {
     return `${indent}${compact}`;
   }
   if (node.attributes.length === 0) {
@@ -405,8 +429,8 @@ const printCompactStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>): s
   return `<${node.name}${suffix}>`;
 };
 
-const printHtmlAttribute = ({ name, value }: HtmlAttribute): string =>
-  value === undefined ? name : `${name}="${escapeAttribute(value)}"`;
+const printHtmlAttribute = ({ hole, name, value }: HtmlAttribute): string =>
+  hole ?? (value === undefined ? name : `${name}="${escapeAttribute(value)}"`);
 
 const decodeAttribute = (value: string): string =>
   value

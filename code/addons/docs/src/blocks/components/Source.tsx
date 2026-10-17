@@ -53,7 +53,10 @@ export interface SourceCodeProps {
 export interface SourceProps extends SourceCodeProps {
   isLoading?: boolean;
   error?: SourceError;
-  /** Why the snippet is an incomplete example, when it is one; see `StoryDoc.warning`. */
+  /**
+   * Why the snippet is an incomplete example, when it is one; see `StoryDoc.warning` and
+   * `StoryDoc.templateWarning`.
+   */
   warning?: string;
 }
 

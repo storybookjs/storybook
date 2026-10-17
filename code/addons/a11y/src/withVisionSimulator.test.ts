@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryContext } from 'storybook/internal/types';
+import type { StoryContextForRender } from 'storybook/internal/types';
 
 import { useCallback, useEffect } from 'storybook/preview-api';
 
@@ -15,8 +15,8 @@ const mockedUseCallback = vi.mocked(useCallback);
 const mockedUseEffect = vi.mocked(useEffect);
 const cleanups: Array<() => void> = [];
 
-const createContext = (disable = false): StoryContext => {
-  const context: StoryContext = {
+const createContext = (disable = false): StoryContextForRender => {
+  const context: StoryContextForRender = {
     componentId: 'test',
     title: 'Test',
     kind: 'Test',

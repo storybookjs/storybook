@@ -33,6 +33,7 @@ import {
   isRegExpLiteral,
   isStringLiteral,
   locationOf,
+  outerSpan,
   unwrapExpression,
 } from './estree/ast.ts';
 import {
@@ -40,7 +41,6 @@ import {
   type InputSourceMap,
   SourceEditor,
   appendStatement,
-  exportDefaultKeywords,
 } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
@@ -640,9 +640,11 @@ export class CsfFile {
       const metaName = generateUid(this._editor.scopes, 'meta');
       this._metaVariableName = metaName;
       const declaration = node.declaration as Node & { start: number; end: number };
-      // Only the keywords: the declaration's span may sit inside parentheses the parser dropped.
-      const keywords = exportDefaultKeywords(this._editor.code, node.start);
-      this._editor.edits.overwrite(node.start, node.start + keywords, `const ${metaName} = `);
+      this._editor.edits.overwrite(
+        node.start,
+        outerSpan(declaration).start,
+        `const ${metaName} = `
+      );
       this._editor.edits.appendLeft(node.end, `\nexport default ${metaName};`);
       this._metaStatement = node;
       decl = declaration;

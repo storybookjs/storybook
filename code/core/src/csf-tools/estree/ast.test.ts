@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { codeFrame, parseModule } from './ast.ts';
+import { type E, codeFrame, expressionFromSource, outerSpan, parseModule, walk } from './ast.ts';
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -54,6 +54,35 @@ describe('parseModule', () => {
 
   it('names a file without a TS or JS extension in its parse error', () => {
     expect(() => parseModule('export const = ;', '/src/Api.vue')).toThrow('in /src/Api.vue');
+  });
+
+  it('replaces parenthesized nodes by their content, which keeps the outermost span', () => {
+    const { program } = parseModule(
+      'x = ((a)); type T = ((string));\n@d((b)) export class C {}',
+      'a.ts'
+    );
+    const types = new Set<string>();
+    walk(program, (node) => {
+      types.add(node.type);
+    });
+    expect(types.has('ParenthesizedExpression') || types.has('TSParenthesizedType')).toBe(false);
+
+    const [assignment, alias] = program.body as [E.ExpressionStatement, E.TSTypeAliasDeclaration];
+    const value = (assignment.expression as E.AssignmentExpression).right;
+    expect([value.start, value.end, outerSpan(value)]).toEqual([6, 7, { start: 4, end: 9 }]);
+    expect(outerSpan(alias.typeAnnotation)).toEqual({ start: 20, end: 30 });
+    expect(outerSpan(assignment)).toMatchObject({ start: 0, end: 10 });
+  });
+
+  it('normalizes an expression nested deeper than the call stack allows recursion', () => {
+    const { program } = parseModule(`x = ${Array(20_000).fill('(a)').join(' + ')};`);
+    expect(program.body).toHaveLength(1);
+  });
+});
+
+describe('expressionFromSource', () => {
+  it.each(['a) + (b', 'a); (b', 'a)(b'])('rejects %s, which is no single expression', (code) => {
+    expect(() => expressionFromSource(code)).toThrow(`Expected an expression: ${code}`);
   });
 });
 

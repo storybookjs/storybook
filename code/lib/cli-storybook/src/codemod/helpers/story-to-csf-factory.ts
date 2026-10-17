@@ -4,8 +4,8 @@ import {
   isValidPreviewPath,
   loadCsf,
   printCsf,
+  outerSpan,
   walk,
-  withParentheses,
   removeStatements,
   setImportSpecifiers,
   prependStatement,
@@ -348,10 +348,10 @@ export async function storyToCsfFactory(
       ? customArgs.shared(storyInits.map(({ argsTypes }) => argsTypes))
       : [];
 
-  // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it. The parser drops
-  // parentheses from spans, so `(inner) satisfies T` keeps its own.
+  // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it. The parentheses
+  // of `(inner) satisfies T` stay with `inner`.
   const wrap = (outer: Node, inner: Node, before: string, after: string) => {
-    const span = withParentheses(editor.code, inner, outer.start, outer.end, editor.comments);
+    const span = outerSpan(inner);
     if (span.end < outer.end) {
       editor.edits.remove(span.end, outer.end);
     }

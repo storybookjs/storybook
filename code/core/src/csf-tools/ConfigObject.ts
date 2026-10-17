@@ -15,6 +15,7 @@ import {
   isIdentifier,
   isStringLiteral,
   locationOf,
+  outerSpan,
   staticKey,
   walk,
 } from './estree/ast.ts';
@@ -29,7 +30,7 @@ import {
   specifierList,
 } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
-import { valueSource } from './estree/values.ts';
+import { placeableValueSource } from './estree/values.ts';
 
 type Span = { start: number; end: number };
 
@@ -420,7 +421,8 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
     replaceValue: (member, text) => {
       const { declaration } = entryOf(member);
       if (declaration.type === 'VariableDeclarator') {
-        editor.edits.overwrite(declaration.init!.start, declaration.init!.end, text);
+        const value = outerSpan(declaration.init!);
+        editor.edits.overwrite(value.start, value.end, text);
         return;
       }
       const id = declaration.id!.name;
@@ -460,17 +462,20 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
         return;
       }
       removeEntries([entry]);
-      declare([{ key: name, value: valueSource(editor, member), text: '' }]);
+      declare([{ key: name, value: placeableValueSource(editor, member), text: '' }]);
     },
     group: (members, key) => {
       removeEntries(members.map(entryOf));
       const inner = members
-        .map((member) => `${printKey(entryOf(member).name, quote)}: ${valueSource(editor, member)}`)
+        .map(
+          (member) =>
+            `${printKey(entryOf(member).name, quote)}: ${placeableValueSource(editor, member)}`
+        )
         .join(', ');
       declare([{ key, value: `{ ${inner} }`, text: '' }]);
     },
     take: (member, key) => {
-      const value = valueSource(editor, member);
+      const value = placeableValueSource(editor, member);
       return { key, value, text: `${printKey(key, quote)}: ${value}` };
     },
   };

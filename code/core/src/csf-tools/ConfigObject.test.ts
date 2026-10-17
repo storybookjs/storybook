@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { loadConfig, printConfig } from './ConfigFile.ts';
 import { parseExpression, printExpression } from './CsfObject.ts';
+import type { E } from './estree/ast.ts';
 
 const configurations = [
   `export default { parameters: { a11y: { element: '#root' } } };`,
@@ -364,6 +365,31 @@ describe('ConfigFile mutations', () => {
     expect(config.rename(['a'], name)).toEqual({ ok: true, changed: true });
     expect(printConfig(config).code).toBe(output);
     expect(config.getValue([name])).toBe(1);
+  });
+
+  it('keeps the parentheses of a comma expression it moves or renames', () => {
+    const config = loadConfig(
+      `export const a = (f(), 1);\nexport const b = (g(), 2);\nexport const parameters = {};`
+    ).parse();
+
+    expect(config.move(['a'], ['parameters', 'a'])).toEqual({ ok: true, changed: true });
+    expect(config.rename(['b'], 'custom-field')).toEqual({ ok: true, changed: true });
+    expect(config.move(['parameters', 'a'], ['first'])).toEqual({ ok: true, changed: true });
+
+    const output = loadConfig(printConfig(config).code).parse();
+    expect(printExpression(output.get(['first'])!)).toBe('f(), 1');
+    expect(printExpression(output.get(['custom-field'])!)).toBe('g(), 2');
+  });
+
+  it('keeps the parentheses of a comma expression it copies or appends to an array', () => {
+    const config = loadConfig(`export default { addons: [(a, b)] };`).parse();
+    const [element] = (config.get(['addons']) as E.ArrayExpression).elements;
+    config.set(['first'], element as E.Expression);
+    config.appendNodeToArray(['addons'], parseExpression('c, d'));
+
+    expect(printConfig(config).code).toBe(
+      `export default { addons: [(a, b), (c, d)], first: (a, b) };`
+    );
   });
 
   it('can create named exports in an empty file', () => {

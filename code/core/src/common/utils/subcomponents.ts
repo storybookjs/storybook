@@ -64,7 +64,6 @@ function unwrapSubcomponentNode(
     }
 
     if (
-      current.type === 'ParenthesizedExpression' ||
       current.type === 'TSAsExpression' ||
       current.type === 'TSSatisfiesExpression' ||
       current.type === 'TSNonNullExpression'

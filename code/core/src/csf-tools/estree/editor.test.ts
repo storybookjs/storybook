@@ -23,7 +23,6 @@ import {
   removeStatement,
   removeStatements,
   setImportSpecifiers,
-  withParentheses,
 } from './editor.ts';
 
 const parse = (source: string, fileName?: string) =>
@@ -105,12 +104,16 @@ describe('reindent', () => {
   });
 });
 
-describe('withParentheses', () => {
-  it('widens a span over the parentheses wrapped around it', () => {
-    const code = '[ ((a ? 1 : 2)) ]';
-    expect(withParentheses(code, { start: 4, end: 13 })).toEqual({ start: 2, end: 15 });
-    expect(withParentheses(code, { start: 4, end: 13 }, 3, 14)).toEqual({ start: 3, end: 14 });
-    expect(withParentheses(code, { start: 6, end: 7 })).toEqual({ start: 6, end: 7 });
+describe('parenthesized array elements', () => {
+  it('appends after a comma expression and removes a doubly parenthesized one whole', () => {
+    const editor = new SourceEditor(`export default { addons: [(a, b)] };`);
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'c'`], '');
+    expect(editor.toString()).toBe(`export default { addons: [(a, b), 'c'] };`);
+
+    const removal = new SourceEditor(`export default { addons: ['c', ((a, b))] };`);
+    const array = defaultExportArray(removal);
+    removeFromList(removal, arrayList(removal, array), [array.elements[1]!]);
+    expect(removal.toString()).toBe(`export default { addons: ['c'] };`);
   });
 
   it('appends after a parenthesized last element and removes it whole', () => {
@@ -438,6 +441,14 @@ describe('computed keys', () => {
     expect(meta.rename(['b'], 'd')).toEqual({ ok: true, changed: true });
     expect(printCsf(csf).code).toBe(`export default { c: 1, async d() {} };`);
   });
+
+  it('renames a parenthesized computed key with comments around its parentheses', () => {
+    const csf = parse(`export default { [('a')]: 1, [ /* c */ (('b')) /* d */ ]: 2 };`);
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.rename(['a'], 'c')).toEqual({ ok: true, changed: true });
+    expect(meta.rename(['b'], 'd')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(`export default { c: 1, d: 2 };`);
+  });
 });
 
 describe('parenthesized default exports', () => {
@@ -449,6 +460,20 @@ describe('parenthesized default exports', () => {
     expect(printCsf(csf).code).toBe(
       `const _meta = ({ title: 'X' } satisfies Meta);\nexport default _meta;\nexport const A = {};`
     );
+  });
+
+  it('hoists and reads a doubly parenthesized meta', () => {
+    const csf = loadCsf(`export default (({ title: 'X' }));\nexport const A = {};`, {
+      transformInlineMeta: true,
+      makeTitle: (title) => title ?? 'title',
+    }).parse();
+    expect(csf._meta?.title).toBe('X');
+    expect(printCsf(csf).code).toBe(
+      `const _meta = (({ title: 'X' }));\nexport default _meta;\nexport const A = {};`
+    );
+
+    const reference = parse(`const meta = { title: 'Y' };\nexport default ((meta));`);
+    expect(reference._meta?.title).toBe('Y');
   });
 
   it('hoists an inline meta with comments between the keywords', () => {

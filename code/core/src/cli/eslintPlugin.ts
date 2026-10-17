@@ -11,6 +11,7 @@ import {
   generateUid,
   importedName,
   isStringLiteral,
+  outerSpan,
   prependStatement,
   printString,
   readConfig,
@@ -169,9 +170,9 @@ function addStorybookConfig(editor: SourceEditor, target: ConfigTarget, localNam
     appendToList(editor, arrayList(editor, target), [`...${storybookConfig}`], '');
   } else {
     const open = editor.code.indexOf('(', target.callee.end) + 1;
-    appendToList(editor, { open, close: target.end - 1, items: target.arguments }, [
-      storybookConfig,
-    ]);
+    // An argument's item spans the parentheses around it.
+    const items = target.arguments.map(outerSpan);
+    appendToList(editor, { open, close: target.end - 1, items }, [storybookConfig]);
   }
 }
 

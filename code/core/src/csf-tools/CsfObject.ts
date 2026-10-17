@@ -5,6 +5,7 @@ import {
   type SourceLocation,
   locationOf,
   expressionFromSource,
+  placeableTextOf,
   staticKey,
   textOf,
   unwrapExpression,
@@ -30,7 +31,7 @@ import {
   UNRESOLVED,
   isAstLike,
   isEvaluationInert,
-  placeableSource,
+  placeableValueSource,
   readValue,
   resolveExpression,
   valueSource,
@@ -86,12 +87,15 @@ export type CsfExpression = E.Expression;
  *
  * @example
  * ```ts
- * object.transform(['tags'], (value) => parseExpression(`[...${printExpression(value)}, 'autodocs']`));
+ * object.transform(['tags'], (value) => parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`));
  * ```
  */
 export const parseExpression = (code: string): CsfExpression => expressionFromSource(code);
 
-/** Source of an expression returned by `get` or `parseExpression`, or of any node inside one. */
+/**
+ * Source of an expression returned by `get` or `parseExpression`, or of any node inside one. To
+ * build new code around it, use `placeableTextOf`, which keeps the parentheses of a comma expression.
+ */
 export const printExpression = (node: Node): string => {
   const source = textOf(node);
   if (source === undefined) {
@@ -101,10 +105,6 @@ export const printExpression = (node: Node): string => {
   }
   return source;
 };
-
-// The expression's source, adapted so the code placed after it survives.
-export const placeableExpression = (node: Node): string =>
-  placeableSource(printExpression(node), node.type);
 
 export interface CsfObject {
   /**
@@ -174,7 +174,7 @@ export interface CsfObject {
    * ```ts
    * const object = loadConfig("export default { tags: ['docs'] };").parse();
    * object.transform(['tags'], (value) =>
-   *   parseExpression(`[...${printExpression(value)}, 'autodocs']`)
+   *   parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`)
    * ); // { ok: true, changed: true }
    * object.getValue(['tags']); // ['docs', 'autodocs']
    * ```
@@ -295,7 +295,7 @@ export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): O
   group: (members, key) => groupMembers(editor, object, members, key),
   take: (member, key) => ({
     key,
-    value: valueSource(editor, member),
+    value: placeableValueSource(editor, member),
     text: renamedMemberText(editor, object, member, printKey(key, editor.quote)),
   }),
 });
@@ -454,7 +454,7 @@ class CsfObjectEditor implements CsfObject {
 
   private sourceFor(value: CsfValue | CsfExpression) {
     if (isSpan(value)) {
-      return placeableExpression(value as Node);
+      return placeableTextOf(value as Node);
     }
     if (isAstLike(value)) {
       throw new Error(
@@ -509,7 +509,7 @@ class CsfObjectEditor implements CsfObject {
     if (!derived || derived === value) {
       return { ok: true, changed: false };
     }
-    parent.root.replaceValue(property, placeableExpression(derived));
+    parent.root.replaceValue(property, placeableTextOf(derived));
     return this.success();
   }
 

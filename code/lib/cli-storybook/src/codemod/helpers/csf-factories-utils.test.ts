@@ -181,6 +181,14 @@ describe('getConfigProperties', () => {
     ).toEqual(["foo: 'fooValue'", 'bar: 42']);
   });
 
+  it('keeps the parentheses of a comma expression', () => {
+    const editor = new SourceEditor(`export const foo = (track(), 'fooValue');`);
+
+    expect(
+      getConfigProperties(editor, exportedDeclarations(editor, ['foo']), { configType: 'main' })
+    ).toEqual(["foo: (track(), 'fooValue')"]);
+  });
+
   it('returns object properties from function declarations', () => {
     const editor = new SourceEditor(`export function foo() {}`);
 

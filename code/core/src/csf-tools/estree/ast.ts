@@ -54,7 +54,7 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
   const options = {
     lang,
     sourceType: 'module',
-    preserveParens: false,
+    preserveParens: true,
     // Duplicate declarations and legacy octals are reported like Babel did, instead of parsing
     // into a program that silently keeps the last declaration.
     showSemanticErrors: true,
@@ -79,8 +79,23 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
  * Parse a module. Without a TS or JS file extension there is no grammar to pick: TSX accepts the
  * most, but rejects generic arrows and `<T>value` assertions that `.ts` allows, so TS is tried next
  * and the error of the parse that got further is reported.
+ *
+ * The tree has no parenthesized nodes: `outerSpan` gives the span of the parentheses around one.
  */
 export const parseModule = (code: string, fileName?: string): ParsedModule => {
+  const module = parseWithParentheses(code, fileName);
+  normalize(module.program, undefined);
+  return module;
+};
+
+// `parseModule`, but `textOf` can print every node of the tree.
+export const parsePrintable = (code: string, fileName?: string): ParsedModule => {
+  const module = parseWithParentheses(code, fileName);
+  normalize(module.program, code);
+  return module;
+};
+
+const parseWithParentheses = (code: string, fileName: string | undefined): ParsedModule => {
   const lang = fileName === undefined ? undefined : langFor(fileName);
   const attempt = lang ? parseWith(code, fileName, lang) : parseEither(code, fileName);
   if ('module' in attempt) {
@@ -246,10 +261,9 @@ const WRAPPERS = new Set([
   'TSSatisfiesExpression',
   'TSNonNullExpression',
   'TSTypeAssertion',
-  'ParenthesizedExpression',
 ]);
 
-/** Peel TS assertion/satisfies wrappers and parentheses off an expression node. */
+/** Peel TS assertion/satisfies wrappers off an expression node. */
 export const unwrapExpression = <T extends Node | null | undefined>(node: T): T => {
   let current: Node | null | undefined = node;
   while (current && WRAPPERS.has(current.type)) {
@@ -288,49 +302,131 @@ export const objectProperty = (object: E.ObjectExpression, name: string): Proper
     (member): member is Property => member.type === 'Property' && staticKey(member) === name
   );
 
-export const sourceOf = (code: string, node: { start: number; end: number }) =>
-  code.slice(node.start, node.end);
+type Span = { start: number; end: number };
 
-// The code each registered node was parsed from, so a node can be printed without its module.
+export const sourceOf = (code: string, node: Span) => code.slice(node.start, node.end);
+
+// The code each parsed node came from, so a node can be printed without its module.
 const nodeSources = new WeakMap<object, string>();
 
-// Lets `textOf` print every node under `root`.
-export const registerSource = (root: Node, code: string) => {
-  walk(root, (node) => {
-    nodeSources.set(node, code);
-  });
+const outerSpans = new WeakMap<object, Span>();
+
+/** The span of a node with the parentheses written around it. */
+export const outerSpan = (node: Span): Span => outerSpans.get(node) ?? node;
+
+const isParenthesized = (node: Node): node is E.ParenthesizedExpression | E.TSParenthesizedType =>
+  node.type === 'ParenthesizedExpression' || node.type === 'TSParenthesizedType';
+
+// The node inside the parentheses around `node`, remembering the span of the outermost pair.
+const withoutParentheses = (node: Node): Node => {
+  let inner = node;
+  while (isParenthesized(inner)) {
+    inner = inner.type === 'ParenthesizedExpression' ? inner.expression : inner.typeAnnotation;
+  }
+  outerSpans.set(inner, { start: node.start, end: node.end });
+  return inner;
 };
 
-const textOverrides = new WeakMap<object, string>();
+const childKeys = new Map<string, readonly string[]>(Object.entries(visitorKeys));
 
-// Pin the text a node prints as, e.g. an expression whose parentheses the parser dropped.
-export const setTextOf = (node: Node, text: string) => {
-  textOverrides.set(node, text);
+// Replaces every parenthesized node under `root` by the node inside it, in one pass that also
+// records the code each node came from, if given. It keeps its own stack, so a deeply nested
+// expression cannot overflow the call stack; tracking the size itself is faster than push and pop.
+const normalize = (root: Node, code: string | undefined) => {
+  const stack = [root];
+  let size = 1;
+  while (size > 0) {
+    const node = stack[--size];
+    if (code !== undefined) {
+      nodeSources.set(node, code);
+    }
+    const keys = childKeys.get(node.type);
+    if (keys === undefined) {
+      continue;
+    }
+    const fields = node as unknown as Record<string, Node | (Node | null)[] | null>;
+    for (let index = 0; index < keys.length; index++) {
+      const key = keys[index];
+      const value = fields[key];
+      if (Array.isArray(value)) {
+        for (let position = 0; position < value.length; position++) {
+          const item = value[position];
+          if (item !== null && typeof item === 'object') {
+            stack[size++] = isParenthesized(item)
+              ? (value[position] = withoutParentheses(item))
+              : item;
+          }
+        }
+      } else if (value !== null && typeof value === 'object') {
+        stack[size++] = isParenthesized(value) ? (fields[key] = withoutParentheses(value)) : value;
+      }
+    }
+  }
 };
 
-/** Original source text of a registered node, or `undefined` for a node of unknown origin. */
+// The text of each expression `expressionFromSource` returns: as written, and as it is placed.
+const fragments = new WeakMap<object, { text: string; placeable: string }>();
+
+/**
+ * Original source text of a node from `SourceEditor` or `expressionFromSource`, or `undefined` for
+ * any other node, such as one from `parseModule`.
+ */
 export const textOf = (node: Node): string | undefined => {
-  const override = textOverrides.get(node);
-  if (override !== undefined) {
-    return override;
+  const fragment = fragments.get(node);
+  if (fragment) {
+    return fragment.text;
   }
   const code = nodeSources.get(node);
-  const span = node as Node & { start: number; end: number };
-  return code === undefined ? undefined : code.slice(span.start, span.end);
+  return code === undefined ? undefined : sourceOf(code, node as Node & Span);
+};
+
+/**
+ * Source text of a node from `SourceEditor` or `expressionFromSource` that can be placed as a value:
+ * a comma expression keeps its parentheses or gets them, and a trailing line comment ends its line.
+ * Unlike `textOf`, it throws for any other node.
+ */
+export const placeableTextOf = (node: Node): string => {
+  const fragment = fragments.get(node);
+  if (fragment) {
+    return fragment.placeable;
+  }
+  const code = nodeSources.get(node);
+  if (code === undefined) {
+    throw new Error(
+      `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\` or \`parseExpression\``
+    );
+  }
+  if (node.type !== 'SequenceExpression') {
+    return sourceOf(code, node as Node & Span);
+  }
+  const outer = outerSpan(node);
+  return outer === node ? `(${sourceOf(code, node)})` : sourceOf(code, outer);
 };
 
 /** Parse an expression fragment, which has no file name to pick its grammar. */
 export const parseFragment = (code: string): ParsedModule => parseModule(code);
 
 export const expressionFromSource = (code: string): E.Expression => {
+  // The line break ends a trailing line comment before the closing parenthesis.
   const wrapped = `(${code}\n)`;
-  const statement = parseFragment(wrapped).program.body[0];
-  if (statement?.type !== 'ExpressionStatement') {
+  const { program, comments } = parseWithParentheses(wrapped, undefined);
+  const statement = program.body[0] as E.Statement | undefined;
+  const wrapper = statement?.type === 'ExpressionStatement' ? statement.expression : undefined;
+  if (wrapper?.type !== 'ParenthesizedExpression' || wrapper.end !== wrapped.length) {
     throw new SyntaxError(`Expected an expression: ${code}`);
   }
-  registerSource(statement.expression, wrapped);
-  setTextOf(statement.expression, code);
-  return statement.expression;
+  const parenthesized = wrapper.expression.type === 'ParenthesizedExpression';
+  normalize(program, wrapped);
+  const expression = (statement as E.ExpressionStatement).expression;
+  // The wrapper's parentheses are not part of the fragment.
+  outerSpans.delete(expression);
+  const comment = comments.at(-1);
+  const ended = comment?.type === 'Line' && comment.end === code.length + 1 ? `${code}\n` : code;
+  fragments.set(expression, {
+    text: code,
+    placeable: expression.type === 'SequenceExpression' && !parenthesized ? `(${ended})` : ended,
+  });
+  return expression;
 };
 
 const KEYWORDS = new Set(

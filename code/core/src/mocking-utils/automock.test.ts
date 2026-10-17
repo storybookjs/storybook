@@ -21,12 +21,15 @@ describe('getAutomockCode', () => {
     }
   });
 
-  it('keeps the parentheses of a parenthesized default export', () => {
-    const mocked = getAutomockCode('export default (x);', false, (source) =>
+  it.each([
+    ['export default (x);', 'const __vitest_default = (x);'],
+    ['export /* a */ default /* b */ ((x));', 'const __vitest_default = ((x));'],
+  ])('keeps the parentheses of %s', (code, declaration) => {
+    const mocked = getAutomockCode(code, false, (source) =>
       parseModuleAst(source, '/mod.ts')
     ).toString();
 
-    expect(mocked).toMatch(/^const __vitest_default = \(x\);/);
+    expect(mocked.startsWith(declaration)).toBe(true);
     expect(() => parseModuleAst(mocked, '/mod.ts')).not.toThrow();
   });
 

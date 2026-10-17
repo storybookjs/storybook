@@ -438,6 +438,21 @@ describe('configureEslintPlugin', () => {
       expect(logger.warn).not.toHaveBeenCalled();
     });
 
+    it('appends after a parenthesized typescript-eslint config argument', async () => {
+      const output = await configureFlatConfig(
+        dedent`
+          import tseslint from 'typescript-eslint';
+
+          export default tseslint.config(tseslint.configs.recommended, (local));
+        `,
+        'eslint.config.js'
+      );
+
+      expect(output).toContain(
+        'export default tseslint.config(tseslint.configs.recommended, (local), storybook.configs["flat/recommended"]);'
+      );
+    });
+
     it('configures a CommonJS export of a config variable', async () => {
       const input = dedent`
         const storybook = require('eslint-plugin-storybook');

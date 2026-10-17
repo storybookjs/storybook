@@ -4,6 +4,7 @@ import {
   type ESTreeNode as Node,
   type SourceEditor,
   loadCsf,
+  placeableTextOf,
   printCsf,
   removeStatement,
   walk,
@@ -21,7 +22,7 @@ const renameAnnotation = (annotation: string) => {
 };
 
 // `Story.story = { parameters }` is one assignment. The fields inside it are the annotations.
-const annotationProperties = (editor: SourceEditor, annotations: Record<string, Node>) => {
+const annotationProperties = (annotations: Record<string, Node>) => {
   const fields = new Map<string, Node>();
   for (const [annotation, value] of Object.entries(annotations)) {
     if (annotation === 'story' && value.type === 'ObjectExpression') {
@@ -35,7 +36,7 @@ const annotationProperties = (editor: SourceEditor, annotations: Record<string, 
     fields.set(annotation, value);
   }
   return [...fields].map(
-    ([annotation, value]) => `${renameAnnotation(annotation)}: ${editor.source(value)}`
+    ([annotation, value]) => `${renameAnnotation(annotation)}: ${placeableTextOf(value)}`
   );
 };
 
@@ -154,7 +155,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
 
   const objectExports = new Set<string>();
   Object.entries(csf._storyExports).forEach(([key, decl]) => {
-    const annotations = annotationProperties(editor, csf._storyAnnotations[key]);
+    const annotations = annotationProperties(csf._storyAnnotations[key]);
 
     if (decl.type !== 'VariableDeclarator') {
       return;

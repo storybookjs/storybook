@@ -6,14 +6,13 @@ import {
   STORYBOOK_FN_PLACEHOLDER,
   generateDummyArgsFromArgTypes,
 } from '../../core-server/utils/get-dummy-args-from-argtypes.ts';
-import { type E, type Node, unwrapExpression, walk } from '../estree/ast.ts';
+import { type E, type Node, outerSpan, unwrapExpression, walk } from '../estree/ast.ts';
 import {
   SourceEditor,
   appendToList,
   prependStatement,
   printKey,
   printValue,
-  exportDefaultKeywords,
   specifierList,
 } from '../estree/editor.ts';
 import { generateUid } from '../estree/scope.ts';
@@ -164,8 +163,7 @@ const collectComponentExports = (editor: SourceEditor, fileName: string) => {
       ) {
         const identifierName = createComponentNameFromFileName(fileName);
         const identifier = generateUid(scopes, identifierName);
-        const keywords = exportDefaultKeywords(editor.code, node.start);
-        editor.edits.overwrite(node.start, node.start + keywords, `const ${identifier} = `);
+        editor.edits.overwrite(node.start, outerSpan(declaration).start, `const ${identifier} = `);
         editor.edits.appendLeft(node.end, `\nexport default ${identifier};`);
 
         if (declaration.type === 'CallExpression') {

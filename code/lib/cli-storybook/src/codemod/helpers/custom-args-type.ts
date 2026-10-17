@@ -81,9 +81,6 @@ export function customArgsTypes(editor: SourceEditor, component: Node | undefine
 
   const customArgs = (type: E.TSType | undefined): E.TSType[] =>
     (type?.type === 'TSIntersectionType' ? type.types : type ? [type] : []).flatMap((member) => {
-      if (member.type === 'TSParenthesizedType') {
-        return customArgs(member.typeAnnotation);
-      }
       // `StoryObj<Meta<T>>` has the args of `Meta<T>`.
       const nested = argsType(member);
       if (nested) {

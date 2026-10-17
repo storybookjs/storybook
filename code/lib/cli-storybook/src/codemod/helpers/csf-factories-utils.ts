@@ -2,6 +2,7 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type SourceEditor,
+  placeableTextOf,
   walk,
   removeStatements,
   setImportSpecifiers,
@@ -108,7 +109,7 @@ export function getConfigProperties(
       continue;
     }
     if (decl.type === 'VariableDeclarator' && decl.init) {
-      properties.push(`${name}: ${editor.source(decl.init)}`);
+      properties.push(`${name}: ${placeableTextOf(decl.init)}`);
     } else if (decl.type === 'FunctionDeclaration' && decl.body) {
       properties.push(`${name}: () => ${editor.source(decl.body)}`);
     }

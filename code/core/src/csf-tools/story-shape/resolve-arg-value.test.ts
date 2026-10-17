@@ -115,6 +115,13 @@ describe('resolveArgValue', () => {
     });
   });
 
+  it.each([
+    [`[(f(), 1), { ...base }]`, `[(f(), 1), { size: 'md' }]`],
+    [`{ a: (f(), 1), [(k, 'b')]: { ...base } }`, `{ a: (f(), 1), [(k, 'b')]: { size: 'md' } }`],
+  ])('keeps the parentheses of comma expressions while writing out %s', (expression, node) => {
+    expect(valueOf(`const base = { size: 'md' };`, expression).node).toBe(node);
+  });
+
   it('leaves a literal alone', () => {
     expect(valueOf('', `{ a: 1, b: [2, 3] }`)).toEqual({
       node: '{ a: 1, b: [2, 3] }',

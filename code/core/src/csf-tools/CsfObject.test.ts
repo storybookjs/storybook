@@ -183,6 +183,28 @@ describe('CsfObject', () => {
     );
   });
 
+  it('copies a parenthesized comma expression over itself and into new members', () => {
+    const csf = parse(`export default { a: (x, y), b: 0 };`);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.set(['a'], meta.get(['a'])!)).toEqual({ ok: true, changed: true });
+    expect(meta.set(['b'], meta.get(['a'])!)).toEqual({ ok: true, changed: true });
+    expect(meta.set(['c'], meta.get(['a'])!)).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(`export default { a: (x, y), b: (x, y), c: (x, y) };`);
+  });
+
+  it.each([
+    { expression: '1 // x', output: 'export default { a: 1 // x\n, b: 2 };' },
+    { expression: 'x, y // x', output: 'export default { a: (x, y // x\n), b: 2 };' },
+  ])('ends the line of $expression before the member after it', ({ expression, output }) => {
+    const csf = parse('export default { a: 0, b: 2 };');
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.set(['a'], parseExpression(expression))).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(output);
+    expect(parse(output).objects({ stories: false })[0].getValue(['b'])).toBe(2);
+  });
+
   it.each([
     { expression: '1 // note', output: 'export default {\n  a: 1 // note\n, b: 2,\n};' },
     { expression: 'x, y', output: 'export default {\n  a: (x, y), b: 2,\n};' },

@@ -22,7 +22,9 @@ export {
   isStringLiteral,
   isValidIdentifier,
   locationOf,
+  outerSpan,
   parseModule,
+  placeableTextOf,
   textOf,
   unwrapExpression as unwrapESTreeExpression,
   walk,
@@ -51,5 +53,4 @@ export {
   removeStatements,
   setImportSpecifiers,
   specifierList,
-  withParentheses,
 } from './estree/editor.ts';

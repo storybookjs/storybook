@@ -8,8 +8,9 @@ import {
   type Property,
   isNode,
   isValidIdentifier,
+  outerSpan,
   parseModule,
-  registerSource,
+  parsePrintable,
   sourceOf,
   walk,
 } from './ast.ts';
@@ -61,9 +62,7 @@ export class SourceEditor {
 
   constructor(code: string, fileName?: string) {
     this.fileName = fileName;
-    this._module = parseModule(code, fileName);
-    // Every node prints as the text it was parsed from, wherever it is used.
-    registerSource(this._module.program, code);
+    this._module = parsePrintable(code, fileName);
     this._edits = new MagicString(code, { filename: fileName });
   }
 
@@ -131,8 +130,7 @@ export class SourceEditor {
   }
 
   replaceSource(code: string) {
-    this._module = parseModule(code, this.fileName);
-    registerSource(this._module.program, code);
+    this._module = parsePrintable(code, this.fileName);
     this._scopes = undefined;
     this._parents = undefined;
     this._edits = new MagicString(code, { filename: this.fileName });
@@ -366,7 +364,7 @@ export const objectList = (object: E.ObjectExpression | E.ObjectPattern): List =
 // A hole (`[a, , b]`) is an empty item right before the comma that writes it.
 const isHole = (item: Span) => item.start === item.end;
 
-// Nodes are parsed without parentheses, so an element's span may sit inside `( )`.
+// An element's item spans the parentheses around it.
 export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => {
   const { code, comments } = editor;
   const open = array.start + 1;
@@ -375,7 +373,7 @@ export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List 
   const items = array.elements.map((element): Span => {
     let item: Span;
     if (element) {
-      item = withParentheses(code, element, cursor, close, comments);
+      item = outerSpan(element);
     } else {
       const comma = nextTokenStart(code, comments, cursor);
       item = { start: comma, end: comma };
@@ -385,30 +383,6 @@ export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List 
     return item;
   });
   return { open, close, items };
-};
-
-/**
- * Widen a span to the balanced parentheses wrapped directly around it, within `lower..upper`.
- * Whitespace and the given comments may sit between the parentheses and the span.
- */
-export const withParentheses = (
-  code: string,
-  span: Span,
-  lower = 0,
-  upper = code.length,
-  comments: readonly Span[] = []
-): Span => {
-  let { start, end } = span;
-  while (true) {
-    const before = previousTokenEnd(code, comments, start);
-    const after = nextTokenStart(code, comments, end);
-    if (before > lower && after < upper && code[before - 1] === '(' && code[after] === ')') {
-      start = before - 1;
-      end = after + 1;
-    } else {
-      return start === span.start && end === span.end ? span : { start, end };
-    }
-  }
 };
 
 // Position right after the comma that follows an item, if it has one.
@@ -940,7 +914,8 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
     );
     return;
   }
-  editor.edits.overwrite(member.value.start, member.value.end, text);
+  const value = outerSpan(member.value);
+  editor.edits.overwrite(value.start, value.end, text);
 };
 
 export const keySource = (editor: SourceEditor, member: Property) =>
@@ -952,7 +927,7 @@ const keyRange = (editor: SourceEditor, member: Property): Span => {
     return member.key;
   }
   const { code, comments } = editor;
-  const key = withParentheses(code, member.key, member.start, member.end, comments);
+  const key = outerSpan(member.key);
   return {
     start: previousTokenEnd(code, comments, key.start) - 1,
     end: nextTokenStart(code, comments, key.end) + 1,
@@ -1003,14 +978,6 @@ const methodFromFunction = (text: string, key: string) => {
     ? `${match[1] ? 'async ' : ''}${match[2] ? '*' : ''}${key}${text.slice(match[0].length)}`
     : undefined;
 };
-
-// Length of `export default` and the whitespace after it at `start`.
-// Comments may sit between and after the keywords.
-const SKIPPED = String.raw`(?:\s|/\*[\s\S]*?\*/|//[^\n]*\n)`;
-const EXPORT_DEFAULT = new RegExp(`^export${SKIPPED}+default${SKIPPED}*`);
-
-export const exportDefaultKeywords = (code: string, start: number) =>
-  EXPORT_DEFAULT.exec(code.slice(start))![0].length;
 
 export const isSpan = (value: unknown): value is Span =>
   isNode(value) && typeof (value as unknown as Span).start === 'number';

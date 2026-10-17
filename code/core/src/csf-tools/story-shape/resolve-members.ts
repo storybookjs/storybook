@@ -1,6 +1,13 @@
 // Follows the references a story hides its config behind: a spread of a constant, of a sibling
 // story, or of something another module owns, applying every write in the order it runs.
-import { type E, type Node, expressionFromSource, isStringLiteral, textOf } from '../estree/ast.ts';
+import {
+  type E,
+  type Node,
+  expressionFromSource,
+  isStringLiteral,
+  placeableTextOf,
+  textOf,
+} from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
 import { importedName, isTypeSpecifier } from './imports.ts';
 import {
@@ -661,7 +668,9 @@ const mergedAnnotations = (
 
 // The spreads point at the original nodes, so each still resolves in the scope it was written in.
 const spreadPair = (from: Node, over: Node): E.ObjectExpression => {
-  const merged = expressionFromSource(`{ ...${codeOf(from)}, ...${codeOf(over)} }`);
+  const merged = expressionFromSource(
+    `{ ...${placeableTextOf(from)}, ...${placeableTextOf(over)} }`
+  );
   const object = unwrapExpression(merged) as E.ObjectExpression;
   (object.properties[0] as E.SpreadElement).argument = from as E.Expression;
   (object.properties[1] as E.SpreadElement).argument = over as E.Expression;

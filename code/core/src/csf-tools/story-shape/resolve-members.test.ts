@@ -604,6 +604,19 @@ describe('CSF factories', () => {
     });
   });
 
+  it('reports parent args written as a comma expression, which it cannot read', () => {
+    const code = dedent`
+      import preview from './preview';
+      const meta = preview.meta({ component: Button });
+      export const Base = meta.story({ args: (track(), { label: 'base', primary: true }) });
+      export const Extended = Base.extend({ args: { label: 'extended' } });
+    `;
+    expect(argsOf(code, 'Extended')).toEqual({
+      args: { label: "'extended'" },
+      unresolved: ["...(track(), { label: 'base', primary: true })"],
+    });
+  });
+
   it('reports a bare spread of a factory story, which copies its methods and not its config', () => {
     const code = dedent`
       import preview from './preview';

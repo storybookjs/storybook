@@ -70,6 +70,24 @@ describe('csf-2-to-3', () => {
       `);
     });
 
+    it('keeps the parentheses of a comma expression annotation', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+
+          export const A = (args) => <Cat {...args} />;
+          A.args = (track(), { name: 'Fluffy' });
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          args: (track(), { name: "Fluffy" }),
+        };
+      `);
+    });
+
     it('should ignore non-story exports, statements', async () => {
       await expect(
         jsTransform(dedent`

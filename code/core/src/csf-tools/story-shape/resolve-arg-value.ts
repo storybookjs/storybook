@@ -6,6 +6,7 @@ import {
   expressionFromSource,
   parseFragment,
   isValidIdentifier,
+  placeableTextOf,
 } from '../estree/ast.ts';
 import { analyzeScopes } from '../estree/scope.ts';
 import { type ImportRef } from './import-statements.ts';
@@ -100,7 +101,7 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
             ? ''
             : element.type === 'SpreadElement'
               ? codeOf(element)
-              : codeOf(inlineSpreads(element, ctx, unresolved))
+              : placeableTextOf(inlineSpreads(element, ctx, unresolved))
         )
         .join(', ')}]`
     );
@@ -168,7 +169,7 @@ const objectFrom = (
       }
       const name = keyOf(property);
       key = property.computed
-        ? `[${codeOf(property.key)}]`
+        ? `[${placeableTextOf(property.key)}]`
         : name !== null && isValidIdentifier(name, false)
           ? name
           : codeOf(property.key);
@@ -184,7 +185,7 @@ const objectFrom = (
     // A shorthand prints its key and nothing else, so it may only stay shorthand while its value is
     // still the one the key stands for.
     const shorthand = 'type' in property && property.shorthand && value === property.value;
-    members.push(shorthand ? key : `${key}: ${codeOf(value)}`);
+    members.push(shorthand ? key : `${key}: ${placeableTextOf(value)}`);
   }
   // One member per line, so formatters keep the object expanded.
   return rebuilt(

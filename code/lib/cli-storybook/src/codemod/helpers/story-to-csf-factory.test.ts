@@ -949,6 +949,31 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('migrates a parenthesized meta before satisfies', async () => {
+        const source = (meta: string) => dedent`
+          import type { Meta } from '@storybook/react';
+          import { Button } from './Button';
+
+          ${meta}
+          export const A = {};
+        `;
+        const migrated = dedent`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+          export const A = meta.story();
+        `;
+        await expect(
+          transform(source('export default ({ component: Button }) satisfies Meta;'))
+        ).resolves.toBe(`${migrated}\n`);
+        await expect(
+          transform(
+            source('const meta = (({ component: Button })) satisfies Meta;\nexport default meta;')
+          )
+        ).resolves.toBe(`${migrated}\n`);
+      });
+
       it('migrates parenthesized expressions with a comment inside the parentheses', async () => {
         const output = await transform(dedent`
           import type { StoryObj } from '@storybook/react';

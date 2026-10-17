@@ -143,7 +143,6 @@ const TS_TYPES = new Set([
   'TSNumberKeyword',
   'TSObjectKeyword',
   'TSOptionalType',
-  'TSParenthesizedType',
   'TSPropertySignature',
   'TSQualifiedName',
   'TSRestType',

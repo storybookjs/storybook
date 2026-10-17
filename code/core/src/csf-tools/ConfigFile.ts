@@ -17,7 +17,6 @@ import {
   createCsfObject,
   literalRoot,
   parseExpression,
-  placeableExpression,
 } from './CsfObject.ts';
 import {
   type E,
@@ -25,6 +24,7 @@ import {
   isIdentifier,
   isStringLiteral,
   locationOf,
+  placeableTextOf,
   unwrapExpression,
   walk,
 } from './estree/ast.ts';
@@ -246,7 +246,7 @@ export class ConfigFile implements CsfObject {
    * ```ts
    * const object = loadConfig("export default { tags: ['docs'] };").parse();
    * object.transform(['tags'], (value) =>
-   *   parseExpression(`[...${printExpression(value)}, 'autodocs']`)
+   *   parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`)
    * ); // { ok: true, changed: true }
    * object.getValue(['tags']); // ['docs', 'autodocs']
    * ```
@@ -738,7 +738,7 @@ export class ConfigFile implements CsfObject {
 
   appendNodeToArray(path: string[], node: CsfExpression) {
     const current = this.getFieldNode(path);
-    const source = placeableExpression(node);
+    const source = placeableTextOf(node);
     if (!current) {
       this.set(path, parseExpression(`[${source}]`));
     } else if (current.type === 'ArrayExpression') {

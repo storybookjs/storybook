@@ -7,7 +7,7 @@ import {
   isIdentifier,
   isNode,
   isNumericLiteral,
-  parseModule,
+  placeableTextOf,
   staticKey,
   unwrapExpression,
 } from './ast.ts';
@@ -49,35 +49,17 @@ const BABEL_ONLY_TYPES = new Set([
 export const isAstLike = (value: unknown): value is Node =>
   isNode(value) && (Object.hasOwn(visitorKeys, value.type) || BABEL_ONLY_TYPES.has(value.type));
 
-// Whether the parenthesis at index 0 closes at the last index. Then the text between them is an
-// expression on its own; otherwise it starts with an unmatched `)`, which fails the parse.
-const isParenthesized = (source: string) => {
-  if (!source.startsWith('(') || !source.endsWith(')')) {
-    return false;
-  }
-  try {
-    parseModule(`[${source.slice(1, -1)}\n]`);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Source text ready to be placed as a value: a comma expression keeps its parentheses, and a
- * trailing line comment ends its line so the code after it survives.
- */
-export const placeableSource = (source: string, type: string) => {
-  const text = type === 'SequenceExpression' && !isParenthesized(source) ? `(${source})` : source;
-  const lastComment = parseModule(`(${text}\n)`).comments.at(-1);
-  return lastComment?.type === 'Line' && lastComment.end === text.length + 1 ? `${text}\n` : text;
-};
-
 /** A member's value as source; methods become function expressions. */
 export const valueSource = (editor: SourceEditor, member: Property) =>
   member.method || member.kind !== 'init'
     ? functionFromMethod(editor, member)
     : editor.source(member.value);
+
+// `valueSource` ready to be placed as another value, as `placeableTextOf` prints it.
+export const placeableValueSource = (editor: SourceEditor, member: Property) =>
+  member.method || member.kind !== 'init'
+    ? functionFromMethod(editor, member)
+    : placeableTextOf(member.value);
 
 export type CsfValue =
   | string

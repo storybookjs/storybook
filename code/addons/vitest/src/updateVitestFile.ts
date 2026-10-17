@@ -1,3 +1,5 @@
+import { isBuiltin } from 'node:module';
+
 import {
   findExportDefault,
   getConfigObjectFromMergeArg,
@@ -302,21 +304,23 @@ const findWritableConfigObject = (
   );
 };
 
-// The export an import binding reads: `node:path` and `path` are one module, and its default
-// export, however it is imported, the same object as its namespace.
+// The export an import binding reads. `node:path` and `path` are one module, and the default
+// export of a Node builtin is the same object as its namespace.
 const importedExport = (binding: Binding) => {
   if (binding.kind !== 'import' || binding.declaration?.type !== 'ImportDeclaration') {
     return undefined;
   }
   const specifier = binding.node as E.ImportDeclarationSpecifier;
-  const name =
-    specifier.type === 'ImportSpecifier'
-      ? specifier.imported.type === 'Literal'
-        ? specifier.imported.value
-        : specifier.imported.name
-      : 'default';
   const source = binding.declaration.source.value.replace(/^node:/, '');
-  return `${name === 'default' ? '*' : name} from ${source}`;
+  const name =
+    specifier.type === 'ImportNamespaceSpecifier'
+      ? '*'
+      : specifier.type === 'ImportDefaultSpecifier'
+        ? 'default'
+        : specifier.imported.type === 'Literal'
+          ? specifier.imported.value
+          : specifier.imported.name;
+  return `${name === 'default' && isBuiltin(source) ? '*' : name} from ${source}`;
 };
 
 // Whether the target binds a name the merged template code reads to anything but the same import.

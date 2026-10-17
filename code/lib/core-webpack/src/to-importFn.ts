@@ -29,12 +29,13 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
   // It's imperfect as it could match extra things in extremely unusual cases, but it'll do for now.
   // NOTE: directory is "slashed" so will contain only `/` (no `\`), even on windows
   const directoryWithoutLeadingDots = directory.replace(/^(\.+\/)+/, '/');
-  const webpackIncludeGlob = ['.', '..'].includes(directory)
-    ? files
-    : `${directoryWithoutLeadingDots}/${files}`;
-  const webpackIncludeRegexpWithCaret = webpackIncludeGlob.includes('node_modules')
-    ? globToRegexp(webpackIncludeGlob)
-    : adjustRegexToExcludeNodeModules(globToRegexp(webpackIncludeGlob));
+  const includeRegexp = globToRegexp(
+    files,
+    ['.', '..'].includes(directory) ? undefined : directoryWithoutLeadingDots
+  );
+  const webpackIncludeRegexpWithCaret = `${directory}/${files}`.includes('node_modules')
+    ? includeRegexp
+    : adjustRegexToExcludeNodeModules(includeRegexp);
   // picomatch is creating an exact match, but we are only matching the end of the filename
   return new RegExp(webpackIncludeRegexpWithCaret.source.replace(/^\^/, ''));
 }

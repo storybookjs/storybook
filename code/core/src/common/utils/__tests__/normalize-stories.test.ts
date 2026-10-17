@@ -250,6 +250,21 @@ describe('normalizeStoriesEntry', () => {
     `);
   });
 
+  it.each(['stories[1]', 'stories{1,2}'])('treats directory %s literally', (directory) => {
+    const specifier = normalizeStoriesEntry(
+      { directory: `../src/${directory}`, files: '**/*.stories.@(js|jsx)' },
+      options
+    );
+
+    expect(specifier.directory).toBe(`./src/${directory}`);
+    expect(specifier.importPathMatcher).toMatchPaths([
+      `./src/${directory}/Button.stories.jsx`,
+      `./src/${directory}/nested/Button.stories.js`,
+    ]);
+    expect(specifier.importPathMatcher.test('./src/stories1/Button.stories.jsx')).toBe(false);
+    expect(specifier.importPathMatcher.test(`./src/${directory}/Button.stories.ts`)).toBe(false);
+  });
+
   it('directory/titlePrefix specifier', () => {
     const specifier = normalizeStoriesEntry({ directory: '..', titlePrefix: 'atoms' }, options);
     expect(specifier).toMatchInlineSnapshot(`

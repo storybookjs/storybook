@@ -1,6 +1,12 @@
+// eslint-disable-next-line depend/ban-dependencies
+import { convertPathToPattern } from 'globby';
 import * as pico from 'picomatch';
 
-export function globToRegexp(glob: string) {
+export function globToRegexp(glob: string, directory?: string) {
+  if (directory) {
+    glob = `${convertPathToPattern(directory)}/${glob}`;
+  }
+
   const regex = pico.makeRe(glob, {
     fastpaths: false,
     noglobstar: false,

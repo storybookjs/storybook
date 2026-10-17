@@ -7,7 +7,11 @@ import { compareSnippet } from '../compare/snippets.ts';
 import { parseSvelteSnippet } from '../compare/snippets-svelte.ts';
 import type { Violation } from '../compare/types.ts';
 
+import { omitNativeMocks } from './native-mock.ts';
+import type { StorySource } from './capture/story-source.ts';
+
 export type AcceptedRule =
+  | 'native-mock-omitted'
   | 'text-equivalent'
   | 'snippet-child'
   | 'default-omitted'
@@ -92,10 +96,16 @@ export function compareSvelteCaptureSnippet({
   baseline,
   candidate,
   argTypes,
+  source,
+  sha,
+  storyId,
 }: {
   baseline: string;
   candidate: string;
   argTypes: StrictArgTypes;
+  source?: StorySource;
+  sha?: string;
+  storyId?: string;
 }): { violations: Violation[]; accepted: AcceptedRule[] } {
   const accepted: AcceptedRule[] = [];
   const counted = new Set<string>();
@@ -103,6 +113,16 @@ export function compareSvelteCaptureSnippet({
   const after = parseSvelteSnippet(candidate);
   if (!before && !after && markup(baseline) === markup(candidate)) {
     return { violations: [], accepted: ['text-equivalent'] };
+  }
+  if (!before && !after) {
+    const stripped = omitNativeMocks(baseline, source, sha, storyId);
+    if (
+      stripped !== baseline &&
+      [stripped, omitNativeMocks(baseline, source, sha, storyId, true)].some(
+        (text) => markup(text) === markup(candidate)
+      )
+    )
+      return { violations: [], accepted: ['native-mock-omitted'] };
   }
   const input = { kind: 'snippet', framework: 'svelte', baseline, candidate } satisfies Parameters<
     typeof collectCurrentOrBetterViolations

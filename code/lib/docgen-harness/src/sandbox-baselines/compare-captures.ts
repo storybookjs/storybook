@@ -38,6 +38,7 @@ export function compareCaptures(options: CompareRunOptions) {
   const violations: CaptureViolation[] = [];
   const accepted: Record<AcceptedRule | 'callable-classification', number> = {
     'text-equivalent': 0,
+    'native-mock-omitted': 0,
     'snippet-child': 0,
     'default-omitted': 0,
     'event-omitted': 0,
@@ -102,6 +103,9 @@ export function compareCaptures(options: CompareRunOptions) {
             baseline: snippet,
             candidate: current,
             argTypes: candidate.argTypes,
+            source: story.source,
+            sha: before.metadata.sha,
+            storyId,
           });
           add(result.violations, storyId);
           count(result.accepted);

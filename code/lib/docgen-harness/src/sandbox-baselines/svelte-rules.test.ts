@@ -102,3 +102,47 @@ describe('counted Svelte capture rules', () => {
     expect(compare('<It/>', '<Button/>').violations.map((v) => v.kind)).toContain('changed-root');
   });
 });
+
+it('omits only native mock self-references with verified source evidence', async () => {
+  const { sourceDigest } = await import('./capture/story-source.ts');
+  const text = `<script module>
+    import { fn as mock } from 'storybook/test';
+    import { defineMeta } from '@storybook/svelte-vite';
+    const { Story } = defineMeta({ args: { onclick: mock().mockName('click') } });
+  </script><Story name="Default"><button {...args}>Click</button></Story>`;
+  const run = (
+    source = text,
+    baseline = '<button onclick={onclick}>Click</button>',
+    candidate = '<button>Click</button>',
+    digest = sourceDigest(source),
+    sha = 'head'
+  ) =>
+    compareSvelteCaptureSnippet({
+      baseline,
+      candidate,
+      argTypes: {},
+      storyId: 'actions--default',
+      sha: 'head',
+      source: { source, digest, sha, importPath: './Actions.stories.svelte' },
+    });
+  expect(run()).toEqual({ accepted: ['native-mock-omitted'], violations: [] });
+  expect(run(text.replace("mock().mockName('click')", 'mock()'))).toEqual({
+    accepted: ['native-mock-omitted'],
+    violations: [],
+  });
+  for (const result of [
+    run(text, '<button onclick={other}>Click</button>'),
+    run(text.replace("mock().mockName('click')", '() => {}')),
+    run(text.replace("mock().mockName('click')", '42')),
+    run(text.replace('storybook/test', 'other')),
+    run(text, undefined, '<button>Changed</button>'),
+    run(text, undefined, undefined, '0'.repeat(64)),
+    run(text, undefined, undefined, undefined, 'other'),
+    run(text.replace('<Story name="Default">', '<Story name="Default" args={{ onclick: 42 }}>')),
+    run(text, '<Button onclick={onclick}/>', '<Button/>'),
+    compare('<button onclick={onclick}>Click</button>', '<button>Click</button>'),
+  ]) {
+    expect(result.violations).not.toEqual([]);
+    expect(result.accepted).not.toContain('native-mock-omitted');
+  }
+});

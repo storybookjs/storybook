@@ -126,15 +126,6 @@
       "name": "number",
     },
   },
-  "onFastCountChange": {
-    "action": {
-      "name": "fast-count-change",
-    },
-    "name": "onFastCountChange",
-    "table": {
-      "disable": true,
-    },
-  },
   "size": {
     "description": "Button size.",
     "name": "size",

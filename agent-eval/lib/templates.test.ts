@@ -6,63 +6,20 @@ import type { Sandbox } from '@vercel/agent-eval';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
-  enableExperimentalReview,
+  addMcpAddon,
   pointStorybookAtCheckout,
-  isReviewEnabledFor,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
   type WorkspacePackage,
   writeClaudeInAppBrowserMock,
+  writeStorybookAgentInstructions,
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
-// EVAL_REVIEW is unset in unit-test runs, so this asserts the default gate:
-// plugin sandboxes are always review-on (the addon enables review for the
-// `storybook tools` CLI channel by default), MCP sandboxes review-off.
-describe('isReviewEnabledFor', () => {
-  it('is always on for the plugin integration', () => {
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-  });
-
-  it('is off for the mcp integration without EVAL_REVIEW=1', () => {
-    expect(isReviewEnabledFor('mcp')).toBe(false);
-  });
-});
-
-describe('enableExperimentalReview', () => {
-  it('injects the experimentalReview feature into a Storybook main.ts', () => {
-    const files = {
-      '.storybook/main.ts': [
-        "import type { StorybookConfig } from '@storybook/react-vite';",
-        '',
-        'const config: StorybookConfig = {',
-        "\tstories: ['../stories/**/*.stories.tsx'],",
-        "\tframework: '@storybook/react-vite',",
-        '};',
-        'export default config;',
-        '',
-      ].join('\n'),
-      'src/App.tsx': 'export const App = () => null;',
-    };
-
-    enableExperimentalReview(files);
-
-    expect(files['.storybook/main.ts']).toContain('experimentalReview: true');
-    expect(files['src/App.tsx']).toBe('export const App = () => null;');
-  });
-
-  it('fails loudly when a main.ts drifts from the expected config shape', () => {
-    const files = { 'packages/ui/.storybook/main.ts': 'export default {};' };
-
-    expect(() => enableExperimentalReview(files)).toThrowError(/experimentalReview/);
-  });
-
-  // Drift guard: EVAL_REVIEW=1 patches every sandbox `.storybook/main.ts`, so
-  // each template and fixture Storybook config must keep the uniform opener
-  // the patcher anchors on — otherwise ci:review runs die in sandbox setup.
-  it('can patch every template and fixture Storybook main.ts', () => {
+describe('addMcpAddon', () => {
+  it('registers the addon in every template and fixture Storybook', () => {
     const mainFiles = [
       ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'templates')),
       ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'evals')),
@@ -70,15 +27,23 @@ describe('enableExperimentalReview', () => {
     expect(mainFiles.length).toBeGreaterThan(0);
 
     for (const mainFile of mainFiles) {
-      const files = { '.storybook/main.ts': readFileSync(mainFile, 'utf8') };
-      expect(() => enableExperimentalReview(files), mainFile).not.toThrow();
-      expect(files['.storybook/main.ts'], mainFile).toContain('experimentalReview: true');
+      const files = {
+        '.storybook/main.ts': readFileSync(mainFile, 'utf8'),
+        'package.json': readFileSync(join(mainFile, '..', '..', 'package.json'), 'utf8'),
+      };
+
+      addMcpAddon(files);
+
+      expect(files['.storybook/main.ts'], mainFile).toContain("'@storybook/addon-mcp'],");
+      expect(JSON.parse(files['package.json']).devDependencies, mainFile).toMatchObject({
+        '@storybook/addon-mcp': 'workspace:*',
+      });
     }
   });
 });
 
 // The Codex MCP experiment copies the server instructions into AGENTS.md, so a
-// change to them must update the copies too.
+// change to them must update the copy too.
 describe('Codex AGENTS.md instructions', () => {
   let buildServerInstructions: (options: Record<string, unknown>) => string;
 
@@ -92,28 +57,18 @@ describe('Codex AGENTS.md instructions', () => {
 
   // The server derives these flags from the sandbox (`getToolAvailability`); they match the MCP
   // fixtures, which are all react-vite with addon-vitest, docs and MCP. Keep them in sync.
-  const serverInstructions = (reviewEnabled: boolean) =>
-    buildServerInstructions({
-      transport: 'mcp',
-      devEnabled: true,
-      testSupported: true,
-      docsEnabled: true,
-      changeDetectionEnabled: true,
-      moduleGraphSupported: true,
-      reviewEnabled,
-    }).trim();
-
-  it('match the review-off server instructions', () => {
+  it('match the server instructions', () => {
     const copy = readFileSync(join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md'), 'utf8');
-    expect(copy.trim()).toBe(serverInstructions(false));
-  });
 
-  it('match the review-on server instructions', () => {
-    const copy = readFileSync(
-      join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents-review.md'),
-      'utf8'
+    expect(copy.trim()).toBe(
+      buildServerInstructions({
+        transport: 'mcp',
+        devEnabled: true,
+        testSupported: true,
+        docsEnabled: true,
+        moduleGraphSupported: true,
+      }).trim()
     );
-    expect(copy.trim()).toBe(serverInstructions(true));
   });
 });
 
@@ -138,7 +93,16 @@ describe('readTemplateCheckoutPackages', () => {
     const packages = (await readTemplateCheckoutPackages()).map((pkg) => pkg.name);
 
     expect(packages).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/react-vite', '@storybook/builder-vite'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/react-vite',
+        '@storybook/builder-vite',
+        '@storybook/addon-mcp',
+        // Served by the lifecycle evals' checkout registry.
+        'create-storybook',
+        '@storybook/cli',
+        '@storybook/codemod',
+      ])
     );
   });
 });
@@ -243,22 +207,33 @@ describe('pointStorybookAtCheckout', () => {
   });
 });
 
-describe('writeClaudeInAppBrowserMock', () => {
-  function createSandbox(files: Record<string, string>): Sandbox {
-    return {
-      writeFiles: async (written: Record<string, string>) => {
-        Object.assign(files, written);
-      },
-      readFile: async (filePath: string) => {
-        const content = files[filePath];
-        if (content === undefined) {
-          throw new Error(`ENOENT: ${filePath}`);
-        }
-        return content;
-      },
-    } as unknown as Sandbox;
-  }
+function createSandbox(files: Record<string, string>): Sandbox {
+  return {
+    writeFiles: async (written: Record<string, string>) => {
+      Object.assign(files, written);
+    },
+    runCommand: async (command: string, [flag, filePath]: string[] = []) => ({
+      stdout: '',
+      stderr: '',
+      exitCode:
+        command === 'test' &&
+        flag === '-f' &&
+        filePath !== undefined &&
+        files[filePath] !== undefined
+          ? 0
+          : 1,
+    }),
+    readFile: async (filePath: string) => {
+      const content = files[filePath];
+      if (content === undefined) {
+        throw new Error(`ENOENT: ${filePath}`);
+      }
+      return content;
+    },
+  } as unknown as Sandbox;
+}
 
+describe('writeClaudeInAppBrowserMock', () => {
   it('registers the Browser server next to existing servers and writes the prompt block', async () => {
     const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
     const files: Record<string, string> = {
@@ -273,16 +248,47 @@ describe('writeClaudeInAppBrowserMock', () => {
         Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
       },
     });
-    expect(files['CLAUDE.md']).toContain('<built_in_browser>');
+    expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
+    expect(files['CLAUDE.md']).toBeUndefined();
     expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
   });
+});
 
-  it('keeps an existing CLAUDE.md and appends the prompt block', async () => {
-    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules' };
+describe('writeStorybookAgentInstructions', () => {
+  let STORYBOOK_AGENT_INSTRUCTIONS: string;
 
+  beforeAll(async () => {
+    ({ STORYBOOK_AGENT_INSTRUCTIONS } = await import(
+      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
+    ));
+  });
+
+  it('writes the section of create storybook to AGENTS.md, next to the browser rule', async () => {
+    const files: Record<string, string> = {};
     await writeClaudeInAppBrowserMock(createSandbox(files));
 
-    expect(files['CLAUDE.md']).toMatch(/^# Project rules\n\n[\s\S]*<built_in_browser>/);
+    await writeStorybookAgentInstructions(createSandbox(files));
+
+    expect(files['AGENTS.md']).toBe(STORYBOOK_AGENT_INSTRUCTIONS);
+    expect(files['CLAUDE.md']).toBeUndefined();
+  });
+
+  it('also writes it to a CLAUDE.md of the template', async () => {
+    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules\n' };
+
+    await writeStorybookAgentInstructions(createSandbox(files));
+
+    expect(files['CLAUDE.md']).toBe(`# Project rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
+  });
+
+  it('writes nothing when it cannot tell whether a file exists', async () => {
+    const files: Record<string, string> = { 'AGENTS.md': '# Project rules\n' };
+    const sandbox = createSandbox(files);
+    sandbox.runCommand = async () => ({ stdout: '', stderr: 'test: I/O error', exitCode: 2 });
+
+    await expect(writeStorybookAgentInstructions(sandbox)).rejects.toThrow('I/O error');
+
+    expect(files).toEqual({ 'AGENTS.md': '# Project rules\n' });
   });
 });
 

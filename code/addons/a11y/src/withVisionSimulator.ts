@@ -7,13 +7,15 @@ import { filterDefs, filters } from './visionSimulatorFilters.ts';
 const knownFilters = Object.values(filters).map((f) => f.filter);
 const knownFiltersRegExp = new RegExp(`\\b(${knownFilters.join('|')})\\b`, 'g');
 
-export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => {
+export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals, parameters }) => {
   const { vision } = globals;
+  const isDisabled = parameters.visionSimulator?.disable === true;
 
   const applyVisionFilter = useCallback(() => {
     const existingFilters = document.body.style.filter.replaceAll(knownFiltersRegExp, '').trim();
 
-    const visionFilter = filters[vision as keyof typeof filters]?.filter;
+    const visionFilter = isDisabled ? undefined : filters[vision as keyof typeof filters]?.filter;
+
     if (visionFilter && document.body.classList.contains('sb-show-main')) {
       if (!existingFilters || existingFilters === 'none') {
         document.body.style.filter = visionFilter;
@@ -25,7 +27,7 @@ export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => 
     }
 
     return () => (document.body.style.filter = existingFilters || 'none');
-  }, [vision]);
+  }, [isDisabled, vision]);
 
   useEffect(() => {
     const cleanup = applyVisionFilter();

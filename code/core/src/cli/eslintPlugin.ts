@@ -7,11 +7,11 @@ import {
   type ESTreeNode as Node,
   SourceEditor,
   appendToList,
+  argumentList,
   arrayList,
   generateUid,
   importedName,
   isStringLiteral,
-  outerSpan,
   prependStatement,
   printString,
   readConfig,
@@ -167,12 +167,9 @@ function findConfigTarget(
 function addStorybookConfig(editor: SourceEditor, target: ConfigTarget, localName: string) {
   const storybookConfig = `${localName}.configs[${printString('flat/recommended', editor.quote)}]`;
   if (target.type === 'ArrayExpression') {
-    appendToList(editor, arrayList(editor, target), [`...${storybookConfig}`], '');
+    appendToList(editor, arrayList(editor, target), [`...${storybookConfig}`]);
   } else {
-    const open = editor.code.indexOf('(', target.callee.end) + 1;
-    // An argument's item spans the parentheses around it.
-    const items = target.arguments.map(outerSpan);
-    appendToList(editor, { open, close: target.end - 1, items }, [storybookConfig]);
+    appendToList(editor, argumentList(editor, target), [storybookConfig]);
   }
 }
 

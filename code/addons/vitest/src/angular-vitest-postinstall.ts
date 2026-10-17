@@ -100,14 +100,9 @@ export function injectAngularVitestIntoEditor(editor: SourceEditor): boolean {
 
   const bridge = new Set([ANGULAR_VITEST_PLUGIN_CALL]);
   if (!pluginsArray.elements.some((element) => isCallTo(element, bridge))) {
-    prependToList(
-      editor,
-      arrayList(editor, pluginsArray),
-      [
-        `// Forwards Angular build options (styles, assets, zoneless, …) into standalone vitest runs\n${ANGULAR_VITEST_PLUGIN_CALL}({})`,
-      ],
-      ''
-    );
+    prependToList(editor, arrayList(editor, pluginsArray), [
+      `// Forwards Angular build options (styles, assets, zoneless, …) into standalone vitest runs\n${ANGULAR_VITEST_PLUGIN_CALL}({})`,
+    ]);
   }
 
   if (!hasAngularVitestImport(program)) {

@@ -19,6 +19,7 @@ import {
   reindent,
   objectList,
   prependToList,
+  statementSpan,
 } from 'storybook/internal/csf-tools';
 
 import { normalize } from 'pathe';
@@ -76,23 +77,6 @@ const elementTexts = (editor: SourceEditor, array: E.ArrayExpression) =>
 
 const indent = (text: string, prefix: string) => prefix + reindent(text, '', prefix);
 
-// `appendToList` re-indents multi-line items only when the list itself spans lines.
-const appendItems = (
-  editor: SourceEditor,
-  list: ReturnType<typeof arrayList>,
-  texts: string[],
-  padding?: string
-) => {
-  const inline = list.items.length > 0 && !editor.code.slice(list.open, list.close).includes('\n');
-  const continuation = `\n${lineIndent(editor.code, list.open)}`;
-  appendToList(
-    editor,
-    list,
-    inline ? texts.map((text) => text.replaceAll('\n', continuation)) : texts,
-    padding
-  );
-};
-
 // Nested objects are merged, arrays concatenated, other values overwritten.
 const mergeProperties = (
   { source, target }: Merge,
@@ -116,7 +100,7 @@ const mergeProperties = (
     if (sourceValue.type === 'ObjectExpression' && targetValue.type === 'ObjectExpression') {
       mergeProperties({ source, target }, sourceValue, targetValue);
     } else if (sourceValue.type === 'ArrayExpression' && targetValue.type === 'ArrayExpression') {
-      appendItems(target, arrayList(target, targetValue), elementTexts(source, sourceValue), '');
+      appendToList(target, arrayList(target, targetValue), elementTexts(source, sourceValue));
     } else if (targetProp.shorthand) {
       target.edits.overwrite(
         targetProp.start,
@@ -128,7 +112,7 @@ const mergeProperties = (
     }
   }
   if (appended.length > 0) {
-    appendItems(target, objectList(target, into), appended);
+    appendToList(target, objectList(target, into), appended);
   }
 };
 
@@ -144,11 +128,10 @@ const appendToExistingProjects = (
     const templateTestObject = templateTest.value;
     const templateProjects = templateTestObject.properties.find(isProjectsArrayProp);
     if (templateProjects) {
-      appendItems(
+      appendToList(
         merge.target,
         arrayList(merge.target, existingProjects),
-        elementTexts(merge.source, templateProjects.value),
-        ''
+        elementTexts(merge.source, templateProjects.value)
       );
     }
     const existingNames = new Set(testObject.properties.map(keyName));
@@ -157,7 +140,7 @@ const appendToExistingProjects = (
       return name !== undefined && name !== 'projects' && !existingNames.has(name);
     });
     if (added.length > 0) {
-      appendItems(
+      appendToList(
         merge.target,
         objectList(merge.target, testObject),
         memberTexts(merge.source, templateTestObject, added)
@@ -230,7 +213,7 @@ const wrapTestConfigAsProject = (
     .join('');
   const project = `{\n  extends: true,\n  test: {${projectTest}${projectTest ? '\n  ' : ''}},\n}`;
 
-  prependToList(source, arrayList(source, templateProjects.value), [project], '');
+  prependToList(source, arrayList(source, templateProjects.value), [project]);
   if (hoisted.length > 0) {
     prependToList(
       source,
@@ -340,14 +323,13 @@ const hasConflictingBinding = (source: SourceEditor, target: SourceEditor, at: E
   });
 };
 
-// Template imports and variables the target lacks, each with the comments that follow it.
+// Template imports and variables the target lacks, each with the comments it owns.
 const missingStatements = (source: SourceEditor, target: SourceEditor) => {
-  const { body } = source.program;
   // Any top-level binding counts, so a name the config declares in another form is not declared
   // a second time.
   const declared = (name: string) => target.scopes.program.bindings.has(name);
-  return body.flatMap((node, index) => {
-    const text = source.code.slice(node.start, body[index + 1]?.start ?? source.code.length).trim();
+  return source.program.body.flatMap((node) => {
+    const text = source.source(statementSpan(source, node));
     if (node.type === 'ImportDeclaration') {
       const name = node.specifiers[0]?.local.name;
       return name && !declared(name) ? [text] : [];

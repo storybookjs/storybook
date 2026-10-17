@@ -63,10 +63,6 @@ describe('updateConfigFile', () => {
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default defineConfig({
                 plugins: [react()],
@@ -141,10 +137,6 @@ describe('updateConfigFile', () => {
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default {
                 plugins: [react()],
@@ -227,10 +219,6 @@ describe('updateConfigFile', () => {
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vitejs.dev/config/
               export default defineConfig(({ mode }) => {
                 return {
@@ -369,10 +357,6 @@ describe('updateConfigFile', () => {
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default defineConfig({
                 plugins: [react()],
@@ -448,10 +432,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default defineConfig({
                 test: {
         
@@ -541,14 +521,9 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               const config = defineConfig({
                 resolve: {
                   preserveSymlinks: true,
-                  alias: {
       ...
                 plugins: [
                   viteReact(),
@@ -625,10 +600,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default defineConfig({
                 plugins: [react()],
@@ -702,10 +673,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default defineConfig({
                 plugins: [react()],
@@ -783,10 +750,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default defineConfig({
                 plugins: [react()],
@@ -863,10 +826,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 defineConfig({
@@ -951,10 +910,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 {
@@ -1036,10 +991,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 defineConfig({
@@ -1116,10 +1067,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vite.dev/config/
               export default mergeConfig(
                 viteConfig,
@@ -1211,14 +1158,9 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 defineConfig({
-                  test: {
       ...
                         extends: "./vite.config.ts",
                         test: { name: "server" },
@@ -1299,10 +1241,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 defineConfig({
@@ -1403,10 +1341,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 defineConfig({
@@ -1493,10 +1427,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default defineConfig(mergeConfig(viteConfig, {
                 test: {
         
@@ -1577,10 +1507,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default defineConfig(
                 mergeConfig(viteConfig, {
                   test: {
@@ -1662,10 +1588,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(viteConfig, {
                 test: {
         
@@ -1743,10 +1665,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               const test = {
                 name: 'node',
                 environment: 'happy-dom',
@@ -1830,10 +1748,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               const config = mergeConfig(
                 viteConfig,
                 defineConfig({
@@ -1913,10 +1827,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default defineProject({
                 test: {
         
@@ -1996,8 +1906,6 @@ b'],
       + import path from 'node:path';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + 
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + 
           
                 export const config = mergeConfig(
@@ -2082,8 +1990,6 @@ b'],
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
       + 
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
           
                 export const vitestConfig = {
                   test: {
@@ -2166,10 +2072,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               const vitestConfig = {
                 test: {
         
@@ -2391,10 +2293,6 @@ b'],
       + import { playwright } from '@vitest/browser-playwright';
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               export default mergeConfig(
                 viteConfig,
                 defineConfig({

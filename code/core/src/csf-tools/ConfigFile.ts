@@ -734,7 +734,7 @@ export class ConfigFile implements CsfObject {
     if (!current) {
       this.set(path, parseExpression(`[${source}]`));
     } else if (current.type === 'ArrayExpression') {
-      appendToList(this._editor, arrayList(this._editor, current), [source], '');
+      appendToList(this._editor, arrayList(this._editor, current), [source]);
       this._editor.commit();
     } else {
       throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);

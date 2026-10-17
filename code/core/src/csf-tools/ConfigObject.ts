@@ -23,6 +23,7 @@ import {
   type List,
   type SourceEditor,
   appendStatement,
+  declaratorList,
   printKey,
   printString,
   removeFromList,
@@ -324,12 +325,6 @@ export const locateConfigRoot = (
   return { ok: true, root: namedExportsRoot(editor, entries) };
 };
 
-const declaratorList = (statement: E.VariableDeclaration): List => ({
-  open: statement.start + statement.kind.length,
-  close: statement.declarations.at(-1)!.end,
-  items: statement.declarations,
-});
-
 const exportedName = (node: E.ModuleExportName) =>
   node.type === 'Identifier' ? node.name : (node as E.StringLiteral).value;
 
@@ -382,7 +377,10 @@ const namedExportsRoot = (editor: SourceEditor, entries: NamedEntry[]): ObjectRo
         }
       : {
           statement: exportStatement ?? statement,
-          list: statement.type === 'VariableDeclaration' ? declaratorList(statement) : undefined,
+          list:
+            statement.type === 'VariableDeclaration'
+              ? declaratorList(editor, statement)
+              : undefined,
           item: declaration,
         };
 

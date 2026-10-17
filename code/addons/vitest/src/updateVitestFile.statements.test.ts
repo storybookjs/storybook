@@ -44,9 +44,9 @@ describe('updateConfigFile statements', () => {
       const x = 1
       export default defineConfig({ test: {
         projects: [{
-      extends: true,
-      test: {},
-      }, { extends: true, test: { name: 'storybook' } }],
+          extends: true,
+          test: {},
+        }, { extends: true, test: { name: 'storybook' } }],
       } })
       "
     `);
@@ -66,9 +66,9 @@ describe('updateConfigFile statements', () => {
       const dirname = fileURLToPath(new URL('.', import.meta.url));
       export default defineConfig({ test: {
         projects: [{
-      extends: true,
-      test: {},
-      }, { extends: true, test: { name: 'storybook' } }],
+          extends: true,
+          test: {},
+        }, { extends: true, test: { name: 'storybook' } }],
       } })"
     `);
   });
@@ -87,9 +87,9 @@ describe('updateConfigFile statements', () => {
       const dirname = fileURLToPath(new URL('.', import.meta.url));
       export default defineConfig({ test: {
         projects: [{
-      extends: true,
-      test: {},
-      }, { extends: true, test: { name: 'storybook' } }],
+          extends: true,
+          test: {},
+        }, { extends: true, test: { name: 'storybook' } }],
       } })
       "
     `);
@@ -111,9 +111,9 @@ describe('updateConfigFile statements', () => {
        */
       export default defineConfig({ test: {
         projects: [{
-      extends: true,
-      test: {},
-      }, { extends: true, test: { name: 'storybook' } }],
+          extends: true,
+          test: {},
+        }, { extends: true, test: { name: 'storybook' } }],
       } })
       "
     `);
@@ -132,9 +132,9 @@ describe('updateConfigFile statements', () => {
       const dirname = fileURLToPath(new URL('.', import.meta.url));
       export default defineConfig({ test: {
         projects: [{
-      extends: true,
-      test: {},
-      }, { extends: true, test: { name: 'storybook' } }],
+          extends: true,
+          test: {},
+        }, { extends: true, test: { name: 'storybook' } }],
       } })
       "
     `);
@@ -146,9 +146,9 @@ describe('updateConfigFile statements', () => {
     expect(code).toMatchInlineSnapshot(`
       "export default defineConfig({ test: {
         projects: [{
-      extends: true,
-      test: {},
-      }, { extends: true, test: { name: 'storybook' } }],
+          extends: true,
+          test: {},
+        }, { extends: true, test: { name: 'storybook' } }],
       } })
       import react from 'x'
       import { fileURLToPath } from 'node:url';
@@ -300,8 +300,6 @@ describe('updateConfigFile statements', () => {
       import react from '@vitejs/plugin-react';
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       import { playwright } from '@vitest/browser-playwright';
-
-      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 
       export default defineConfig({
         plugins: [react()],

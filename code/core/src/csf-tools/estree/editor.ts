@@ -419,13 +419,15 @@ const commentsBeside = (editor: SourceEditor, index: number) =>
   triviaAfter(editor, index, SPACE_ON_LINE);
 
 /**
- * A comma-separated list in the source: object members, array elements, import specifiers. `open`
- * is the index right after the opening token, `close` the index of the closing token.
+ * A comma-separated list in the source: object members, array elements, call arguments, import
+ * specifiers. `open` is the index right after the opening token, `close` the index of the closing
+ * token, and `padding` the space inside them when the list is on one line: `{ a }` but `[a]`.
  */
 export interface List {
   open: number;
   close: number;
   items: readonly Span[];
+  padding: string;
 }
 
 /** The `{ … }` of an import or export with at least one named specifier. */
@@ -443,6 +445,7 @@ export const specifierList = (
     open: previousTokenEnd(editor, items[0].start),
     close: code[afterLast] === ',' ? nextTokenStart(editor, afterLast + 1) : afterLast,
     items,
+    padding: ' ',
   };
 };
 
@@ -451,7 +454,7 @@ export const objectList = (
   object: E.ObjectExpression | E.ObjectPattern
 ): List => {
   editor.assertCurrent(object);
-  return { open: object.start + 1, close: object.end - 1, items: object.properties };
+  return { open: object.start + 1, close: object.end - 1, items: object.properties, padding: ' ' };
 };
 
 // A hole (`[a, , b]`) is an empty item right before the comma that writes it.
@@ -474,7 +477,28 @@ export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List 
     cursor = separatorAfter(editor, item) ?? item.end;
     return item;
   });
-  return { open, close, items };
+  return { open, close, items, padding: '' };
+};
+
+// An argument's item spans the parentheses around it.
+export const argumentList = (editor: SourceEditor, call: E.CallExpression): List => {
+  editor.assertCurrent(call);
+  let open = nextTokenStart(editor, (call.typeArguments ?? outerSpan(call.callee)).end);
+  if (call.optional && !call.typeArguments) {
+    open = nextTokenStart(editor, open + '?.'.length);
+  }
+  return { open: open + 1, close: call.end - 1, items: call.arguments.map(outerSpan), padding: '' };
+};
+
+/** The declarators of a declaration, from its keyword to its last declarator. */
+export const declaratorList = (editor: SourceEditor, declaration: E.VariableDeclaration): List => {
+  editor.assertCurrent(declaration);
+  return {
+    open: previousTokenEnd(editor, declaration.declarations[0].start),
+    close: declaration.declarations.at(-1)!.end,
+    items: declaration.declarations,
+    padding: ' ',
+  };
 };
 
 // Position right after the comma that follows an item, if it has one.
@@ -622,36 +646,36 @@ export const memberText = (
   member: E.ObjectPropertyKind
 ) => itemText(editor, objectList(editor, object), member);
 
-export const appendToList = (
-  editor: SourceEditor,
-  list: List,
-  texts: string[],
-  // Padding inside an empty single-line list: `{ a }` for objects, `[a]` for arrays.
-  padding = ' '
-) => {
+// Items joined on the line of a one-line list, their continuation lines indented like it.
+const inline = (editor: SourceEditor, list: List, texts: string[]) => {
+  const indent = lineIndent(editor.code, list.open);
+  return texts.map((text) => reindent(text, '', indent)).join(', ');
+};
+
+export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
   const { code, edits } = editor;
-  const { items } = list;
+  const { items, padding } = list;
   if (items.length === 0) {
+    // Only comments can be inside an empty list, and the items go after them.
     const inner = code.slice(list.open, list.close);
-    if ((inner.includes('\n') && inner.trim()) || texts.some((text) => text.includes('\n'))) {
-      // Multi-line items, or only comments inside: lay the items out one per line.
+    const end = list.open + inner.trimEnd().length;
+    if ((inner.includes('\n') && end > list.open) || texts.some((text) => text.includes('\n'))) {
+      // Multi-line items, or comments on lines of their own: lay the items out one per line.
       const outer = lineIndent(code, list.open - 1);
       const indent = `${outer}${editor.indent}`;
-      const lead = inner.trim() ? '' : '\n';
-      if (!inner.trim() && list.close > list.open) {
-        edits.remove(list.open, list.close);
+      if (list.close > end) {
+        edits.remove(end, list.close);
       }
       edits.appendLeft(
-        list.close,
-        `${lead}${texts.map((text) => `${indent}${reindent(text, '', indent)},`).join('\n')}\n${outer}`
+        end,
+        `\n${texts.map((text) => `${indent}${reindent(text, '', indent)},`).join('\n')}\n${outer}`
       );
-      return;
-    }
-    const content = `${padding}${texts.join(', ')}${padding}`;
-    if (list.close > list.open) {
-      edits.overwrite(list.open, list.close, content);
+    } else if (end > list.open) {
+      edits.appendLeft(end, ` ${texts.join(', ')}${end === list.close ? padding : ''}`);
+    } else if (list.close > list.open) {
+      edits.overwrite(list.open, list.close, `${padding}${texts.join(', ')}${padding}`);
     } else {
-      edits.appendLeft(list.open, content);
+      edits.appendLeft(list.open, `${padding}${texts.join(', ')}${padding}`);
     }
     return;
   }
@@ -669,17 +693,17 @@ export const appendToList = (
     return;
   }
   if (comma !== undefined) {
-    edits.appendLeft(comma, ` ${texts.join(', ')}${trailingComma}`);
+    edits.appendLeft(comma, ` ${inline(editor, list, texts)}${trailingComma}`);
   } else {
-    edits.appendLeft(last.end, `, ${texts.join(', ')}`);
+    edits.appendLeft(last.end, `, ${inline(editor, list, texts)}`);
   }
 };
 
-export const prependToList = (editor: SourceEditor, list: List, texts: string[], padding = ' ') => {
+export const prependToList = (editor: SourceEditor, list: List, texts: string[]) => {
   const { code, edits } = editor;
   const [first] = list.items;
   if (!first) {
-    appendToList(editor, list, texts, padding);
+    appendToList(editor, list, texts);
     return;
   }
   if (isMultiline(code, list)) {
@@ -690,7 +714,7 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[],
     );
     return;
   }
-  edits.appendRight(first.start, `${texts.join(', ')}, `);
+  edits.appendRight(first.start, `${inline(editor, list, texts)}, `);
 };
 
 /** Remove items with their separators and the comments that lead and trail them from a list. */
@@ -918,12 +942,16 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
   insertStatementAfter(editor, last, text);
 };
 
+/** The span of a statement with the comments it owns. */
+export const statementSpan = (editor: SourceEditor, statement: Span): Span => ({
+  start: (leadingComments(editor, statement)[0] ?? statement).start,
+  end: statementEnd(editor, statement),
+});
+
 /** Remove a statement with the comments it owns, and its lines when nothing else shares them. */
 export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
-  editor.assertCurrent(statement);
   const { code } = editor;
-  const start = (leadingComments(editor, statement)[0] ?? statement).start;
-  const end = statementEnd(editor, statement);
+  const { start, end } = statementSpan(editor, statement);
   const lineBreak = lineEnd(code, end);
   let from = lineStart(code, start);
   if (code.slice(end, lineBreak).trim()) {

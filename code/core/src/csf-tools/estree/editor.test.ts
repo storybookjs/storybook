@@ -15,8 +15,11 @@ import {
   SourceEditor,
   appendStatement,
   appendToList,
+  argumentList,
   arrayList,
+  declaratorList,
   insertAfterImports,
+  objectList,
   prependStatement,
   prependToList,
   printMembers,
@@ -160,10 +163,60 @@ describe('style', () => {
   });
 });
 
+describe('lists', () => {
+  const firstStatement = (code: string) => {
+    const editor = new SourceEditor(code);
+    return { editor, statement: editor.program.body[0] };
+  };
+  const expressionOf = (statement: E.Node) => (statement as E.ExpressionStatement).expression;
+
+  it('keeps the comments of an empty one-line list when adding its first item', () => {
+    const object = firstStatement('({ /* todo */ });');
+    appendToList(
+      object.editor,
+      objectList(object.editor, expressionOf(object.statement) as E.ObjectExpression),
+      ['a: 1']
+    );
+    expect(object.editor.toString()).toBe('({ /* todo */ a: 1 });');
+
+    const call = firstStatement('config(/* none */);');
+    appendToList(
+      call.editor,
+      argumentList(call.editor, expressionOf(call.statement) as E.CallExpression),
+      ['a']
+    );
+    expect(call.editor.toString()).toBe('config(/* none */ a);');
+  });
+
+  it('finds the arguments of an optional call with type arguments past comments', () => {
+    const { editor, statement } = firstStatement('f?.<T>(/* ( */ a);');
+    const chain = expressionOf(statement) as E.ChainExpression;
+    appendToList(editor, argumentList(editor, chain.expression as E.CallExpression), ['b']);
+    expect(editor.toString()).toBe('f?.<T>(/* ( */ a, b);');
+  });
+
+  it('indents the continuation lines of an item added to a one-line list like its line', () => {
+    const { editor } = firstStatement('const a = {\n  b: [1],\n};');
+    const array = editor.program.body[0] as E.VariableDeclaration;
+    const object = array.declarations[0].init as E.ObjectExpression;
+    const value = (object.properties[0] as E.ObjectProperty).value as E.ArrayExpression;
+    appendToList(editor, arrayList(editor, value), ['{\n  c: 2,\n}']);
+    expect(editor.toString()).toBe('const a = {\n  b: [1, {\n    c: 2,\n  }],\n};');
+  });
+
+  it('removes a declarator with its comma', () => {
+    const { editor, statement } = firstStatement('const a = 1, b = 2, c = 3;');
+    const declaration = statement as E.VariableDeclaration;
+    removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[0]]);
+    removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[2]]);
+    expect(editor.toString()).toBe('const b = 2;');
+  });
+});
+
 describe('parenthesized array elements', () => {
   it('appends after a comma expression and removes a doubly parenthesized one whole', () => {
     const editor = new SourceEditor(`export default { addons: [(a, b)] };`);
-    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'c'`], '');
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'c'`]);
     expect(editor.toString()).toBe(`export default { addons: [(a, b), 'c'] };`);
 
     const removal = new SourceEditor(`export default { addons: ['c', ((a, b))] };`);
@@ -174,7 +227,7 @@ describe('parenthesized array elements', () => {
 
   it('appends after a parenthesized last element and removes it whole', () => {
     const editor = new SourceEditor(`export default { addons: [(cond ? 'a' : 'c')] };`);
-    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
     expect(editor.toString()).toBe(`export default { addons: [(cond ? 'a' : 'c'), 'b'] };`);
 
     const removal = new SourceEditor(`export default { addons: ['b', (cond ? 'a' : 'c')] };`);
@@ -185,7 +238,7 @@ describe('parenthesized array elements', () => {
 
   it('skips the comments between the parentheses and the element', () => {
     const editor = new SourceEditor(`export default { addons: [(/* c */ cond ? 'a' : 'c')] };`);
-    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
     expect(editor.toString()).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c'), 'b'] };`);
 
     const removal = new SourceEditor(
@@ -196,12 +249,12 @@ describe('parenthesized array elements', () => {
     expect(removal.toString()).toBe(`export default { addons: [(/* c */ cond ? 'a' : 'c')] };`);
 
     const after = new SourceEditor(`export default { addons: [(x /* after */)] };`);
-    appendToList(after, arrayList(after, defaultExportArray(after)), [`'b'`], '');
+    appendToList(after, arrayList(after, defaultExportArray(after)), [`'b'`]);
     expect(after.toString()).toBe(`export default { addons: [(x /* after */), 'b'] };`);
 
     // The list spans lines because of the comment, so the item lands on its own line.
     const line = new SourceEditor(`export default { addons: [(x // after\n)] };`);
-    appendToList(line, arrayList(line, defaultExportArray(line)), [`'b'`], '');
+    appendToList(line, arrayList(line, defaultExportArray(line)), [`'b'`]);
     expect(line.toString()).toBe(`export default { addons: [(x // after\n),\n'b'] };`);
   });
 });
@@ -217,7 +270,7 @@ describe('array holes', () => {
 
   it('keeps leading holes when appending to and emptying an array', () => {
     const editor = new SourceEditor(`export default { addons: [, 'a'] };`);
-    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
     expect(editor.toString()).toBe(`export default { addons: [, 'a', 'b'] };`);
 
     expect(removeElement(`export default { addons: [, 'a'] };`, 1)).toBe(
@@ -239,14 +292,14 @@ describe('array holes', () => {
 
   it('appends after a trailing hole', () => {
     const editor = new SourceEditor(`export default { addons: ['a', ,] };`);
-    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    appendToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
     expect(editor.toString()).toBe(`export default { addons: ['a', , 'b'] };`);
     expect(lengthOf(editor.toString())).toBe(3);
   });
 
   it('prepends before a leading hole', () => {
     const editor = new SourceEditor(`export default { addons: [, 'a'] };`);
-    prependToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`], '');
+    prependToList(editor, arrayList(editor, defaultExportArray(editor)), [`'b'`]);
     expect(editor.toString()).toBe(`export default { addons: ['b', , 'a'] };`);
   });
 });

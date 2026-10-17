@@ -3,9 +3,11 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type SourceEditor,
+  declaratorList,
   loadCsf,
   placeableTextOf,
   printCsf,
+  removeFromList,
   removeStatement,
   walk,
 } from 'storybook/internal/csf-tools';
@@ -124,14 +126,10 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
     }
     const declarator = reference.parent;
     const declaration = editor.parentOf(declarator) as E.VariableDeclaration;
-    const { declarations } = declaration;
-    const index = declarations.indexOf(declarator);
-    if (declarations.length === 1) {
+    if (declaration.declarations.length === 1) {
       removeStatement(editor, declaration);
-    } else if (index < declarations.length - 1) {
-      editor.edits.remove(declarator.start, declarations[index + 1].start);
     } else {
-      editor.edits.remove(declarations[index - 1].end, declarator.end);
+      removeFromList(editor, declaratorList(editor, declaration), [declarator]);
     }
   });
   editor.commit();

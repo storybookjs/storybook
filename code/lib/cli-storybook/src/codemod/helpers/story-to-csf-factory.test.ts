@@ -63,7 +63,6 @@ describe('stories codemod', () => {
          * Copyright 2024
          */
         import preview from "#.storybook/preview";
-
         const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);

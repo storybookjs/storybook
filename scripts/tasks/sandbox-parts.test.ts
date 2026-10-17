@@ -137,9 +137,9 @@ it('wires Compodoc into an Angular Vite preview that opts out of server docgen',
   );
 
   expect(await readFile(PREVIEW_PATH, 'utf-8')).toMatchInlineSnapshot(`
-    "import { sb } from \"storybook/test\";
+    "import { setCompodocJson } from \"@storybook/addon-docs/angular\";
     import docJson from \"../documentation.json\";
-    import { setCompodocJson } from \"@storybook/addon-docs/angular\";
+    import { sb } from \"storybook/test\";
     sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');
     sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });
     sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');

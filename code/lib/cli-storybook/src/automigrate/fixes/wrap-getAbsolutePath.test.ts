@@ -74,8 +74,8 @@ describe('wrapGetAbsolutePath', () => {
       const call = writeFile.mock.calls[0];
 
       expect(call[1]).toMatchInlineSnapshot(`
-        "import { fileURLToPath } from 'node:url';
-        import { dirname } from 'node:path';
+        "import { dirname } from 'node:path';
+        import { fileURLToPath } from 'node:url';
         const config = {
           stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
           addons: [
@@ -152,8 +152,8 @@ describe('wrapGetAbsolutePath', () => {
       const output = String(writeFile.mock.calls.at(-1)?.[1]);
 
       expect(output).toMatchInlineSnapshot(`
-        "import { fileURLToPath } from 'node:url';
-        import { dirname as value } from 'node:path';
+        "import { dirname as value } from 'node:path';
+        import { fileURLToPath } from 'node:url';
 
         const config = {
           stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -184,9 +184,9 @@ describe('wrapGetAbsolutePath', () => {
 
       expect(() => parseModule(output, 'main.js')).not.toThrow();
       expect(output).toMatchInlineSnapshot(`
-        "import { fileURLToPath } from 'node:url';
-        import { dirname as pathDirname } from 'node:path';
+        "import { dirname as pathDirname } from 'node:path';
         import path from 'node:path';
+        import { fileURLToPath } from 'node:url';
 
         const { dirname } = path;
 
@@ -218,8 +218,8 @@ describe('wrapGetAbsolutePath', () => {
       const output = String(writeFile.mock.calls.at(-1)?.[1]);
 
       expect(output).toMatchInlineSnapshot(`
-        "import { fileURLToPath } from 'node:url';
-        import { dirname as pathDirname } from 'path';
+        "import { dirname as pathDirname } from 'path';
+        import { fileURLToPath } from 'node:url';
 
         const config = {
           stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -249,8 +249,8 @@ describe('wrapGetAbsolutePath', () => {
       const output = String(writeFile.mock.calls[0]?.[1]);
 
       expect(output).toMatchInlineSnapshot(`
-        "import { fileURLToPath } from 'node:url';
-        import { dirname } from 'node:path';
+        "import { dirname } from 'node:path';
+        import { fileURLToPath } from 'node:url';
         const config = {
           stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
           addons: [

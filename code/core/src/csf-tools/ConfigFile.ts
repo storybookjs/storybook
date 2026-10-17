@@ -33,6 +33,7 @@ import {
   appendStatement,
   appendToList,
   arrayList,
+  insertAfterImports,
   insertStatementAfter,
   objectList,
   prependStatement,
@@ -971,11 +972,11 @@ export class ConfigFile implements CsfObject {
               ? isIdentifier((specifier as E.ImportSpecifier).imported, name)
               : specifier.local.name === name))
       );
-    // A clause the declaration cannot take gets a declaration of its own right after it, which
-    // keeps the module evaluation order.
+    // A new import goes after the existing ones, and a clause the declaration cannot take gets a
+    // declaration of its own right after it, which keeps the module evaluation order.
     const addImport = (clause: string, merged?: { default?: string; named?: string[] }) => {
       if (!importDeclaration) {
-        prependStatement(editor, `import ${clause} from ${source};`);
+        insertAfterImports(editor, `import ${clause} from ${source};`);
       } else if (merged) {
         setImportSpecifiers(editor, importDeclaration, importDeclaration.specifiers, merged);
       } else {
@@ -986,7 +987,7 @@ export class ConfigFile implements CsfObject {
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {
       if (!importDeclaration) {
-        prependStatement(editor, `import ${source};`);
+        insertAfterImports(editor, `import ${source};`);
       }
       // Handle default imports e.g. import foo from 'bar'
     } else if (typeof importSpecifier === 'string') {

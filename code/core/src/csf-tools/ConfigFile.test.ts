@@ -1458,7 +1458,6 @@ describe('ConfigFile', () => {
         // Copyright Example
 
         import { dirname } from "node:path";
-
         // @ts-expect-error not a number
         const config: number = {};
         export default config;
@@ -1479,7 +1478,6 @@ describe('ConfigFile', () => {
         // Copyright Example
 
         const { dirname } = require("node:path");
-
         module.exports = { stories: [] };
       `);
     });

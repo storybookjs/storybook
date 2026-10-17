@@ -40,9 +40,9 @@ describe('syncPreviewAddonsWithMainConfig', () => {
 
     const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
     expect(printConfig(result).code).toMatchInlineSnapshot(`
-      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
       import * as myAddonAnnotations from "custom-addon/preview";
             import { definePreview } from "@storybook/react/preview";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
 
             export default definePreview({
               addons: [myAddonAnnotations, addonA11yAnnotations],
@@ -70,9 +70,9 @@ describe('syncPreviewAddonsWithMainConfig', () => {
 
     const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
     expect(printConfig(result).code).toMatchInlineSnapshot(`
-      import addonA11yAnnotations from "@storybook/addon-a11y";
       import * as myAddonAnnotations from "custom-addon/preview";
             import { definePreview } from "@storybook/react/preview";
+      import addonA11yAnnotations from "@storybook/addon-a11y";
 
             export default definePreview({
               addons: [myAddonAnnotations, addonA11yAnnotations()],
@@ -96,8 +96,8 @@ describe('syncPreviewAddonsWithMainConfig', () => {
 
     const result = await syncPreviewAddonsWithMainConfig(mainConfig, preview, configDir);
     expect(printConfig(result).code).toMatchInlineSnapshot(`
-      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
       import { definePreview } from "@storybook/react/preview";
+      import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
 
       export default definePreview({
         tags: [],

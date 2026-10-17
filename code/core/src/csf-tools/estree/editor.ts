@@ -828,35 +828,20 @@ const leadingComments = (editor: SourceEditor, statement: Span): E.Comment[] => 
 };
 
 /**
- * Insert a statement before the first non-directive statement, above its leading comments. A file
- * header stays first: the statement goes below the leading imports, or below the header itself.
+ * Insert a statement as the first statement after the directives, above the comments it owns. A file
+ * header stays above it.
  */
 export const prependStatement = (editor: SourceEditor, text: string) => {
   const { body } = editor.program;
   const directives = leadingDirectives(editor);
-  const after =
-    directives.at(-1)?.end ?? (editor.code.startsWith('#!') ? editor.code.indexOf('\n') + 1 : 0);
   const first = body[directives.length];
   if (!first) {
+    const after =
+      directives.at(-1)?.end ?? (editor.code.startsWith('#!') ? editor.code.indexOf('\n') + 1 : 0);
     editor.edits.appendLeft(after, `${after > 0 ? '\n' : ''}${text}\n`);
     return;
   }
-  const header = headerComments(editor);
-  if (header.length > 0) {
-    const statements = body.slice(directives.length);
-    const imports = statements.findIndex((statement) => statement.type !== 'ImportDeclaration');
-    const lastImport = imports === -1 ? statements.at(-1) : statements[imports - 1];
-    if (lastImport) {
-      insertStatementAfter(editor, lastImport, text);
-      return;
-    }
-    const headerEnd = header.at(-1)!.end;
-    const next = headerEnd + /^\s*/.exec(editor.code.slice(headerEnd))![0].length;
-    editor.edits.appendRight(next, `${text}\n\n`);
-    return;
-  }
-  const start = after + /^\s*/.exec(editor.code.slice(after))![0].length;
-  editor.edits.appendRight(start, `${text}\n`);
+  editor.edits.appendRight((leadingComments(editor, first)[0] ?? first).start, `${text}\n`);
 };
 
 export const appendStatement = (editor: SourceEditor, text: string) => {

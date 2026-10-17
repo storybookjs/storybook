@@ -373,46 +373,30 @@ describe('prependStatement', () => {
     );
   });
 
-  it('inserts below a copyright comment directly above the first import', () => {
+  it('inserts below a file header', () => {
     const editor = new SourceEditor(`// Copyright Storybook\nimport a from 'a';\nconst b = 1;`);
     prependStatement(editor, `import c from 'c';`);
     expect(editor.toString()).toBe(
-      `// Copyright Storybook\nimport a from 'a';\nimport c from 'c';\nconst b = 1;`
+      `// Copyright Storybook\nimport c from 'c';\nimport a from 'a';\nconst b = 1;`
     );
   });
 
-  it('inserts below a JSDoc header directly above the first import', () => {
-    const editor = new SourceEditor(
-      `/**\n * Copyright ACME\n */\nimport a from 'a';\nconst b = 1;`
+  it('inserts below a JSDoc header above an import, and above a JSDoc on a declaration', () => {
+    const header = new SourceEditor(`/**\n * Copyright ACME\n */\nimport a from 'a';`);
+    prependStatement(header, `import c from 'c';`);
+    expect(header.toString()).toBe(
+      `/**\n * Copyright ACME\n */\nimport c from 'c';\nimport a from 'a';`
     );
-    prependStatement(editor, `import c from 'c';`);
-    expect(editor.toString()).toBe(
-      `/**\n * Copyright ACME\n */\nimport a from 'a';\nimport c from 'c';\nconst b = 1;`
-    );
+
+    const docs = new SourceEditor(`/** Docs for a */\nconst a = 1;`);
+    prependStatement(docs, `import c from 'c';`);
+    expect(docs.toString()).toBe(`import c from 'c';\n/** Docs for a */\nconst a = 1;`);
   });
 
   it('inserts below a JSDoc pragma directly above the first statement', () => {
     const editor = new SourceEditor(`/** @license MIT */\nconst a = 1;`);
     prependStatement(editor, `import b from 'b';`);
-    expect(editor.toString()).toBe(`/** @license MIT */\nimport b from 'b';\n\nconst a = 1;`);
-  });
-
-  it('inserts below the comment trailing the last import under a file header', () => {
-    const editor = new SourceEditor(
-      `// Copyright Storybook\nimport x from 'x'; // x\nconst b = 1;`
-    );
-    prependStatement(editor, `import z from 'z';`);
-    expect(editor.toString()).toBe(
-      `// Copyright Storybook\nimport x from 'x'; // x\nimport z from 'z';\nconst b = 1;`
-    );
-  });
-
-  it('inserts below a block comment that starts beside the last import', () => {
-    const editor = new SourceEditor(`// Copyright Storybook\nimport x from 'x'; /* x\n y */`);
-    prependStatement(editor, `import z from 'z';`);
-    expect(editor.toString()).toBe(
-      `// Copyright Storybook\nimport x from 'x'; /* x\n y */\nimport z from 'z';`
-    );
+    expect(editor.toString()).toBe(`/** @license MIT */\nimport b from 'b';\nconst a = 1;`);
   });
 });
 

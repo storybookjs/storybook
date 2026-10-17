@@ -9,32 +9,32 @@ export type {
   CsfObjectTarget,
   CsfValue,
 } from './CsfObject.ts';
-export { parseExpression, printExpression } from './CsfObject.ts';
+export { parseExpression } from './CsfObject.ts';
 export * from './ConfigFile.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';
 export { vitestTransform } from './vitest-plugin/transformer.ts';
 export { componentTransform } from './vitest-plugin/component-transformer.ts';
 export * from './story-shape/index.ts';
-export type { E as ESTree, Node as ESTreeNode, SourceLocation } from './estree/ast.ts';
+export type { E as ESTree, Node as ESTreeNode } from './estree/ast.ts';
 export {
   expressionFromSource,
   isStringLiteral,
+  isTSWrapper,
   isValidIdentifier,
-  locationOf,
   normalizeLineEndings,
   outerSpan,
   parseModule,
   placeableTextOf,
+  staticKey,
   textOf,
-  unwrapExpression as unwrapESTreeExpression,
+  unwrapExpression,
   walk,
 } from './estree/ast.ts';
 export { SourceEditor } from './estree/editor.ts';
-export { analyzeScopes, generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
+export { generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
 export {
   type List,
-  appendMembers,
   appendStatement,
   appendToList,
   argumentList,
@@ -45,15 +45,12 @@ export {
   itemText,
   lineIndent,
   objectList,
-  prependMembers,
   prependStatement,
   prependToList,
-  printKey,
   printString,
   printValue,
   reindent,
   removeFromList,
-  removeMembers,
   removeStatement,
   removeStatements,
   setImportSpecifiers,

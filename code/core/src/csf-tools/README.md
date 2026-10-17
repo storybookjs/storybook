@@ -2,10 +2,10 @@
 
 An experimental library to read, analyze, transform, and write CSF programmatically.
 
-- Read - Parse a CSF file with Babel
-- Analyze - Extract its metadata & stories based on the Babel AST
+- Read - Parse a CSF file with OXC
+- Analyze - Extract its metadata & stories from the ESTree AST
 - Transform - Edit stories through `CsfFile.objects()` and preview or main configuration directly through `ConfigFile`
-- Write - Write the AST back to a file
+- Write - Write the edited source back to a file; code no edit touches stays as written
 
 It can parse MDX into CSF.
 
@@ -16,7 +16,7 @@ It can parse MDX into CSF.
 
 Each editor reads and writes static property paths with `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Missing fields return `undefined`. Values that cannot be resolved statically return `undefined` and add a mutation diagnostic; reads never return a partially decoded object.
-`set` accepts Babel expressions or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values. Values are copied into the AST; subsequent changes to the input do not affect the file. Top-level expression-shaped objects are interpreted as AST nodes.
+`set` accepts an expression from `get` or `parseExpression`, or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values. Plain values are printed into the source, so later changes to the input do not affect the file.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object or an empty parent that shadows an earlier spread or computed key. Removing a field that could reveal an earlier spread value produces a diagnostic. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
 Nested object paths can follow local constants used only by that object; shared or reassigned references remain untouched.
 Nodes reused by `transform` keep their original source, so relocating a value prints it as written instead of pretty-printing it.

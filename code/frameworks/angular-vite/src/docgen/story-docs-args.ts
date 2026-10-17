@@ -2,9 +2,9 @@
 // themselves - following spreads and names - is the shared CSF pass in `story-shape`.
 import {
   type ESTreeNode as Node,
-  codeOf,
+  textOf,
   expressionFromSource,
-  keyOf,
+  staticKey,
   parseModule,
   reindent,
   unwrapExpression,
@@ -42,7 +42,7 @@ export const evaluateArgLiteral = (node: Node, enums: SnippetEnum[]): string | u
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
-export const argFieldValue = (node: Node): string => printArgSource(codeOf(unwrapExpression(node)));
+export const argFieldValue = (node: Node): string => printArgSource(textOf(unwrapExpression(node)));
 
 // An arg no static evaluation could reduce to a value falls back to its source text, without the
 // comments a template expression cannot take (a class field keeps them). Every expression is
@@ -51,7 +51,7 @@ export const argFieldValue = (node: Node): string => printArgSource(codeOf(unwra
 export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
   const literal = evaluateArgLiteral(node, enums);
   return escapeAttributeExpression(
-    literal ?? printArgSource(withoutComments(codeOf(unwrapExpression(node))))
+    literal ?? printArgSource(withoutComments(textOf(unwrapExpression(node))))
   );
 };
 
@@ -179,8 +179,8 @@ const evaluateNode = (node: Node, enums: SnippetEnum[]): unknown => {
       if (property.type !== 'Property' || property.method || property.kind !== 'init') {
         return EVAL_FAILED;
       }
-      const key = keyOf(property);
-      if (key === null) {
+      const key = staticKey(property);
+      if (key === undefined) {
         return EVAL_FAILED;
       }
       const propertyValue = evaluateNode(property.value, enums);

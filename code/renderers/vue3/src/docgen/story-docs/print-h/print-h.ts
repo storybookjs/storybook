@@ -2,9 +2,9 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type ImportBinding,
-  codeOf,
+  textOf,
   isStringLiteral,
-  keyOf,
+  staticKey,
   returnedExpression,
   unwrapExpression,
   walk,
@@ -335,7 +335,7 @@ function printProps(
       return undefined;
     }
 
-    const name = keyOf(property);
+    const name = staticKey(property);
     if (!name) {
       return undefined;
     }
@@ -479,7 +479,7 @@ function printSlotsObject(value: E.ObjectExpression, options: PrintOptions): str
       return undefined;
     }
 
-    const name = keyOf(property);
+    const name = staticKey(property);
     const slotFunction = unwrapExpression(property.value);
     if (!name || !isFunctionExpression(slotFunction)) {
       return undefined;
@@ -519,7 +519,7 @@ function printedArgsExpression(node: Node, argsParam: string): string | undefine
     return printValue(node);
   }
 
-  const source = codeOf(node);
+  const source = textOf(node);
   const start = (node as Node & { start: number }).start;
   let renamed = '';
   let cursor = 0;

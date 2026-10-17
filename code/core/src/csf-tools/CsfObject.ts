@@ -7,7 +7,6 @@ import {
   expressionFromSource,
   placeableTextOf,
   staticKey,
-  textOf,
   unwrapExpression,
 } from './estree/ast.ts';
 import {
@@ -90,20 +89,6 @@ export type CsfExpression = E.Expression;
  * ```
  */
 export const parseExpression = (code: string): CsfExpression => expressionFromSource(code);
-
-/**
- * Source of an expression returned by `get` or `parseExpression`, or of any node inside one. To
- * build new code around it, use `placeableTextOf`, which keeps the parentheses of a comma expression.
- */
-export const printExpression = (node: Node): string => {
-  const source = textOf(node);
-  if (source === undefined) {
-    throw new Error(
-      'CsfObject: expressions must come from `get`, `transform` or `parseExpression`'
-    );
-  }
-  return source;
-};
 
 export interface CsfObject {
   /**

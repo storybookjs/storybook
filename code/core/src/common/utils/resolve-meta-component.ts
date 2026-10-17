@@ -1,14 +1,13 @@
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import type { E, Node } from '../../csf-tools/estree/ast.ts';
+import { type E, type Node, unwrapExpression } from '../../csf-tools/estree/ast.ts';
 import { parseReferenceModule } from '../../csf-tools/story-shape/reference-context.ts';
 import { isSelfContained } from '../../csf-tools/story-shape/resolve-arg-value.ts';
 import {
   type ReferenceModule,
   resolveReferencedValue,
-  sourceOf,
+  oneLineTextOf,
 } from '../../csf-tools/story-shape/resolve-members.ts';
-import { unwrapExpression } from '../../csf-tools/story-shape/utils.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
 import { createModuleResolver } from './module-resolver.ts';
 
@@ -144,7 +143,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
       }
     }
 
-    return { reason: 'unreadable-component-expression', expression: sourceOf(node) };
+    return { reason: 'unreadable-component-expression', expression: oneLineTextOf(node) };
   };
 }
 

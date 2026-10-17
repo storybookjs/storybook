@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadConfig, printConfig } from './ConfigFile.ts';
-import { parseExpression, printExpression } from './CsfObject.ts';
-import type { E } from './estree/ast.ts';
+import { parseExpression } from './CsfObject.ts';
+import { type E, textOf } from './estree/ast.ts';
 
 const configurations = [
   `export default { parameters: { a11y: { element: '#root' } } };`,
@@ -260,7 +260,7 @@ describe('ConfigFile mutations', () => {
         if (value.type !== 'FunctionExpression') {
           throw new Error('Expected a function expression');
         }
-        const source = printExpression(value);
+        const source = textOf(value);
         return parseExpression(`${source.slice(0, source.lastIndexOf('}'))} spy(); }`);
       })
     ).toEqual({ ok: true, changed: true });
@@ -376,8 +376,8 @@ describe('ConfigFile mutations', () => {
     expect(config.move(['parameters', 'a'], ['first'])).toEqual({ ok: true, changed: true });
 
     const output = loadConfig(printConfig(config).code).parse();
-    expect(printExpression(output.get(['first'])!)).toBe('f(), 1');
-    expect(printExpression(output.get(['custom-field'])!)).toBe('g(), 2');
+    expect(textOf(output.get(['first'])!)).toBe('f(), 1');
+    expect(textOf(output.get(['custom-field'])!)).toBe('g(), 2');
   });
 
   it('keeps the parentheses of a comma expression it copies or appends to an array', () => {

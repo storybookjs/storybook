@@ -1,5 +1,5 @@
 import type { CsfFile } from '../CsfFile.ts';
-import type { E, Node } from '../estree/ast.ts';
+import { type E, type Node, staticKey } from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
 import { normalizeStoryDeclaration, storyShapeError } from './normalize-story.ts';
 import {
@@ -7,7 +7,7 @@ import {
   type ResolvedMembers,
   resolveObjectMembers,
 } from './resolve-members.ts';
-import { type FunctionNode, keyOf, metaObject, resolveIdentifierInit } from './utils.ts';
+import { type FunctionNode, metaObject, resolveIdentifierInit } from './utils.ts';
 
 /** A function a story or meta supplies through `render`; a method shorthand is its function. */
 export type RenderFunction = FunctionNode;
@@ -114,7 +114,7 @@ const readRender = (
   let renderIndex = -1;
   for (let index = properties.length - 1; index >= 0; index -= 1) {
     const property = properties[index];
-    if (property.type === 'Property' && keyOf(property) === 'render') {
+    if (property.type === 'Property' && staticKey(property) === 'render') {
       renderIndex = index;
       break;
     }

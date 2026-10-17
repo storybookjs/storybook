@@ -12,7 +12,7 @@ import {
   type ESTreeNode as Node,
   type ImportBinding,
   isStringLiteral,
-  keyOf,
+  staticKey,
   normalizeLineEndings,
   parseModule,
   propertyValue,
@@ -1076,7 +1076,7 @@ function hasOnlySupportedRenderProperties(renderObject: E.ObjectExpression): boo
       return false;
     }
 
-    const key = keyOf(property);
+    const key = staticKey(property);
     // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
     return (
       key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
@@ -1106,7 +1106,7 @@ function readComponentImports(
       return undefined;
     }
 
-    const tagName = keyOf(property);
+    const tagName = staticKey(property);
     const component = unwrapExpression(property.value);
     if (!tagName || component.type !== 'Identifier') {
       return undefined;
@@ -1130,6 +1130,6 @@ function readComponentImports(
 function setupProperty(renderObject: E.ObjectExpression): E.ObjectProperty | undefined {
   return renderObject.properties.find(
     (property): property is E.ObjectProperty =>
-      property.type === 'Property' && keyOf(property) === SETUP_PROPERTY
+      property.type === 'Property' && staticKey(property) === SETUP_PROPERTY
   );
 }

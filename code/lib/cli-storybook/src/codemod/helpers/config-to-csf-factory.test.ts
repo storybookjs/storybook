@@ -372,8 +372,8 @@ describe('preview specific functionality', () => {
       import { definePreview } from '@storybook/react-vite';
 
       export default definePreview({
-
         decorators: [],
+
         parameters: {
           options: {}
         }

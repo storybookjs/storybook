@@ -21,7 +21,7 @@ import {
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   jsDocTagsForNode,
-  keyOf,
+  staticKey,
   loadCsf,
   metaObject,
   noSnippetWarning,
@@ -495,7 +495,7 @@ function setupReturnedRenderExpression(renderObject: E.ObjectExpression): E.Expr
     if (property.type === 'SpreadElement') {
       return false;
     }
-    const key = keyOf(property);
+    const key = staticKey(property);
     return key === 'setup' || key === 'components' || key === 'inheritAttrs';
   });
   if (!supported) {
@@ -504,7 +504,7 @@ function setupReturnedRenderExpression(renderObject: E.ObjectExpression): E.Expr
 
   const setup = renderObject.properties.find(
     (property): property is E.ObjectProperty =>
-      property.type === 'Property' && keyOf(property) === 'setup'
+      property.type === 'Property' && staticKey(property) === 'setup'
   );
   const setupFn = setup && unwrapExpression(setup.value);
   if (!setupFn || !isFunction(setupFn)) {

@@ -4,11 +4,14 @@ import {
   appendStatement,
   type ESTreeNode as Node,
   loadConfig,
+  objectList,
+  prependToList,
   printConfig,
   printString,
   removeStatements,
   setImportSpecifiers,
   prependStatement,
+  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -20,19 +23,6 @@ import {
   getConfigProperties,
   removeExportDeclarations,
 } from './csf-factories-utils.ts';
-
-// Inserts members at the start of an object, one per line when the object spans several lines.
-function prependMembers(code: string, object: E.ObjectExpression, members: string[]) {
-  const [first] = object.properties;
-  if (!first) {
-    return { at: object.start + 1, text: ` ${members.join(', ')} ` };
-  }
-  const lineStart = code.lastIndexOf('\n', first.start - 1) + 1;
-  const indent = code.slice(lineStart, first.start);
-  return code.slice(object.start, first.start).includes('\n') && !indent.trim()
-    ? { at: first.start, text: members.map((member) => `${member},\n${indent}`).join('') }
-    : { at: first.start, text: members.map((member) => `${member}, `).join('') };
-}
 
 export async function configToCsfFactory(
   info: FileInfo,
@@ -59,7 +49,7 @@ export async function configToCsfFactory(
     if (node.type !== 'ExportDefaultDeclaration') {
       return false;
     }
-    const declaration = config._unwrap(node.declaration);
+    const declaration = unwrapExpression(node.declaration);
     return (
       declaration?.type === 'CallExpression' &&
       declaration.callee.type === 'Identifier' &&
@@ -102,7 +92,7 @@ export async function configToCsfFactory(
           (d) =>
             d.id.type === 'Identifier' &&
             d.id.name === declarationName &&
-            config._unwrap(d.init)?.type === 'ObjectExpression'
+            unwrapExpression(d.init)?.type === 'ObjectExpression'
         )
     );
 
@@ -117,7 +107,7 @@ export async function configToCsfFactory(
       if (node.type !== 'ExportDefaultDeclaration') {
         continue;
       }
-      const declaration = unwrapIdentifier ? config._unwrap(node.declaration) : node.declaration;
+      const declaration = unwrapIdentifier ? unwrapExpression(node.declaration) : node.declaration;
       if (declaration?.type === 'Identifier') {
         const declarationNode = findObjectDeclaration(declaration.name);
         if (!declarationNode) {
@@ -152,8 +142,7 @@ export async function configToCsfFactory(
      * Transform into: `export default defineMain({ tags: [], parameters: {} })`
      */
     // when merging named exports with default exports, add the named exports first in the list
-    const { at, text } = prependMembers(editor.code, config._exportsObject, defineConfigProps);
-    editor.edits.appendRight(at, text);
+    prependToList(editor, objectList(editor, config._exportsObject), defineConfigProps);
     removeExportDeclarations(editor, exportDecls);
     config._editor.commit();
     wrapDefaultExport(false);

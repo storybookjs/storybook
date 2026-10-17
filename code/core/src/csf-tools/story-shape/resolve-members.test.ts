@@ -11,7 +11,7 @@ import {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveReferencedValue,
-  sourceOf,
+  oneLineTextOf,
 } from './resolve-members.ts';
 
 const indexed = (editor: SourceEditor) => {
@@ -44,7 +44,7 @@ const argsOf = (code: string, storyName: string, ctx = contextOf({ 'entry.ts': c
   const record = resolveArgsRecord(story?.properties.args, ctx);
   return {
     args: Object.fromEntries(
-      Object.entries(record.properties).map(([key, node]) => [key, sourceOf(node)])
+      Object.entries(record.properties).map(([key, node]) => [key, oneLineTextOf(node)])
     ),
     unresolved: [...(story?.unresolved ?? []), ...record.unresolved],
   };
@@ -670,7 +670,7 @@ describe('resolveReferencedValue', () => {
   const valueOf = (ctx: ReferenceContext, expression: string) => {
     const node = expressionFromSource(expression);
     const resolved = resolveReferencedValue(ctx, node);
-    return resolved && { value: sourceOf(resolved.node), filePath: resolved.ctx.filePath };
+    return resolved && { value: oneLineTextOf(resolved.node), filePath: resolved.ctx.filePath };
   };
 
   it('reads a member of a local object', () => {

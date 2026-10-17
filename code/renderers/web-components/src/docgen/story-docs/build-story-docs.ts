@@ -8,14 +8,14 @@ import type {
 } from 'storybook/internal/csf-tools';
 import {
   authoredSource,
-  codeOf,
+  textOf,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   noSnippetWarning,
   reindent,
   resolveEffectiveRender,
-  sourceOf,
+  oneLineTextOf,
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
@@ -246,7 +246,7 @@ const renderedArgsSnippet = (
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
     }
-    warnings.push(unresolvedWarning([sourceOf(render.node)]));
+    warnings.push(unresolvedWarning([oneLineTextOf(render.node)]));
   } else if (render.kind === 'unresolved') {
     warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
   }
@@ -285,7 +285,7 @@ const unresolvedRenderSource = (
     resolved.storyMembers.properties.render ??
     resolved.metaMembers.properties.render ??
     render.shadowedRender;
-  return node ? [sourceOf(node)] : [];
+  return node ? [oneLineTextOf(node)] : [];
 };
 
 const argsSnippet = (
@@ -442,7 +442,7 @@ const listenerHandler = (node: Node): string => {
   if (!isFunctionNode(unwrapExpression(node))) {
     return '() => {}';
   }
-  const code = codeOf(node);
+  const code = textOf(node);
   const closingIndent = /^[ \t]*/.exec(code.slice(code.lastIndexOf('\n') + 1))![0];
   return reindent(code, closingIndent, '    ');
 };

@@ -1,7 +1,7 @@
 import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfFile } from './CsfFile.ts';
-import { type E, type Node, identifierKey } from './estree/ast.ts';
+import { type E, type Node, staticKey } from './estree/ast.ts';
 import {
   type SourceEditor,
   appendMembers,
@@ -64,7 +64,7 @@ const addComponentDescription = (
 ) => {
   if (!path.length) {
     const hasExistingComponent = node.properties.some(
-      (p) => p.type === 'Property' && identifierKey(p) === 'component'
+      (p) => p.type === 'Property' && staticKey(p) === 'component'
     );
     if (!hasExistingComponent) {
       // make this the lowest-priority so that if the user is object-spreading on top of it,
@@ -76,7 +76,7 @@ const addComponentDescription = (
   const [first, ...rest] = path;
   const existing = node.properties.find(
     (p): p is E.ObjectProperty =>
-      p.type === 'Property' && identifierKey(p) === first && p.value.type === 'ObjectExpression'
+      p.type === 'Property' && staticKey(p) === first && p.value.type === 'ObjectExpression'
   );
   if (existing) {
     addComponentDescription(editor, existing.value as E.ObjectExpression, rest, value);
@@ -127,7 +127,7 @@ export const extractSource = (node: Node, code: string) => {
   return src ? code.slice(src.start, src.end) : '';
 };
 
-export const leadingComments = (node: Node | undefined, editor: SourceEditor) => {
+const leadingComments = (node: Node | undefined, editor: SourceEditor) => {
   const start = (node as { start?: number } | undefined)?.start;
   return start === undefined ? [] : triviaBefore(editor, start).comments;
 };

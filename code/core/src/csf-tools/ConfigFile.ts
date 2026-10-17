@@ -25,6 +25,7 @@ import {
   isStringLiteral,
   locationOf,
   placeableTextOf,
+  staticKey,
   unwrapExpression,
   walk,
 } from './estree/ast.ts';
@@ -68,26 +69,15 @@ const getCsfParsingErrorMessage = ({
     `;
 };
 
-const propKey = (p: Node) => {
-  if (p.type !== 'Property') {
-    return null;
-  }
-  if (p.key.type === 'Identifier') {
-    return p.key.name;
-  }
-  if (isStringLiteral(p.key)) {
-    return p.key.value;
-  }
-  return null;
-};
-
 const _getPath = (path: string[], node: Node | null | undefined): Node | undefined => {
   if (path.length === 0) {
     return node ?? undefined;
   }
   if (node?.type === 'ObjectExpression') {
     const [first, ...rest] = path;
-    const field = node.properties.find((p) => propKey(p) === first) as E.ObjectProperty | undefined;
+    const field = node.properties.find((p) => staticKey(p) === first) as
+      | E.ObjectProperty
+      | undefined;
     if (field) {
       return _getPath(rest, field.value);
     }
@@ -104,7 +94,9 @@ const _getPathProperties = (path: string[], node: Node): E.ObjectProperty[] | un
   }
   if (node.type === 'ObjectExpression') {
     const [first, ...rest] = path;
-    const field = node.properties.find((p) => propKey(p) === first) as E.ObjectProperty | undefined;
+    const field = node.properties.find((p) => staticKey(p) === first) as
+      | E.ObjectProperty
+      | undefined;
     if (field) {
       // FXIME handle spread etc.
       if (rest.length === 0) {
@@ -381,30 +373,22 @@ export class ConfigFile implements CsfObject {
   _parseExportsObject(exportsObject: E.ObjectExpression) {
     this._exportsObject = exportsObject;
     for (const p of exportsObject.properties) {
-      const exportName = propKey(p);
+      const exportName = staticKey(p);
       if (exportName) {
         this._exports[exportName] = this._resolveDeclaration((p as E.ObjectProperty).value);
       }
     }
   }
 
-  /** Unwraps TS assertions/satisfies from a node, to get the underlying node. */
-  _unwrap = (node: Node | undefined | null): any => {
-    if (node?.type === 'TSAsExpression' || node?.type === 'TSSatisfiesExpression') {
-      return this._unwrap(node.expression);
-    }
-    return node;
-  };
-
   /**
    * Resolve a declaration node by unwrapping TS assertions/satisfies and following identifiers to
    * resolve the correct node in case it's an identifier.
    */
   _resolveDeclaration = (node: Node, isTopLevel = true) => {
-    const decl = this._unwrap(node);
+    const decl = unwrapExpression(node);
     if (decl?.type === 'Identifier' && isTopLevel) {
       const initialization = findVarInitialization(decl.name, this._program);
-      return initialization ? this._unwrap(initialization) : decl;
+      return initialization ? unwrapExpression(initialization) : decl;
     }
     return decl;
   };
@@ -491,7 +475,9 @@ export class ConfigFile implements CsfObject {
                 this._parseExportsObject(value);
                 continue;
               }
-              this._exports[exportName] = value;
+              if (value) {
+                this._exports[exportName] = value;
+              }
               this._exportDecls[exportName] = decl;
             }
           }
@@ -521,7 +507,7 @@ export class ConfigFile implements CsfObject {
           if (exportObject?.type === 'ObjectExpression') {
             this._exportsObject = exportObject;
             for (const p of exportObject.properties as Node[]) {
-              const exportName = propKey(p);
+              const exportName = staticKey(p);
               if (exportName) {
                 this._exports[exportName] = this._resolveDeclaration(
                   (p as E.ObjectProperty).value,
@@ -677,7 +663,7 @@ export class ConfigFile implements CsfObject {
   removeField(path: string[]) {
     const editor = this._editor;
     const removeProperty = (object: E.ObjectExpression, prop: string) => {
-      const member = object.properties.find((p) => propKey(p) === prop);
+      const member = object.properties.find((p) => staticKey(p) === prop);
       if (member) {
         removeFromList(editor, objectList(editor, object), [member]);
       }

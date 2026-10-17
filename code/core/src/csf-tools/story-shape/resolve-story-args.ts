@@ -12,7 +12,7 @@ import {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
-  sourceOf,
+  oneLineTextOf,
 } from './resolve-members.ts';
 
 /** Everything reading one story's args statically produced. */
@@ -67,7 +67,7 @@ export function createStoryArgsResolver(
         shadowed: [],
         unresolved: [
           csf._storyStatements[storyExport]
-            ? sourceOf(csf._storyStatements[storyExport])
+            ? oneLineTextOf(csf._storyStatements[storyExport])
             : storyExport,
         ],
       };

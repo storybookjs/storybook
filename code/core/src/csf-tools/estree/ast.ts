@@ -270,10 +270,13 @@ const WRAPPERS = new Set([
   'TSTypeAssertion',
 ]);
 
+/** Whether a node is a TS assertion, satisfies or non-null wrapper around an expression. */
+export const isTSWrapper = (node: Node) => WRAPPERS.has(node.type);
+
 /** Peel TS assertion/satisfies wrappers off an expression node. */
 export const unwrapExpression = <T extends Node | null | undefined>(node: T): T => {
   let current: Node | null | undefined = node;
-  while (current && WRAPPERS.has(current.type)) {
+  while (current && isTSWrapper(current)) {
     current = (current as { expression: Node }).expression;
   }
   return current as T;
@@ -282,8 +285,15 @@ export const unwrapExpression = <T extends Node | null | undefined>(node: T): T 
 // Object literal properties written as `key: value`, methods or accessors (not spreads).
 export type Property = E.ObjectProperty;
 
-// Static key of an object member, or `undefined` when only running the code would produce it.
-export const staticKey = (member: Property): string | undefined => {
+/**
+ * Static key of an object member, or `undefined` for a spread or a key only running the code would
+ * produce. A computed key written as a literal is static: `{ ['a']: 1 }` names `a`, `{ [a]: 1 }`
+ * does not.
+ */
+export const staticKey = (member: Node): string | undefined => {
+  if (member.type !== 'Property') {
+    return undefined;
+  }
   const key = member.key as Node;
   if (isStringLiteral(key)) {
     return key.value;
@@ -300,16 +310,12 @@ export const staticKey = (member: Property): string | undefined => {
   return undefined;
 };
 
-// Ignores `computed` on purpose, matching the Babel `t.isIdentifier(p.key)` checks.
-export const identifierKey = (member: Node): string | undefined =>
-  member.type === 'Property' && member.key.type === 'Identifier' ? member.key.name : undefined;
-
 export const objectProperty = (object: E.ObjectExpression, name: string): Property | undefined =>
   object.properties.find(
     (member): member is Property => member.type === 'Property' && staticKey(member) === name
   );
 
-type Span = { start: number; end: number };
+export type Span = { start: number; end: number };
 
 export const sourceOf = (code: string, node: Span) => code.slice(node.start, node.end);
 
@@ -377,35 +383,33 @@ const normalize = (root: Node, module: ParsedModule | undefined) => {
 // The text of each expression `expressionFromSource` returns: as written, and as it is placed.
 const fragments = new WeakMap<object, { text: string; placeable: string }>();
 
-/**
- * Original source text of a node from `SourceEditor` or `expressionFromSource`, or `undefined` for
- * any other node, such as one from `parseModule`.
- */
-export const textOf = (node: Node): string | undefined => {
-  const fragment = fragments.get(node);
-  if (fragment) {
-    return fragment.text;
-  }
-  const module = nodeModules.get(node);
-  return module === undefined ? undefined : sourceOf(module.code, node as Node & Span);
-};
-
-/**
- * Source text of a node from `SourceEditor` or `expressionFromSource` that can be placed as a value:
- * a comma expression keeps its parentheses or gets them, and a trailing line comment ends its line.
- * Unlike `textOf`, it throws for any other node.
- */
-export const placeableTextOf = (node: Node): string => {
-  const fragment = fragments.get(node);
-  if (fragment) {
-    return fragment.placeable;
-  }
+const codeOf = (node: Node) => {
   const code = nodeModules.get(node)?.code;
   if (code === undefined) {
     throw new Error(
       `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\` or \`parseExpression\``
     );
   }
+  return code;
+};
+
+/**
+ * Source text of a node from `SourceEditor` or `expressionFromSource`, as written. Throws for any
+ * other node, such as one from `parseModule`.
+ */
+export const textOf = (node: Node): string =>
+  fragments.get(node)?.text ?? sourceOf(codeOf(node), node as Node & Span);
+
+/**
+ * `textOf` for placing a node as a value: a comma expression keeps its parentheses or gets them,
+ * and a trailing line comment ends its line.
+ */
+export const placeableTextOf = (node: Node): string => {
+  const fragment = fragments.get(node);
+  if (fragment) {
+    return fragment.placeable;
+  }
+  const code = codeOf(node);
   if (node.type !== 'SequenceExpression') {
     return sourceOf(code, node as Node & Span);
   }

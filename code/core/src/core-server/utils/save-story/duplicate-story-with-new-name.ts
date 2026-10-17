@@ -1,6 +1,6 @@
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
-import { type E, type Node, identifierKey, walk } from '../../../csf-tools/estree/ast.ts';
+import { type E, type Node, staticKey, walk } from '../../../csf-tools/estree/ast.ts';
 import {
   SourceEditor,
   appendStatement,
@@ -37,7 +37,7 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
     }
     const args = child.properties.filter(
       (property): property is E.ObjectProperty =>
-        property.type === 'Property' && !property.computed && identifierKey(property) === 'args'
+        property.type === 'Property' && staticKey(property) === 'args'
     );
     if (args.length > 0) {
       removeFromList(copy, objectList(copy, child), args);

@@ -1,7 +1,7 @@
 import {
   type ESTree as E,
   type ESTreeNode as Node,
-  codeOf,
+  textOf,
   isStringLiteral,
   unwrapExpression,
   walk,
@@ -91,7 +91,7 @@ export function classifyValue(node: Node): ValuePlan {
 
 // Strips the story file's nesting from continuation lines so the value reads naturally when hoisted.
 export function printValue(node: Node): string {
-  const source = codeOf(node);
+  const source = textOf(node);
   const lines = source.split('\n');
   if (lines.length === 1) {
     return source;

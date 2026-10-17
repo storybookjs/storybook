@@ -8,9 +8,9 @@ import type {
 import {
   collectImportBindings,
   isStringLiteral,
-  keyOf,
+  staticKey,
   returnedExpression,
-  sourceOf,
+  oneLineTextOf,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
@@ -63,18 +63,18 @@ export function templateFromExpression(
       lit: false,
       quasis: [expression.value],
       scope,
-      source: sourceOf(expression),
+      source: oneLineTextOf(expression),
     };
   }
   if (expression.type === 'TemplateLiteral') {
-    return templateFromLiteral(expression, bindings, false, scope, sourceOf(expression));
+    return templateFromLiteral(expression, bindings, false, scope, oneLineTextOf(expression));
   }
   if (expression.type !== 'TaggedTemplateExpression' || expression.tag.type !== 'Identifier') {
     return undefined;
   }
   return isImported(expression.tag.name, 'html', TEMPLATE_TAG_SOURCES, bindings) ||
     isImported(expression.tag.name, 'default', TEMPLATE_TAG_SOURCES, bindings)
-    ? templateFromLiteral(expression.quasi, bindings, true, scope, sourceOf(expression))
+    ? templateFromLiteral(expression.quasi, bindings, true, scope, oneLineTextOf(expression))
     : undefined;
 }
 
@@ -225,14 +225,14 @@ const aliasForExpression = (
   const unwrapped = unwrapExpression(expression);
   const arg = argReferenceForExpression(unwrapped, scope);
   if (arg) {
-    return { kind: 'arg', source: sourceOf(expression), ...arg };
+    return { kind: 'arg', source: oneLineTextOf(expression), ...arg };
   }
   if (isStaticLiteral(unwrapped)) {
     return { kind: 'value', value: literalValue(unwrapped) };
   }
   const template = templateFromExpression(unwrapped, bindings, copyScope(scope));
   if (template) {
-    return { kind: 'template', source: sourceOf(expression), template };
+    return { kind: 'template', source: oneLineTextOf(expression), template };
   }
   return undefined;
 };
@@ -246,7 +246,7 @@ const destructuredAliases = (
     if (property.type !== 'Property' || property.computed) {
       return undefined;
     }
-    const key = keyOf(property as unknown as E.ObjectProperty);
+    const key = staticKey(property as unknown as E.ObjectProperty);
     if (!key) {
       return undefined;
     }

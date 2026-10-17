@@ -3,7 +3,7 @@ import type { CsfFile } from 'storybook/internal/csf-tools';
 import {
   type E,
   type Node,
-  identifierKey,
+  staticKey,
   isValidIdentifier,
   walk,
 } from '../../../csf-tools/estree/ast.ts';
@@ -65,7 +65,7 @@ export const updateArgsInCsfFile = async (
 
   const argsProperty = story.properties.find(
     (property): property is E.ObjectProperty =>
-      property.type === 'Property' && !property.computed && identifierKey(property) === 'args'
+      property.type === 'Property' && staticKey(property) === 'args'
   );
 
   if (!argsProperty) {
@@ -82,8 +82,7 @@ export const updateArgsInCsfFile = async (
     return;
   }
   for (const property of argsProperty.value.properties) {
-    const key =
-      property.type === 'Property' && !property.computed ? identifierKey(property) : undefined;
+    const key = staticKey(property);
     if (property.type === 'Property' && key && key in args) {
       replaceValue(editor, property, args[key]);
       delete args[key];

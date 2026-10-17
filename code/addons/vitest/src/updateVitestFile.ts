@@ -20,6 +20,7 @@ import {
   objectList,
   prependToList,
   statementSpan,
+  staticKey,
 } from 'storybook/internal/csf-tools';
 
 import { normalize } from 'pathe';
@@ -51,21 +52,20 @@ interface Merge {
   target: SourceEditor;
 }
 
-const keyName = (member: Member) =>
-  member.type === 'Property' &&
-  !member.method &&
-  member.kind === 'init' &&
-  member.key.type === 'Identifier'
-    ? member.key.name
-    : undefined;
-
+// A method or accessor has no value expression to merge.
 const findNamedProp = (members: Member[], name: string) =>
-  members.find((member): member is E.ObjectProperty => keyName(member) === name);
+  members.find(
+    (member): member is E.ObjectProperty =>
+      member.type === 'Property' &&
+      !member.method &&
+      member.kind === 'init' &&
+      staticKey(member) === name
+  );
 
 const isProjectsArrayProp = (
   member: Member
 ): member is E.ObjectProperty & { value: E.ArrayExpression } =>
-  keyName(member) === 'projects' && (member as E.ObjectProperty).value.type === 'ArrayExpression';
+  staticKey(member) === 'projects' && (member as E.ObjectProperty).value.type === 'ArrayExpression';
 
 const memberTexts = (editor: SourceEditor, object: E.ObjectExpression, members: Member[]) =>
   members.map((member) => itemText(editor, objectList(editor, object), member));
@@ -86,7 +86,7 @@ const mergeProperties = (
 ) => {
   const appended: string[] = [];
   for (const sourceProp of fromMembers) {
-    const name = keyName(sourceProp);
+    const name = staticKey(sourceProp);
     if (!name) {
       continue;
     }
@@ -134,9 +134,9 @@ const appendToExistingProjects = (
         elementTexts(merge.source, templateProjects.value)
       );
     }
-    const existingNames = new Set(testObject.properties.map(keyName));
+    const existingNames = new Set(testObject.properties.map(staticKey));
     const added = templateTestObject.properties.filter((member) => {
-      const name = keyName(member);
+      const name = staticKey(member);
       return name !== undefined && name !== 'projects' && !existingNames.has(name);
     });
     if (added.length > 0) {
@@ -152,7 +152,7 @@ const appendToExistingProjects = (
     merge,
     templateConfig,
     targetConfig,
-    templateConfig.properties.filter((member) => keyName(member) !== 'test')
+    templateConfig.properties.filter((member) => staticKey(member) !== 'test')
   );
 };
 

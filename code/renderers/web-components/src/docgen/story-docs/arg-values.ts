@@ -1,8 +1,8 @@
 import {
   type ESTree as E,
   type ESTreeNode as Node,
-  keyOf,
-  sourceOf,
+  staticKey,
+  oneLineTextOf,
   templateParts,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
@@ -36,7 +36,7 @@ export function evaluateArgValue(node: Node): ArgValue {
     const unwrapped = unwrapExpression(node);
     return isFunctionNode(unwrapped)
       ? { kind: 'function' }
-      : { kind: 'unresolved', source: sourceOf(node) };
+      : { kind: 'unresolved', source: oneLineTextOf(node) };
   }
   if (value === undefined) {
     return { kind: 'unset' };
@@ -91,9 +91,9 @@ const evaluateObject = (node: E.ObjectExpression): Record<string, unknown> | typ
     ) {
       return FAILED;
     }
-    const key = keyOf(property);
+    const key = staticKey(property);
     const value = evaluate(property.value);
-    if (key === null || value === FAILED) {
+    if (key === undefined || value === FAILED) {
       return FAILED;
     }
     values[key] = value;

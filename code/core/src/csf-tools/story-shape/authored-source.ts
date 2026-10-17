@@ -1,9 +1,9 @@
-import { type Node, isStringLiteral } from '../estree/ast.ts';
+import { type Node, isStringLiteral, unwrapExpression } from '../estree/ast.ts';
 import type { ReferenceContext, ResolvedMembers } from './resolve-members.ts';
-import { resolveObjectMembers, sourceOf } from './resolve-members.ts';
+import { oneLineTextOf, resolveObjectMembers } from './resolve-members.ts';
 import { resolveArgValue } from './resolve-arg-value.ts';
 import type { ResolvedStoryArgs } from './resolve-story-args.ts';
-import { templateParts, unwrapExpression } from './utils.ts';
+import { templateParts } from './utils.ts';
 
 export type AuthoredSource =
   | { kind: 'missing' }
@@ -54,7 +54,7 @@ export const authoredSource = (
     if (parts && parts.expressions.length === 0) {
       return { kind: 'code', code: parts.quasis[0] ?? '' };
     }
-    return { kind: 'unresolvable', source: sourceOf(code.node) };
+    return { kind: 'unresolvable', source: oneLineTextOf(code.node) };
   }
   return { kind: 'missing' };
 };
@@ -77,7 +77,7 @@ const memberAt = (
         return { kind: 'missing' };
       }
       if (isOpaqueValue(object)) {
-        return { kind: 'unresolvable', source: sourceOf(original) };
+        return { kind: 'unresolvable', source: oneLineTextOf(original) };
       }
       return depth === 0 ? { kind: 'missing' } : { kind: 'masked' };
     }

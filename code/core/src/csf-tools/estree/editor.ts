@@ -6,6 +6,7 @@ import {
   type Node,
   type ParsedModule,
   type Property,
+  type Span,
   isNode,
   isStringLiteral,
   isValidIdentifier,
@@ -18,8 +19,6 @@ import {
   walk,
 } from './ast.ts';
 import { type ScopeInfo, analyzeScopes } from './scope.ts';
-
-type Span = { start: number; end: number };
 
 // Maps in a chain are matched by source name, so every map of an editor uses the same one. A
 // private member would make the class nominal and break assignability between `src` and `dist`.

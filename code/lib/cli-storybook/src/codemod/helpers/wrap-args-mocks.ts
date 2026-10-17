@@ -5,9 +5,12 @@ import {
   type SourceEditor,
   generateUid,
   insertAfterImports,
+  isTSWrapper,
   printString,
   walk,
   setImportSpecifiers,
+  staticKey,
+  unwrapExpression,
   wrapExpression,
 } from 'storybook/internal/csf-tools';
 
@@ -31,7 +34,8 @@ const mockMembers = [
   'mockRejectedValueOnce',
 ];
 
-function keyName(node: Node) {
+// The name a member access or an import specifier spells.
+function nameOf(node: Node) {
   if (node.type === 'Identifier') {
     return node.name;
   }
@@ -42,27 +46,14 @@ function withoutDefault(node: Node) {
   return node.type === 'AssignmentPattern' ? node.left : node;
 }
 
-function withoutTypeCast(node: Node): Node {
-  return node.type === 'TSNonNullExpression' ||
-    node.type === 'TSAsExpression' ||
-    node.type === 'TSSatisfiesExpression'
-    ? withoutTypeCast(node.expression)
-    : node;
-}
-
-const isTypeCast = (node: Node) =>
-  node.type === 'TSAsExpression' ||
-  node.type === 'TSSatisfiesExpression' ||
-  node.type === 'TSNonNullExpression';
-
 function isRender(editor: SourceEditor, fn: Node) {
   let value = fn;
   let owner = editor.parentOf(fn);
-  while (owner && isTypeCast(owner)) {
+  while (owner && isTSWrapper(owner)) {
     value = owner;
     owner = editor.parentOf(owner);
   }
-  return owner?.type === 'Property' && owner.value === value && keyName(owner.key) === 'render';
+  return owner?.type === 'Property' && owner.value === value && staticKey(owner) === 'render';
 }
 
 function isMember(node: Node): node is E.MemberExpression {
@@ -98,8 +89,8 @@ export function wrapArgsMocks(editor: SourceEditor) {
   };
 
   const isArgsObject = (expression: Node) => {
-    const node = withoutTypeCast(expression);
-    return isBoundIn(argsObjects, node) || (isMember(node) && keyName(node.property) === 'args');
+    const node = unwrapExpression(expression);
+    return isBoundIn(argsObjects, node) || (isMember(node) && nameOf(node.property) === 'args');
   };
 
   const addArgs = (pattern: Node) => {
@@ -120,20 +111,20 @@ export function wrapArgsMocks(editor: SourceEditor) {
       return;
     }
     for (const property of target.properties) {
-      if (property.type === 'Property' && keyName(property.key) === 'args') {
+      if (property.type === 'Property' && staticKey(property) === 'args') {
         addArgs(property.value);
       }
     }
   };
 
   const collectTarget = (node: E.MemberExpression) => {
-    if (!isMember(node) || !mockMembers.includes(keyName(node.property) ?? '')) {
+    if (!isMember(node) || !mockMembers.includes(nameOf(node.property) ?? '')) {
       return;
     }
     if (node.object.type === 'TSAsExpression') {
       return;
     }
-    const object = withoutTypeCast(node.object);
+    const object = unwrapExpression(node.object);
     if (isBoundIn(argValues, object) || (isMember(object) && isArgsObject(object.object))) {
       targets.push(node.object);
     }
@@ -154,7 +145,7 @@ export function wrapArgsMocks(editor: SourceEditor) {
       });
     } else if (node.type === 'VariableDeclarator') {
       const { id, init } = node;
-      const value = init && withoutTypeCast(init);
+      const value = init && unwrapExpression(init);
       if (init && isArgsObject(init)) {
         addArgs(id);
       } else if (value && isMember(value) && isArgsObject(value.object)) {
@@ -182,7 +173,7 @@ export function wrapArgsMocks(editor: SourceEditor) {
     (specifier): specifier is E.ImportSpecifier =>
       specifier.type === 'ImportSpecifier' &&
       specifier.importKind !== 'type' &&
-      keyName(specifier.imported) === 'mocked'
+      nameOf(specifier.imported) === 'mocked'
   );
   const namespace = specifiers.find((specifier) => specifier.type === 'ImportNamespaceSpecifier');
 

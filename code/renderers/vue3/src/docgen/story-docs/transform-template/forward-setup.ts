@@ -2,7 +2,7 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type ImportBinding,
-  keyOf,
+  staticKey,
   unwrapExpression,
   walk,
 } from 'storybook/internal/csf-tools';
@@ -153,7 +153,7 @@ export function readForwardableSetup(
     ) {
       return bail(SETUP_RETURN_WARNING);
     }
-    const key = keyOf(property);
+    const key = staticKey(property);
     const value = unwrapExpression(property.value);
     if (!key || value.type !== 'Identifier') {
       return bail(SETUP_RETURN_WARNING);

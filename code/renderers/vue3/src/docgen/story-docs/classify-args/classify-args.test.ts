@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { type ESTreeNode as Node, expressionFromSource, keyOf } from 'storybook/internal/csf-tools';
+import {
+  type ESTreeNode as Node,
+  expressionFromSource,
+  staticKey,
+} from 'storybook/internal/csf-tools';
 
 import { classifyArgs, type ClassifiedArg } from './classify-args.ts';
 import { printValue } from '../../shared/classify-value.ts';
@@ -202,8 +206,8 @@ function parseArgs(code: string): Record<string, Node> {
       if (property.type !== 'Property' || property.method || property.computed) {
         throw new Error(`Not a plain arg: ${printValue(property)}`);
       }
-      const name = keyOf(property);
-      if (name === null) {
+      const name = staticKey(property);
+      if (name === undefined) {
         throw new Error(`Unsupported arg name: ${printValue(property.key)}`);
       }
       return [name, property.value];

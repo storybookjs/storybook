@@ -1,7 +1,7 @@
 import type { ESTreeNode as Node, collectImportBindings } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
-  keyOf,
+  staticKey,
   resolveComponentImport,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
@@ -54,7 +54,7 @@ export const ngModulesFromDecorators = (
       if (property.type !== 'Property' || property.method || property.kind !== 'init') {
         continue;
       }
-      const key = keyOf(property);
+      const key = staticKey(property);
       const value = unwrapExpression(property.value);
       if ((key !== 'imports' && key !== 'declarations') || value.type !== 'ArrayExpression') {
         continue;

@@ -6,7 +6,7 @@ import {
   type ImportRef,
   type RenderResolution,
   type StoryArgsResolver,
-  codeOf,
+  textOf,
   collectImportBindings,
   createStoryArgsResolver,
   isCanonicalCsf2BindCall,
@@ -92,7 +92,7 @@ function importedBoundStory(
   );
   const argsObject = values.length ? `{\n${values.join(',\n')}\n}` : '{}';
   return {
-    code: `const ${storyName} = () => ${codeOf(declaration.init)}(${argsObject});`,
+    code: `const ${storyName} = () => ${textOf(declaration.init)}(${argsObject});`,
     importRef: {
       localImportName: local,
       importId: binding.importId,
@@ -285,7 +285,7 @@ const toJsxChildren = (node: Node | null | undefined) =>
     : isStringLiteral(node)
       ? node.value
       : isJsx(node)
-        ? codeOf(node)
+        ? textOf(node)
         : `{${placeableTextOf(node)}}`;
 
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */

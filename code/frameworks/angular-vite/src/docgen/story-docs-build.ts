@@ -32,7 +32,7 @@ import {
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
-import { sourceOf, userTemplate } from './story-docs-markup.ts';
+import { oneLineTextOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
@@ -231,7 +231,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
     // expression that only names what it declares itself - a handler's own parameters - needs
     // nothing from the host.
     if (evaluateArgLiteral(value, enums) === undefined && !isSelfContained(value)) {
-      unresolved.push(sourceOf(value));
+      unresolved.push(oneLineTextOf(value));
     }
   }
 
@@ -359,7 +359,7 @@ const referencedArgFields = (
     }
     const value = evaluateArgLiteral(node, enums);
     if (value === undefined) {
-      unresolved.push(sourceOf(node));
+      unresolved.push(oneLineTextOf(node));
       continue;
     }
     fields.push({ name, value });

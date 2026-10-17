@@ -1,7 +1,13 @@
 import type { CsfFile } from '../CsfFile.ts';
-import { type E, type Node, isFunction, isStringLiteral, unwrapExpression } from '../estree/ast.ts';
+import {
+  type E,
+  type Node,
+  isFunction,
+  isStringLiteral,
+  staticKey,
+  unwrapExpression,
+} from '../estree/ast.ts';
 
-export { unwrapExpression };
 export {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
@@ -41,19 +47,6 @@ const isStringRawTag = (tag: Node): boolean =>
   tag.property.type === 'Identifier' &&
   tag.property.name === 'raw';
 
-/**
- * Static key of an object member, or `null` when it is computed from something else.
- *
- * A computed key written as a string literal is static: `{ ['args']: … }` names the same member as
- * `{ args: … }`, so it reads as that name rather than as a key only running the story would produce.
- */
-export const keyOf = (p: E.ObjectProperty): string | null =>
-  isStringLiteral(p.key)
-    ? p.key.value
-    : !p.computed && p.key.type === 'Identifier'
-      ? p.key.name
-      : null;
-
 /** Value of an object expression's own property, when it has one. */
 export const propertyValue = (
   object: E.ObjectExpression | undefined | null,
@@ -61,7 +54,7 @@ export const propertyValue = (
 ): Node | undefined =>
   object?.properties.find(
     (candidate): candidate is E.ObjectProperty =>
-      candidate.type === 'Property' && !candidate.method && keyOf(candidate) === name
+      candidate.type === 'Property' && !candidate.method && staticKey(candidate) === name
   )?.value;
 
 /**

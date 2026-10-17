@@ -24,12 +24,11 @@ export {
 } from './reference-context.ts';
 export { isSelfContained, resolveArgValue, type ResolvedArgValue } from './resolve-arg-value.ts';
 export {
-  codeOf,
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
   resolveReferencedValue,
-  sourceOf,
+  oneLineTextOf,
   type ReferenceContext,
   type ReferenceModule,
   type ResolvedMembers,
@@ -53,14 +52,12 @@ export {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
-  keyOf,
   metaObject,
   propertyValue,
   resolveIdentifierInit,
   resolveReturnedObjectExpression,
   returnedExpression,
   templateParts,
-  unwrapExpression,
   withoutTypeCalls,
   type FunctionNode,
   type TemplateParts,

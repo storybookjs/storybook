@@ -8,7 +8,7 @@ import { decode, encode } from '@jridgewell/sourcemap-codec';
 import { dedent } from 'ts-dedent';
 
 import { type CsfSourceMap, type StoryTest, loadCsf } from '../CsfFile.ts';
-import { type Node, identifierKey, locationOf } from '../estree/ast.ts';
+import { type Node, staticKey, locationOf } from '../estree/ast.ts';
 import { type SourceEditor, appendMembers, prependStatement } from '../estree/editor.ts';
 import { generateUid } from '../estree/scope.ts';
 
@@ -147,7 +147,7 @@ export async function vitestTransform({
   }
 
   const metaTitleProperty = metaNode.properties.find(
-    (prop) => prop.type === 'Property' && identifierKey(prop) === 'title'
+    (prop) => prop.type === 'Property' && staticKey(prop) === 'title'
   );
 
   const metaTitle = q(parsed._meta?.title || 'unknown');

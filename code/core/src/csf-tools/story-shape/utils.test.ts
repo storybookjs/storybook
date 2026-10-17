@@ -3,16 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
-import { type E, type Node, expressionFromSource, textOf } from '../estree/ast.ts';
+import {
+  type E,
+  type Node,
+  expressionFromSource,
+  staticKey,
+  textOf,
+  unwrapExpression,
+} from '../estree/ast.ts';
 import {
   csfFactoryReceiver,
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
-  keyOf,
   metaObject,
   resolveIdentifierInit,
   returnedExpression,
-  unwrapExpression,
 } from './utils.ts';
 
 const parse = (code: string) => {
@@ -97,8 +102,8 @@ describe('isCsfFactoryCall', () => {
   });
 });
 
-describe('keyOf', () => {
-  it('returns literal object member keys and skips dynamic keys', () => {
+describe('staticKey', () => {
+  it('returns literal object member keys and skips spreads and dynamic keys', () => {
     const meta = metaObject(
       parse(dedent`
         const computed = 'dynamic';
@@ -108,7 +113,7 @@ describe('keyOf', () => {
           label: 'Save',
           'aria-label': 'Close',
           [computed]: 'ignored',
-          1: 'ignored',
+          1: 'one',
           method() {},
           'method-label'() {},
           [computed]() {},
@@ -117,20 +122,16 @@ describe('keyOf', () => {
       `)
     );
 
-    const keys = meta?.properties.map((property) =>
-      property.type === 'SpreadElement' ? null : keyOf(property)
-    );
-
-    expect(keys).toEqual([
+    expect(meta?.properties.map(staticKey)).toEqual([
       'title',
       'label',
       'aria-label',
-      null,
-      null,
+      undefined,
+      '1',
       'method',
       'method-label',
-      null,
-      null,
+      undefined,
+      undefined,
     ]);
   });
 });

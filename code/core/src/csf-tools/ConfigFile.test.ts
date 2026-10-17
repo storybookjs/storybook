@@ -189,6 +189,17 @@ describe('ConfigFile', () => {
           )
         ).toBeUndefined();
       });
+      it('computed key named like the field', () => {
+        expect(
+          getField(
+            ['core', 'builder'],
+            dedent`
+            const builder = 'other';
+            export const core = { [builder]: 'webpack5' }
+            `
+          )
+        ).toBeUndefined();
+      });
       it('found scalar', () => {
         expect(
           getField(

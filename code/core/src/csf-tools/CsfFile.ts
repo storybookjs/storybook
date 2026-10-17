@@ -27,7 +27,7 @@ import {
   type Node,
   type SourceLocation,
   children,
-  identifierKey,
+  staticKey,
   isFunction,
   isIdentifier,
   isRegExpLiteral,
@@ -146,7 +146,7 @@ function parseTestTags(optionsNode: Node | null | undefined, program: E.Program)
   if (node?.type === 'ObjectExpression') {
     const tagsProp = node.properties.find(
       (property): property is E.ObjectProperty =>
-        property.type === 'Property' && identifierKey(property) === 'tags' && !property.method
+        property.type === 'Property' && staticKey(property) === 'tags' && !property.method
     );
 
     if (tagsProp) {
@@ -227,9 +227,7 @@ const hasMount = (play: Node | undefined) => {
   ) {
     const [arg] = play.params;
     if (arg?.type === 'ObjectPattern') {
-      return arg.properties.some(
-        (prop) => prop.type === 'Property' && identifierKey(prop) === 'mount'
-      );
+      return arg.properties.some((prop) => prop.type === 'Property' && staticKey(prop) === 'mount');
     }
   }
   return false;
@@ -523,7 +521,7 @@ export class CsfFile {
     this._metaNode = declaration;
     const meta: StaticMeta = {};
     for (const p of declaration.properties) {
-      const key = identifierKey(p);
+      const key = staticKey(p);
       if (p.type !== 'Property' || key === undefined) {
         continue;
       }
@@ -757,7 +755,7 @@ export class CsfFile {
           parameters.__isArgsStory = true; // assume default render is an args story
           // CSF3 object export
           for (const p of storyNode.properties) {
-            const key = identifierKey(p);
+            const key = staticKey(p);
             if (p.type !== 'Property' || key === undefined) {
               continue;
             }
@@ -776,7 +774,7 @@ export class CsfFile {
             } else if (key === 'parameters' && p.value.type === 'ObjectExpression') {
               const idProperty = p.value.properties.find(
                 (property): property is E.ObjectProperty =>
-                  property.type === 'Property' && identifierKey(property) === '__id'
+                  property.type === 'Property' && staticKey(property) === '__id'
               );
               if (idProperty) {
                 parameters.__id = (idProperty.value as E.StringLiteral).value;
@@ -827,7 +825,7 @@ export class CsfFile {
           const storyNode = decl;
           if (storyNode?.type === 'ObjectExpression') {
             for (const p of storyNode.properties) {
-              const key = identifierKey(p);
+              const key = staticKey(p);
               if (p.type === 'Property' && key !== undefined) {
                 annotations[key] = p.value;
               }

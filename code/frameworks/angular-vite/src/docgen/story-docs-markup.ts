@@ -11,7 +11,8 @@ import {
   importedName,
   isCanonicalCsf2BindCall,
   isStringLiteral,
-  sourceOf,
+  oneLineTextOf,
+  staticKey,
   templateParts,
   type TemplateParts,
   unwrapExpression,
@@ -33,7 +34,7 @@ export interface StoryShape {
   unresolvedArgs: string[];
 }
 
-export { sourceOf };
+export { oneLineTextOf };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
@@ -141,7 +142,7 @@ export const userTemplate = (
   if (csf2) {
     const templateProperty = resolvedProperty(csf2.returned, 'template');
     if (templateProperty.kind === 'unresolvable') {
-      return { kind: 'unresolvable', source: sourceOf(csf2.returned) };
+      return { kind: 'unresolvable', source: oneLineTextOf(csf2.returned) };
     }
     const fromCsf2 = templateFrom(
       templateProperty.kind === 'value' ? templateProperty.node : undefined,
@@ -165,7 +166,10 @@ const shapeTemplate = (
 ): TemplateResult | undefined => {
   const template = resolvedMember(members, 'template');
   if (template.kind === 'unresolvable') {
-    return { kind: 'unresolvable', ...(template.node ? { source: sourceOf(template.node) } : {}) };
+    return {
+      kind: 'unresolvable',
+      ...(template.node ? { source: oneLineTextOf(template.node) } : {}),
+    };
   }
   if (template.kind === 'value') {
     const own = templateFrom(declaredValue(shape, template.node), shape, bindings, NO_SCOPE);
@@ -181,17 +185,17 @@ const shapeTemplate = (
   // A story whose `render` exists but cannot be read must not inherit the meta's markup, which is
   // for code the story never runs.
   if (render.kind === 'unresolvable') {
-    return { kind: 'unresolvable', ...(render.node ? { source: sourceOf(render.node) } : {}) };
+    return { kind: 'unresolvable', ...(render.node ? { source: oneLineTextOf(render.node) } : {}) };
   }
 
   const fn = declaredValue(shape, render.node);
   const returned = returnedObject(fn);
   if (!returned) {
-    return { kind: 'unresolvable', source: `render: ${sourceOf(render.node)}` };
+    return { kind: 'unresolvable', source: `render: ${oneLineTextOf(render.node)}` };
   }
   const templateProperty = resolvedProperty(returned, 'template');
   return templateProperty.kind === 'unresolvable'
-    ? { kind: 'unresolvable', source: `render: ${sourceOf(render.node)}` }
+    ? { kind: 'unresolvable', source: `render: ${oneLineTextOf(render.node)}` }
     : templateFrom(
         templateProperty.kind === 'value' ? templateProperty.node : undefined,
         shape,
@@ -222,10 +226,10 @@ const templateFrom = (
     const expansions: TemplateExpansion[] = [];
     const markup = interpolate(parts, shape, bindings, scope, representedArgs, expansions);
     return markup === undefined
-      ? { kind: 'unresolvable', source: sourceOf(node) }
+      ? { kind: 'unresolvable', source: oneLineTextOf(node) }
       : literalTemplate(markup, representedArgs, expansions);
   }
-  return { kind: 'unresolvable', source: sourceOf(node) };
+  return { kind: 'unresolvable', source: oneLineTextOf(node) };
 };
 
 const literalTemplate = (
@@ -444,7 +448,7 @@ export const resolvedProperty = (object: E.ObjectExpression, key: string): Prope
       opaqueAfter = property;
       return;
     }
-    const name = keyNameOf(property);
+    const name = staticKey(property);
     if (name === key) {
       found = property;
       opaqueAfter = undefined;
@@ -465,14 +469,6 @@ export const resolvedProperty = (object: E.ObjectExpression, key: string): Prope
       : { kind: 'unresolvable', node: found };
   }
   return { kind: 'value', node: found.value };
-};
-
-// A string-literal computed key has the exact runtime semantics of a plain string key.
-export const keyNameOf = (property: E.ObjectProperty | E.BindingProperty): string | undefined => {
-  if (property.key.type === 'Identifier' && !property.computed) {
-    return property.key.name;
-  }
-  return isStringLiteral(property.key) ? property.key.value : undefined;
 };
 
 const isPlainMethod = (node: Node | undefined): node is E.ObjectProperty & { value: E.Function } =>
@@ -568,7 +564,7 @@ const functionScope = (node: Node | undefined): FunctionScope => {
       if (property.type !== 'Property' || property.computed) {
         continue;
       }
-      const argName = keyNameOf(property);
+      const argName = staticKey(property);
       const local =
         property.value.type === 'AssignmentPattern' ? property.value.left : property.value;
       if (argName !== undefined && local.type === 'Identifier') {
@@ -599,7 +595,7 @@ const functionScope = (node: Node | undefined): FunctionScope => {
       if (property.type === 'RestElement' && property.argument.type === 'Identifier') {
         rest = property.argument.name;
       } else if (property.type === 'Property') {
-        const key = property.computed ? undefined : keyNameOf(property);
+        const key = property.computed ? undefined : staticKey(property);
         if (key !== undefined) {
           destructured.push(key);
         } else {

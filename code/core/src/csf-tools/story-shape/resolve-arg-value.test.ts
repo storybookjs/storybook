@@ -6,7 +6,7 @@ import {
   type ReferenceContext,
   resolveArgsRecord,
   resolveBindingMembers,
-  sourceOf,
+  oneLineTextOf,
 } from './resolve-members.ts';
 
 const indexed = (editor: SourceEditor) => {
@@ -23,7 +23,7 @@ const valueOf = (code: string, expression: string) => {
   const record = resolveArgsRecord(resolveBindingMembers(ctx, 'Story')?.properties.args, ctx);
   const resolved = resolveArgValue(record.properties.v, ctx);
   return {
-    node: sourceOf(resolved.node),
+    node: oneLineTextOf(resolved.node),
     imports: resolved.imports.map((ref) => `${ref.localImportName}:${ref.importId}`),
     unresolved: resolved.unresolved,
   };

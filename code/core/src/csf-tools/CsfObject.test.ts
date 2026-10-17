@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { loadConfig, printConfig } from './ConfigFile.ts';
-import { type CsfValue, parseExpression, printExpression } from './CsfObject.ts';
+import { type CsfValue, parseExpression } from './CsfObject.ts';
+import { textOf } from './estree/ast.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
@@ -19,8 +20,8 @@ describe('CsfObject', () => {
       }).parse();
       const [meta] = csf.objects({ stories: false });
 
-      expect(printExpression(meta.get(['parameters'])!)).toBe(expression);
-      expect(printExpression(parseExpression(expression))).toBe(expression);
+      expect(textOf(meta.get(['parameters'])!)).toBe(expression);
+      expect(textOf(parseExpression(expression))).toBe(expression);
     }
   );
 
@@ -147,7 +148,7 @@ describe('CsfObject', () => {
     expect(story.set(['c'], parseExpression('1 //x'))).toEqual({ ok: true, changed: true });
 
     const [, again] = parse(printCsf(csf).code).objects();
-    expect(printExpression(again.get(['b'])!)).toBe('1, 2');
+    expect(textOf(again.get(['b'])!)).toBe('1, 2');
     expect(again.getValue(['c'])).toBe(1);
     expect(csf.mutationDiagnostics).toEqual([]);
   });
@@ -224,7 +225,7 @@ describe('CsfObject', () => {
       if (value.type !== 'FunctionExpression') {
         throw new Error('Expected a function expression');
       }
-      const source = printExpression(value);
+      const source = textOf(value);
       return parseExpression(`${source.slice(0, source.lastIndexOf('}'))} return true; }`);
     });
     expect(printCsf(csf).code).toContain('beforeEach()');
@@ -564,7 +565,7 @@ describe('CsfObject', () => {
     expect(
       meta.transform(['parameters', 'backgrounds', 'values'], (values) =>
         values.type === 'ArrayExpression' && values.elements[0]
-          ? parseExpression(`{\n  gray: ${printExpression(values.elements[0])}\n}`)
+          ? parseExpression(`{\n  gray: ${textOf(values.elements[0])}\n}`)
           : undefined
       )
     ).toEqual({ ok: true, changed: true });

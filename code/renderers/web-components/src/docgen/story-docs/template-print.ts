@@ -1,5 +1,5 @@
 import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-tools';
-import { sourceOf } from 'storybook/internal/csf-tools';
+import { oneLineTextOf } from 'storybook/internal/csf-tools';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
@@ -246,7 +246,7 @@ const resolveAttribute = (
     }
     const value = resolveMarkerValue(expression, state);
     if (value.kind === 'function') {
-      state.unresolved.add(sourceOf(expression));
+      state.unresolved.add(oneLineTextOf(expression));
       return undefined;
     }
     if (value.kind === 'nothing') {
@@ -357,7 +357,7 @@ const removeUnsupportedMarkers = (text: string, state: TemplatePrintState): stri
   for (const marker of markersIn(text, state)) {
     const expression = state.markers.get(marker);
     if (expression) {
-      state.unresolved.add(sourceOf(expression));
+      state.unresolved.add(oneLineTextOf(expression));
     }
     next = next.replace(marker, '');
   }
@@ -368,7 +368,7 @@ const unresolvedMarkers = (text: string, state: TemplatePrintState): void => {
   for (const marker of markersIn(text, state)) {
     const expression = state.markers.get(marker);
     if (expression) {
-      state.unresolved.add(sourceOf(expression));
+      state.unresolved.add(oneLineTextOf(expression));
     }
   }
 };
@@ -383,7 +383,7 @@ const markerSources = (markers: string[], state: TemplatePrintState): string =>
   markers
     .map((marker) => state.markers.get(marker))
     .filter((expression): expression is E.Expression => expression !== undefined)
-    .map(sourceOf)
+    .map(oneLineTextOf)
     .join(', ');
 
 const attributeFromPrinted = (attribute: string | undefined): HtmlAttribute | undefined => {

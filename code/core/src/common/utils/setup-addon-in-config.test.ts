@@ -76,7 +76,7 @@ describe('setupAddonInConfig', () => {
 
     const [path, node] = vi.mocked(mockMain.appendNodeToArray).mock.calls[0];
     expect(path).toEqual(['addons']);
-    expect(csfTools.printExpression(node)).toBe("getAbsolutePath('@storybook/addon-docs')");
+    expect(csfTools.textOf(node)).toBe("getAbsolutePath('@storybook/addon-docs')");
     expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({

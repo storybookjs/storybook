@@ -6,17 +6,13 @@ import {
   expressionFromSource,
   isStringLiteral,
   placeableTextOf,
+  staticKey,
   textOf,
+  unwrapExpression,
 } from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
 import { importedName, isTypeSpecifier } from './imports.ts';
-import {
-  csfFactoryReceiver,
-  isCanonicalCsf2BindCall,
-  isCsfFactoryCall,
-  keyOf,
-  unwrapExpression,
-} from './utils.ts';
+import { csfFactoryReceiver, isCanonicalCsf2BindCall, isCsfFactoryCall } from './utils.ts';
 import { isFunction } from '../estree/ast.ts';
 
 /** Members of an object, and what reading it statically could not account for. */
@@ -66,17 +62,8 @@ export interface StoryReferences extends StoryReferenceResolver {
   filePath: string;
 }
 
-/** Source text of a node exactly as written, for printing it or building code around it. */
-export const codeOf = (node: Node): string => {
-  const text = textOf(node);
-  if (text === undefined) {
-    throw new Error(`Cannot print a ${node.type} node whose source is unknown`);
-  }
-  return text;
-};
-
 /** Source text of a node on one line, for naming an expression a static pass could not read. */
-export const sourceOf = (node: Node): string => codeOf(node).replace(/\s*\n\s*/g, ' ');
+export const oneLineTextOf = (node: Node): string => textOf(node).replace(/\s*\n\s*/g, ' ');
 
 const complete = (properties: Record<string, Node> = {}): ResolvedMembers => ({
   properties,
@@ -122,7 +109,7 @@ export const resolveArgsRecord = (
     : {
         properties: {},
         shadowed: [],
-        unresolved: [`args: ${sourceOf(unwrapped)}`],
+        unresolved: [`args: ${oneLineTextOf(unwrapped)}`],
       };
 };
 
@@ -137,7 +124,7 @@ const asArgsRecord = (members: ResolvedMembers): ResolvedMembers => {
   const unresolved = [...members.unresolved];
   for (const [key, node] of methods) {
     delete properties[key];
-    unresolved.push(sourceOf(node));
+    unresolved.push(oneLineTextOf(node));
   }
   return {
     properties,
@@ -230,7 +217,7 @@ const membersOf = (
     if (property.type === 'SpreadElement') {
       const spread = spreadMembers(ctx, property, visited);
       if (spread === undefined || spread.unresolved.length > 0) {
-        shadowKnownMembers(sourceOf(property));
+        shadowKnownMembers(oneLineTextOf(property));
         continue;
       }
       for (const [key, value] of Object.entries(spread.properties)) {
@@ -242,10 +229,10 @@ const membersOf = (
       continue;
     }
 
-    const key = keyOf(property);
-    if (key === null) {
+    const key = staticKey(property);
+    if (key === undefined) {
       // A dynamic key can supply or shadow any member at runtime.
-      shadowKnownMembers(sourceOf(property));
+      shadowKnownMembers(oneLineTextOf(property));
       continue;
     }
     if (property.kind !== 'init' || (property.method && (property.value as E.Function).generator)) {
@@ -253,7 +240,7 @@ const membersOf = (
       // the story produces.
       delete properties[key];
       shadowed.delete(key);
-      unresolved.push(sourceOf(property));
+      unresolved.push(oneLineTextOf(property));
       continue;
     }
     properties[key] = property.method ? property : property.value;
@@ -566,7 +553,7 @@ const declaredMembers = (
       members: {
         properties: {},
         shadowed: [],
-        unresolved: [sourceOf(unwrapped)],
+        unresolved: [oneLineTextOf(unwrapped)],
       },
     };
   }
@@ -749,7 +736,7 @@ const assignedMembers = (
       continue;
     }
     if (depth > 1 || outermost === undefined || assignment.operator !== '=') {
-      unresolved.push(sourceOf(assignment));
+      unresolved.push(oneLineTextOf(assignment));
       continue;
     }
     properties[outermost] = assignment.right;

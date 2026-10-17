@@ -15,7 +15,7 @@ import {
   prependStatement,
   printString,
   readConfig,
-  unwrapESTreeExpression as unwrapExpression,
+  unwrapExpression,
   walk,
   writeConfig,
 } from 'storybook/internal/csf-tools';

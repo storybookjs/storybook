@@ -7,12 +7,14 @@ import {
   parseFragment,
   isValidIdentifier,
   placeableTextOf,
+  staticKey,
+  textOf,
+  unwrapExpression,
 } from '../estree/ast.ts';
 import { analyzeScopes } from '../estree/scope.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
-import { type ReferenceContext, codeOf, resolveArgsRecord } from './resolve-members.ts';
-import { keyOf, unwrapExpression } from './utils.ts';
+import { type ReferenceContext, resolveArgsRecord } from './resolve-members.ts';
 
 /** An arg value read through to the definition it names, and what printing it still depends on. */
 export interface ResolvedArgValue {
@@ -100,7 +102,7 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
           element === null
             ? ''
             : element.type === 'SpreadElement'
-              ? codeOf(element)
+              ? textOf(element)
               : placeableTextOf(inlineSpreads(element, ctx, unresolved))
         )
         .join(', ')}]`
@@ -167,12 +169,12 @@ const objectFrom = (
       if (property.method || property.kind !== 'init') {
         return undefined;
       }
-      const name = keyOf(property);
+      const name = staticKey(property);
       key = property.computed
         ? `[${placeableTextOf(property.key)}]`
-        : name !== null && isValidIdentifier(name, false)
+        : name !== undefined && isValidIdentifier(name, false)
           ? name
-          : codeOf(property.key);
+          : textOf(property.key);
       original = property.value;
     } else {
       if (property.value.type === 'Property') {
@@ -216,9 +218,9 @@ const followValue = (node: Node, ctx: ReferenceContext, seen: Set<string>): Node
 
 const freeNames = (node: Node): Set<string> => {
   if (node.type === 'Property') {
-    return unboundNames(`({ ${codeOf(node)} })`);
+    return unboundNames(`({ ${textOf(node)} })`);
   }
-  return unboundNames(`(${codeOf(node)})`);
+  return unboundNames(`(${textOf(node)})`);
 };
 
 // Names every scope has, so a snippet never needs to import them.

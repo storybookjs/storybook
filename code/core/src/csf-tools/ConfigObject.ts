@@ -12,11 +12,13 @@ import {
   type E,
   type Node,
   type Property,
+  type Span,
   isIdentifier,
   isStringLiteral,
+  isTSWrapper,
+  isValidIdentifier,
   locationOf,
   outerSpan,
-  staticKey,
   walk,
 } from './estree/ast.ts';
 import {
@@ -32,8 +34,6 @@ import {
 } from './estree/editor.ts';
 import { generateUid } from './estree/scope.ts';
 import { placeableValueSource } from './estree/values.ts';
-
-type Span = { start: number; end: number };
 
 const isConfigFactory = (editor: SourceEditor, callee: Node): boolean => {
   if (callee.type !== 'Identifier') {
@@ -57,10 +57,6 @@ const isModuleExports = (node: Node) =>
   isIdentifier(node.object, 'module') &&
   (isIdentifier(node.property, 'exports') || isStringLiteral(node.property)) &&
   (node.property.type === 'Identifier' || (node.property as E.StringLiteral).value === 'exports');
-
-const TS_WRAPPERS = new Set(['TSAsExpression', 'TSSatisfiesExpression', 'TSNonNullExpression']);
-
-const isValidIdentifier = (name: string) => /^[A-Za-z_$][\w$]*$/.test(name);
 
 // `custom-field` → `customField`
 const toIdentifier = (name: string) =>
@@ -132,7 +128,7 @@ export const locateConfigRoot = (
       return true;
     }
     let parent = parents.get(reference);
-    while (parent && TS_WRAPPERS.has(parent.type)) {
+    while (parent && isTSWrapper(parent)) {
       parent = parents.get(parent);
     }
     return (
@@ -498,5 +494,3 @@ export function createConfigObject(
   };
   return { ok: true, object: createCsfObject({ kind: 'config' }, host, [], report, markChanged) };
 }
-
-export { staticKey };

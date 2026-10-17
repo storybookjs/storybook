@@ -1,5 +1,5 @@
 import type { ESTree as E, ESTreeNode as Node, ImportBinding } from 'storybook/internal/csf-tools';
-import { sourceOf, unwrapExpression, walk } from 'storybook/internal/csf-tools';
+import { oneLineTextOf, unwrapExpression, walk } from 'storybook/internal/csf-tools';
 
 import { FAILED, evaluateArgValue, isFunctionNode, primitiveLiteralValue } from './arg-values.ts';
 import type { AliasValue, HtmlTemplate, TemplateScope } from './template-scope.ts';
@@ -33,12 +33,12 @@ export const resolveHoleValue = (expression: E.Expression, context: HoleContext)
       ? aliasValueForIdentifier(expressionNode, context.scope)
       : undefined;
   if (alias) {
-    return resolveAlias(alias, context, sourceOf(expression));
+    return resolveAlias(alias, context, oneLineTextOf(expression));
   }
 
   const arg = argReferenceForExpression(expression, context.scope);
   if (arg) {
-    return resolveArgReference(arg, context.storyArgs[arg.name], sourceOf(expression));
+    return resolveArgReference(arg, context.storyArgs[arg.name], oneLineTextOf(expression));
   }
 
   const unwrapped = expressionNode;
@@ -49,11 +49,11 @@ export const resolveHoleValue = (expression: E.Expression, context: HoleContext)
     return { kind: 'value', value: literalValue(unwrapped) };
   }
   if (isFunctionNode(unwrapped)) {
-    return { handler: sourceOf(expression), kind: 'function' };
+    return { handler: oneLineTextOf(expression), kind: 'function' };
   }
   const nested = templateFromExpression(unwrapped, context.bindings, context.scope);
   if (nested) {
-    return { kind: 'template', source: sourceOf(expression), template: nested };
+    return { kind: 'template', source: oneLineTextOf(expression), template: nested };
   }
   if (isIfDefinedCall(unwrapped, context.bindings)) {
     const value = resolveHoleValue(unwrapped.arguments[0], context);
@@ -73,7 +73,7 @@ export const resolveHoleValue = (expression: E.Expression, context: HoleContext)
     return test.arg && !branch.arg ? { ...branch, arg: test.arg } : branch;
   }
 
-  return { kind: 'unresolved', source: sourceOf(expression) };
+  return { kind: 'unresolved', source: oneLineTextOf(expression) };
 };
 
 export const collectReferencedArgs = (expression: Node, scope: TemplateScope): Set<string> => {
@@ -123,7 +123,7 @@ const resolveArg = (arg: string, node: Node | undefined): HoleValue => {
   const value = evaluateArgValue(node);
   switch (value.kind) {
     case 'function':
-      return { handler: sourceOf(node), kind: 'function', arg };
+      return { handler: oneLineTextOf(node), kind: 'function', arg };
     case 'unset':
       return { kind: 'value', arg, value: undefined };
     case 'unresolved':
@@ -253,12 +253,12 @@ const resolveConditionalTest = (
 ): { arg?: string; kind: 'value'; truthy: boolean } | { kind: 'unresolved'; source: string } => {
   const arg = argReferenceForExpression(expression, context.scope);
   if (arg) {
-    const value = resolveArgReference(arg, context.storyArgs[arg.name], sourceOf(expression));
+    const value = resolveArgReference(arg, context.storyArgs[arg.name], oneLineTextOf(expression));
     return value.kind === 'value' || value.kind === 'empty'
       ? { arg: arg.name, kind: 'value', truthy: value.kind === 'value' && Boolean(value.value) }
       : {
           kind: 'unresolved',
-          source: value.kind === 'unresolved' ? value.source : sourceOf(expression),
+          source: value.kind === 'unresolved' ? value.source : oneLineTextOf(expression),
         };
   }
   const unwrapped = unwrapExpression(expression);
@@ -268,7 +268,7 @@ const resolveConditionalTest = (
   if (isStaticLiteral(unwrapped)) {
     return { kind: 'value', truthy: Boolean(literalValue(unwrapped)) };
   }
-  return { kind: 'unresolved', source: sourceOf(expression) };
+  return { kind: 'unresolved', source: oneLineTextOf(expression) };
 };
 
 const templateAttributeText = (

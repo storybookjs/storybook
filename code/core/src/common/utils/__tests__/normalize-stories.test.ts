@@ -250,7 +250,12 @@ describe('normalizeStoriesEntry', () => {
     `);
   });
 
-  it.each(['stories[1]', 'stories{1,2}'])('treats directory %s literally', (directory) => {
+  it.each([
+    ['stories[1]', 'stories1'],
+    ['stories{1,2}', 'stories1'],
+    ['(group)', 'group'],
+    ['@(x)', 'x'],
+  ])('treats directory %s literally', (directory, sibling) => {
     const specifier = normalizeStoriesEntry(
       { directory: `../src/${directory}`, files: '**/*.stories.@(js|jsx)' },
       options
@@ -261,7 +266,7 @@ describe('normalizeStoriesEntry', () => {
       `./src/${directory}/Button.stories.jsx`,
       `./src/${directory}/nested/Button.stories.js`,
     ]);
-    expect(specifier.importPathMatcher.test('./src/stories1/Button.stories.jsx')).toBe(false);
+    expect(specifier.importPathMatcher.test(`./src/${sibling}/Button.stories.jsx`)).toBe(false);
     expect(specifier.importPathMatcher.test(`./src/${directory}/Button.stories.ts`)).toBe(false);
   });
 

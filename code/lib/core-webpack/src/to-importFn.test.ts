@@ -194,7 +194,12 @@ const testCases: [string, string[], string[]][] = [
 ];
 
 describe('toImportFn - webpackIncludeRegexp', () => {
-  it.each(['stories[1]', 'stories{1,2}'])('treats directory %s literally', (directory) => {
+  it.each([
+    ['stories[1]', 'stories1'],
+    ['stories{1,2}', 'stories1'],
+    ['(group)', 'group'],
+    ['@(x)', 'x'],
+  ])('treats directory %s literally', (directory, sibling) => {
     const regex = webpackIncludeRegexp(
       normalizeStoriesEntry(
         { directory: `../src/${directory}`, files: '**/*.stories.@(js|jsx)' },
@@ -204,7 +209,7 @@ describe('toImportFn - webpackIncludeRegexp', () => {
 
     expect(regex.test(`/Users/user/code/src/${directory}/Button.stories.jsx`)).toBe(true);
     expect(regex.test(`/Users/user/code/src/${directory}/nested/Button.stories.js`)).toBe(true);
-    expect(regex.test('/Users/user/code/src/stories1/Button.stories.jsx')).toBe(false);
+    expect(regex.test(`/Users/user/code/src/${sibling}/Button.stories.jsx`)).toBe(false);
     expect(regex.test(`/Users/user/code/src/${directory}/Button.stories.ts`)).toBe(false);
   });
 

@@ -1,6 +1,5 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { convertPathToPattern } from 'globby';
 import * as pico from 'picomatch';
+import { convertPathToPattern } from 'tinyglobby';
 
 export function globToRegexp(glob: string, directory?: string) {
   if (directory) {

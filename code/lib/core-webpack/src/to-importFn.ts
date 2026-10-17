@@ -33,7 +33,8 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
     files,
     ['.', '..'].includes(directory) ? undefined : directoryWithoutLeadingDots
   );
-  const webpackIncludeRegexpWithCaret = `${directory}/${files}`.includes('node_modules')
+  const includesNodeModules = [directory, files].some((part) => part.includes('node_modules'));
+  const webpackIncludeRegexpWithCaret = includesNodeModules
     ? includeRegexp
     : adjustRegexToExcludeNodeModules(includeRegexp);
   // picomatch is creating an exact match, but we are only matching the end of the filename

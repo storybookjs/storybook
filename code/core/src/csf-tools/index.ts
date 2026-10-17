@@ -59,4 +59,5 @@ export {
   setImportSpecifiers,
   specifierList,
   statementSpan,
+  wrapExpression,
 } from './estree/editor.ts';

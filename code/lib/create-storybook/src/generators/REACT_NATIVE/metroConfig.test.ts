@@ -170,6 +170,16 @@ export default {};
     }
   });
 
+  it('wraps a parenthesized comma expression as one argument', () => {
+    const before = 'module.exports = (setup(), config);\n';
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toContain('module.exports = withStorybook((setup(), config));');
+    }
+  });
+
   it('treats aliased ESM withStorybook wrapper as already configured', () => {
     const before = `
 import { withStorybook as wrapMetro } from '@storybook/react-native/withStorybook';

@@ -7,6 +7,7 @@ import {
   printString,
   outerSpan,
   walk,
+  wrapExpression,
   removeStatements,
   setImportSpecifiers,
   prependStatement,
@@ -351,12 +352,11 @@ export async function storyToCsfFactory(
   // Wraps `inner` in `before…after`, dropping the type cast of `outer` around it. The parentheses
   // of `(inner) satisfies T` stay with `inner`.
   const wrap = (outer: Node, inner: Node, before: string, after: string) => {
-    const span = outerSpan(inner);
-    if (span.end < outer.end) {
-      editor.edits.remove(span.end, outer.end);
+    const { end } = outerSpan(inner);
+    if (end < outer.end) {
+      editor.edits.remove(end, outer.end);
     }
-    editor.edits.appendRight(span.start, before);
-    editor.edits.appendLeft(span.end, after);
+    wrapExpression(editor, inner, before, after);
   };
 
   // modify meta

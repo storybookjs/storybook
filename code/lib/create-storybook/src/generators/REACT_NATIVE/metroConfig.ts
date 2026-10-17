@@ -11,6 +11,7 @@ import {
   parseModule,
   prependStatement,
   walk,
+  wrapExpression,
 } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -214,8 +215,7 @@ export const transformMetroConfigSource = (source: string, filePath: string): Tr
   let changed = false;
 
   const wrap = (node: Node) => {
-    editor.edits.appendRight(node.start, `${withStorybookLocalName}(`);
-    editor.edits.appendLeft(node.end, ')');
+    wrapExpression(editor, node, `${withStorybookLocalName}(`, ')');
     changed = true;
   };
 

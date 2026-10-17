@@ -1058,6 +1058,14 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
   editor.edits.overwrite(value.start, value.end, text);
 };
 
+/** Write `before` and `after` around an expression and the parentheses written around it. */
+export const wrapExpression = (editor: SourceEditor, node: Node, before: string, after: string) => {
+  editor.assertCurrent(node);
+  const { start, end } = outerSpan(node);
+  editor.edits.appendRight(start, before);
+  editor.edits.appendLeft(end, after);
+};
+
 export const keySource = (editor: SourceEditor, member: Property) =>
   editor.source(keyRange(editor, member));
 

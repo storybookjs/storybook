@@ -8,6 +8,7 @@ import {
   printString,
   walk,
   setImportSpecifiers,
+  wrapExpression,
 } from 'storybook/internal/csf-tools';
 
 const mockMembers = [
@@ -214,7 +215,6 @@ export function wrapArgsMocks(editor: SourceEditor) {
   }
 
   for (const target of targets) {
-    editor.edits.appendRight(target.start, `${callee}(`);
-    editor.edits.appendLeft(target.end, ')');
+    wrapExpression(editor, target, `${callee}(`, ')');
   }
 }

@@ -20,7 +20,7 @@ The `args` object can be defined at the [story](#story-args), [component](#compo
 
 <If renderer="svelte">
 
-To define the args of a single story, use the `args` property in the `Story` component if you are using Svelte CSF with the native templating syntax, or use the `args` key on a CSF story file:
+To define the args of a single story, use the `args` property in the `Story` component if you are using Svelte CSF or Svelte CSF Next with the native templating syntax:
 
 </If>
 
@@ -42,7 +42,7 @@ In the above example, we use the [object spread](https://developer.mozilla.org/e
 
 <If renderer="svelte">
 
-You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` property in the `defineMeta` function of a Svelte CSF story file or via the `args` key on the default CSF export:
+You can also define args at the component level; they will apply to all the component's stories unless you overwrite them. To do so, use the `args` property in the `defineMeta` function if you are using Svelte CSF, or in the `preview.meta` function if you are using Svelte CSF Next:
 
 </If>
 

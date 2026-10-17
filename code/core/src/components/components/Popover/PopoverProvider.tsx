@@ -1,13 +1,18 @@
-import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { cloneElement, useCallback, useState } from 'react';
+import type { DOMAttributes, FocusEvent, ReactElement, ReactNode } from 'react';
+import React, { cloneElement, useCallback, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
+import { getInteractionModality } from 'react-aria/private/interactions/useFocusVisible';
 import { Pressable } from 'react-aria-components/Pressable';
 import { DialogTrigger } from 'react-aria-components/Dialog';
 import { Popover as PopoverUpstream } from 'react-aria-components/Popover';
 
-import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
+import {
+  type PopperPlacement,
+  convertToReactAriaPlacement,
+  PopoverDismissalProvider,
+} from '../shared/overlayHelpers.tsx';
 import { Popover } from './Popover.tsx';
 
 export interface PopoverProviderProps {
@@ -85,13 +90,28 @@ export const PopoverProvider = ({
   const placement = convertToReactAriaPlacement(placementProp);
 
   const [isOpen, setIsOpen] = useState(defaultVisible ?? false);
+  const suppressFocusRestoreRef = useRef(false);
+
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
+      if (!isOpen && getInteractionModality() === 'keyboard') {
+        suppressFocusRestoreRef.current = true;
+      }
       setIsOpen(isOpen);
       onVisibleChange?.(isOpen);
     },
     [onVisibleChange]
   );
+
+  const consumeFocusRestoreSuppression = () => {
+    const suppressed = suppressFocusRestoreRef.current;
+    suppressFocusRestoreRef.current = false;
+    return suppressed;
+  };
+  const handleTriggerBlur = (event: FocusEvent<Element>) => {
+    children.props.onBlur?.(event);
+    suppressFocusRestoreRef.current = false;
+  };
   const onHide = useCallback(() => onOpenChange(false), [onOpenChange]);
 
   return (
@@ -101,16 +121,22 @@ export const PopoverProvider = ({
       onOpenChange={onOpenChange}
       {...props}
     >
-      <Pressable>
-        {
-          /* React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves. */
-          cloneElement(
-            children,
-            // @ts-expect-error aria-haspopup is a valid ARIA attribute but cloneElement types are too strict
-            { 'aria-haspopup': 'dialog' }
-          )
-        }
-      </Pressable>
+      <PopoverDismissalProvider value={{ consumeFocusRestoreSuppression }}>
+        <Pressable
+          onPressStart={() => {
+            suppressFocusRestoreRef.current = false;
+          }}
+        >
+          {
+            /* React-aria does not inject aria-haspopup='dialog' to support legacy screen readers, so we do it ourselves. */
+            cloneElement(
+              children,
+              // @ts-expect-error aria-haspopup is a valid ARIA attribute but cloneElement types are too strict
+              { 'aria-haspopup': 'dialog', onBlur: handleTriggerBlur }
+            )
+          }
+        </Pressable>
+      </PopoverDismissalProvider>
       <PopoverUpstream
         aria-label={ariaLabel}
         placement={placement}

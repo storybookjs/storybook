@@ -1,4 +1,11 @@
-import React, { type ButtonHTMLAttributes, type ReactNode, forwardRef, useState } from 'react';
+import React, {
+  type ButtonHTMLAttributes,
+  type ReactNode,
+  createContext,
+  forwardRef,
+  useContext,
+  useState,
+} from 'react';
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
@@ -23,6 +30,16 @@ export const POPPER_PLACEMENTS = [
 ] as const;
 
 export type PopperPlacement = (typeof POPPER_PLACEMENTS)[number];
+
+// Keyboard focus restore after a popover closes must not open the trigger's tooltip, or it
+// swallows the next Escape.
+const PopoverDismissalContext = createContext<{
+  consumeFocusRestoreSuppression: () => boolean;
+} | null>(null);
+
+export const PopoverDismissalProvider = PopoverDismissalContext.Provider;
+
+export const usePopoverDismissal = () => useContext(PopoverDismissalContext);
 
 export const convertToReactAriaPlacement = memoize(1000)((
   p: PopperPlacement

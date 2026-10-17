@@ -1,13 +1,18 @@
 import fs from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { afterEach } from 'node:test';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { migrateLegacySettings } from '../common/utils/migrate-legacy-settings.ts';
 import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings.ts';
+
+const legacySettingsPath = join(homedir(), '.storybook', 'settings.json');
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
+vi.mock('../common/utils/migrate-legacy-settings.ts');
 
 const userSince = new Date();
 const baseSettings = { version: 1, userSince: +userSince };
@@ -26,6 +31,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 describe('globalSettings', () => {
@@ -63,6 +69,45 @@ describe('globalSettings', () => {
 
     expect(fs.mkdir).toHaveBeenCalledWith(dirname(TEST_SETTINGS_FILE), { recursive: true });
     expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, baseSettingsJson);
+  });
+});
+
+describe('globalSettings default path', () => {
+  it('reads from ~/.storybook/settings.json when XDG_CONFIG_HOME is not set', async () => {
+    vi.stubEnv('XDG_CONFIG_HOME', undefined);
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings();
+
+    expect(fs.readFile).toHaveBeenCalledWith(legacySettingsPath, 'utf8');
+  });
+
+  it('reads from $XDG_CONFIG_HOME/storybook/settings.json when it is set', async () => {
+    vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings();
+
+    expect(fs.readFile).toHaveBeenCalledWith(
+      join('/tmp/xdg-config', 'storybook', 'settings.json'),
+      'utf8'
+    );
+  });
+
+  it('migrates legacy settings when using the default path', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings();
+
+    expect(migrateLegacySettings).toHaveBeenCalled();
+  });
+
+  it('does not migrate legacy settings for an explicit path', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings(TEST_SETTINGS_FILE);
+
+    expect(migrateLegacySettings).not.toHaveBeenCalled();
   });
 });
 

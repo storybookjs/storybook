@@ -12,14 +12,18 @@ const knownFiltersRegExp = new RegExp(
   'g'
 );
 
-export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => {
+export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals, parameters }) => {
   const { vision } = globals;
+  const isDisabled = parameters.visionSimulator?.disable === true;
 
   const applyVisionFilter = useCallback(() => {
     const existingFilters = document.body.style.filter.replaceAll(knownFiltersRegExp, '').trim();
 
-    const visionFilter = filters[vision as keyof typeof filters]?.filter;
-    if (vision !== undefined && !visionFilter) {
+    const visionFilter = isDisabled
+      ? undefined
+      : filters[vision as keyof typeof filters]?.filter;
+
+    if (!isDisabled && vision !== undefined && !visionFilter) {
       once.warn(
         `The vision simulation "${vision}" is not available. Remove or replace the "globals.vision" value. Available values: ${Object.keys(filters).join(', ')}.`
       );
@@ -36,7 +40,7 @@ export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => 
     }
 
     return () => (document.body.style.filter = existingFilters || 'none');
-  }, [vision]);
+  }, [isDisabled, vision]);
 
   useEffect(() => {
     const cleanup = applyVisionFilter();

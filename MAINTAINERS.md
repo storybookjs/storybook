@@ -5,9 +5,9 @@ This document outlines some of the processes that the maintainers should adhere 
 1. Triage with the correct [label](#labels)
 2. If there is a change related to it, ensure it has been published and tested before closing
 
-# Required Core/DX approval
+# Review eligibility
 
-Non-draft PRs must have an **approving review** from at least one active member of the Storybook **Core** or **Developer Experience** GitHub teams before merge. Maintainers (and other teams) do not satisfy this gate. Self-approvals do not count. One Core/DX approval is enough even if other Core/DX members requested changes. Approvals are not treated as stale when new commits are pushed.
+Reviews from users who are not members of the `storybookjs` GitHub organization are automatically dismissed by the [Dismiss non-member reviews workflow](.github/workflows/dismiss-non-member-reviews.yml). The workflow calls the GitHub org-members API with `STORYBOOKJS_ORG_MEMBERSHIP_TOKEN` (`read:org`, the same secret used for the CircleCI trusted-author checks) and falls back to `GITHUB_TOKEN`. Custom secrets can be withheld on fork PRs. When that happens, the fallback token may not resolve members whose org membership is private, and their reviews are dismissed anyway.
 
 # Labels
 

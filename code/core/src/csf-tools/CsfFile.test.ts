@@ -36,19 +36,23 @@ const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) =
 };
 
 describe('CsfFile', () => {
-  it('prints CRLF sources with LF output', async () => {
-    const os = (await import('node:os')).default;
-    const original = os.EOL;
-    Object.defineProperty(os, 'EOL', { value: '\r\n' });
-    try {
-      const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
-        '\r\n'
-      );
-      const csf = loadCsf(source, { makeTitle }).parse();
-      expect(printCsf(csf).code).not.toContain('\r');
-    } finally {
-      Object.defineProperty(os, 'EOL', { value: original });
-    }
+  it('prints an edited CRLF source with LF line endings', () => {
+    const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
+      '\r\n'
+    );
+    const csf = loadCsf(source, { makeTitle }).parse();
+    const [story] = csf.objects({ meta: false });
+    story.set(['args', 'label'], 'Hi');
+    expect(printCsf(csf).code).toBe(
+      'export default { title: "foo/bar" };\n\nexport const Story = { args: { label: "Hi" } };'
+    );
+  });
+
+  it('reports the line and column of a CSF error in a CRLF source', () => {
+    const source = ['const title = "foo";', 'export default { title: `${title}/bar` };'].join(
+      '\r\n'
+    );
+    expect(() => loadCsf(source, { makeTitle }).parse()).toThrow('(line 2, col 24)');
   });
 
   describe('basic', () => {

@@ -23,7 +23,7 @@ export async function warnWhenUsingArgTypesRegex(
     ) ?? false;
 
   if (hasVisualTestAddon && previewConfigPath && previewContent.includes('argTypesRegex')) {
-    const { program } = parseModule(previewContent, previewConfigPath);
+    const { program, code } = parseModule(previewContent, previewConfigPath);
     walk(program, (node) => {
       if (node.type === 'Identifier' && node.name === 'argTypesRegex') {
         const message = dedent`
@@ -31,7 +31,7 @@ export async function warnWhenUsingArgTypesRegex(
             'actions.argTypesRegex'
           )} together with the visual test addon:
           
-          ${codeFrame(previewConfigPath, previewContent, node.start)}
+          ${codeFrame(previewConfigPath, code, node.start)}
           
           We recommend removing the ${picocolors.cyan(
             'argTypesRegex'

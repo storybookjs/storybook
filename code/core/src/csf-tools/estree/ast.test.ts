@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { type E, codeFrame, expressionFromSource, outerSpan, parseModule, walk } from './ast.ts';
+import {
+  type E,
+  codeFrame,
+  expressionFromSource,
+  outerSpan,
+  parseModule,
+  textOf,
+  walk,
+} from './ast.ts';
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -74,6 +82,12 @@ describe('parseModule', () => {
     expect(outerSpan(assignment)).toMatchObject({ start: 0, end: 10 });
   });
 
+  it.each(['\r\n', '\r'])('parses %j line endings as LF at the same lines and columns', (eol) => {
+    const { code } = parseModule(['const a = 1;', 'const b = 2;', ''].join(eol));
+    expect(code).toBe('const a = 1;\nconst b = 2;\n');
+    expect(() => parseModule(['const a = 1;', 'const b = ;', ''].join(eol))).toThrow(/\(2:10\)$/);
+  });
+
   it('normalizes an expression nested deeper than the call stack allows recursion', () => {
     const { program } = parseModule(`x = ${Array(20_000).fill('(a)').join(' + ')};`);
     expect(program.body).toHaveLength(1);
@@ -84,18 +98,16 @@ describe('expressionFromSource', () => {
   it.each(['a) + (b', 'a); (b', 'a)(b'])('rejects %s, which is no single expression', (code) => {
     expect(() => expressionFromSource(code)).toThrow(`Expected an expression: ${code}`);
   });
+
+  it('normalizes a CRLF fragment to LF', () => {
+    expect(textOf(expressionFromSource('{\r\n  a: 1,\r\n}'))).toBe('{\n  a: 1,\n}');
+  });
 });
 
 describe('codeFrame', () => {
   it('points at the column of the index', () => {
     expect(codeFrame('Button.stories.ts', 'const a = 1;\nconst b = ;', 23)).toBe(
       'Button.stories.ts: (2:10)\n> 2 | const b = ;\n    |           ^'
-    );
-  });
-
-  it('leaves the carriage return of a CRLF line out of the frame', () => {
-    expect(codeFrame(undefined, 'const a = 1;\r\nconst b = ;\r\n', 24)).toBe(
-      '(2:10)\n> 2 | const b = ;\n    |           ^'
     );
   });
 });

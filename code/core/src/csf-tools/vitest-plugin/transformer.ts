@@ -72,11 +72,10 @@ export class GeneratedTail {
 // Generated lines map to their target node, so Vitest reports each test at its story.
 export const printWithTail = (editor: SourceEditor, tail: GeneratedTail, fileName: string) => {
   const head = editor.toString();
-  const { eol } = editor;
-  const map = editor.edits.generateMap({ hires: true, source: fileName, includeContent: true });
+  const map = editor.generateMap({ source: fileName });
   const decoded = decode(map.mappings);
   const firstLine = head.split('\n').length;
-  const separator = head.endsWith('\n') ? '' : eol;
+  const separator = head.endsWith('\n') ? '' : '\n';
   tail.lines.forEach(({ text, target }, index) => {
     const line = firstLine - (separator ? 0 : 1) + index;
     while (decoded.length <= line) {
@@ -93,7 +92,7 @@ export const printWithTail = (editor: SourceEditor, tail: GeneratedTail, fileNam
   });
   map.mappings = encode(decoded);
   return {
-    code: `${head}${separator}${tail.lines.map(({ text }) => text).join(eol)}${eol}`,
+    code: `${head}${separator}${tail.lines.map(({ text }) => text).join('\n')}\n`,
     map: map as CsfSourceMap,
   };
 };

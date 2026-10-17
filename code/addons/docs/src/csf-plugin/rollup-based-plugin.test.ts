@@ -110,6 +110,28 @@ describe('rollupBasedPlugin', () => {
     expect(entry).toMatchObject({ originalLine: positionOf(originalCode, 'play:').line });
     expect(result.map.sourcesContent).toEqual([originalCode]);
   });
+
+  it('prints a CRLF story file with LF, maps it line for line and keeps its content as written', async () => {
+    const crlf = originalCode.replaceAll('\n', '\r\n');
+    vol.fromJSON({ [id]: crlf });
+
+    const result = await transformCsf(crlf, id, {});
+    if (typeof result !== 'object') {
+      throw new Error('expected a transform result with a sourcemap');
+    }
+
+    expect(result.code).not.toMatch(/\r|\\r/);
+    const output = positionOf(result.code, 'play:');
+    const entry = new SourceMap(result.map as unknown as SourceMapPayload).findEntry(
+      output.line,
+      output.column
+    );
+    expect(entry).toMatchObject({
+      originalLine: positionOf(originalCode, 'play:').line,
+      originalColumn: positionOf(originalCode, 'play:').column,
+    });
+    expect(result.map.sourcesContent).toEqual([crlf]);
+  });
 });
 
 describe('transformCsf', () => {

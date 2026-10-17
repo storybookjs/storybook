@@ -22,6 +22,7 @@ export {
   isStringLiteral,
   isValidIdentifier,
   locationOf,
+  normalizeLineEndings,
   outerSpan,
   parseModule,
   placeableTextOf,

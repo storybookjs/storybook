@@ -1247,10 +1247,12 @@ export const formatConfig = (config: ConfigFile): string => {
   return printConfig(config).code;
 };
 
-/** Print the config with its edits; untouched code is preserved byte for byte. */
+/**
+ * Print the config with its edits and `\n` line endings; untouched code is otherwise preserved
+ * byte for byte.
+ */
 export const printConfig = (config: ConfigFile): PrintResultType => {
-  // Written files always use LF line endings, whatever the input used.
-  const code = config._editorSource.toString().replace(/\r\n?/g, '\n');
+  const code = config._editorSource.toString();
   return { code, toString: () => code };
 };
 

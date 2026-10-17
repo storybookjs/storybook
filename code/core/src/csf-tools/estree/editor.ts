@@ -8,6 +8,7 @@ import {
   type Property,
   isNode,
   isValidIdentifier,
+  normalizeLineEndings,
   outerSpan,
   parseModule,
   parsePrintable,
@@ -43,7 +44,8 @@ export type InputSourceMap =
 
 /**
  * Source text plus its OXC AST. Edits accumulate in `edits`, so untouched code stays
- * byte-identical; `commit()` applies them and parses the result again.
+ * byte-identical; `commit()` applies them and parses the result again. Line endings are
+ * normalized to `\n`, so `code`, node offsets and `toString()` all use `\n`.
  */
 export class SourceEditor {
   _module: ParsedModule;
@@ -58,12 +60,16 @@ export class SourceEditor {
   // code the editor was created with.
   _committed: SourceMap[] = [];
 
+  // The code the editor was created with, line endings included: the content its maps name.
+  readonly _originalCode: string;
+
   readonly fileName: string | undefined;
 
   constructor(code: string, fileName?: string) {
     this.fileName = fileName;
+    this._originalCode = code;
     this._module = parsePrintable(code, fileName);
-    this._edits = new MagicString(code, { filename: fileName });
+    this._edits = new MagicString(this.code, { filename: fileName });
   }
 
   get code() {
@@ -125,20 +131,17 @@ export class SourceEditor {
     this._committed.push(
       this._edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
     );
-    this.replaceSource(this._edits.toString());
-    return true;
-  }
-
-  replaceSource(code: string) {
-    this._module = parsePrintable(code, this.fileName);
+    this._module = parsePrintable(this._edits.toString(), this.fileName);
     this._scopes = undefined;
     this._parents = undefined;
-    this._edits = new MagicString(code, { filename: this.fileName });
+    this._edits = new MagicString(this.code, { filename: this.fileName });
+    return true;
   }
 
   /**
    * Hi-res map from the code the editor was created with to `toString()`, through every commit,
-   * and through `inputSourceMap` when the code came from an earlier transform.
+   * and through `inputSourceMap` when the code came from an earlier transform. Without an input
+   * map, `sourcesContent` is that code as it was passed in, line endings included.
    */
   generateMap(options: { source?: string; inputSourceMap?: InputSourceMap } = {}): GeneratedMap {
     const source = options.source ?? this.fileName ?? '';
@@ -154,6 +157,7 @@ export class SourceEditor {
     const chain = [current, ...this._committed.slice().reverse()];
     if (chain.length === 1 && !input) {
       current.sources = [source];
+      current.sourcesContent = [this._originalCode];
       return current;
     }
     const maps = chain.map((map) => map as unknown as SourceMapInput);
@@ -174,7 +178,9 @@ export class SourceEditor {
       file: composed.file ?? '',
       sources: composed.sources as string[],
       // Unknown content stays `null`, so devtools load the file instead of showing it empty.
-      sourcesContent: composed.sourcesContent as string[] | undefined,
+      sourcesContent: input
+        ? (composed.sourcesContent as string[] | undefined)
+        : composed.sources.map(() => this._originalCode),
       names: composed.names,
       // Encoded, since `decodedMappings` was not requested.
       mappings: composed.mappings as string,
@@ -185,14 +191,8 @@ export class SourceEditor {
     return map;
   }
 
-  /** Line ending of the file; inserted text is written with `\n` and converted on output. */
-  get eol(): '\n' | '\r\n' {
-    return this.code.includes('\r\n') ? '\r\n' : '\n';
-  }
-
   toString() {
-    const code = this._edits.toString();
-    return this.eol === '\r\n' ? code.replace(/\r?\n/g, '\r\n') : code;
+    return this._edits.toString();
   }
 
   /** Quote for generated strings, overriding the inferred one. */
@@ -237,7 +237,8 @@ export const printValue = (
     return 'null';
   }
   if (typeof value === 'function') {
-    return value.toString();
+    // A function prints as the text of the file it was loaded from, which may use CRLF.
+    return normalizeLineEndings(value.toString());
   }
   if (typeof value === 'string') {
     return printString(value, quote);
@@ -491,10 +492,12 @@ const reindentLines = (text: string, from: string, to: string, literals: readonl
 };
 
 /**
- * Re-indent the continuation lines of `text`, leaving string and template literal values alone.
- * Text that does not parse is returned unchanged, as its literals cannot be located.
+ * Re-indent the continuation lines of `text`, leaving string and template literal values alone,
+ * and normalize its line endings to `\n`. Text that does not parse keeps its indentation, as its
+ * literals cannot be located.
  */
-export const reindent = (text: string, from: string, to: string) => {
+export const reindent = (source: string, from: string, to: string) => {
+  const text = normalizeLineEndings(source);
   if (from === to || !text.includes('\n')) {
     return text;
   }

@@ -170,7 +170,7 @@ const renameImports = (code: string, framework: string) => {
     .sort((a, b) => b.start - a.start)
     .reduce(
       (result, { start, end }) => result.slice(0, start) + framework + result.slice(end),
-      code
+      ast.code
     );
 };
 
@@ -200,7 +200,7 @@ const mergeImports = (code: string, source: string) => {
       continue;
     }
     const specifiers = [first, ...rest].flatMap(({ specifiers }) =>
-      specifiers.map((specifier) => code.slice(specifier.start, specifier.end))
+      specifiers.map((specifier) => ast.code.slice(specifier.start, specifier.end))
     );
     edits.push({
       start: first.specifiers[0].start,
@@ -208,9 +208,9 @@ const mergeImports = (code: string, source: string) => {
       text: [...new Set(specifiers)].join(', '),
     });
     for (const node of rest) {
-      const lineStart = code.lastIndexOf('\n', node.start - 1) + 1;
-      const lineEnd = code.startsWith('\r\n', node.end) ? 2 : code[node.end] === '\n' ? 1 : 0;
-      const ownLine = code.slice(lineStart, node.start).trim() === '' && lineEnd > 0;
+      const lineStart = ast.code.lastIndexOf('\n', node.start - 1) + 1;
+      const lineEnd = ast.code[node.end] === '\n' ? 1 : 0;
+      const ownLine = ast.code.slice(lineStart, node.start).trim() === '' && lineEnd > 0;
       edits.push(
         ownLine
           ? { start: lineStart, end: node.end + lineEnd, text: '' }
@@ -223,7 +223,7 @@ const mergeImports = (code: string, source: string) => {
     .sort((a, b) => b.start - a.start)
     .reduce(
       (result, { start, end, text }) => result.slice(0, start) + text + result.slice(end),
-      code
+      ast.code
     );
 };
 

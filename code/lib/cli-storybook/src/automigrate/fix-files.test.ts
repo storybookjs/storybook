@@ -77,6 +77,19 @@ describe('createFixFiles', () => {
     ).toEqual([story]);
   });
 
+  it('reads a CRLF file with LF line endings, so only a real edit rewrites it', async () => {
+    const { files, commit } = createFixFiles();
+    fs.writeFileSync(main, "export default {\r\n  addons: ['a'],\r\n};\r\n");
+
+    expect(await files.editConfig(main, () => {})).toBe(false);
+    expect(await files.editConfig(main, (config) => config.set(['framework'], 'x'))).toBe(true);
+    await commit();
+
+    expect(fs.readFileSync(main, 'utf8')).toBe(
+      "export default {\n  addons: ['a'],\n  framework: 'x',\n};\n"
+    );
+  });
+
   it('refuses to overwrite a file another writer changed after it was read', async () => {
     const { files, commit } = createFixFiles();
     await files.edit(story, (source) => source.replace('@storybook/test', 'storybook/test'));

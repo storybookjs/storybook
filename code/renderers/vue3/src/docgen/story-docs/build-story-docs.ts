@@ -175,7 +175,7 @@ export async function buildStoryDocsPayload(
       filePath: storyPath,
       ...(context.references ?? openStoryReferences()),
     }),
-    source: storyFile,
+    source: csf._code,
   });
 
   return {

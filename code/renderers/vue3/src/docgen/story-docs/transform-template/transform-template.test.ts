@@ -467,10 +467,9 @@ export const Primary = {
     `);
   });
 
-  it('takes the whole CRLF line when the dropped binding was written on its own', async () => {
+  it('prints a CRLF template with LF, taking the whole line of a dropped binding', async () => {
     expect(
-      (
-        await primarySnippet(`
+      await primarySnippet(`
 export const Primary = {
   args: {
     label: 'Hi',
@@ -484,7 +483,6 @@ export const Primary = {
   }),
 };
 `)
-      )?.replaceAll('\r\n', '\n')
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
@@ -1868,6 +1866,19 @@ const onSubmit = () => null;
 </template>`);
   });
 
+  it('substitutes an arg in an expression across the lines of a CRLF template', () => {
+    const snippet = transformTemplate({
+      args: [prop('label', `'Hi'`)],
+      componentImports: new Map([['C', `import C from './C.vue';`]]),
+      componentName: 'C',
+      importBindings: new Map(),
+      template: `<C :title="'x' +\r\n  args.label" />`,
+      unsetArgs: new Set(),
+    })!.snippet;
+
+    expect(snippet).toContain(`<C :title="'x' +\n    'Hi'" />`);
+  });
+
   it('sorts event attributes after prop attributes', () => {
     const snippet = render([event('onSubmit', 'submit', '() => null'), prop('label', `'Send'`)]);
 
@@ -1885,7 +1896,7 @@ function render(args: ClassifiedArg[], componentName = 'C'): string {
     importBindings: new Map(),
     template: `<${componentName} v-bind="args" />`,
     unsetArgs: new Set(),
-  })!.snippet.replaceAll('\r\n', '\n');
+  })!.snippet;
 }
 
 function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {

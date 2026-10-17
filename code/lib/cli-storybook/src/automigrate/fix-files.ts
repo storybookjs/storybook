@@ -2,7 +2,12 @@ import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { HandledError } from 'storybook/internal/common';
-import { type ConfigFile, formatConfig, loadConfig } from 'storybook/internal/csf-tools';
+import {
+  type ConfigFile,
+  formatConfig,
+  loadConfig,
+  normalizeLineEndings,
+} from 'storybook/internal/csf-tools';
 
 import { editParsedFile } from './helpers/edit-parsed-file.ts';
 
@@ -21,7 +26,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  * refuses to overwrite a file that something else (such as `add()`) changed after the fix read it.
  */
 export interface FixFiles {
-  /** Read a file, including edits staged earlier by the same fix. */
+  /** Read a file with `\n` line endings, including edits staged earlier by the same fix. */
   read(path: string): Promise<string>;
   /** Stage the complete contents of a file. */
   write(path: string, content: string): void;
@@ -58,7 +63,7 @@ export const createFixFiles = () => {
     }
     const content = await readFile(path, 'utf-8');
     originals.set(key, content);
-    return content;
+    return normalizeLineEndings(content);
   };
 
   const edit: FixFiles['edit'] = async (paths, transform) => {

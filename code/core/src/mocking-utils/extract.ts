@@ -6,10 +6,10 @@ import type { CoreConfig } from 'storybook/internal/types';
 
 import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
-import MagicString from 'magic-string';
 import { basename, normalize } from 'pathe';
 
 import { parseModule } from '../csf-tools/estree/ast.ts';
+import { SourceEditor } from '../csf-tools/estree/editor.ts';
 import { resolveMock } from './resolve.ts';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
@@ -39,11 +39,16 @@ interface ExtractMockCallsOptions {
  * Parse a module into an ESTree program. The file extension picks the grammar, so a `.ts` module
  * keeps its generic arrows; without a TS or JS extension the TSX and TS grammars are both tried.
  * Throws on syntax errors.
+ *
+ * Node offsets index `normalizeLineEndings(code)`, which differs from `code` when it uses CRLF.
  */
 export const parseModuleAst = (code: string, fileName?: string) =>
   parseModule(code, fileName).program;
 
-/** @deprecated Use `parseModuleAst`. It returns an ESTree program, no longer a Babel AST. */
+/**
+ * @deprecated Use `parseModuleAst`. It returns an ESTree program, no longer a Babel AST, and its
+ *   offsets index the code with `\n` line endings.
+ */
 export const babelParser = parseModuleAst;
 
 const isStringLiteral = (node: any): boolean =>
@@ -55,10 +60,9 @@ const isStaticImport = (node: any): boolean =>
 
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
 export function rewriteSbMockImportCalls(code: string, fileName: string) {
-  const ast = parseModuleAst(code, fileName);
-  const edits = new MagicString(code);
+  const editor = new SourceEditor(code, fileName);
 
-  walk(ast as any, {
+  walk(editor.program as any, {
     enter(node: any) {
       if (
         node.type === 'CallExpression' &&
@@ -72,17 +76,17 @@ export function rewriteSbMockImportCalls(code: string, fileName: string) {
       ) {
         // Replace sb.mock(import('foo'), ...) with sb.mock('foo', ...)
         const [argument] = node.arguments;
-        edits.overwrite(argument.start, argument.end, JSON.stringify(argument.source.value));
+        editor.edits.overwrite(argument.start, argument.end, JSON.stringify(argument.source.value));
       }
     },
   });
-  if (!edits.hasChanged()) {
+  if (!editor.pending) {
     return { code, map: null };
   }
   // Spread into a plain object: babel-loader, next in the webpack chain, rejects a string map.
-  const map = { ...edits.generateMap({ hires: true, includeContent: true, source: fileName }) };
+  const map = { ...editor.generateMap() };
   return {
-    code: edits.toString(),
+    code: editor.toString(),
     map: { ...map, sourcesContent: map.sourcesContent as string[] },
   };
 }

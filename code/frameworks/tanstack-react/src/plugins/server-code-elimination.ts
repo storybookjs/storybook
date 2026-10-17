@@ -65,12 +65,7 @@ export function serverCodeEliminationPlugin(options: { excludeFiles?: string[] }
           return null;
         }
 
-        return {
-          code: editor.toString(),
-          map: editor.edits
-            .generateMap({ source: id, includeContent: true, hires: true })
-            .toString(),
-        };
+        return { code: editor.toString(), map: editor.generateMap({ source: id }).toString() };
       },
     },
   };

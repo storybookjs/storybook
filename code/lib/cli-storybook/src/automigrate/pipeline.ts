@@ -8,6 +8,7 @@ import {
   formatConfig,
   loadConfig,
   loadCsf,
+  normalizeLineEndings,
   printCsf,
 } from 'storybook/internal/csf-tools';
 
@@ -221,8 +222,7 @@ export const runTransforms = async (
     }
 
     // Printers emit `\n`, so a CRLF file would otherwise always look changed.
-    const source = raw.replaceAll('\r\n', '\n');
-    const crlf = source !== raw && !/(?<!\r)\n/.test(raw);
+    const source = normalizeLineEndings(raw);
     let code = source;
     // Kept across consecutive edits; dropped when a handler rewrites the text or an edit fails, so
     // the next edit parses `code`, the output of the last hook that succeeded.
@@ -258,7 +258,7 @@ export const runTransforms = async (
     if (write && code !== source) {
       try {
         const output = printed ? await formatExistingFile(context.id, code) : code;
-        await writeFile(context.id, crlf ? output.replace(/\r?\n/g, '\r\n') : output);
+        await writeFile(context.id, output);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {
           if (outcome.changed.includes(context.id)) {

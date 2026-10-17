@@ -13,6 +13,7 @@ import {
   type ImportBinding,
   isStringLiteral,
   keyOf,
+  normalizeLineEndings,
   parseModule,
   propertyValue,
   unwrapExpression,
@@ -203,8 +204,10 @@ export function readTemplateRenderConfig(
 export function transformTemplate(
   input: TransformTemplateInput
 ): TransformTemplateResult | undefined {
+  // `parseModule` normalizes line endings, so template expressions must already use `\n`.
+  const template = normalizeLineEndings(input.template);
   let invalid = false;
-  const ast = parse(input.template, { onError: () => (invalid = true) });
+  const ast = parse(template, { onError: () => (invalid = true) });
   if (invalid) {
     return undefined;
   }
@@ -217,7 +220,7 @@ export function transformTemplate(
     componentImports: input.componentImports,
     componentName: input.componentName,
     importBindings: input.importBindings ?? new Map(),
-    template: input.template,
+    template,
   };
 
   if (input.setup && !seedForwardedSetup(input.setup, state)) {
@@ -238,7 +241,7 @@ export function transformTemplate(
 
   return {
     snippet: renderPreparedSfcSnippet({
-      templateCode: applyEdits(input.template, state.edits),
+      templateCode: applyEdits(template, state.edits),
       ctx: state.ctx,
     }),
   };
@@ -283,7 +286,6 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
-    text = text.replace(/\r\n?/g, '\n');
     state.ctx.statements.push(dedentBy(text, statement.column));
   }
   return true;
@@ -896,13 +898,8 @@ function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, templat
 
   const lineStart = blankRunStart(template, start);
   const lineEnd = blankRunEnd(template, end);
-  const lineTerminator = lineTerminatorAt(template, lineEnd);
-  if (template[lineStart - 1] === '\n' && lineTerminator) {
-    return {
-      start: previousLineTerminatorStart(template, lineStart),
-      end: lineTerminator.start,
-      text,
-    };
+  if (template[lineStart - 1] === '\n' && template[lineEnd] === '\n') {
+    return { start: lineStart - 1, end: lineEnd, text };
   }
   return { start: lineStart, end, text };
 }
@@ -921,17 +918,6 @@ function blankRunEnd(template: string, index: number): number {
     cursor += 1;
   }
   return cursor;
-}
-
-function lineTerminatorAt(template: string, index: number): { start: number } | undefined {
-  if (template[index] === '\r' && template[index + 1] === '\n') {
-    return { start: index };
-  }
-  return template[index] === '\n' ? { start: index } : undefined;
-}
-
-function previousLineTerminatorStart(template: string, index: number): number {
-  return template[index - 2] === '\r' ? index - 2 : index - 1;
 }
 
 /**

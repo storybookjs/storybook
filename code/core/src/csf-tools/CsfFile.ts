@@ -1232,10 +1232,12 @@ export const formatCsf = (
   };
 };
 
-/** Print the file with its pending edits; untouched code is preserved byte for byte. */
+/**
+ * Print the file with its pending edits and `\n` line endings; untouched code is otherwise
+ * preserved byte for byte.
+ */
 export const printCsf = (csf: CsfFile): PrintResultType => {
-  // Written files always use LF line endings, whatever the input used.
-  const code = csf._editor.toString().replace(/\r\n?/g, '\n');
+  const code = csf._editor.toString();
   return { code, toString: () => code };
 };
 
@@ -1250,7 +1252,7 @@ export const writeCsf = async (csf: CsfFile, fileName?: string) => {
   if (!fname) {
     throw new Error('Please specify a fileName for writeCsf');
   }
-  await writeFile(fileName as string, printCsf(csf).code);
+  await writeFile(fname, printCsf(csf).code);
 };
 
 export { isFunction };

@@ -7,7 +7,7 @@ import type {
 } from 'estree';
 import MagicString from 'magic-string';
 
-import { outerSpan } from '../csf-tools/estree/ast.ts';
+import { normalizeLineEndings, outerSpan } from '../csf-tools/estree/ast.ts';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
 
 // An ESTree program; OXC's own `Program` type is structurally compatible with what is read here.
@@ -53,9 +53,11 @@ export function automockModule(
 ): MagicString {
   const globalThisAccessor =
     options.globalThisAccessor || JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__);
-  const ast = parse(code) as Program;
+  // Edits apply at the parsed offsets, which index the code with `\n` line endings.
+  const text = normalizeLineEndings(code);
+  const ast = parse(text) as Program;
 
-  const m = new MagicString(code);
+  const m = new MagicString(text);
 
   const allSpecifiers: { name: string; alias?: string }[] = [];
   let importIndex = 0;

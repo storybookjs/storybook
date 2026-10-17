@@ -75,10 +75,16 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
   return { module: { code, program: result.program, comments: result.comments } };
 };
 
+/** Replace CRLF and lone CR line endings with `\n`, as every parse does first. */
+export const normalizeLineEndings = (code: string) => code.replace(/\r\n?/g, '\n');
+
 /**
  * Parse a module. Without a TS or JS file extension there is no grammar to pick: TSX accepts the
  * most, but rejects generic arrows and `<T>value` assertions that `.ts` allows, so TS is tried next
  * and the error of the parse that got further is reported.
+ *
+ * Line endings are normalized to `\n` first, so node offsets index the returned `code`, which can
+ * be shorter than the code passed in. Lines and columns are the same in both.
  *
  * The tree has no parenthesized nodes: `outerSpan` gives the span of the parentheses around one.
  */
@@ -91,11 +97,12 @@ export const parseModule = (code: string, fileName?: string): ParsedModule => {
 // `parseModule`, but `textOf` can print every node of the tree.
 export const parsePrintable = (code: string, fileName?: string): ParsedModule => {
   const module = parseWithParentheses(code, fileName);
-  normalize(module.program, code);
+  normalize(module.program, module.code);
   return module;
 };
 
-const parseWithParentheses = (code: string, fileName: string | undefined): ParsedModule => {
+const parseWithParentheses = (source: string, fileName: string | undefined): ParsedModule => {
+  const code = normalizeLineEndings(source);
   const lang = fileName === undefined ? undefined : langFor(fileName);
   const attempt = lang ? parseWith(code, fileName, lang) : parseEither(code, fileName);
   if ('module' in attempt) {
@@ -166,7 +173,7 @@ export const locationOf = (code: string, start: number, end: number): SourceLoca
 /** `file: (line:column)` and the offending line with a marker under `index`, as Babel printed it. */
 export const codeFrame = (fileName: string | undefined, code: string, index: number) => {
   const { line, column } = locationOf(code, index, index).start;
-  const text = (code.split('\n')[line - 1] ?? '').replace(/\r$/, '');
+  const text = code.split('\n')[line - 1] ?? '';
   const gutter = ' '.repeat(String(line).length);
   return `${fileName ? `${fileName}: ` : ''}(${line}:${column})\n> ${line} | ${text}\n  ${gutter} | ${' '.repeat(column)}^`;
 };
@@ -406,7 +413,8 @@ export const placeableTextOf = (node: Node): string => {
 /** Parse an expression fragment, which has no file name to pick its grammar. */
 export const parseFragment = (code: string): ParsedModule => parseModule(code);
 
-export const expressionFromSource = (code: string): E.Expression => {
+export const expressionFromSource = (source: string): E.Expression => {
+  const code = normalizeLineEndings(source);
   // The line break ends a trailing line comment before the closing parenthesis.
   const wrapped = `(${code}\n)`;
   const { program, comments } = parseWithParentheses(wrapped, undefined);

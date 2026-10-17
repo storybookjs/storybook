@@ -99,4 +99,21 @@ describe('webpack loader', () => {
     const entry = new SourceMap(result.map).findEntry(output.line, output.column);
     expect(entry).toMatchObject({ originalLine: positionOf(originalCode, 'play:').line });
   });
+
+  it('prints a CRLF story file with LF and maps it through the incoming source map', async () => {
+    const crlf = originalCode.replaceAll('\n', '\r\n');
+    vol.fromJSON({ [id]: crlf });
+    const transpiled = transpile(crlf);
+
+    const result = await run(transpiled.code, transpiled.map);
+
+    expect(result.code).not.toMatch(/\r|\\r/);
+    const output = positionOf(result.code, 'play:');
+    const entry = new SourceMap(result.map).findEntry(output.line, output.column);
+    expect(entry).toMatchObject({
+      originalLine: positionOf(originalCode, 'play:').line,
+      originalColumn: positionOf(originalCode, 'play:').column,
+    });
+    expect(result.map.sourcesContent).toEqual([crlf]);
+  });
 });

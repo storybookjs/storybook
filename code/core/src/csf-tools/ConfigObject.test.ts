@@ -80,7 +80,6 @@ describe('ConfigFile mutations', () => {
     expect(config.set(['tags'], ['autodocs']).ok).toBe(true);
 
     const result = printConfig(config);
-    // Recast defaults to `os.EOL`; printed files must stay LF on Windows too.
     expect(result.code).not.toContain('\r');
     // Freshly generated nodes must reuse the source's quote style, which is
     // only inferable when token offsets align with the original code.

@@ -19,6 +19,7 @@ import {
   prependStatement,
   prependToList,
   printMembers,
+  printValue,
   reindent,
   removeFromList,
   removeStatement,
@@ -62,6 +63,10 @@ describe('reindent', () => {
   it('re-indents code lines only', () => {
     expect(reindent('{\n  a: 1,\n}', '', '    ')).toBe('{\n      a: 1,\n    }');
     expect(reindent('{\n    a: 1,\n  }', '  ', '')).toBe('{\n  a: 1,\n}');
+  });
+
+  it('re-indents CRLF text with LF line endings, leaving its template literals alone', () => {
+    expect(reindent('{\r\n  a: `x\r\ny`,\r\n}', '', '  ')).toBe('{\n    a: `x\ny`,\n  }');
   });
 
   it('leaves the lines of template literals and continued strings alone', () => {
@@ -292,7 +297,7 @@ describe('removeStatement', () => {
       "import a from 'a';\r\n\r\n\r\nconst b = 1;\r\nconst c = 2;\r\n"
     );
     removeStatement(editor, editor.program.body[1]);
-    expect(editor.toString()).toBe("import a from 'a';\r\nconst c = 2;\r\n");
+    expect(editor.toString()).toBe("import a from 'a';\nconst c = 2;\n");
   });
 
   it('removes every comment that trails the statement on its line', () => {
@@ -575,12 +580,12 @@ describe('parenthesized default exports', () => {
 });
 
 describe('line endings', () => {
-  it('writes inserted text with the line ending of the file', () => {
-    const csf = parse('export default {\r\n  title: "A",\r\n};\r\n');
+  it.each(['\r\n', '\r'])('prints a file with %j line endings with LF only', (eol) => {
+    const csf = parse(['export default {', '  title: "A",', '};', ''].join(eol));
     const [meta] = csf.objects({ stories: false });
     meta.set(['parameters', 'layout'], 'centered');
     expect(csf._editor.toString()).toBe(
-      'export default {\r\n  title: "A",\r\n  parameters: { layout: "centered" },\r\n};\r\n'
+      'export default {\n  title: "A",\n  parameters: { layout: "centered" },\n};\n'
     );
   });
 });
@@ -721,6 +726,13 @@ describe('printMembers', () => {
   });
 });
 
+describe('printValue', () => {
+  it('prints a function loaded from a CRLF file with LF line endings', () => {
+    const fn = Object.assign(() => 1, { toString: () => '() => {\r\n  return 1;\r\n}' });
+    expect(printValue(fn, "'")).toBe('() => {\n  return 1;\n}');
+  });
+});
+
 describe('generateMap', () => {
   const original = `const a = 1;\nconst b = 2;\nexport default { title: 'A' };\n`;
   // An earlier transform: drops the first line and maps the result back to `original`.
@@ -776,6 +788,20 @@ describe('generateMap', () => {
     });
     expect(result.sources).toEqual(['Button.stories.tsx']);
     expect(result.sourceRoot).toBe('webpack:///src/');
+  });
+
+  it('maps a CRLF file line for line and keeps its content as written', () => {
+    const crlf = original.replaceAll('\n', '\r\n');
+    const editor = new SourceEditor(crlf, 'file.ts');
+    editOf(editor);
+    editor.commit();
+    editor.edits.appendLeft(0, '// header\n');
+    const result = editor.generateMap();
+    expect(result.sourcesContent).toEqual([crlf]);
+    expect(entryOf(result, editor.toString(), 'title')).toMatchObject({
+      originalLine: 2,
+      originalColumn: original.split('\n')[2].indexOf('title'),
+    });
   });
 
   it('names the source as requested after a committed edit', () => {

@@ -224,6 +224,14 @@ describe('extractMockCalls', () => {
       `);
     });
 
+    it('rewrites a call on a later line of a CRLF file', () => {
+      const result = extractModule.rewriteSbMockImportCalls(
+        `import 'a';\r\n\r\nsb.mock(import('./bar/baz'), { spy: true });\r\n`,
+        'preview.ts'
+      );
+      expect(result.code).toBe(`import 'a';\n\nsb.mock("./bar/baz", { spy: true });\n`);
+    });
+
     it('names the file in the map and returns no map when nothing changed', () => {
       const changed = extractModule.rewriteSbMockImportCalls(
         `sb.mock(import('./bar/baz'));`,

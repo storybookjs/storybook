@@ -33,6 +33,19 @@ describe('getAutomockCode', () => {
     expect(() => parseModuleAst(mocked, '/mod.ts')).not.toThrow();
   });
 
+  it('mocks every export of a CRLF module', () => {
+    const code = 'export const a = 1;\r\nexport function b() {}\r\nexport default a;\r\n';
+
+    const mocked = getAutomockCode(code, false, (source) =>
+      parseModuleAst(source, '/mod.ts')
+    ).toString();
+
+    expect(mocked).toContain('["a"]: a,');
+    expect(mocked).toContain('["b"]: b,');
+    expect(mocked).toContain('["__vitest_default"]: __vitest_default,');
+    expect(() => parseModuleAst(mocked, '/mod.ts')).not.toThrow();
+  });
+
   it('mocks a .ts module with generic arrows under a Vite id with a query', () => {
     const code = 'export const identity = <T>(value: T) => value;';
 

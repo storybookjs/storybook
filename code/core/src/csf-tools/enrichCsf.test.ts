@@ -7,7 +7,7 @@ import type { EnrichCsfOptions } from './enrichCsf.ts';
 import { enrichCsf, extractSource } from './enrichCsf.ts';
 
 expect.addSnapshotSerializer({
-  print: (val: any) => val.replace(/\\r\\n/gm, '\\n'),
+  print: (val: any) => val,
   test: () => true,
 });
 

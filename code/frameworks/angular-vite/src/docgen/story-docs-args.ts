@@ -57,8 +57,7 @@ export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string 
 
 // Continuation lines keep the story file's indentation, which the snippet replaces with its own.
 // Lines inside template literals are values and keep theirs.
-const printArgSource = (source: string): string => {
-  const code = source.replace(/\r\n/g, '\n');
+const printArgSource = (code: string): string => {
   const lines = code.split('\n').slice(1);
   const last = lines.at(-1);
   const indents = lines.filter((line) => line.trim()).map((line) => /^[ \t]*/.exec(line)![0]);
@@ -80,8 +79,7 @@ const printArgSource = (source: string): string => {
 };
 
 const withoutComments = (code: string): string => {
-  const wrapped = `(${code.replace(/\r\n/g, '\n')}\n)`;
-  const { comments } = parseModule(wrapped);
+  const { code: wrapped, comments } = parseModule(`(${code}\n)`);
   let result = '';
   let cursor = 0;
   for (const comment of comments) {

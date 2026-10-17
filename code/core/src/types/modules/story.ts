@@ -46,6 +46,16 @@ export interface ProjectAnnotations<
 > extends BaseProjectAnnotations<TRenderer> {
   testingLibraryRender?: (...args: never[]) => { unmount: () => void };
   renderToCanvas?: RenderToCanvas<TRenderer>;
+  /**
+   * Load a file of the story index, for a framework whose story files cannot be imported as is.
+   *
+   * The store caches a CSF file by the identity of the returned exports, so return the same object
+   * for the same module.
+   */
+  experimental_loadStoryFile?: (
+    importPath: Path,
+    importFn: ModuleImportFn
+  ) => Promise<ModuleExports>;
 }
 
 type NamedExportsOrDefault<TExport> = TExport | { default: TExport };

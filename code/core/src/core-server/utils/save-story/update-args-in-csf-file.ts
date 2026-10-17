@@ -33,7 +33,7 @@ export const updateArgsInCsfFile = async (
       if (!isValidIdentifier(k, false)) {
         throw new SaveStoryError(`Invalid arg name: ${JSON.stringify(k)}`);
       }
-      return [k, valueToSource(v, editor.quote)];
+      return [k, valueToSource(v, editor)];
     })
   );
 
@@ -70,7 +70,10 @@ export const updateArgsInCsfFile = async (
 
   if (!argsProperty) {
     prependMembers(editor, story, [
-      `args: ${printMembers(Object.entries(args).map(([key, value]) => `${key}: ${value}`))}`,
+      `args: ${printMembers(
+        Object.entries(args).map(([key, value]) => `${key}: ${value}`),
+        editor.indent
+      )}`,
     ]);
     return;
   }

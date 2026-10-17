@@ -355,8 +355,6 @@ export class ConfigFile implements CsfObject {
 
   _exportsObject: E.ObjectExpression | undefined;
 
-  _quotes: 'single' | 'double' | undefined;
-
   fileName?: string;
 
   hasDefaultExport = false;
@@ -412,8 +410,6 @@ export class ConfigFile implements CsfObject {
   };
 
   parse() {
-    // Read before any edit: a mutation may remove the string literals the style is inferred from.
-    this._editor.preferredQuote = this._quote;
     walk(this._program, (node, parent) => {
       const isTopLevel = parent?.type === 'Program';
       if (node.type === 'ExportDefaultDeclaration') {
@@ -777,26 +773,8 @@ export class ConfigFile implements CsfObject {
     }
   }
 
-  _inferQuotes() {
-    if (!this._quotes) {
-      const occurrences = { "'": 0, '"': 0 };
-      walk(this._program, (node) => {
-        const raw = isStringLiteral(node) ? node.raw : undefined;
-        if (typeof raw === 'string' && (raw[0] === "'" || raw[0] === '"')) {
-          occurrences[raw[0] as "'" | '"'] += 1;
-        }
-      });
-      this._quotes = occurrences["'"] > occurrences['"'] ? 'single' : 'double';
-    }
-    return this._quotes;
-  }
-
-  get _quote() {
-    return this._inferQuotes() === 'single' ? "'" : '"';
-  }
-
   valueToNode(value: any): CsfExpression | undefined {
-    return parseExpression(printValue(value, this._quote));
+    return parseExpression(printValue(value, this._editor.quote));
   }
 
   getBodyDeclarations(): Node[] {
@@ -878,7 +856,7 @@ export class ConfigFile implements CsfObject {
           .arguments[0] as E.StringLiteral
       ).value;
     }
-    const source = printString(fromImport, this._quote);
+    const source = printString(fromImport, this._editor.quote);
     const editor = this._editor;
 
     // if the import specifier is a string, we're dealing with default imports
@@ -956,7 +934,7 @@ export class ConfigFile implements CsfObject {
       fromImport = importDeclaration.source.value;
     }
     const editor = this._editor;
-    const source = printString(fromImport, this._quote);
+    const source = printString(fromImport, this._editor.quote);
     const has = (type: string, name?: string) =>
       !!importDeclaration?.specifiers.some(
         (specifier) =>

@@ -5,6 +5,7 @@ import {
   type ESTreeNode as Node,
   loadConfig,
   printConfig,
+  printString,
   removeStatements,
   setImportSpecifiers,
   prependStatement,
@@ -49,7 +50,6 @@ export async function configToCsfFactory(
   const methodName = configType === 'main' ? 'defineMain' : 'definePreview';
   const editor = config._editor;
   const exportDecls = config._exportDecls;
-  const quote = config._quote;
 
   const defineConfigProps = getConfigProperties(editor, exportDecls, { configType });
   const hasNamedExports = defineConfigProps.length > 0;
@@ -207,7 +207,7 @@ export async function configToCsfFactory(
     // if not, add import { defineMain } from '@storybook/framework'
     prependStatement(
       editor,
-      `import { ${methodName} } from ${quote}${expectedImportSource}${quote};`
+      `import { ${methodName} } from ${printString(expectedImportSource, editor.quote)};`
     );
   }
   config._editor.commit();

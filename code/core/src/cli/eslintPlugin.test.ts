@@ -331,7 +331,7 @@ describe('configureEslintPlugin', () => {
             require.resolve('@acme/eslint-config/react'),
           ),
           cypress.configs.recommended,
-          ...storybook.configs["flat/recommended"],
+          ...storybook.configs['flat/recommended'],
         ];"
       `);
       expect(content).not.toContain('import storybook');
@@ -362,7 +362,7 @@ describe('configureEslintPlugin', () => {
 
         module.exports = [
           { rules: { 'no-console': 'error' } },
-          ...storybook.configs["flat/recommended"],
+          ...storybook.configs['flat/recommended'],
         ];"
       `);
     });
@@ -413,7 +413,7 @@ describe('configureEslintPlugin', () => {
         const storybook = require('eslint-plugin-storybook');
         const { defineConfig } = require('eslint/config');
 
-        module.exports = defineConfig([{ rules: { 'no-console': 'error' } }, ...storybook.configs["flat/recommended"]]);"
+        module.exports = defineConfig([{ rules: { 'no-console': 'error' } }, ...storybook.configs['flat/recommended']]);"
       `);
       expect(logger.warn).not.toHaveBeenCalled();
     });
@@ -433,7 +433,7 @@ describe('configureEslintPlugin', () => {
         const storybook = require('eslint-plugin-storybook');
         const tseslint = require('typescript-eslint');
 
-        module.exports = tseslint.config(tseslint.configs.recommended, storybook.configs["flat/recommended"]);"
+        module.exports = tseslint.config(tseslint.configs.recommended, storybook.configs['flat/recommended']);"
       `);
       expect(logger.warn).not.toHaveBeenCalled();
     });
@@ -449,7 +449,7 @@ describe('configureEslintPlugin', () => {
       );
 
       expect(output).toContain(
-        'export default tseslint.config(tseslint.configs.recommended, (local), storybook.configs["flat/recommended"]);'
+        "export default tseslint.config(tseslint.configs.recommended, (local), storybook.configs['flat/recommended']);"
       );
     });
 
@@ -464,7 +464,7 @@ describe('configureEslintPlugin', () => {
 
       expect(output).toMatchInlineSnapshot(`
         "const storybook = require('eslint-plugin-storybook');
-        const config = [{ rules: { 'no-console': 'error' } }, ...storybook.configs["flat/recommended"]];
+        const config = [{ rules: { 'no-console': 'error' } }, ...storybook.configs['flat/recommended']];
 
         module.exports = config;"
       `);
@@ -483,7 +483,7 @@ describe('configureEslintPlugin', () => {
       );
 
       expect(output).toContain("const _storybook = require('eslint-plugin-storybook');");
-      expect(output).toContain('..._storybook.configs["flat/recommended"]');
+      expect(output).toContain("..._storybook.configs['flat/recommended']");
     });
 
     it('preserves computed CommonJS exports and warns', async () => {
@@ -518,7 +518,7 @@ describe('configureEslintPlugin', () => {
       );
 
       expect(output).toContain("const storybook = require('eslint-plugin-storybook');");
-      expect(output).toContain('...storybook.configs["flat/recommended"]');
+      expect(output).toContain("...storybook.configs['flat/recommended']");
       expect(output).not.toContain('...nestedStorybook.configs');
     });
 
@@ -532,7 +532,7 @@ describe('configureEslintPlugin', () => {
         'eslint.config.js'
       );
 
-      expect(output).toContain("const _storybook = require('eslint-plugin-storybook');");
+      expect(output).toContain('const _storybook = require("eslint-plugin-storybook");');
       expect(output).toContain('..._storybook.configs["flat/recommended"]');
     });
 
@@ -544,7 +544,7 @@ describe('configureEslintPlugin', () => {
       const output = await configureFlatConfig(input, 'eslint.config.js');
 
       expect(output).toContain("const _storybook = require('eslint-plugin-storybook');");
-      expect(output).toContain('..._storybook.configs["flat/recommended"]');
+      expect(output).toContain("..._storybook.configs['flat/recommended']");
       await expect(configureFlatConfig(output, 'eslint.config.js')).resolves.toBe(output);
     });
 
@@ -632,7 +632,7 @@ describe('configureEslintPlugin', () => {
         import somePlugin from 'some-plugin';
         export default [
           somePlugin,
-          ...storybook.configs["flat/recommended"],
+          ...storybook.configs['flat/recommended'],
         ]"
       `);
     });
@@ -661,7 +661,7 @@ describe('configureEslintPlugin', () => {
         import storybook from 'eslint-plugin-storybook';
         import somePlugin from 'some-plugin';
         import tseslint from 'typescript-eslint';
-        export default tseslint.config(somePlugin, storybook.configs["flat/recommended"]);"
+        export default tseslint.config(somePlugin, storybook.configs['flat/recommended']);"
       `);
     });
 

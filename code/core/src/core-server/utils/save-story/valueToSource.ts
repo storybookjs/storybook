@@ -23,5 +23,7 @@ const withoutUndefined = (value: unknown): unknown => {
 };
 
 /** Print an arg value as source, with objects expanded one member per line. */
-export const valueToSource = (value: unknown, quote = '"'): string =>
-  printValue(withoutUndefined(value), quote, { expanded: true });
+export const valueToSource = (
+  value: unknown,
+  { quote, indent }: { quote: string; indent: string } = { quote: '"', indent: '  ' }
+): string => printValue(withoutUndefined(value), quote, { indent });

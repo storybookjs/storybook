@@ -165,7 +165,7 @@ function findConfigTarget(
 }
 
 function addStorybookConfig(editor: SourceEditor, target: ConfigTarget, localName: string) {
-  const storybookConfig = `${localName}.configs["flat/recommended"]`;
+  const storybookConfig = `${localName}.configs[${printString('flat/recommended', editor.quote)}]`;
   if (target.type === 'ArrayExpression') {
     appendToList(editor, arrayList(editor, target), [`...${storybookConfig}`], '');
   } else {

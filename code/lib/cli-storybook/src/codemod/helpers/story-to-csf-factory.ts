@@ -4,6 +4,7 @@ import {
   isValidPreviewPath,
   loadCsf,
   printCsf,
+  printString,
   outerSpan,
   walk,
   removeStatements,
@@ -109,7 +110,6 @@ export async function storyToCsfFactory(
 
   const editor = csf._editor;
   const { program, scopes } = editor;
-  const quote = editor.quote;
 
   // Check if a root-level constant named 'preview' exists
   const hasRootLevelConfig = program.body.some(
@@ -452,11 +452,14 @@ export async function storyToCsfFactory(
       editor.edits.overwrite(
         previewImport.source.start,
         previewImport.source.end,
-        `${quote}${previewPath}${quote}`
+        printString(previewPath, editor.quote)
       );
     }
   } else if (hasMeta) {
-    prependStatement(editor, `import ${sbConfigImportName} from ${quote}${previewPath}${quote};`);
+    prependStatement(
+      editor,
+      `import ${sbConfigImportName} from ${printString(previewPath, editor.quote)};`
+    );
   }
 
   editor.commit();

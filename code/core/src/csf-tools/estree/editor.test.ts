@@ -131,6 +131,35 @@ describe('commit', () => {
   });
 });
 
+describe('style', () => {
+  it('quotes like most string literals, leaving JSX attributes out', () => {
+    expect(new SourceEditor('import a from \'a\';\nconst x = <A b="1" c="2" />;').quote).toBe("'");
+    expect(new SourceEditor("const a = \"a\";\nconst b = 'b';\nconst c = 'c';").quote).toBe("'");
+  });
+
+  it('breaks a tie with the first literal and defaults to double quotes', () => {
+    expect(new SourceEditor('const a = "a";\nconst b = \'b\';').quote).toBe('"');
+    expect(new SourceEditor('const a = 1;').quote).toBe('"');
+  });
+
+  it('keeps the style of the code it was created with after a commit', () => {
+    const editor = new SourceEditor("const a = 'a';\n");
+    editor.edits.overwrite(10, 13, '1');
+    editor.commit();
+    expect(editor.quote).toBe("'");
+  });
+
+  it('indents generated lines with the step of the first multi-line block', () => {
+    const editor = new SourceEditor('const a = {\n\tb: 1,\n};\nconst c = [];\n');
+    const array = (editor.program.body[1] as E.VariableDeclaration).declarations[0]
+      .init as E.ArrayExpression;
+    appendToList(editor, arrayList(editor, array), ['{\n\td: 1,\n}']);
+    expect(editor.toString()).toBe(
+      'const a = {\n\tb: 1,\n};\nconst c = [\n\t{\n\t\td: 1,\n\t},\n];\n'
+    );
+  });
+});
+
 describe('parenthesized array elements', () => {
   it('appends after a comma expression and removes a doubly parenthesized one whole', () => {
     const editor = new SourceEditor(`export default { addons: [(a, b)] };`);
@@ -804,7 +833,7 @@ describe('tab-indented files', () => {
 
 describe('printMembers', () => {
   it('leaves the template literal of a function value alone', () => {
-    expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'])).toBe(
+    expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'], '  ')).toBe(
       '{\n  fn: () => {\n    return `a\nb`;\n  },\n}'
     );
   });

@@ -7,6 +7,7 @@ import {
   type ParsedModule,
   type Property,
   isNode,
+  isStringLiteral,
   isValidIdentifier,
   moduleOf,
   normalizeLineEndings,
@@ -69,6 +70,8 @@ export class SourceEditor {
   readonly fileName: string | undefined;
 
   readonly _onCommit: (() => void) | undefined;
+
+  _style: Style | undefined;
 
   constructor(code: string, fileName?: string, onCommit?: () => void) {
     this.fileName = fileName;
@@ -145,6 +148,7 @@ export class SourceEditor {
     if (!this.pending) {
       return false;
     }
+    this._style ??= inferStyle(this._module);
     this._committed.push(
       this._edits.generateMap({ hires: true, includeContent: true, source: mapSource(this) })
     );
@@ -213,18 +217,61 @@ export class SourceEditor {
     return this._edits.toString();
   }
 
-  /** Quote for generated strings, overriding the inferred one. */
-  preferredQuote: "'" | '"' | undefined;
+  /** Quote for generated strings: the one most string literals of the file use. */
+  get quote() {
+    this._style ??= inferStyle(this._module);
+    return this._style.quote;
+  }
 
-  /** Quote for generated strings; defaults to the style of the first string literal. */
-  get quote(): "'" | '"' {
-    if (this.preferredQuote) {
-      return this.preferredQuote;
-    }
-    const match = /(?:^|[\s,:([{=])(['"])/.exec(this.code);
-    return match?.[1] === '"' ? '"' : "'";
+  /** Indent step for generated lines: the one of the file's first multi-line block. */
+  get indent() {
+    this._style ??= inferStyle(this._module);
+    return this._style.indent;
   }
 }
+
+type Style = { quote: "'" | '"'; indent: string };
+
+// The style of the code the editor was created with, so edits do not change it. A tie between
+// quotes goes to the first literal; JSX attributes are left out, as they keep double quotes.
+const inferStyle = ({ code, program }: ParsedModule): Style => {
+  const counts = { "'": 0, '"': 0 };
+  let first: "'" | '"' | undefined;
+  let indent: string | undefined;
+  walk(program, (node, parent) => {
+    if (isStringLiteral(node) && parent?.type !== 'JSXAttribute') {
+      const quote = node.raw?.[0];
+      if (quote === "'" || quote === '"') {
+        counts[quote]++;
+        first ??= quote;
+      }
+    }
+    indent ??= blockIndent(code, node);
+  });
+  const quote =
+    counts["'"] === counts['"'] ? (first ?? '"') : counts["'"] > counts['"'] ? "'" : '"';
+  return { quote, indent: indent ?? '  ' };
+};
+
+// The indent step from a block's line to the line of its first item, if that is a deeper one.
+const blockIndent = (code: string, node: Node) => {
+  const first =
+    node.type === 'ObjectExpression'
+      ? node.properties[0]
+      : node.type === 'ArrayExpression'
+        ? node.elements[0]
+        : node.type === 'BlockStatement'
+          ? node.body[0]
+          : undefined;
+  if (!first || !code.slice(node.start, first.start).includes('\n')) {
+    return undefined;
+  }
+  const outer = lineIndent(code, node.start);
+  const inner = lineIndent(code, first.start);
+  return inner.length > outer.length && inner.startsWith(outer)
+    ? inner.slice(outer.length)
+    : undefined;
+};
 
 export const printKey = (name: string, quote: string) =>
   isValidIdentifier(name, false) ? name : printString(name, quote);
@@ -237,16 +284,16 @@ export const printString = (value: string, quote: string) => {
 };
 
 /** An object literal laid out one member per line, so formatters keep it expanded. */
-export const printMembers = (members: string[], unit = '  ') =>
+export const printMembers = (members: string[], indent: string) =>
   members.length === 0
     ? '{}'
-    : `{\n${members.map((member) => `${unit}${reindent(member, '', unit)},`).join('\n')}\n}`;
+    : `{\n${members.map((member) => `${indent}${reindent(member, '', indent)},`).join('\n')}\n}`;
 
-/** Print a JS value as source. `expanded` lays objects out one member per line. */
+/** Print a JS value as source. With an `indent`, objects are laid out one member per line. */
 export const printValue = (
   value: unknown,
   quote: string,
-  options: { expanded?: boolean } = {}
+  options: { indent?: string } = {}
 ): string => {
   if (value === undefined) {
     return 'undefined';
@@ -286,8 +333,8 @@ export const printValue = (
     const members = Object.entries(value as Record<string, unknown>).map(
       ([key, item]) => `${printKey(key, quote)}: ${printValue(item, quote, options)}`
     );
-    if (options.expanded) {
-      return printMembers(members);
+    if (options.indent) {
+      return printMembers(members, options.indent);
     }
     return members.length === 0 ? '{}' : `{ ${members.join(', ')} }`;
   }
@@ -440,17 +487,6 @@ const separatorAfter = (editor: SourceEditor, item: Span) => {
 export const lineIndent = (code: string, index: number) =>
   /^[ \t]*/.exec(code.slice(lineStart(code, index)))![0];
 
-/** Indent step of the file: from an object's line to its first member's, else two spaces. */
-export const indentUnit = (code: string, object: E.ObjectExpression | undefined) => {
-  const first = object?.properties[0];
-  if (!object || !first || !code.slice(object.start, first.start).includes('\n')) {
-    return '  ';
-  }
-  const outer = lineIndent(code, object.start);
-  const inner = lineIndent(code, first.start);
-  return inner.length > outer.length && inner.startsWith(outer) ? inner.slice(outer.length) : '  ';
-};
-
 const isMultiline = (code: string, list: List) => code.slice(list.open, list.close).includes('\n');
 
 // Spans of the literals under `root` whose line breaks are part of their value: strings, regexes
@@ -600,7 +636,7 @@ export const appendToList = (
     if ((inner.includes('\n') && inner.trim()) || texts.some((text) => text.includes('\n'))) {
       // Multi-line items, or only comments inside: lay the items out one per line.
       const outer = lineIndent(code, list.open - 1);
-      const indent = `${outer}  `;
+      const indent = `${outer}${editor.indent}`;
       const lead = inner.trim() ? '' : '\n';
       if (!inner.trim() && list.close > list.open) {
         edits.remove(list.open, list.close);
@@ -726,7 +762,7 @@ export const groupMembers = (
   const { start } = members[0];
   const indent = /[ \t]*$/.exec(editor.code.slice(lineStart(editor.code, start), start))![0];
   const inner = multiline
-    ? reindent(printMembers(texts, indentUnit(editor.code, object)), '', indent)
+    ? reindent(printMembers(texts, editor.indent), '', indent)
     : `{ ${texts.join(', ')} }`;
   // The comments of the first member move into the group with it.
   const lead = multiline ? `\n${indent}` : ' ';

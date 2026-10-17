@@ -476,7 +476,7 @@ describe('stories codemod', () => {
           )
         )
       ).resolves.toMatchInlineSnapshot(`
-        import preview from '../.rnstorybook/preview';
+        import preview from "../.rnstorybook/preview";
         const meta = preview.meta({});
         export const A = meta.story();
       `);

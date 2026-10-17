@@ -4,6 +4,7 @@ import {
   arrayList,
   insertAfterImports,
   prependToList,
+  printString,
   walk,
 } from 'storybook/internal/csf-tools';
 
@@ -110,7 +111,7 @@ export function injectAngularVitestIntoEditor(editor: SourceEditor): boolean {
   }
 
   if (!hasAngularVitestImport(program)) {
-    const statement = `import { ${ANGULAR_VITEST_PLUGIN_CALL} } from ${editor.quote}${ANGULAR_VITEST_IMPORT_SOURCE}${editor.quote};`;
+    const statement = `import { ${ANGULAR_VITEST_PLUGIN_CALL} } from ${printString(ANGULAR_VITEST_IMPORT_SOURCE, editor.quote)};`;
     insertAfterImports(editor, statement);
   }
   return true;

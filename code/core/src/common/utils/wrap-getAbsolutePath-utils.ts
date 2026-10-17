@@ -52,7 +52,7 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
 /** Source of a call to the config's getAbsolutePath wrapper, such as `getAbsolutePath('x')`. */
 export function getAbsolutePathCall(config: ConfigFile, value: string) {
   const wrapper = getAbsolutePathWrapperName(config) ?? PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME;
-  return `${wrapper}(${printString(value, config._quote)})`;
+  return `${wrapper}(${printString(value, config._editor.quote)})`;
 }
 
 // Relative paths resolve from the config dir; the wrapper's `${value}/package.json` lookup breaks them.
@@ -203,7 +203,7 @@ export function ensureNamedImport(config: ConfigFile, imported: string, source: 
   }
   prependStatement(
     config._editor,
-    `import { ${imported} as ${local} } from ${printString(source, config._quote)};`
+    `import { ${imported} as ${local} } from ${printString(source, config._editor.quote)};`
   );
   config._editor.commit();
   return local;

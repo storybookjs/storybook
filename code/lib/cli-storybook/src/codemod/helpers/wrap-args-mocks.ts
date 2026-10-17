@@ -5,6 +5,7 @@ import {
   type SourceEditor,
   generateUid,
   insertAfterImports,
+  printString,
   walk,
   setImportSpecifiers,
 } from 'storybook/internal/csf-tools';
@@ -207,7 +208,7 @@ export function wrapArgsMocks(editor: SourceEditor) {
     } else {
       insertAfterImports(
         editor,
-        `import { ${specifier} } from ${editor.quote}storybook/test${editor.quote};`
+        `import { ${specifier} } from ${printString('storybook/test', editor.quote)};`
       );
     }
   }

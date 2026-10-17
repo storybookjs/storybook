@@ -403,25 +403,28 @@ describe('set-config-layout transform', () => {
 });
 
 describe('setConfigLayout', () => {
-  it('detects and writes a manager config migration', async () => {
-    const source = dedent`
-      import { addons } from 'storybook/manager-api';
+  it.each(['storybook/manager-api', 'storybook/internal/manager-api', '@storybook/manager-api'])(
+    'detects and writes a manager config migration for %s',
+    async (specifier) => {
+      const source = dedent`
+      import { addons } from '${specifier}';
       addons.setConfig({ showToolbar: false });
     `;
-    vol.fromJSON({ [managerConfigPath]: source });
+      vol.fromJSON({ [managerConfigPath]: source });
 
-    const result = await check();
-    if (!result) {
-      throw new Error('expected a migration result');
-    }
+      const result = await check();
+      if (!result) {
+        throw new Error('expected a migration result');
+      }
 
-    await run(result);
+      await run(result);
 
-    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
-      "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ layout: { showToolbar: false } });"
+      await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toBe(dedent`
+      import { addons } from '${specifier}';
+      addons.setConfig({ layout: { showToolbar: false } });
     `);
-  });
+    }
+  );
 
   it('returns null when the manager config does not need migration', async () => {
     vol.fromJSON({

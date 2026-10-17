@@ -1,3 +1,4 @@
+import type { types as t } from 'storybook/internal/babel';
 import { createMetaComponentResolver } from 'storybook/internal/common';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
@@ -26,13 +27,15 @@ const resolveComponent = createMetaComponentResolver({ extensions: ['.vue'] });
  *
  * `vue-component-meta` extracts from a module on disk, so the shared resolver's looser results — a
  * component declared in the story file, or a specifier that does not resolve — are reported here as
- * no component at all.
+ * no component at all. Passing `componentNode` resolves a declared subcomponent's expression
+ * instead, through the same following.
  */
 export function resolveMetaComponent(
   csf: CsfFile,
-  storyPath: string
+  storyPath: string,
+  componentNode?: t.Node
 ): { component: ResolvedVueComponent } | { reason: UnresolvedComponentReason } {
-  const resolved = resolveComponent(csf, storyPath);
+  const resolved = resolveComponent(csf, storyPath, componentNode);
   if ('reason' in resolved) {
     return resolved;
   }

@@ -1,3 +1,59 @@
+## 11.0.0-alpha.7
+
+- Addon Themes: Declare the package as an ES module - [#36721](https://github.com/storybookjs/storybook/pull/36721), thanks @ump45nose!
+- Addon Vitest: Make the test run report agree with its outcome - [#36697](https://github.com/storybookjs/storybook/pull/36697), thanks @kasperpeulen!
+- Addon-docs: Skip re-parsing untransformed stories in the CSF plugin - [#36468](https://github.com/storybookjs/storybook/pull/36468), thanks @EastonShin!
+- Angular: Fix schema for stats-json so TurboSnap works - [#36776](https://github.com/storybookjs/storybook/pull/36776), thanks @Sidnioulz!
+- Automigrate: Stop wrapping relative addon paths with getAbsolutePath - [#36799](https://github.com/storybookjs/storybook/pull/36799), thanks @obvious-autobuild!
+- CLI: Align prerelease upgrade ranges - [#36751](https://github.com/storybookjs/storybook/pull/36751), thanks @valentinpalkovic!
+- CLI: Align the Vite upgrade blocker with the 6.3.0 floor - [#36793](https://github.com/storybookjs/storybook/pull/36793), thanks @obvious-autobuild!
+- CLI: Detect internal manager-api specifier in set-config-layout automigration - [#36786](https://github.com/storybookjs/storybook/pull/36786), thanks @obvious-autobuild!
+- CLI: Fix wrong advice in the skills setup instructions - [#36680](https://github.com/storybookjs/storybook/pull/36680), thanks @kasperpeulen!
+- CLI: Honor selected package manager during upgrade - [#36744](https://github.com/storybookjs/storybook/pull/36744), thanks @valentinpalkovic!
+- CLI: Install npm workspace dependencies from root - [#36753](https://github.com/storybookjs/storybook/pull/36753), thanks @valentinpalkovic!
+- CLI: Keep React Native stories on #.storybook/preview - [#36623](https://github.com/storybookjs/storybook/pull/36623), thanks @ndelangen!
+- CLI: Migrate CSF2 argTypes and fail incomplete upgrades - [#36745](https://github.com/storybookjs/storybook/pull/36745), thanks @valentinpalkovic!
+- CLI: Support CommonJS ESLint flat config automigration - [#36391](https://github.com/storybookjs/storybook/pull/36391), thanks @storybook-contribution-review!
+- CLI: Warn when the preview still imports the Custom Elements Manifest - [#36777](https://github.com/storybookjs/storybook/pull/36777), thanks @huang-julien!
+- CSF: Remove legacy .story annotations - [#36764](https://github.com/storybookjs/storybook/pull/36764), thanks @ndelangen!
+- CSF: Resolve local function story references - [#36746](https://github.com/storybookjs/storybook/pull/36746), thanks @valentinpalkovic!
+- Core: Fix autodocs, preset resolution, and React manifest matching - [#36642](https://github.com/storybookjs/storybook/pull/36642), thanks @valentinpalkovic!
+- Core: Floor ts-dedent to ^2.2.0 so a CJS-only hoist cannot break the Vite preview graph - [#36792](https://github.com/storybookjs/storybook/pull/36792), thanks @obvious-autobuild!
+- Core: Handle WebSocket errors so a bad frame can't crash the dev server - [#35863](https://github.com/storybookjs/storybook/pull/35863), thanks @SnowingFox!
+- Core: Keep prebuilt manager and preview files under 1MB - [#36483](https://github.com/storybookjs/storybook/pull/36483), thanks @ndelangen!
+- Core: List changed stories first and narrow the coverage gap in stories changed - [#36683](https://github.com/storybookjs/storybook/pull/36683), thanks @kasperpeulen!
+- Core: Remove deprecated mockChannel export from preview-api and manager-api [SB-2038] - [#36667](https://github.com/storybookjs/storybook/pull/36667), thanks @obvious-autobuild!
+- Core: Render full unions for named-alias enum props - [#36661](https://github.com/storybookjs/storybook/pull/36661), thanks @obvious-autobuild!
+- Core: Suggest close stories when a story selector matches nothing - [#36698](https://github.com/storybookjs/storybook/pull/36698), thanks @kasperpeulen!
+- Core: Tighten toolbar types and remove redundant normalization (SB-2019) - [#36733](https://github.com/storybookjs/storybook/pull/36733), thanks @obvious-autobuild!
+- Docgen: Fold or skip dynamic slot names in the Vue template fallback merge - [#36342](https://github.com/storybookjs/storybook/pull/36342), thanks @obvious-autobuild!
+- Docs: Render Markdown in JSDoc parameter and return descriptions - [#36612](https://github.com/storybookjs/storybook/pull/36612), thanks @dannediesel!
+- Docs: Update stories block component to use standard heading style - [#36709](https://github.com/storybookjs/storybook/pull/36709), thanks @eskres!
+- MCP: Point the splash link at the agent setup guide - [#36301](https://github.com/storybookjs/storybook/pull/36301), thanks @sharadvc!
+- Manager: Keep tour tooltips on screen when their content grows - [#36657](https://github.com/storybookjs/storybook/pull/36657), thanks @valentinpalkovic!
+- Manager: Remove persisted tag-filter state migration [SB-2022] - [#36678](https://github.com/storybookjs/storybook/pull/36678), thanks @obvious-autobuild!
+- Next.js: Fix app-router mock crash on Next.js 16.4 - [#36588](https://github.com/storybookjs/storybook/pull/36588), thanks @obvious-autobuild!
+- Nextjs-Vite: Provide parentRenderTree.bfcacheId in app router mock - [#36732](https://github.com/storybookjs/storybook/pull/36732), thanks @bhushan4work!
+- Nextjs: Use builder Webpack for framework plugins - [#36752](https://github.com/storybookjs/storybook/pull/36752), thanks @valentinpalkovic!
+- React: Guard docgen extraction against TypeScript builds without the compiler API - [#35834](https://github.com/storybookjs/storybook/pull/35834), thanks @FrancoKaddour!
+- React: Keep the act environment set while a story tears down - [#36608](https://github.com/storybookjs/storybook/pull/36608), thanks @malcolmwhite-surge!
+- React: Prebundle react/jsx-runtime to avoid a reload when plugins import it - [#36682](https://github.com/storybookjs/storybook/pull/36682), thanks @nishimoto265!
+- Skills: Rename stories to ui-workflow, add component-docs, triggered from AGENTS.md - [#36760](https://github.com/storybookjs/storybook/pull/36760), thanks @kasperpeulen!
+- Svelte: Fix Svelte CSF code snippet crash on null args - [#36770](https://github.com/storybookjs/storybook/pull/36770), thanks @bryce-easygo!
+- TanStack React: Surface story render errors to Storybook - [#36715](https://github.com/storybookjs/storybook/pull/36715), thanks @jperezmart!
+- TanStack: Add strictMode to FrameworkOptions type - [#36712](https://github.com/storybookjs/storybook/pull/36712), thanks @BaconMan1168!
+- Tanstack: Load story router after all beforeEach hooks - [#36804](https://github.com/storybookjs/storybook/pull/36804), thanks @huang-julien!
+- Tools: Make docs tool output easier for agents to act on - [#36676](https://github.com/storybookjs/storybook/pull/36676), thanks @kasperpeulen!
+- TypeScript: Explicitly type returntype of ArgsStore#get - [#36583](https://github.com/storybookjs/storybook/pull/36583), thanks @mrginglymus!
+- Typescript: Exclude all dunderscore prefixed folders from production compilation - [#36740](https://github.com/storybookjs/storybook/pull/36740), thanks @mrginglymus!
+- UI: Rebuild Sidebar Tree - [#33422](https://github.com/storybookjs/storybook/pull/33422), thanks @Sidnioulz!
+- UI: Respect reduced motion and pause,stop,hide in Card animations - [#36653](https://github.com/storybookjs/storybook/pull/36653), thanks @Sidnioulz!
+- UI: Restore accessible descriptions for generic tooltips - [#36508](https://github.com/storybookjs/storybook/pull/36508), thanks @CrazyBucket!
+- Vitest: Don't duplicate setupFiles configured as a string - [#36807](https://github.com/storybookjs/storybook/pull/36807), thanks @fixfon!
+- WC: Deprecate runtime WC manifest path - [#36622](https://github.com/storybookjs/storybook/pull/36622), thanks @huang-julien!
+- WC: Generate docgen with cem-generator - [#36728](https://github.com/storybookjs/storybook/pull/36728), thanks @huang-julien!
+- [SB-2007] Remove ExternalDocs and ExternalDocsContainer - [#36757](https://github.com/storybookjs/storybook/pull/36757), thanks @obvious-autobuild!
+
 ## 11.0.0-alpha.6
 
 - Addon Docs: Map CSF plugin sourcemaps to the transform input - [#36463](https://github.com/storybookjs/storybook/pull/36463), thanks @mnkprs!

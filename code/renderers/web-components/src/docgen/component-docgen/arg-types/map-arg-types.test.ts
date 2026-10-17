@@ -9,8 +9,6 @@ import type {
 } from '../manifest/types.ts';
 import { mapArgTypes } from './map-arg-types.ts';
 
-const TYPE_PROPERTY = 'parsedType';
-
 const declaration = (value: Partial<ManifestDeclaration>): ManifestDeclaration => ({
   customElement: true,
   kind: 'class',
@@ -22,7 +20,6 @@ const declaration = (value: Partial<ManifestDeclaration>): ManifestDeclaration =
 type MapArgTypesCase = {
   name: string;
   declaration: ManifestDeclaration;
-  typeProperty?: string;
   expected: Record<string, unknown>;
 };
 
@@ -491,7 +488,7 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'alt type wins for SBType while raw type is preserved',
+      name: 'parsedType wins for SBType while raw type is preserved',
       declaration: declaration({
         members: [
           {
@@ -516,7 +513,7 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'blank alt type falls back to raw type text',
+      name: 'blank parsedType falls back to raw type text',
       declaration: declaration({
         members: [
           {
@@ -535,32 +532,6 @@ describe('mapArgTypes', () => {
           table: {
             category: 'properties',
             type: { summary: "'a' | 'b'" },
-            defaultValue: { summary: undefined },
-          },
-        },
-      },
-    },
-    {
-      name: 'custom type property',
-      declaration: declaration({
-        members: [
-          {
-            kind: 'field',
-            name: 'size',
-            type: { text: 'Size' },
-            resolvedType: { text: "'small' | 'large'" },
-          } as ManifestClassField & { resolvedType: { text: string } },
-        ],
-      }),
-      typeProperty: 'resolvedType',
-      expected: {
-        size: {
-          name: 'size',
-          description: undefined,
-          type: { name: 'enum', value: ['small', 'large'] },
-          table: {
-            category: 'properties',
-            type: { summary: 'Size' },
             defaultValue: { summary: undefined },
           },
         },
@@ -663,17 +634,16 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'event reads the custom type property',
+      name: 'event reads the parsed type',
       declaration: declaration({
         events: [
           {
             name: 'value-change',
             type: { text: 'ValueChangeEvent' },
-            resolvedType: { text: 'CustomEvent<{ value: number }>' },
-          } as ManifestEvent & { resolvedType: { text: string } },
+            parsedType: { text: 'CustomEvent<{ value: number }>' },
+          } as ManifestEvent & { parsedType: { text: string } },
         ],
       }),
-      typeProperty: 'resolvedType',
       expected: {
         'value-change-event': {
           name: 'value-change',
@@ -915,9 +885,8 @@ describe('mapArgTypes', () => {
   ] satisfies {
     name: string;
     declaration: ManifestDeclaration;
-    typeProperty?: string;
     expected: Record<string, unknown>;
-  }[])('$name', ({ declaration, typeProperty, expected }) => {
-    expect(mapArgTypes(declaration, typeProperty ?? TYPE_PROPERTY)).toEqual(expected);
+  }[])('$name', ({ declaration, expected }) => {
+    expect(mapArgTypes(declaration)).toEqual(expected);
   });
 });

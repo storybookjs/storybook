@@ -412,15 +412,15 @@ const manualRemovalHint = (previewConfigPath: string, reason: string): void =>
   );
 
 const removePreviewWiring = (preview: ConfigFile, previewConfigPath: string): void => {
-  const reason = removeTopLevelCall(preview._ast.program, {
+  const result = removeTopLevelCall(preview._ast.program, {
     callee: SET_COMPODOC_JSON,
     calleeSources: new Set([ADDON_DOCS_ANGULAR]),
   });
-  if (reason) {
+  if (!result.removed) {
     manualRemovalHint(
       previewConfigPath,
       countReferences(preview._ast.program, SET_COMPODOC_JSON) > 0
-        ? reason
+        ? result.reason
         : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
     );
     return;

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Listener } from 'storybook/internal/channels';
+import { Channel, type Listener } from 'storybook/internal/channels';
 import type { TestProviderStateByProviderId } from 'storybook/internal/types';
 import {
   type Addon_Collection,
@@ -10,7 +10,7 @@ import {
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ManagerContext, mockChannel } from 'storybook/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
@@ -51,7 +51,7 @@ const testProviderStates: TestProviderStateByProviderId = {
   linting: 'test-provider-state:pending',
 };
 
-const channel = mockChannel();
+const channel = new Channel({});
 const managerContext: any = {
   api: {
     on: (eventName: string, listener: Listener) => {
@@ -185,6 +185,15 @@ export const Crashed: Story = {
       ...testProviderStates,
       'component-tests': 'test-provider-state:crashed',
     },
+  },
+  play: async ({ canvas, canvasElement }) => {
+    const collapse = () => canvasElement.querySelector('[data-testid="collapse"]');
+    await waitFor(() => expect(collapse()).not.toHaveAttribute('inert'));
+    const button = await canvas.findByRole('button', { name: /Collapse testing module/ });
+    await fireEvent.click(button);
+    await waitFor(() => expect(collapse()).toHaveAttribute('inert'));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await expect(collapse()).toHaveAttribute('inert');
   },
 };
 

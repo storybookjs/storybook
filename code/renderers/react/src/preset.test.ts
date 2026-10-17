@@ -14,6 +14,14 @@ describe('optimizeViteDeps', () => {
     // If this test fails, add 'react-dom/test-utils' back to the optimizeViteDeps array in preset.ts.
     expect(optimizeViteDeps).toContain('react-dom/test-utils');
   });
+
+  it('includes react/jsx-runtime', () => {
+    // Plugins such as vite-plugin-svgr emit `react/jsx-runtime` imports while transforming non-JS
+    // files. The dependency scan does not run those transforms, so the import is only found
+    // mid-run and a second copy of React gets loaded.
+    // If this test fails, add 'react/jsx-runtime' back to the optimizeViteDeps array in preset.ts.
+    expect(optimizeViteDeps).toContain('react/jsx-runtime');
+  });
 });
 
 describe('features', () => {

@@ -145,4 +145,8 @@ export async function internal_getArgTypesData(
   return argTypesData;
 }
 
-export const optimizeViteDeps: string[] = ['react-dom/client', 'react-dom/test-utils'];
+export const optimizeViteDeps: string[] = [
+  'react-dom/client',
+  'react-dom/test-utils',
+  'react/jsx-runtime',
+];

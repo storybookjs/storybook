@@ -288,6 +288,65 @@ describe('spreads at the story config level', () => {
     expect(argsOf(code, 'Assigned')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
   });
 
+  it('resolves a story alias to a local function', () => {
+    const code = dedent`
+      const ParagraphStory = ({ text }) => text;
+      export const Example = ParagraphStory;
+    `;
+    expect(argsOf(code, 'Example')).toEqual({ args: {}, unresolved: [] });
+  });
+
+  it('keeps the input accessor when a CSF factory story is aliased', () => {
+    const code = dedent`
+      const meta = preview.meta({ component: Button });
+      const Primary = meta.story({ args: { label: 'saved' } });
+      const Alias = Primary;
+      export const Sibling = meta.story({ args: { ...Alias.input.args, size: 'small' } });
+    `;
+    expect(argsOf(code, 'Sibling')).toEqual({
+      args: { label: "'saved'", size: "'small'" },
+      unresolved: [],
+    });
+  });
+
+  it('applies assignments through aliases in source order', () => {
+    const code = dedent`
+      const Base = () => null;
+      const Alias = Base;
+      Alias.args = { label: 'first' };
+      Base.args = { label: 'last' };
+      export const Story = Alias;
+    `;
+    expect(argsOf(code, 'Story')).toEqual({ args: { label: "'last'" }, unresolved: [] });
+  });
+
+  it('does not read an imported alias with local names when externalization is unavailable', () => {
+    const ctx = contextOf({
+      'shared.ts': dedent`
+        const defaults = { label: 'remote' };
+        export const Shared = { args: { ...defaults } };
+      `,
+      'entry.ts': dedent`
+        import { Shared } from './shared';
+        const defaults = { label: 'local' };
+        export const Alias = Shared;
+      `,
+    });
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: {}, unresolved: ['Shared'] });
+  });
+
+  it('reads a self-contained imported alias when its values can be externalized', () => {
+    const ctx = contextOf(
+      {
+        'shared.ts': `export const Shared = { args: { label: 'remote' } };`,
+        'entry.ts': `import { Shared } from './shared'; export const Alias = Shared;`,
+      },
+      'entry.ts',
+      (node) => (isSelfContained(node) ? node : undefined)
+    );
+    expect(argsOf('', 'Alias', ctx)).toEqual({ args: { label: "'remote'" }, unresolved: [] });
+  });
+
   it('prefers an assignment over the args the declaration carries', () => {
     const code = dedent`
       export const Both = { args: { label: 'declared' } };

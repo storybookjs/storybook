@@ -1,5 +1,5 @@
 import { DEFAULT_SLOT_NAME } from '../../arg-keys.ts';
-import { readCssPropertySyntax, readTypeText } from './arg-types/alt-type.ts';
+import { readCssPropertySyntax, readTypeText } from './manifest/type-text.ts';
 import {
   classifyDeclaration,
   isBackedByAttribute,
@@ -17,12 +17,9 @@ import { deprecationMessage, firstValue, trimmedOrUndefined } from './utils.ts';
 
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
 
-export function buildApiDescription(
-  declaration: ManifestDeclaration,
-  typeProperty: string
-): string | undefined {
+export function buildApiDescription(declaration: ManifestDeclaration): string | undefined {
   const api = classifyDeclaration(declaration);
-  const attributes = api.attributes.map((attribute) => attributeDoc(attribute, typeProperty));
+  const attributes = api.attributes.map(attributeDoc);
   const properties = api.fields.filter((field) => !isBackedByAttribute(field, api.attributes));
 
   if (
@@ -41,17 +38,14 @@ export function buildApiDescription(
   const typePrefix = declaration.name.replace(/\W+/g, '');
   const sections = [
     attributesSection(typePrefix, attributes),
-    propertiesSection(typePrefix, properties, typeProperty),
-    eventsSection(typePrefix, api.events, typeProperty),
-    methodsSection(typePrefix, api.methods, typeProperty),
+    propertiesSection(typePrefix, properties),
+    eventsSection(typePrefix, api.events),
+    methodsSection(typePrefix, api.methods),
     listSection(
       'Slots',
       api.slots.map((slot) => listItem(slot.name || DEFAULT_SLOT_NAME, memberDoc(slot)))
     ),
-    listSection(
-      'CSS Custom Properties',
-      api.cssProperties.map((property) => cssPropertyListItem(property, typeProperty))
-    ),
+    listSection('CSS Custom Properties', api.cssProperties.map(cssPropertyListItem)),
     listSection(
       'CSS Parts',
       api.cssParts.map((part) => listItem(part.name, memberDoc(part)))
@@ -103,8 +97,7 @@ function attributesSection(typePrefix: string, attributes: AttributeDoc[]): stri
 
 function propertiesSection(
   typePrefix: string,
-  properties: ManifestClassField[],
-  typeProperty: string
+  properties: ManifestClassField[]
 ): string | undefined {
   if (properties.length === 0) {
     return undefined;
@@ -115,7 +108,7 @@ function propertiesSection(
     `${typePrefix}Properties`,
     properties.flatMap((property) => {
       const doc = memberDoc(property);
-      const type = fieldType(property, typeProperty);
+      const type = fieldType(property);
       return [
         ...docComment(doc),
         property.readonly === true
@@ -126,11 +119,7 @@ function propertiesSection(
   );
 }
 
-function eventsSection(
-  typePrefix: string,
-  events: ManifestEvent[],
-  typeProperty: string
-): string | undefined {
+function eventsSection(typePrefix: string, events: ManifestEvent[]): string | undefined {
   if (events.length === 0) {
     return undefined;
   }
@@ -140,16 +129,12 @@ function eventsSection(
     `${typePrefix}Events`,
     events.flatMap((event) => [
       ...docComment(memberDoc(event)),
-      `  ${memberName(event.name)}: ${readTypeText(event, typeProperty) ?? 'Event'};`,
+      `  ${memberName(event.name)}: ${readTypeText(event) ?? 'Event'};`,
     ])
   );
 }
 
-function methodsSection(
-  typePrefix: string,
-  methods: ManifestClassMethod[],
-  typeProperty: string
-): string | undefined {
+function methodsSection(typePrefix: string, methods: ManifestClassMethod[]): string | undefined {
   if (methods.length === 0) {
     return undefined;
   }
@@ -159,10 +144,7 @@ function methodsSection(
     `${typePrefix}Methods`,
     methods.flatMap((method) => [
       ...docComment(memberDoc(method)),
-      `  ${memberName(method.name)}(${formatParameters(method)}): ${methodReturnType(
-        method,
-        typeProperty
-      )};`,
+      `  ${memberName(method.name)}(${formatParameters(method)}): ${methodReturnType(method)};`,
     ])
   );
 }
@@ -180,8 +162,8 @@ function listSection(heading: string, items: string[]): string | undefined {
   return [`## ${heading}`, '', ...items].join('\n');
 }
 
-function cssPropertyListItem(property: ManifestCssCustomProperty, typeProperty: string): string {
-  const syntax = readCssPropertySyntax(property, typeProperty);
+function cssPropertyListItem(property: ManifestCssCustomProperty): string {
+  const syntax = readCssPropertySyntax(property);
   const name = property.name;
   const syntaxText = syntax ? ` \`${syntax}\`` : '';
   return listItemPrefix(`${name}${syntaxText}`, memberDoc(property));
@@ -204,30 +186,30 @@ function listItemPrefix(prefix: string, doc: MemberDoc): string {
   return `- ${prefix}${text}${defaultText}${deprecatedText}`;
 }
 
-function attributeDoc(attribute: AttributeApi, typeProperty: string): AttributeDoc {
+function attributeDoc(attribute: AttributeApi): AttributeDoc {
   const { field } = attribute;
 
   return {
     ...attribute,
-    type: attributeType(attribute, typeProperty),
+    type: attributeType(attribute),
     doc: memberDoc(field, attribute.attribute),
   };
 }
 
-function attributeType({ attribute, field }: AttributeApi, typeProperty: string): string {
+function attributeType({ attribute, field }: AttributeApi): string {
   return (
     firstValue([field, attribute], (source) =>
-      source ? trimmedOrUndefined(readTypeText(source, typeProperty)) : undefined
+      source ? trimmedOrUndefined(readTypeText(source)) : undefined
     ) ?? 'string'
   );
 }
 
-function fieldType(field: ManifestClassField, typeProperty: string): string {
-  return trimmedOrUndefined(readTypeText(field, typeProperty)) ?? 'unknown';
+function fieldType(field: ManifestClassField): string {
+  return trimmedOrUndefined(readTypeText(field)) ?? 'unknown';
 }
 
-function methodReturnType(method: ManifestClassMethod, typeProperty: string): string {
-  return method.return ? (readTypeText(method.return, typeProperty) ?? 'void') : 'void';
+function methodReturnType(method: ManifestClassMethod): string {
+  return method.return ? (readTypeText(method.return) ?? 'void') : 'void';
 }
 
 function memberDoc(...sources: Array<DocItem | undefined>): MemberDoc {

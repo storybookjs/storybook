@@ -72,13 +72,12 @@ describe('experimental_docgenProvider', () => {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/dist/custom-elements.json')],
-          typeProperty: 'parsedType',
         },
       },
     ]);
   });
 
-  it('passes an explicit docgen type property to the worker', async () => {
+  it('passes an explicit manifest path to the worker', async () => {
     vol.fromNestedJSON({
       '/workspace/.storybook/custom-elements.json': JSON.stringify({ modules: [] }),
     });
@@ -86,20 +85,27 @@ describe('experimental_docgenProvider', () => {
     expect(
       await experimental_docgenProvider(
         [],
-        optionsWith(
-          { docgenServer: true },
-          {
-            customElementsManifest: 'custom-elements.json',
-            docgen: { typeProperty: 'resolvedType' },
-          }
-        )
+        optionsWith({}, { customElementsManifest: 'custom-elements.json' })
       )
     ).toEqual([
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/.storybook/custom-elements.json')],
-          typeProperty: 'resolvedType',
+        },
+      },
+    ]);
+  });
+
+  it('passes the preview file to the worker', async () => {
+    vol.fromNestedJSON({ '/workspace/.storybook/preview.ts': '' });
+
+    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([
+      {
+        moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
+        options: {
+          manifestPaths: [],
+          previewFilePath: '/workspace/.storybook/preview.ts',
         },
       },
     ]);

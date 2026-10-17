@@ -47,7 +47,7 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "ts-dedent": "^2.0.0"
+    "ts-dedent": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",

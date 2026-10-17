@@ -4,6 +4,7 @@ import {
   expectSkillInvoked,
   expectStorybookBoots,
   expectStorybookDependenciesAtLeast,
+  expectStorybookInstalledFromCheckout,
 } from '#test-utils';
 
 describe('upgrading Storybook from version 9', () => {
@@ -29,6 +30,10 @@ describe('upgrading Storybook from version 9', () => {
       // but a stale seeded copy left behind must fail the floor.
       ifPresent: ['@storybook/react'],
     });
+  });
+
+  test('installs the Storybook build of this checkout', () => {
+    expectStorybookInstalledFromCheckout();
   });
 
   test('the upgraded Storybook boots', async () => {

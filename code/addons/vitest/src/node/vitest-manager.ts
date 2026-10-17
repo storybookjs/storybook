@@ -382,7 +382,11 @@ export class VitestManager {
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
     } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.restartVitest({ coverage: coverageShouldBeEnabled });
+      if (coverageShouldBeEnabled) {
+        await this.vitest.enableCoverage();
+      } else {
+        this.vitest.disableCoverage();
+      }
     } else {
       await this.vitestRestartPromise;
     }

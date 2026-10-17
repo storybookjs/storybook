@@ -3,7 +3,7 @@ npx storybook@latest automigrate
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@latest automigrate
+pnpm --allow-build=esbuild dlx storybook@latest automigrate
 ```
 
 ```shell renderer="common" packageManager="yarn"

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { coerce, gte, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
-import { type Document, parseDocument } from 'yaml';
+import { Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
@@ -52,10 +52,80 @@ type PnpmListItem = {
 
 export type PnpmListOutput = PnpmListItem[];
 
-const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
-
 /** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
 const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
+
+/** `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0). */
+const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
+
+/** Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved. */
+const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
+
+/** pnpm 10 build-script list settings that `allowBuilds` replaced in pnpm 11. */
+const LEGACY_BUILD_SCRIPT_LISTS = [
+  'onlyBuiltDependencies',
+  'ignoredBuiltDependencies',
+  'neverBuiltDependencies',
+] as const;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Whether a build-script matcher names `pkg`. A matcher is a bare package name, or a name pinned to
+ * versions (`esbuild@0.25.0 || 0.25.1`) or to a git/tarball source (`foo@git+ssh://...`).
+ */
+const matchesPackage = (matcher: unknown, pkg: string): boolean =>
+  typeof matcher === 'string' && (matcher === pkg || matcher.startsWith(`${pkg}@`));
+
+/**
+ * Whether the user already allowed or denied `pkg`'s build scripts in a block of pnpm settings
+ * (`pnpm-workspace.yaml`, or the `pnpm` field of package.json): through `allowBuilds`, through the
+ * pnpm 10 list settings it replaced, or by allowing every build. A pinned `allowBuilds` matcher
+ * counts whatever its value, since adding a bare `esbuild: true` next to it would widen the user's
+ * choice; the bare key only counts once it holds a boolean, so pnpm's own placeholder still gets
+ * resolved.
+ */
+function hasBuildScriptDecision(settings: unknown, pkg: string): boolean {
+  if (!isRecord(settings)) {
+    return false;
+  }
+  if (settings.dangerouslyAllowAllBuilds === true) {
+    return true;
+  }
+  const { allowBuilds } = settings;
+  if (
+    isRecord(allowBuilds) &&
+    Object.entries(allowBuilds).some(([matcher, value]) =>
+      matcher === pkg ? typeof value === 'boolean' : matchesPackage(matcher, pkg)
+    )
+  ) {
+    return true;
+  }
+  return LEGACY_BUILD_SCRIPT_LISTS.some((key) => {
+    const list = settings[key];
+    return Array.isArray(list) && list.some((matcher) => matchesPackage(matcher, pkg));
+  });
+}
+
+/**
+ * The package matchers listed in the JSON file that pnpm 10's `onlyBuiltDependenciesFile` points
+ * to, resolved against the directory of the workspace file. An unreadable or malformed file counts
+ * as listing nothing.
+ */
+function readOnlyBuiltDependenciesFile(settings: unknown, workspaceDir: string): unknown[] {
+  if (!isRecord(settings) || typeof settings.onlyBuiltDependenciesFile !== 'string') {
+    return [];
+  }
+  try {
+    const list = JSON.parse(
+      readFileSync(resolve(workspaceDir, settings.onlyBuiltDependenciesFile), 'utf8')
+    );
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
 
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
@@ -311,17 +381,88 @@ export class PNPMProxy extends JsPackageManager {
     return match ? match[1].trim() : null;
   }
 
-  /**
-   * Locate and parse the `pnpm-workspace.yaml` that governs this project's catalogs, walking up
-   * from the package.json we operate on. Returns null when the file is missing or malformed.
-   */
-  #readWorkspaceYaml(): { path: string; doc: Document } | null {
-    const path = find.up('pnpm-workspace.yaml', {
+  /** Looks for a `pnpm-workspace.yaml` all the way down to the project root. */
+  protected findWorkspaceYamlPath(): string | undefined {
+    return find.up('pnpm-workspace.yaml', {
       cwd: this.primaryPackageJson.operationDir,
       last: getProjectRoot(),
     });
+  }
+
+  /**
+   * pnpm 10+ refuses to run dependency build scripts until the user approves them, and from pnpm 11
+   * an unreviewed script fails a non-interactive install (`ERR_PNPM_IGNORED_BUILDS`). pnpm install
+   * has no `--allow-builds` flag, so we need to pre-approve builds. The only way to do this is to
+   * record the allowed builds in the `pnpm-workspace.yaml` like pnpm approve-builds does.
+   */
+  protected allowStorybookBuildScripts(): void {
+    if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
+      return;
+    }
+
+    // Find workspace file, create one if needed.
+    const workspace = this.#readWorkspaceYaml({ createIfMissing: true });
+    if (!workspace) {
+      logger.warn(
+        `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')}: pnpm-workspace.yaml is unreadable`
+      );
+      return;
+    }
+
+    const { path, doc } = workspace;
+    let changed = false;
+
+    try {
+      // An `allowBuilds:` key left empty (e.g. after its last entry was removed) is a null, which
+      // `setIn` cannot descend into; start a map there. Other non-map values are user errors pnpm
+      // rejects too, so just let the update fail below.
+      if (doc.getIn(['allowBuilds']) == null) {
+        doc.setIn(['allowBuilds'], doc.createNode({}));
+      }
+
+      // Add dependencies that need a build approval, unless the user already decided on them in the
+      // workspace file, in package.json's `pnpm` field, or in a trusted-dependencies file.
+      const settings = doc.toJS();
+      const decisions = [settings, this.primaryPackageJson.packageJson.pnpm];
+      const trustedDependencies = readOnlyBuiltDependenciesFile(settings, dirname(path));
+      for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
+        const decided =
+          decisions.some((candidate) => hasBuildScriptDecision(candidate, pkg)) ||
+          trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
+        if (!decided) {
+          doc.setIn(['allowBuilds', pkg], true);
+          changed = true;
+        }
+      }
+
+      // Write file back only if changes were needed.
+      if (changed) {
+        writeFileSync(path, doc.toString(), 'utf8');
+      }
+    } catch (e) {
+      logger.warn(
+        `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
+      );
+    }
+  }
+
+  /**
+   * Locate and parse the `pnpm-workspace.yaml` that governs this project, walking up from the
+   * package.json we operate on. Returns null when the file is malformed, or when it is missing
+   * and `createIfMissing` is unset. If `createIfMissing` is set, an empty document is returned
+   * with the location to which it can be written (next to `package.json`).
+   */
+  #readWorkspaceYaml(options?: {
+    createIfMissing: boolean;
+  }): { path: string; doc: Document } | null {
+    const path = this.findWorkspaceYamlPath();
     if (!path) {
-      return null;
+      return options?.createIfMissing
+        ? {
+            path: join(this.primaryPackageJson.operationDir, 'pnpm-workspace.yaml'),
+            doc: new Document(),
+          }
+        : null;
     }
     try {
       const doc = parseDocument(readFileSync(path, 'utf8'));
@@ -399,6 +540,7 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
+    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: ['install', ...this.getInstallArgs('install'), ...(options?.force ? ['--force'] : [])],
@@ -538,6 +680,7 @@ export class PNPMProxy extends JsPackageManager {
 
     const commandArgs = ['add', ...args, ...this.getInstallArgs('add')];
 
+    this.allowStorybookBuildScripts();
     return executeCommand({
       command: 'pnpm',
       args: commandArgs,

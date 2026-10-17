@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { uninstrumentedUserEvent } from 'storybook/test';
+
 import { enhanceContext } from './preview.ts';
 
 const nativeFocus = HTMLElement.prototype.focus;
@@ -66,6 +68,26 @@ describe('lazy userEvent initialization', () => {
     expect(spread.userEvent).toBeUndefined();
   });
 
+  it('defers userEvent.setup() until userEvent property is accessed', async () => {
+    const setupSpy = vi.spyOn(uninstrumentedUserEvent, 'setup');
+    try {
+      const context = {
+        canvasElement: document.body,
+        parameters: {},
+      } as any;
+
+      await enhanceContext(context);
+
+      expect(setupSpy).not.toHaveBeenCalled();
+
+      const userEvent = context.userEvent;
+      expect(setupSpy).toHaveBeenCalledTimes(1);
+      expect(userEvent).toBeDefined();
+    } finally {
+      setupSpy.mockRestore();
+    }
+  });
+
   it('instantiates userEvent and caches the instance upon first access', async () => {
     const context = {
       canvasElement: document.body,
@@ -94,5 +116,27 @@ describe('lazy userEvent initialization', () => {
     context.userEvent = customUserEvent;
 
     expect(context.userEvent).toBe(customUserEvent);
+  });
+
+  it('preserves the focus guard accessor after reading lazy userEvent', async () => {
+    const context = {
+      canvasElement: document.body,
+      parameters: {},
+    } as any;
+
+    await enhanceContext(context);
+
+    // Read userEvent to trigger lazy uninstrumentedUserEvent.setup() (which executes user-event's patchFocus)
+    const _ = context.userEvent;
+
+    // Focus descriptor on HTMLElement.prototype must still be an accessor with a getter (not replaced by a plain value)
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'focus');
+    expect(descriptor).toBeDefined();
+    expect(typeof descriptor?.get).toBe('function');
+
+    // Focusing a node from a detached document must not throw
+    const detachedDocument = document.implementation.createHTMLDocument();
+    const button = detachedDocument.createElement('button');
+    expect(() => button.focus()).not.toThrow();
   });
 });

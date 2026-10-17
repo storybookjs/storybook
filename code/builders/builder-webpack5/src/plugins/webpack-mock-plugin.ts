@@ -2,7 +2,6 @@ import { dirname, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  parseModuleAst,
   extractMockCalls,
   findMockRedirect,
   getIsExternal,
@@ -158,7 +157,6 @@ export class WebpackMockPlugin {
     // Use extractMockCalls to get all mocks from the transformed preview file
     const mocks = extractMockCalls(
       { previewConfigPath, configDir: dirname(previewConfigPath) },
-      parseModuleAst,
       compiler.context,
       findMockRedirect
     );

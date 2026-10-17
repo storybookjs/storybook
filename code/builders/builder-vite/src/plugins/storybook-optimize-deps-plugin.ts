@@ -1,10 +1,6 @@
 import { loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import {
-  parseModuleAst,
-  extractMockCalls,
-  findMockRedirect,
-} from 'storybook/internal/mocking-utils';
+import { extractMockCalls, findMockRedirect } from 'storybook/internal/mocking-utils';
 import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
 
 import { resolve } from 'pathe';
@@ -69,7 +65,6 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
                 coreOptions: { disableTelemetry: true },
                 configDir: options.configDir,
               },
-              parseModuleAst,
               projectRoot,
               findMockRedirect
             )

@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 
 import {
-  parseModuleAst,
   extractMockCalls,
   findMockRedirect,
   getAutomockCode,
@@ -56,7 +55,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       },
 
       buildStart() {
-        mockCalls = extractMockCalls(options, parseModuleAst, viteConfig.root, findMockRedirect);
+        mockCalls = extractMockCalls(options, viteConfig.root, findMockRedirect);
       },
 
       configureServer(server) {
@@ -65,12 +64,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(
-              options,
-              parseModuleAst,
-              viteConfig.root,
-              findMockRedirect
-            );
+            mockCalls = extractMockCalls(options, viteConfig.root, findMockRedirect);
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
@@ -149,9 +143,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = getAutomockCode(code, call.spy, (source) =>
-                  parseModuleAst(source, id)
-                );
+                const automockedCode = getAutomockCode(code, call.spy, id);
 
                 return {
                   code: automockedCode.toString(),

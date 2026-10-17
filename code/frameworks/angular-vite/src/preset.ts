@@ -1,6 +1,5 @@
 import { findConfigFile } from 'storybook/internal/common';
 import {
-  parseModuleAst,
   extractMockCalls,
   findMockRedirect,
   getAutomockCode,
@@ -534,7 +533,7 @@ export function angularOptionsPlugin(
 // the same mock calls and re-applies them on whatever analogjs produced:
 //   - `__mocks__/…` redirect → return the redirect file contents.
 //   - plain `sb.mock(...)` automock → wrap the post-analogjs exports with
-//     `getAutomockCode(code, spy, parse)`.
+//     `getAutomockCode(code, spy, id)`.
 function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
   let viteConfig: { resolve?: { preserveSymlinks?: boolean } } = {};
   let redirects: Array<{ absolutePath: string; redirectPath: string }> = [];
@@ -555,7 +554,6 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
       try {
         const calls = extractMockCalls(
           { previewConfigPath, configDir: options.configDir },
-          parseModuleAst,
           (viteConfig as any).root ?? process.cwd(),
           findMockRedirect
         );
@@ -608,7 +606,7 @@ function angularViteRedirectReapplyPlugin(options?: StandaloneOptions): Plugin {
           return null;
         }
         try {
-          const automocked = getAutomockCode(code, a.spy, (source) => parseModuleAst(source, id));
+          const automocked = getAutomockCode(code, a.spy, id);
           return {
             code: automocked.toString(),
             map: automocked.generateMap(),

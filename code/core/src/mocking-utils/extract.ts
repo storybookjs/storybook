@@ -35,22 +35,6 @@ interface ExtractMockCallsOptions {
   configDir: string;
 }
 
-/**
- * Parse a module into an ESTree program. The file extension picks the grammar, so a `.ts` module
- * keeps its generic arrows; without a TS or JS extension the TSX and TS grammars are both tried.
- * Throws on syntax errors.
- *
- * Node offsets index `normalizeLineEndings(code)`, which differs from `code` when it uses CRLF.
- */
-export const parseModuleAst = (code: string, fileName?: string) =>
-  parseModule(code, fileName).program;
-
-/**
- * @deprecated Use `parseModuleAst`. It returns an ESTree program, no longer a Babel AST, and its
- *   offsets index the code with `\n` line endings.
- */
-export const babelParser = parseModuleAst;
-
 const isStringLiteral = (node: any): boolean =>
   node?.type === 'Literal' && typeof node.value === 'string';
 
@@ -98,7 +82,6 @@ export function rewriteSbMockImportCalls(code: string, fileName: string) {
  */
 export function extractMockCalls(
   options: ExtractMockCallsOptions,
-  parse: (input: string) => unknown,
   root: string,
   findMockRedirect: (
     root: string,
@@ -109,7 +92,7 @@ export function extractMockCalls(
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
     const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
-    const ast = parse(jsCode);
+    const ast = parseModule(jsCode, options.previewConfigPath).program;
     const mocks: MockCall[] = [];
 
     /** Helper to check if an ObjectExpression node has spy: true */

@@ -7,16 +7,14 @@ import type {
 } from 'estree';
 import MagicString from 'magic-string';
 
-import { normalizeLineEndings, outerSpan } from '../csf-tools/estree/ast.ts';
+import { outerSpan, parseModule } from '../csf-tools/estree/ast.ts';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
-
-// An ESTree program; OXC's own `Program` type is structurally compatible with what is read here.
-type ParseFn = (code: string) => unknown;
 
 export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 
-export function getAutomockCode(originalCode: string, isSpy: boolean, parse: ParseFn) {
-  const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', parse, {
+/** Mock the exports of a module. The file name picks the grammar it is parsed with. */
+export function getAutomockCode(originalCode: string, isSpy: boolean, fileName?: string) {
+  const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', fileName, {
     globalThisAccessor: JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__),
   });
   return mocked;
@@ -48,14 +46,14 @@ export function getAutomockCode(originalCode: string, isSpy: boolean, parse: Par
 export function automockModule(
   code: string,
   mockType: 'automock' | 'autospy',
-  parse: (code: string) => any,
+  fileName: string | undefined,
   options: any = {}
 ): MagicString {
   const globalThisAccessor =
     options.globalThisAccessor || JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__);
   // Edits apply at the parsed offsets, which index the code with `\n` line endings.
-  const text = normalizeLineEndings(code);
-  const ast = parse(text) as Program;
+  const { code: text, program } = parseModule(code, fileName);
+  const ast = program as unknown as Program;
 
   const m = new MagicString(text);
 

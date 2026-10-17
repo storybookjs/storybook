@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { getAutomockCode } from './automock.ts';
-import { parseModuleAst } from './extract.ts';
+import { parseModule } from '../csf-tools/estree/ast.ts';
 
 describe('getAutomockCode', () => {
   it('mocks destructured exports, including ones with defaults', () => {
@@ -12,9 +12,7 @@ describe('getAutomockCode', () => {
       export async function getUser() {}
     `;
 
-    const mocked = getAutomockCode(code, false, (source) =>
-      parseModuleAst(source, '/mod.ts')
-    ).toString();
+    const mocked = getAutomockCode(code, false, '/mod.ts').toString();
 
     for (const name of ['a', 'renamed', 'first', 'getUser']) {
       expect(mocked).toContain(`["${name}"]: ${name},`);
@@ -25,33 +23,27 @@ describe('getAutomockCode', () => {
     ['export default (x);', 'const __vitest_default = (x);'],
     ['export /* a */ default /* b */ ((x));', 'const __vitest_default = ((x));'],
   ])('keeps the parentheses of %s', (code, declaration) => {
-    const mocked = getAutomockCode(code, false, (source) =>
-      parseModuleAst(source, '/mod.ts')
-    ).toString();
+    const mocked = getAutomockCode(code, false, '/mod.ts').toString();
 
     expect(mocked.startsWith(declaration)).toBe(true);
-    expect(() => parseModuleAst(mocked, '/mod.ts')).not.toThrow();
+    expect(() => parseModule(mocked, '/mod.ts')).not.toThrow();
   });
 
   it('mocks every export of a CRLF module', () => {
     const code = 'export const a = 1;\r\nexport function b() {}\r\nexport default a;\r\n';
 
-    const mocked = getAutomockCode(code, false, (source) =>
-      parseModuleAst(source, '/mod.ts')
-    ).toString();
+    const mocked = getAutomockCode(code, false, '/mod.ts').toString();
 
     expect(mocked).toContain('["a"]: a,');
     expect(mocked).toContain('["b"]: b,');
     expect(mocked).toContain('["__vitest_default"]: __vitest_default,');
-    expect(() => parseModuleAst(mocked, '/mod.ts')).not.toThrow();
+    expect(() => parseModule(mocked, '/mod.ts')).not.toThrow();
   });
 
   it('mocks a .ts module with generic arrows under a Vite id with a query', () => {
     const code = 'export const identity = <T>(value: T) => value;';
 
-    const mocked = getAutomockCode(code, false, (source) =>
-      parseModuleAst(source, '/src/api.ts?v=abc')
-    ).toString();
+    const mocked = getAutomockCode(code, false, '/src/api.ts?v=abc').toString();
 
     expect(mocked).toContain('["identity"]: identity,');
   });

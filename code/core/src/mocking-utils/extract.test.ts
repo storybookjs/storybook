@@ -40,8 +40,6 @@ vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
 }));
 
-const parser = extractModule.parseModuleAst;
-
 describe('isModuleDirectory', () => {
   it('returns true for node_modules path', () => {
     expect(extractModule.isModuleDirectory('/foo/node_modules/bar')).toBe(true);
@@ -64,7 +62,6 @@ describe('extractMockCalls', () => {
     vi.mocked(readFileSync).mockReturnValue(previewContent);
     return extractModule.extractMockCalls(
       { previewConfigPath, configDir, coreOptions },
-      parser,
       root,
       findMockRedirect
     );
@@ -244,13 +241,6 @@ describe('extractMockCalls', () => {
         '/project/.storybook/preview.ts'
       );
       expect(unchanged).toEqual({ code: `export default {};`, map: null });
-    });
-
-    it('parses .ts modules with the TS grammar and fails on syntax errors', () => {
-      const code = `export const identity = <T>(value: T) => value;`;
-      expect(extractModule.parseModuleAst(code, '/project/util.ts').body).toHaveLength(1);
-      expect(extractModule.parseModuleAst(code).body).toHaveLength(1);
-      expect(() => extractModule.parseModuleAst('export const = ;', '/project/util.ts')).toThrow();
     });
 
     it('rewrites sb.mock(import("<xyz>")) to sb.mock("<xyz>")', () => {

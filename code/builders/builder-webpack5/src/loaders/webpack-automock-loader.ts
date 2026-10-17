@@ -1,4 +1,4 @@
-import { parseModuleAst, getAutomockCode } from 'storybook/internal/mocking-utils';
+import { getAutomockCode } from 'storybook/internal/mocking-utils';
 
 import type { LoaderContext } from 'webpack';
 
@@ -31,7 +31,7 @@ export default function webpackAutomockLoader(
   const isSpy = options.spy === 'true';
 
   // Generate the mocked source code using the utility from @vitest/mocker.
-  const mocked = getAutomockCode(source, isSpy, (code) => parseModuleAst(code, this.resourcePath));
+  const mocked = getAutomockCode(source, isSpy, this.resourcePath);
 
   // Return the transformed code to Webpack for further processing.
   return mocked.toString();

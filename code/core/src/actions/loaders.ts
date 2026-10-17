@@ -44,7 +44,7 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
           'next/headers::headers().delete',
         ].some((prefix) => name.startsWith(prefix))
       ) {
-        action(name)(args);
+        action(name)(...args);
       }
     });
     subscribed = true;

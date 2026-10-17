@@ -155,7 +155,7 @@ export function wrapValuesWithGetAbsolutePathWrapper(config: ConfigFile, nodes: 
   const wrap = (node: Node) =>
     isGetAbsolutePathWrapperNecessary(node, (target) => {
       if (isStringLiteral(target)) {
-        config._editorSource.edits.overwrite(
+        config._editor.edits.overwrite(
           target.start,
           target.end,
           getAbsolutePathCall(config, target.value)
@@ -165,7 +165,7 @@ export function wrapValuesWithGetAbsolutePathWrapper(config: ConfigFile, nodes: 
       }
     });
   nodes.forEach(wrap);
-  config._commit();
+  config._editor.commit();
 }
 
 /**
@@ -191,7 +191,7 @@ export function ensureNamedImport(config: ConfigFile, imported: string, source: 
     }
   }
 
-  const taken = config._editorSource.scopes.program.bindings;
+  const taken = config._editor.scopes.program.bindings;
   if (!taken.has(imported)) {
     config.setImport([imported], source);
     return imported;
@@ -202,9 +202,9 @@ export function ensureNamedImport(config: ConfigFile, imported: string, source: 
     local = `_${local}`;
   }
   prependStatement(
-    config._editorSource,
+    config._editor,
     `import { ${imported} as ${local} } from ${printString(source, config._quote)};`
   );
-  config._commit();
+  config._editor.commit();
   return local;
 }

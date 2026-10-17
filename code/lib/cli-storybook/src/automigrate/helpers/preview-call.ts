@@ -78,7 +78,7 @@ export const removeTopLevelCall = (
   preview: ConfigFile,
   { callee, calleeSources }: { callee: string; calleeSources: ReadonlySet<string> }
 ): RemoveTopLevelCallResult => {
-  const editor = preview._editorSource;
+  const editor = preview._editor;
   const callsToDrop = topLevelCalls(editor.program, callee);
   if (callsToDrop.length === 0) {
     return { removed: false, reason: `${callee} is not called at the top level` };
@@ -118,6 +118,6 @@ export const removeTopLevelCall = (
     }
   }
   removeStatements(editor, statementsToDrop);
-  preview._commit();
+  preview._editor.commit();
   return { removed: true, keptArguments };
 };

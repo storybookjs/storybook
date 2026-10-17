@@ -423,7 +423,6 @@ export const discoverCsfObjects = (
         );
         return current && literalRoot(csf._editor, current.node);
       },
-      commit: () => csf._commit(),
     };
     return createCsfObject(target, host, prefix, report, markChanged);
   });

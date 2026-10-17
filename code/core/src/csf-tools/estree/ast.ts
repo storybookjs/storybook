@@ -94,10 +94,10 @@ export const parseModule = (code: string, fileName?: string): ParsedModule => {
   return module;
 };
 
-// `parseModule`, but `textOf` can print every node of the tree.
+// `parseModule`, but `textOf` can print every node of the tree and `moduleOf` finds its parse.
 export const parsePrintable = (code: string, fileName?: string): ParsedModule => {
   const module = parseWithParentheses(code, fileName);
-  normalize(module.program, module.code);
+  normalize(module.program, module);
   return module;
 };
 
@@ -313,8 +313,11 @@ type Span = { start: number; end: number };
 
 export const sourceOf = (code: string, node: Span) => code.slice(node.start, node.end);
 
-// The code each parsed node came from, so a node can be printed without its module.
-const nodeSources = new WeakMap<object, string>();
+// The parse each node came from, so a node can be printed without its module.
+const nodeModules = new WeakMap<object, ParsedModule>();
+
+/** The parse a node of `parsePrintable` or `expressionFromSource` came from. */
+export const moduleOf = (node: object): ParsedModule | undefined => nodeModules.get(node);
 
 const outerSpans = new WeakMap<object, Span>();
 
@@ -337,15 +340,15 @@ const withoutParentheses = (node: Node): Node => {
 const childKeys = new Map<string, readonly string[]>(Object.entries(visitorKeys));
 
 // Replaces every parenthesized node under `root` by the node inside it, in one pass that also
-// records the code each node came from, if given. It keeps its own stack, so a deeply nested
+// records the parse each node came from, if given. It keeps its own stack, so a deeply nested
 // expression cannot overflow the call stack; tracking the size itself is faster than push and pop.
-const normalize = (root: Node, code: string | undefined) => {
+const normalize = (root: Node, module: ParsedModule | undefined) => {
   const stack = [root];
   let size = 1;
   while (size > 0) {
     const node = stack[--size];
-    if (code !== undefined) {
-      nodeSources.set(node, code);
+    if (module !== undefined) {
+      nodeModules.set(node, module);
     }
     const keys = childKeys.get(node.type);
     if (keys === undefined) {
@@ -383,8 +386,8 @@ export const textOf = (node: Node): string | undefined => {
   if (fragment) {
     return fragment.text;
   }
-  const code = nodeSources.get(node);
-  return code === undefined ? undefined : sourceOf(code, node as Node & Span);
+  const module = nodeModules.get(node);
+  return module === undefined ? undefined : sourceOf(module.code, node as Node & Span);
 };
 
 /**
@@ -397,7 +400,7 @@ export const placeableTextOf = (node: Node): string => {
   if (fragment) {
     return fragment.placeable;
   }
-  const code = nodeSources.get(node);
+  const code = nodeModules.get(node)?.code;
   if (code === undefined) {
     throw new Error(
       `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\` or \`parseExpression\``
@@ -417,14 +420,15 @@ export const expressionFromSource = (source: string): E.Expression => {
   const code = normalizeLineEndings(source);
   // The line break ends a trailing line comment before the closing parenthesis.
   const wrapped = `(${code}\n)`;
-  const { program, comments } = parseWithParentheses(wrapped, undefined);
+  const module = parseWithParentheses(wrapped, undefined);
+  const { program, comments } = module;
   const statement = program.body[0] as E.Statement | undefined;
   const wrapper = statement?.type === 'ExpressionStatement' ? statement.expression : undefined;
   if (wrapper?.type !== 'ParenthesizedExpression' || wrapper.end !== wrapped.length) {
     throw new SyntaxError(`Expected an expression: ${code}`);
   }
   const parenthesized = wrapper.expression.type === 'ParenthesizedExpression';
-  normalize(program, wrapped);
+  normalize(program, module);
   const expression = (statement as E.ExpressionStatement).expression;
   // The wrapper's parentheses are not part of the fragment.
   outerSpans.delete(expression);

@@ -67,7 +67,7 @@ const isProjectsArrayProp = (
   keyName(member) === 'projects' && (member as E.ObjectProperty).value.type === 'ArrayExpression';
 
 const memberTexts = (editor: SourceEditor, object: E.ObjectExpression, members: Member[]) =>
-  members.map((member) => itemText(editor, objectList(object), member));
+  members.map((member) => itemText(editor, objectList(editor, object), member));
 
 const elementTexts = (editor: SourceEditor, array: E.ArrayExpression) =>
   arrayList(editor, array).items.map((element) =>
@@ -128,7 +128,7 @@ const mergeProperties = (
     }
   }
   if (appended.length > 0) {
-    appendItems(target, objectList(into), appended);
+    appendItems(target, objectList(target, into), appended);
   }
 };
 
@@ -159,7 +159,7 @@ const appendToExistingProjects = (
     if (added.length > 0) {
       appendItems(
         merge.target,
-        objectList(testObject),
+        objectList(merge.target, testObject),
         memberTexts(merge.source, templateTestObject, added)
       );
     }
@@ -232,7 +232,11 @@ const wrapTestConfigAsProject = (
 
   prependToList(source, arrayList(source, templateProjects.value), [project], '');
   if (hoisted.length > 0) {
-    prependToList(source, objectList(templateTestObject), memberTexts(target, testObject, hoisted));
+    prependToList(
+      source,
+      objectList(source, templateTestObject),
+      memberTexts(target, testObject, hoisted)
+    );
   }
   source.commit();
 
@@ -242,7 +246,7 @@ const wrapTestConfigAsProject = (
     existingTest.start,
     existingTest.end,
     reindent(
-      itemText(source, objectList(config), templateTest),
+      itemText(source, objectList(source, config), templateTest),
       '',
       lineIndent(target.code, existingTest.start)
     )

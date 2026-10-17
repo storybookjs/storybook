@@ -428,7 +428,7 @@ const removePreviewWiring = (preview: ConfigFile, previewConfigPath: string): vo
   if (!result.removed) {
     manualRemovalHint(
       previewConfigPath,
-      countReferences(preview._editorSource, SET_COMPODOC_JSON) > 0
+      countReferences(preview._editor, SET_COMPODOC_JSON) > 0
         ? result.reason
         : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
     );

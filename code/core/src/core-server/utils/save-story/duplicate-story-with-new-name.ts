@@ -40,7 +40,7 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
         property.type === 'Property' && !property.computed && identifierKey(property) === 'args'
     );
     if (args.length > 0) {
-      removeFromList(copy, objectList(child), args);
+      removeFromList(copy, objectList(copy, child), args);
     }
   });
   const initCode = copy.toString().slice(1, -1);
@@ -50,7 +50,7 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
       : '';
 
   appendStatement(csfFile._editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
-  csfFile._commit();
+  csfFile._editor.commit();
 
   const duplicated = csfFile._storyExports[newStoryName];
   return (duplicated?.type === 'VariableDeclarator' ? duplicated.init : duplicated) as Node;

@@ -47,7 +47,7 @@ export async function configToCsfFactory(
   }
 
   const methodName = configType === 'main' ? 'defineMain' : 'definePreview';
-  const editor = config._editorSource;
+  const editor = config._editor;
   const exportDecls = config._exportDecls;
   const quote = config._quote;
 
@@ -155,7 +155,7 @@ export async function configToCsfFactory(
     const { at, text } = prependMembers(editor.code, config._exportsObject, defineConfigProps);
     editor.edits.appendRight(at, text);
     removeExportDeclarations(editor, exportDecls);
-    config._commit();
+    config._editor.commit();
     wrapDefaultExport(false);
   } else if (config._exportsObject) {
     /**
@@ -192,7 +192,7 @@ export async function configToCsfFactory(
      */
     appendStatement(editor, `export default ${methodName}({});`);
   }
-  config._commit();
+  config._editor.commit();
 
   // Check whether @storybook/framework import already exists
   const existingImport = findFrameworkImport();
@@ -210,7 +210,7 @@ export async function configToCsfFactory(
       `import { ${methodName} } from ${quote}${expectedImportSource}${quote};`
     );
   }
-  config._commit();
+  config._editor.commit();
 
   // Remove type imports – now inferred – from @storybook/* packages
   const disallowList = ['StorybookConfig', 'Preview'];

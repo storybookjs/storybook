@@ -111,6 +111,26 @@ describe('reindent', () => {
   });
 });
 
+describe('commit', () => {
+  it('throws for a node of the parse before a commit', () => {
+    const editor = new SourceEditor("import z from 'z';\nimport { a } from 'a';\n");
+    const [stale] = editor.program.body;
+    editor.edits.overwrite(stale.start, stale.end, "import z from 'zzzzzzzz';");
+    editor.commit();
+    expect(() => removeStatement(editor, stale)).toThrow('stale after `commit()`');
+    expect(() => editor.source(stale)).toThrow('stale after `commit()`');
+    removeStatement(editor, editor.program.body[0]);
+    expect(editor.toString()).toBe("import { a } from 'a';\n");
+  });
+
+  it('derives the story exports of a CsfFile again', () => {
+    const csf = parse('export default {};\nexport const A = {};\n');
+    appendStatement(csf._editor, 'export const B = {};');
+    csf._editor.commit();
+    expect(Object.keys(csf._stories)).toEqual(['A', 'B']);
+  });
+});
+
 describe('parenthesized array elements', () => {
   it('appends after a comma expression and removes a doubly parenthesized one whole', () => {
     const editor = new SourceEditor(`export default { addons: [(a, b)] };`);

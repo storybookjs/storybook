@@ -270,7 +270,6 @@ export interface CsfObjectHost {
   readonly editor: SourceEditor;
   // Located again after every commit.
   root(): ObjectRoot | undefined;
-  commit(): void;
 }
 
 export const literalRoot = (editor: SourceEditor, object: E.ObjectExpression): ObjectRoot => ({
@@ -530,7 +529,7 @@ class CsfObjectEditor implements CsfObject {
       return this.failure(removal.code, path, removal.node);
     }
     inspected.parent.root.remove([inspected.property]);
-    this.commit();
+    this.editor.commit();
     this.removeEmptyParents(logicalPath);
     return this.success();
   }
@@ -600,13 +599,13 @@ class CsfObjectEditor implements CsfObject {
     // Insert first: if that throws, nothing has been committed. The source is removed afterwards,
     // looked up again since the insertion moved its spans.
     this.insert(destinationPath, [{ ...moved, key }]);
-    this.commit();
+    this.editor.commit();
     const remaining = this.inspect(sourcePath);
     if (remaining.ok === false || !remaining.property || !remaining.parent) {
       throw new Error(`CsfObject: ${sourcePath.join('.')} was not found again after moving it`);
     }
     remaining.parent.root.remove([remaining.property]);
-    this.commit();
+    this.editor.commit();
     this.removeEmptyParents(sourcePath);
     return this.success();
   }
@@ -790,7 +789,7 @@ class CsfObjectEditor implements CsfObject {
         return;
       }
       ancestor.parent.root.remove([ancestor.property]);
-      this.commit();
+      this.editor.commit();
     }
   }
 
@@ -878,10 +877,6 @@ class CsfObjectEditor implements CsfObject {
     return this.editor.program;
   }
 
-  private commit() {
-    this.host.commit();
-  }
-
   private failure(
     code: CsfMutationDiagnosticCode,
     path: readonly string[],
@@ -903,7 +898,7 @@ class CsfObjectEditor implements CsfObject {
   }
 
   private success(): CsfMutationResult {
-    this.commit();
+    this.editor.commit();
     this.#changed = true;
     this.markChanged();
     return { ok: true, changed: true };

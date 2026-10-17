@@ -8,6 +8,7 @@ import {
   type Property,
   isNode,
   isValidIdentifier,
+  moduleOf,
   normalizeLineEndings,
   outerSpan,
   parseModule,
@@ -44,8 +45,10 @@ export type InputSourceMap =
 
 /**
  * Source text plus its OXC AST. Edits accumulate in `edits`, so untouched code stays
- * byte-identical; `commit()` applies them and parses the result again. Line endings are
- * normalized to `\n`, so `code`, node offsets and `toString()` all use `\n`.
+ * byte-identical; `commit()` applies them, parses the result again and calls `onCommit`, so whoever
+ * derived state from the old tree derives it again. Nodes of an earlier parse index code that is
+ * gone: `source()` and the editing functions throw for them. Line endings are normalized to `\n`,
+ * so `code`, node offsets and `toString()` all use `\n`.
  */
 export class SourceEditor {
   _module: ParsedModule;
@@ -65,8 +68,11 @@ export class SourceEditor {
 
   readonly fileName: string | undefined;
 
-  constructor(code: string, fileName?: string) {
+  readonly _onCommit: (() => void) | undefined;
+
+  constructor(code: string, fileName?: string, onCommit?: () => void) {
     this.fileName = fileName;
+    this._onCommit = onCommit;
     this._originalCode = code;
     this._module = parsePrintable(code, fileName);
     this._edits = new MagicString(this.code, { filename: fileName });
@@ -120,7 +126,18 @@ export class SourceEditor {
   }
 
   source(node: Span) {
+    this.assertCurrent(node);
     return sourceOf(this.code, node);
+  }
+
+  /** Throw for a node of another parse, such as one from before a commit. */
+  assertCurrent(node: Span) {
+    const module = moduleOf(node);
+    if (module && module !== this._module) {
+      throw new Error(
+        `Cannot edit a ${(node as Node).type} node of another parse: nodes are stale after \`commit()\`, look them up again`
+      );
+    }
   }
 
   /** Apply pending edits and parse the result again. Returns whether anything changed. */
@@ -135,6 +152,7 @@ export class SourceEditor {
     this._scopes = undefined;
     this._parents = undefined;
     this._edits = new MagicString(this.code, { filename: this.fileName });
+    this._onCommit?.();
     return true;
   }
 
@@ -368,6 +386,7 @@ export const specifierList = (
   editor: SourceEditor,
   declaration: E.ImportDeclaration | E.ExportNamedDeclaration
 ): List => {
+  editor.assertCurrent(declaration);
   const { code } = editor;
   const items = declaration.specifiers.filter(
     (specifier) => specifier.type === 'ImportSpecifier' || specifier.type === 'ExportSpecifier'
@@ -380,17 +399,20 @@ export const specifierList = (
   };
 };
 
-export const objectList = (object: E.ObjectExpression | E.ObjectPattern): List => ({
-  open: object.start + 1,
-  close: object.end - 1,
-  items: object.properties,
-});
+export const objectList = (
+  editor: SourceEditor,
+  object: E.ObjectExpression | E.ObjectPattern
+): List => {
+  editor.assertCurrent(object);
+  return { open: object.start + 1, close: object.end - 1, items: object.properties };
+};
 
 // A hole (`[a, , b]`) is an empty item right before the comma that writes it.
 const isHole = (item: Span) => item.start === item.end;
 
 // An element's item spans the parentheses around it.
 export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List => {
+  editor.assertCurrent(array);
   const open = array.start + 1;
   const close = array.end - 1;
   let cursor = open;
@@ -551,16 +573,18 @@ const itemTextWith = (
  * Text of an item including the comments that lead it, with continuation lines dedented. The
  * comments that trail the item on its line move above it, so a comma can follow the text.
  */
-export const itemText = (editor: SourceEditor, list: List, item: Span) =>
-  itemTextWith(editor, list, list.items.indexOf(item), (start) =>
+export const itemText = (editor: SourceEditor, list: List, item: Span) => {
+  editor.assertCurrent(item);
+  return itemTextWith(editor, list, list.items.indexOf(item), (start) =>
     dedentSource(editor, start, item.end, lineIndent(editor.code, item.start))
   );
+};
 
 export const memberText = (
   editor: SourceEditor,
   object: E.ObjectExpression,
   member: E.ObjectPropertyKind
-) => itemText(editor, objectList(object), member);
+) => itemText(editor, objectList(editor, object), member);
 
 export const appendToList = (
   editor: SourceEditor,
@@ -635,6 +659,7 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[],
 
 /** Remove items with their separators and the comments that lead and trail them from a list. */
 export const removeFromList = (editor: SourceEditor, list: List, removedItems: readonly Span[]) => {
+  removedItems.forEach((item) => editor.assertCurrent(item));
   const { code, edits } = editor;
   const { items } = list;
   // A list item may be a widened span, so an item is removed when it contains a removed span.
@@ -680,10 +705,10 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
 };
 
 export const appendMembers = (editor: SourceEditor, object: E.ObjectExpression, texts: string[]) =>
-  appendToList(editor, objectList(object), texts);
+  appendToList(editor, objectList(editor, object), texts);
 
 export const prependMembers = (editor: SourceEditor, object: E.ObjectExpression, texts: string[]) =>
-  prependToList(editor, objectList(object), texts);
+  prependToList(editor, objectList(editor, object), texts);
 
 /** Replace contiguous members with `key: { …members }`, keeping the first member's comments. */
 export const groupMembers = (
@@ -692,7 +717,8 @@ export const groupMembers = (
   members: Property[],
   key: string
 ) => {
-  const list = objectList(object);
+  const list = objectList(editor, object);
+  members.forEach((member) => editor.assertCurrent(member));
   const texts = members.map((member) => memberText(editor, object, member));
   const first = list.items.indexOf(members[0]);
   const multiline = editor.code.slice(object.start, object.end).includes('\n');
@@ -719,7 +745,7 @@ export const removeMembers = (
   editor: SourceEditor,
   object: E.ObjectExpression,
   members: readonly E.ObjectPropertyKind[]
-) => removeFromList(editor, objectList(object), members);
+) => removeFromList(editor, objectList(editor, object), members);
 
 const NEXT_LINE_DIRECTIVE =
   /^\s*(@ts-(expect-error|ignore)|[a-z]+-disable-next-line|prettier-ignore|biome-ignore)\b/;
@@ -772,6 +798,7 @@ export const headerComments = (editor: SourceEditor): E.Comment[] => {
  * code below instead, and so is everything after it.
  */
 export const statementEnd = (editor: SourceEditor, statement: Span) => {
+  editor.assertCurrent(statement);
   const { comments } = commentsBeside(editor, statement.end);
   const below = comments.findIndex(
     (comment) =>
@@ -857,6 +884,7 @@ export const appendStatement = (editor: SourceEditor, text: string) => {
 
 /** Remove a statement with the comments it owns, and its lines when nothing else shares them. */
 export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: boolean) => {
+  editor.assertCurrent(statement);
   const { code } = editor;
   const start = (leadingComments(editor, statement)[0] ?? statement).start;
   const end = statementEnd(editor, statement);
@@ -887,6 +915,7 @@ export const removeStatement = (editor: SourceEditor, statement: Span, atTop?: b
 
 /** Remove top-level statements, each with a `;` that directly follows it. */
 export const removeStatements = (editor: SourceEditor, statements: ReadonlySet<Node>) => {
+  statements.forEach((statement) => editor.assertCurrent(statement));
   const { body } = editor.program;
   let keptBefore = false;
   body.forEach((statement, index) => {
@@ -912,6 +941,7 @@ export const setImportSpecifiers = (
   kept: readonly E.ImportDeclaration['specifiers'][number][],
   added: { default?: string; named?: string[] } = {}
 ) => {
+  editor.assertCurrent(declaration);
   const { specifiers } = declaration;
   const named = specifiers.filter((specifier) => specifier.type === 'ImportSpecifier');
   const others = specifiers.filter((specifier) => specifier.type !== 'ImportSpecifier');
@@ -946,6 +976,7 @@ export const setImportSpecifiers = (
 };
 
 export const replaceValue = (editor: SourceEditor, member: Property, text: string) => {
+  editor.assertCurrent(member);
   if (member.shorthand) {
     editor.edits.overwrite(member.start, member.end, `${editor.source(member.key)}: ${text}`);
     return;
@@ -968,6 +999,7 @@ export const keySource = (editor: SourceEditor, member: Property) =>
 
 // A computed key's span includes its brackets: the tokens around the key and its parentheses.
 const keyRange = (editor: SourceEditor, member: Property): Span => {
+  editor.assertCurrent(member);
   if (!member.computed) {
     return member.key;
   }
@@ -995,7 +1027,7 @@ export const renamedMemberText = (
   member: Property,
   key: string
 ) => {
-  const list = objectList(object);
+  const list = objectList(editor, object);
   const indent = lineIndent(editor.code, member.start);
   const dedent = (start: number, end: number) => dedentSource(editor, start, end, indent);
   return itemTextWith(editor, list, list.items.indexOf(member), (start) => {

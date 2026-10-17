@@ -291,7 +291,7 @@ const findManifestImports = (
 };
 
 const removeDefaultImport = (preview: ConfigFile, name: string): void => {
-  const editor = preview._editorSource;
+  const editor = preview._editor;
   const statementsToDrop = new Set<Node>();
   for (const node of editor.program.body) {
     if (node.type !== 'ImportDeclaration') {
@@ -307,7 +307,7 @@ const removeDefaultImport = (preview: ConfigFile, name: string): void => {
     }
   }
   removeStatements(editor, statementsToDrop);
-  preview._commit();
+  preview._editor.commit();
 };
 
 const removePreviewWiring = (
@@ -345,7 +345,7 @@ const removePreviewWiring = (
   }
 
   for (const [name, specifier] of keptImports) {
-    const editor = preview._editorSource;
+    const editor = preview._editor;
     // A setter call left in place already got the manual-removal hint.
     const readers = topLevelReaders(editor, name).filter(
       (node) => !SETTER_NAMES.some((setterName) => isTopLevelCall(node, setterName))

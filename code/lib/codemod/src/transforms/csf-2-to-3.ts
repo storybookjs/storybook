@@ -152,6 +152,8 @@ export default async function transform(info: FileInfo, api: API, options: { par
 
   const editor = csf._editor;
   const importHelper = new StorybookImportHelper(editor);
+  // Read before the commit below, after which the stories no longer bind their templates.
+  const templates = Object.keys(csf._templates);
 
   const objectExports = new Set<string>();
   Object.entries(csf._storyExports).forEach(([key, decl]) => {
@@ -204,7 +206,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
   editor.commit();
 
   upgradeDeprecatedTypes(editor);
-  removeUnusedTemplates(editor, Object.keys(csf._templates));
+  removeUnusedTemplates(editor, templates);
 
   let output = printCsf(csf).code;
 

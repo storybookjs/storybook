@@ -203,7 +203,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get(path: readonly string[]): CsfExpression | undefined {
-    const editor = this._editor('read');
+    const editor = this._objectEditor('read');
     return editor.ok ? editor.object.get(path) : undefined;
   }
 
@@ -220,7 +220,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   getValue(path: readonly string[]): CsfValue {
-    const editor = this._editor('read');
+    const editor = this._objectEditor('read');
     return editor.ok ? editor.object.getValue(path) : undefined;
   }
 
@@ -323,13 +323,13 @@ export class ConfigFile implements CsfObject {
   }
 
   _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
-    const editor = this._editor('mutate');
+    const editor = this._objectEditor('mutate');
     return editor.ok === true
       ? operation(editor.object)
       : { ok: false, changed: false, diagnostic: editor.diagnostic };
   }
 
-  _editor(mode: 'read' | 'mutate') {
+  _objectEditor(mode: 'read' | 'mutate') {
     const editor = createConfigObject(
       this,
       mode,
@@ -344,7 +344,7 @@ export class ConfigFile implements CsfObject {
     return editor;
   }
 
-  _editorSource: SourceEditor;
+  _editor: SourceEditor;
 
   _exports: Record<string, Node> = {};
 
@@ -362,27 +362,22 @@ export class ConfigFile implements CsfObject {
   hasDefaultExport = false;
 
   constructor(code: string, fileName?: string) {
-    this._editorSource = new SourceEditor(code, fileName);
+    this._editor = new SourceEditor(code, fileName, () => {
+      this._exports = {};
+      this._exportDecls = {};
+      this._exportsObject = undefined;
+      this.hasDefaultExport = false;
+      this.parse();
+    });
     this.fileName = fileName;
   }
 
   get _program(): E.Program {
-    return this._editorSource.program;
+    return this._editor.program;
   }
 
   get _code(): string {
-    return this._editorSource.code;
-  }
-
-  _commit() {
-    if (!this._editorSource.commit()) {
-      return;
-    }
-    this._exports = {};
-    this._exportDecls = {};
-    this._exportsObject = undefined;
-    this.hasDefaultExport = false;
-    this.parse();
+    return this._editor.code;
   }
 
   _parseExportsObject(exportsObject: E.ObjectExpression) {
@@ -418,7 +413,7 @@ export class ConfigFile implements CsfObject {
 
   parse() {
     // Read before any edit: a mutation may remove the string literals the style is inferred from.
-    this._editorSource.preferredQuote = this._quote;
+    this._editor.preferredQuote = this._quote;
     walk(this._program, (node, parent) => {
       const isTopLevel = parent?.type === 'Program';
       if (node.type === 'ExportDefaultDeclaration') {
@@ -684,11 +679,11 @@ export class ConfigFile implements CsfObject {
   }
 
   removeField(path: string[]) {
-    const editor = this._editorSource;
+    const editor = this._editor;
     const removeProperty = (object: E.ObjectExpression, prop: string) => {
       const member = object.properties.find((p) => propKey(p) === prop);
       if (member) {
-        removeFromList(editor, objectList(object), [member]);
+        removeFromList(editor, objectList(editor, object), [member]);
       }
     };
     // the structure of this._exports doesn't work for this use case
@@ -716,7 +711,7 @@ export class ConfigFile implements CsfObject {
       }
 
       if (removedRootProperty) {
-        this._commit();
+        this._editor.commit();
         return;
       }
     }
@@ -725,7 +720,7 @@ export class ConfigFile implements CsfObject {
     const parentNode = _getPath(rest.slice(0, -1), this._exports[root]);
     if (this._exports[root] && parentNode?.type === 'ObjectExpression') {
       removeProperty(parentNode, path.at(-1)!);
-      this._commit();
+      this._editor.commit();
     }
   }
 
@@ -743,8 +738,8 @@ export class ConfigFile implements CsfObject {
     if (!current) {
       this.set(path, parseExpression(`[${source}]`));
     } else if (current.type === 'ArrayExpression') {
-      appendToList(this._editorSource, arrayList(this._editorSource, current), [source], '');
-      this._commit();
+      appendToList(this._editor, arrayList(this._editor, current), [source], '');
+      this._editor.commit();
     } else {
       throw new Error(`Expected array at '${path.join('.')}', got '${current.type}'`);
     }
@@ -772,8 +767,8 @@ export class ConfigFile implements CsfObject {
         return element ? this._getWrappedValue(element) === value : false;
       });
       if (element) {
-        removeFromList(this._editorSource, arrayList(this._editorSource, current), [element]);
-        this._commit();
+        removeFromList(this._editor, arrayList(this._editor, current), [element]);
+        this._editor.commit();
       } else {
         throw new Error(`Could not find '${value}' in array at '${path.join('.')}'`);
       }
@@ -839,13 +834,12 @@ export class ConfigFile implements CsfObject {
     const calls = findCallArguments(this, options, report);
     return calls.map((_, index) => {
       const host: CsfObjectHost = {
-        editor: this._editorSource,
+        editor: this._editor,
         root: () => {
           // Edits re-parse the file, so the argument is found again by its position among calls.
           const node = findCallArguments(this, options, () => {})[index];
-          return node && literalRoot(this._editorSource, node);
+          return node && literalRoot(this._editor, node);
         },
-        commit: () => this._commit(),
       };
       return createCsfObject(target, host, [], report, () => {
         this._changed = true;
@@ -855,8 +849,8 @@ export class ConfigFile implements CsfObject {
 
   /** Appends a statement, given as source, to the end of the file. */
   setBodyDeclaration(declaration: string) {
-    appendStatement(this._editorSource, declaration);
-    this._commit();
+    appendStatement(this._editor, declaration);
+    this._editor.commit();
   }
 
   /**
@@ -885,7 +879,7 @@ export class ConfigFile implements CsfObject {
       ).value;
     }
     const source = printString(fromImport, this._quote);
-    const editor = this._editorSource;
+    const editor = this._editor;
 
     // if the import specifier is a string, we're dealing with default imports
     if (typeof importSpecifier === 'string') {
@@ -908,10 +902,10 @@ export class ConfigFile implements CsfObject {
       if (!pattern) {
         prependStatement(editor, `const { ${names.join(', ')} } = require(${source});`);
       } else if (pattern.type === 'ObjectPattern' && names.length > 0) {
-        appendToList(editor, objectList(pattern), names);
+        appendToList(editor, objectList(editor, pattern), names);
       }
     }
-    this._commit();
+    this._editor.commit();
   }
 
   _findRequire(fromImport: string) {
@@ -961,7 +955,7 @@ export class ConfigFile implements CsfObject {
     if (importDeclaration) {
       fromImport = importDeclaration.source.value;
     }
-    const editor = this._editorSource;
+    const editor = this._editor;
     const source = printString(fromImport, this._quote);
     const has = (type: string, name?: string) =>
       !!importDeclaration?.specifiers.some(
@@ -1013,7 +1007,7 @@ export class ConfigFile implements CsfObject {
     ) {
       addImport(`* as ${importSpecifier.namespace}`);
     }
-    this._commit();
+    this._editor.commit();
   }
 
   _removeRequireImport(
@@ -1026,7 +1020,7 @@ export class ConfigFile implements CsfObject {
       return;
     }
     const declarator = requireDeclaration.declarations[0];
-    const editor = this._editorSource;
+    const editor = this._editor;
 
     // Handle default requires e.g. const foo = require('bar')
     if (typeof importSpecifier === 'string') {
@@ -1049,7 +1043,7 @@ export class ConfigFile implements CsfObject {
       if (removed.length === pattern.properties.length) {
         removeStatement(editor, requireDeclaration);
       } else if (removed.length > 0) {
-        removeFromList(editor, objectList(pattern), removed);
+        removeFromList(editor, objectList(editor, pattern), removed);
       }
     }
   }
@@ -1062,7 +1056,7 @@ export class ConfigFile implements CsfObject {
     if (!importDeclaration) {
       return;
     }
-    const editor = this._editorSource;
+    const editor = this._editor;
 
     // Remove side-effect imports (e.g., import 'foo') if exact match, else do nothing.
     if (importSpecifier === null) {
@@ -1138,9 +1132,9 @@ export class ConfigFile implements CsfObject {
     fromImport: string
   ) {
     this._removeRequireImport(importSpecifier, fromImport);
-    this._commit();
+    this._editor.commit();
     this._removeImport(importSpecifier, fromImport);
-    this._commit();
+    this._editor.commit();
   }
 }
 
@@ -1150,7 +1144,7 @@ const findCallArguments = (
   { importedName, methodName, moduleNames }: CallArgumentsOptions,
   report: (diagnostic: CsfMutationDiagnostic) => void
 ): E.ObjectExpression[] => {
-  const editor = config._editorSource;
+  const editor = config._editor;
   const modules = new Set(moduleNames);
   const imports = new Map<string, Set<Node>>();
   const addImport = (name: string, node: Node) =>
@@ -1250,7 +1244,7 @@ export const formatConfig = (config: ConfigFile): string => {
  * byte for byte.
  */
 export const printConfig = (config: ConfigFile): PrintResultType => {
-  const code = config._editorSource.toString();
+  const code = config._editor.toString();
   return { code, toString: () => code };
 };
 

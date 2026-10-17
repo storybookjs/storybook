@@ -386,7 +386,10 @@ export class CsfFile {
   _tests: StoryTest[] = [];
 
   constructor(code: string, options: CsfOptions) {
-    this._editor = new SourceEditor(code, options.fileName);
+    this._editor = new SourceEditor(code, options.fileName, () => {
+      this._reset();
+      this.parse();
+    });
     this._options = options;
     this.imports = [];
     mutationStates.set(this, { diagnostics: [], changed: false });
@@ -469,14 +472,6 @@ export class CsfFile {
   // Not committed: `formatCsf` prints it with the other pending edits.
   _appendStatement(code: string) {
     appendStatement(this._editor, code);
-  }
-
-  _commit() {
-    if (!this._editor.commit()) {
-      return;
-    }
-    this._reset();
-    this.parse();
   }
 
   _reset() {

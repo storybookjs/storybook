@@ -75,6 +75,16 @@ describe('useHighlightMenu', () => {
       refId,
     } as ChannelEvent);
 
+  /** Simulate an event arriving from a preview over the channel transport, which stamps a source. */
+  const receiveFromPreview = (type: string, args: any[], refId?: string) =>
+    channel.receive({
+      type,
+      args,
+      from: 'preview',
+      refId,
+      source: 'https://preview.example/',
+    } as ChannelEvent);
+
   const getMenu = () => document.getElementById('storybook-highlights-menu');
 
   const secondTarget = (): HighlightMenuTarget =>
@@ -365,6 +375,48 @@ describe('useHighlightMenu', () => {
     expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Shared item');
   });
 
+  it('keeps host preview and manager-local registrations in separate buckets', () => {
+    channel.emit(HIGHLIGHT, {
+      id: 'dup',
+      selectors: ['#target'],
+      menu: [[{ id: 'manager-item', title: 'Manager item', clickable: true }]],
+    });
+    receiveFromPreview(HIGHLIGHT, [
+      { id: 'dup', selectors: ['#target'], menu: [[{ id: 'host-item', title: 'Host item' }]] },
+    ]);
+
+    // The host menu shows the host preview's registration, not the manager-local one
+    send(makeState({ targets: [makeTarget({ id: 'dup' })] }));
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Host item');
+
+    // A ref with no entry of its own falls back to the manager bucket, never the host preview's
+    mockIframe('storybook-ref-abc', { left: 500, top: 100, right: 1300, bottom: 720 });
+    send(makeState({ targets: [makeTarget({ id: 'dup' })] }), 'abc');
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Manager item');
+  });
+
+  it('preserves the open menu on registry changes for unrelated ids or frames', () => {
+    send(makeState());
+    const menuItem = getMenu()!.querySelector('.menu-list .menu-item') as HTMLButtonElement;
+    menuItem.focus();
+    expect(document.activeElement).toBe(menuItem);
+
+    channel.emit(HIGHLIGHT, {
+      id: 'unrelated',
+      selectors: ['#other'],
+      menu: [[{ id: 'unrelated-item', title: 'Unrelated' }]],
+    });
+    receiveFromPreview(
+      HIGHLIGHT,
+      [{ id: 'ref-only', selectors: ['#other'], menu: [[{ id: 'ref-item', title: 'Ref item' }]] }],
+      'abc'
+    );
+
+    expect(getMenu()!.querySelector('.menu-list .menu-item')).toBe(menuItem);
+    expect(document.activeElement).toBe(menuItem);
+    expect(menuItem.textContent).toBe('Open docs');
+  });
+
   it('re-renders the open menu when the registry changes', () => {
     send(makeState());
     expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Open docs');
@@ -378,23 +430,22 @@ describe('useHighlightMenu', () => {
   });
 
   it('clears the registry of a frame when its story starts rendering', () => {
-    send(makeState());
-    expect(getMenu()!.querySelector('.menu-list')).not.toBeNull();
+    // Highlights announced by a preview (e.g. the a11y addon) are cleared when that frame's
+    // story re-renders; manager-local registrations are not story-scoped and survive it.
+    receiveFromPreview(HIGHLIGHT, [
+      { id: 'h3', selectors: ['#target'], menu: [[{ id: 'item-3', title: 'Frame item' }]] },
+    ]);
+    send(makeState({ targets: [makeTarget({ id: 'h3' })] }));
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Frame item');
 
-    channel.receive({
-      type: STORY_RENDER_PHASE_CHANGED,
-      args: [{ newPhase: 'loading' }],
-      from: 'preview',
-    } as ChannelEvent);
+    receiveFromPreview(STORY_RENDER_PHASE_CHANGED, [{ newPhase: 'loading' }]);
     expect(getMenu()!.querySelector('.menu-list')).toBeNull();
 
     // A later highlight from the same frame restores its menu
-    channel.emit(HIGHLIGHT, {
-      id: 'h1',
-      selectors: ['#target'],
-      menu: [[{ id: 'item-1', title: 'Open docs', clickable: true }]],
-    });
-    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Open docs');
+    receiveFromPreview(HIGHLIGHT, [
+      { id: 'h3', selectors: ['#target'], menu: [[{ id: 'item-3', title: 'Frame item' }]] },
+    ]);
+    expect(getMenu()!.querySelector('.menu-list .menu-item')!.textContent).toBe('Frame item');
   });
 
   it('hides the menu when the preview reports no targets or no coordinates', () => {

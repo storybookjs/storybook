@@ -167,16 +167,31 @@ export const useHighlightMenu = (channel: Channel) => {
 
   // Menu definitions are rendered from this manager-side registry, populated from the `Highlight`
   // payloads announced over the channel. The preview only reports which highlight id was hit; the
-  // manager never renders menu content received through the menu state event. Entries are keyed
-  // by the sending frame's ref id, so the host, every ref and manager-local emits cannot overwrite
-  // each other's menus when they use the same highlight id.
-  const highlightRegistry = new Map<string, Map<string, Highlight>>();
-  /** Registry bucket for the host preview and manager-local emits, which apply to every frame. */
-  const GLOBAL_REGISTRY_KEY = '';
+  // manager never renders menu content received through the menu state event. Entries are bucketed
+  // by origin: every ref has its own bucket keyed by its ref id, the host preview's registrations
+  // live in the host bucket, and manager-local registrations (e.g. from manager addons) live in a
+  // bucket of their own, so identical highlight ids never overwrite each other across origins.
+  const highlightRegistry = new Map<string | symbol, Map<string, Highlight>>();
+  /** Registry bucket for highlights announced by the host preview. */
+  const HOST_REGISTRY_KEY = '';
+  /** Registry bucket for manager-local registrations, which apply to every frame. */
+  const MANAGER_REGISTRY_KEY = Symbol('manager-registry');
 
   const findHighlight = (id: string, frameId?: string) =>
-    highlightRegistry.get(frameId ?? GLOBAL_REGISTRY_KEY)?.get(id) ??
-    (frameId ? highlightRegistry.get(GLOBAL_REGISTRY_KEY)?.get(id) : undefined);
+    (frameId
+      ? highlightRegistry.get(frameId)?.get(id)
+      : highlightRegistry.get(HOST_REGISTRY_KEY)?.get(id)) ??
+    highlightRegistry.get(MANAGER_REGISTRY_KEY)?.get(id);
+
+  /** The registry bucket an incoming registration belongs to. */
+  const getRegistryKey = function (this: { refId?: string; source?: string }) {
+    // Events from a preview carry the source its channel transport stamped on them; a ref's
+    // events additionally carry its ref id. Manager-local emits carry neither.
+    if (this.refId) {
+      return this.refId;
+    }
+    return this.source ? HOST_REGISTRY_KEY : MANAGER_REGISTRY_KEY;
+  };
 
   const getContentKey = ({ targets, selected }: HighlightMenuState) =>
     JSON.stringify({
@@ -188,6 +203,11 @@ export const useHighlightMenu = (channel: Channel) => {
       })),
       selected,
       refId,
+      // The rendered menu also depends on the registry entries resolved for these targets, so
+      // registry updates that do not affect them must not rebuild the open menu.
+      menus: targets.map(({ id, details }) =>
+        filterMenuGroups(findHighlight(id, refId)?.menu, details.selectors)
+      ),
     });
 
   const getPreviewIframe = () =>
@@ -383,22 +403,32 @@ export const useHighlightMenu = (channel: Channel) => {
   };
 
   const onHighlightRegistryChange = () => {
-    renderedKey = undefined;
-    // Re-render an open menu right away, so registry updates are not masked by the content key
-    // until the targets or the selection change.
-    if (state && menu) {
-      renderedKey = getContentKey(state);
-      renderMenu(menu, state);
-      positionMenu();
+    if (!state || !menu) {
+      renderedKey = undefined;
+      return;
     }
+    // Re-render an open menu right away when the registry change affects the content it renders,
+    // so updates are not masked by the content key until the targets or the selection change.
+    // Changes for other highlight ids or frames leave the menu alone, so keyboard focus on a menu
+    // item and the list's scroll position survive them.
+    const contentKey = getContentKey(state);
+    if (contentKey === renderedKey) {
+      return;
+    }
+    renderedKey = contentKey;
+    renderMenu(menu, state);
+    positionMenu();
   };
 
-  const onAddHighlight = function (this: { refId?: string }, highlight: HighlightOptions) {
+  const onAddHighlight = function (
+    this: { refId?: string; source?: string },
+    highlight: HighlightOptions
+  ) {
     const info = highlight && normalizeOptions(highlight);
     if (typeof info?.id !== 'string' || !info.id) {
       return;
     }
-    const key = this.refId ?? GLOBAL_REGISTRY_KEY;
+    const key = getRegistryKey.call(this);
     let registry = highlightRegistry.get(key);
     if (!registry) {
       registry = new Map();
@@ -408,19 +438,23 @@ export const useHighlightMenu = (channel: Channel) => {
     onHighlightRegistryChange();
   };
 
-  const onRemoveHighlight = function (this: { refId?: string }, id: string) {
+  const onRemoveHighlight = function (this: { refId?: string; source?: string }, id: string) {
     if (id) {
-      highlightRegistry.get(this.refId ?? GLOBAL_REGISTRY_KEY)?.delete(id);
+      highlightRegistry.get(getRegistryKey.call(this))?.delete(id);
       onHighlightRegistryChange();
     }
   };
 
-  const onResetHighlights = function (this: { refId?: string }) {
-    // Every preview resets on this event, so a manager-local reset clears all frames; a
-    // frame-sourced reset only clears that frame's entries.
+  const onResetHighlights = function (this: { refId?: string; source?: string }) {
     if (this.refId) {
+      // A ref-sourced reset only clears that ref's entries.
       highlightRegistry.delete(this.refId);
+    } else if (this.source) {
+      // A host-preview reset only clears the host preview's own entries, never a ref's or the
+      // manager's.
+      highlightRegistry.delete(HOST_REGISTRY_KEY);
     } else {
+      // Every preview listens for a manager-local reset and resets itself, so it clears all frames.
       highlightRegistry.clear();
     }
     onHighlightRegistryChange();
@@ -433,7 +467,7 @@ export const useHighlightMenu = (channel: Channel) => {
     { newPhase }: { newPhase: string }
   ) {
     if (newPhase === 'loading') {
-      highlightRegistry.delete(this.refId ?? GLOBAL_REGISTRY_KEY);
+      highlightRegistry.delete(this.refId ?? HOST_REGISTRY_KEY);
       onHighlightRegistryChange();
     }
   };

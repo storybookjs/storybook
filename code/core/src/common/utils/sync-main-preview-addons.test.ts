@@ -42,11 +42,11 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(printConfig(result).code).toMatchInlineSnapshot(`
       import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
       import * as myAddonAnnotations from "custom-addon/preview";
-      import { definePreview } from "@storybook/react/preview";
+            import { definePreview } from "@storybook/react/preview";
 
-      export default definePreview({
-        addons: [myAddonAnnotations, addonA11yAnnotations],
-      });
+            export default definePreview({
+              addons: [myAddonAnnotations, addonA11yAnnotations],
+            });
     `);
   });
 
@@ -72,11 +72,11 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(printConfig(result).code).toMatchInlineSnapshot(`
       import addonA11yAnnotations from "@storybook/addon-a11y";
       import * as myAddonAnnotations from "custom-addon/preview";
-      import { definePreview } from "@storybook/react/preview";
+            import { definePreview } from "@storybook/react/preview";
 
-      export default definePreview({
-        addons: [myAddonAnnotations, addonA11yAnnotations()],
-      });
+            export default definePreview({
+              addons: [myAddonAnnotations, addonA11yAnnotations()],
+            });
     `);
   });
 
@@ -173,9 +173,7 @@ describe('syncPreviewAddonsWithMainConfig', () => {
     expect(transformedCode).toMatchInlineSnapshot(`
       import { definePreview } from "@storybook/react/preview";
 
-      export default definePreview({
-        addons: []
-      });
+      export default definePreview({ addons: [] });
     `);
   });
 });

@@ -1,7 +1,14 @@
 // Turns a resolved arg node into the Angular template expression a binding carries. Reading the args
 // themselves - following spreads and names - is the shared CSF pass in `story-shape`.
-import { babelPrint, types as t } from 'storybook/internal/babel';
-import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import {
+  type ESTreeNode as Node,
+  codeOf,
+  expressionFromSource,
+  keyOf,
+  parseModule,
+  reindent,
+  unwrapExpression,
+} from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
 import { isValidIdentifier } from '../template-grammar.ts';
@@ -16,18 +23,12 @@ const EVAL_FAILED = Symbol('story-docs-eval-failed');
  */
 export const createArgExternalizer =
   (enums: SnippetEnum[]) =>
-  (node: t.Node): t.Node | undefined => {
+  (node: Node): Node | undefined => {
     const value = evaluateNode(node, enums);
-    return value === EVAL_FAILED ? undefined : t.valueToNode(value);
+    return value === EVAL_FAILED
+      ? undefined
+      : expressionFromSource(printExpressionValue(value, new Set()));
   };
-
-// An arg no static evaluation could reduce to a value falls back to its source text. Every
-// expression is escaped for the attribute position it lands in: the double-quote delimiter and
-// text Angular's lexer would decode as a character reference survive the round-trip unchanged.
-export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): string => {
-  const literal = evaluateArgLiteral(node, enums);
-  return escapeAttributeExpression(literal ?? printArgSource(unwrapExpression(node)));
-};
 
 /**
  * The arg's value as a standalone expression, or `undefined` when it needs the story to run.
@@ -36,17 +37,60 @@ export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): strin
  * to produce code rather than an attribute can tell a real value from a name only the story file
  * knows. The two positions share a printer, so a value reads the same wherever it lands.
  */
-export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string | undefined => {
+export const evaluateArgLiteral = (node: Node, enums: SnippetEnum[]): string | undefined => {
   const value = evaluateNode(unwrapExpression(node), enums);
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
-export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
+export const argFieldValue = (node: Node): string => printArgSource(codeOf(unwrapExpression(node)));
 
-// recast reprints a node it parsed straight from the file's own text, comments and indentation
-// included. A clone drops the bookkeeping that path relies on and is formatted from the AST
-// instead, which is what leaves a binding holding the expression and nothing else.
-const printArgSource = (node: t.Node): string => babelPrint(t.cloneNode(node, true));
+// An arg no static evaluation could reduce to a value falls back to its source text, without the
+// comments a template expression cannot take (a class field keeps them). Every expression is
+// escaped for the attribute position it lands in: the double-quote delimiter and text Angular's
+// lexer would decode as a character reference survive the round-trip unchanged.
+export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
+  const literal = evaluateArgLiteral(node, enums);
+  return escapeAttributeExpression(
+    literal ?? printArgSource(withoutComments(codeOf(unwrapExpression(node))))
+  );
+};
+
+// Continuation lines keep the story file's indentation, which the snippet replaces with its own.
+// Lines inside template literals are values and keep theirs.
+const printArgSource = (source: string): string => {
+  const code = source.replace(/\r\n/g, '\n');
+  const lines = code.split('\n').slice(1);
+  const last = lines.at(-1);
+  const indents = lines.filter((line) => line.trim()).map((line) => /^[ \t]*/.exec(line)![0]);
+  // A closing bracket sits at the expression's own indentation; otherwise the shallowest line does.
+  const indent =
+    last && /^[ \t]*[)\]}]/.test(last)
+      ? /^[ \t]*/.exec(last)![0]
+      : indents.reduce(
+          (shortest, current) => (current.length < shortest.length ? current : shortest),
+          indents[0] ?? ''
+        );
+  let result = reindent(code, indent, '');
+  // Tabs left on code lines become spaces, deepest first so each line is converted once.
+  const deepest = Math.max(0, ...result.split('\n').map((line) => /^\t*/.exec(line)![0].length));
+  for (let depth = deepest; depth > 0; depth--) {
+    result = reindent(result, '\t'.repeat(depth), '  '.repeat(depth));
+  }
+  return result;
+};
+
+const withoutComments = (code: string): string => {
+  const wrapped = `(${code}\n)`;
+  const { comments } = parseModule(wrapped);
+  let result = '';
+  let cursor = 0;
+  for (const comment of comments) {
+    result += wrapped.slice(cursor, comment.start);
+    cursor = comment.end + /^[ \t]*/.exec(wrapped.slice(comment.end))![0].length;
+  }
+  result += wrapped.slice(cursor);
+  return result.slice(1, -2).replace(/[ \t]+\n/g, '\n');
+};
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.
 const quoteExpressionString = (value: string): string =>
@@ -84,38 +128,36 @@ const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
 const escapeAttributeExpression = (expression: string): string =>
   expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');
 
-const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
+const evaluateNode = (node: Node, enums: SnippetEnum[]): unknown => {
   const unwrapped = unwrapExpression(node);
-  if (
-    t.isStringLiteral(unwrapped) ||
-    t.isNumericLiteral(unwrapped) ||
-    t.isBooleanLiteral(unwrapped)
-  ) {
-    return unwrapped.value;
+  if (unwrapped.type === 'Literal') {
+    const { value } = unwrapped;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return value;
+    }
+    return 'regex' in unwrapped || 'bigint' in unwrapped ? EVAL_FAILED : null;
   }
-  if (t.isNullLiteral(unwrapped)) {
-    return null;
-  }
-  if (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') {
+  if (unwrapped.type === 'Identifier' && unwrapped.name === 'undefined') {
     return undefined;
   }
-  if (t.isUnaryExpression(unwrapped) && unwrapped.operator === 'void') {
+  if (unwrapped.type === 'UnaryExpression' && unwrapped.operator === 'void') {
     return undefined;
   }
   if (
-    t.isUnaryExpression(unwrapped) &&
+    unwrapped.type === 'UnaryExpression' &&
     unwrapped.operator === '-' &&
-    t.isNumericLiteral(unwrapped.argument)
+    unwrapped.argument.type === 'Literal' &&
+    typeof unwrapped.argument.value === 'number'
   ) {
     return -unwrapped.argument.value;
   }
-  if (t.isTemplateLiteral(unwrapped) && unwrapped.expressions.length === 0) {
+  if (unwrapped.type === 'TemplateLiteral' && unwrapped.expressions.length === 0) {
     return unwrapped.quasis[0]?.value.cooked ?? EVAL_FAILED;
   }
-  if (t.isArrayExpression(unwrapped)) {
+  if (unwrapped.type === 'ArrayExpression') {
     const values: unknown[] = [];
     for (const element of unwrapped.elements) {
-      if (element === null || t.isSpreadElement(element)) {
+      if (element === null || element.type === 'SpreadElement') {
         return EVAL_FAILED;
       }
       const value = evaluateNode(element, enums);
@@ -126,10 +168,10 @@ const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
     }
     return values;
   }
-  if (t.isObjectExpression(unwrapped)) {
+  if (unwrapped.type === 'ObjectExpression') {
     const value: Record<string, unknown> = {};
     for (const property of unwrapped.properties) {
-      if (!t.isObjectProperty(property)) {
+      if (property.type !== 'Property' || property.method || property.kind !== 'init') {
         return EVAL_FAILED;
       }
       const key = keyOf(property);
@@ -147,10 +189,10 @@ const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
   // `Enum.Member`: the analyzer collects referenced enums, so the member's value - what the
   // runtime generator would see - is recoverable statically.
   if (
-    t.isMemberExpression(unwrapped) &&
+    unwrapped.type === 'MemberExpression' &&
     !unwrapped.computed &&
-    t.isIdentifier(unwrapped.object) &&
-    t.isIdentifier(unwrapped.property)
+    unwrapped.object.type === 'Identifier' &&
+    unwrapped.property.type === 'Identifier'
   ) {
     const objectName = unwrapped.object.name;
     const propertyName = unwrapped.property.name;

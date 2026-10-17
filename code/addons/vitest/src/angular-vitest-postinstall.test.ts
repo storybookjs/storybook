@@ -1,46 +1,39 @@
 import { describe, expect, it } from 'vitest';
 
-import type { types as t } from 'storybook/internal/babel';
-import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import { type ESTree as E, SourceEditor, parseModule, walk } from 'storybook/internal/csf-tools';
 
 import {
   ANGULAR_VITEST_IMPORT_SOURCE,
   ANGULAR_VITEST_PLUGIN_CALL,
   collectStorybookTestLocalNames,
-  injectAngularVitestIntoAst,
   injectAngularVitestIntoConfig,
+  injectAngularVitestIntoEditor,
   isAngularVitestAlreadyWired,
 } from './angular-vitest-postinstall.ts';
 
 /** Returns the names of the elements (call callees / spread) inside the plugins array, in order. */
 function pluginCalleesInSameArray(code: string, locatorName = 'storybookTest'): string[] | null {
-  const ast = babelParse(code);
   let elements: string[] | null = null;
-  traverse(ast, {
-    CallExpression(path) {
-      if (elements) {
-        path.stop();
-        return;
-      }
-      const { callee } = path.node;
-      if (
-        callee.type === 'Identifier' &&
-        callee.name === locatorName &&
-        path.parentPath.isArrayExpression()
-      ) {
-        const array = path.parentPath.node as t.ArrayExpression;
-        elements = array.elements.map((el) => {
-          if (el?.type === 'CallExpression' && el.callee.type === 'Identifier') {
-            return el.callee.name;
-          }
-          if (el?.type === 'SpreadElement') {
-            return 'spread';
-          }
-          return el?.type ?? 'null';
-        });
-        path.stop();
-      }
-    },
+  walk(parseModule(code).program, (node, parent) => {
+    if (elements) {
+      return false;
+    }
+    if (
+      node.type === 'CallExpression' &&
+      node.callee.type === 'Identifier' &&
+      node.callee.name === locatorName &&
+      parent?.type === 'ArrayExpression'
+    ) {
+      elements = parent.elements.map((el: E.ArrayExpression['elements'][number]) => {
+        if (el?.type === 'CallExpression' && el.callee.type === 'Identifier') {
+          return el.callee.name;
+        }
+        if (el?.type === 'SpreadElement') {
+          return 'spread';
+        }
+        return el?.type ?? 'null';
+      });
+    }
   });
   return elements;
 }
@@ -92,13 +85,15 @@ describe('isAngularVitestAlreadyWired', () => {
 
 describe('collectStorybookTestLocalNames', () => {
   it('always seeds the bare storybookTest name', () => {
-    const names = collectStorybookTestLocalNames(babelParse('export default {};'));
+    const names = collectStorybookTestLocalNames(parseModule('export default {};').program);
     expect(names.has('storybookTest')).toBe(true);
   });
 
   it('collects aliased import names', () => {
     const names = collectStorybookTestLocalNames(
-      babelParse(`import { storybookTest as sbTest } from '@storybook/addon-vitest/vitest-plugin';`)
+      parseModule(
+        `import { storybookTest as sbTest } from '@storybook/addon-vitest/vitest-plugin';`
+      ).program
     );
     expect(names.has('sbTest')).toBe(true);
     expect(names.has('storybookTest')).toBe(true);
@@ -106,7 +101,7 @@ describe('collectStorybookTestLocalNames', () => {
 
   it('ignores imports from other sources', () => {
     const names = collectStorybookTestLocalNames(
-      babelParse(`import { storybookTest as other } from 'somewhere-else';`)
+      parseModule(`import { storybookTest as other } from 'somewhere-else';`).program
     );
     expect(names.has('other')).toBe(false);
   });
@@ -123,7 +118,7 @@ describe('injectAngularVitestIntoConfig', () => {
     expect(out).toContain(ANGULAR_VITEST_IMPORT_SOURCE);
   });
 
-  it('adds the scaffold comment (case 20: comments preserved through generate)', () => {
+  it('adds the scaffold comment (case 20: comments preserved)', () => {
     const out = injectAngularVitestIntoConfig(FRESH_V4)!;
     expect(out).toContain('Forwards Angular build options');
     // The template's own comment must also survive.
@@ -193,17 +188,17 @@ describe('injectAngularVitestIntoConfig', () => {
   });
 });
 
-describe('injectAngularVitestIntoAst', () => {
-  it('mutates the AST in place and returns true', () => {
-    const ast = babelParse(FRESH_V4);
-    expect(injectAngularVitestIntoAst(ast)).toBe(true);
-    const callees = pluginCalleesInSameArray(generate(ast).code);
+describe('injectAngularVitestIntoEditor', () => {
+  it('edits the source in place and returns true', () => {
+    const editor = new SourceEditor(FRESH_V4);
+    expect(injectAngularVitestIntoEditor(editor)).toBe(true);
+    const callees = pluginCalleesInSameArray(editor.toString());
     expect(callees).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
   });
 
   it('returns false for non-locatable arrays', () => {
-    const ast = babelParse('export default { test: {} };');
-    expect(injectAngularVitestIntoAst(ast)).toBe(false);
+    const editor = new SourceEditor('export default { test: {} };');
+    expect(injectAngularVitestIntoEditor(editor)).toBe(false);
   });
 
   it('co-locates in a workspace (defineWorkspace) element plugins array (case 6)', () => {

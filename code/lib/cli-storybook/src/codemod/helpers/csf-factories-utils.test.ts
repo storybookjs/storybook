@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
-import { generate, parser } from 'storybook/internal/babel';
+import { SourceEditor } from 'storybook/internal/csf-tools';
+
+import { dedent } from 'ts-dedent';
 
 import {
   cleanupTypeImports,
+  type ExportDeclarations,
   getConfigProperties,
   removeExportDeclarations,
 } from './csf-factories-utils.ts';
@@ -22,13 +24,30 @@ expect.addSnapshotSerializer({
   test: (_val) => true,
 });
 
-function parseCodeToProgramNode(code: string): t.Program {
-  return parser.parse(code, { sourceType: 'unambiguous', plugins: ['typescript'] }).program;
-}
+const edit = (code: string, change: (editor: SourceEditor) => void) => {
+  const editor = new SourceEditor(dedent(code));
+  change(editor);
+  return editor.toString();
+};
 
-function generateCodeFromAST(node: t.Program) {
-  return generate(node).code;
-}
+const exportedDeclarations = (editor: SourceEditor, names: string[]): ExportDeclarations =>
+  Object.fromEntries(
+    editor.program.body.flatMap((node) => {
+      if (node.type !== 'ExportNamedDeclaration' || !node.declaration) {
+        return [];
+      }
+      const { declaration } = node;
+      const decls =
+        declaration.type === 'VariableDeclaration'
+          ? declaration.declarations
+          : declaration.type === 'FunctionDeclaration'
+            ? [declaration]
+            : [];
+      return decls.flatMap((decl) =>
+        decl.id?.type === 'Identifier' && names.includes(decl.id.name) ? [[decl.id.name, decl]] : []
+      );
+    })
+  );
 
 describe('cleanupTypeImports', () => {
   it('removes disallowed imports from @storybook/*', () => {
@@ -37,10 +56,7 @@ describe('cleanupTypeImports', () => {
       import { Other } from 'some-other-package';
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const cleanedNodes = cleanupTypeImports(programNode, ['Story']);
-
-    expect(generateCodeFromAST({ ...programNode, body: cleanedNodes })).toMatchInlineSnapshot(`
+    expect(edit(code, (editor) => cleanupTypeImports(editor, ['Story']))).toMatchInlineSnapshot(`
       import { SomethingElse } from '@storybook/react';
       import { Other } from 'some-other-package';
     `);
@@ -51,10 +67,9 @@ describe('cleanupTypeImports', () => {
       import { Story, Meta } from '@storybook/react';
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const cleanedNodes = cleanupTypeImports(programNode, ['Story', 'Meta']);
-
-    expect(generateCodeFromAST({ ...programNode, body: cleanedNodes })).toMatchInlineSnapshot(``);
+    expect(
+      edit(code, (editor) => cleanupTypeImports(editor, ['Story', 'Meta']))
+    ).toMatchInlineSnapshot(``);
   });
 
   it('retains non storybook imports', () => {
@@ -62,10 +77,7 @@ describe('cleanupTypeImports', () => {
       import { Preview } from 'internal-types';
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const cleanedNodes = cleanupTypeImports(programNode, ['Preview']);
-
-    expect(generateCodeFromAST({ ...programNode, body: cleanedNodes })).toMatchInlineSnapshot(
+    expect(edit(code, (editor) => cleanupTypeImports(editor, ['Preview']))).toMatchInlineSnapshot(
       `import { Preview } from 'internal-types';`
     );
   });
@@ -75,10 +87,7 @@ describe('cleanupTypeImports', () => {
       import * as Storybook from '@storybook/react';
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const cleanedNodes = cleanupTypeImports(programNode, ['Preview']);
-
-    expect(generateCodeFromAST({ ...programNode, body: cleanedNodes })).toMatchInlineSnapshot(
+    expect(edit(code, (editor) => cleanupTypeImports(editor, ['Preview']))).toMatchInlineSnapshot(
       `import * as Storybook from '@storybook/react';`
     );
   });
@@ -96,20 +105,14 @@ describe('cleanupTypeImports', () => {
       };
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const cleanedNodes = cleanupTypeImports(programNode, [
-      'Type1',
-      'Type2',
-      'Type3',
-      'Type4',
-      'ShouldBeRemoved',
-    ]);
-
-    const result = generateCodeFromAST({ ...programNode, body: cleanedNodes });
+    const result = edit(code, (editor) =>
+      cleanupTypeImports(editor, ['Type1', 'Type2', 'Type3', 'Type4', 'ShouldBeRemoved'])
+    );
 
     expect(result).toMatchInlineSnapshot(`
       import { Type1, type Type2 } from '@storybook/react';
       import type { Type3, Type4 } from '@storybook/react';
+
       const example: Type1 = {};
       const example2 = {} as Type2;
       const example3 = {} satisfies Type3;
@@ -130,16 +133,11 @@ describe('removeExportDeclarations', () => {
       export const baz = 'baz';
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const exportDecls = {
-      foo: t.variableDeclarator(t.identifier('foo')),
-      baz: t.variableDeclarator(t.identifier('baz')),
-    };
-
-    const cleanedNodes = removeExportDeclarations(programNode, exportDecls);
-    const cleanedCode = generateCodeFromAST({ ...programNode, body: cleanedNodes });
-
-    expect(cleanedCode).toMatchInlineSnapshot(`export const bar = 'bar';`);
+    expect(
+      edit(code, (editor) =>
+        removeExportDeclarations(editor, exportedDeclarations(editor, ['foo', 'baz']))
+      )
+    ).toMatchInlineSnapshot(`export const bar = 'bar';`);
   });
 
   it('removes specified function export declarations', () => {
@@ -148,19 +146,11 @@ describe('removeExportDeclarations', () => {
       export function bar() { return 'bar'; }
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const exportDecls = {
-      foo: t.functionDeclaration(t.identifier('foo'), [], t.blockStatement([])),
-    };
-
-    const cleanedNodes = removeExportDeclarations(programNode, exportDecls);
-    const cleanedCode = generateCodeFromAST({ ...programNode, body: cleanedNodes });
-
-    expect(cleanedCode).toMatchInlineSnapshot(`
-      export function bar() {
-        return 'bar';
-      }
-    `);
+    expect(
+      edit(code, (editor) =>
+        removeExportDeclarations(editor, exportedDeclarations(editor, ['foo']))
+      )
+    ).toMatchInlineSnapshot(`export function bar() { return 'bar'; }`);
   });
 
   it('retains exports not in the disallow list', () => {
@@ -169,15 +159,11 @@ describe('removeExportDeclarations', () => {
       export const bar = 'bar';
     `;
 
-    const programNode = parseCodeToProgramNode(code);
-    const exportDecls = {
-      nonExistent: t.variableDeclarator(t.identifier('nonExistent')),
-    };
-
-    const cleanedNodes = removeExportDeclarations(programNode, exportDecls);
-    const cleanedCode = generateCodeFromAST({ ...programNode, body: cleanedNodes });
-
-    expect(cleanedCode).toMatchInlineSnapshot(`
+    expect(
+      edit(code, (editor) =>
+        removeExportDeclarations(editor, exportedDeclarations(editor, ['nonExistent']))
+      )
+    ).toMatchInlineSnapshot(`
       export const foo = 'foo';
       export const bar = 'bar';
     `);
@@ -186,29 +172,20 @@ describe('removeExportDeclarations', () => {
 
 describe('getConfigProperties', () => {
   it('returns object properties from variable declarations', () => {
-    const exportDecls = {
-      foo: t.variableDeclarator(t.identifier('foo'), t.stringLiteral('fooValue')),
-      bar: t.variableDeclarator(t.identifier('bar'), t.numericLiteral(42)),
-    };
+    const editor = new SourceEditor(`export const foo = 'fooValue';\nexport const bar = 42;`);
 
-    const properties = getConfigProperties(exportDecls, { configType: 'main' });
-
-    expect(properties).toHaveLength(2);
-    expect(properties[0].key.name).toBe('foo');
-    expect(properties[0].value.value).toBe('fooValue');
-    expect(properties[1].key.name).toBe('bar');
-    expect(properties[1].value.value).toBe(42);
+    expect(
+      getConfigProperties(editor, exportedDeclarations(editor, ['foo', 'bar']), {
+        configType: 'main',
+      })
+    ).toEqual(["foo: 'fooValue'", 'bar: 42']);
   });
 
   it('returns object properties from function declarations', () => {
-    const exportDecls = {
-      foo: t.functionDeclaration(t.identifier('foo'), [], t.blockStatement([])),
-    };
+    const editor = new SourceEditor(`export function foo() {}`);
 
-    const properties = getConfigProperties(exportDecls, { configType: 'main' });
-
-    expect(properties).toHaveLength(1);
-    expect(properties[0].key.name).toBe('foo');
-    expect(properties[0].value.type).toBe('ArrowFunctionExpression');
+    expect(
+      getConfigProperties(editor, exportedDeclarations(editor, ['foo']), { configType: 'main' })
+    ).toEqual(['foo: () => {}']);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelParseFile } from '../CsfFile.ts';
+import { SourceEditor } from '../estree/editor.ts';
 import { resolveArgValue } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
@@ -9,8 +9,12 @@ import {
   sourceOf,
 } from './resolve-members.ts';
 
+const indexed = (editor: SourceEditor) => {
+  editor.parentOf(editor.program);
+  return editor;
+};
 const contextOf = (code: string, filePath = 'entry.ts'): ReferenceContext => ({
-  program: babelParseFile({ code, filename: filePath }).path,
+  editor: indexed(new SourceEditor(code, filePath)),
   filePath,
 });
 
@@ -121,7 +125,7 @@ describe('resolveArgValue', () => {
 
   it('names nothing for a global or a parameter the expression declares itself', () => {
     expect(valueOf('', '(event) => Math.max(event.x, 0)')).toEqual({
-      node: 'event => Math.max(event.x, 0)',
+      node: '(event) => Math.max(event.x, 0)',
       imports: [],
       unresolved: [],
     });

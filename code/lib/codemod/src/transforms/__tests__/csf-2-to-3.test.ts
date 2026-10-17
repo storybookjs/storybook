@@ -22,6 +22,16 @@ const tsTransform = async (source: string) =>
 
 describe('csf-2-to-3', () => {
   describe('javascript', () => {
+    it('keeps the annotations of a story whose export it cannot rewrite', async () => {
+      const output = await jsTransform(dedent`
+        export default { title: 'Cat' };
+        const Template = (args) => <Cat {...args} />;
+        export const A = Template.bind({}), B = Template.bind({});
+        A.args = { name: 'Fluffy' };
+      `);
+      expect(output).toContain(`A.args = { name: "Fluffy" };`);
+    });
+
     it('should replace non-simple function exports with objects', async () => {
       await expect(
         jsTransform(dedent`
@@ -143,7 +153,6 @@ describe('csf-2-to-3', () => {
       ).resolves.toMatchInlineSnapshot(`
         export default { title: "Cat" };
         const Template = (args) => <Cat {...args} />;
-
         export const A = {
           render: Template,
           args: { isPrimary: false },
@@ -227,6 +236,56 @@ describe('csf-2-to-3', () => {
       `);
     });
 
+    it('drops the comments that led a removed template or annotation', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Button', component: Button };
+
+          /** Shared template */
+          const Template = (args) => <Button {...args} />;
+
+          export const Primary = Template.bind({});
+          // @ts-expect-error
+          Primary.args = { label: 'A' };
+
+          export const Next = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Button", component: Button };
+
+        export const Primary = {
+          args: { label: "A" },
+        };
+
+        export const Next = () => <Cat />;
+      `);
+    });
+
+    it('keeps a template that is still rendered as a JSX element', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', component: Cat };
+
+          const Template = (args) => <Cat {...args} />;
+
+          export const A = Template.bind({});
+          A.args = { isPrimary: false };
+
+          export const B = () => <Template isPrimary />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", component: Cat };
+
+        const Template = (args) => <Cat {...args} />;
+
+        export const A = {
+          args: { isPrimary: false },
+        };
+
+        export const B = () => <Template isPrimary />;
+      `);
+    });
+
     it('should ignore no-arg stories without annotations', async () => {
       await expect(
         jsTransform(dedent`
@@ -242,7 +301,6 @@ describe('csf-2-to-3', () => {
 
         export const A = {};
         export const B = () => <Cat name="frisky" />;
-
         export const C = {
           render: () => <Cat name="fluffy" />,
           parameters: { foo: 2 },
@@ -261,7 +319,6 @@ describe('csf-2-to-3', () => {
         `)
       ).resolves.toMatchInlineSnapshot(`
         export default { title: "Cat" };
-
         export const A = {
           render: (args) => <Cat {...args} />,
           parameters: { foo: 2 },
@@ -271,6 +328,21 @@ describe('csf-2-to-3', () => {
   });
 
   describe('typescript', () => {
+    it('adds a type import only when it rewrites the annotation', async () => {
+      await expect(
+        tsTransform(dedent`
+          import type { StoryObj } from '@storybook/react';
+          export default { title: 'Cat' };
+          export const A: StoryObj = () => <Cat />, B: StoryObj = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import type { StoryObj } from "@storybook/react";
+        export default { title: "Cat" };
+        export const A: StoryObj = () => <Cat />,
+          B: StoryObj = () => <Cat />;
+      `);
+    });
+
     it('should error with namespace imports', async () => {
       await expect.addSnapshotSerializer({
         serialize: (value) => {

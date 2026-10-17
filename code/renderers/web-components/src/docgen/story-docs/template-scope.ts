@@ -1,16 +1,24 @@
-import { types as t } from 'storybook/internal/babel';
-import type { CsfFile, ImportBinding, RenderFunctionPath } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ESTree as E,
+  ESTreeNode as Node,
+  ImportBinding,
+  RenderFunction,
+} from 'storybook/internal/csf-tools';
 import {
   collectImportBindings,
+  isStringLiteral,
   keyOf,
-  returnedExpressionPath,
+  returnedExpression,
   sourceOf,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
+import { FAILED, primitiveLiteralValue } from './arg-values.ts';
+
 export interface HtmlTemplate {
   bindings: Map<string, ImportBinding>;
-  expressions: t.Expression[];
+  expressions: E.Expression[];
   lit: boolean;
   quasis: string[];
   scope: TemplateScope;
@@ -33,10 +41,10 @@ export type AliasValue =
 const TEMPLATE_TAG_SOURCES = ['lit', 'lit-html', 'lit-element'];
 
 export function resolveHtmlTemplate(
-  renderFunction: RenderFunctionPath,
+  renderFunction: RenderFunction,
   csf: CsfFile
 ): HtmlTemplate | undefined {
-  const bindings = collectImportBindings(csf._file.path);
+  const bindings = collectImportBindings(csf._program);
   const returned = returnedTemplateExpression(renderFunction, bindings);
   return returned
     ? templateFromExpression(unwrapExpression(returned.node), bindings, returned.scope)
@@ -44,11 +52,11 @@ export function resolveHtmlTemplate(
 }
 
 export function templateFromExpression(
-  expression: t.Node,
+  expression: Node,
   bindings: Map<string, ImportBinding>,
   scope: TemplateScope
 ): HtmlTemplate | undefined {
-  if (t.isStringLiteral(expression)) {
+  if (isStringLiteral(expression)) {
     return {
       bindings,
       expressions: [],
@@ -58,10 +66,10 @@ export function templateFromExpression(
       source: sourceOf(expression),
     };
   }
-  if (t.isTemplateLiteral(expression)) {
+  if (expression.type === 'TemplateLiteral') {
     return templateFromLiteral(expression, bindings, false, scope, sourceOf(expression));
   }
-  if (!t.isTaggedTemplateExpression(expression) || !t.isIdentifier(expression.tag)) {
+  if (expression.type !== 'TaggedTemplateExpression' || expression.tag.type !== 'Identifier') {
     return undefined;
   }
   return isImported(expression.tag.name, 'html', TEMPLATE_TAG_SOURCES, bindings) ||
@@ -71,64 +79,65 @@ export function templateFromExpression(
 }
 
 export function aliasValueForIdentifier(
-  expression: t.Identifier,
+  expression: { name: string },
   scope: TemplateScope
 ): AliasValue | undefined {
   return scope.aliases.get(expression.name);
 }
 
 export function argReferenceForExpression(
-  expression: t.Expression,
+  expression: Node,
   scope: TemplateScope
 ): { name: string; path: string[] } | undefined {
   const unwrapped = unwrapExpression(expression);
-  if (t.isIdentifier(unwrapped)) {
+  if (unwrapped.type === 'Identifier') {
     const alias = aliasValueForIdentifier(unwrapped, scope);
     return alias?.kind === 'arg'
       ? { name: alias.name, path: alias.path }
       : parameterArgReference(unwrapped, scope);
   }
-  if (!t.isMemberExpression(unwrapped)) {
+  if (unwrapped.type !== 'MemberExpression') {
     return undefined;
   }
   const property = memberPropertyName(unwrapped);
   if (property === undefined) {
     return undefined;
   }
-  if (scope.args && t.isIdentifier(unwrapped.object, { name: scope.args })) {
+  if (
+    scope.args &&
+    unwrapped.object.type === 'Identifier' &&
+    unwrapped.object.name === scope.args
+  ) {
     return { name: property, path: [] };
-  }
-  if (!t.isExpression(unwrapped.object)) {
-    return undefined;
   }
   const object = argReferenceForExpression(unwrapped.object, scope);
   return object ? { name: object.name, path: [...object.path, property] } : undefined;
 }
 
 const returnedTemplateExpression = (
-  renderFunction: RenderFunctionPath,
+  renderFunction: RenderFunction,
   bindings: Map<string, ImportBinding>
-): { node: t.Expression; scope: TemplateScope } | undefined => {
+): { node: E.Expression; scope: TemplateScope } | undefined => {
   const baseScope = scopeForRenderFunction(renderFunction);
-  const strict = returnedExpressionPath(renderFunction);
+  const strict = returnedExpression(renderFunction);
   if (strict) {
-    return { node: strict.node, scope: baseScope };
+    return { node: strict, scope: baseScope };
   }
 
-  if (!t.isBlockStatement(renderFunction.node.body)) {
+  if (renderFunction.body?.type !== 'BlockStatement') {
     return undefined;
   }
 
-  const statements = renderFunction.node.body.body;
+  const statements = renderFunction.body.body;
   const returned = statements.at(-1);
-  if (!t.isReturnStatement(returned) || !t.isExpression(returned.argument)) {
+  if (returned?.type !== 'ReturnStatement' || !returned.argument) {
     return undefined;
   }
 
   const scope = copyScope(baseScope);
   for (const statement of statements.slice(0, -1)) {
     if (
-      !t.isVariableDeclaration(statement) ||
+      statement.type !== 'VariableDeclaration' ||
       (statement.kind !== 'const' && statement.kind !== 'let')
     ) {
       return undefined;
@@ -141,14 +150,14 @@ const returnedTemplateExpression = (
   return { node: returned.argument, scope };
 };
 
-const scopeForRenderFunction = (renderFunction: RenderFunctionPath): TemplateScope => {
-  const [first] = renderFunction.node.params;
+const scopeForRenderFunction = (renderFunction: RenderFunction): TemplateScope => {
+  const [first] = renderFunction.params;
   const scope: TemplateScope = { aliases: new Map(), destructured: new Map() };
-  if (t.isIdentifier(first)) {
+  if (first?.type === 'Identifier') {
     scope.args = first.name;
     return scope;
   }
-  if (!t.isObjectPattern(first)) {
+  if (first?.type !== 'ObjectPattern') {
     return scope;
   }
   const destructured = destructuredAliases(first, { name: '', path: [] });
@@ -165,15 +174,15 @@ const scopeForRenderFunction = (renderFunction: RenderFunctionPath): TemplateSco
 };
 
 const addVariableAliases = (
-  declaration: t.VariableDeclaration,
+  declaration: E.VariableDeclaration,
   scope: TemplateScope,
   bindings: Map<string, ImportBinding>
 ): boolean => {
   for (const declarator of declaration.declarations) {
-    if (!t.isExpression(declarator.init)) {
+    if (!declarator.init) {
       return false;
     }
-    if (t.isIdentifier(declarator.id)) {
+    if (declarator.id.type === 'Identifier') {
       const alias = aliasForExpression(declarator.init, scope, bindings);
       if (!alias) {
         return false;
@@ -181,7 +190,7 @@ const addVariableAliases = (
       scope.aliases.set(declarator.id.name, alias);
       continue;
     }
-    if (t.isObjectPattern(declarator.id)) {
+    if (declarator.id.type === 'ObjectPattern') {
       const source = destructureSourceForExpression(declarator.init, scope);
       if (!source) {
         return false;
@@ -199,22 +208,22 @@ const addVariableAliases = (
 };
 
 const destructureSourceForExpression = (
-  expression: t.Expression,
+  expression: E.Expression,
   scope: TemplateScope
 ): { name: string; path: string[] } | undefined => {
   const unwrapped = unwrapExpression(expression);
-  return scope.args && t.isIdentifier(unwrapped, { name: scope.args })
+  return scope.args && unwrapped.type === 'Identifier' && unwrapped.name === scope.args
     ? { name: '', path: [] }
     : argReferenceForExpression(expression, scope);
 };
 
 const aliasForExpression = (
-  expression: t.Expression,
+  expression: E.Expression,
   scope: TemplateScope,
   bindings: Map<string, ImportBinding>
 ): AliasValue | undefined => {
   const unwrapped = unwrapExpression(expression);
-  const arg = t.isExpression(unwrapped) ? argReferenceForExpression(unwrapped, scope) : undefined;
+  const arg = argReferenceForExpression(unwrapped, scope);
   if (arg) {
     return { kind: 'arg', source: sourceOf(expression), ...arg };
   }
@@ -229,15 +238,15 @@ const aliasForExpression = (
 };
 
 const destructuredAliases = (
-  pattern: t.ObjectPattern,
+  pattern: E.ObjectPattern,
   source: { name: string; path: string[] }
 ): AliasMap | undefined => {
   const aliases: AliasMap = new Map();
   for (const property of pattern.properties) {
-    if (!t.isObjectProperty(property) || property.computed) {
+    if (property.type !== 'Property' || property.computed) {
       return undefined;
     }
-    const key = keyOf(property);
+    const key = keyOf(property as unknown as E.ObjectProperty);
     if (!key) {
       return undefined;
     }
@@ -245,9 +254,9 @@ const destructuredAliases = (
       source.name === ''
         ? { name: key, path: [] }
         : { name: source.name, path: [...source.path, key] };
-    if (t.isIdentifier(property.value)) {
+    if (property.value.type === 'Identifier') {
       aliases.set(property.value.name, { kind: 'arg', ...root });
-    } else if (t.isObjectPattern(property.value)) {
+    } else if (property.value.type === 'ObjectPattern') {
       const nested = destructuredAliases(property.value, root);
       if (!nested) {
         return undefined;
@@ -261,33 +270,31 @@ const destructuredAliases = (
 };
 
 const parameterArgReference = (
-  expression: t.Identifier,
+  expression: { name: string },
   scope: TemplateScope
 ): { name: string; path: string[] } | undefined => {
   const arg = scope.destructured.get(expression.name);
   return arg ? { name: arg, path: [] } : undefined;
 };
 
-const memberPropertyName = (expression: t.MemberExpression): string | undefined => {
-  if (!expression.computed && t.isIdentifier(expression.property)) {
+const memberPropertyName = (expression: E.MemberExpression): string | undefined => {
+  if (!expression.computed && expression.property.type === 'Identifier') {
     return expression.property.name;
   }
-  return expression.computed && t.isStringLiteral(expression.property)
+  return expression.computed && isStringLiteral(expression.property)
     ? expression.property.value
     : undefined;
 };
 
 const templateFromLiteral = (
-  literal: t.TemplateLiteral,
+  literal: E.TemplateLiteral,
   bindings: Map<string, ImportBinding>,
   lit: boolean,
   scope: TemplateScope,
   source: string
 ): HtmlTemplate => ({
   bindings,
-  expressions: literal.expressions.filter((expression): expression is t.Expression =>
-    t.isExpression(expression)
-  ),
+  expressions: literal.expressions,
   lit,
   quasis: literal.quasis.map((quasi) => quasi.value.raw),
   scope,
@@ -310,22 +317,18 @@ const isImported = (
   return !!binding && sources.includes(binding.importId) && binding.importName === importName;
 };
 
-const isStaticLiteral = (expression: t.Node): boolean =>
-  t.isStringLiteral(expression) ||
-  t.isNumericLiteral(expression) ||
-  t.isBooleanLiteral(expression) ||
-  (t.isTemplateLiteral(expression) && expression.expressions.length === 0);
+const isStaticLiteral = (expression: Node): boolean => {
+  const value = primitiveLiteralValue(expression);
+  return (
+    (value !== FAILED && value !== null) ||
+    (expression.type === 'TemplateLiteral' && expression.expressions.length === 0)
+  );
+};
 
-const literalValue = (expression: t.Node): unknown => {
-  if (
-    t.isStringLiteral(expression) ||
-    t.isNumericLiteral(expression) ||
-    t.isBooleanLiteral(expression)
-  ) {
-    return expression.value;
-  }
-  if (t.isTemplateLiteral(expression)) {
+const literalValue = (expression: Node): unknown => {
+  if (expression.type === 'TemplateLiteral') {
     return expression.quasis[0]?.value.cooked ?? expression.quasis[0]?.value.raw ?? '';
   }
-  return undefined;
+  const value = primitiveLiteralValue(expression);
+  return value === FAILED ? undefined : value;
 };

@@ -89,6 +89,22 @@ describe('upgrade-deprecated-types', () => {
       ).rejects.toThrowErrorMatchingSnapshot();
     });
 
+    it('keeps inline type modifiers, default imports and comments between specifiers', async () => {
+      await expect(
+        tsTransform(dedent`
+          import React, { type ComponentStory, /* keep */ type ComponentMeta, Meta } from '@storybook/react';
+
+          export default { title: 'Cat' } satisfies ComponentMeta<typeof Cat>;
+          export const A: ComponentStory<typeof Cat> = () => <Cat />;
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import React, { type StoryFn, Meta } from "@storybook/react";
+
+        export default { title: "Cat" } satisfies Meta<typeof Cat>;
+        export const A: StoryFn<typeof Cat> = () => <Cat />;
+      `);
+    });
+
     it('upgrade namespaces', async () => {
       await expect(
         tsTransform(dedent`

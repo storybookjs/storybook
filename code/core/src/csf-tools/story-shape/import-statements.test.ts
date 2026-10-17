@@ -11,7 +11,7 @@ import {
 import { collectImportBindings } from './imports.ts';
 
 const bindingsOf = (code: string) =>
-  collectImportBindings(loadCsf(code, { makeTitle: (title) => title ?? 'title' })._file.path);
+  collectImportBindings(loadCsf(code, { makeTitle: (title) => title ?? 'title' })._program);
 
 const resolve = (code: string, componentName: string) =>
   resolveComponentImport(componentName, bindingsOf(code));

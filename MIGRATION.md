@@ -39,6 +39,7 @@
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
+  - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
@@ -1312,6 +1313,34 @@ Key changes:
 The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
 
 Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook automigrate nextjs-to-nextjs-vite` directly.
+
+### `storybook/internal/babel` removed; `csf-tools` uses ESTree
+
+Storybook no longer bundles Babel or recast to read and write story and config files. Both are parsed with OXC, and edits are applied to the source text, so code a migration does not touch keeps its formatting.
+
+#### Behavior that changes for every project
+
+- **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow, so such files fail to index with an error that names Flow. Convert them to TypeScript or plain JavaScript.
+- `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
+- Files that automigrations and codemods rewrite (`main.ts`, `preview.ts`, story files) are written with `\n` line endings, so a file with `\r\n` line endings comes out with `\n`.
+- Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
+
+#### Changes for tooling that imports Storybook's internal entry points
+
+- `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
+- The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile._program` and `CsfFile._editor`.
+- `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()` or `parseExpression(code)`. Use `printExpression(node)` to read an expression's source.
+- An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf._appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`.
+- `babelParse` and `babelParseFile` are removed; use `loadCsf(code, options)` and `readCsf(fileName, options)`.
+- `getHeaderComments(statement)` is replaced by `headerComments(editor)`.
+- The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes.
+- The `getAbsolutePath` wrapper helpers in `storybook/internal/common` work on nodes: `getAbsolutePathWrapperAsCallExpression` is replaced by `getAbsolutePathCall`, and `wrapValueWithGetAbsolutePathWrapper` by `wrapValuesWithGetAbsolutePathWrapper`.
+- `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
+- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options; `printCsf` and `printConfig` take no options and always print with `\n` line endings.
+- `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
+- The Vitest config helpers (`canUpdateVitestConfigFile`, `getTargetConfigObject`, ...) moved from `storybook/internal/babel` to `storybook/internal/cli`.
+
+Babel itself is still used where it compiles your code, for example by `@storybook/nextjs` and the webpack Babel compiler addon.
 
 ### Create React App support removed
 

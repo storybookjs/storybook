@@ -39,10 +39,7 @@ describe('createFixFiles', () => {
     await commit();
     expect(fs.readFileSync(main, 'utf8')).toMatchInlineSnapshot(`
       "// banner
-      export default {
-        addons: ['a'],
-        framework: 'x'
-      };"
+      export default { addons: ['a'], framework: 'x' };"
     `);
     expect(fs.readFileSync(resolve('.storybook/new.ts'), 'utf8')).toBe('export {};');
   });

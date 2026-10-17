@@ -1,10 +1,10 @@
 import {
   ensureNamedImport,
-  getAbsolutePathWrapperAsCallExpression,
+  getAbsolutePathWrapperDeclaration,
   getAbsolutePathWrapperName,
   getFieldsForGetAbsolutePathWrapper,
   isGetAbsolutePathWrapperNecessary,
-  wrapValueWithGetAbsolutePathWrapper,
+  wrapValuesWithGetAbsolutePathWrapper,
 } from 'storybook/internal/common';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
@@ -30,7 +30,7 @@ export const wrapGetAbsolutePath: Fix = {
         if (!fields.some((node) => isGetAbsolutePathWrapperNecessary(node))) {
           return;
         }
-        fields.forEach((node) => wrapValueWithGetAbsolutePathWrapper(mainConfig, node));
+        wrapValuesWithGetAbsolutePathWrapper(mainConfig, fields);
 
         if (getAbsolutePathWrapperName(mainConfig) === null) {
           if (/\.c[jt]sx?$/.test(id) || mainConfig._code.includes('module.exports')) {
@@ -41,7 +41,7 @@ export const wrapGetAbsolutePath: Fix = {
             fileURLToPath: ensureNamedImport(mainConfig, 'fileURLToPath', 'node:url'),
           };
           mainConfig.setBodyDeclaration(
-            getAbsolutePathWrapperAsCallExpression(/\.tsx?$/.test(id), names)
+            getAbsolutePathWrapperDeclaration(/\.tsx?$/.test(id), names)
           );
         }
       },

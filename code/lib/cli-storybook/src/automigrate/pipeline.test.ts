@@ -222,9 +222,7 @@ describe('runTransforms', () => {
     expect(fs.readFileSync(managerConfigPath, 'utf8')).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       import { theme } from '@storybook/tanstack-react';
-      addons.setConfig({ layout: {
-        showNav: false
-      }, theme });"
+      addons.setConfig({ layout: { showNav: false }, theme });"
     `);
     expect(fs.readFileSync(storyInConfigDir, 'utf8')).toBe(
       "import type { Meta } from '@storybook/tanstack-react';"
@@ -341,10 +339,7 @@ describe('edit hooks', () => {
     expect(loadConfig).toHaveBeenCalledTimes(1);
     expect(formatExistingFile).toHaveBeenCalledTimes(1);
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
-      "export default { features: {
-        a: true,
-        b: true
-      } };
+      "export default { features: { a: true, b: true } };
       // formatted"
     `);
     expect(outcomes.get('b')).toEqual({ changed: [mainConfigPath], errors: [] });
@@ -361,7 +356,7 @@ describe('edit hooks', () => {
 
     expect(detection.get('noop')).toEqual({ changed: [], errors: [] });
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe(
-      'export default {\r\n  features: {\r\n    a: true\r\n  },\r\n};\r\n\r\n// formatted'
+      'export default {\r\n  features: { a: true },\r\n};\r\n\r\n// formatted'
     );
   });
 
@@ -418,10 +413,7 @@ describe('edit hooks', () => {
     );
 
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
-      "export default { features: {
-        a: true,
-        c: true
-      } };
+      "export default { features: { a: true, c: true } };
       // formatted"
     `);
     expect(outcomes.get('broken')).toEqual({

@@ -413,7 +413,8 @@ describe('vitestSetupFile', () => {
         "import { MotionGlobalConfig } from 'framer-motion';
 
         // Skip animations
-        MotionGlobalConfig.skipAnimations = true;"
+        MotionGlobalConfig.skipAnimations = true;
+        "
       `);
       expect(readFixture('vitest.config.ts')).toBe(STANDARD_VITEST_CONFIG);
     });
@@ -1037,7 +1038,6 @@ describe('transformSetupFile', () => {
       //
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });
@@ -1062,7 +1062,6 @@ describe('transformSetupFile', () => {
       "// Copyright Example
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });

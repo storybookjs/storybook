@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { parse } from '@babel/parser';
 import { readFileSync } from 'fs';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -41,8 +40,7 @@ vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
 }));
 
-const parser = (input: string) =>
-  parse(input, { sourceType: 'module', plugins: ['jsx', 'typescript'] });
+const parser = extractModule.parseModuleAst;
 
 describe('isModuleDirectory', () => {
   it('returns true for node_modules path', () => {
@@ -220,10 +218,31 @@ describe('extractMockCalls', () => {
 
       const result = extractModule.rewriteSbMockImportCalls(code);
       expect(result.code).toMatchInlineSnapshot(`
-        "sb.mock("./bar/baz", {
-          spy: true
-        });"
+        "
+                sb.mock("./bar/baz", { spy: true });
+              "
       `);
+    });
+
+    it('names the file in the map and returns no map when nothing changed', () => {
+      const changed = extractModule.rewriteSbMockImportCalls(
+        `sb.mock(import('./bar/baz'));`,
+        '/project/.storybook/preview.ts'
+      );
+      expect(changed.map?.sources).toEqual(['/project/.storybook/preview.ts']);
+
+      const unchanged = extractModule.rewriteSbMockImportCalls(
+        `export default {};`,
+        '/project/.storybook/preview.ts'
+      );
+      expect(unchanged).toEqual({ code: `export default {};`, map: null });
+    });
+
+    it('parses .ts modules with the TS grammar and fails on syntax errors', () => {
+      const code = `export const identity = <T>(value: T) => value;`;
+      expect(extractModule.parseModuleAst(code, '/project/util.ts').body).toHaveLength(1);
+      expect(extractModule.parseModuleAst(code).body).toHaveLength(1);
+      expect(() => extractModule.parseModuleAst('export const = ;', '/project/util.ts')).toThrow();
     });
 
     it('rewrites sb.mock(import("<xyz>")) to sb.mock("<xyz>")', () => {
@@ -233,7 +252,9 @@ describe('extractMockCalls', () => {
 
       const result = extractModule.rewriteSbMockImportCalls(code);
       expect(result.code).toMatchInlineSnapshot(`
-        "sb.mock("./bar/baz");"
+        "
+                sb.mock("./bar/baz");
+              "
       `);
     });
   });

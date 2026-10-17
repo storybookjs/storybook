@@ -10,7 +10,8 @@ import MagicString from 'magic-string';
 
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
 
-type ParseFn = (code: string) => Program;
+// An ESTree program; OXC's own `Program` type is structurally compatible with what is read here.
+type ParseFn = (code: string) => unknown;
 
 export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 
@@ -98,10 +99,9 @@ export function automockModule(
         } else if (expression.type === 'RestElement') {
           traversePattern(expression.argument);
         }
-        // const [name[1], name[2]] = []
-        // cannot be used in export
+        // export const { a = 1 } = {}
         else if (expression.type === 'AssignmentPattern') {
-          throw new Error(`AssignmentPattern is not supported. Please open a new bug report.`);
+          traversePattern(expression.left);
         }
         // const test = thing.func()
         // cannot be used in export

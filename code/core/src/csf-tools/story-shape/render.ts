@@ -1,18 +1,16 @@
-import { type NodePath, type types as t } from 'storybook/internal/babel';
-
 import type { CsfFile } from '../CsfFile.ts';
-import { normalizeStoryDeclaration } from './normalize-story.ts';
+import type { E, Node } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
+import { normalizeStoryDeclaration, storyShapeError } from './normalize-story.ts';
 import {
   type ReferenceContext,
   type ResolvedMembers,
   resolveObjectMembers,
 } from './resolve-members.ts';
-import { keyOf, metaObjectPath, pathForNode, resolveIdentifierInit } from './utils.ts';
+import { type FunctionNode, keyOf, metaObject, resolveIdentifierInit } from './utils.ts';
 
-/** A function a story or meta supplies through `render`. */
-export type RenderFunctionPath = NodePath<
-  t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
->;
+/** A function a story or meta supplies through `render`; a method shorthand is its function. */
+export type RenderFunction = FunctionNode;
 
 /**
  * Outcome of looking for a `render` function.
@@ -27,13 +25,15 @@ export type RenderFunctionPath = NodePath<
  */
 export type RenderResolution =
   | { kind: 'missing' }
-  | { kind: 'resolved'; path: RenderFunctionPath }
-  | { kind: 'unresolved'; shadowedRender?: RenderFunctionPath };
+  | { kind: 'resolved'; node: RenderFunction }
+  | { kind: 'unresolved'; shadowedRender?: RenderFunction };
 
-type RenderReadResult = RenderResolution | { kind: 'invalid'; path: NodePath<t.Node> };
+type RenderReadResult = RenderResolution | { kind: 'invalid'; node: Node };
 
-const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
-  path.isArrowFunctionExpression() || path.isFunctionExpression() || path.isFunctionDeclaration();
+const isRenderFunction = (node: Node | null | undefined): node is RenderFunction =>
+  node?.type === 'ArrowFunctionExpression' ||
+  node?.type === 'FunctionExpression' ||
+  node?.type === 'FunctionDeclaration';
 
 /**
  * Resolves the `render` property of a story or meta config, following a local identifier
@@ -45,8 +45,8 @@ const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
  * the explicit property wins. When `render` is missing, any spread could still be supplying one,
  * which is also `unresolved`.
  *
- * `storyDeclaration` anchors the identifier lookup to the module the story lives in, so a helper
- * declared beside the story resolves while an imported one reports `unresolved`.
+ * `editor` is the module the story lives in, so a helper declared beside the story resolves while
+ * an imported one reports `unresolved`.
  *
  * `references` lets a spread be read rather than assumed: with it, `{ ...Base }` reports whichever
  * `render` `Base` supplies, or `missing` when it supplies none, instead of the `unresolved` a pass
@@ -56,73 +56,40 @@ const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
  * story-file mistake rather than something a static pass merely could not follow.
  */
 export function resolveRenderFunction(
-  config: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>,
+  config: E.ObjectExpression | undefined,
+  editor: SourceEditor,
   references?: ReferenceContext
 ): RenderResolution {
-  const properties = config?.get('properties') ?? [];
-
-  // Duplicate keys resolve to the LAST occurrence, matching runtime object semantics.
-  let renderIndex = -1;
-  for (let index = properties.length - 1; index >= 0; index -= 1) {
-    const property = properties[index];
-    if (
-      (property.isObjectProperty() || property.isObjectMethod()) &&
-      keyOf(property.node) === 'render'
-    ) {
-      renderIndex = index;
-      break;
-    }
-  }
-
-  const throughSpreads = () =>
-    config && references
-      ? renderFromMembers(
-          resolveObjectMembers(config.node, references),
-          references,
-          storyDeclaration
-        )
-      : { kind: 'unresolved' as const };
-
-  if (renderIndex === -1) {
-    return properties.some((property) => property.isSpreadElement())
-      ? throughSpreads()
-      : { kind: 'missing' };
-  }
-
-  const resolved = readRenderProperty(properties[renderIndex], storyDeclaration);
+  const resolved = readRender(config, editor, references);
   if (resolved.kind === 'invalid') {
-    throw resolved.path.buildCodeFrameError(
-      'Expected render to be an arrow function or function expression'
+    throw storyShapeError(
+      'Expected render to be an arrow function or function expression',
+      resolved.node,
+      editor
     );
   }
-  if (properties.some((property, index) => index > renderIndex && property.isSpreadElement())) {
-    const read = throughSpreads();
-    if (read.kind !== 'unresolved') {
-      return read;
-    }
-    return resolved.kind === 'resolved'
-      ? { kind: 'unresolved', shadowedRender: resolved.path }
-      : { kind: 'unresolved' };
-  }
-
   return resolved;
 }
 
+/**
+ * The `render` a story runs with: its own, or the meta's when the story does not set one.
+ *
+ * A story `render` that is present but cannot be read, including one that is not a function,
+ * reports `unresolved` rather than falling back to the meta's.
+ */
 export function resolveEffectiveRender(
   csf: CsfFile,
   exportName: string,
   references?: ReferenceContext
 ): RenderResolution {
-  const declaration = csf._storyDeclarationPath[exportName];
-  const normalized = normalizeStoryDeclarationForRender(declaration);
+  const normalized = normalizeStoryDeclaration(csf._storyExports[exportName], csf._editor);
   if (normalized.type === 'fn') {
-    return { kind: 'resolved', path: normalized.path };
+    return { kind: 'resolved', node: normalized.node as RenderFunction };
   }
 
   const storyRender = readRender(
-    normalized.type === 'config' ? normalized.path : undefined,
-    declaration,
+    normalized.type === 'config' ? (normalized.node as E.ObjectExpression) : undefined,
+    csf._editor,
     references
   );
   if (storyRender.kind === 'invalid') {
@@ -132,26 +99,22 @@ export function resolveEffectiveRender(
     return storyRender;
   }
 
-  const metaRender = readRender(metaObjectPath(csf), declaration, references);
+  const metaRender = readRender(metaObject(csf), csf._editor, references);
   return metaRender.kind === 'invalid' ? { kind: 'unresolved' } : metaRender;
 }
 
-const normalizeStoryDeclarationForRender = normalizeStoryDeclaration;
-
 const readRender = (
-  config: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>,
+  config: E.ObjectExpression | undefined,
+  editor: SourceEditor,
   references?: ReferenceContext
 ): RenderReadResult => {
-  const properties = config?.get('properties') ?? [];
+  const properties = config?.properties ?? [];
 
+  // Duplicate keys resolve to the LAST occurrence, matching runtime object semantics.
   let renderIndex = -1;
   for (let index = properties.length - 1; index >= 0; index -= 1) {
     const property = properties[index];
-    if (
-      (property.isObjectProperty() || property.isObjectMethod()) &&
-      keyOf(property.node) === 'render'
-    ) {
+    if (property.type === 'Property' && keyOf(property) === 'render') {
       renderIndex = index;
       break;
     }
@@ -159,27 +122,28 @@ const readRender = (
 
   const throughSpreads = () =>
     config && references
-      ? renderFromMembers(
-          resolveObjectMembers(config.node, references),
-          references,
-          storyDeclaration
-        )
+      ? renderFromMembers(resolveObjectMembers(config, references), editor)
       : { kind: 'unresolved' as const };
 
   if (renderIndex === -1) {
-    return properties.some((property) => property.isSpreadElement())
+    return properties.some((property) => property.type === 'SpreadElement')
       ? throughSpreads()
       : { kind: 'missing' };
   }
 
-  const resolved = readRenderProperty(properties[renderIndex], storyDeclaration);
-  if (properties.some((property, index) => index > renderIndex && property.isSpreadElement())) {
+  const resolved = readRenderProperty(properties[renderIndex] as E.ObjectProperty, editor);
+  if (resolved.kind === 'invalid') {
+    return resolved;
+  }
+  if (
+    properties.some((property, index) => index > renderIndex && property.type === 'SpreadElement')
+  ) {
     const read = throughSpreads();
     if (read.kind !== 'unresolved') {
       return read;
     }
     return resolved.kind === 'resolved'
-      ? { kind: 'unresolved', shadowedRender: resolved.path }
+      ? { kind: 'unresolved', shadowedRender: resolved.node }
       : { kind: 'unresolved' };
   }
 
@@ -192,11 +156,7 @@ const readRender = (
  * A member the story file itself does not contain is `unresolved`: a function another module
  * declares reads as a name that means nothing in a snippet, whichever way it is printed.
  */
-function renderFromMembers(
-  members: ResolvedMembers,
-  references: ReferenceContext,
-  storyDeclaration: NodePath<t.Node>
-): RenderResolution {
+function renderFromMembers(members: ResolvedMembers, editor: SourceEditor): RenderResolution {
   if (members.unresolved.length > 0) {
     return { kind: 'unresolved' };
   }
@@ -206,48 +166,51 @@ function renderFromMembers(
     return { kind: 'missing' };
   }
 
-  const path = pathForNode(references.program, node);
-  if (!path) {
+  if (editor.parentOf(node) === null) {
     return { kind: 'unresolved' };
   }
-  if (path.isObjectMethod()) {
-    return path.node.kind === 'method' && !path.node.generator
-      ? { kind: 'resolved', path }
+  if (node.type === 'Property') {
+    return methodRender(node as E.ObjectProperty);
+  }
+  if (node.type === 'Identifier') {
+    const resolved = resolveIdentifierInit(editor.program, node.name);
+    return isRenderFunction(resolved)
+      ? { kind: 'resolved', node: resolved }
       : { kind: 'unresolved' };
   }
-  if (path.isIdentifier()) {
-    const resolved = resolveIdentifierInit(storyDeclaration, path);
-    return resolved && isRenderFunction(resolved)
-      ? { kind: 'resolved', path: resolved }
-      : { kind: 'unresolved' };
-  }
-  return isRenderFunction(path) ? { kind: 'resolved', path } : { kind: 'unresolved' };
+  return isRenderFunction(node) ? { kind: 'resolved', node } : { kind: 'unresolved' };
 }
 
+// A getter, setter or generator is not itself the render function.
+const methodRender = (
+  property: E.ObjectProperty
+): Extract<RenderResolution, { kind: 'resolved' | 'unresolved' }> => {
+  const fn = property.value as E.Function;
+  return property.kind === 'init' && property.method && !fn.generator
+    ? { kind: 'resolved', node: fn }
+    : { kind: 'unresolved' };
+};
+
 function readRenderProperty(
-  renderProperty: NodePath<t.ObjectExpression['properties'][number]>,
-  storyDeclaration: NodePath<t.Node>
+  renderProperty: E.ObjectProperty,
+  editor: SourceEditor
 ): Extract<RenderReadResult, { kind: 'invalid' | 'resolved' | 'unresolved' }> {
-  if (renderProperty.isObjectMethod()) {
-    // A getter's render value is what it returns, a setter reads as undefined, and a generator is
-    // not a render function, so only a plain method is the function itself.
-    return renderProperty.node.kind === 'method' && !renderProperty.node.generator
-      ? { kind: 'resolved', path: renderProperty }
+  if (renderProperty.method || renderProperty.kind !== 'init') {
+    return methodRender(renderProperty);
+  }
+
+  const render = renderProperty.value;
+
+  if (render.type === 'Identifier') {
+    const resolved = resolveIdentifierInit(editor.program, render.name);
+    return isRenderFunction(resolved)
+      ? { kind: 'resolved', node: resolved }
       : { kind: 'unresolved' };
   }
 
-  const renderPath = (renderProperty as NodePath<t.ObjectProperty>).get('value');
-
-  if (renderPath.isIdentifier()) {
-    const resolved = resolveIdentifierInit(storyDeclaration, renderPath);
-    return resolved && isRenderFunction(resolved)
-      ? { kind: 'resolved', path: resolved }
-      : { kind: 'unresolved' };
+  if (!isRenderFunction(render)) {
+    return { kind: 'invalid', node: render };
   }
 
-  if (!isRenderFunction(renderPath)) {
-    return { kind: 'invalid', path: renderPath };
-  }
-
-  return { kind: 'resolved', path: renderPath };
+  return { kind: 'resolved', node: render };
 }

@@ -1,4 +1,4 @@
-import type { types as t } from 'storybook/internal/babel';
+import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-tools';
 import { sourceOf } from 'storybook/internal/csf-tools';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
@@ -37,7 +37,7 @@ interface TemplatePrintState {
   falseDefaults: Set<string>;
   listenersNotShown: Set<string>;
   lit: boolean;
-  markers: Map<string, t.Expression>;
+  markers: Map<string, E.Expression>;
   properties: Set<string>;
   referenced: Set<string>;
   unresolved: Set<string>;
@@ -45,7 +45,7 @@ interface TemplatePrintState {
 
 export function printHtmlTemplate(
   template: HtmlTemplate,
-  storyArgs: Record<string, t.Node>,
+  storyArgs: Record<string, Node>,
   declaration: ManifestDeclaration
 ): HtmlTemplateRenderResult {
   return printTemplate(template, {
@@ -67,7 +67,7 @@ const printTemplateWithListeners = (
 ): HtmlTemplateRenderResult => {
   const scopedContext = { ...context, bindings: template.bindings, scope: template.scope };
   const nonce = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
-  const markers = new Map<string, t.Expression>();
+  const markers = new Map<string, E.Expression>();
   const source = template.quasis.reduce((html, quasi, index) => {
     const expression = template.expressions[index];
     if (!expression) {
@@ -338,7 +338,7 @@ const nodesForChildValue = (value: HoleValue, state: TemplatePrintState): HtmlNo
   }
 };
 
-const resolveMarkerValue = (expression: t.Expression, state: TemplatePrintState): HoleValue => {
+const resolveMarkerValue = (expression: E.Expression, state: TemplatePrintState): HoleValue => {
   const value = resolveHoleValue(expression, state.context);
   if (value.arg) {
     state.referenced.add(value.arg);
@@ -382,7 +382,7 @@ const markersIn = (text: string, state: TemplatePrintState): string[] =>
 const markerSources = (markers: string[], state: TemplatePrintState): string =>
   markers
     .map((marker) => state.markers.get(marker))
-    .filter((expression): expression is t.Expression => expression !== undefined)
+    .filter((expression): expression is E.Expression => expression !== undefined)
     .map(sourceOf)
     .join(', ');
 

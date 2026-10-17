@@ -1,8 +1,8 @@
-import { recast } from 'storybook/internal/babel';
 import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
 import {
+  type ImportRef,
+  type StoryReferences,
   createStoryArgsResolver,
   extractStoryJSDocInfo,
   loadCsf,
@@ -173,7 +173,10 @@ export function extractStorySnippets(
     .map(([storyExport, story]): ResolvedStory => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
-        const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
+        const { description, summary } = extractStoryJSDocInfo(
+          csf._storyStatements[storyExport],
+          csf._editor
+        );
         const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
         imports.push(...snippet.imports);
         const warning = unresolvedWarning(snippet.unresolved);
@@ -181,7 +184,7 @@ export function extractStorySnippets(
         return {
           id: story.id,
           name,
-          snippet: recast.print(snippet.node).code,
+          snippet: snippet.code,
           description,
           summary,
           ...(warning ? { warning } : {}),

@@ -254,11 +254,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               "description": undefined,
               "id": "example-header--logged-in",
               "name": "Logged In",
-              "snippet": "const LoggedIn = () => <Header
-        onLogin={fn()}
-        onLogout={fn()}
-        onCreateAccount={fn()}
-        user={{ name: 'Jane Doe' }} />;",
+              "snippet": "const LoggedIn = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} user={{ name: 'Jane Doe' }} />;",
               "summary": undefined,
             },
             {
@@ -496,10 +492,9 @@ test('component exported from other file', async () => {
         {
           "error": {
             "message": "Expected story to be a function or variable declaration
-       9 | export default meta;
-      10 |
+    (11:0)
     > 11 | export { Primary } from './other-file';
-         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+         | ^",
             "name": "SyntaxError",
           },
           "id": "example-button--primary",
@@ -551,10 +546,9 @@ test('unknown expressions', async () => {
         {
           "error": {
             "message": "Expected story to be csf factory, function or an object expression
-       9 | export default meta;
-      10 |
+    (11:23)
     > 11 | export const Primary = someWeirdExpression;
-         |                        ^^^^^^^^^^^^^^^^^^^",
+         |                        ^",
             "name": "SyntaxError",
           },
           "id": "example-button--primary",

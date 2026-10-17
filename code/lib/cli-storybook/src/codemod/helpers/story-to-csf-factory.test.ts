@@ -77,11 +77,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         export const A = meta.story();
       `);
     });
@@ -210,11 +206,7 @@ describe('stories codemod', () => {
           `)
       ).resolves.toMatchInlineSnapshot(`
         import preview from "#.storybook/preview";
-
-        const meta = preview.meta({
-          title: "Component",
-        });
-
+        const meta = preview.meta({ title: "Component" });
         const someData = {};
 
         export const A = meta.story();
@@ -324,9 +316,7 @@ describe('stories codemod', () => {
         import * as BaseStories from "./Button.stories";
         import { Primary as ImportedPrimary } from "./Card.stories";
 
-        const meta = preview.meta({
-          title: "Component",
-        });
+        const meta = preview.meta({ title: "Component" });
 
         export const A = meta.story({
           args: BaseStories.Primary.input.args,
@@ -487,7 +477,7 @@ describe('stories codemod', () => {
           )
         )
       ).resolves.toMatchInlineSnapshot(`
-        import preview from "../.rnstorybook/preview";
+        import preview from '../.rnstorybook/preview';
         const meta = preview.meta({});
         export const A = meta.story();
       `);
@@ -934,6 +924,31 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('migrates parenthesized expressions before satisfies and as', async () => {
+        await expect(
+          transform(dedent`
+            import type { StoryFn, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            export default { component: Button };
+
+            export const P = ((args) => <Button {...args} />) satisfies
+              StoryFn<typeof Button>;
+            export const O = ({ args: { a: 1 } }) satisfies StoryObj;
+            export const A = ({ args: { a: 2 } }) as StoryObj;
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview.meta({ component: Button });
+
+          export const P = meta.story((args) => <Button {...args} />);
+          export const O = meta.story({ args: { a: 1 } });
+          export const A = meta.story({ args: { a: 2 } });
+        `);
+      });
+
       it('keeps the custom args type of a story on that story', async () => {
         await expect(
           transform(dedent`
@@ -1126,6 +1141,33 @@ describe('stories codemod', () => {
         `);
       });
 
+      it('tells custom args types apart by their string literals', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+
+            const meta = { component: Button } satisfies Meta<{ href: 'http://x' }>;
+            export default meta;
+
+            export const Same: StoryObj<{ href: 'http://x' }> = {};
+            export const Spaced: StoryObj<{ href: 'http://x' } & { label: 'a  b' }> = {};
+            export const Single: StoryObj<{ href: /* c */ 'http://x' } & { label: 'a b' }> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button } from "./Button";
+
+          const meta = preview
+            .type<{ args: { href: "http://x" } }>()
+            .meta({ component: Button });
+
+          export const Same = meta.story();
+          export const Spaced = meta.type<{ args: { label: "a  b" } }>().story();
+          export const Single = meta.type<{ args: { label: "a b" } }>().story();
+        `);
+      });
+
       it('keeps a Storybook type that the custom args type is built from', async () => {
         await expect(
           transform(dedent`
@@ -1234,9 +1276,7 @@ describe('stories codemod', () => {
           name: string;
         }
 
-        const meta = preview.meta({
-          title: "Table",
-        });
+        const meta = preview.meta({ title: "Table" });
 
         export const A = meta.story({
           render: () => {
@@ -1267,14 +1307,10 @@ describe('stories codemod', () => {
         import preview from "#.storybook/preview";
         import { Meta } from "@storybook/react";
         import { Button } from "./Button";
-
         type ThisShouldNotBeRemoved = Meta<typeof Button>;
         const something: ThisShouldNotBeRemoved = {};
 
-        const meta = preview.meta({
-          title: "Button",
-        });
-
+        const meta = preview.meta({ title: "Button" });
         export const A = meta.story();
       `);
     });
@@ -1453,11 +1489,9 @@ describe('stories codemod', () => {
         const meta = preview.meta({
           component: Component,
           args: { getUsers: fn(), onClick: fn() },
-
           beforeEach: ({ args }) => {
             mocked(args.getUsers).mockResolvedValue([]);
           },
-
           loaders: [
             async ({ args }) => {
               mocked(args.getUsers).mockClear();

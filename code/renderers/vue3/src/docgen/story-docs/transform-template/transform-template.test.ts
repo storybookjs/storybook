@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
+import { type ESTreeNode as Node, expressionFromSource } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -494,6 +494,41 @@ export const Primary = {
         <MyButton
           label="Hi"
         />
+      </template>"
+    `);
+  });
+
+  it('resolves bindings with leading whitespace, line breaks and outer parentheses', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', active: true },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`<MyButton
+      :label="
+        args.label
+      "
+      :active="(args.active)"
+      :class="(args.active ? 'on' : 'off')"
+      v-if=" args.active "
+    >{{ (args.label) }}</MyButton>\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton
+              label="Hi"
+              :active="(true)"
+              :class="(true ? 'on' : 'off')"
+              v-if=" true "
+            >{{ ('Hi') }}</MyButton>
       </template>"
     `);
   });
@@ -1703,7 +1738,7 @@ import C from './C.vue';
   });
 
   it('hoists a value that needs script scope, indented like the snippet around it', () => {
-    expect(render([prop('options', `{\n    tone: "neutral"\n}`, 'hoist')]))
+    expect(render([prop('options', `{\n      tone: "neutral"\n    }`, 'hoist')]))
       .toBe(`<script lang="ts" setup>
 import C from './C.vue';
 
@@ -1815,7 +1850,7 @@ import C from '@example/C.vue';
   it('hoists inline slot text whose whitespace raw template text would condense', () => {
     const snippet = render([slot('default', `'  padded  '`)]);
 
-    expect(snippet).toContain('const _default = "  padded  ";');
+    expect(snippet).toContain("const _default = '  padded  ';");
     expect(snippet).toContain('{{ _default }}');
   });
 
@@ -1879,11 +1914,6 @@ function event(name: string, eventName: string, code: string): ClassifiedArg {
   };
 }
 
-function expression(code: string): t.Node {
-  const file = babelParse(`const value = ${code}`);
-  const statement = file.program.body[0];
-  if (!t.isVariableDeclaration(statement) || !statement.declarations[0]?.init) {
-    throw new Error(`Not an expression: ${code}`);
-  }
-  return t.removePropertiesDeep(t.cloneNode(statement.declarations[0].init, true, true));
+function expression(code: string): Node {
+  return expressionFromSource(code);
 }

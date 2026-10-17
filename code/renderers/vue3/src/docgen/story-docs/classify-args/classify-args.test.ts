@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
+import { type ESTreeNode as Node, expressionFromSource, keyOf } from 'storybook/internal/csf-tools';
 
 import { classifyArgs, type ClassifiedArg } from './classify-args.ts';
 import { printValue } from '../../shared/classify-value.ts';
@@ -191,27 +191,22 @@ function classify(
   };
 }
 
-function parseArgs(code: string): Record<string, t.Node> {
-  const file = babelParse(`(${code})`);
-  const statement = file.program.body[0];
-  if (!t.isExpressionStatement(statement) || !t.isObjectExpression(statement.expression)) {
+function parseArgs(code: string): Record<string, Node> {
+  const expression = expressionFromSource(code);
+  if (expression.type !== 'ObjectExpression') {
     throw new Error(`Not an args object: ${code}`);
   }
 
   return Object.fromEntries(
-    statement.expression.properties.map((property) => {
-      if (!t.isObjectProperty(property) || property.computed) {
+    expression.properties.map((property) => {
+      if (property.type !== 'Property' || property.method || property.computed) {
         throw new Error(`Not a plain arg: ${printValue(property)}`);
       }
-
-      if (t.isIdentifier(property.key)) {
-        return [property.key.name, property.value];
+      const name = keyOf(property);
+      if (name === null) {
+        throw new Error(`Unsupported arg name: ${printValue(property.key)}`);
       }
-      if (t.isStringLiteral(property.key)) {
-        return [property.key.value, property.value];
-      }
-
-      throw new Error(`Unsupported arg name: ${printValue(property.key)}`);
+      return [name, property.value];
     })
   );
 }

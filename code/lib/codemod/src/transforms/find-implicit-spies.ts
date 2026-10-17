@@ -1,104 +1,77 @@
-import type { BabelFile } from 'storybook/internal/babel';
-import { core as babel, types as t } from 'storybook/internal/babel';
-import { loadCsf } from 'storybook/internal/csf-tools';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type SourceEditor,
+  loadCsf,
+  storyShapeError,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import type { FileInfo } from 'jscodeshift';
 
-function findImplicitSpies(path: babel.NodePath, file: string, keys: string[]) {
-  path.traverse({
-    Identifier: (identifier) => {
-      if (!keys.includes(identifier.node.name) && /^on[A-Z].*/.test(identifier.node.name)) {
-        console.warn(identifier.buildCodeFrameError(`${file} Possible implicit spy found`).message);
-      }
-    },
-  });
-}
-
-function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: string) {
-  const argKeys: string[] = [];
-
-  file.path.traverse({
-    // CSF2 play function Story.args =
-    AssignmentExpression: (path) => {
-      const left = path.get('left');
-
-      if (!left.isMemberExpression()) {
-        return;
-      }
-      const object = left.get('object');
-
-      if (!(object.isIdentifier() && object.node.name === storyName)) {
-        return;
-      }
-
-      const property = left.get('property');
-      const right = path.get('right');
-      if (
-        property.isIdentifier() &&
-        property.node.name === annotationName &&
-        right.isObjectExpression()
-      ) {
-        argKeys.push(
-          ...right.node.properties.flatMap((value) =>
-            t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
-          )
-        );
-      }
-    },
-    // CSF3 const Story = {args: () => {} };
-    VariableDeclarator: (path) => {
-      const id = path.get('id');
-      const init = path.get('init');
-
-      if (!(id.isIdentifier() && id.node.name === storyName) || !init.isObjectExpression()) {
-        return;
-      }
-
-      const args = init
-        .get('properties')
-        .flatMap((it) => (it.isObjectProperty() ? [it] : []))
-        .find((it) => {
-          const argKey = it.get('key');
-          return argKey.isIdentifier() && argKey.node.name === annotationName;
-        });
-
-      if (!args) {
-        return;
-      }
-      const argsValue = args.get('value');
-
-      if (!argsValue || !argsValue.isObjectExpression()) {
-        return;
-      }
-      argKeys.push(
-        ...argsValue.node.properties.flatMap((value) =>
-          t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
-        )
+function findImplicitSpies(editor: SourceEditor, node: Node, file: string, keys: string[]) {
+  walk(node, (identifier) => {
+    if (
+      identifier.type === 'Identifier' &&
+      !keys.includes(identifier.name) &&
+      /^on[A-Z].*/.test(identifier.name)
+    ) {
+      console.warn(
+        storyShapeError(`${file} Possible implicit spy found`, identifier, editor).message
       );
-    },
+    }
   });
-
-  return argKeys;
 }
 
-const getObjectExpressionKeys = (node: babel.Node | undefined) => {
-  return t.isObjectExpression(node)
+const getObjectExpressionKeys = (node: Node | undefined) => {
+  return node?.type === 'ObjectExpression'
     ? node.properties.flatMap((value) =>
-        t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
+        value.type === 'Property' && !value.method && value.key.type === 'Identifier'
+          ? [value.key.name]
+          : []
       )
     : [];
 };
 
-export default async function transform(info: FileInfo) {
-  const csf = loadCsf(info.source, { makeTitle: (title) => title });
-  const fileNode = csf._ast;
-  // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-  const file: BabelFile = new babel.File(
-    { filename: info.path },
-    { code: info.source, ast: fileNode }
+const findProperty = (object: E.ObjectExpression, name: string) =>
+  object.properties.find(
+    (it): it is E.ObjectProperty =>
+      it.type === 'Property' && !it.method && it.key.type === 'Identifier' && it.key.name === name
   );
 
+// CSF2 `Story.annotation = value` and CSF3 `const Story = { annotation: value }`
+function findAnnotations(program: E.Program, storyName: string, annotationName: string) {
+  const values: Node[] = [];
+  walk(program, (node) => {
+    if (
+      node.type === 'AssignmentExpression' &&
+      node.left.type === 'MemberExpression' &&
+      node.left.object.type === 'Identifier' &&
+      node.left.object.name === storyName &&
+      node.left.property.type === 'Identifier' &&
+      node.left.property.name === annotationName
+    ) {
+      values.push(node.right);
+    }
+    if (
+      node.type === 'VariableDeclarator' &&
+      node.id.type === 'Identifier' &&
+      node.id.name === storyName &&
+      node.init?.type === 'ObjectExpression'
+    ) {
+      const property = findProperty(node.init, annotationName);
+      if (property) {
+        values.push(property.value);
+      }
+    }
+  });
+  return values;
+}
+
+export default async function transform(info: FileInfo) {
+  const csf = loadCsf(info.source, { makeTitle: (title) => title });
   csf.parse();
+  const editor = csf._editor;
 
   const metaKeys = [
     ...getObjectExpressionKeys(csf._metaAnnotations.args),
@@ -111,55 +84,36 @@ export default async function transform(info: FileInfo) {
     }
     const allKeys = [
       ...metaKeys,
-      ...getAnnotationKeys(file, name, 'args'),
-      ...getAnnotationKeys(file, name, 'argTypes'),
+      ...findAnnotations(editor.program, name, 'args').flatMap(getObjectExpressionKeys),
+      ...findAnnotations(editor.program, name, 'argTypes').flatMap(getObjectExpressionKeys),
     ];
 
-    file.path.traverse({
+    walk(editor.program, (node) => {
       // CSF2 play function Story.play =
-      AssignmentExpression: (path) => {
-        const left = path.get('left');
-
-        if (!left.isMemberExpression()) {
-          return;
-        }
-        const object = left.get('object');
-
-        if (!(object.isIdentifier() && object.node.name === name)) {
-          return;
-        }
-
-        const property = left.get('property');
-        if (property.isIdentifier() && property.node.name === 'play') {
-          findImplicitSpies(path, info.path, allKeys);
-        }
-      },
-
+      if (
+        node.type === 'AssignmentExpression' &&
+        node.left.type === 'MemberExpression' &&
+        node.left.object.type === 'Identifier' &&
+        node.left.object.name === name &&
+        node.left.property.type === 'Identifier' &&
+        node.left.property.name === 'play'
+      ) {
+        findImplicitSpies(editor, node, info.path, allKeys);
+      }
       // CSF3 play function: const Story = {play: () => {} };
-      VariableDeclarator: (path) => {
-        const id = path.get('id');
-        const init = path.get('init');
-
-        if (!(id.isIdentifier() && id.node.name === name) || !init.isObjectExpression()) {
-          return;
-        }
-
-        const play = init
-          .get('properties')
-          .flatMap((it) => (it.isObjectProperty() ? [it] : []))
-          .find((it) => {
-            const argKey = it.get('key');
-            return argKey.isIdentifier() && argKey.node.name === 'play';
-          });
-
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.id.type === 'Identifier' &&
+        node.id.name === name &&
+        node.init?.type === 'ObjectExpression'
+      ) {
+        const play = findProperty(node.init, 'play');
         if (play) {
-          findImplicitSpies(play, info.path, allKeys);
+          findImplicitSpies(editor, play, info.path, allKeys);
         }
-      },
+      }
     });
   });
-
-  return;
 }
 
 export const parser = 'tsx';

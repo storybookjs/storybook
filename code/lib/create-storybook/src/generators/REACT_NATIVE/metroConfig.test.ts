@@ -117,6 +117,7 @@ export default async function makeMetroConfig() {
         "- export default async function makeMetroConfig() {
         - 
         + import { withStorybook } from '@storybook/react-native/withStorybook';
+        + 
         + export default withStorybook(async function makeMetroConfig() {
         + 
             return { resolver: {} };
@@ -246,11 +247,12 @@ export default async function makeMetroConfig<T = string>(): Promise<MetroConfig
       expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
         "  import type { MetroConfig } from 'metro-config';
           
+        + import { withStorybook } from '@storybook/react-native/withStorybook';
+        + 
+          
           
         - export default async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
         - 
-        + import { withStorybook } from '@storybook/react-native/withStorybook';
-        + 
         + export default withStorybook(async function makeMetroConfig<T = string>(): Promise<MetroConfig> {
         + 
             return {} as MetroConfig;

@@ -6,14 +6,15 @@ import { loadCsf } from '../CsfFile.ts';
 import { extractStoryJSDocInfo } from './jsdoc.ts';
 
 const storyStatement = (code: string) => {
-  return loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse()._storyStatements['A'];
+  const csf = loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
+  return [csf._storyStatements['A'], csf._editor] as const;
 };
 
 describe('extractStoryJSDocInfo', () => {
   it('extracts a plain JSDoc description', () => {
     expect(
       extractStoryJSDocInfo(
-        storyStatement(dedent`
+        ...storyStatement(dedent`
           export default { title: 'Button' };
           /**
            * Primary button story.
@@ -30,7 +31,7 @@ describe('extractStoryJSDocInfo', () => {
   it('uses @describe over the JSDoc body', () => {
     expect(
       extractStoryJSDocInfo(
-        storyStatement(dedent`
+        ...storyStatement(dedent`
           export default { title: 'Button' };
           /**
            * Body description.
@@ -48,7 +49,7 @@ describe('extractStoryJSDocInfo', () => {
   it('uses @desc when @describe is absent', () => {
     expect(
       extractStoryJSDocInfo(
-        storyStatement(dedent`
+        ...storyStatement(dedent`
           export default { title: 'Button' };
           /**
            * Body description.
@@ -66,7 +67,7 @@ describe('extractStoryJSDocInfo', () => {
   it('extracts @summary', () => {
     expect(
       extractStoryJSDocInfo(
-        storyStatement(dedent`
+        ...storyStatement(dedent`
           export default { title: 'Button' };
           /**
            * Full story description.
@@ -84,7 +85,7 @@ describe('extractStoryJSDocInfo', () => {
   it('returns undefined fields when no JSDoc is present', () => {
     expect(
       extractStoryJSDocInfo(
-        storyStatement(dedent`
+        ...storyStatement(dedent`
           export default { title: 'Button' };
           export const A = {};
         `)
@@ -98,7 +99,7 @@ describe('extractStoryJSDocInfo', () => {
   it('trims surrounding whitespace from the final description', () => {
     expect(
       extractStoryJSDocInfo(
-        storyStatement(dedent`
+        ...storyStatement(dedent`
           export default { title: 'Button' };
           /**
            *

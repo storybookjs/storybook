@@ -1,7 +1,7 @@
-import { types as t } from 'storybook/internal/babel';
 import {
   type ConfigFile,
   isCsfFactoryPreview,
+  parseExpression,
   readConfig,
   writeConfig,
 } from 'storybook/internal/csf-tools';
@@ -57,8 +57,8 @@ export async function syncPreviewAddonsWithMainConfig(
   for (const addon of addons) {
     const annotations = await getAddonAnnotations(addon, configDir);
     if (annotations) {
-      const hasAlreadyImportedAddonAnnotations = previewConfig._ast.program.body.find(
-        (node) => t.isImportDeclaration(node) && node.source.value === annotations.importPath
+      const hasAlreadyImportedAddonAnnotations = previewConfig._program.body.find(
+        (node) => node.type === 'ImportDeclaration' && node.source.value === annotations.importPath
       );
 
       if (hasAlreadyImportedAddonAnnotations) {
@@ -67,9 +67,9 @@ export async function syncPreviewAddonsWithMainConfig(
 
       if (
         !existingAddons ||
-        (t.isArrayExpression(existingAddons) &&
+        (existingAddons.type === 'ArrayExpression' &&
           !existingAddons.elements.some(
-            (element) => t.isIdentifier(element) && element.name === annotations.importName
+            (element) => element?.type === 'Identifier' && element.name === annotations.importName
           ))
       ) {
         syncedAddons.push(addon);
@@ -79,12 +79,12 @@ export async function syncPreviewAddonsWithMainConfig(
           previewConfig.setImport(annotations.importName, annotations.importPath);
           previewConfig.appendNodeToArray(
             ['addons'],
-            t.callExpression(t.identifier(annotations.importName), [])
+            parseExpression(`${annotations.importName}()`)
           );
         } else {
           // import * as addonName from 'addon/preview'; + addonName
           previewConfig.setImport({ namespace: annotations.importName }, annotations.importPath);
-          previewConfig.appendNodeToArray(['addons'], t.identifier(annotations.importName));
+          previewConfig.appendNodeToArray(['addons'], parseExpression(annotations.importName));
         }
       }
     }

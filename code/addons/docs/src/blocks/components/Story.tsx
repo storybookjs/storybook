@@ -3,13 +3,14 @@ import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
-import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
+import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
 import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';
 import { ZoomContext } from './ZoomContext';
+import { useIframeArgsSync } from './useIframeArgsSync';
 
 interface CommonProps {
   story: PreparedStory;
@@ -28,6 +29,7 @@ interface InlineStoryProps extends CommonProps {
 interface IFrameStoryProps extends CommonProps {
   inline: false;
   height: string;
+  args?: Args;
 }
 
 export type StoryProps = InlineStoryProps | IFrameStoryProps;
@@ -92,29 +94,35 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => (
-  <div style={{ width: '100%', height }}>
-    <ZoomContext.Consumer>
-      {({ scale }) => {
-        return (
-          <IFrame
-            key="iframe"
-            id={`iframe--${story.id}`}
-            title={story.name}
-            src={getStoryHref(story.id, { viewMode: 'story' })}
-            allowFullScreen
-            scale={scale}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '0 none',
-            }}
-          />
-        );
-      }}
-    </ZoomContext.Consumer>
-  </div>
-);
+const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px', args }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  useIframeArgsSync(iframeRef, story, args);
+
+  return (
+    <div style={{ width: '100%', height }}>
+      <ZoomContext.Consumer>
+        {({ scale }) => {
+          return (
+            <IFrame
+              key="iframe"
+              iframeRef={iframeRef}
+              id={`iframe--${story.id}`}
+              title={story.name}
+              src={getStoryHref(story.id, { viewMode: 'story' })}
+              allowFullScreen
+              scale={scale}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: '0 none',
+              }}
+            />
+          );
+        }}
+      </ZoomContext.Consumer>
+    </div>
+  );
+};
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 
@@ -142,7 +150,7 @@ const Story: FunctionComponent<StoryProps> = (props) => {
       {inline ? (
         <InlineStory {...(props as InlineStoryProps)} />
       ) : (
-        <IFrameStory {...(props as IFrameStoryProps)} />
+        <IFrameStory key={story.id} {...(props as IFrameStoryProps)} />
       )}
     </div>
   );

@@ -1,95 +1,16 @@
-import type { ComponentProps } from 'react';
-import React, { memo } from 'react';
+import { babelParse, babelPrint, traverse, types as t } from 'storybook/internal/babel';
 
-import { deprecate, logger } from 'storybook/internal/client-logger';
+import picocolors from 'picocolors';
 
-import * as StorybookIcons from '@storybook/icons';
+import { isAtOrPastVersion } from '../helpers/versionBoundary.ts';
+import type { Fix } from '../types.ts';
 
-import { styled } from 'storybook/theming';
-
-export type IconType = keyof typeof icons;
-type NewIconTypes = (typeof icons)[IconType];
-
-const NEW_ICON_MAP = StorybookIcons as Record<NewIconTypes, (props: unknown) => React.ReactNode>;
-
-const Svg = styled.svg`
-  display: inline-block;
-  shape-rendering: inherit;
-  vertical-align: middle;
-  fill: currentColor;
-  path {
-    fill: currentColor;
-  }
-`;
-
-export interface IconsProps extends ComponentProps<typeof Svg> {
-  icon: IconType;
-  useSymbol?: boolean;
-  onClick?: () => void;
-  __suppressDeprecationWarning?: boolean;
-}
-
-// TODO: Remove in SB11
 /**
- * @deprecated No longer used, will be removed in Storybook 9.0 Please use the `@storybook/icons`
- *   package instead.
+ * Legacy icon names from the `Icons` map that `@storybook/components` removed, mapped to the
+ * `@storybook/icons` export names that replace them. A toolbar configured with a legacy name
+ * renders no icon, because the manager resolves names against the `@storybook/icons` namespace.
  */
-export const Icons = ({
-  icon,
-  useSymbol,
-  __suppressDeprecationWarning = false,
-  ...props
-}: IconsProps) => {
-  if (!__suppressDeprecationWarning) {
-    deprecate(
-      `Use of the deprecated Icons ${
-        `(${icon})` || ''
-      } component detected. Please use the @storybook/icons component directly. For more informations, see the migration notes at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#icons-is-deprecated`
-    );
-  }
-
-  const findIcon: NewIconTypes = icons[icon] || null;
-  if (!findIcon) {
-    logger.warn(
-      `Use of an unknown prop ${
-        `(${icon})` || ''
-      } in the Icons component. The Icons component is deprecated. Please use the @storybook/icons component directly. For more informations, see the migration notes at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#icons-is-deprecated`
-    );
-    return null;
-  }
-
-  const Icon = NEW_ICON_MAP[findIcon];
-
-  return <Icon {...props} />;
-};
-
-export interface SymbolsProps {
-  icons?: IconType[];
-}
-
-// TODO: Remove in SB11
-/**
- * @deprecated No longer used, will be removed in Storybook 9.0 Please use the `@storybook/icons`
- *   package instead.
- */
-export const Symbols = memo<SymbolsProps>(function Symbols({ icons: keys = Object.keys(icons) }) {
-  return (
-    <Svg
-      viewBox="0 0 14 14"
-      style={{ position: 'absolute', width: 0, height: 0 }}
-      data-chromatic="ignore"
-    >
-      {/* @ts-expect-error (non strict) */}
-      {keys.map((key: IconType) => (
-        <symbol id={`icon--${key}`} key={key}>
-          {icons[key]}
-        </symbol>
-      ))}
-    </Svg>
-  );
-});
-
-export const icons = {
+const legacyIconNames: Record<string, string> = Object.assign(Object.create(null), {
   user: 'UserIcon',
   useralt: 'UserAltIcon',
   useradd: 'UserAddIcon',
@@ -346,4 +267,105 @@ export const icons = {
   x: 'XIcon',
   youtube: 'YoutubeIcon',
   vscode: 'VSCodeIcon',
-} as const;
+});
+
+const legacyIconPattern = new RegExp(
+  'icon\\s*:\\s*[\'"](?:' + Object.keys(legacyIconNames).join('|') + ')[\'"]'
+);
+
+const isLegacyIconName = (value: string): boolean => Object.hasOwn(legacyIconNames, value);
+
+const renameIconProperty = (object: t.ObjectExpression): boolean => {
+  let changed = false;
+  for (const property of object.properties) {
+    if (
+      t.isObjectProperty(property) &&
+      !property.computed &&
+      t.isIdentifier(property.key, { name: 'icon' }) &&
+      t.isStringLiteral(property.value) &&
+      isLegacyIconName(property.value.value)
+    ) {
+      property.value = t.stringLiteral(legacyIconNames[property.value.value]);
+      changed = true;
+    }
+  }
+  return changed;
+};
+
+// `properties.find` predicates as type guards: `ObjectExpression.properties` mixes ObjectMethod,
+// ObjectProperty and SpreadElement, and only a guard narrows the found entry — so `.value` is
+// accessible without a cast, with the object/array shape asserted where it is checked.
+const isToolbarProperty = (
+  property: t.ObjectExpression['properties'][number]
+): property is t.ObjectProperty & { value: t.ObjectExpression } =>
+  t.isObjectProperty(property) &&
+  !property.computed &&
+  t.isIdentifier(property.key, { name: 'toolbar' }) &&
+  t.isObjectExpression(property.value);
+
+const isItemsProperty = (
+  property: t.ObjectExpression['properties'][number]
+): property is t.ObjectProperty & { value: t.ArrayExpression } =>
+  t.isObjectProperty(property) &&
+  !property.computed &&
+  t.isIdentifier(property.key, { name: 'items' }) &&
+  t.isArrayExpression(property.value);
+
+const rewriteLegacyIconNames = (code: string) => {
+  let ast;
+  try {
+    ast = babelParse(code);
+  } catch {
+    return undefined;
+  }
+  let changed = false;
+
+  traverse(ast, {
+    ObjectExpression(path) {
+      // Toolbar configs live under a `toolbar` key in `globalTypes` (preview) and `argTypes`
+      // (stories): `{ toolbar: { icon, items: [{ icon }] } }`
+      const toolbarProperty = path.node.properties.find(isToolbarProperty);
+      if (!toolbarProperty) {
+        return;
+      }
+      changed = renameIconProperty(toolbarProperty.value) || changed;
+      const itemsProperty = toolbarProperty.value.properties.find(isItemsProperty);
+      if (itemsProperty) {
+        for (const element of itemsProperty.value.elements) {
+          if (t.isObjectExpression(element)) {
+            changed = renameIconProperty(element) || changed;
+          }
+        }
+      }
+    },
+  });
+
+  if (!changed) {
+    return undefined;
+  }
+  const printed = babelPrint(ast);
+  return printed === code ? undefined : printed;
+};
+
+export const legacyToolbarIcons: Fix = {
+  id: 'legacy-toolbar-icons',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#toolbar-icon-no-longer-accepts-legacy-icon-names',
+  prompt: () =>
+    `Rewrite legacy toolbar icon names to ${picocolors.cyan(
+      '@storybook/icons'
+    )} export names (e.g. ${picocolors.cyan("icon: 'globe'")} to ${picocolors.cyan(
+      "icon: 'GlobeIcon'"
+    )})`,
+
+  // 10.x still resolves toolbar icons through the removed legacy-name map, so only rewrite once
+  // the project is on 11, where the manager resolves export names instead.
+  check: async ({ storybookVersion }) =>
+    isAtOrPastVersion(storybookVersion, '11.0.0') ? {} : null,
+
+  transform: () => [
+    {
+      filter: { kind: ['preview', 'story', 'config'], code: legacyIconPattern },
+      handler: rewriteLegacyIconNames,
+    },
+  ],
+};

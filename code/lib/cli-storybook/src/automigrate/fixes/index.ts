@@ -14,6 +14,7 @@ import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
+import { legacyToolbarIcons } from './legacy-toolbar-icons.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 import { storySortToMain } from './story-sort-to-main.ts';
 import { setConfigLayout } from './set-config-layout.ts';
@@ -48,6 +49,7 @@ export const allFixes: Fix[] = [
   csfNextMockedArgs,
   removeExperimentalReview,
   removeChangeDetectionFlag,
+  legacyToolbarIcons,
   skills,
   docgenServer,
 ];

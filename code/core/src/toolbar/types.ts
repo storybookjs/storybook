@@ -1,6 +1,6 @@
-import type { InputType } from 'storybook/internal/types';
+import type * as Icons from '@storybook/icons';
 
-import type { IconsProps } from '../components/components/icon/icon.tsx';
+import type { InputType } from 'storybook/internal/types';
 
 export type ToolbarShortcutType = 'next' | 'previous' | 'reset';
 
@@ -13,9 +13,21 @@ export interface ToolbarShortcutConfig {
 
 export type ToolbarShortcuts = Record<ToolbarShortcutType, ToolbarShortcutConfig>;
 
+/**
+ * The names of the icon components exported by `@storybook/icons`, e.g. `'CircleHollowIcon'`.
+ *
+ * The name is serialized from the preview to the manager, where the manager-side `ToolbarIcon`
+ * component resolves it to a component. The namespace import is type-only, so the icons package
+ * (and with it React) is never bundled into the preview.
+ */
+export type ToolbarIconType = {
+  [K in keyof typeof Icons]: K extends `${string}Icon` ? K : never;
+}[keyof typeof Icons];
+
 export interface ToolbarItem {
   value?: string;
-  icon?: IconsProps['icon'];
+  /** Name of an icon exported by `@storybook/icons`, e.g. `'CircleHollowIcon'` */
+  icon?: ToolbarIconType;
   right?: string;
   title?: string;
   hideIcon?: boolean;
@@ -25,8 +37,8 @@ export interface ToolbarItem {
 export interface NormalizedToolbarConfig {
   /** The label to show for this toolbar item */
   title?: string;
-  /** Choose an icon to show for this toolbar item */
-  icon?: IconsProps['icon'];
+  /** Name of an `@storybook/icons` icon shown next to the toolbar title */
+  icon?: ToolbarIconType;
   /** Set to true to prevent default update of icon to match any present selected items icon */
   preventDynamicIcon?: boolean;
   items: ToolbarItem[];

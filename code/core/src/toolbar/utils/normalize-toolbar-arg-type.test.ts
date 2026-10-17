@@ -19,11 +19,11 @@ describe('normalizeArgType', () => {
 
   it('gives a reset item the toolbar icon, hides it, and clears its value', () => {
     const result = normalizeArgType('locale', {
-      toolbar: { icon: 'user', items: [{ type: 'reset', title: 'Reset locale' }] },
+      toolbar: { icon: 'UserIcon', items: [{ type: 'reset', title: 'Reset locale' }] },
     });
     const [resetItem] = result?.toolbar.items ?? [];
 
-    expect(resetItem?.icon).toBe('user');
+    expect(resetItem?.icon).toBe('UserIcon');
     expect(resetItem?.hideIcon).toBe(true);
     expect(resetItem?.value).toBeUndefined();
   });

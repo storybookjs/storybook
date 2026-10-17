@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, ReactElement } from 'react';
 import React from 'react';
 
 import { Select } from 'storybook/internal/components';
@@ -6,14 +6,10 @@ import { Select } from 'storybook/internal/components';
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { Icons } from '../../components/components/icon/icon.tsx';
-import type { ToolbarMenuProps } from '../types.ts';
+import type { ToolbarIconType, ToolbarMenuProps } from '../types.ts';
 import { getSelectedItem } from '../utils/get-selected.ts';
 import { registerShortcuts } from '../utils/register-shortcuts.ts';
-
-// We can't remove the Icons component just yet because there's no way for now to import icons
-// in the preview directly. Before having a better solution, we are going to keep the Icons component
-// for now and remove the deprecated warning.
+import { ToolbarIcon } from './ToolbarIcon.tsx';
 
 const ToolbarMenuItemContainer = styled('div')({
   width: '100%',
@@ -25,14 +21,20 @@ const ToolbarMenuItemMiddle = styled('div')({
   flex: 1,
 });
 
+// `Select` renders its fixed icon slot for any option that carries an icon node, so an item
+// without an icon — or with `hideIcon: true` — must resolve to `undefined`, not to an element
+// that renders nothing.
+const renderToolbarIcon = (name?: ToolbarIconType): ReactElement | undefined =>
+  name ? <ToolbarIcon icon={name} /> : undefined;
+
 export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
   id,
   name,
   description,
   toolbar: {
-    icon: _icon,
+    icon: toolbarIcon,
     items,
-    title: _title,
+    title: toolbarTitle,
     preventDynamicIcon,
     dynamicTitle = true,
     shortcuts,
@@ -43,16 +45,9 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
 
   const currentValue = globals[id];
   const isOverridden = id in storyGlobals;
-  let icon = _icon;
-  let title = _title;
-
-  if (!preventDynamicIcon) {
-    icon = getSelectedItem({ currentValue, items })?.icon || icon;
-  }
-
-  if (dynamicTitle) {
-    title = getSelectedItem({ currentValue, items })?.title || title;
-  }
+  const selected = getSelectedItem({ currentValue, items });
+  const icon = preventDynamicIcon ? toolbarIcon : selected?.icon || toolbarIcon;
+  const title = dynamicTitle ? selected?.title || toolbarTitle : toolbarTitle;
 
   if (!title && !icon) {
     console.warn(`Toolbar '${id}' has no title or icon`);
@@ -66,10 +61,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
         .filter((item) => item.type !== 'reset')
         .map((item) => {
           const itemTitle = item.title ?? item.value ?? 'Untitled';
-          const iconComponent =
-            !item.hideIcon && item.icon ? (
-              <Icons icon={item.icon} __suppressDeprecationWarning={true} />
-            ) : undefined;
+          const itemIcon = item.hideIcon ? undefined : item.icon;
 
           if (item.right) {
             return {
@@ -77,7 +69,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
               value: item.value,
               children: (
                 <ToolbarMenuItemContainer>
-                  {iconComponent}
+                  {renderToolbarIcon(itemIcon)}
                   <ToolbarMenuItemMiddle>{item.title ?? item.value}</ToolbarMenuItemMiddle>
                   {item.right}
                 </ToolbarMenuItemContainer>
@@ -87,7 +79,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
             return {
               title: itemTitle,
               value: item.value,
-              icon: iconComponent,
+              icon: renderToolbarIcon(itemIcon),
             };
           }
         }),
@@ -138,7 +130,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       resetLabel={resetLabel}
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
-      icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
+      icon={renderToolbarIcon(icon)}
       showSelectedOptionTitle={dynamicTitle}
     >
       {title}

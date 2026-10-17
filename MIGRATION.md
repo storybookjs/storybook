@@ -5,6 +5,7 @@
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
+  - [Toolbar icon no longer accepts legacy icon names](#toolbar-icon-no-longer-accepts-legacy-icon-names)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -723,6 +724,23 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 `sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
+### Toolbar icon no longer accepts legacy icon names
+
+Toolbar menus in `globalTypes` (and toolbar `argTypes` in stories) configure their `icon` with the name of an icon exported by `@storybook/icons` — e.g. `'CircleHollowIcon'` — instead of a legacy name like `'circlehollow'`. The manager resolves the name where the toolbar renders, so the icon can cross the serialization boundary between the preview and the manager. Passing an `icon` on individual items works the same way. For history, the legacy names came from the `Icons` and `Symbols` components that were removed from `@storybook/components` in 9.0 (see [#29159](https://github.com/storybookjs/storybook/issues/29159)).
+
+`storybook automigrate` rewrites legacy names in your `.storybook` config and story files:
+
+```diff
+ myAddon: {
+   toolbar: {
+-   icon: 'circlehollow',
++   icon: 'CircleHollowIcon',
+    title: 'Background',
+    items: [{ value: 'light', title: 'Light' }],
+  },
+}
+```
 
 ### Addon `TAB` registration removed
 

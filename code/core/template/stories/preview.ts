@@ -67,13 +67,13 @@ export const globalTypes = {
     name: 'Theme',
     description: 'Global theme for components',
     toolbar: {
-      icon: 'circlehollow',
+      icon: 'CircleHollowIcon',
       title: 'Theme',
       items: [
-        { value: 'light', icon: 'sun', title: 'light' },
-        { value: 'dark', icon: 'moon', title: 'dark' },
-        { value: 'side-by-side', icon: 'sidebyside', title: 'side by side' },
-        { value: 'stacked', icon: 'stacked', title: 'stacked' },
+        { value: 'light', icon: 'SunIcon', title: 'light' },
+        { value: 'dark', icon: 'MoonIcon', title: 'dark' },
+        { value: 'side-by-side', icon: 'SideBySideIcon', title: 'side by side' },
+        { value: 'stacked', icon: 'StackedIcon', title: 'stacked' },
       ],
     },
   },
@@ -81,7 +81,7 @@ export const globalTypes = {
     name: 'Locale',
     description: 'Internationalization locale',
     toolbar: {
-      icon: 'globe',
+      icon: 'GlobeIcon',
       shortcuts: {
         next: {
           label: 'Go to next language',

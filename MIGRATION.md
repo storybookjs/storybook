@@ -1321,7 +1321,7 @@ Storybook no longer bundles Babel or recast to read and write story and config f
 
 - **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow. A `// @flow` file whose syntax is also valid TypeScript still indexes, but Flow-only syntax such as variance (`+readOnly`) or type casts (`(value: Type)`) is a parse error, and the error names Flow. Convert such files to TypeScript or plain JavaScript.
 - `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
-- `storybook automigrate` writes the files it changes with `\n` line endings, even if they used CRLF; it used to keep CRLF.
+- Files Storybook edits, with `storybook automigrate`, its codemods, or the setup steps of `storybook init` and `storybook add`, are written with `\n` line endings, even if they used CRLF; they used to keep CRLF. Code the builders transform, for example for `sb.mock()`, has `\n` line endings too.
 - Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
 - A parse error in a module that `sb.mock()` automocks under webpack now fails that module's build, where Babel's error recovery used to mock whatever it could parse.
 

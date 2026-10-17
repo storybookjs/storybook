@@ -30,6 +30,8 @@ export function svelteCsf(): Plugin {
       },
     },
     transform: {
+      // Must run after vite-plugin-svelte has compiled the file to JS.
+      order: 'post',
       filter: { id: /\.stories\.svelte$/ },
       handler(compiledCode, id) {
         return transformSvelteCsf({

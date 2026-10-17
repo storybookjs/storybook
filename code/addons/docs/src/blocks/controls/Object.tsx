@@ -171,10 +171,11 @@ export const ObjectControl: FC<ObjectProps> = ({
   onChange,
   argType,
   required,
+  defaultEditor,
 }) => {
   const data = useMemo(() => value && cloneDeep(value), [value]);
   const hasData = data !== null && data !== undefined;
-  const [showRaw, setShowRaw] = useState(!hasData);
+  const [showRaw, setShowRaw] = useState(() => defaultEditor === 'json' || !hasData);
   const hadDataRef = useRef(hasData);
 
   const [parseError, setParseError] = useState<Error | null>(null);

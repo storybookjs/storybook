@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './my-component.component';
@@ -18,7 +18,7 @@ export const SkipStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';
@@ -35,7 +35,7 @@ export const SkipStory = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -50,7 +50,7 @@ export const SkipStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -71,7 +71,7 @@ export const SkipStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -90,7 +90,7 @@ export const SkipStory = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -107,7 +107,7 @@ export const SkipStory = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
@@ -124,7 +124,7 @@ export const SkipStory = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
@@ -141,7 +141,7 @@ export const SkipStory = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   component: 'my-component',
   //👇 Provides the `skip-test` tag to all stories in this file
@@ -154,7 +154,7 @@ export const SkipStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -172,7 +172,7 @@ export const SkipStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -187,7 +187,7 @@ export const SkipStory = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({

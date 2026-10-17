@@ -1,4 +1,4 @@
-```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular-vite';
 
 import { MyComponent } from './my-component.component';
@@ -18,7 +18,7 @@ export const ForInstructionOnly: Story = {
 };
 ```
 
-```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';
@@ -35,7 +35,7 @@ export const ForInstructionOnly = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -50,7 +50,7 @@ export const ForInstructionOnly = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -72,7 +72,7 @@ export const ForInstructionOnly = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -91,7 +91,7 @@ export const ForInstructionOnly = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -108,7 +108,7 @@ export const ForInstructionOnly = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import MyComponent from './MyComponent.vue';
 
 export default {
@@ -123,7 +123,7 @@ export const ForInstructionOnly = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import MyComponent from './MyComponent.vue';
@@ -144,7 +144,7 @@ export const ForInstructionOnly: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';
@@ -163,7 +163,7 @@ export const ForInstructionOnly = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import MyComponent from './MyComponent.vue';

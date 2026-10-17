@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/angular';
 
 const config: StorybookConfig = {
@@ -15,7 +15,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/angular/node';
 
 const config = defineMain({

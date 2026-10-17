@@ -1,4 +1,4 @@
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { type Meta, type StoryObj, moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -37,7 +37,7 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
@@ -101,7 +101,7 @@ export const Example = {
 };
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { Layout } from './Layout';
 import { MyComponent } from './MyComponent';
 
@@ -124,7 +124,7 @@ export const Example = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -153,7 +153,7 @@ export const Example: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Layout } from './Layout';
@@ -178,7 +178,7 @@ export const Example = meta.story({
 });
 ```
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Layout } from './Layout';
@@ -255,7 +255,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import Layout from './Layout.vue';
 import MyComponent from './MyComponent.vue';
 
@@ -281,7 +281,7 @@ export const Example = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Layout from './Layout.vue';
@@ -312,7 +312,7 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Layout from './Layout.vue';
@@ -340,7 +340,7 @@ export const Example = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Layout from './Layout.vue';
@@ -368,7 +368,7 @@ export const Example = meta.story({
 });
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { html } from 'lit';
 
 export default {
@@ -390,7 +390,7 @@ export const Example = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -417,7 +417,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -441,7 +441,7 @@ export const Example = meta.story({
 });
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';

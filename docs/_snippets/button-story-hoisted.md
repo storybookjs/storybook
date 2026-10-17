@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/angular';
 
 import { Button as ButtonComponent } from './button.component';
@@ -19,7 +19,7 @@ type Story = StoryObj<ButtonComponent>;
 export const Button: Story = {};
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button as ButtonComponent } from './button.component';
@@ -37,7 +37,7 @@ const meta = preview.meta({
 export const Button = meta.story();
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { Button as ButtonComponent } from './Button';
 
 export default {
@@ -53,7 +53,7 @@ export default {
 export const Button = {};
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -75,7 +75,7 @@ type Story = StoryObj<typeof meta>;
 export const Button: Story = {};
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   title: 'Design System/Atoms/Button',
   component: 'demo-button',
@@ -85,7 +85,7 @@ export default {
 export const Button = {};
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -100,7 +100,7 @@ type Story = StoryObj;
 export const Button: Story = {};
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -112,7 +112,7 @@ const meta = preview.meta({
 export const Button = meta.story();
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -124,7 +124,7 @@ const meta = preview.meta({
 export const Button = meta.story();
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button as ButtonComponent } from './Button';
@@ -144,7 +144,7 @@ export const Button = meta.story();
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button as ButtonComponent } from './Button';
@@ -162,7 +162,7 @@ const meta = preview.meta({
 export const Button = meta.story();
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import ButtonComponent from './Button.vue';
@@ -182,7 +182,7 @@ export const Button = meta.story();
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import ButtonComponent from './Button.vue';

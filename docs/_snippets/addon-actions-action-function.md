@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/angular';
 
 import { action } from 'storybook/actions';
@@ -16,7 +16,7 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';
@@ -50,7 +50,7 @@ const meta = preview.meta({
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import { action } from 'storybook/actions';
 
 import Button from './Button.svelte';
@@ -64,7 +64,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { action } from 'storybook/actions';
 
 import Button from './Button';
@@ -96,7 +96,7 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';
 
@@ -115,7 +115,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -134,7 +134,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { action } from 'storybook/actions';
 
 export default {
@@ -146,7 +146,7 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/web-components-vite';
 
 import { action } from 'storybook/actions';
@@ -162,7 +162,7 @@ const meta: Meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';
@@ -176,7 +176,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';
@@ -190,7 +190,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';
@@ -208,7 +208,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';
@@ -224,7 +224,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';
@@ -242,7 +242,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import { action } from 'storybook/actions';
 
 import preview from '../.storybook/preview';

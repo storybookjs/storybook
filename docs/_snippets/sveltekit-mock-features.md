@@ -35,7 +35,7 @@
 />
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -104,7 +104,7 @@ export const MyStory = {
 />
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/sveltekit';
 
 import MyComponent from './MyComponent.svelte';

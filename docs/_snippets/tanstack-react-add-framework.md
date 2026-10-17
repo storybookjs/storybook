@@ -1,4 +1,4 @@
-```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 - import type { StorybookConfig } from '@storybook/react-vite';
 + import type { StorybookConfig } from '@storybook/tanstack-react';
 
@@ -11,7 +11,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 - import { defineMain } from '@storybook/react-vite/node';
 + import { defineMain } from '@storybook/tanstack-react/node';
 

@@ -1,4 +1,4 @@
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/tanstack-react';
 
 const config: StorybookConfig = {
@@ -15,7 +15,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/tanstack-react/node';
 
 export default defineMain({

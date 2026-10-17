@@ -1,4 +1,4 @@
-```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { expect } from 'storybook/test';
 
 // Replace your-framework with nextjs or nextjs-vite
@@ -20,7 +20,7 @@ export const Submitted = {
 };
 ```
 
-```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -48,7 +48,7 @@ export const Submitted: Story = {
 };
 ```
 
-```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="MyForm.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import { expect } from 'storybook/test';
 
 /*
@@ -77,7 +77,7 @@ export const Submitted = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="MyForm.stories.js" renderer="react" language="js" tabTitle="CSF"
 import { expect } from 'storybook/test';
 
 // Replace your-framework with nextjs or nextjs-vite

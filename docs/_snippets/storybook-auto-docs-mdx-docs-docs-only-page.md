@@ -29,7 +29,7 @@ import * as ExampleComponentStories from './ExampleComponent.stories.svelte';
 ```
 
 <!-- prettier-ignore -->
-```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="CSF 3"
+```mdx filename="ExampleDocumentation.mdx" renderer="svelte" language="mdx" tabTitle="CSF (Legacy)"
 import { Meta } from '@storybook/addon-docs/blocks';
 
 import * as ExampleComponentStories from './ExampleComponent.stories';

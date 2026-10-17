@@ -1,4 +1,4 @@
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import React, { useState } from 'react';
 
 import { Button } from './Button';
@@ -27,7 +27,7 @@ export const Primary = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import React, { useState } from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
@@ -62,7 +62,7 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import React, { useState } from 'react';
 
 import preview from '../.storybook/preview';
@@ -95,7 +95,7 @@ export const Primary = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import React, { useState } from 'react';
 
 import preview from '../.storybook/preview';

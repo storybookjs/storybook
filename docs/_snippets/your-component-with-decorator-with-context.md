@@ -20,7 +20,7 @@
 </script>
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import { setContext } from 'svelte';
 
 import YourComponent from './YourComponent.svelte';
@@ -75,7 +75,7 @@ export default {
 </script>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 import { setContext } from 'svelte';
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta } from '@storybook/your-framework';

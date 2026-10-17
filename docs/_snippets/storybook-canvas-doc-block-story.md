@@ -1,4 +1,4 @@
-```jsx filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```jsx filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import { MyComponent } from './MyComponent';
@@ -49,7 +49,7 @@ export const Colors = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -106,7 +106,7 @@ export const Colors: Story = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import preview from '../.storybook/preview';
@@ -161,7 +161,7 @@ export const Colors = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 
 import preview from '../.storybook/preview';

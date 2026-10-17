@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { YourComponent } from './your.component';
@@ -18,7 +18,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { YourComponent } from './your.component';
@@ -114,7 +114,7 @@ export const Basic = {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { YourComponent } from './YourComponent';
 
 //👇 This default export determines where your story goes in the story list
@@ -129,7 +129,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -205,7 +205,7 @@ export const Basic: Story = {
 />
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import YourComponent from './YourComponent.svelte';
 
 //👇 This default export determines where your story goes in the story list
@@ -240,7 +240,7 @@ export const Basic = {
 />
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -261,7 +261,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import YourComponent from './YourComponent.vue';
 
 //👇 This default export determines where your story goes in the story list
@@ -288,7 +288,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import YourComponent from './YourComponent.vue';
@@ -320,7 +320,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import YourComponent from './YourComponent.vue';
@@ -351,7 +351,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import YourComponent from './YourComponent.vue';
@@ -380,7 +380,7 @@ export const Basic = meta.story({
 });
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 // This default export determines where your story goes in the story list
 export default {
   component: 'demo-your-component',
@@ -393,7 +393,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // This default export determines where your story goes in the story list
@@ -411,7 +411,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 This default export determines where your story goes in the story list
@@ -426,7 +426,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 This default export determines where your story goes in the story list
@@ -441,7 +441,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { YourComponent } from './YourComponent';
@@ -460,7 +460,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { YourComponent } from './YourComponent';

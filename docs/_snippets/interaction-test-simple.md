@@ -1,4 +1,4 @@
-```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect } from 'storybook/test';
 
@@ -21,7 +21,7 @@ export const Opens: Story = {
 };
 ```
 
-```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Dialog.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -42,7 +42,7 @@ export const Opens = meta.story({
 });
 ```
 
-```ts filename="Dialog.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Dialog.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect } from 'storybook/test';
@@ -66,7 +66,7 @@ export const Opens: Story = {
 };
 ```
 
-```js filename="Dialog.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Dialog.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { expect } from 'storybook/test';
 
 import { Dialog } from './Dialog';
@@ -107,7 +107,7 @@ export const Opens = {
 />
 ```
 
-```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Dialog.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect } from 'storybook/test';
@@ -153,7 +153,7 @@ export const Opens: Story = {
 />
 ```
 
-```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Dialog.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import { expect } from 'storybook/test';
 
 import Dialog from './Dialog.svelte';
@@ -172,7 +172,7 @@ export const Opens = {
 };
 ```
 
-```ts filename="Dialog.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Dialog.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { expect } from 'storybook/test';
 
@@ -193,7 +193,7 @@ export const Opens: Story = {
 };
 ```
 
-```js filename="Dialog.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Dialog.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { expect } from 'storybook/test';
 
 export default {
@@ -210,7 +210,7 @@ export const Opens = {
 };
 ```
 
-```js filename="Dialog.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Dialog.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -229,7 +229,7 @@ export const Opens = meta.story({
 });
 ```
 
-```ts filename="Dialog.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Dialog.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -248,7 +248,7 @@ export const Opens = meta.story({
 });
 ```
 
-```ts filename="Dialog.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Dialog.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -271,7 +271,7 @@ export const Opens = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Dialog.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Dialog.stories.js" renderer="react" language="js" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -292,7 +292,7 @@ export const Opens = meta.story({
 });
 ```
 
-```ts filename="Dialog.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Dialog.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -315,7 +315,7 @@ export const Opens = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Dialog.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Dialog.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
 import preview from '../.storybook/preview';

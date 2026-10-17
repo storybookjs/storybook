@@ -1,4 +1,4 @@
-```ts filename="EventForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="EventForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { fn, expect } from 'storybook/test';
 
@@ -43,7 +43,7 @@ export const Submits: Story = {
 };
 ```
 
-```ts filename="EventForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="EventForm.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -86,7 +86,7 @@ export const Submits = meta.story({
 });
 ```
 
-```ts filename="EventForm.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="EventForm.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
@@ -132,7 +132,7 @@ export const Submits: Story = {
 };
 ```
 
-```js filename="EventForm.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="EventForm.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
@@ -218,7 +218,7 @@ export const Submits = {
 />
 ```
 
-```ts filename="EventForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="EventForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
@@ -309,7 +309,7 @@ export const Submits: Story = {
 />
 ```
 
-```js filename="EventForm.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="EventForm.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
@@ -350,7 +350,7 @@ export const Submits = {
 };
 ```
 
-```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { fn, expect } from 'storybook/test';
 
@@ -394,7 +394,7 @@ export const Submits: Story = {
 };
 ```
 
-```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { fn, expect } from 'storybook/test';
 
 import { users } from '../mocks/users';
@@ -434,7 +434,7 @@ export const Submits = {
 };
 ```
 
-```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="EventForm.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -476,7 +476,7 @@ export const Submits = meta.story({
 });
 ```
 
-```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="EventForm.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -518,7 +518,7 @@ export const Submits = meta.story({
 });
 ```
 
-```ts filename="EventForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="EventForm.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -563,7 +563,7 @@ export const Submits = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="EventForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="EventForm.stories.js" renderer="react" language="js" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -606,7 +606,7 @@ export const Submits = meta.story({
 });
 ```
 
-```ts filename="EventForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="EventForm.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -651,7 +651,7 @@ export const Submits = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="EventForm.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="EventForm.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import { fn, expect, mocked } from 'storybook/test';
 
 import preview from '../.storybook/preview';

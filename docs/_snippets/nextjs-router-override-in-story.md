@@ -1,4 +1,4 @@
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import RouterBasedComponent from './RouterBasedComponent';
 
 export default {
@@ -21,7 +21,7 @@ export const Example = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -50,7 +50,7 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import RouterBasedComponent from './RouterBasedComponent';
@@ -77,7 +77,7 @@ export const Example = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import RouterBasedComponent from './RouterBasedComponent';

@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button.component';
@@ -36,7 +36,7 @@ export const Combo: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button.component';
@@ -71,7 +71,7 @@ export const Combo = meta.story({
 });
 ```
 
-```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { Button } from './Button';
 
 export default {
@@ -102,7 +102,7 @@ export const Combo = {
 };
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -270,7 +270,7 @@ export const Combo: Story = {
 </Story>
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import Button from './Button.vue';
 
 export default {
@@ -304,7 +304,7 @@ export const Combo = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -343,7 +343,7 @@ export const Combo: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
@@ -381,7 +381,7 @@ export const Combo = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
@@ -417,7 +417,7 @@ export const Combo = meta.story({
 });
 ```
 
-```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```ts filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { html } from 'lit';
 
 export default {
@@ -449,7 +449,7 @@ export const Combo = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -486,7 +486,7 @@ export const Combo: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -520,7 +520,7 @@ export const Combo = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -554,7 +554,7 @@ export const Combo = meta.story({
 });
 ```
 
-```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="Button.stories.tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -589,7 +589,7 @@ export const Combo = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';

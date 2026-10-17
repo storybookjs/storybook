@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import path from 'path';
 
 export default {
@@ -11,7 +11,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 import path from 'path';
 // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
 import type { StorybookConfig } from '@storybook/your-framework';

@@ -1,4 +1,4 @@
-```ts filename="Showcase.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="Showcase.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/tanstack-react';
 
 import { Route } from './$id';
@@ -22,7 +22,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Showcase.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Showcase.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Route } from './$id';

@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF (Legacy)"
 export default {
   framework: {
     name: '@storybook/react-vite',
@@ -9,7 +9,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
@@ -24,7 +24,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -40,7 +40,7 @@ export default defineMain({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 

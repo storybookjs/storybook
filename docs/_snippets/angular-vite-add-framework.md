@@ -1,4 +1,4 @@
-```diff filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```diff filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 - import type { StorybookConfig } from '@storybook/angular';
 + import type { StorybookConfig } from '@storybook/angular-vite';
 
@@ -11,7 +11,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```diff filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```diff filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF"
 - import { defineMain } from '@storybook/angular/node';
 + import { defineMain } from '@storybook/angular-vite/node';
 

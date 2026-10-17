@@ -1,4 +1,4 @@
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { MyComponent } from './my-component.component';
@@ -22,7 +22,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './my-component.component';
@@ -58,7 +58,7 @@ export const Basic = meta.story({
 <Story name="Default" args={{ something: 'Something else' }} />
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="components/MyComponent/MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import MyComponent from './MyComponent.svelte';
 
 export default {
@@ -73,7 +73,7 @@ export const Basic = {
 };
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="components/MyComponent/MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -103,7 +103,7 @@ export const Basic = {
 <Story name="Default" args={{ something: 'Something else'}} />
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -128,7 +128,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -153,7 +153,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   component: 'my-component',
   title: 'components/MyComponent/MyComponent',
@@ -166,7 +166,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -184,7 +184,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="components/MyComponent/MyComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -199,7 +199,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="components/MyComponent/MyComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -214,7 +214,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';
@@ -237,7 +237,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="components/MyComponent/MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="components/MyComponent/MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { MyComponent } from './MyComponent';

@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 import { Route } from './Page';
@@ -35,7 +35,7 @@ export const WithSearch: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Route } from './Page';

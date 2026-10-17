@@ -1,4 +1,4 @@
-```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { HistogramComponent } from './histogram.component';
@@ -20,7 +20,7 @@ export const Basic: Story = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Histogram.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { HistogramComponent } from './histogram.component';
@@ -124,7 +124,7 @@ export const Basic = {
 };
 ```
 
-```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { Histogram } from './Histogram';
 
 export default {
@@ -141,7 +141,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -225,7 +225,7 @@ export const Basic: Story = {
 />
 ```
 
-```js filename="Histogram.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Histogram.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import Histogram from './Histogram.svelte';
 
 export default {
@@ -264,7 +264,7 @@ export const Basic = {
 />
 ```
 
-```ts filename="Histogram.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Histogram.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -287,7 +287,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import Histogram from './Histogram.vue';
 
 export default {
@@ -316,7 +316,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Histogram from './Histogram.vue';
@@ -350,7 +350,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   component: 'histogram-component',
 };
@@ -365,7 +365,7 @@ export const Basic = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -385,7 +385,7 @@ export const Basic: Story = {
 };
 ```
 
-```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Histogram.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -402,7 +402,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -419,7 +419,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Histogram from './Histogram.vue';
@@ -452,7 +452,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Histogram.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Histogram from './Histogram.vue';
@@ -483,7 +483,7 @@ export const Basic = meta.story({
 });
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Histogram } from './Histogram';
@@ -504,7 +504,7 @@ export const Basic = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Histogram.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Histogram } from './Histogram';

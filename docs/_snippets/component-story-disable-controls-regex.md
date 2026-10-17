@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { YourComponent } from './your-component.component';
@@ -35,7 +35,7 @@ export const RegexExclude: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { YourComponent } from './your-component.component';
@@ -109,7 +109,7 @@ export const RegexExclude = meta.story({
 />
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import YourComponent from './YourComponent.svelte';
 
 export default {
@@ -141,7 +141,7 @@ export const RegexExclude = {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -213,7 +213,7 @@ export const RegexExclude = {
 />
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -251,7 +251,7 @@ export const RegexExclude: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -289,7 +289,7 @@ export const RegexExclude: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   component: 'your-component',
 };
@@ -319,7 +319,7 @@ export const RegexExclude = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -354,7 +354,7 @@ export const RegexExclude: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourComponent.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -386,7 +386,7 @@ export const RegexExclude = meta.story({
 });
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -418,7 +418,7 @@ export const RegexExclude = meta.story({
 });
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { YourComponent } from './YourComponent';
@@ -454,7 +454,7 @@ export const RegexExclude = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { YourComponent } from './YourComponent';
@@ -488,7 +488,7 @@ export const RegexExclude = meta.story({
 });
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import YourComponent from './YourComponent.vue';
@@ -524,7 +524,7 @@ export const RegexExclude = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="YourComponent.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import YourComponent from './YourComponent.vue';

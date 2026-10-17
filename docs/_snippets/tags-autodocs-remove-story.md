@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './Button.component';
@@ -18,7 +18,7 @@ export const UndocumentedStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button.component';
@@ -52,7 +52,7 @@ export const UndocumentedStory = meta.story({
 <Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import Button from './Button.svelte';
 
 export default {
@@ -67,7 +67,7 @@ export const UndocumentedStory = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { Button } from './Button';
 
 export default {
@@ -99,7 +99,7 @@ export const UndocumentedStory = {
 <Story name="UndocumentedStory" tags={['!autodocs']} />
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -120,7 +120,7 @@ export const UndocumentedStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -141,7 +141,7 @@ export const UndocumentedStory: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   title: 'Button',
   component: 'demo-button',
@@ -155,7 +155,7 @@ export const UndocumentedStory = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -174,7 +174,7 @@ export const UndocumentedStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -189,7 +189,7 @@ export const UndocumentedStory = meta.story({
 });
 ```
 
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -204,7 +204,7 @@ export const UndocumentedStory = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -223,7 +223,7 @@ export const UndocumentedStory = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
@@ -240,7 +240,7 @@ export const UndocumentedStory = meta.story({
 });
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';
@@ -259,7 +259,7 @@ export const UndocumentedStory = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Button from './Button.vue';

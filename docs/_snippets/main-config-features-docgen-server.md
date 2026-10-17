@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF (Legacy)"
 export default {
   framework: '@storybook/react-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -8,7 +8,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
@@ -22,7 +22,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/react-vite/node';
 
 export default defineMain({
@@ -34,7 +34,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF"
 import { defineMain } from '@storybook/react-vite/node';
 
 export default defineMain({
@@ -46,7 +46,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/angular-vite';
 
 const config: StorybookConfig = {
@@ -60,7 +60,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/angular-vite/node';
 
 export default defineMain({
@@ -72,7 +72,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 export default {
   framework: '@storybook/vue3-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -82,7 +82,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/vue3-vite';
 
 const config: StorybookConfig = {
@@ -96,7 +96,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
@@ -108,7 +108,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
@@ -120,7 +120,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   framework: '@storybook/web-components-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -130,7 +130,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { StorybookConfig } from '@storybook/web-components-vite';
 
 const config: StorybookConfig = {
@@ -144,7 +144,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({
@@ -156,7 +156,7 @@ export default defineMain({
 });
 ```
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({

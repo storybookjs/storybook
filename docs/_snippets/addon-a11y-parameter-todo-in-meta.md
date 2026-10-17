@@ -1,4 +1,4 @@
-```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { Meta } from '@storybook/angular';
 
 import { DataTable } from './data-table.component';
@@ -14,7 +14,7 @@ const meta: Meta<DataTable> = {
 export default meta;
 ```
 
-```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="DataTable.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { DataTable } from './data-table.component';
@@ -29,7 +29,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="DataTable.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="DataTable.stories.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { Meta } from '@storybook/your-framework';
 
@@ -46,7 +46,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="DataTable.stories.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="DataTable.stories.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { DataTable } from './DataTable';
 
 export default {
@@ -76,7 +76,7 @@ export default {
 </script>
 ```
 
-```ts filename="DataTable.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="DataTable.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta } from '@storybook/your-framework';
 
@@ -110,7 +110,7 @@ export default meta;
 </script>
 ```
 
-```js filename="DataTable.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="DataTable.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import DataTable from './DataTable.svelte';
 
 export default {
@@ -123,7 +123,7 @@ export default {
 };
 ```
 
-```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta<DataTable> = {
@@ -137,7 +137,7 @@ const meta: Meta<DataTable> = {
 export default meta;
 ```
 
-```js filename="DataTable.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="DataTable.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 export default {
   component: 'demo-data-table',
   parameters: {
@@ -148,7 +148,7 @@ export default {
 };
 ```
 
-```js filename="DataTable.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="DataTable.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -161,7 +161,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="DataTable.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 const meta = preview.meta({
@@ -174,7 +174,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="DataTable.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="DataTable.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { DataTable } from './DataTable';
@@ -191,7 +191,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="DataTable.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="DataTable.stories.js" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { DataTable } from './DataTable';
@@ -206,7 +206,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="DataTable.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="DataTable.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import DataTable from './DataTable.vue';
@@ -223,7 +223,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="DataTable.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="DataTable.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import DataTable from './DataTable.vue';

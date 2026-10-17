@@ -1,4 +1,4 @@
-```ts filename="UserCard.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="UserCard.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 import { Route } from './UserCard';
@@ -27,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 ```
 
-```ts filename="UserCard.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="UserCard.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Route } from './UserCard';

@@ -1,4 +1,4 @@
-```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { useArgs } from 'storybook/preview-api';
 
 import { Checkbox } from './checkbox';
@@ -29,7 +29,7 @@ export const Example = {
 };
 ```
 
-```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { useArgs } from 'storybook/preview-api';
@@ -65,7 +65,7 @@ export const Example = {
 } satisfies Story;
 ```
 
-```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename="my-component/component.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import { useArgs } from 'storybook/preview-api';
 
 import preview from '../.storybook/preview';
@@ -100,7 +100,7 @@ export const Example = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename="my-component/component.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import { useArgs } from 'storybook/preview-api';
 
 import preview from '../.storybook/preview';

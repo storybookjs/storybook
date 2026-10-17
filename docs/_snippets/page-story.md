@@ -1,4 +1,4 @@
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { CommonModule } from '@angular/common';
 
 import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
@@ -30,7 +30,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { CommonModule } from '@angular/common';
 
 import { moduleMetadata } from '@storybook/angular';
@@ -61,7 +61,7 @@ export const LoggedIn = meta.story({
 });
 ```
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import { Page } from './Page';
 
 //👇 Imports all Header stories
@@ -78,7 +78,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -156,7 +156,7 @@ export const LoggedIn: Story = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import Page from './Page.svelte';
 
 //👇 Imports all Header stories
@@ -189,7 +189,7 @@ export const LoggedIn = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -212,7 +212,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF (Legacy)"
 import Page from './Page.vue';
 
 //👇 Imports all Header stories
@@ -241,7 +241,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Page from './Page.vue';
@@ -275,7 +275,7 @@ export const Primary: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
@@ -308,7 +308,7 @@ export const LoggedIn = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import Page from './Page.vue';
@@ -339,7 +339,7 @@ export const LoggedIn = meta.story({
 });
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 // 👇 Imports all Header stories
 import * as HeaderStories from './Header.stories';
 
@@ -354,7 +354,7 @@ export const LoggedIn = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 // 👇 Imports all Header stories
@@ -374,7 +374,7 @@ export const LoggedIn: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Imports all Header stories
@@ -391,7 +391,7 @@ export const LoggedIn = meta.story({
 });
 ```
 
-```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Imports all Header stories
@@ -408,7 +408,7 @@ export const LoggedIn = meta.story({
 });
 ```
 
-```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Page.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';
@@ -429,7 +429,7 @@ export const LoggedIn = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Page.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Page } from './Page';

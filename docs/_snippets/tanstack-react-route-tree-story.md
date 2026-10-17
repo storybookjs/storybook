@@ -1,4 +1,4 @@
-```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/tanstack-react';
 
 // 👇 Route file is part of the app route tree
@@ -27,7 +27,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 ```
 
-```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="SettingsProfile.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 // 👇 Route file is part of the app route tree

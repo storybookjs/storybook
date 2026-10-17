@@ -1,4 +1,4 @@
-```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import type { Preview } from '@storybook/your-framework';
 
@@ -14,7 +14,7 @@ const preview = {
 export default preview;
 ```
 
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF 3"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF (Legacy)"
 export default {
   parameters: {
     jsx: {
@@ -25,7 +25,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 
@@ -39,7 +39,7 @@ export default definePreview({
 });
 ```
 
-```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
 

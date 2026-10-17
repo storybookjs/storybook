@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF (Legacy)"
 export default {
   stories: [],
   addons: [
@@ -16,7 +16,7 @@ export default {
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // For Vite support add the following import
 // import type { AddonOptionsVite } from '@storybook/addon-coverage';
 
@@ -46,7 +46,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -75,7 +75,7 @@ export default defineMain({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
@@ -96,7 +96,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 import type { AddonOptionsVite } from '@storybook/addon-coverage';
@@ -123,7 +123,7 @@ export default defineMain({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF"
 import { defineMain } from '@storybook/vue3-vite/node';
 
 export default defineMain({
@@ -144,7 +144,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/angular/node';
 
 // For Vite support add the following import
@@ -171,7 +171,7 @@ export default defineMain({
 });
 ```
 
-```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 import type { AddonOptionsVite } from '@storybook/addon-coverage';
@@ -198,7 +198,7 @@ export default defineMain({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF"
 import { defineMain } from '@storybook/web-components-vite/node';
 
 export default defineMain({

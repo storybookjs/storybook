@@ -1,4 +1,4 @@
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular-vite';
 
 import { YourComponent } from './your.component';
@@ -26,7 +26,7 @@ type Story = StoryObj<YourComponent>;
 export const Base: Story = {};
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="YourComponent.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { moduleMetadata } from '@storybook/angular-vite';
 import preview from '../.storybook/preview';
 

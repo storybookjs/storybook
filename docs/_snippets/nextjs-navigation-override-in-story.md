@@ -1,4 +1,4 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF (Legacy)"
 import NavigationBasedComponent from './NavigationBasedComponent';
 
 export default {
@@ -25,7 +25,7 @@ export const Example = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -58,7 +58,7 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import NavigationBasedComponent from './NavigationBasedComponent';
@@ -89,7 +89,7 @@ export const Example = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import NavigationBasedComponent from './NavigationBasedComponent';

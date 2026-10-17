@@ -66,7 +66,7 @@
 {/snippet}
 ```
 
-```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Example.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { Example } from './Example';
 
 export default {
@@ -84,7 +84,7 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Example.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -107,7 +107,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { html } from 'lit';
 
 export default {
@@ -125,7 +125,7 @@ export default {
 };
 ```
 
-```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
@@ -147,7 +147,7 @@ const meta: Meta = {
 export default meta;
 ```
 
-```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Example.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -167,7 +167,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Example.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { html } from 'lit';
 
 import preview from '../.storybook/preview';
@@ -187,7 +187,7 @@ const meta = preview.meta({
 });
 ```
 
-```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Example.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Example } from './Example';
@@ -209,7 +209,7 @@ const meta = preview.meta({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Example.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import preview from '../.storybook/preview';
 
 import { Example } from './Example';

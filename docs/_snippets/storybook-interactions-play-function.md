@@ -1,4 +1,4 @@
-```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect, fn, waitFor } from 'storybook/test';
 
@@ -36,7 +36,7 @@ export const Submitted: Story = {
 };
 ```
 
-```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Form.stories.ts" renderer="angular" language="ts" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -111,7 +111,7 @@ export const Submitted = meta.story({
 />
 ```
 
-```js filename="Form.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
+```js filename="Form.stories.js" renderer="svelte" language="js" tabTitle="CSF (Legacy)"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import Form from './Form.svelte';
@@ -146,7 +146,7 @@ export const Submitted = {
 };
 ```
 
-```js filename="Form.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
+```js filename="Form.stories.js|jsx" renderer="common" language="js" tabTitle="CSF (Legacy)"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import { Form } from './Form';
@@ -220,7 +220,7 @@ export const Submitted = {
 />
 ```
 
-```ts filename="Form.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+```ts filename="Form.stories.ts" renderer="svelte" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with svelte-vite or sveltekit
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -260,7 +260,7 @@ export const Submitted: Story = {
 };
 ```
 
-```ts filename="Form.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Form.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF (Legacy)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -300,7 +300,7 @@ export const Submitted: Story = {
 };
 ```
 
-```js filename="Form.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+```js filename="Form.stories.js" renderer="web-components" language="js" tabTitle="CSF (Legacy)"
 import { expect, fn, waitFor } from 'storybook/test';
 
 export default {
@@ -332,7 +332,7 @@ export const Submitted = {
 };
 ```
 
-```ts filename="Form.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+```ts filename="Form.stories.ts" renderer="web-components" language="ts" tabTitle="CSF (Legacy)"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { expect, fn, waitFor } from 'storybook/test';
@@ -369,7 +369,7 @@ export const Submitted: Story = {
 };
 ```
 
-```js filename="Form.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+```js filename="Form.stories.js" renderer="web-components" language="js" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -403,7 +403,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```ts filename="Form.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Form.stories.ts" renderer="web-components" language="ts" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -437,7 +437,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```ts filename="Form.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Form.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -475,7 +475,7 @@ export const Submitted = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Form.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```js filename="Form.stories.js|jsx" renderer="react" language="js" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -512,7 +512,7 @@ export const Submitted = meta.story({
 });
 ```
 
-```ts filename="Form.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
+```ts filename="Form.stories.ts" renderer="vue" language="ts" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';
@@ -550,7 +550,7 @@ export const Submitted = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="Form.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```js filename="Form.stories.js" renderer="vue" language="js" tabTitle="CSF"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import preview from '../.storybook/preview';

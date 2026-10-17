@@ -3,16 +3,70 @@ import { types as t, traverse } from 'storybook/internal/babel';
 import { SaveStoryError } from './utils.ts';
 import { valueToAST } from './valueToAST.ts';
 
-export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
-  let found = false;
-  const args = Object.fromEntries(
-    Object.entries(input).map(([k, v]) => {
-      if (!t.isValidIdentifier(k, false)) {
-        throw new SaveStoryError(`Invalid arg name: ${JSON.stringify(k)}`);
+// Non-identifier keys like 'data-testid' must be quoted or the generated code is invalid syntax.
+// Quoting also keeps untrusted keys from being printed as code, since a string literal cannot inject statements.
+const argKey = (key: string) =>
+  t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key);
+
+const argKeyName = (key: t.ObjectProperty['key']): string | null => {
+  if (t.isIdentifier(key)) {
+    return key.name;
+  }
+  if (t.isStringLiteral(key)) {
+    return key.value;
+  }
+  if (t.isNumericLiteral(key)) {
+    return String(key.value);
+  }
+  return null;
+};
+
+const updateArgsObject = (obj: t.ObjectExpression, args: Record<string, t.Expression>) => {
+  const properties = obj.properties;
+  const argsProperty = properties.find((property) => {
+    if (t.isObjectProperty(property)) {
+      const key = property.key;
+      return t.isIdentifier(key) && key.name === 'args';
+    }
+    return false;
+  });
+
+  if (argsProperty) {
+    if (t.isObjectProperty(argsProperty)) {
+      const a = argsProperty.value;
+      if (t.isObjectExpression(a)) {
+        a.properties.forEach((p) => {
+          if (t.isObjectProperty(p)) {
+            const keyName = argKeyName(p.key);
+            if (keyName !== null && Object.hasOwn(args, keyName)) {
+              p.value = args[keyName];
+              delete args[keyName];
+            }
+          }
+        });
+
+        const remainder = Object.entries(args);
+        if (Object.keys(args).length) {
+          remainder.forEach(([key, value]) => {
+            a.properties.push(t.objectProperty(argKey(key), value));
+          });
+        }
       }
-      return [k, valueToAST(v)];
-    })
-  );
+    }
+  } else {
+    properties.unshift(
+      t.objectProperty(
+        t.identifier('args'),
+        t.objectExpression(
+          Object.entries(args).map(([key, value]) => t.objectProperty(argKey(key), value))
+        )
+      )
+    );
+  }
+};
+
+export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
+  const args = Object.fromEntries(Object.entries(input).map(([k, v]) => [k, valueToAST(v)]));
 
   const isCsf4Story =
     t.isCallExpression(node) &&
@@ -26,102 +80,15 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
   }
 
   if (t.isObjectExpression(node)) {
-    const properties = node.properties;
-    const argsProperty = properties.find((property) => {
-      if (t.isObjectProperty(property)) {
-        const key = property.key;
-        return t.isIdentifier(key) && key.name === 'args';
-      }
-      return false;
-    });
-
-    if (argsProperty) {
-      if (t.isObjectProperty(argsProperty)) {
-        const a = argsProperty.value;
-        if (t.isObjectExpression(a)) {
-          a.properties.forEach((p) => {
-            if (t.isObjectProperty(p)) {
-              const key = p.key;
-              if (t.isIdentifier(key) && key.name in args) {
-                p.value = args[key.name];
-                delete args[key.name];
-              }
-            }
-          });
-
-          const remainder = Object.entries(args);
-          if (Object.keys(args).length) {
-            remainder.forEach(([key, value]) => {
-              a.properties.push(t.objectProperty(t.identifier(key), value));
-            });
-          }
-        }
-      }
-    } else {
-      properties.unshift(
-        t.objectProperty(
-          t.identifier('args'),
-          t.objectExpression(
-            Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
-          )
-        )
-      );
-    }
+    updateArgsObject(node, args);
     return;
   }
 
   traverse(node, {
     ObjectExpression(path) {
-      if (found) {
-        return;
-      }
-
-      found = true;
-      const properties = path.get('properties');
-      const argsProperty = properties.find((property) => {
-        if (property.isObjectProperty()) {
-          const key = property.get('key');
-          return key.isIdentifier() && key.node.name === 'args';
-        }
-        return false;
-      });
-
-      if (argsProperty) {
-        if (argsProperty.isObjectProperty()) {
-          const a = argsProperty.get('value');
-          if (a.isObjectExpression()) {
-            a.traverse({
-              ObjectProperty(p) {
-                const key = p.get('key');
-                if (key.isIdentifier() && key.node.name in args) {
-                  p.get('value').replaceWith(args[key.node.name]);
-                  delete args[key.node.name];
-                }
-              },
-              noScope: true,
-            });
-
-            const remainder = Object.entries(args);
-            if (Object.keys(args).length) {
-              remainder.forEach(([key, value]) => {
-                a.pushContainer('properties', t.objectProperty(t.identifier(key), value));
-              });
-            }
-          }
-        }
-      } else {
-        path.unshiftContainer(
-          'properties',
-          t.objectProperty(
-            t.identifier('args'),
-            t.objectExpression(
-              Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
-            )
-          )
-        );
-      }
+      updateArgsObject(path.node, args);
+      path.stop();
     },
-
     noScope: true,
   });
 };

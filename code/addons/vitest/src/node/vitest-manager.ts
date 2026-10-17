@@ -1,12 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import type {
-  CoverageOptions,
-  ResolvedCoverageOptions,
-  TestProject,
-  TestSpecification,
-  Vitest,
-} from 'vitest/node';
+import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
@@ -27,8 +21,6 @@ import { StorybookReporter } from './reporter.ts';
 import type { TestManager } from './test-manager.ts';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
-const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
@@ -46,6 +38,8 @@ const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 export class VitestManager {
   vitest: Vitest | null = null;
 
+  private testNameSeparator = ' ';
+
   vitestStartupCounter = 0;
 
   vitestRestartPromise: Promise<void> | null = null;
@@ -55,13 +49,13 @@ export class VitestManager {
   constructor(private testManager: TestManager) {}
 
   async startVitest({ coverage }: { coverage: boolean }) {
-    const { createVitest } = await import('vitest/node');
+    const { createVitest, version } = await import('vitest/node');
+    this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
       },
     ];
     const coverageOptions = (
@@ -86,7 +80,6 @@ export class VitestManager {
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
 
     const configFiles = [
-      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
         `vitest.config.${ext}`,
         `vite.config.${ext}`,
@@ -97,7 +90,7 @@ export class VitestManager {
       last: getProjectRoot(),
     });
 
-    let vitestWorkspaceConfig: string | undefined;
+    let vitestConfigLocation: string | undefined;
     let firstVitestConfig: string | undefined;
 
     for (const location of potentialConfigFileLocations) {
@@ -110,12 +103,12 @@ export class VitestManager {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
-            vitestWorkspaceConfig = dirname(maybe);
+            vitestConfigLocation = dirname(maybe);
             break;
           }
         }
       }
-      if (vitestWorkspaceConfig) {
+      if (vitestConfigLocation) {
         break;
       }
     }
@@ -126,7 +119,7 @@ export class VitestManager {
 
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
+        root: vitestConfigLocation ?? vitestConfigFallbackLocation,
         configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,
@@ -162,7 +155,11 @@ export class VitestManager {
     }
 
     try {
-      await this.vitest.init();
+      if (typeof this.vitest.standalone === 'function') {
+        await this.vitest.standalone();
+      } else {
+        await this.vitest.init();
+      }
     } catch (e: any) {
       let message = 'Failed to initialize Vitest';
       const isV8 = e.message?.includes('@vitest/coverage-v8');
@@ -211,12 +208,7 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    // @ts-expect-error `server` only exists in Vitest 3
-    this.vitest!.projects.forEach(({ browser, vite, server }) => {
-      if (server) {
-        const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
-      }
+    this.vitest!.projects.forEach(({ browser, vite }) => {
       if (vite) {
         const serverMods = vite.moduleGraph.getModulesByFile(filepath);
         serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
@@ -229,7 +221,7 @@ export class VitestManager {
   }
 
   private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
-    const index = this.testManager.store.getState().index;
+    const index = this.testManager.storyIndex;
     if (requestStoryIds) {
       const stories: StoryIndexEntry[] = [];
       for (const id of requestStoryIds) {
@@ -269,7 +261,7 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${escapeRegExp(getTestName(parentStory.name))} ${escapeRegExp(story.name)}$`;
+      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
     return `^${escapeRegExp(story.name)}$`;
@@ -470,15 +462,15 @@ export class VitestManager {
 
     const storybookProject = this.vitest!.projects.find((p) => this.isStorybookProject(p));
     // we create synthetic TestSpecifications for the preview annotations and setup files, so that we can analyze their dependencies
-    const previewAnnotationSpecifications = this.testManager.store
-      .getState()
-      .previewAnnotations.map((previewAnnotation) => {
+    const previewAnnotationSpecifications = this.testManager.previewAnnotations.map(
+      (previewAnnotation) => {
         return {
           project: storybookProject ?? this.vitest!.projects[0],
           moduleId:
             typeof previewAnnotation === 'string' ? previewAnnotation : previewAnnotation.absolute,
         };
-      }) as TestSpecification[];
+      }
+    ) as TestSpecification[];
     const setupFilesSpecifications = this.vitest!.projects.flatMap((project) =>
       project.config.setupFiles.map((setupFile) => ({
         project,

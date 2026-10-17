@@ -89,7 +89,7 @@ export default defineGeneratorModule({
     const isVite = context.builder === SupportedBuilder.VITE;
     const { root, projectType } = angularProject;
     const { projects } = angularJSON;
-    // `@storybook/angular-vite` turns `experimentalDocgenServer` on by default, and that path
+    // `docgenServer` is on by default, and that path
     // extracts Angular metadata in process. Compodoc has no role there, so init neither asks about
     // it nor installs it. Turning the feature off is what brings the documented Compodoc setup back.
     const useCompodoc = isVite
@@ -177,7 +177,6 @@ export default defineGeneratorModule({
       ...extraAngularDeps,
       ...(isVite
         ? [
-            angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
             angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
             `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',

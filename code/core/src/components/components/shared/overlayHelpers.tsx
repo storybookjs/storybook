@@ -2,24 +2,27 @@ import React, { type ButtonHTMLAttributes, type ReactNode, forwardRef, useState 
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
-import { UNSAFE_PortalProvider } from '@react-aria/overlays';
-import type { PositionProps } from '@react-types/overlays';
+import { UNSAFE_PortalProvider } from 'react-aria/PortalProvider';
+import type { PositionProps } from 'react-aria/useOverlayPosition';
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
 
-type BasicPlacement = 'top' | 'bottom' | 'left' | 'right';
+export const POPPER_PLACEMENTS = [
+  'top',
+  'top-start',
+  'top-end',
+  'bottom',
+  'bottom-start',
+  'bottom-end',
+  'left',
+  'left-start',
+  'left-end',
+  'right',
+  'right-start',
+  'right-end',
+] as const;
 
-type PlacementWithModifier =
-  | 'top-start'
-  | 'top-end'
-  | 'bottom-start'
-  | 'bottom-end'
-  | 'left-start'
-  | 'left-end'
-  | 'right-start'
-  | 'right-end';
-
-export type PopperPlacement = BasicPlacement | PlacementWithModifier;
+export type PopperPlacement = (typeof POPPER_PLACEMENTS)[number];
 
 export const convertToReactAriaPlacement = memoize(1000)((
   p: PopperPlacement

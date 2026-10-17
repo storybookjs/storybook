@@ -51,6 +51,7 @@ import type {
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { global } from '@storybook/global';
+import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
@@ -81,6 +82,7 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
+const STATUS_CHANGE_REBUILD_THROTTLE = 500;
 
 const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
 
@@ -315,24 +317,14 @@ export interface SubAPI {
    */
   setPreviewInitialized: (ref?: ComposedRef) => Promise<void>;
   /**
-   * Updates the filtering of the index.
-   *
-   * @deprecated Use `experimental_setFilters` instead.
-   * @param {string} addonId - The ID of the addon to update.
-   * @param {API_FilterFunction} filterFunction - A function that returns a boolean based on the
-   *   story, index and status.
-   * @returns {Promise<void>} A promise that resolves when the state has been updated.
+   * Registers one sidebar filter. A story or docs entry shows only when every registered filter
+   * passes. Pass a function that always returns true to stop filtering for that id.
    */
-  experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
+  setFilter: (id: string, filterFunction: API_FilterFunction) => Promise<void>;
   /**
-   * Updates the filtering of the index for multiple filters at once, then re-applies the index
-   * (and the indexes of composed refs) so the new filters take effect.
-   *
-   * @param {Record<string, API_FilterFunction>} filters - A map of filter IDs to filter functions.
-   *   Each function returns a boolean based on the story, index and status.
-   * @returns {Promise<void>} A promise that resolves when the state has been updated.
+   * Registers several sidebar filters at once, then re-applies the story index.
    */
-  experimental_setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
+  setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
 
   /** Resets tag filters in the sidebar to the default filters. */
   resetTagFilters(): Promise<void>;
@@ -478,9 +470,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     const includedTags = (state.includedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
     const excludedTags = (state.excludedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
 
-    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
-    const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];
-    const excludedStatuses = changeDetectionEnabled ? (state.excludedStatusFilters ?? []) : [];
+    const includedStatuses = state.includedStatusFilters ?? [];
+    const excludedStatuses = state.excludedStatusFilters ?? [];
 
     const storyCounts: Record<string, number> = {};
     const entries = state.internal_index ? Object.values(state.internal_index.entries) : [];
@@ -915,24 +906,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
 
-    experimental_setFilter: async (id, filterFunction) => {
-      await api.experimental_setFilters({ [id]: filterFunction });
+    setFilter: async (id, filterFunction) => {
+      await api.setFilters({ [id]: filterFunction });
     },
 
-    experimental_setFilters: async (filters) => {
+    setFilters: async (filters) => {
       await store.setState((state) => ({ filters: { ...state.filters, ...filters } }));
-
-      const { internal_index: index } = store.getState();
-
-      if (!index) {
+      if (!(await applyCurrentFilters())) {
         return;
-      }
-      // apply new filters by setting the index again
-      await api.setIndex(index);
-
-      const refs = await fullAPI.getRefs();
-      for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
-        await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
       }
 
       for (const id of Object.keys(filters)) {
@@ -1049,16 +1030,64 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
   };
 
+  const applyCurrentFilters = async () => {
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return false;
+    }
+
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+      await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    }
+
+    return true;
+  };
+
+  // Simple queue so status-filter rebuilds never overlap.
+  let statusFilterRebuildQueued = false;
+  let statusFilterRebuildInFlight = false;
+
+  const flushStatusFilterRebuild = async () => {
+    if (statusFilterRebuildInFlight) {
+      return;
+    }
+    statusFilterRebuildInFlight = true;
+    try {
+      while (statusFilterRebuildQueued) {
+        statusFilterRebuildQueued = false;
+        try {
+          await applyCurrentFilters();
+        } catch (error) {
+          logger.warn('Failed to rebuild story index after status change:', error);
+        }
+      }
+    } finally {
+      statusFilterRebuildInFlight = false;
+      if (statusFilterRebuildQueued) {
+        void flushStatusFilterRebuild();
+      }
+    }
+  };
+
+  const requestStatusFilterRebuild = () => {
+    statusFilterRebuildQueued = true;
+    void flushStatusFilterRebuild();
+  };
+
   const recomputeTagsFilter = () => {
     const { includedTagFilters, excludedTagFilters } = store.getState();
-    return api.experimental_setFilters({
+    return api.setFilters({
       [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
     });
   };
 
   const recomputeStatusFilter = () => {
     const { includedStatusFilters, excludedStatusFilters } = store.getState();
-    return api.experimental_setFilters({
+    return api.setFilters({
       [STATUS_FILTER]: computeStatusFilterFn(
         includedStatusFilters ?? [],
         excludedStatusFilters ?? []
@@ -1282,8 +1311,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   });
 
   provider.channel?.on(SET_CONFIG, async () => {
-    const config = provider.getConfig();
-    const configFilters = config?.sidebar?.filters || {};
     const {
       includedTagFilters,
       excludedTagFilters,
@@ -1292,23 +1319,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       tagPresets,
     } = store.getState();
 
-    // Config sidebar filters first, then our managed filters override any conflicts
-    await api.experimental_setFilters({
-      ...configFilters,
+    await api.setFilters({
       [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
       [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
       [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
     });
   });
 
-  fullStatusStore.onAllStatusChange(async () => {
-    // re-apply the filters when the statuses change; this also re-applies the index
-    // (and the indexes of composed refs), which read statuses at transform time
-    await recomputeStatusFilter();
-  });
-
-  const config = provider.getConfig();
-  const configFilters = config?.sidebar?.filters || {};
+  fullStatusStore.onAllStatusChange(
+    throttle(requestStatusFilterRebuild, STATUS_CHANGE_REBUILD_THROTTLE, {
+      edges: ['leading', 'trailing'],
+    })
+  );
 
   // Compute default tag filter values from presets
   const tagPresets: TagsOptions = global.TAGS_OPTIONS || {};
@@ -1324,9 +1346,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   const initialIncludedStatuses: StatusValue[] = parsedStatuses.included;
   const initialExcludedStatuses: StatusValue[] = parsedStatuses.excluded;
 
-  // Build initial filters: config sidebar filters first, then our managed filters take priority
   const initialFilters: Record<string, API_FilterFunction> = {
-    ...configFilters,
     [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
     [TAGS_FILTER]: computeTagsFilterFn(initialIncluded, initialExcluded),
     [STATUS_FILTER]: computeStatusFilterFn(initialIncludedStatuses, initialExcludedStatuses),
@@ -1361,10 +1381,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const hasBuiltInTagFilters =
         initialIncluded.some((id) => BUILT_IN_TAG_IDS.has(id)) ||
         initialExcluded.some((id) => BUILT_IN_TAG_IDS.has(id));
-      const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const hasStatusFilters =
-        changeDetectionEnabled &&
-        (initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0);
+        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
 
       if (hasBuiltInTagFilters || hasStatusFilters) {
         emitFilterTelemetry('url');

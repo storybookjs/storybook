@@ -20,7 +20,7 @@ export function previewStories({
   origin,
   index,
   stories,
-}: PreviewStoriesParams): PreviewStoriesOutput {
+}: PreviewStoriesParams): Pick<PreviewStoriesOutput, 'stories'> {
   const resolvedStories = findStoryIds(index, stories);
   const result: PreviewStoriesOutput['stories'] = [];
 

@@ -1,6 +1,8 @@
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
+
+import { pluralFiles } from './failure-report.ts';
 import { dedent } from 'ts-dedent';
 
 import type { FixSummary } from '../types.ts';
@@ -9,7 +11,11 @@ import { FixStatus } from '../types.ts';
 export const messageDivider = '\n\n';
 const segmentDivider = '\n\n─────────────────────────────────────────────────\n\n';
 
-function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, FixStatus>) {
+function getGlossaryMessages(
+  fixSummary: FixSummary,
+  fixResults: Record<string, FixStatus>,
+  dryRun: boolean
+) {
   const messages = [];
   if (fixSummary.succeeded.length > 0) {
     messages.push(picocolors.bold('Successful migrations:'));
@@ -39,7 +45,13 @@ function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, 
   }
 
   if (fixSummary.skipped.length > 0) {
-    messages.push(picocolors.bold('Skipped migrations:'));
+    messages.push(
+      picocolors.bold(
+        dryRun
+          ? 'Migrations that a run would apply (dry run, no files changed):'
+          : 'Skipped migrations:'
+      )
+    );
     messages.push(fixSummary.skipped.map((m) => picocolors.cyan(m)).join(', '));
   }
 
@@ -49,12 +61,17 @@ function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, 
 export function logMigrationSummary({
   fixResults,
   fixSummary,
+  skippedFiles = 0,
+  dryRun = false,
 }: {
   fixResults: Record<string, FixStatus>;
   fixSummary: FixSummary;
+  /** Files that fixes which otherwise succeeded could not migrate. */
+  skippedFiles?: number;
+  dryRun?: boolean;
 }) {
   const messages = [];
-  messages.push(getGlossaryMessages(fixSummary, fixResults).join(messageDivider));
+  messages.push(getGlossaryMessages(fixSummary, fixResults, dryRun).join(messageDivider));
 
   messages.push(dedent`If you'd like to run the migrations again, you can do so by running 
     ${picocolors.cyan('npx storybook automigrate')}
@@ -73,8 +90,14 @@ export function logMigrationSummary({
 
   if (hasNoFixes) {
     logger.warn('No migrations were applicable to your project');
+  } else if (dryRun && !hasFailures) {
+    logger.step(CLI_COLORS.success('Dry run finished: no files were changed'));
   } else if (hasFailures) {
     logger.error('Migration check ran with failures');
+  } else if (skippedFiles > 0) {
+    logger.warn(
+      `Migrations ran, but ${pluralFiles(skippedFiles)} could not be migrated automatically`
+    );
   } else {
     logger.step(CLI_COLORS.success('Migration check ran successfully'));
   }

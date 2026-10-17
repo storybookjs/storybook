@@ -18,7 +18,7 @@ const Resizing = styled.div({
   border: '1px solid silver',
 });
 
-const meta: Meta<typeof Optional> = {
+const meta = {
   title: 'Optional',
   component: Optional,
   decorators: [
@@ -29,11 +29,11 @@ const meta: Meta<typeof Optional> = {
       </Resizing>
     ),
   ],
-};
+} satisfies Meta<typeof Optional>;
 
 export default meta;
 
-export const Default: StoryObj<typeof Optional> = {
+export const Default: StoryObj<typeof meta> = {
   args: {
     content: (
       <div style={{ display: 'inline-block', whiteSpace: 'nowrap', background: 'papayawhip' }}>
@@ -43,7 +43,7 @@ export const Default: StoryObj<typeof Optional> = {
   },
 };
 
-export const Fallback: StoryObj<typeof Optional> = {
+export const Fallback: StoryObj<typeof meta> = {
   args: {
     content: (
       <div style={{ display: 'inline-block', whiteSpace: 'nowrap', background: 'papayawhip' }}>

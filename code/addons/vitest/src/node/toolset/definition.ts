@@ -1,14 +1,19 @@
 import * as v from 'valibot';
 
-import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
+import {
+  storyInputArraySchema,
+  type StoryIndexAccess,
+  type StoryInput,
+} from 'storybook/internal/core-server';
 import {
   defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
+  type ToolsetDefinition,
+  type ToolsetMethod,
   type ToolsetOutcome,
+  type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import { formatTestRun, summarizeTestRun } from './format.ts';
+import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -111,7 +116,7 @@ export type TestRunFailureData = Extract<
   a11y: boolean;
 };
 
-const runInputSchema = v.object({
+const runInputSchema = v.strictObject({
   stories: v.optional(
     v.pipe(
       storyInputArraySchema,
@@ -136,7 +141,19 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
 });
 
-type RunInput = v.InferOutput<typeof runInputSchema>;
+// Inferring this from the schema would make the exported toolset type unnameable in declaration
+// output, because core's valibot types live in a private declaration chunk.
+type RunInput = { stories?: StoryInput[]; a11y: boolean };
+
+export type TestToolset = ToolsetDefinition<
+  'test',
+  {
+    run: ToolsetMethod<
+      v.GenericSchema<{ stories?: StoryInput[]; a11y?: boolean }, RunInput>,
+      ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
+    >;
+  }
+>;
 
 /**
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
@@ -158,38 +175,39 @@ For visual/design accessibility violations (for example color contrast), ask the
 }
 
 /**
- * Reports a run that reached a verdict. A run that never got one — a channel error, a cancellation —
- * stays silent, so the event counts runs whose numbers mean something.
+ * The report for a run that reached a verdict. A run that never got one — a channel error, a
+ * cancellation — reports nothing, so the event counts runs whose numbers mean something.
  */
-async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: ToolsetCtx) {
+function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
 
   if (data.status === 'no-stories') {
-    await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
-      toolset: 'test',
-      runA11y: data.a11y,
-      inputStoryCount,
-      matchedStoryCount: 0,
-      passingStoryCount: 0,
-      failingStoryCount: 0,
-      a11yViolationCount: 0,
-      unhandledErrorCount: 0,
-    });
-    return;
+    return {
+      payload: {
+        runA11y: data.a11y,
+        inputStoryCount,
+        matchedStoryCount: 0,
+        passingStoryCount: 0,
+        failingStoryCount: 0,
+        a11yViolationCount: 0,
+        unhandledErrorCount: 0,
+      },
+    };
   }
 
   if (data.status !== 'completed') {
-    return;
+    return undefined;
   }
 
-  await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
-    toolset: 'test',
-    runA11y: data.a11y,
-    inputStoryCount,
-    // A partially resolved selector list never reaches a run, so every input matched by this point.
-    matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
-    ...summarizeTestRun(data.result, data.a11y),
-  });
+  return {
+    payload: {
+      runA11y: data.a11y,
+      inputStoryCount,
+      // A partially resolved selector list never reaches a run, so every input matched by this point.
+      matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
+      ...summarizeTestRun(data.result, data.a11y),
+    },
+  };
 }
 
 function isFailedRun(data: TestRunData): data is TestRunFailureData {
@@ -198,11 +216,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'cancelled':
       return true;
     case 'completed':
-      return (
-        data.result.componentTestCount.error > 0 ||
-        (data.a11y && data.result.a11yCount.error > 0) ||
-        data.result.unhandledErrors.length > 0
-      );
+      return Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0);
     case 'no-stories':
       return false;
     default: {
@@ -224,7 +238,11 @@ export type CreateTestToolsetOptions = {
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTestToolsetOptions) {
+export function createTestToolset({
+  channel,
+  storyIndex,
+  a11yEnabled,
+}: CreateTestToolsetOptions): TestToolset {
   const queue = createAsyncQueue();
 
   return defineToolset({
@@ -248,11 +266,11 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };
-
-            await reportRunTelemetry(data, input, ctx);
-
-            const markdown = formatTestRun(data, ctx);
-            return isFailedRun(data) ? { ok: false, data, markdown } : { ok: true, data, markdown };
+            const markdown = formatTestRun(data, ctx, { a11yEnabled });
+            const telemetry = runTelemetry(data, input);
+            return isFailedRun(data)
+              ? { ok: false, data, markdown, telemetry }
+              : { ok: true, data, markdown, telemetry };
           } finally {
             done();
           }
@@ -261,5 +279,3 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
     },
   });
 }
-
-export type TestToolset = ReturnType<typeof createTestToolset>;

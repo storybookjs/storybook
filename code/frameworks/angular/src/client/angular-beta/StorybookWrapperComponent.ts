@@ -36,13 +36,13 @@ export const createStorybookWrapperComponent = ({
   storyComponent,
   styles,
   moduleMetadata,
-  initialProps,
+  initialProps = {},
   analyzedMetadata,
 }: {
   selector: string;
-  template: string;
+  template: string | undefined;
   storyComponent: Type<unknown> | undefined;
-  styles: string[];
+  styles: string[] | undefined;
   moduleMetadata: NgModuleMetadata;
   initialProps?: ICollection;
   analyzedMetadata: PropertyExtractor;
@@ -72,14 +72,16 @@ export const createStorybookWrapperComponent = ({
     schemas: moduleMetadata.schemas,
   })
   class StorybookWrapperComponent implements AfterViewInit, OnDestroy {
-    private storyComponentPropsSubscription: Subscription;
+    private storyComponentPropsSubscription: Subscription | undefined;
 
-    private storyWrapperPropsSubscription: Subscription;
+    private storyWrapperPropsSubscription: Subscription | undefined;
 
-    @ViewChild(viewChildSelector, { static: true }) storyComponentElementRef: ElementRef;
+    @ViewChild(viewChildSelector, { static: true }) storyComponentElementRef:
+      | ElementRef
+      | undefined;
 
     @ViewChild(viewChildSelector, { read: ViewContainerRef, static: true })
-    storyComponentViewContainerRef: ViewContainerRef;
+    storyComponentViewContainerRef: ViewContainerRef | undefined;
 
     // Used in case of a component without selector
     storyComponent = storyComponent ?? '';
@@ -102,7 +104,8 @@ export const createStorybookWrapperComponent = ({
 
     ngAfterViewInit(): void {
       // Bind properties to component, if the story have component
-      if (this.storyComponentElementRef) {
+      const { storyComponentElementRef, storyComponentViewContainerRef } = this;
+      if (storyComponentElementRef && storyComponentViewContainerRef) {
         const ngComponentInputsOutputs = getComponentInputsOutputs(storyComponent);
 
         const initialOtherProps = getNonInputsOutputsProps(ngComponentInputsOutputs, initialProps);
@@ -110,29 +113,29 @@ export const createStorybookWrapperComponent = ({
         // Initializes properties that are not Inputs | Outputs
         // Allows story props to override local component properties
         initialOtherProps.forEach((p) => {
-          (this.storyComponentElementRef as any)[p] = initialProps[p];
+          Object.assign(storyComponentElementRef, { [p]: initialProps[p] });
         });
         // `markForCheck` the component in case this uses changeDetection: OnPush
         // And then forces the `detectChanges`
-        this.storyComponentViewContainerRef.injector.get(ChangeDetectorRef).markForCheck();
+        storyComponentViewContainerRef.injector.get(ChangeDetectorRef).markForCheck();
         this.changeDetectorRef.detectChanges();
 
         // Once target component has been initialized, the storyProps$ observable keeps target component properties than are not Input|Output up to date
         this.storyComponentPropsSubscription = this.storyProps$
           .pipe(
             skip(1),
-            map((props) => {
+            map((props = {}) => {
               const propsKeyToKeep = getNonInputsOutputsProps(ngComponentInputsOutputs, props);
               return propsKeyToKeep.reduce((acc, p) => ({ ...acc, [p]: props[p] }), {});
             })
           )
           .subscribe((props) => {
             // Replace inputs with new ones from props
-            Object.assign(this.storyComponentElementRef, props);
+            Object.assign(storyComponentElementRef, props);
 
             // `markForCheck` the component in case this uses changeDetection: OnPush
             // And then forces the `detectChanges`
-            this.storyComponentViewContainerRef.injector.get(ChangeDetectorRef).markForCheck();
+            storyComponentViewContainerRef.injector.get(ChangeDetectorRef).markForCheck();
             this.changeDetectorRef.detectChanges();
           });
       }

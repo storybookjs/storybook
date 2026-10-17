@@ -27,18 +27,7 @@ export type ChildErrorMessage = {
   error: SerializedError;
 };
 
-export type ChildTelemetryMessage = {
-  type: 'telemetry';
-  id: string;
-  event: string;
-  payload: Record<string, unknown>;
-};
-
-export type ChildMessage =
-  | ChildHelloMessage
-  | ChildResultMessage
-  | ChildErrorMessage
-  | ChildTelemetryMessage;
+export type ChildMessage = ChildHelloMessage | ChildResultMessage | ChildErrorMessage;
 
 export type ParentInitMessage = {
   type: 'init';

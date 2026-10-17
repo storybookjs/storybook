@@ -59,11 +59,8 @@ describe('updateConfigFile', () => {
               import react from '@vitejs/plugin-react'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -83,7 +80,7 @@ describe('updateConfigFile', () => {
       +             plugins: [
       +               // The plugin will run tests for the stories defined in your Storybook config
       +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +             ],
       +             test: {
       +               name: 'storybook',
@@ -139,12 +136,9 @@ describe('updateConfigFile', () => {
               import react from '@vitejs/plugin-react'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -164,7 +158,7 @@ describe('updateConfigFile', () => {
       +             plugins: [
       +               // The plugin will run tests for the stories defined in your Storybook config
       +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +             ],
       +             test: {
       +               name: 'storybook',
@@ -229,11 +223,8 @@ describe('updateConfigFile', () => {
               import { defineConfig } from 'vite';
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -273,7 +264,7 @@ describe('updateConfigFile', () => {
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -374,11 +365,8 @@ describe('updateConfigFile', () => {
               import react from '@vitejs/plugin-react'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -404,7 +392,7 @@ describe('updateConfigFile', () => {
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -456,11 +444,8 @@ b'],
               import { defineConfig } from 'vite'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -493,7 +478,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -554,8 +539,6 @@ b'],
       + import path from 'node:path';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -578,7 +561,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -638,11 +621,8 @@ b'],
               import react from '@vitejs/plugin-react'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -662,7 +642,7 @@ b'],
       +             plugins: [
       +               // The plugin will run tests for the stories defined in your Storybook config
       +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +             ],
       +             test: {
       +               name: 'storybook',
@@ -718,11 +698,8 @@ b'],
               import react from '@vitejs/plugin-react'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -748,7 +725,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -802,11 +779,8 @@ b'],
               import react from '@vitejs/plugin-react'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -824,7 +798,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -885,11 +859,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -918,7 +889,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -975,12 +946,9 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1007,7 +975,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1064,11 +1032,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1087,7 +1052,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1147,11 +1112,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1178,7 +1140,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1245,11 +1207,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1270,7 +1229,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1336,11 +1295,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1377,7 +1333,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1443,11 +1399,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1484,7 +1437,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1536,11 +1489,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1568,7 +1518,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -1623,11 +1573,8 @@ b'],
               import type { ViteUserConfig } from 'vitest/config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1656,7 +1603,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1710,12 +1657,9 @@ b'],
               import type { ViteUserConfig } from 'vitest/config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1743,7 +1687,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -1794,12 +1738,9 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1830,7 +1771,7 @@ b'],
       +             plugins: [
       +               // The plugin will run tests for the stories defined in your Storybook config
       +               // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +               storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +               storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +             ],
       +             test: {
       +               name: 'storybook',
@@ -1885,11 +1826,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -1919,7 +1857,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -1970,12 +1908,9 @@ b'],
               import { defineProject } from 'vitest/config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -2003,7 +1938,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -2059,11 +1994,8 @@ b'],
                 import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + 
@@ -2091,7 +2023,7 @@ b'],
       +                   plugins: [
       +                     // The plugin will run tests for the stories defined in your Storybook config
       +                     // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                     storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                     storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                   ],
       +                   test: {
       +                     name: 'storybook',
@@ -2146,12 +2078,9 @@ b'],
                 import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
       + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
       + 
@@ -2177,7 +2106,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',
@@ -2232,12 +2161,9 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { defineConfig } from 'vitest/config';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -2265,7 +2191,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -2348,20 +2274,12 @@ b'],
               import { defineConfig as defineVitestConfig } from "vitest/config";
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
-        
-      + // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
-      + 
-      + 
               // https://vitejs.dev/config/
               const viteConfig = defineConfig({
                 plugins: [tsconfigPaths(), react()],
-                optimizeDeps: {
       ...
         
               const vitestConfig = defineVitestConfig({
@@ -2405,7 +2323,7 @@ b'],
       +               plugins: [
       +                 // The plugin will run tests for the stories defined in your Storybook config
       +                 // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                 storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                 storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +               ],
       +               test: {
       +                 name: 'storybook',
@@ -2469,11 +2387,8 @@ b'],
               import viteConfig from './vite.config'
         
       + import path from 'node:path';
-      + import { fileURLToPath } from 'node:url';
       + import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       + import { playwright } from '@vitest/browser-playwright';
-      + const dirname =
-      +   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
       + 
         
         
@@ -2514,7 +2429,7 @@ b'],
       +                 plugins: [
       +                   // The plugin will run tests for the stories defined in your Storybook config
       +                   // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
-      +                   storybookTest({ configDir: path.join(dirname, '.storybook') }),
+      +                   storybookTest({ configDir: path.join(import.meta.dirname, '.storybook') }),
       +                 ],
       +                 test: {
       +                   name: 'storybook',

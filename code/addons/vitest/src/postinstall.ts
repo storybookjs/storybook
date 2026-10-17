@@ -39,7 +39,7 @@ const STORYBOOK_TEST_PLUGIN_SOURCE = `${ADDON_NAME}/vitest-plugin`;
 
 /**
  * The Vitest config templates resolve the Storybook config dir against the
- * generated config file's own directory (`path.join(dirname, CONFIG_DIR)`).
+ * generated config file's own directory (`path.join(import.meta.dirname, CONFIG_DIR)`).
  * So CONFIG_DIR must be the path FROM that file's directory TO the config dir,
  * not the cwd-relative `--config-dir` value. Otherwise, in a monorepo where the
  * config file is created inside the project (e.g. `apps/x/vitest.config.ts`) but

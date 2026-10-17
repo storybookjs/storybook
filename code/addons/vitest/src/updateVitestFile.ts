@@ -300,68 +300,33 @@ const findWritableConfigObject = (
   );
 };
 
-// What a binding stands for, so the template reuses a target binding that is the same thing: an
-// import of the same export (`node:path` and `path` name the same module, and its default and
-// namespace imports the same object), or a declaration written the same way.
-const bindingIdentity = (editor: SourceEditor, binding: Binding) => {
-  if (binding.kind === 'import' && binding.declaration?.type === 'ImportDeclaration') {
-    const specifier = binding.node as E.ImportDeclarationSpecifier;
-    const name =
-      specifier.type === 'ImportSpecifier'
-        ? specifier.imported.type === 'Literal'
-          ? specifier.imported.value
-          : specifier.imported.name
-        : '*';
-    return `${name} from ${binding.declaration.source.value.replace(/^node:/, '')}`;
+// The export an import binding reads: `node:path` and `path` are one module, and its default and
+// namespace imports the same object.
+const importedExport = (binding: Binding) => {
+  if (binding.kind !== 'import' || binding.declaration?.type !== 'ImportDeclaration') {
+    return undefined;
   }
-  return editor.code.slice(binding.node.start, binding.node.end).replace(/\s+/g, ' ');
+  const specifier = binding.node as E.ImportDeclarationSpecifier;
+  const name =
+    specifier.type === 'ImportSpecifier'
+      ? specifier.imported.type === 'Literal'
+        ? specifier.imported.value
+        : specifier.imported.name
+      : '*';
+  return `${name} from ${binding.declaration.source.value.replace(/^node:/, '')}`;
 };
 
-const unusedName = (name: string, editors: SourceEditor[]) => {
-  const base = `storybook${name[0].toUpperCase()}${name.slice(1)}`;
-  let candidate = base;
-  for (let index = 2; editors.some((editor) => editor.scopes.names.has(candidate)); index++) {
-    candidate = `${base}${index}`;
-  }
-  return candidate;
-};
-
-const renameBinding = (editor: SourceEditor, binding: Binding, name: string) => {
-  const { identifier, node } = binding;
-  if (node.type === 'ImportSpecifier' && node.imported.start === identifier.start) {
-    // `import { x }` becomes `import { x as name }`.
-    editor.edits.appendLeft(identifier.end, ` as ${name}`);
-  } else {
-    editor.edits.overwrite(identifier.start, identifier.end, name);
-  }
-  for (const reference of binding.references) {
-    const parent = editor.parentOf(reference);
-    if (parent?.type === 'Property' && parent.shorthand) {
-      // `{ x }` becomes `{ x: name }`.
-      editor.edits.appendLeft(reference.end, `: ${name}`);
-    } else {
-      editor.edits.overwrite(reference.start, reference.end, name);
-    }
-  }
-};
-
-// Rename the template bindings the merged code reads that the target binds to something else,
-// such as the template's `dirname` in a config that imports `dirname` from `node:path`.
-const renameTakenBindings = (source: SourceEditor, target: SourceEditor) => {
+// Whether the target binds a name the merged template code reads to anything but the same import.
+const hasConflictingBinding = (source: SourceEditor, target: SourceEditor, at: E.Node) => {
+  const scope = target.scopes.scopeOf(at);
+  // The template's own `defineConfig(...)` call is not merged.
   const call = findExportDefault(source.program)?.declaration as E.CallExpression;
-  for (const binding of source.scopes.program.bindings.values()) {
-    const existing = target.scopes.program.bindings.get(binding.name);
-    // The template's own `defineConfig(...)` call is not merged.
+  return [...source.scopes.program.bindings.values()].some((binding) => {
+    const existing = scope.lookup(binding.name);
     const merged = binding.references.some((reference) => reference !== call.callee);
-    if (
-      existing &&
-      merged &&
-      bindingIdentity(source, binding) !== bindingIdentity(target, existing)
-    ) {
-      renameBinding(source, binding, unusedName(binding.name, [source, target]));
-    }
-  }
-  source.commit();
+    const imported = importedExport(binding);
+    return merged && existing && (!imported || importedExport(existing) !== imported);
+  });
 };
 
 // Template imports and variables the target lacks, each with the comments that follow it.
@@ -429,11 +394,10 @@ export const updateConfigFile = (sourceCode: string, target: SourceEditor): bool
   };
   const exportDefault = findExportDefault(target.program);
   const targetConfig = exportDefault && findWritableConfigObject(target.program, exportDefault);
-  if (!templateConfig() || !targetConfig) {
+  if (!templateConfig() || !targetConfig || hasConflictingBinding(source, target, targetConfig)) {
     return false;
   }
 
-  renameTakenBindings(source, target);
   const statements = missingStatements(source, target);
   if (statements.length > 0) {
     insertStatements(target, statements.join('\n'));

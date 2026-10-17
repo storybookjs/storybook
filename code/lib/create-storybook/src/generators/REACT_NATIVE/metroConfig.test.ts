@@ -69,7 +69,6 @@ describe('metroConfig codemod', () => {
     expect(await getFormattedDiff(before, after, filePath)).toMatchInlineSnapshot(`
       "+ const { withStorybook } = require('@storybook/react-native/withStorybook');
       + 
-      + 
         const defaultConfig = {};
         
       - module.exports = defaultConfig;
@@ -96,7 +95,6 @@ describe('metroConfig codemod', () => {
       "- module.exports = withExpo(defaultConfig);
       - 
       + const { withStorybook } = require('@storybook/react-native/withStorybook');
-      + 
       + module.exports = withStorybook(withExpo(defaultConfig));
       + "
     `);
@@ -117,7 +115,6 @@ export default async function makeMetroConfig() {
         "- export default async function makeMetroConfig() {
         - 
         + import { withStorybook } from '@storybook/react-native/withStorybook';
-        + 
         + export default withStorybook(async function makeMetroConfig() {
         + 
             return { resolver: {} };
@@ -127,6 +124,18 @@ export default async function makeMetroConfig() {
         + });
         + "
       `);
+    }
+  });
+
+  it('keeps a next-line directive above the statement it is about', () => {
+    const before = `// @ts-expect-error\nmodule.exports = unknownConfig;\n`;
+    const transformed = transformMetroConfigSource(before, path.join(tempDir, 'metro.config.js'));
+
+    expect(transformed.action).toBe('updated');
+    if (transformed.action === 'updated') {
+      expect(transformed.code).toBe(
+        `const { withStorybook } = require('@storybook/react-native/withStorybook');\n// @ts-expect-error\nmodule.exports = withStorybook(unknownConfig);\n`
+      );
     }
   });
 
@@ -216,7 +225,6 @@ module.exports = {};
     if (transformed.action === 'updated') {
       expect(await getFormattedDiff(before, transformed.code, filePath)).toMatchInlineSnapshot(`
         "+ const { withStorybook } = require('@storybook/react-native/withStorybook');
-        + 
         + 
           const hint = \`
           import { something } from 'somewhere'

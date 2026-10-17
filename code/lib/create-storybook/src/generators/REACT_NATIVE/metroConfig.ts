@@ -6,9 +6,10 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   SourceEditor,
-  insertStatementAfter,
+  insertAfterImports,
   isStringLiteral,
   parseModule,
+  prependStatement,
   walk,
 } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -184,40 +185,12 @@ const hasWithStorybookBinding = (program: E.Program) => {
   return undefined;
 };
 
-// After directives and a pragma comment at the very start of the file (`// @ts-nocheck`), but above
-// the first statement's other leading comments.
-const getTopInsertionPosition = (editor: SourceEditor) => {
-  const { body } = editor.program;
-  const firstStatement = body.find(
-    (statement) =>
-      !(statement.type === 'ExpressionStatement' && isStringLiteral(statement.expression))
-  );
-  if (!firstStatement) {
-    return undefined;
-  }
-  const previousEnd = body[body.indexOf(firstStatement) - 1]?.end ?? 0;
-  const leadingComment = editor.comments.find(
-    (comment) =>
-      comment.start > 0 && comment.start >= previousEnd && comment.end <= firstStatement.start
-  );
-  return leadingComment?.start ?? firstStatement.start;
-};
-
 const injectWithStorybookImport = (editor: SourceEditor, useEsmImport: boolean) => {
-  const { body } = editor.program;
-  const lastImport = body.findLast((statement) => statement.type === 'ImportDeclaration');
-  if (useEsmImport && lastImport) {
-    insertStatementAfter(editor, lastImport, WITH_STORYBOOK_IMPORT);
-    return;
+  if (useEsmImport) {
+    insertAfterImports(editor, WITH_STORYBOOK_IMPORT);
+  } else {
+    prependStatement(editor, WITH_STORYBOOK_REQUIRE);
   }
-
-  const statement = useEsmImport ? WITH_STORYBOOK_IMPORT : WITH_STORYBOOK_REQUIRE;
-  const position = getTopInsertionPosition(editor);
-  if (position === undefined) {
-    editor.edits.append(`\n${statement}\n`);
-    return;
-  }
-  editor.edits.appendRight(position, `${statement}\n\n`);
 };
 
 const WITH_STORYBOOK_IMPORT =

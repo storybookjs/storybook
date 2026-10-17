@@ -152,6 +152,7 @@ describe('bootTestRunner', () => {
           STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(['/project/.storybook/preview.ts']),
         },
         extendEnv: true,
+        buffer: { ipc: false },
       },
     });
     message({ type: 'ready' });

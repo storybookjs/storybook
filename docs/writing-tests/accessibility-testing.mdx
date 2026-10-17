@@ -60,6 +60,10 @@ Because the addon is built on top of `axe-core`, much of the configuration avail
 | `parameters.a11y.test`    | `undefined` | Determines test behavior when run with the Vitest addon. [More details below](#test-behavior).                                                                                                           |
 | `globals.a11y.manual`     | `undefined` | Set to `true` to prevent stories from being automatically analyzed when visited. [More details below](#disable-automated-checks)                                                                         |
 
+Standalone Vitest runs, such as those started from the CLI or in CI, default `parameters.a11y.options.resultTypes` to `['violations', 'incomplete']`. This keeps all violation and incomplete details while limiting `passes` and `inapplicable` results to at most one node per rule to reduce memory use.
+
+An explicit `resultTypes` value takes precedence. To keep all nodes in every result group, set it to `['violations', 'incomplete', 'passes', 'inapplicable']`. Checks run through the Storybook UI keep the full results by default.
+
 <details>
 <summary>Default `parameters.a11y.config`</summary>
 

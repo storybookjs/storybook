@@ -32,7 +32,7 @@ export class ArgsStore {
 
   argsByStoryId: Record<StoryId, Args> = {};
 
-  get(storyId: StoryId) {
+  get(storyId: StoryId): Args {
     if (!(storyId in this.argsByStoryId)) {
       throw new Error(`No args known for ${storyId} -- has it been rendered yet?`);
     }

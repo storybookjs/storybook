@@ -163,6 +163,7 @@ function getWrapperProperties(
  * @param storyFn Fn
  * @param context StoryContext
  */
+/** @deprecated Use server-side docgen. See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated. */
 export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, context) => {
   const skip = skipSourceRender(context);
   const story = storyFn();

@@ -13,14 +13,10 @@ describe('definePreview', () => {
 
     const meta = preview.meta({});
 
-    meta.story({
-      tags: ['foo', 'bar'],
-    });
+    meta.story({ tags: ['foo', 'bar'] });
 
     // @ts-expect-error - bad tags
-    meta.story({
-      tags: ['baz', 'qux'],
-    });
+    meta.story({ tags: ['baz', 'qux'] });
   });
   it('supports extensible tags with autocompletion', () => {
     const preview = definePreview({

@@ -1,9 +1,16 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { getBuilderOptions, resolvePathInStorybookCache } from 'storybook/internal/common';
+import {
+  getBuilderOptions,
+  getProjectRoot,
+  resolvePathInStorybookCache,
+} from 'storybook/internal/common';
+import { once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
+import * as find from 'empathic/find';
+import { dedent } from 'ts-dedent';
 import type {
   ConfigEnv,
   InlineConfig,
@@ -34,6 +41,39 @@ const configEnvBuild: ConfigEnv = {
   isSsrBuild: false,
 };
 
+// Mirrors Vite's own config-file search list (see Vite's `DEFAULT_CONFIG_FILES`).
+const DEFAULT_VITE_CONFIG_FILES = [
+  'vite.config.js',
+  'vite.config.mjs',
+  'vite.config.ts',
+  'vite.config.cjs',
+  'vite.config.mts',
+  'vite.config.cts',
+];
+
+const warnOnce = once('warn');
+
+// loadConfigFromFile returns null without logging when discovery misses.
+function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): void {
+  const unloadedConfig = find.any(DEFAULT_VITE_CONFIG_FILES, {
+    cwd: projectRoot,
+    last: getProjectRoot(),
+  });
+
+  if (!unloadedConfig) {
+    return;
+  }
+
+  warnOnce(
+    dedent`
+      No user Vite config was loaded: Storybook auto-discovers a Vite config file in "${projectRoot}" (the directory above your Storybook config dir "${configDir}"), and none was found there.
+      A Vite config was found at "${unloadedConfig}", but it is outside of that directory and was not loaded.
+      To load it, point the "viteConfigPath" builder option at it, e.g. core: { builder: { options: { viteConfigPath: '${unloadedConfig}' } } }.
+      See: https://storybook.js.org/docs/builders/vite#override-the-default-configuration
+    `
+  );
+}
+
 async function loadUserViteConfig(options: Options, type: PluginConfigType): Promise<ViteConfig> {
   const configEnv = type === 'development' ? configEnvServe : configEnvBuild;
   const { loadConfigFromFile } = await import('vite');
@@ -48,6 +88,11 @@ async function loadUserViteConfig(options: Options, type: PluginConfigType): Pro
     undefined,
     configLoader
   );
+
+  // An explicit `viteConfigPath` is the user's responsibility; Vite errors on it itself.
+  if (!loaded && !viteConfigPath) {
+    reportUnloadedUserViteConfig(options.configDir, projectRoot);
+  }
 
   return loaded?.config ?? {};
 }

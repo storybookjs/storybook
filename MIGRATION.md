@@ -17,6 +17,7 @@
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+  - [React: `react-docgen` is an optional peer dependency](#react-react-docgen-is-an-optional-peer-dependency)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -993,6 +994,24 @@ Client-side docgen that runs in the builder is deprecated and will be removed in
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
 Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
 Remove `docgenServer: false` to use server-side docgen.
+
+### React: `react-docgen` is an optional peer dependency
+
+`@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack` no longer install `react-docgen`, and with it Babel.
+TypeScript projects document components with server-side docgen and need nothing.
+`react-docgen` still documents components when server-side docgen is off: in JavaScript projects without the `typescript` package, and with `features.docgenServer: false`.
+It is also the only engine that reads `propTypes` and `defaultProps`.
+Without it, Storybook warns once and shows no prop tables or inferred controls for those projects.
+Install it as a devDependency; `storybook upgrade` offers to with the `react-docgen-optional` automigration:
+
+```sh
+npm install --save-dev react-docgen
+```
+
+- `typescript: { reactDocgen: false }` needs nothing and hides the warning. It now also turns docgen off in the components manifest, which ran `react-docgen` regardless.
+- With `reactDocgen: 'react-docgen-typescript'`, TypeScript files are unaffected; `.js` and `.jsx` components only get props with `react-docgen` installed.
+- With server-side docgen on, the argTypes the Vitest addon infers for components without stories come from `react-docgen-typescript` instead of `react-docgen`.
+- `@storybook/nextjs-vite`, `@storybook/react-native-web-vite` and `@storybook/tanstack-react` follow the same rules: add `react-docgen` to the project's own `package.json`. `@storybook/nextjs` still depends on Babel itself.
 
 ### Node.js 22.12 or higher
 

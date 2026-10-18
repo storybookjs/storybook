@@ -127,7 +127,7 @@ describe('lazy userEvent initialization', () => {
     await enhanceContext(context);
 
     // Read userEvent to trigger lazy uninstrumentedUserEvent.setup() (which executes user-event's patchFocus)
-    const _ = context.userEvent;
+    expect(context.userEvent).toBeDefined();
 
     // Focus descriptor on HTMLElement.prototype must still be an accessor with a getter (not replaced by a plain value)
     const descriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'focus');

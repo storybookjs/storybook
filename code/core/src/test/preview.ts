@@ -128,7 +128,7 @@ function focusGuardGet(this: HTMLElement | typeof HTMLElement.prototype) {
   return currentFocus;
 }
 
-export function installFocusGuard() {
+function installFocusGuard() {
   if (typeof HTMLElement === 'undefined' || !HTMLElement.prototype) {
     return;
   }
@@ -154,8 +154,10 @@ export function installFocusGuard() {
   });
 }
 
-function defineLazyUserEvent(context: any) {
-  let userEvent: ReturnType<typeof uninstrumentedUserEvent.setup> | undefined;
+type UserEventInstance = ReturnType<typeof uninstrumentedUserEvent.setup>;
+
+function defineLazyUserEvent(context: Parameters<LoaderFunction>[0]) {
+  let userEvent: UserEventInstance | undefined;
 
   Object.defineProperty(context, 'userEvent', {
     configurable: true,
@@ -183,7 +185,7 @@ function defineLazyUserEvent(context: any) {
       }
       return userEvent;
     },
-    set(value: ReturnType<typeof uninstrumentedUserEvent.setup> | undefined) {
+    set(value: UserEventInstance | undefined) {
       userEvent = value;
     },
   });

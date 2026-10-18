@@ -28,6 +28,7 @@ export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-c
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
   reactDocgenTypescriptOptions: ParserOptions;
+  componentManifestLargePropSourceAllowlist?: string[];
 }
 
 export type { ComponentRef } from './types.ts';
@@ -71,7 +72,8 @@ export const getComponents = async ({
   docgenEngine: DocgenEngine;
   additionalComponentNames?: string[];
 }): Promise<ComponentRef[]> => {
-  const { reactDocgenTypescriptOptions } = typescriptOptions;
+  const { reactDocgenTypescriptOptions, componentManifestLargePropSourceAllowlist = [] } =
+    typescriptOptions;
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -185,7 +187,11 @@ export const getComponents = async ({
             let reactDocgenTypescript: ComponentDocWithExportName | undefined;
             let reactDocgenTypescriptError: { name: string; message: string } | undefined;
             try {
-              const docs = await parseWithReactDocgenTypescript(path, reactDocgenTypescriptOptions);
+              const docs = await parseWithReactDocgenTypescript(
+                path,
+                reactDocgenTypescriptOptions,
+                componentManifestLargePropSourceAllowlist
+              );
               reactDocgenTypescript = matchComponentDoc(docs, component);
               if (!reactDocgenTypescript) {
                 reactDocgenTypescriptError = getReactDocgenTypescriptError(path, component, docs);

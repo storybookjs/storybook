@@ -9,14 +9,15 @@ import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { manifests } from './generator.ts';
-import {
-  type ComponentDocWithExportName,
-  invalidateParser,
-  parseWithReactDocgenTypescript,
-} from './reactDocgenTypescript.ts';
+import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
 import { invalidateCache } from './utils.ts';
 
 const repoRoot = process.cwd();
+const defaultReactDocgenTypescriptPropFilter = Object.assign(
+  (prop: { parent?: { fileName?: string } }) =>
+    prop.parent ? !/node_modules/.test(prop.parent.fileName ?? '') : true,
+  { __storybookDefaultReactDocgenTypescriptPropFilter: true }
+);
 type ManifestComponentWithReactDocgenTypescript = {
   error?: { name: string; message: string };
   reactDocgenTypescript?: ComponentDocWithExportName;
@@ -56,7 +57,7 @@ test(
 );
 
 test(
-  'keeps imported props accepted by the configured propFilter',
+  'keeps filtering large sources when a custom propFilter is configured',
   { concurrent: false },
   async () => {
     invalidateCache();
@@ -64,27 +65,28 @@ test(
 
     const tempDir = createTempProject();
     const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
-    const libraryDir = join(tempDir, 'node_modules', 'wide-library');
-    mkdirSync(libraryDir, { recursive: true });
-    writeFileSync(
-      join(libraryDir, 'index.d.ts'),
-      `export interface SelectProps {\n${[
-        '  options: string[];',
-        ...Array.from({ length: 34 }, (_, index) => `  inheritedProp${index}: string;`),
-      ].join('\n')}\n}`
-    );
-    const componentPath = join(tempDir, 'src', 'Select.tsx');
-    writeFileSync(
-      componentPath,
-      `import type { SelectProps } from 'wide-library';\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
-    );
+    createLargePropSourceFixtures(tempDir);
 
     try {
-      const [select] = await parseWithReactDocgenTypescript(componentPath, {
-        propFilter: () => true,
-      });
+      const result = await manifests(
+        undefined,
+        createManifestOptions(
+          {
+            reactDocgenTypescriptOptions: {
+              propFilter: () => true,
+            },
+          },
+          './src/Select.stories.tsx'
+        )
+      );
+      const select = result?.components?.components?.['example-button'] as
+        | ManifestComponentWithReactDocgenTypescript
+        | undefined;
 
-      expect(select?.props.options).toBeDefined();
+      expect(select?.reactDocgenTypescript?.props.options).toBeUndefined();
+      expect(select?.reactDocgenTypescript?.props.inheritedProp0).toBeUndefined();
+      expect(select?.reactDocgenTypescript?.props.otherProp0).toBeUndefined();
+      expect(select?.reactDocgenTypescript?.props.reactProp0).toBeUndefined();
     } finally {
       cwdSpy.mockRestore();
       invalidateCache();
@@ -94,7 +96,48 @@ test(
   }
 );
 
-function createManifestOptions() {
+test(
+  'allows selected large prop sources through the component manifest',
+  { concurrent: false },
+  async () => {
+    invalidateCache();
+    invalidateParser();
+
+    const tempDir = createTempProject();
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+    createLargePropSourceFixtures(tempDir);
+
+    try {
+      const result = await manifests(
+        undefined,
+        createManifestOptions(
+          {
+            componentManifestLargePropSourceAllowlist: ['wide-library'],
+          },
+          './src/Select.stories.tsx'
+        )
+      );
+      const select = result?.components?.components?.['example-button'] as
+        | ManifestComponentWithReactDocgenTypescript
+        | undefined;
+
+      expect(select?.reactDocgenTypescript?.props.options).toBeDefined();
+      expect(select?.reactDocgenTypescript?.props.inheritedProp0).toBeDefined();
+      expect(select?.reactDocgenTypescript?.props.otherProp0).toBeUndefined();
+      expect(select?.reactDocgenTypescript?.props.reactProp0).toBeUndefined();
+    } finally {
+      cwdSpy.mockRestore();
+      invalidateCache();
+      invalidateParser();
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
+);
+
+function createManifestOptions(
+  typescriptOptions: Record<string, unknown> = {},
+  storyImportPath = './src/Button.stories.tsx'
+) {
   const manifestEntries: IndexEntry[] = [
     {
       type: 'story',
@@ -102,7 +145,7 @@ function createManifestOptions() {
       id: 'example-button--primary',
       name: 'Primary',
       title: 'Example/Button',
-      importPath: './src/Button.stories.tsx',
+      importPath: storyImportPath,
       componentPath: './src/Button.tsx',
       tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
       exportName: 'Primary',
@@ -115,7 +158,13 @@ function createManifestOptions() {
     presets: {
       apply: async (extension: string, config?: unknown) => {
         if (extension === 'typescript') {
-          return { reactDocgen: 'react-docgen-typescript' };
+          return {
+            reactDocgen: 'react-docgen-typescript',
+            reactDocgenTypescriptOptions: {
+              propFilter: defaultReactDocgenTypescriptPropFilter,
+            },
+            ...typescriptOptions,
+          };
         }
         if (extension === 'features') {
           return {};
@@ -124,6 +173,61 @@ function createManifestOptions() {
       },
     },
   } as Parameters<typeof manifests>[1];
+}
+
+function createLargePropSourceFixtures(tempDir: string) {
+  const typeSources = [
+    {
+      directory: join(tempDir, 'node_modules', '@types', 'react'),
+      packageName: '@types/react',
+      interfaceName: 'HTMLAttributes',
+      propPrefix: 'reactProp',
+    },
+    {
+      directory: join(tempDir, 'node_modules', 'wide-library'),
+      packageName: 'wide-library',
+      interfaceName: 'WideLibraryProps',
+      propPrefix: 'inheritedProp',
+    },
+    {
+      directory: join(tempDir, 'node_modules', 'other-library'),
+      packageName: 'other-library',
+      interfaceName: 'OtherLibraryProps',
+      propPrefix: 'otherProp',
+    },
+  ];
+
+  for (const { directory, packageName, interfaceName, propPrefix } of typeSources) {
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(
+      join(directory, 'package.json'),
+      JSON.stringify({ name: packageName, types: 'index.d.ts' })
+    );
+    writeFileSync(
+      join(directory, 'index.d.ts'),
+      `export interface ${interfaceName} {\n${Array.from(
+        { length: 34 },
+        (_, index) => `  ${propPrefix}${index}: string;`
+      ).join('\n')}${packageName === 'wide-library' ? '\n  options: string[];' : ''}\n}`
+    );
+  }
+
+  writeFileSync(
+    join(tempDir, 'src', 'Select.tsx'),
+    `import type { HTMLAttributes } from 'react';\nimport type { WideLibraryProps } from 'wide-library';\nimport type { OtherLibraryProps } from 'other-library';\n\nexport interface SelectProps extends HTMLAttributes, WideLibraryProps, OtherLibraryProps {}\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
+  );
+  writeFileSync(
+    join(tempDir, 'src', 'Select.stories.tsx'),
+    dedent`
+      import type { Meta } from '@storybook/react-vite';
+      import { Select } from './Select';
+
+      export default {
+        title: 'Example/Button',
+        component: Select,
+      } satisfies Meta<typeof Select>;
+    `
+  );
 }
 
 function createTempProject() {

@@ -196,6 +196,12 @@ export const previewBody = async (base: any, { configDir, presets }: Options) =>
   return getPreviewBodyTemplate(configDir, interpolations);
 };
 
+const defaultReactDocgenTypescriptPropFilter = Object.assign(
+  (prop: { parent?: { fileName: string } }) =>
+    prop.parent ? !/node_modules/.test(prop.parent.fileName) : true,
+  { __storybookDefaultReactDocgenTypescriptPropFilter: true }
+);
+
 export const typescript = () => ({
   check: false,
   // 'react-docgen' faster than `react-docgen-typescript` but produces lower quality results
@@ -203,7 +209,7 @@ export const typescript = () => ({
   reactDocgenTypescriptOptions: {
     shouldExtractLiteralValuesFromEnum: true,
     shouldRemoveUndefinedFromOptional: true,
-    propFilter: (prop: any) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
+    propFilter: defaultReactDocgenTypescriptPropFilter,
     // NOTE: this default cannot be changed
     savePropValueAsString: true,
   },

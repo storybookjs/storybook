@@ -163,14 +163,17 @@ const IO_SOURCE = `
     @Input('publicName') aliased = '';
     @Input({ required: true }) needed!: number;
     @Input({ transform: booleanAttribute }) flag = false;
+    @Input({ transform: (value: string | number) => Number(value) }) amount = 0;
     viaMeta = '';
     metaOut = new EventEmitter<void>();
     size = input<'sm' | 'md'>('sm');
     count = input.required<number>({ alias: 'total' });
     checked = model(false);
+    open = model(false, { alias: 'expanded' });
     @Output() clicked = new EventEmitter<string>();
     @Output('renamed') internal = new EventEmitter<void>();
     toggled = output<boolean>();
+    closed = output<void>({ alias: 'dismissed' });
   }
 `;
 
@@ -183,17 +186,21 @@ const IO_DECLARATION = `
       aliased: string;
       needed: number;
       flag: boolean;
+      amount: number;
       viaMeta: string;
       metaOut: EventEmitter<void>;
       size: import("@angular/core").InputSignal<"sm" | "md">;
       count: import("@angular/core").InputSignal<number>;
       checked: import("@angular/core").ModelSignal<boolean>;
+      open: import("@angular/core").ModelSignal<boolean>;
       clicked: EventEmitter<string>;
       internal: EventEmitter<void>;
       toggled: import("@angular/core").OutputEmitterRef<boolean>;
+      closed: import("@angular/core").OutputEmitterRef<void>;
       static ɵfac: i0.ɵɵFactoryDeclaration<IoComponent, never>;
-      static ɵcmp: i0.ɵɵComponentDeclaration<IoComponent, "my-io", never, { "viaMeta": { "alias": "metaAlias"; "required": false; }; "plain": { "alias": "plain"; "required": false; }; "aliased": { "alias": "publicName"; "required": false; }; "needed": { "alias": "needed"; "required": true; }; "flag": { "alias": "flag"; "required": false; }; "size": { "alias": "size"; "required": false; "isSignal": true; }; "count": { "alias": "total"; "required": true; "isSignal": true; }; "checked": { "alias": "checked"; "required": false; "isSignal": true; }; }, { "metaOut": "metaOut"; "checked": "checkedChange"; "clicked": "clicked"; "internal": "renamed"; "toggled": "toggled"; }, never, never, true, never>;
+      static ɵcmp: i0.ɵɵComponentDeclaration<IoComponent, "my-io", never, { "viaMeta": { "alias": "metaAlias"; "required": false; }; "plain": { "alias": "plain"; "required": false; }; "aliased": { "alias": "publicName"; "required": false; }; "needed": { "alias": "needed"; "required": true; }; "flag": { "alias": "flag"; "required": false; }; "amount": { "alias": "amount"; "required": false; }; "size": { "alias": "size"; "required": false; "isSignal": true; }; "count": { "alias": "total"; "required": true; "isSignal": true; }; "checked": { "alias": "checked"; "required": false; "isSignal": true; }; "open": { "alias": "expanded"; "required": false; "isSignal": true; }; }, { "metaOut": "metaOut"; "checked": "checkedChange"; "open": "expandedChange"; "clicked": "clicked"; "internal": "renamed"; "toggled": "toggled"; "closed": "dismissed"; }, never, never, true, never>;
       static ngAcceptInputType_flag: unknown;
+      static ngAcceptInputType_amount: string | number;
   }
 `;
 
@@ -212,7 +219,9 @@ describe('inputs and outputs read from the compiled maps', () => {
   it('reports every input as analyzing the source would', () => {
     expect(fromDeclaration.inputsClass.map(binding)).toEqual(fromSource.inputsClass.map(binding));
     expect(names(fromDeclaration.inputsClass)).toEqual([
+      'amount',
       'checked',
+      'expanded',
       'flag',
       'metaAlias',
       'needed',
@@ -223,11 +232,17 @@ describe('inputs and outputs read from the compiled maps', () => {
     ]);
   });
 
+  it('types a transform input by what it accepts, from its generated `ngAcceptInputType_` static', () => {
+    expect(byName(fromDeclaration.inputsClass, 'amount').type).toBe('string | number');
+  });
+
   it('reports every output under its public name, a model() under its input name', () => {
     expect(names(fromDeclaration.outputsClass)).toEqual(names(fromSource.outputsClass));
     expect(names(fromDeclaration.outputsClass)).toEqual([
       'checked',
       'clicked',
+      'dismissed',
+      'expanded',
       'metaOut',
       'renamed',
       'toggled',

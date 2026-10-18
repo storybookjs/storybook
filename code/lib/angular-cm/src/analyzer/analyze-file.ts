@@ -54,28 +54,26 @@ export function analyzeSourceFile(
       logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
-    const declared = kind === 'class' ? readComponentDeclaration(ctx, statement) : undefined;
-    if (!declared && sourceFile.isDeclarationFile) {
+    if (kind === 'class' && sourceFile.isDeclarationFile) {
       logger.debug(
         `[angular-cm] ${statement.name.text} left out of docgen: a declaration-file class with no compiled ɵcmp`
       );
       continue;
     }
-    const recordKind = declared ? 'component' : kind;
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = collectClassMembers(ctx, statement, recordKind);
+    const members = collectClassMembers(ctx, statement, kind);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
       ...getJsDocTagsField(ts, statement),
     };
 
-    if (recordKind === 'component' || recordKind === 'directive') {
-      const { selector, standalone } = declared ?? decoratorMetadata(ctx, statement, recordKind);
+    if (kind === 'component' || kind === 'directive') {
+      const { selector, standalone } = componentMetadata(ctx, statement, kind);
       const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
-        type: recordKind,
+        type: kind,
         ...(selector === undefined ? {} : { selector }),
         ...(standalone === undefined ? {} : { standalone }),
         inputsClass: members.inputs,
@@ -84,8 +82,8 @@ export function analyzeSourceFile(
         methodsClass: members.methods,
         ...common,
       };
-      (recordKind === 'component' ? meta.components : meta.directives).push(record);
-    } else if (recordKind === 'pipe') {
+      (kind === 'component' ? meta.components : meta.directives).push(record);
+    } else if (kind === 'pipe') {
       const record: Pipe & typeof common = {
         name,
         ngname: pipeName(ctx, statement) ?? name,
@@ -95,7 +93,7 @@ export function analyzeSourceFile(
         ...common,
       };
       meta.pipes.push(record);
-    } else if (recordKind === 'injectable') {
+    } else if (kind === 'injectable') {
       const record: Injectable & typeof common = {
         name,
         type: 'injectable',
@@ -141,14 +139,18 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
       return kind;
     }
   }
-  return 'class';
+  return readComponentDeclaration(ctx, node) ? 'component' : 'class';
 };
 
-const decoratorMetadata = (
+const componentMetadata = (
   ctx: AnalyzerContext,
   node: tsModule.ClassDeclaration,
   kind: 'component' | 'directive'
 ): ComponentMetadata => {
+  const declared = readComponentDeclaration(ctx, node);
+  if (declared) {
+    return declared;
+  }
   const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
   return {
     selector: metadata && decoratorSelector(ctx, metadata),

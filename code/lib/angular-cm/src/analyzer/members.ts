@@ -3,9 +3,9 @@ import { logger } from 'storybook/internal/node-logger';
 import type * as ts from 'typescript';
 
 import type { Argument, Method, Property } from '../types.ts';
-import { type DeclaredIOEntry, readComponentDeclaration } from './component-declaration.ts';
+import { readComponentDeclaration } from './component-declaration.ts';
 import type { AnalyzerContext } from './context.ts';
-import type { DecoratorInfo } from './decorators.ts';
+import type { DecoratorInfo, MetadataIOEntry } from './decorators.ts';
 import {
   decoratorStringArg,
   getDecorators,
@@ -16,7 +16,12 @@ import { defaultInitializer } from './default-initializer.ts';
 import { analyzeInputTransform, type InputTransformSource } from './input-transform.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { memberName } from './node-text.ts';
-import { buildSignalEntry, parseSignalCall, signalValueTypeFromType } from './signals.ts';
+import {
+  buildDeclaredSignalEntry,
+  buildSignalEntry,
+  declaredSignalKind,
+  parseSignalCall,
+} from './signals.ts';
 
 /**
  * A collected member, paired with the identity Angular itself merges on.
@@ -112,7 +117,8 @@ export function visitClassMembers(
 }
 
 /**
- * Reclassify the fields named in a `@Component`/`@Directive` `inputs`/`outputs` array.
+ * Reclassify the fields named in a `@Component`/`@Directive` `inputs`/`outputs` array, or in the
+ * input and output maps of a compiled `ɵcmp`.
  *
  * Runs after the inheritance merge so metadata naming an inherited field reclassifies it too, and
  * again per base inside that merge so a base's own metadata is not lost on the way down.
@@ -124,107 +130,86 @@ export function applyMetadataInputsOutputs(
 ): void {
   for (const decoratorName of ['Component', 'Directive']) {
     for (const entry of readMetadataInputsOutputs(ctx, classNode, decoratorName)) {
-      const index = members.properties.findIndex(
-        (property) => property.declName === entry.name && !property.isStatic
+      reclassify(
+        members,
+        entry,
+        entry.required === undefined ? {} : { required: entry.required, optional: !entry.required }
       );
-      if (index < 0) {
-        continue;
-      }
-      const [property] = members.properties.splice(index, 1);
-      const renamed = {
-        ...property,
-        value: { ...property.value, name: entry.alias ?? entry.name },
-      };
-      if (entry.bucket === 'inputs') {
-        members.inputs.push({
-          ...renamed,
-          value: {
-            ...renamed.value,
-            ...(entry.required !== undefined
-              ? { required: entry.required, optional: !entry.required }
-              : {}),
-          },
-        });
-      } else {
-        members.outputs.push(renamed);
-      }
     }
   }
   for (const entry of readComponentDeclaration(ctx, classNode)?.inputsOutputs ?? []) {
-    applyDeclaredIO(ctx, members, entry);
+    reclassify(members, entry, {
+      // `@Input()` and `@Input({ required: false })` compile to the same entry, so only `true` tells.
+      ...(entry.required ? { required: true, optional: false } : {}),
+      ...acceptedInputType(ctx, classNode, entry),
+    });
   }
 }
 
-// Mirrors what the source path records for the same member, so a component reads the same from
-// its compiled `.d.ts` as from its source.
-const applyDeclaredIO = (ctx: AnalyzerContext, members: ClassMembers, entry: DeclaredIOEntry) => {
-  const index = members.properties.findIndex(
-    (property) => property.declName === entry.name && !property.isStatic
-  );
-  if (index < 0) {
-    if (entry.bucket === 'outputs') {
-      addModelOutput(members, entry.name);
-    }
-    return;
-  }
-  const [property] = members.properties.splice(index, 1);
-  const signal = signalFields(ctx, property, entry.bucket);
-  const isInput = entry.bucket === 'inputs';
-  const moved: MemberEntry<Property> = {
-    ...property,
-    ...(signal ? { typeSource: signal.typeSource } : {}),
+// Moves the named field into its bucket under its public name. A signal member is already there,
+// because visiting it decided its kind.
+const reclassify = (
+  members: ClassMembers,
+  entry: MetadataIOEntry,
+  inputFields: Partial<Property>
+): void => {
+  const bucket = entry.bucket === 'inputs' ? members.inputs : members.outputs;
+  const isField = (member: MemberEntry<Property>) =>
+    member.declName === entry.name && !member.isStatic;
+  const bind = (member: MemberEntry<Property>): MemberEntry<Property> => ({
+    ...member,
     value: {
-      ...property.value,
+      ...member.value,
       name: entry.alias ?? entry.name,
-      ...signal?.value,
-      ...(isInput && signal ? { required: !!entry.required, optional: false } : {}),
-      ...(isInput && !signal && entry.required ? { required: true, optional: false } : {}),
+      ...(entry.bucket === 'inputs' ? inputFields : {}),
     },
-  };
-  (isInput ? members.inputs : members.outputs).push(moved);
-};
+  });
 
-// A `model()` is in both maps, and its input entry has already taken the field.
-const addModelOutput = (members: ClassMembers, field: string) => {
-  const index = members.inputs.findIndex(
-    (input) => input.declName === field && input.typeSource?.kind === 'signal'
-  );
-  if (index < 0) {
+  const index = members.properties.findIndex(isField);
+  if (index >= 0) {
+    const [property] = members.properties.splice(index, 1);
+    bucket.push(bind(property));
     return;
   }
-  const model = {
-    ...members.inputs[index],
-    typeSource: { kind: 'signal', signalKind: 'model' } as const,
-  };
-  members.inputs[index] = model;
-  members.outputs.push(model);
+  const signal = bucket.find((member) => isField(member) && member.typeSource?.kind === 'signal');
+  // A `model()` publishes its output as `${input}Change`, but it is recorded under the input name.
+  if (
+    !signal ||
+    (signal.typeSource?.kind === 'signal' &&
+      signal.typeSource.signalKind === 'model' &&
+      entry.bucket === 'outputs')
+  ) {
+    return;
+  }
+  const bound = bind(signal);
+  for (const list of [members.inputs, members.outputs]) {
+    const at = list.indexOf(signal);
+    if (at >= 0) {
+      list[at] = bound;
+    }
+  }
 };
 
-// A declaration types a signal member as its `InputSignal<T>`-style wrapper rather than the call.
-const signalFields = (
+// A transform input's write type survives in a declaration file only as a generated static.
+const acceptedInputType = (
   ctx: AnalyzerContext,
-  { declaration }: MemberEntry<Property>,
-  bucket: DeclaredIOEntry['bucket']
-) => {
-  const type = signalValueTypeFromType(
-    ctx,
-    ctx.checker.getTypeAtLocation(declaration),
-    declaration
-  );
-  if (type === undefined) {
-    return undefined;
+  classNode: ts.ClassLikeDeclaration,
+  entry: MetadataIOEntry
+): Partial<Property> => {
+  const { ts } = ctx;
+  if (entry.bucket !== 'inputs') {
+    return {};
   }
-  const { line } = ctx.ts.getLineAndCharacterOfPosition(
-    declaration.getSourceFile(),
-    declaration.getStart()
+  const accepted = classNode.members.find(
+    (member): member is ts.PropertyDeclaration =>
+      ts.isPropertyDeclaration(member) &&
+      isStatic(ctx, member) &&
+      memberName(ts, member.name) === `ngAcceptInputType_${entry.name}`
   );
-  return {
-    value: { type, line: line + 1 },
-    typeSource: {
-      kind: 'signal',
-      signalKind: bucket === 'inputs' ? 'input' : 'output',
-    } as const,
-  };
+  const type = accepted && ctx.checker.getTypeAtLocation(accepted);
+  return type && !(type.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any))
+    ? { type: ctx.types.renderValueType(type, accepted) }
+    : {};
 };
 
 const entryFor = <T>(
@@ -258,20 +243,21 @@ const visitProperty = (
     return;
   }
   const signal = parseSignalCall(ctx, member);
-  if (signal) {
+  const signalKind = signal?.kind ?? declaredSignalKind(ctx, member);
+  if (signalKind) {
     const entry = entryFor(
       ctx,
       member,
       {
-        ...buildSignalEntry(ctx, member, signal),
+        ...(signal ? buildSignalEntry(ctx, member, signal) : buildDeclaredSignalEntry(ctx, member)),
         ...memberApiFields(ctx, member),
       },
-      { kind: 'signal', signalKind: signal.kind }
+      { kind: 'signal', signalKind }
     );
-    if (signal.kind !== 'output') {
+    if (signalKind !== 'output') {
       members.inputs.push(entry);
     }
-    if (signal.kind !== 'input') {
+    if (signalKind !== 'input') {
       // model() lands in BOTH arrays under the same bare name; the extractor keys on that.
       members.outputs.push(entry);
     }

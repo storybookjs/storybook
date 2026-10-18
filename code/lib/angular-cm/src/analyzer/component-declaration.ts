@@ -8,12 +8,8 @@ export interface ComponentMetadata {
   standalone: boolean | undefined;
 }
 
-export interface DeclaredIOEntry extends MetadataIOEntry {
-  signal?: boolean;
-}
-
 export interface ComponentDeclaration extends ComponentMetadata {
-  inputsOutputs: DeclaredIOEntry[];
+  inputsOutputs: MetadataIOEntry[];
 }
 
 // Angular 12-13 emit seven type arguments; Angular 14 introduced standalone as the eighth.
@@ -102,17 +98,17 @@ const booleanArgument = ({ ts }: AnalyzerContext, argument: ts.TypeNode): boolea
 };
 
 // Keyed by class field. An entry is the public name, or since Angular 16 an object type such as
-// `{ alias: 'label'; required: false; isSignal?: true }`.
+// `{ alias: 'label'; required: false }`.
 const ioMapEntries = (
   ctx: AnalyzerContext,
   map: ts.TypeNode,
   bucket: MetadataIOEntry['bucket']
-): DeclaredIOEntry[] => {
+): MetadataIOEntry[] => {
   const { ts } = ctx;
   if (!ts.isTypeLiteralNode(map)) {
     return [];
   }
-  const entries: DeclaredIOEntry[] = [];
+  const entries: MetadataIOEntry[] = [];
   for (const member of map.members) {
     const name = member.name && propertyNameText(ctx, member.name);
     const value = ts.isPropertySignature(member) ? member.type : undefined;
@@ -125,15 +121,11 @@ const ioMapEntries = (
     const required = ts.isTypeLiteralNode(value)
       ? booleanLiteral(ctx, objectTypeMember(ctx, value, 'required'))
       : undefined;
-    const signal = ts.isTypeLiteralNode(value)
-      ? booleanLiteral(ctx, objectTypeMember(ctx, value, 'isSignal'))
-      : undefined;
     entries.push({
       bucket,
       name,
       ...(alias === undefined || alias === name ? {} : { alias }),
       ...(required === undefined ? {} : { required }),
-      ...(signal ? { signal } : {}),
     });
   }
   return entries;

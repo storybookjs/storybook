@@ -81,12 +81,9 @@ function walkBases(
       inheritedSubstitutions,
       baseType
     );
-    // A declaration file records no decorators or signal calls, so a base from one has nothing to
-    // contribute to the IO buckets.
-    if (!declaration.getSourceFile().isDeclarationFile) {
-      mergeBucket(ctx, members, baseMembers, 'inputs');
-      mergeBucket(ctx, members, baseMembers, 'outputs');
-    }
+    // A base from a declaration file has IO only where its compiled `ɵcmp` or a signal type says so.
+    mergeBucket(ctx, members, baseMembers, 'inputs');
+    mergeBucket(ctx, members, baseMembers, 'outputs');
     mergeInto(members.properties, baseMembers.properties, members);
     mergeInto(members.methods, baseMembers.methods, members);
   }

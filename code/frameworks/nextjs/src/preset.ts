@@ -1,14 +1,13 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { findBabelConfigFile, getProjectRoot } from 'storybook/internal/common';
 import { deprecate, logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfigAsync } from '@babel/core';
 
-import { findBabelConfigFile } from './babel/babel-config-file.ts';
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
 import TransformFontImports from './font/babel/index.ts';

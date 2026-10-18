@@ -1,4 +1,4 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { recast, type NodePath, types as t } from 'storybook/internal/babel';
 import {
   collectImportBindings,
   createStoryArgsResolver,
@@ -51,6 +51,11 @@ export function getCodeSnippet(
     imports,
     unresolved,
   };
+}
+
+// Recast defaults `lineTerminator` to `os.EOL`; manifest snippets must print LF on every platform.
+export function printSnippet(node: t.Node): string {
+  return recast.print(node, { lineTerminator: '\n' }).code;
 }
 
 function importedBoundStory(

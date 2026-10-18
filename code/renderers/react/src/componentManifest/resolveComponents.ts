@@ -1,4 +1,3 @@
-import { recast } from 'storybook/internal/babel';
 import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
@@ -9,7 +8,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
-import { getCodeSnippet } from './generateCodeSnippet.ts';
+import { getCodeSnippet, printSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type DocgenEngine,
@@ -181,8 +180,7 @@ export function extractStorySnippets(
         return {
           id: story.id,
           name,
-          // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
-          snippet: recast.print(snippet.node, { lineTerminator: '\n' }).code,
+          snippet: printSnippet(snippet.node),
           description,
           summary,
           ...(warning ? { warning } : {}),

@@ -86,7 +86,8 @@ export function classifyValue(node: t.Node): ValuePlan {
 // A node parsed from the story file reprints as its own source; one this pass built is formatted
 // from the tree instead, so the indentation has to match the snippet it lands in.
 export function printValue(node: t.Node): string {
-  return recast.print(node, { tabWidth: 2 }).code;
+  // Recast defaults `lineTerminator` to `os.EOL`; manifest snippets must print LF on every platform.
+  return recast.print(node, { tabWidth: 2, lineTerminator: '\n' }).code;
 }
 
 export function isFunctionExpression<T extends t.Node>(

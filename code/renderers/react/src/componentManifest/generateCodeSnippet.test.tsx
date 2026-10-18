@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
+import { types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getCodeSnippet } from './generateCodeSnippet.ts';
+import { getCodeSnippet, printSnippet } from './generateCodeSnippet.ts';
 
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
@@ -14,8 +14,7 @@ function generateExample(code: string) {
     (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').node
   );
 
-  // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
-  return recast.print(t.program(snippets), { lineTerminator: '\n' }).code;
+  return printSnippet(t.program(snippets));
 }
 
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
@@ -25,8 +24,7 @@ function generateResolved(code: string) {
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
-      snippet: recast.print(snippet.node, { lineTerminator: '\n' }).code,
+      snippet: printSnippet(snippet.node),
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };

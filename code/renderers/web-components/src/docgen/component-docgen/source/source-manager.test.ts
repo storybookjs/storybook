@@ -525,9 +525,14 @@ describe('SourceManager', () => {
     ).resolves.toMatchObject({ manifestPath: 'shared-tag.js' });
   });
 
-  // Relies on real `fs.watch` delivery. On Windows CI the manager never receives the event and
-  // this times out (daily runs 2325846 and 2330660), while every step before and after the
-  // event is covered by the other tests. Skipped there pending a dedicated watch investigation.
+  // Relies on real `fs.watch` delivery. On Windows CI this times out (runs
+  // https://circleci.com/gh/storybookjs/storybook/2325846 and
+  // https://circleci.com/gh/storybookjs/storybook/2330660), while every step before and after
+  // the event is covered by the other tests. Probable cause, from code reading and a Linux
+  // fs.watch probe but not Windows-verified: Windows reports a new file as `rename` plus
+  // `change`, and the watch layer's per-path debounce keeps the last event, so the file arrives
+  // as `changed` instead of `created` and the roots are never marked stale. Tracked in #36855;
+  // skipped pending a Windows-verified core watcher fix.
   it.skipIf(process.platform === 'win32')(
     'finds a tag defined after an earlier miss once the watcher reports the new file',
     async () => {

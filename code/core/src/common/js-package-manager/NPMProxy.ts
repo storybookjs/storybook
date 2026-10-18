@@ -227,7 +227,7 @@ export class NPMProxy extends JsPackageManager {
               .filter((pattern: string) => pattern.startsWith('!'))
               .map((pattern: string) => `${pattern.slice(1)}/package.json`),
           }
-          // glob returns posix separators while `packageJsonPath` may carry win32 ones
+          // compare in pathe's normalized form; on Windows the two sides may differ in separator or drive-letter casing
         ).some((filePath) => normalize(filePath) === normalize(packageJsonPath))
       );
     });

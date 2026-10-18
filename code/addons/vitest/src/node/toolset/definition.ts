@@ -1,13 +1,19 @@
 import * as v from 'valibot';
 
-import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
+import {
+  storyInputArraySchema,
+  type StoryIndexAccess,
+  type StoryInput,
+} from 'storybook/internal/core-server';
 import {
   defineToolset,
-  type ToolsetTelemetryReport,
+  type ToolsetDefinition,
+  type ToolsetMethod,
   type ToolsetOutcome,
+  type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import { formatTestRun, summarizeTestRun } from './format.ts';
+import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -135,7 +141,19 @@ Use { absoluteStoryPath + exportName } only when you're currently working in a s
   ),
 });
 
-type RunInput = v.InferOutput<typeof runInputSchema>;
+// Inferring this from the schema would make the exported toolset type unnameable in declaration
+// output, because core's valibot types live in a private declaration chunk.
+type RunInput = { stories?: StoryInput[]; a11y: boolean };
+
+export type TestToolset = ToolsetDefinition<
+  'test',
+  {
+    run: ToolsetMethod<
+      v.GenericSchema<{ stories?: StoryInput[]; a11y?: boolean }, RunInput>,
+      ToolsetOutcome<TestRunSuccessData, TestRunFailureData>
+    >;
+  }
+>;
 
 /**
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
@@ -198,11 +216,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'cancelled':
       return true;
     case 'completed':
-      return (
-        data.result.componentTestCount.error > 0 ||
-        (data.a11y && data.result.a11yCount.error > 0) ||
-        data.result.unhandledErrors.length > 0
-      );
+      return Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0);
     case 'no-stories':
       return false;
     default: {
@@ -224,7 +238,11 @@ export type CreateTestToolsetOptions = {
  * Creates the public test API. Each registration owns a queue because addon-vitest supports one
  * live test run at a time.
  */
-export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTestToolsetOptions) {
+export function createTestToolset({
+  channel,
+  storyIndex,
+  a11yEnabled,
+}: CreateTestToolsetOptions): TestToolset {
   const queue = createAsyncQueue();
 
   return defineToolset({
@@ -248,7 +266,7 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };
-            const markdown = formatTestRun(data, ctx);
+            const markdown = formatTestRun(data, ctx, { a11yEnabled });
             const telemetry = runTelemetry(data, input);
             return isFailedRun(data)
               ? { ok: false, data, markdown, telemetry }
@@ -261,5 +279,3 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
     },
   });
 }
-
-export type TestToolset = ReturnType<typeof createTestToolset>;

@@ -3,9 +3,8 @@ import { loadConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
+import { managerApiPackages } from '../helpers/manager-api-packages.ts';
 import type { Fix } from '../types.ts';
-
-const managerApiPackages = ['storybook/manager-api', '@storybook/manager-api'];
 
 export const sidebarFilters: Fix = {
   id: 'sidebar-filters',

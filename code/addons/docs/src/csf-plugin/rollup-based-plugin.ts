@@ -8,7 +8,11 @@ import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants.ts';
 
-export async function transformCsf(code: string, id: string, options: EnrichCsfOptions) {
+export async function transformCsf(
+  code: string,
+  id: string,
+  options: EnrichCsfOptions
+): Promise<ReturnType<typeof formatCsf> | undefined> {
   if (!STORIES_REGEX.test(id)) {
     return;
   }
@@ -17,7 +21,11 @@ export async function transformCsf(code: string, id: string, options: EnrichCsfO
   try {
     const makeTitle = (userTitle: string) => userTitle || 'default';
     const csf = loadCsf(code, { makeTitle }).parse();
-    const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
+    // Built-in enrichment reads each comment before it changes the meta node and only appends story
+    // statements, so it can share `csf`. An `enrichCsf` hook runs after the meta is changed, so it
+    // gets a separate parse.
+    const csfSource =
+      code === sourceCode && !options.enrichCsf ? csf : loadCsf(sourceCode, { makeTitle }).parse();
     await enrichCsf(csf, csfSource, options);
     return formatCsf(csf, { sourceMaps: true, sourceFileName: id }, code);
   } catch (err: unknown) {

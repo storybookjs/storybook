@@ -17,8 +17,8 @@ import path from 'pathe';
 import type { DocgenEngine, ReactDocgenOff } from '../docgen/engine.ts';
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
-import { type DocObj } from './reactDocgen.ts';
-import { type ComponentDocWithExportName } from './reactDocgenTypescript.ts';
+import type { DocObj } from './reactDocgen.ts';
+import type { ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
   type ParsedCsf,
   type ResolvedSubcomponent,

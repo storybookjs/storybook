@@ -13,7 +13,6 @@ import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/inter
 import type { ParserOptions } from 'react-docgen-typescript';
 
 import type { DocgenEngine, ReactDocgenConfig } from '../docgen/engine.ts';
-import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
 import {
   type ComponentDocWithExportName,
   getReactDocgenTypescriptError,
@@ -21,7 +20,7 @@ import {
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
 import type { ComponentRef } from './types.ts';
-import { cachedResolveImport } from './utils.ts';
+import { cachedResolveImport, getImportTag, matchPath } from './utils.ts';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
@@ -210,6 +209,7 @@ export const getComponents = async ({
           }
 
           if (docgenEngine === 'react-docgen') {
+            const { getReactDocgen } = await import('./reactDocgen.ts');
             const reactDocgen = getReactDocgen(path, componentWithPackage);
             return {
               ...componentWithPackage,

@@ -6,7 +6,6 @@ import type { ArgTypes } from 'storybook/internal/csf';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
-import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo.ts';
 import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type { GetArgTypesDataOptions } from './componentManifest/reactDocgen/utils.ts';
 import { getReactDocgenPlan } from './docgen/engine.ts';
@@ -114,6 +113,8 @@ export async function internal_getArgTypesData(
     });
   }
   if (argTypes === 'react-docgen') {
+    const { extractArgTypesFromDocgen } =
+      await import('./componentManifest/reactDocgen/extractReactDocgenInfo.ts');
     return extractArgTypesFromDocgen({ componentFilePath: resolvedFilePath, componentExportName });
   }
   return null;

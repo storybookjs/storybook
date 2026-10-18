@@ -3,11 +3,16 @@ import { readFileSync, statSync } from 'node:fs';
 
 import {
   findTsconfigPath as findTsconfigPathCommon,
+  findTsconfigPathForPath,
+  getTsconfigPathsBaseDir,
   resolveImport,
+  supportedExtensions,
 } from 'storybook/internal/common';
+import { extractJSDocInfo } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
+import * as TsconfigPaths from 'tsconfig-paths';
 
 export const groupBy = <K extends PropertyKey, T>(
   items: T[],
@@ -212,3 +217,36 @@ export const findTsconfigPath = cached(
     name: 'findTsconfigPath',
   }
 );
+
+const getTsConfig = cached(
+  (path: string) => {
+    // `path` may be a source file (export resolution) or a directory (makeFsImporter basedir).
+    const tsconfigPath = findTsconfigPathForPath(path);
+    if (!tsconfigPath) {
+      return { resultType: 'failed' as const, message: "Couldn't find tsconfig.json" };
+    }
+    return TsconfigPaths.loadConfig(tsconfigPath);
+  },
+  { name: 'getTsConfig' }
+);
+
+export function matchPath(id: string, importerPath?: string) {
+  importerPath ??= process.cwd();
+  const tsconfig = getTsConfig(importerPath);
+
+  if (tsconfig.resultType === 'success') {
+    const match = TsconfigPaths.createMatchPath(
+      getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+      tsconfig.paths,
+      ['browser', 'module', 'main']
+    );
+    return match(id, undefined, undefined, supportedExtensions) ?? id;
+  }
+  return id;
+}
+
+export function getImportTag(docgen: { description?: string }) {
+  const jsdocComment = docgen?.description;
+  const tags = jsdocComment ? extractJSDocInfo(jsdocComment).tags : undefined;
+  return tags?.import?.[0];
+}

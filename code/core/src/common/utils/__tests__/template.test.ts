@@ -15,7 +15,6 @@ vi.mock('fs', async () => {
 const HEAD_HTML_CONTENTS = '<script>console.log("custom script!");</script>';
 const BASE_HTML_CONTENTS = '<script>console.log("base script!");</script>';
 
-const BASE_BODY_HTML_CONTENTS = '<div>story contents</div>';
 const BODY_HTML_CONTENTS = '<div>custom body contents</div>';
 
 const BASE_CORE_PKG_DIR = join(import.meta.url, '..', '..', '..', '..', '..');
@@ -55,23 +54,19 @@ describe('server.getPreviewHeadHtml', () => {
 describe('server.getPreviewBodyHtml', () => {
   it('return an empty string when .storybook/preview-body.html does NOT exist', () => {
     vol.fromNestedJSON({
-      [`${BASE_CORE_PKG_DIR}/assets/server/base-preview-body.html`]: BASE_BODY_HTML_CONTENTS,
       config: {},
     });
 
-    expect(getPreviewBodyTemplate('./config')).toEqual(BASE_BODY_HTML_CONTENTS);
+    expect(getPreviewBodyTemplate('./config')).toEqual('');
   });
 
   it('return the contents of the file when .storybook/preview-body.html exists', () => {
     vol.fromNestedJSON({
-      [`${BASE_CORE_PKG_DIR}/assets/server/base-preview-body.html`]: BASE_BODY_HTML_CONTENTS,
       config: {
         'preview-body.html': BODY_HTML_CONTENTS,
       },
     });
 
-    expect(getPreviewBodyTemplate('./config')).toEqual(
-      BODY_HTML_CONTENTS + BASE_BODY_HTML_CONTENTS
-    );
+    expect(getPreviewBodyTemplate('./config')).toEqual(BODY_HTML_CONTENTS);
   });
 });

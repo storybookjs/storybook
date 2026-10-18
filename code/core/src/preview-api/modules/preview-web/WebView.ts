@@ -20,12 +20,143 @@ enum Mode {
   PREPARING_DOCS = 'PREPARING_DOCS',
   ERROR = 'ERROR',
 }
+// Written for addons and tools that read the mode from <body>; our own blocks do not depend on them.
 const classes: Record<Mode, string> = {
   PREPARING_STORY: 'sb-show-preparing-story',
   PREPARING_DOCS: 'sb-show-preparing-docs',
   MAIN: 'sb-show-main',
   NOPREVIEW: 'sb-show-nopreview',
   ERROR: 'sb-show-errordisplay',
+};
+
+type ChromeMode = Exclude<Mode, Mode.MAIN>;
+
+// Storybook's own blocks; only the one of the current mode is in the document.
+export const chromeHtml: Record<ChromeMode, string> = {
+  PREPARING_STORY: `
+    <div class="sb-preparing-story sb-wrapper">
+      <div class="sb-loader"></div>
+    </div>
+  `,
+  PREPARING_DOCS: `
+    <div class="sb-preparing-docs sb-wrapper">
+      <div class="sb-previewBlock">
+        <div class="sb-previewBlock_header">
+          <div class="sb-previewBlock_icon"></div>
+          <div class="sb-previewBlock_icon"></div>
+          <div class="sb-previewBlock_icon"></div>
+          <div class="sb-previewBlock_icon"></div>
+        </div>
+        <div class="sb-previewBlock_body">
+          <div class="sb-loader"></div>
+        </div>
+      </div>
+      <table aria-hidden="true" class="sb-argstableBlock">
+        <thead class="sb-argstableBlock-head">
+          <tr>
+            <th><span>Name</span></th>
+            <th><span>Description</span></th>
+            <th><span>Default</span></th>
+            <th><span>Control </span></th>
+          </tr>
+        </thead>
+        <tbody class="sb-argstableBlock-body">
+          <tr>
+            <td><span>propertyName</span><span title="Required">*</span></td>
+            <td>
+              <div><span>This is a short description</span></div>
+              <div class="sb-argstableBlock-summary">
+                <div><span class="sb-argstableBlock-code">summary</span></div>
+              </div>
+            </td>
+            <td>
+              <div><span class="sb-argstableBlock-code">defaultValue</span></div>
+            </td>
+            <td><button>Set string</button></td>
+          </tr>
+          <tr>
+            <td><span>propertyName</span><span>*</span></td>
+            <td>
+              <div><span>This is a short description</span></div>
+              <div class="sb-argstableBlock-summary">
+                <div><span class="sb-argstableBlock-code">summary</span></div>
+              </div>
+            </td>
+            <td>
+              <div><span class="sb-argstableBlock-code">defaultValue</span></div>
+            </td>
+            <td><button>Set string</button></td>
+          </tr>
+          <tr>
+            <td><span>propertyName</span><span>*</span></td>
+            <td>
+              <div><span>This is a short description</span></div>
+              <div class="sb-argstableBlock-summary">
+                <div><span class="sb-argstableBlock-code">summary</span></div>
+              </div>
+            </td>
+            <td>
+              <div><span class="sb-argstableBlock-code">defaultValue</span></div>
+            </td>
+            <td><button>Set string</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `,
+  NOPREVIEW: `
+    <div class="sb-nopreview sb-wrapper">
+      <div class="sb-nopreview_main">
+        <h1 class="sb-nopreview_heading sb-heading">No Preview</h1>
+        <p>Sorry, but you either have no stories or none are selected somehow.</p>
+        <ul>
+          <li>Please check the Storybook config.</li>
+          <li>Try reloading the page.</li>
+        </ul>
+        <p>
+          If the problem persists, check the browser console, or the terminal you've run Storybook from.
+        </p>
+      </div>
+    </div>
+  `,
+  ERROR: `
+    <div class="sb-errordisplay sb-wrapper">
+      <div class="sb-errordisplay_main">
+        <h1 id="error-message"></h1>
+        <p>
+          The component failed to render properly, likely due to a configuration issue in Storybook.
+          Here are some common causes and how you can address them:
+        </p>
+        <ol>
+          <li>
+            <strong>Missing Context/Providers</strong>: You can use decorators to supply specific
+            contexts or providers, which are sometimes necessary for components to render correctly. For
+            detailed instructions on using decorators, please visit the
+            <a href="https://storybook.js.org/docs/writing-stories/decorators"
+              >Decorators documentation</a
+            >.
+          </li>
+          <li>
+            <strong>Misconfigured Webpack or Vite</strong>: Verify that Storybook picks up all necessary
+            settings for loaders, plugins, and other relevant parameters. You can find step-by-step
+            guides for configuring
+            <a href="https://storybook.js.org/docs/builders/webpack">Webpack</a> or
+            <a href="https://storybook.js.org/docs/builders/vite">Vite</a>
+            with Storybook.
+          </li>
+          <li>
+            <strong>Missing Environment Variables</strong>: Your Storybook may require specific
+            environment variables to function as intended. You can set up custom environment variables
+            as outlined in the
+            <a href="https://storybook.js.org/docs/configure/environment-variables"
+              >Environment Variables documentation</a
+            >.
+          </li>
+        </ol>
+        <pre class="sb-errordisplay_code"><code id="error-stack"></code></pre>
+      </div>
+    </div>
+  `,
 };
 
 const layoutClassMap = {
@@ -39,12 +170,38 @@ const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
 
+const createElement = (html: string) => {
+  const template = document.createElement('template');
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild as HTMLElement;
+};
+
+const createRoot = (id: string) => {
+  const root = document.createElement('div');
+  root.id = id;
+  return root;
+};
+
+// A story may replace the body, which takes our elements out of the document with it.
+const attach = (element: HTMLElement) => {
+  if (!element.isConnected) {
+    document.body.append(element);
+  }
+  return element;
+};
+
 export class WebView implements View<HTMLElement> {
   private currentLayoutClass?: (typeof layoutClassMap)[keyof typeof layoutClassMap] | null;
 
   private testing = false;
 
   private preparingTimeout?: ReturnType<typeof setTimeout>;
+
+  private storyRootElement?: HTMLElement;
+
+  private docsRootElement?: HTMLElement;
+
+  private chrome = new Map<ChromeMode, HTMLElement>();
 
   constructor() {
     // Special code for testing situations
@@ -89,7 +246,9 @@ export class WebView implements View<HTMLElement> {
   }
 
   storyRoot(): HTMLElement {
-    return document.getElementById('storybook-root')!;
+    this.storyRootElement ??=
+      document.getElementById('storybook-root') ?? createRoot('storybook-root');
+    return attach(this.storyRootElement);
   }
 
   prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}) {
@@ -110,7 +269,16 @@ export class WebView implements View<HTMLElement> {
   }
 
   docsRoot(): HTMLElement {
-    return document.getElementById('storybook-docs')!;
+    this.docsRootElement ??=
+      document.getElementById('storybook-docs') ?? createRoot('storybook-docs');
+    return attach(this.docsRootElement);
+  }
+
+  private chromeElement(mode: ChromeMode) {
+    if (!this.chrome.has(mode)) {
+      this.chrome.set(mode, createElement(chromeHtml[mode]));
+    }
+    return this.chrome.get(mode)!;
   }
 
   scrollToAnchor(hash: string) {
@@ -167,6 +335,14 @@ export class WebView implements View<HTMLElement> {
         document.body.classList.remove(classes[otherMode as Mode]);
       }
     });
+    this.chrome.forEach((element, chromeMode) => {
+      if (chromeMode !== mode) {
+        element.remove();
+      }
+    });
+    if (mode !== Mode.MAIN) {
+      attach(this.chromeElement(mode));
+    }
   }
 
   showErrorDisplay({ message = '', stack = '' }) {
@@ -178,8 +354,9 @@ export class WebView implements View<HTMLElement> {
       detail = parts.slice(1).join('\n').replace(/^\n/, '');
     }
 
-    document.getElementById('error-message')!.innerHTML = ansiConverter.toHtml(header);
-    document.getElementById('error-stack')!.innerHTML = ansiConverter.toHtml(detail);
+    const errorDisplay = this.chromeElement(Mode.ERROR);
+    errorDisplay.querySelector('#error-message')!.innerHTML = ansiConverter.toHtml(header);
+    errorDisplay.querySelector('#error-stack')!.innerHTML = ansiConverter.toHtml(detail);
 
     this.showMode(Mode.ERROR);
   }
@@ -191,9 +368,8 @@ export class WebView implements View<HTMLElement> {
 
     this.showMode(Mode.NOPREVIEW);
 
-    // In storyshots this can get called and these two can be null
-    this.storyRoot()?.setAttribute('hidden', 'true');
-    this.docsRoot()?.setAttribute('hidden', 'true');
+    this.storyRoot().setAttribute('hidden', 'true');
+    this.docsRoot().setAttribute('hidden', 'true');
   }
 
   showPreparingStory({ immediate = false } = {}) {

@@ -38,3 +38,62 @@ describe('WebView htmlLang', () => {
     expect(document.documentElement.lang).toBe('en');
   });
 });
+
+describe('WebView in a document whose body a story replaced', () => {
+  let view: WebView;
+
+  const replaceBody = () => {
+    document.body.replaceChildren();
+    document.body.getAttributeNames().forEach((name) => document.body.removeAttribute(name));
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="storybook-root"></div><div id="storybook-docs"></div>';
+    view = new WebView();
+    view.prepareForStory(makeStory());
+    replaceBody();
+  });
+
+  it('shows the error display with its message', () => {
+    view.showErrorDisplay({ message: 'Boom', stack: 'at Story' });
+
+    expect(document.body).toHaveTextContent('Boom');
+    expect(document.body).toHaveTextContent('at Story');
+  });
+
+  it('returns a story root that is in the document', () => {
+    const root = view.prepareForStory(makeStory());
+
+    expect(root).toBe(view.storyRoot());
+    expect(root.isConnected).toBe(true);
+    expect(root).not.toHaveAttribute('hidden');
+  });
+
+  it('returns a docs root that is in the document', () => {
+    const root = view.prepareForDocs();
+
+    expect(root.isConnected).toBe(true);
+    expect(root).not.toHaveAttribute('hidden');
+  });
+
+  it('shows "no preview"', () => {
+    view.showNoPreview();
+
+    expect(document.querySelector('.sb-nopreview')).toBeInTheDocument();
+  });
+
+  it('shows the preparing state', () => {
+    view.showPreparingStory({ immediate: true });
+
+    expect(document.querySelector('.sb-preparing-story')).toBeInTheDocument();
+  });
+
+  it('removes its blocks when the story is shown again', () => {
+    view.showErrorDisplay({ message: 'Boom' });
+    view.showPreparingStory({ immediate: true });
+    view.showMain();
+
+    expect(document.querySelector('.sb-errordisplay')).not.toBeInTheDocument();
+    expect(document.querySelector('.sb-preparing-story')).not.toBeInTheDocument();
+  });
+});

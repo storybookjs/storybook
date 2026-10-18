@@ -12,6 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
+import { normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -226,7 +227,8 @@ export class NPMProxy extends JsPackageManager {
               .filter((pattern: string) => pattern.startsWith('!'))
               .map((pattern: string) => `${pattern.slice(1)}/package.json`),
           }
-        ).includes(packageJsonPath)
+          // glob returns posix separators while `packageJsonPath` may carry win32 ones
+        ).some((filePath) => normalize(filePath) === normalize(packageJsonPath))
       );
     });
 

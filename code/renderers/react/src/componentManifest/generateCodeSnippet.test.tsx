@@ -14,7 +14,8 @@ function generateExample(code: string) {
     (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').node
   );
 
-  return recast.print(t.program(snippets)).code;
+  // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+  return recast.print(t.program(snippets), { lineTerminator: '\n' }).code;
 }
 
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
@@ -24,7 +25,8 @@ function generateResolved(code: string) {
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      snippet: recast.print(snippet.node).code,
+      // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+      snippet: recast.print(snippet.node, { lineTerminator: '\n' }).code,
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };

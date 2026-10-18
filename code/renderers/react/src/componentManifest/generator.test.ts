@@ -19,13 +19,18 @@ vi.mock('storybook/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });
 
-/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
 type ManifestOptions = Parameters<typeof manifests>[1];
 type ManifestEntries = ManifestOptions['manifestEntries'];
 const createManifestOptions = (
   manifestEntries: ManifestEntries,
   options: Partial<ManifestOptions> = {}
-): ManifestOptions => ({ watch: false, manifestEntries, ...options }) as ManifestOptions;
+): ManifestOptions =>
+  ({
+    watch: false,
+    manifestEntries,
+    presets: { apply: async (_extension: string, config?: unknown) => config },
+    ...options,
+  }) as ManifestOptions;
 
 const runManifests = (manifestEntries: ManifestEntries) =>
   manifests(undefined, createManifestOptions(manifestEntries));
@@ -1363,4 +1368,23 @@ test('should extract story description and summary from JSDoc comments', async (
       },
     ]
   `);
+});
+
+test('documents no props when reactDocgen is false', async () => {
+  const presets = {
+    apply: async (extension: string, config?: unknown) =>
+      extension === 'typescript' ? { reactDocgen: false } : config,
+  } as NonNullable<ManifestOptions['presets']>;
+
+  const result = await runManifestsWithOptions([indexJson.entries['example-button--primary']], {
+    presets,
+  });
+  const button = result?.components?.components?.['example-button'] as any;
+
+  expect(result?.components?.meta?.docgen).toBe('none');
+  expect(button?.reactDocgen).toBeUndefined();
+  expect(button?.error).toEqual({
+    name: 'Docgen disabled',
+    message: 'Props are not documented because `typescript.reactDocgen` is `false`.',
+  });
 });

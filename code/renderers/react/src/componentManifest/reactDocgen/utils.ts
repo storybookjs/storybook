@@ -11,12 +11,9 @@ import type {
 } from 'react-docgen';
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
-
 export type GetArgTypesDataOptions = {
   componentFilePath: string;
   componentExportName?: string;
-  reactDocgen?: ReactDocgenConfig;
   reactDocgenTypescriptOptions?: ReactDocgenTypescriptOptions;
 };
 

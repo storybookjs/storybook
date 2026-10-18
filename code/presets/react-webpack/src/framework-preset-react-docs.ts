@@ -1,81 +1,48 @@
 import { fileURLToPath } from 'node:url';
 
-import { deprecate } from 'storybook/internal/node-logger';
+import type { Configuration, RuleSetRule } from 'webpack';
 
-import type { Configuration } from 'webpack';
-
+import type { ReactDocgenPlan } from '../../../renderers/react/src/docgen/engine.ts';
 import type { StorybookConfig } from './types.ts';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
   options
 ): Promise<Configuration> => {
-  const features = await options.presets.apply('features', {});
-  if (features?.docgenServer) {
-    // The docgen service owns React metadata extraction for this mode. Do not inject
-    // `Component.__docgenInfo` into the preview bundle, otherwise preview argTypes would include
-    // docgen data that the UI is now responsible for merging from the service.
+  const { builder } = await options.presets.apply<ReactDocgenPlan>('internal_reactDocgenPlan');
+
+  if (!builder.reactDocgen && !builder.reactDocgenTypescript) {
     return config;
   }
 
-  const typescriptOptions = await options.presets.apply('typescript', {} as any);
-  const debug = options.loglevel === 'debug';
-
-  const { reactDocgen, reactDocgenTypescriptOptions } = typescriptOptions || {};
-
-  if (typeof reactDocgen !== 'string') {
-    return config;
-  }
-
-  deprecate(
-    `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
-      `It runs because \`features.docgenServer\` is off. Server-side docgen needs the \`typescript\` package: install it and remove any \`docgenServer: false\` from your \`.storybook/main.ts\`.`
-  );
-
-  if (reactDocgen !== 'react-docgen-typescript') {
-    return {
-      ...config,
-      module: {
-        ...(config.module ?? {}),
-        rules: [
-          ...(config.module?.rules ?? []),
-          {
-            test: /\.(cjs|mjs|tsx?|jsx?)$/,
-            enforce: 'pre',
-            loader: fileURLToPath(
-              import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
-            ),
-            options: {
-              debug,
-            },
-            exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
-          },
-        ],
-      },
-    };
-  }
-
-  const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
-
-  return {
-    ...config,
-    module: {
-      ...(config.module ?? {}),
-      rules: [
-        ...(config.module?.rules ?? []),
+  const rules: RuleSetRule[] = builder.reactDocgen
+    ? [
         {
-          test: /\.(cjs|mjs|jsx?)$/,
+          test: builder.reactDocgen === 'all' ? /\.(cjs|mjs|tsx?|jsx?)$/ : /\.(cjs|mjs|jsx?)$/,
           enforce: 'pre',
           loader: fileURLToPath(
             import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
           ),
           options: {
-            debug,
+            debug: options.loglevel === 'debug',
           },
           exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
         },
-      ],
-    },
+      ]
+    : [];
+
+  const module = { ...config.module, rules: [...(config.module?.rules ?? []), ...rules] };
+
+  if (!builder.reactDocgenTypescript) {
+    return { ...config, module };
+  }
+
+  const { reactDocgenTypescriptOptions } = await options.presets.apply('typescript', {} as any);
+  const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
+
+  return {
+    ...config,
+    module,
     plugins: [
       ...(config.plugins || []),
       new ReactDocgenTypeScriptPlugin({

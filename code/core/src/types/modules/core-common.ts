@@ -483,7 +483,8 @@ export interface ComponentsManifest {
       | 'angular-component-meta'
       | 'compodoc'
       | 'custom-elements-manifest'
-      | 'svelte2tsx';
+      | 'svelte2tsx'
+      | 'none';
     durationMs: number;
   };
 }

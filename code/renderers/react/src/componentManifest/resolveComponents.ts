@@ -9,13 +9,9 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
+import type { DocgenEngine } from '../docgen/engine.ts';
 import { getCodeSnippet } from './generateCodeSnippet.ts';
-import {
-  type ComponentRef,
-  type DocgenEngine,
-  type TypescriptOptions,
-  getComponents,
-} from './getComponentImports.ts';
+import { type ComponentRef, type TypescriptOptions, getComponents } from './getComponentImports.ts';
 import { findExactComponentMatch } from './subcomponents.ts';
 import { cachedReadTextFileSync } from './utils.ts';
 

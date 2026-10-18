@@ -14,6 +14,7 @@ import type {
 
 import path from 'pathe';
 
+import type { DocgenEngine, ReactDocgenOff } from '../docgen/engine.ts';
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
 import { type DocObj } from './reactDocgen.ts';
@@ -24,8 +25,6 @@ import {
   extractStorySnippets,
 } from './resolveComponents.ts';
 import { cachedFindUp, cachedReadTextFileSync } from './utils.ts';
-
-export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 // One instance per process, so the module-resolution cache is shared; each build opens its own.
 const openStoryReferences = createStoryReferenceResolver();
@@ -132,6 +131,17 @@ function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
   };
 }
 
+const DOCGEN_OFF_ERRORS: Record<ReactDocgenOff, { name: string; message: string }> = {
+  disabled: {
+    name: 'Docgen disabled',
+    message: 'Props are not documented because `typescript.reactDocgen` is `false`.',
+  },
+  'react-docgen-missing': {
+    name: 'react-docgen is not installed',
+    message: 'Install `react-docgen` as a devDependency to document the props of this component.',
+  },
+};
+
 function getComponentDocgenData(component: ComponentRef | undefined, docgenEngine: DocgenEngine) {
   let reactDocgen;
   let reactDocgenTypescript;
@@ -149,12 +159,14 @@ function getComponentDocgenData(component: ComponentRef | undefined, docgenEngin
     reactDocgenTypescript = component?.reactDocgenTypescript;
     docgenDescription = reactDocgenTypescript?.description;
     docgenError = component?.reactDocgenTypescriptError;
-  } else {
+  } else if (docgenEngine === 'react-component-meta') {
     reactComponentMeta = component?.reactComponentMeta
       ? relativizeComponentMetaPaths(component.reactComponentMeta)
       : undefined;
     docgenDescription = reactComponentMeta?.description;
     docgenJsDocTags = component?.componentJsDocTags;
+  } else {
+    docgenError = DOCGEN_OFF_ERRORS[docgenEngine];
   }
 
   return {

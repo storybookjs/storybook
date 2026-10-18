@@ -1,152 +1,58 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { TypescriptOptions } from '@storybook/core-webpack';
 import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plugin';
 
-import type { Configuration } from 'webpack';
-
+import type { ReactDocgenPlan } from '../../../renderers/react/src/docgen/engine.ts';
 import * as preset from './framework-preset-react-docs.ts';
 
-vi.mock('./requirer', () => ({
-  requirer: (resolver: any, path: string) => path,
-}));
+const runWebpackFinal = (builder: ReactDocgenPlan['builder']) =>
+  preset.webpackFinal?.({ plugins: [] }, {
+    presets: {
+      apply: async (name: string) => {
+        if (name === 'internal_reactDocgenPlan') {
+          return { builder };
+        }
+        if (name === 'typescript') {
+          return { reactDocgenTypescriptOptions: {} };
+        }
+        return undefined;
+      },
+    },
+  } as any);
 
-describe('framework-preset-react-docgen', () => {
-  const presetsListWithDocs = [{ name: '@storybook/addon-docs', options: {}, preset: null }];
+const loaderRule = (test: RegExp) => ({
+  test,
+  enforce: 'pre',
+  loader: expect.stringContaining('react-docgen-loader'),
+  options: { debug: false },
+  exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
+});
 
-  // mock requirer
-
-  describe('react-docgen', () => {
-    it('should return the webpack config with the extra webpack loader', async () => {
-      const webpackConfig: Configuration = {};
-
-      const config = await preset.webpackFinal?.(webpackConfig, {
-        presets: {
-          apply: async (name: string) => {
-            if (name === 'typescript') {
-              return {
-                check: false,
-                reactDocgen: 'react-docgen',
-              } as Partial<TypescriptOptions>;
-            }
-
-            if (name === 'babel') {
-              return {
-                plugins: [],
-                presets: [],
-              };
-            }
-
-            return undefined;
-          },
-        },
-        presetsList: presetsListWithDocs,
-      } as any);
-
-      expect(config).toEqual({
-        module: {
-          rules: [
-            {
-              exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
-              loader: expect.stringContaining('@storybook/preset-react-webpack'),
-              options: { babelOptions: { plugins: [], presets: [] }, debug: false },
-              test: /\.(cjs|mjs|tsx?|jsx?)$/,
-            },
-          ],
-        },
-      });
+describe('framework-preset-react-docs', () => {
+  it('runs the react-docgen loader on every file', async () => {
+    expect(await runWebpackFinal({ reactDocgen: 'all', reactDocgenTypescript: false })).toEqual({
+      plugins: [],
+      module: { rules: [loaderRule(/\.(cjs|mjs|tsx?|jsx?)$/)] },
     });
   });
 
-  describe('react-docgen-typescript', () => {
-    it('should return the webpack config with the extra plugin', async () => {
-      const webpackConfig = {
-        plugins: [],
-      };
-
-      const config = await preset.webpackFinal?.(webpackConfig, {
-        presets: {
-          // @ts-expect-error (not strict)
-          apply: async (name: string) => {
-            if (name === 'typescript') {
-              return {
-                check: false,
-                reactDocgen: 'react-docgen-typescript',
-              } as Partial<TypescriptOptions>;
-            }
-
-            if (name === 'babel') {
-              return {
-                plugins: [],
-                presets: [],
-              };
-            }
-
-            return undefined;
-          },
-        },
-        presetsList: presetsListWithDocs,
-      });
-
-      expect(config).toEqual({
-        module: {
-          rules: [
-            {
-              exclude: /(\.(stories|story)\.(js|jsx|ts|tsx))|(node_modules)/,
-              loader: expect.stringContaining('@storybook/preset-react-webpack'),
-              options: { babelOptions: { plugins: [], presets: [] }, debug: false },
-              test: /\.(cjs|mjs|jsx?)$/,
-            },
-          ],
-        },
-        plugins: [expect.any(ReactDocgenTypescriptPlugin)],
-      });
+  it('adds react-docgen-typescript and runs the loader on JavaScript files', async () => {
+    expect(await runWebpackFinal({ reactDocgen: 'js', reactDocgenTypescript: true })).toEqual({
+      plugins: [expect.any(ReactDocgenTypescriptPlugin)],
+      module: { rules: [loaderRule(/\.(cjs|mjs|jsx?)$/)] },
     });
   });
 
-  describe('no docgen', () => {
-    it('should not add any extra plugins', async () => {
-      const webpackConfig = {
-        plugins: [],
-      };
-
-      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, {
-        presets: {
-          // @ts-expect-error (Converted from ts-ignore)
-          apply: async () =>
-            ({
-              check: false,
-              reactDocgen: false,
-            }) as Partial<TypescriptOptions>,
-        },
-        presetsList: presetsListWithDocs,
-      });
-
-      expect(outputWebpackconfig).toEqual({ plugins: [] });
+  it('adds react-docgen-typescript without the loader when react-docgen is missing', async () => {
+    expect(await runWebpackFinal({ reactDocgen: false, reactDocgenTypescript: true })).toEqual({
+      plugins: [expect.any(ReactDocgenTypescriptPlugin)],
+      module: { rules: [] },
     });
   });
 
-  describe('no docs or controls addon used', () => {
-    it('should not add any extra plugins', async () => {
-      const webpackConfig = {
-        plugins: [],
-      };
-
-      const outputWebpackconfig = await preset.webpackFinal?.(webpackConfig, {
-        presets: {
-          // @ts-expect-error (Converted from ts-ignore)
-          apply: async () =>
-            ({
-              check: false,
-              reactDocgen: 'react-docgen-typescript',
-            }) as Partial<TypescriptOptions>,
-        },
-        presetsList: [],
-      });
-
-      expect(outputWebpackconfig).toEqual({
-        plugins: [],
-      });
+  it('leaves the config alone when builder docgen is off', async () => {
+    expect(await runWebpackFinal({ reactDocgen: false, reactDocgenTypescript: false })).toEqual({
+      plugins: [],
     });
   });
 });

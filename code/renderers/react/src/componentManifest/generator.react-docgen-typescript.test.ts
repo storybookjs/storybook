@@ -15,6 +15,9 @@ import { invalidateCache } from './utils.ts';
 const repoRoot = process.cwd();
 type ManifestComponentWithReactDocgenTypescript = {
   error?: { name: string; message: string };
+  description?: string;
+  summary?: string;
+  jsDocTags?: Record<string, string[]>;
   reactDocgenTypescript?: ComponentDocWithExportName;
 };
 
@@ -42,6 +45,12 @@ test(
       expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
         required: false,
       });
+      // react-docgen-typescript strips @tags from description; they must still reach the manifest.
+      expect(button?.summary).toBe('For user interactions that do not navigate to another route.');
+      expect(button?.jsDocTags?.summary).toEqual([
+        'For user interactions that do not navigate to another route.',
+      ]);
+      expect(button?.description).toBe('Primary UI component for user interaction');
     } finally {
       cwdSpy.mockRestore();
       invalidateCache();
@@ -154,7 +163,11 @@ function createTempProject() {
         primary?: boolean;
       }
 
-      /** Primary UI component for user interaction */
+      /**
+       * Primary UI component for user interaction
+       *
+       * @summary For user interactions that do not navigate to another route.
+       */
       export const Button = ({ label, primary = false }: ButtonProps) => (
         <button data-primary={primary}>{label}</button>
       );

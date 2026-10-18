@@ -132,6 +132,20 @@ function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
   };
 }
 
+/**
+ * react-docgen-typescript stores JSDoc tags as `Record<string, string>` on `ComponentDoc.tags`
+ * and strips them from `description`. The components manifest expects `JsDocTagMap`
+ * (`Record<string, string[]>`), matching the shape used by react-component-meta.
+ */
+function reactDocgenTypescriptTagsToJsDocTagMap(
+  tags: Record<string, string> | undefined
+): Record<string, string[]> | undefined {
+  if (!tags || Object.keys(tags).length === 0) {
+    return undefined;
+  }
+  return Object.fromEntries(Object.entries(tags).map(([key, value]) => [key, [value]]));
+}
+
 function getComponentDocgenData(component: ComponentRef | undefined, docgenEngine: DocgenEngine) {
   let reactDocgen;
   let reactDocgenTypescript;
@@ -148,6 +162,8 @@ function getComponentDocgenData(component: ComponentRef | undefined, docgenEngin
   } else if (docgenEngine === 'react-docgen-typescript') {
     reactDocgenTypescript = component?.reactDocgenTypescript;
     docgenDescription = reactDocgenTypescript?.description;
+    // Pass parsed tags so @summary / @import reach the manifest (they are not in description).
+    docgenJsDocTags = reactDocgenTypescriptTagsToJsDocTagMap(reactDocgenTypescript?.tags);
     docgenError = component?.reactDocgenTypescriptError;
   } else {
     reactComponentMeta = component?.reactComponentMeta

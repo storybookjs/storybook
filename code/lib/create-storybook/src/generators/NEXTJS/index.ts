@@ -19,18 +19,6 @@ const NEXT_CONFIG_FILES = [
   'next.config.mts',
 ];
 
-const BABEL_CONFIG_FILES = [
-  '.babelrc',
-  '.babelrc.json',
-  '.babelrc.js',
-  '.babelrc.mjs',
-  '.babelrc.cjs',
-  'babel.config.js',
-  'babel.config.json',
-  'babel.config.mjs',
-  'babel.config.cjs',
-];
-
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.NEXTJS,
@@ -47,40 +35,27 @@ export default defineGeneratorModule({
       }
 
       const nextConfig = await readFile(nextConfigFile, 'utf-8');
-      const hasCustomWebpackConfig = nextConfig.includes('webpack');
-      const babelConfigFile = findFilesUp(BABEL_CONFIG_FILES, process.cwd())[0];
-
-      if (!hasCustomWebpackConfig && !babelConfigFile) {
+      if (!nextConfig.includes('webpack')) {
         return SupportedBuilder.VITE;
-      } else {
-        // prompt to ask the user which framework to select
-        // based on the framework, either webpack5 or vite will be selected
-        // We want to tell users in this special case, that due to their custom webpack config or babel config
-        // they should select wisely, because the nextjs-vite framework may not be compatible with their setup
-        const reason =
-          hasCustomWebpackConfig && babelConfigFile
-            ? 'custom webpack config and babel config'
-            : hasCustomWebpackConfig
-              ? 'custom webpack config'
-              : 'custom babel config';
-        logger.info(dedent`
-          Storybook has two Next.js builder options: Webpack 5 and Vite.
-          
-          We generally recommend nextjs-vite, which is much faster, more modern, and supports our latest testing features.
-
-          However, your project has a ${reason}, which is not supported by nextjs-vite, so please be aware of that if you choose that option.
-        `);
-        return prompt.select(
-          {
-            message: 'Which framework would you like to use?',
-            options: [
-              { label: '@storybook/nextjs-vite', value: SupportedBuilder.VITE },
-              { label: '@storybook/nextjs (Webpack)', value: SupportedBuilder.WEBPACK5 },
-            ],
-          },
-          createPromptCancelOptions(telemetryService, 'nextjs-builder')
-        );
       }
+
+      logger.info(dedent`
+        Storybook has two Next.js builder options: Webpack 5 and Vite.
+
+        We generally recommend nextjs-vite, which is much faster, more modern, and supports our latest testing features.
+
+        However, your project has a custom webpack config, which is not supported by nextjs-vite, so please be aware of that if you choose that option.
+      `);
+      return prompt.select(
+        {
+          message: 'Which framework would you like to use?',
+          options: [
+            { label: '@storybook/nextjs-vite', value: SupportedBuilder.VITE },
+            { label: '@storybook/nextjs (Webpack)', value: SupportedBuilder.WEBPACK5 },
+          ],
+        },
+        createPromptCancelOptions(telemetryService, 'nextjs-builder')
+      );
     },
   },
   configure: async (packageManager, context) => {

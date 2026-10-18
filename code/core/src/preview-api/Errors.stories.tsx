@@ -4,7 +4,7 @@ import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
 import type { DecoratorFunction } from '../csf/index.ts';
-import { createBlock } from './modules/preview-web/WebView.ts';
+import { createBlock } from './modules/preview-web/blocks.ts';
 
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,

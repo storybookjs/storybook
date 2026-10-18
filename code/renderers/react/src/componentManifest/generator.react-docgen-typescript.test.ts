@@ -97,6 +97,39 @@ test(
 );
 
 test(
+  'keeps filtering large declaration files with the default propFilter',
+  { concurrent: false },
+  async () => {
+    invalidateCache();
+    invalidateParser();
+
+    const tempDir = createTempProject();
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+    createLargePropSourceFixtures(tempDir);
+
+    try {
+      const result = await manifests(
+        undefined,
+        createManifestOptions({}, './src/Select.stories.tsx')
+      );
+      const props = (
+        result?.components?.components?.['example-button'] as
+          | ManifestComponentWithReactDocgenTypescript
+          | undefined
+      )?.reactDocgenTypescript?.props;
+
+      expect(props?.localProp).toBeDefined();
+      expect(props?.localBulkProp0).toBeUndefined();
+    } finally {
+      cwdSpy.mockRestore();
+      invalidateCache();
+      invalidateParser();
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
+);
+
+test(
   'allows selected large prop sources through the component manifest',
   { concurrent: false },
   async () => {
@@ -123,6 +156,11 @@ test(
 
       expect(select?.reactDocgenTypescript?.props.options).toBeDefined();
       expect(select?.reactDocgenTypescript?.props.inheritedProp0).toBeDefined();
+      expect(
+        Object.keys(select?.reactDocgenTypescript?.props ?? {}).filter((name) =>
+          name.startsWith('inheritedProp')
+        )
+      ).toHaveLength(34);
       expect(select?.reactDocgenTypescript?.props.otherProp0).toBeUndefined();
       expect(select?.reactDocgenTypescript?.props.reactProp0).toBeUndefined();
     } finally {
@@ -213,8 +251,15 @@ function createLargePropSourceFixtures(tempDir: string) {
   }
 
   writeFileSync(
+    join(tempDir, 'src', 'large-local.d.ts'),
+    `export interface LocalLargeProps {\n${Array.from(
+      { length: 34 },
+      (_, index) => `  localBulkProp${index}: string;`
+    ).join('\n')}\n}`
+  );
+  writeFileSync(
     join(tempDir, 'src', 'Select.tsx'),
-    `import type { HTMLAttributes } from 'react';\nimport type { WideLibraryProps } from 'wide-library';\nimport type { OtherLibraryProps } from 'other-library';\n\nexport interface SelectProps extends HTMLAttributes, WideLibraryProps, OtherLibraryProps {}\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
+    `import type { HTMLAttributes } from 'react';\nimport type { WideLibraryProps } from 'wide-library';\nimport type { OtherLibraryProps } from 'other-library';\nimport type { LocalLargeProps } from './large-local';\n\nexport interface SelectProps extends HTMLAttributes, WideLibraryProps, OtherLibraryProps, LocalLargeProps {\n  localProp: string;\n}\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
   );
   writeFileSync(
     join(tempDir, 'src', 'Select.stories.tsx'),

@@ -21,9 +21,14 @@ import {
   type CsfValue,
   type ESTree as E,
   type ESTreeNode as Node,
+  appendToList,
+  argumentList,
   readConfig as csfReadConfig,
+  insertAfterImports,
+  objectList,
   parseExpression,
-  printExpression,
+  staticKey,
+  textOf,
   walk,
   writeConfig,
 } from '../../code/core/src/csf-tools/index.ts';
@@ -104,22 +109,6 @@ async function pathExists(path: string) {
   }
 }
 
-const propKey = (p: E.ObjectPropertyKind) => {
-  if (p.type !== 'Property') {
-    return null;
-  }
-
-  if (p.key.type === 'Identifier') {
-    return p.key.name;
-  }
-
-  if (p.key.type === 'Literal' && typeof p.key.value === 'string') {
-    return p.key.value;
-  }
-
-  return null;
-};
-
 const makeObjectSource = (path: string[], value: string) =>
   path.reduceRight((inner, key) => `{ ${key}: ${inner} }`, value);
 
@@ -129,24 +118,20 @@ const updateObjectExpression = (
   value: string,
   existing: E.ObjectExpression
 ) => {
-  const { edits } = config._editorSource;
+  const editor = config._editor;
   const [first, ...rest] = path;
-  const existingField = existing.properties.find((p) => propKey(p) === first) as
+  const existingField = existing.properties.find((p) => staticKey(p) === first) as
     | E.ObjectProperty
     | undefined;
 
   if (!existingField) {
-    const member = `${first}: ${makeObjectSource(rest, value)}`;
-    const last = existing.properties.at(-1);
-    if (last) {
-      edits.appendLeft(last.end, `, ${member}`);
-    } else {
-      edits.overwrite(existing.start, existing.end, `{ ${member} }`);
-    }
+    appendToList(editor, objectList(editor, existing), [
+      `${first}: ${makeObjectSource(rest, value)}`,
+    ]);
   } else if (existingField.value.type === 'ObjectExpression' && rest.length > 0) {
     updateObjectExpression(config, rest, value, existingField.value);
   } else {
-    edits.overwrite(
+    editor.edits.overwrite(
       existingField.value.start,
       existingField.value.end,
       makeObjectSource(rest, value)
@@ -202,17 +187,13 @@ function setPluginParam(
   if (!valueNode) {
     throw new Error(`Unexpected value ${JSON.stringify(paramValue)}`);
   }
-  const value = printExpression(valueNode);
+  const value = textOf(valueNode);
 
   if (paramPos === call.arguments.length) {
-    const lastArgument = call.arguments.at(-1);
-    const argument = makeObjectSource(paramPath, value);
-    if (lastArgument) {
-      config._editorSource.edits.appendLeft(lastArgument.end, `, ${argument}`);
-    } else {
-      config._editorSource.edits.appendLeft(call.end - 1, argument);
-    }
-    config._commit();
+    appendToList(config._editor, argumentList(config._editor, call), [
+      makeObjectSource(paramPath, value),
+    ]);
+    config._editor.commit();
     return;
   }
 
@@ -224,7 +205,7 @@ function setPluginParam(
   }
 
   updateObjectExpression(config, paramPath, value, param);
-  config._commit();
+  config._editor.commit();
 }
 
 const logger = console;
@@ -1067,15 +1048,8 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     "sb.mock(import('uuid'));",
   ].join('\n');
 
-  const lastImport = previewConfig._program.body.findLast(
-    (node) => node.type === 'ImportDeclaration'
-  );
-  if (lastImport) {
-    previewConfig._editorSource.edits.appendLeft(lastImport.end, `\n${mockStatements}`);
-  } else {
-    previewConfig._editorSource.edits.prepend(`${mockStatements}\n`);
-  }
-  previewConfig._commit();
+  insertAfterImports(previewConfig._editor, mockStatements);
+  previewConfig._editor.commit();
 
   await writeConfig(previewConfig);
 };

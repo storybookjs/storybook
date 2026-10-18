@@ -19,7 +19,7 @@ export interface SelectionStore {
 
   selection?: Selection;
 
-  // The URL of the preview that shows the current selection, if the store keeps one.
+  /** The URL of the preview that shows the current selection, if the store keeps one. */
   url?: string;
 
   setSelection(selection: Selection): void;

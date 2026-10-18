@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
 import '@testing-library/jest-dom/vitest';
+import { readFileSync } from 'node:fs';
+
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { WebView } from './WebView.ts';
@@ -59,6 +61,18 @@ describe('WebView in a document whose body a story replaced', () => {
 
     expect(document.body).toHaveTextContent('Boom');
     expect(document.body).toHaveTextContent('at Story');
+  });
+
+  it('shows the error display without the body classes', () => {
+    document.head.innerHTML = readFileSync(
+      `${import.meta.dirname}/../../../../assets/server/base-preview-head.html`,
+      'utf8'
+    );
+
+    view.showErrorDisplay({ message: 'Boom' });
+    document.body.removeAttribute('class');
+
+    expect(document.querySelector('.sb-errordisplay')).toBeVisible();
   });
 
   it('returns a story root that is in the document', () => {

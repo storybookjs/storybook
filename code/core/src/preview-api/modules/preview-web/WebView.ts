@@ -20,7 +20,7 @@ enum Mode {
   PREPARING_DOCS = 'PREPARING_DOCS',
   ERROR = 'ERROR',
 }
-// Written for addons and tools that read the mode from <body>; our own blocks do not depend on them.
+// Addons, Chromatic and the preview's CSS read these from <body>.
 const classes: Record<Mode, string> = {
   PREPARING_STORY: 'sb-show-preparing-story',
   PREPARING_DOCS: 'sb-show-preparing-docs',
@@ -29,10 +29,10 @@ const classes: Record<Mode, string> = {
   ERROR: 'sb-show-errordisplay',
 };
 
-type ChromeMode = Exclude<Mode, Mode.MAIN>;
+type BlockMode = Exclude<Mode, Mode.MAIN>;
 
 // Storybook's own blocks; only the one of the current mode is in the document.
-export const chromeHtml: Record<ChromeMode, string> = {
+const blockHtml: Record<BlockMode, string> = {
   PREPARING_STORY: `
     <div class="sb-preparing-story sb-wrapper">
       <div class="sb-loader"></div>
@@ -170,9 +170,9 @@ const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
 
-const createElement = (html: string) => {
+export const createBlock = (mode: BlockMode) => {
   const template = document.createElement('template');
-  template.innerHTML = html.trim();
+  template.innerHTML = blockHtml[mode].trim();
   return template.content.firstElementChild as HTMLElement;
 };
 
@@ -183,9 +183,9 @@ const createRoot = (id: string) => {
 };
 
 // A story may replace the body, which takes our elements out of the document with it.
-const attach = (element: HTMLElement) => {
+const attach = (element: HTMLElement, position: 'prepend' | 'append' = 'append') => {
   if (!element.isConnected) {
-    document.body.append(element);
+    document.body[position](element);
   }
   return element;
 };
@@ -201,7 +201,7 @@ export class WebView implements View<HTMLElement> {
 
   private docsRootElement?: HTMLElement;
 
-  private chrome = new Map<ChromeMode, HTMLElement>();
+  private blocks = new Map<BlockMode, HTMLElement>();
 
   constructor() {
     // Special code for testing situations
@@ -274,11 +274,11 @@ export class WebView implements View<HTMLElement> {
     return attach(this.docsRootElement);
   }
 
-  private chromeElement(mode: ChromeMode) {
-    if (!this.chrome.has(mode)) {
-      this.chrome.set(mode, createElement(chromeHtml[mode]));
+  private block(mode: BlockMode) {
+    if (!this.blocks.has(mode)) {
+      this.blocks.set(mode, createBlock(mode));
     }
-    return this.chrome.get(mode)!;
+    return this.blocks.get(mode)!;
   }
 
   scrollToAnchor(hash: string) {
@@ -335,13 +335,13 @@ export class WebView implements View<HTMLElement> {
         document.body.classList.remove(classes[otherMode as Mode]);
       }
     });
-    this.chrome.forEach((element, chromeMode) => {
-      if (chromeMode !== mode) {
+    this.blocks.forEach((element, blockMode) => {
+      if (blockMode !== mode) {
         element.remove();
       }
     });
     if (mode !== Mode.MAIN) {
-      attach(this.chromeElement(mode));
+      attach(this.block(mode), 'prepend');
     }
   }
 
@@ -354,7 +354,7 @@ export class WebView implements View<HTMLElement> {
       detail = parts.slice(1).join('\n').replace(/^\n/, '');
     }
 
-    const errorDisplay = this.chromeElement(Mode.ERROR);
+    const errorDisplay = this.block(Mode.ERROR);
     errorDisplay.querySelector('#error-message')!.innerHTML = ansiConverter.toHtml(header);
     errorDisplay.querySelector('#error-stack')!.innerHTML = ansiConverter.toHtml(detail);
 

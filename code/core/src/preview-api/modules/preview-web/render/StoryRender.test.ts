@@ -609,7 +609,7 @@ describe('StoryRender', () => {
       });
     });
 
-    it('reloads at the URL of the selected story, not at a location the story changed', async () => {
+    it('replaces the URL with the URL of the selected story before reloading', async () => {
       const [playGate] = createGate();
       const story = buildStory({ playFunction: vi.fn(() => playGate) as any });
       const replaceState = vi.spyOn(window.history, 'replaceState').mockImplementation(() => {});

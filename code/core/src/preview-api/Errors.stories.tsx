@@ -4,7 +4,7 @@ import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
 import type { DecoratorFunction } from '../csf/index.ts';
-import { chromeHtml } from './modules/preview-web/WebView.ts';
+import { createBlock } from './modules/preview-web/WebView.ts';
 
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
@@ -23,9 +23,7 @@ const StyleDecorator: DecoratorFunction = (Story) => (
 );
 
 const Component = ({ mode, header, detail }: any) => {
-  const template = document.createElement('template');
-  template.innerHTML = chromeHtml[mode as keyof typeof chromeHtml];
-  const element = template.content.firstElementChild!;
+  const element = createBlock(mode);
   const errorMessage = element.querySelector('#error-message');
   const errorStack = element.querySelector('#error-stack');
 

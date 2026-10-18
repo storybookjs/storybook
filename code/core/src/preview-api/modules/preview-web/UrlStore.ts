@@ -131,7 +131,6 @@ export class UrlStore implements SelectionStore {
   setQueryParams(queryParams: Record<PropertyKey, unknown>) {
     const query = getQueryString({ extraParams: queryParams });
     const { hash = '' } = document.location;
-    this.url = `${this.pathname}${query}${hash}`;
-    history.replaceState({}, '', this.url);
+    history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
   }
 }

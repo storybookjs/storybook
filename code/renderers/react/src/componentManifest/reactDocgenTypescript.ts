@@ -26,11 +26,7 @@ const loadTypeScript = () =>
 const loadReactDocgenTypescript = () =>
   (reactDocgenTypescriptPromise ??= import('react-docgen-typescript'));
 
-/**
- * Auto-detect bulk props contributed by a single non-user source file and filter them out. The
- * source allowlist provides an explicit way to retain a large library API without disabling the
- * heuristic for other sources.
- */
+/** Auto-detect and filter bulk props contributed by a single non-user declaration source. */
 const LARGE_NON_USER_SOURCE_THRESHOLD = 30;
 
 const getPropSource = (prop: PropItem): string | undefined =>
@@ -53,6 +49,7 @@ const getLargeNonUserPropSources = (props: Record<string, PropItem>): Set<string
   return largeNonUserSources;
 };
 
+/** Check whether a source path matches an allowlisted package name or path suffix. */
 const isLargePropSourceAllowlisted = (source: string, allowlist: string[]) => {
   const normalizedSource = `/${source.replaceAll('\\', '/')}`;
   return allowlist.some((entry) => {
@@ -239,23 +236,22 @@ async function getParser(
     previousProgramsByConfigKey.set(configKey, program);
 
     const propFilter = userOptions?.propFilter;
+    const canAllowLargeSources =
+      largePropSourceAllowlist.length > 0 &&
+      typeof propFilter === 'function' &&
+      '__storybookDefaultReactDocgenTypescriptPropFilter' in propFilter;
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
       ...userOptions,
-      ...(largePropSourceAllowlist.length > 0
+      ...(canAllowLargeSources
         ? {
             propFilter: (prop, component) => {
               const source = getPropSource(prop);
-              if (
-                source &&
-                isLargePropSourceAllowlisted(source, largePropSourceAllowlist) &&
-                typeof propFilter === 'function' &&
-                '__storybookDefaultReactDocgenTypescriptPropFilter' in propFilter
-              ) {
+              if (source && isLargePropSourceAllowlisted(source, largePropSourceAllowlist)) {
                 return true;
               }
-              return typeof propFilter === 'function' ? propFilter(prop, component) : true;
+              return propFilter(prop, component);
             },
           }
         : {}),
@@ -367,7 +363,7 @@ export const parseWithReactDocgenTypescript = asyncCache(
         // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
         // export map to get the public export name. Falls back to displayName when not aliased.
         exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
-        // Filter bulk props only from known React, DOM, and CSS-in-JS sources.
+        // Filter bulk props from large node_modules or declaration sources unless allowlisted.
         props: Object.fromEntries(
           Object.entries(doc.props).filter(([, prop]) => {
             const source = getPropSource(prop);

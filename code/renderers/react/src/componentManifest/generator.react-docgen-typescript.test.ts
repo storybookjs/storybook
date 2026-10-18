@@ -9,7 +9,11 @@ import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { manifests } from './generator.ts';
-import { type ComponentDocWithExportName, invalidateParser } from './reactDocgenTypescript.ts';
+import {
+  type ComponentDocWithExportName,
+  invalidateParser,
+  parseWithReactDocgenTypescript,
+} from './reactDocgenTypescript.ts';
 import { invalidateCache } from './utils.ts';
 
 const repoRoot = process.cwd();
@@ -42,6 +46,45 @@ test(
       expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
         required: false,
       });
+    } finally {
+      cwdSpy.mockRestore();
+      invalidateCache();
+      invalidateParser();
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  }
+);
+
+test(
+  'keeps imported props accepted by the configured propFilter',
+  { concurrent: false },
+  async () => {
+    invalidateCache();
+    invalidateParser();
+
+    const tempDir = createTempProject();
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(tempDir);
+    const libraryDir = join(tempDir, 'node_modules', 'wide-library');
+    mkdirSync(libraryDir, { recursive: true });
+    writeFileSync(
+      join(libraryDir, 'index.d.ts'),
+      `export interface SelectProps {\n${[
+        '  options: string[];',
+        ...Array.from({ length: 34 }, (_, index) => `  inheritedProp${index}: string;`),
+      ].join('\n')}\n}`
+    );
+    const componentPath = join(tempDir, 'src', 'Select.tsx');
+    writeFileSync(
+      componentPath,
+      `import type { SelectProps } from 'wide-library';\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
+    );
+
+    try {
+      const [select] = await parseWithReactDocgenTypescript(componentPath, {
+        propFilter: () => true,
+      });
+
+      expect(select?.props.options).toBeDefined();
     } finally {
       cwdSpy.mockRestore();
       invalidateCache();

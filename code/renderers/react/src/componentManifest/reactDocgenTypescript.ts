@@ -338,7 +338,12 @@ export const parseWithReactDocgenTypescript = asyncCache(
         props: Object.fromEntries(
           Object.entries(doc.props).filter(([, prop]) => {
             const source = getPropSource(prop);
-            return !source || !largeNonUserSources.has(source);
+            return (
+              !source ||
+              !largeNonUserSources.has(source) ||
+              (typeof userOptions?.propFilter === 'function' &&
+                userOptions.propFilter(prop, { name: doc.displayName }))
+            );
           })
         ),
       };

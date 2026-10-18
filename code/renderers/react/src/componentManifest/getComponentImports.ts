@@ -198,16 +198,23 @@ export const getComponents = async ({
                 message: `File: ${path}\n${message}`,
               };
             }
-            const importOverride = reactDocgenTypescript
-              ? getImportTag(reactDocgenTypescript)
-              : undefined;
+            let reactDocgenTypescriptDoc: ComponentDocWithExportName | undefined;
+            let componentJsDocTags = reactDocgenTypescript?.componentJsDocTags;
+            if (reactDocgenTypescript) {
+              const { componentJsDocTags: _tags, ...doc } = reactDocgenTypescript;
+              reactDocgenTypescriptDoc = doc;
+              componentJsDocTags = _tags;
+            }
 
             return {
               ...componentWithPackage,
               path,
-              ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+              ...(reactDocgenTypescriptDoc
+                ? { reactDocgenTypescript: reactDocgenTypescriptDoc }
+                : {}),
               ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-              importOverride,
+              ...(componentJsDocTags ? { componentJsDocTags } : {}),
+              importOverride: componentJsDocTags?.import?.[0]?.trim(),
             };
           }
 

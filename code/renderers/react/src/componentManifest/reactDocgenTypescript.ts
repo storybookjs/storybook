@@ -8,11 +8,20 @@ import {
 } from 'react-docgen-typescript';
 import type ts from 'typescript';
 
+import {
+  extractComponentJsDocInfo,
+  resolveExportedSymbol,
+} from 'storybook/internal/component-meta';
+import type { JsDocTagMap } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import { asyncCache, cached, findTsconfigPath } from './utils.ts';
 
-export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
+export type ComponentDocWithExportName = ComponentDoc & {
+  exportName: string;
+  /** Canonical JSDoc tags from the TS export symbol (one value per occurrence). */
+  componentJsDocTags?: JsDocTagMap;
+};
 
 type TypeScriptRuntime = typeof import('typescript');
 type ReactDocgenTypescriptRuntime = typeof import('react-docgen-typescript');
@@ -329,11 +338,21 @@ export const parseWithReactDocgenTypescript = asyncCache(
 
     return docs.map((doc) => {
       const largeNonUserSources = getLargeNonUserPropSources(doc.props);
+      // displayName is the resolved symbol name; map it to the public export name when aliased.
+      const exportName = exportNameMap.get(doc.displayName) ?? doc.displayName;
+      // react-docgen-typescript collapses repeated tags into one newline-joined string on
+      // `doc.tags`. Read from the TS symbol instead so JsDocTagMap stays one value per occurrence.
+      const symbol = sourceFile
+        ? resolveExportedSymbol(typescript, checker, sourceFile, exportName)
+        : undefined;
+      const componentJsDocTags = symbol
+        ? extractComponentJsDocInfo(typescript, checker, symbol).jsDocTags
+        : undefined;
+
       return {
         ...doc,
-        // Use name-based lookup: displayName is the resolved symbol name, so look it up in the
-        // export map to get the public export name. Falls back to displayName when not aliased.
-        exportName: exportNameMap.get(doc.displayName) ?? doc.displayName,
+        exportName,
+        componentJsDocTags,
         // Filter out bulk props from non-user sources (React built-ins, DOM, CSS-in-JS system props)
         props: Object.fromEntries(
           Object.entries(doc.props).filter(([, prop]) => {

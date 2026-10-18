@@ -84,7 +84,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     public channel: Channel,
     public store: StoryStore<TRenderer>,
     private renderToScreen: RenderToCanvas<TRenderer>,
-    private callbacks: RenderContextCallbacks<TRenderer> & { showStoryDuringRender?: () => void },
+    private callbacks: RenderContextCallbacks<TRenderer> & {
+      showStoryDuringRender?: () => void;
+      storyUrl?: () => string | undefined;
+    },
     public id: StoryId,
     public viewMode: StoryContext<TRenderer>['viewMode'],
     public renderOptions: StoryRenderOptions = { autoplay: true, forceInitialArgs: false },
@@ -506,6 +509,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate
     // for the next render. Since the reload can take a brief moment to happen, we want to stop
     // further rendering by awaiting a never-resolving promise (which is destroyed on reload).
+    // The story may have changed `location`, so reload at the URL of the selected story.
+    const storyUrl = this.callbacks.storyUrl?.();
+    if (storyUrl) {
+      window.history.replaceState({}, '', storyUrl);
+    }
     window?.location?.reload?.();
     await new Promise(() => {});
   }

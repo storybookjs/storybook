@@ -49,14 +49,16 @@ const getQueryString = ({
   return `?${queryStr}`;
 };
 
-export const setPath = (selection?: Selection) => {
+export const setPath = (selection?: Selection, pathname = document.location.pathname) => {
   if (!selection) {
-    return;
+    return undefined;
   }
   const query = getQueryString({ selection });
   const { hash = '' } = document.location;
   document.title = selection.storyId;
-  history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
+  const url = `${pathname}${query}${hash}`;
+  history.replaceState({}, '', url);
+  return url;
 };
 
 type ValueOf<T> = T[keyof T];
@@ -112,18 +114,24 @@ export class UrlStore implements SelectionStore {
 
   selection?: Selection;
 
+  url?: string;
+
+  // A story may change `location`; the preview stays at the path it was loaded from.
+  private pathname = document?.location.pathname;
+
   constructor() {
     this.selectionSpecifier = getSelectionSpecifierFromPath();
   }
 
   setSelection(selection: Selection) {
     this.selection = selection;
-    setPath(this.selection);
+    this.url = setPath(this.selection, this.pathname);
   }
 
   setQueryParams(queryParams: Record<PropertyKey, unknown>) {
     const query = getQueryString({ extraParams: queryParams });
     const { hash = '' } = document.location;
-    history.replaceState({}, '', `${document.location.pathname}${query}${hash}`);
+    this.url = `${this.pathname}${query}${hash}`;
+    history.replaceState({}, '', this.url);
   }
 }

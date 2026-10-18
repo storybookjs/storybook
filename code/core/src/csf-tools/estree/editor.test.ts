@@ -23,7 +23,6 @@ import {
   prependStatement,
   prependToList,
   printMembers,
-  printValue,
   reindent,
   removeFromList,
   removeStatement,
@@ -772,6 +771,15 @@ describe('line endings', () => {
     const editor = new SourceEditor('const a = 1;\r\nconst b = 2;\nconst c = 3;\n');
     expect(editor.toString()).toBe('const a = 1;\r\nconst b = 2;\r\nconst c = 3;\r\n');
   });
+
+  it.each([
+    ['a CRLF file with CRLF', 'a;\r\n', 'a;\r\nc;\r\nd;\r\n'],
+    ['an LF file with LF', 'a;\n', 'a;\nc;\nd;\n'],
+  ])('writes inserted CRLF text into %s', (_, code, expected) => {
+    const editor = new SourceEditor(code);
+    appendStatement(editor, 'c;\r\nd;');
+    expect(editor.toString()).toBe(expected);
+  });
 });
 
 describe('multi-line members', () => {
@@ -907,13 +915,6 @@ describe('printMembers', () => {
     expect(printMembers(['fn: () => {\n  return `a\nb`;\n}'], '  ')).toBe(
       '{\n  fn: () => {\n    return `a\nb`;\n  },\n}'
     );
-  });
-});
-
-describe('printValue', () => {
-  it('prints a function loaded from a CRLF file with LF line endings', () => {
-    const fn = Object.assign(() => 1, { toString: () => '() => {\r\n  return 1;\r\n}' });
-    expect(printValue(fn, "'")).toBe('() => {\n  return 1;\n}');
   });
 });
 

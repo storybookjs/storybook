@@ -1227,8 +1227,8 @@ export const formatCsf = (
 };
 
 /**
- * Print the file with its pending edits. Untouched code is preserved byte for byte, and a file
- * whose first line ends in CRLF is printed with CRLF line endings.
+ * Print the file with its pending edits. Untouched code is kept as written, except that every line
+ * ends like the first one: CRLF when that is CRLF, `\n` otherwise.
  */
 export const printCsf = (csf: CsfFile): PrintResultType => {
   const code = csf._editor.toString();

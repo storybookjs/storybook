@@ -79,12 +79,15 @@ const parseWith = (code: string, fileName: string | undefined, lang: Lang): Pars
 export const normalizeLineEndings = (code: string) => code.replace(/\r\n?/g, '\n');
 
 /**
- * Give `\n` code the line endings of the code it was normalized from: CRLF when the first line
- * break of `original` is one, as Prettier's `endOfLine: 'auto'` decides.
+ * Give code one line ending, the one of `original`'s first line break: CRLF when that is one, as
+ * Prettier's `endOfLine: 'auto'` decides, and `\n` otherwise.
  */
 export const restoreLineEndings = (code: string, original: string) => {
   const lineBreak = original.indexOf('\n');
-  return lineBreak > 0 && original[lineBreak - 1] === '\r' ? code.replaceAll('\n', '\r\n') : code;
+  const normalized = normalizeLineEndings(code);
+  return lineBreak > 0 && original[lineBreak - 1] === '\r'
+    ? normalized.replaceAll('\n', '\r\n')
+    : normalized;
 };
 
 /**

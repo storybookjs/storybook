@@ -45,11 +45,11 @@ export type InputSourceMap =
     };
 
 /**
- * Source text plus its OXC AST. Edits accumulate in `edits`, so untouched code stays
- * byte-identical; `commit()` applies them, parses the result again and calls `onCommit`, so whoever
- * derived state from the old tree derives it again. Nodes of an earlier parse index code that is
- * gone: `source()` and the editing functions throw for them. Line endings are normalized to `\n`,
- * so `code`, node offsets and `edits` use `\n`; `toString()` restores CRLF for a CRLF file.
+ * Source text plus its OXC AST. Edits accumulate in `edits`, so untouched code stays as written;
+ * `commit()` applies them, parses the result again and calls `onCommit`, so whoever derived state
+ * from the old tree derives it again. Nodes of an earlier parse index code that is gone: `source()`
+ * and the editing functions throw for them. Line endings are normalized to `\n`, so `code`, node
+ * offsets and `edits` use `\n`; `toString()` ends every line like the first, inserted text too.
  */
 export class SourceEditor {
   _module: ParsedModule;
@@ -302,8 +302,7 @@ export const printValue = (
     return 'null';
   }
   if (typeof value === 'function') {
-    // A function prints as the text of the file it was loaded from, which may use CRLF.
-    return normalizeLineEndings(value.toString());
+    return value.toString();
   }
   if (typeof value === 'string') {
     return printString(value, quote);

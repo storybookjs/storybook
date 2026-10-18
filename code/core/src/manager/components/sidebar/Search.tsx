@@ -53,7 +53,6 @@ const options = {
 const SearchBar = styled.div({
   display: 'flex',
   flexDirection: 'row',
-  columnGap: 6,
 });
 
 const ScreenReaderLabel = styled.label({
@@ -156,7 +155,14 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
+// Fill the remaining sidebar height. The virtualized tree inside scrolls itself.
+const FocusContainer = styled.div({
+  outline: 0,
+  flex: '1 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export type SearchProps = {
   children: SearchChildrenFn;
@@ -179,6 +185,8 @@ export const Search = React.memo<SearchProps>(function Search({
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
+  // The explorer's focus target (also focusableUIElements.storyListMenu).
+  const menuRef = useRef<HTMLDivElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
   const [allComponents, showAllComponents] = useState(false);
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
@@ -196,12 +204,13 @@ export const Search = React.memo<SearchProps>(function Search({
 
       for (const datasetValue of datasetValues) {
         const storyStatuses = allStatuses?.[datasetValue.id];
-        const mostCriticalStatusValue = storyStatuses
-          ? getMostCriticalStatusValue(
-              Object.values(storyStatuses)
-                .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                .map((status) => status.value)
-            )
+        const ownStatusValues = Object.values(storyStatuses ?? {})
+          .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+          .map((status) => status.value);
+        // A story can carry review statuses only. Such a story has no status of its own, so use
+        // the group status instead of the 'unknown' placeholder value.
+        const mostCriticalStatusValue = ownStatusValues.length
+          ? getMostCriticalStatusValue(ownStatusValues)
           : null;
 
         const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
@@ -476,12 +485,19 @@ export const Search = React.memo<SearchProps>(function Search({
           },
           onBlur: () => setPlaceholder('Find components'),
           onKeyDown: (e) => {
+            if (e.key !== 'Escape') {
+              return;
+            }
+            // Escape never leaves the field. With a query it clears the query (see stateReducer).
+            // With an empty field it hands focus to the explorer: the stateReducer then returns
+            // to the tree view, and the next Escape, from the explorer, reaches the ancestors.
+            // The mobile menu drawer closes on any Escape that reaches it, so a press from the
+            // field would close it on the first press. A plain blur would not do either: the
+            // drawer's focus scope returns the focus to the field, which reopens the results.
+            e.stopPropagation();
             // @ts-expect-error (non strict)
-            if (e.key === 'Escape' && inputValue.length === 0) {
-              // When pressing escape while the input is empty, blur the input
-              // The stateReducer will handle returning to the tree view
-              // @ts-expect-error (non strict)
-              inputRef.current.blur();
+            if (inputValue.length === 0) {
+              menuRef.current?.focus();
             }
           },
         });
@@ -534,7 +550,8 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
             </SearchBar>
             {!isOpen && belowSearchContent}
-            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
+            {/* Programmatically focusable (focusableUIElements.storyListMenu). */}
+            <FocusContainer tabIndex={-1} id="storybook-explorer-menu" ref={menuRef}>
               {children({
                 query: input,
                 results,

@@ -507,6 +507,7 @@ export const benchmarkPackages = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      npm.installPinnedVersion(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

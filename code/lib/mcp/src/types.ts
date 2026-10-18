@@ -1,4 +1,3 @@
-import type { ComponentDoc } from 'react-docgen-typescript';
 import type {
   AllManifests,
   ComponentManifest,
@@ -146,9 +145,6 @@ export type {
   Story,
   SubcomponentManifest,
 } from 'storybook/internal/toolsets-docs';
-
-/** Component documentation from react-docgen-typescript, extended with export name. */
-export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /**
  * Open-service payload contracts (the "core format") that Storybook's

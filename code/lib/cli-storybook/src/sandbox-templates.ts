@@ -287,7 +287,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
+      extraDevDependencies: ['prop-types', 'react-docgen@^8.0.2'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,

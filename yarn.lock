@@ -10604,8 +10604,6 @@ __metadata:
     "@tmcp/adapter-valibot": "npm:^0.1.5"
     "@tmcp/transport-http": "npm:^0.8.5"
     "@tmcp/transport-stdio": "npm:^0.4.3"
-    react-docgen: "npm:^8.0.2"
-    react-docgen-typescript: "npm:^2.4.0"
     srvx: "npm:^0.8.16"
     storybook: "workspace:*"
     tinyexec: "npm:^1.0.2"
@@ -10767,9 +10765,12 @@ __metadata:
     webpack: "npm:5"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
+    react-docgen:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10852,11 +10853,14 @@ __metadata:
     vite: "npm:^7.0.4"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    react-docgen:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10914,6 +10918,7 @@ __metadata:
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
@@ -10921,6 +10926,8 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    react-docgen:
       optional: true
     typescript:
       optional: true
@@ -30710,7 +30717,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-docgen-typescript@npm:^2.2.2, react-docgen-typescript@npm:^2.4.0":
+"react-docgen-typescript@npm:^2.2.2":
   version: 2.4.0
   resolution: "react-docgen-typescript@npm:2.4.0"
   peerDependencies:

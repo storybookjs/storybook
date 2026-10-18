@@ -10,6 +10,7 @@ import {
   isNode,
   isStringLiteral,
   isValidIdentifier,
+  derivedFrom,
   moduleOf,
   normalizeLineEndings,
   outerSpan,
@@ -47,9 +48,10 @@ export type InputSourceMap =
 /**
  * Source text plus its OXC AST. Edits accumulate in `edits`, so untouched code stays as written;
  * `commit()` applies them, parses the result again and calls `onCommit`, so whoever derived state
- * from the old tree derives it again. Nodes of an earlier parse index code that is gone: `source()`
- * and the editing functions throw for them. Line endings are normalized to `\n`, so `code`, node
- * offsets and `edits` use `\n`; `toString()` ends every line like the first, inserted text too.
+ * from the old tree derives it again. Nodes and lists of an earlier parse index code that is gone:
+ * `source()` and the editing functions throw for them. Line endings are normalized to `\n`, so
+ * `code`, node offsets and `edits` use `\n`; `toString()` ends every line like the first, inserted
+ * text too.
  */
 export class SourceEditor {
   _module: ParsedModule;
@@ -133,12 +135,13 @@ export class SourceEditor {
     return sourceOf(this.code, node);
   }
 
-  /** Throw for a node of another parse, such as one from before a commit. */
-  assertCurrent(node: Span) {
-    const module = moduleOf(node);
+  /** Throw for a node or list of another parse, such as one from before a commit. */
+  assertCurrent(value: object) {
+    const module = moduleOf(value);
     if (module && module !== this._module) {
+      const what = 'type' in value ? `${value.type} node` : 'list';
       throw new Error(
-        `Cannot edit a ${(node as Node).type} node of another parse: nodes are stale after \`commit()\`, look them up again`
+        `Cannot edit a ${what} of another parse: stale after \`commit()\`, or from \`parseExpression\`/\`get()\`; use \`textOf\` for those`
       );
     }
   }
@@ -429,6 +432,9 @@ export interface List {
   padding: string;
 }
 
+// A list indexes the code of the parse it was read from, so it goes stale with its nodes.
+const listOf = (editor: SourceEditor, list: List) => derivedFrom(list, editor._module);
+
 /** The `{ … }` of an import or export with at least one named specifier. */
 export const specifierList = (
   editor: SourceEditor,
@@ -440,12 +446,12 @@ export const specifierList = (
     (specifier) => specifier.type === 'ImportSpecifier' || specifier.type === 'ExportSpecifier'
   );
   const afterLast = nextTokenStart(editor, items.at(-1)!.end);
-  return {
+  return listOf(editor, {
     open: previousTokenEnd(editor, items[0].start),
     close: code[afterLast] === ',' ? nextTokenStart(editor, afterLast + 1) : afterLast,
     items,
     padding: ' ',
-  };
+  });
 };
 
 export const objectList = (
@@ -453,7 +459,12 @@ export const objectList = (
   object: E.ObjectExpression | E.ObjectPattern
 ): List => {
   editor.assertCurrent(object);
-  return { open: object.start + 1, close: object.end - 1, items: object.properties, padding: ' ' };
+  return listOf(editor, {
+    open: object.start + 1,
+    close: object.end - 1,
+    items: object.properties,
+    padding: ' ',
+  });
 };
 
 // A hole (`[a, , b]`) is an empty item right before the comma that writes it.
@@ -476,7 +487,7 @@ export const arrayList = (editor: SourceEditor, array: E.ArrayExpression): List 
     cursor = separatorAfter(editor, item) ?? item.end;
     return item;
   });
-  return { open, close, items, padding: '' };
+  return listOf(editor, { open, close, items, padding: '' });
 };
 
 // An argument's item spans the parentheses around it.
@@ -486,18 +497,19 @@ export const argumentList = (editor: SourceEditor, call: E.CallExpression): List
   if (call.optional && !call.typeArguments) {
     open = nextTokenStart(editor, open + '?.'.length);
   }
-  return { open: open + 1, close: call.end - 1, items: call.arguments.map(outerSpan), padding: '' };
+  const items = call.arguments.map(outerSpan);
+  return listOf(editor, { open: open + 1, close: call.end - 1, items, padding: '' });
 };
 
 /** The declarators of a declaration, from its keyword to its last declarator. */
 export const declaratorList = (editor: SourceEditor, declaration: E.VariableDeclaration): List => {
   editor.assertCurrent(declaration);
-  return {
+  return listOf(editor, {
     open: previousTokenEnd(editor, declaration.declarations[0].start),
     close: declaration.declarations.at(-1)!.end,
     items: declaration.declarations,
     padding: ' ',
-  };
+  });
 };
 
 // Position right after the comma that follows an item, if it has one.
@@ -633,6 +645,7 @@ const itemTextWith = (
  * comments that trail the item on its line move above it, so a comma can follow the text.
  */
 export const itemText = (editor: SourceEditor, list: List, item: Span) => {
+  editor.assertCurrent(list);
   editor.assertCurrent(item);
   return itemTextWith(editor, list, list.items.indexOf(item), (start) =>
     dedentSource(editor, start, item.end, lineIndent(editor.code, item.start))
@@ -652,6 +665,7 @@ const inline = (editor: SourceEditor, list: List, texts: string[]) => {
 };
 
 export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
+  editor.assertCurrent(list);
   const { code, edits } = editor;
   const { items, padding } = list;
   if (items.length === 0) {
@@ -699,6 +713,7 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
 };
 
 export const prependToList = (editor: SourceEditor, list: List, texts: string[]) => {
+  editor.assertCurrent(list);
   const { code, edits } = editor;
   const [first] = list.items;
   if (!first) {
@@ -718,6 +733,7 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[])
 
 /** Remove items with their separators and the comments that lead and trail them from a list. */
 export const removeFromList = (editor: SourceEditor, list: List, removedItems: readonly Span[]) => {
+  editor.assertCurrent(list);
   removedItems.forEach((item) => editor.assertCurrent(item));
   const { code, edits } = editor;
   const { items } = list;

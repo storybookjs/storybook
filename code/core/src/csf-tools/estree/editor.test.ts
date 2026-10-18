@@ -125,6 +125,15 @@ describe('commit', () => {
     expect(editor.toString()).toBe("import { a } from 'a';\n");
   });
 
+  it('throws for a list read before a commit', () => {
+    const editor = new SourceEditor('f(a);\n');
+    const call = (editor.program.body[0] as E.ExpressionStatement).expression as E.CallExpression;
+    const stale = argumentList(editor, call);
+    appendStatement(editor, 'g();');
+    editor.commit();
+    expect(() => appendToList(editor, stale, ['b'])).toThrow('Cannot edit a list of another parse');
+  });
+
   it('derives the story exports of a CsfFile again', () => {
     const csf = parse('export default {};\nexport const A = {};\n');
     appendStatement(csf._editor, 'export const B = {};');

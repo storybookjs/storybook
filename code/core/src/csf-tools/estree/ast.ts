@@ -337,6 +337,12 @@ const nodeModules = new WeakMap<object, ParsedModule>();
 /** The parse a node of `parsePrintable` or `expressionFromSource` came from. */
 export const moduleOf = (node: object): ParsedModule | undefined => nodeModules.get(node);
 
+/** Mark `value` as derived from the nodes of `module`, so `moduleOf` finds that parse for it. */
+export const derivedFrom = <T extends object>(value: T, module: ParsedModule): T => {
+  nodeModules.set(value, module);
+  return value;
+};
+
 const outerSpans = new WeakMap<object, Span>();
 
 /** The span of a node with the parentheses written around it. */

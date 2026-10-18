@@ -19,6 +19,15 @@ vi.mock('node:module', () => ({
   }),
 }));
 
+// The `node:module` mock above would break these modules' own imports.
+vi.mock('storybook/internal/common', () => ({
+  findBabelConfigFile: () => undefined,
+}));
+
+vi.mock('storybook/internal/node-logger', () => ({
+  once: { warn: vi.fn() },
+}));
+
 vi.mock('next/dist/build/load-jsconfig.js', () => ({
   get default() {
     return loadJsConfigModule.defaultExport;

@@ -3,7 +3,7 @@
 import {
   type ESTreeNode as Node,
   textOf,
-  expressionFromSource,
+  parseExpression,
   staticKey,
   parseModule,
   reindent,
@@ -27,7 +27,7 @@ export const createArgExternalizer =
     const value = evaluateNode(node, enums);
     return value === EVAL_FAILED
       ? undefined
-      : expressionFromSource(printExpressionValue(value, new Set()));
+      : parseExpression(printExpressionValue(value, new Set()));
   };
 
 /**

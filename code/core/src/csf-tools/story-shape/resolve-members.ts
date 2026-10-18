@@ -3,7 +3,7 @@
 import {
   type E,
   type Node,
-  expressionFromSource,
+  parseExpression,
   isStringLiteral,
   placeableTextOf,
   staticKey,
@@ -655,9 +655,7 @@ const mergedAnnotations = (
 
 // The spreads point at the original nodes, so each still resolves in the scope it was written in.
 const spreadPair = (from: Node, over: Node): E.ObjectExpression => {
-  const merged = expressionFromSource(
-    `{ ...${placeableTextOf(from)}, ...${placeableTextOf(over)} }`
-  );
+  const merged = parseExpression(`{ ...${placeableTextOf(from)}, ...${placeableTextOf(over)} }`);
   const object = unwrapExpression(merged) as E.ObjectExpression;
   (object.properties[0] as E.SpreadElement).argument = from as E.Expression;
   (object.properties[1] as E.SpreadElement).argument = over as E.Expression;

@@ -1,4 +1,4 @@
-import { printValue } from '../../../csf-tools/estree/editor.ts';
+import { type SourceEditor, printValue } from '../../../csf-tools/estree/editor.ts';
 
 /**
  * Stands in for a function arg, which the controls panel cannot send. It prints as `() => {}`
@@ -22,8 +22,6 @@ const withoutUndefined = (value: unknown): unknown => {
   return value;
 };
 
-/** Print an arg value as source, with objects expanded one member per line. */
-export const valueToSource = (
-  value: unknown,
-  { quote, indent }: { quote: string; indent: string } = { quote: '"', indent: '  ' }
-): string => printValue(withoutUndefined(value), quote, { indent });
+/** Print an arg value as source in the editor's style, objects one member per line. */
+export const valueToSource = (value: unknown, { quote, indent }: SourceEditor): string =>
+  printValue(withoutUndefined(value), quote, { indent });

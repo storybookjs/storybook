@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { expressionFromSource } from 'storybook/internal/csf-tools';
+import { parseExpression } from 'storybook/internal/csf-tools';
 
 import {
   classifyValue,
@@ -95,4 +95,4 @@ describe('printValue', () => {
   });
 });
 
-const expression = expressionFromSource;
+const expression = parseExpression;

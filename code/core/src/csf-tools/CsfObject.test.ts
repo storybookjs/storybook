@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { loadConfig, printConfig } from './ConfigFile.ts';
-import { type CsfValue, parseExpression } from './CsfObject.ts';
-import { textOf } from './estree/ast.ts';
+import type { CsfValue } from './CsfObject.ts';
+import { parseExpression, textOf } from './estree/ast.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();

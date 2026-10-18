@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { expressionFromSource } from 'storybook/internal/csf-tools';
+import { parseExpression } from 'storybook/internal/csf-tools';
 
 import { evaluateArgValue, type ArgValue } from './arg-values.ts';
 
@@ -27,6 +27,6 @@ describe('evaluateArgValue', () => {
     { source: `{ ...name }`, expected: { kind: 'unresolved', source: '{ ...name }' } },
     { source: '`hello ${name}`', expected: { kind: 'unresolved', source: '`hello ${name}`' } },
   ])('$source', ({ source, expected }) => {
-    expect(evaluateArgValue(expressionFromSource(source))).toEqual(expected);
+    expect(evaluateArgValue(parseExpression(source))).toEqual(expected);
   });
 });

@@ -673,9 +673,14 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
     const inner = code.slice(list.open, list.close);
     const end = list.open + inner.trimEnd().length;
     if ((inner.includes('\n') && end > list.open) || texts.some((text) => text.includes('\n'))) {
-      // Multi-line items, or comments on lines of their own: lay the items out one per line.
+      // Multi-line items, or comments on lines of their own: lay the items out one per line, lined
+      // up with the last comment when that starts a line.
       const outer = lineIndent(code, list.open - 1);
-      const indent = `${outer}${editor.indent}`;
+      const last = commentAt(editor, end, 'end');
+      const indent =
+        last && lineStart(code, last.start) > list.open
+          ? lineIndent(code, last.start)
+          : `${outer}${editor.indent}`;
       if (list.close > end) {
         edits.remove(end, list.close);
       }
@@ -770,11 +775,19 @@ export const removeFromList = (editor: SourceEditor, list: List, removedItems: r
     }
     const start = itemStart(editor, list, first);
     const end = itemEnd(editor, list, last);
-    // Code after the run on its line must not join the line of a line comment before it.
-    const joins =
-      commentAt(editor, start, 'end')?.type === 'Line' &&
-      code.slice(end, lineEnd(code, end)).trim();
-    edits.remove(joins ? lineEnd(code, start) + 1 : start, end);
+    if (first === 0) {
+      // No item before the run to keep the space after: what follows the run takes the space
+      // before its first item instead, so `[a, b]` becomes `[b]`.
+      const item = items[0].start;
+      edits.remove(start, item - /\s*$/.exec(code.slice(start, item))![0].length);
+      edits.remove(item, end + /^\s*/.exec(code.slice(end))![0].length);
+    } else {
+      // Code after the run on its line must not join the line of a line comment before it.
+      const joins =
+        commentAt(editor, start, 'end')?.type === 'Line' &&
+        code.slice(end, lineEnd(code, end)).trim();
+      edits.remove(joins ? lineEnd(code, start) + 1 : start, end);
+    }
     first = last;
   }
 };

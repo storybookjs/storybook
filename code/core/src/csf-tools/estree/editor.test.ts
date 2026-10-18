@@ -8,9 +8,8 @@ import { dedent } from 'ts-dedent';
 
 import { loadConfig, printConfig } from '../ConfigFile.ts';
 import { loadCsf, printCsf } from '../CsfFile.ts';
-import { parseExpression } from '../CsfObject.ts';
 import type { E } from './ast.ts';
-import { parseModule } from './ast.ts';
+import { parseExpression, parseModule } from './ast.ts';
 import {
   SourceEditor,
   appendStatement,
@@ -196,6 +195,13 @@ describe('lists', () => {
     expect(call.editor.toString()).toBe('config(/* none */ a);');
   });
 
+  it('lines up the first item of an empty multi-line list with its comments', () => {
+    const { editor, statement } = firstStatement('({\n\t// none yet\n});');
+    const object = expressionOf(statement) as E.ObjectExpression;
+    appendToList(editor, objectList(editor, object), ['a: 1']);
+    expect(editor.toString()).toBe('({\n\t// none yet\n\ta: 1,\n});');
+  });
+
   it('finds the arguments of an optional call with type arguments past comments', () => {
     const { editor, statement } = firstStatement('f?.<T>(/* ( */ a);');
     const chain = expressionOf(statement) as E.ChainExpression;
@@ -218,6 +224,18 @@ describe('lists', () => {
     removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[0]]);
     removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[2]]);
     expect(editor.toString()).toBe('const b = 2;');
+  });
+
+  it('gives what follows a removed first item the space before that item', () => {
+    const { editor, statement } = firstStatement('const a = 1,\n  b = 2;');
+    const declaration = statement as E.VariableDeclaration;
+    removeFromList(editor, declaratorList(editor, declaration), [declaration.declarations[0]]);
+    expect(editor.toString()).toBe('const b = 2;');
+
+    const elements = new SourceEditor(`export default { addons: [a, b] };`);
+    const array = defaultExportArray(elements);
+    removeFromList(elements, arrayList(elements, array), [array.elements[0]!]);
+    expect(elements.toString()).toBe(`export default { addons: [b] };`);
   });
 });
 

@@ -4,7 +4,7 @@ import {
   type Property,
   type SourceLocation,
   locationOf,
-  expressionFromSource,
+  parseExpression,
   placeableTextOf,
   staticKey,
   unwrapExpression,
@@ -79,16 +79,6 @@ export type CsfMutationResult =
  * one file can be written to another without a code generator.
  */
 export type CsfExpression = E.Expression;
-
-/**
- * Parse source into a detached expression for `set` and `transform`.
- *
- * @example
- * ```ts
- * object.transform(['tags'], (value) => parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`));
- * ```
- */
-export const parseExpression = (code: string): CsfExpression => expressionFromSource(code);
 
 export interface CsfObject {
   /**

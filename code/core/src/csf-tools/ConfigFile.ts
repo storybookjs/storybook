@@ -16,7 +16,6 @@ import {
   type CsfValue,
   createCsfObject,
   literalRoot,
-  parseExpression,
 } from './CsfObject.ts';
 import {
   type E,
@@ -24,6 +23,7 @@ import {
   isIdentifier,
   isStringLiteral,
   locationOf,
+  parseExpression,
   placeableTextOf,
   staticKey,
   unwrapExpression,

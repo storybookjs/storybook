@@ -334,7 +334,7 @@ export const sourceOf = (code: string, node: Span) => code.slice(node.start, nod
 // The parse each node came from, so a node can be printed without its module.
 const nodeModules = new WeakMap<object, ParsedModule>();
 
-/** The parse a node of `parsePrintable` or `expressionFromSource` came from. */
+/** The parse a node of `parsePrintable` or `parseExpression` came from. */
 export const moduleOf = (node: object): ParsedModule | undefined => nodeModules.get(node);
 
 /** Mark `value` as derived from the nodes of `module`, so `moduleOf` finds that parse for it. */
@@ -398,7 +398,7 @@ const normalize = (root: Node, module: ParsedModule | undefined) => {
   }
 };
 
-// The text of each expression `expressionFromSource` returns: as written, and as it is placed.
+// The text of each expression `parseExpression` returns: as written, and as it is placed.
 const fragments = new WeakMap<object, { text: string; placeable: string }>();
 
 const codeOf = (node: Node) => {
@@ -412,7 +412,7 @@ const codeOf = (node: Node) => {
 };
 
 /**
- * Source text of a node from `SourceEditor` or `expressionFromSource`, as written. Throws for any
+ * Source text of a node from `SourceEditor` or `parseExpression`, as written. Throws for any
  * other node, such as one from `parseModule`.
  */
 export const textOf = (node: Node): string =>
@@ -438,7 +438,16 @@ export const placeableTextOf = (node: Node): string => {
 /** Parse an expression fragment, which has no file name to pick its grammar. */
 export const parseFragment = (code: string): ParsedModule => parseModule(code);
 
-export const expressionFromSource = (source: string): E.Expression => {
+/**
+ * Parse source into a detached expression, such as for `CsfObject#set` and `transform`. `textOf`
+ * gives its source back.
+ *
+ * @example
+ * ```ts
+ * object.transform(['tags'], (value) => parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`));
+ * ```
+ */
+export const parseExpression = (source: string): E.Expression => {
   const code = normalizeLineEndings(source);
   // The line break ends a trailing line comment before the closing parenthesis.
   const wrapped = `(${code}\n)`;

@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
-import { type CsfExpression, parseExpression } from './CsfObject.ts';
+import type { CsfExpression } from './CsfObject.ts';
+import { parseExpression } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

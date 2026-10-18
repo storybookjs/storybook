@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  type ESTreeNode as Node,
-  expressionFromSource,
-  staticKey,
-} from 'storybook/internal/csf-tools';
+import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
 
 import { classifyArgs, type ClassifiedArg } from './classify-args.ts';
 import { printValue } from '../../shared/classify-value.ts';
@@ -196,7 +192,7 @@ function classify(
 }
 
 function parseArgs(code: string): Record<string, Node> {
-  const expression = expressionFromSource(code);
+  const expression = parseExpression(code);
   if (expression.type !== 'ObjectExpression') {
     throw new Error(`Not an args object: ${code}`);
   }

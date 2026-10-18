@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import { type ESTreeNode as Node, expressionFromSource } from 'storybook/internal/csf-tools';
+import { type ESTreeNode as Node, parseExpression } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -1926,5 +1926,5 @@ function event(name: string, eventName: string, code: string): ClassifiedArg {
 }
 
 function expression(code: string): Node {
-  return expressionFromSource(code);
+  return parseExpression(code);
 }

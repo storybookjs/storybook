@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  type E,
-  codeFrame,
-  expressionFromSource,
-  outerSpan,
-  parseModule,
-  textOf,
-  walk,
-} from './ast.ts';
+import { type E, codeFrame, parseExpression, outerSpan, parseModule, textOf, walk } from './ast.ts';
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -94,13 +86,13 @@ describe('parseModule', () => {
   });
 });
 
-describe('expressionFromSource', () => {
+describe('parseExpression', () => {
   it.each(['a) + (b', 'a); (b', 'a)(b'])('rejects %s, which is no single expression', (code) => {
-    expect(() => expressionFromSource(code)).toThrow(`Expected an expression: ${code}`);
+    expect(() => parseExpression(code)).toThrow(`Expected an expression: ${code}`);
   });
 
   it('normalizes a CRLF fragment to LF', () => {
-    expect(textOf(expressionFromSource('{\r\n  a: 1,\r\n}'))).toBe('{\n  a: 1,\n}');
+    expect(textOf(parseExpression('{\r\n  a: 1,\r\n}'))).toBe('{\n  a: 1,\n}');
   });
 });
 

@@ -3,7 +3,7 @@
 import {
   type E,
   type Node,
-  expressionFromSource,
+  parseExpression,
   parseFragment,
   isValidIdentifier,
   placeableTextOf,
@@ -131,7 +131,7 @@ const inlineSpreads = (node: Node, ctx: ReferenceContext, unresolved: string[]):
 };
 
 // A node built from rewritten source; its parts print as written there.
-const rebuilt = (code: string): Node => unwrapExpression(expressionFromSource(code));
+const rebuilt = (code: string): Node => unwrapExpression(parseExpression(code));
 
 /**
  * Whether a value spreads something it names rather than something written out on the spot.

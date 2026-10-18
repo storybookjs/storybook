@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { loadConfig, printConfig } from './ConfigFile.ts';
-import { parseExpression } from './CsfObject.ts';
-import { type E, textOf } from './estree/ast.ts';
+import { type E, parseExpression, textOf } from './estree/ast.ts';
 
 const configurations = [
   `export default { parameters: { a11y: { element: '#root' } } };`,

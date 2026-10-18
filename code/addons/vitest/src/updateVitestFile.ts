@@ -19,6 +19,7 @@ import {
   reindent,
   objectList,
   prependToList,
+  printMembers,
   statementSpan,
   staticKey,
 } from 'storybook/internal/csf-tools';
@@ -74,8 +75,6 @@ const elementTexts = (editor: SourceEditor, array: E.ArrayExpression) =>
   arrayList(editor, array).items.map((element) =>
     itemText(editor, arrayList(editor, array), element)
   );
-
-const indent = (text: string, prefix: string) => prefix + reindent(text, '', prefix);
 
 // Nested objects are merged, arrays concatenated, other values overwritten.
 const mergeProperties = (
@@ -208,10 +207,8 @@ const wrapTestConfigAsProject = (
   const projectMembers = testObject.properties.filter(
     (member) => !hoisted.includes(member as E.ObjectProperty)
   );
-  const projectTest = memberTexts(target, testObject, projectMembers)
-    .map((text) => `\n${indent(text, '    ')},`)
-    .join('');
-  const project = `{\n  extends: true,\n  test: {${projectTest}${projectTest ? '\n  ' : ''}},\n}`;
+  const projectTest = printMembers(memberTexts(target, testObject, projectMembers), source.indent);
+  const project = printMembers(['extends: true', `test: ${projectTest}`], source.indent);
 
   prependToList(source, arrayList(source, templateProjects.value), [project]);
   if (hoisted.length > 0) {

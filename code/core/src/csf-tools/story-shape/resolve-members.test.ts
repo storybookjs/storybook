@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { expressionFromSource, isStringLiteral } from '../estree/ast.ts';
+import { parseExpression, isStringLiteral } from '../estree/ast.ts';
 import { SourceEditor } from '../estree/editor.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
 import {
@@ -668,7 +668,7 @@ describe('externalize', () => {
 
 describe('resolveReferencedValue', () => {
   const valueOf = (ctx: ReferenceContext, expression: string) => {
-    const node = expressionFromSource(expression);
+    const node = parseExpression(expression);
     const resolved = resolveReferencedValue(ctx, node);
     return resolved && { value: oneLineTextOf(resolved.node), filePath: resolved.ctx.filePath };
   };

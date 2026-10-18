@@ -6,7 +6,7 @@ import { loadCsf } from '../CsfFile.ts';
 import {
   type E,
   type Node,
-  expressionFromSource,
+  parseExpression,
   staticKey,
   textOf,
   unwrapExpression,
@@ -47,10 +47,7 @@ describe('isCanonicalCsf2BindCall', () => {
         "Template['bind']({})",
         'Template[bind]({})',
         'makeStory({})',
-      ].map((initializer) => [
-        initializer,
-        isCanonicalCsf2BindCall(expressionFromSource(initializer)),
-      ])
+      ].map((initializer) => [initializer, isCanonicalCsf2BindCall(parseExpression(initializer))])
     ).toEqual([
       ['Template.bind()', true],
       ['Template.bind({})', true],
@@ -78,7 +75,7 @@ describe('isCsfFactoryCall', () => {
         "schema.type('string').story({})",
         'makeStory({})',
         'Template.bind({})',
-      ].map((initializer) => [initializer, isCsfFactoryCall(expressionFromSource(initializer))])
+      ].map((initializer) => [initializer, isCsfFactoryCall(parseExpression(initializer))])
     ).toEqual([
       ['meta.story({})', true],
       ['meta.type<{ args: { icon: string } }>().story({})', true],
@@ -96,7 +93,7 @@ describe('isCsfFactoryCall', () => {
   });
 
   it('reads the receiver through meta.type<>()', () => {
-    const call = expressionFromSource('meta.type<A>().type<B>().story({})');
+    const call = parseExpression('meta.type<A>().type<B>().story({})');
 
     expect(isCsfFactoryCall(call) && csfFactoryReceiver(call).name).toBe('meta');
   });
@@ -145,12 +142,12 @@ describe('unwrapExpression', () => {
     '<Story>{}',
     '(({} as Story)!) satisfies Story',
   ])('unwraps %s', (code) => {
-    const wrapped = expressionFromSource(code);
+    const wrapped = parseExpression(code);
     expect(unwrapExpression(wrapped).type).toBe('ObjectExpression');
   });
 
   it('returns other nodes untouched', () => {
-    const value = expressionFromSource("'Save'");
+    const value = parseExpression("'Save'");
 
     expect(unwrapExpression(value)).toBe(value);
   });
@@ -208,7 +205,7 @@ describe('returnedExpression', () => {
   });
 
   it('resolves an object method body, which `setup()` uses', () => {
-    const object = expressionFromSource(`{ setup() { return 'Save'; } }`) as E.ObjectExpression;
+    const object = parseExpression(`{ setup() { return 'Save'; } }`) as E.ObjectExpression;
 
     expect(printed(returnedExpression(object.properties[0])!)).toBe(`'Save'`);
   });

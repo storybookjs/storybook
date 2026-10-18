@@ -9,7 +9,6 @@ export type {
   CsfObjectTarget,
   CsfValue,
 } from './CsfObject.ts';
-export { parseExpression } from './CsfObject.ts';
 export * from './ConfigFile.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';
@@ -18,12 +17,12 @@ export { componentTransform } from './vitest-plugin/component-transformer.ts';
 export * from './story-shape/index.ts';
 export type { E as ESTree, Node as ESTreeNode } from './estree/ast.ts';
 export {
-  expressionFromSource,
   isStringLiteral,
   isTSWrapper,
   isValidIdentifier,
   normalizeLineEndings,
   outerSpan,
+  parseExpression,
   parseModule,
   placeableTextOf,
   restoreLineEndings,
@@ -48,6 +47,7 @@ export {
   objectList,
   prependStatement,
   prependToList,
+  printMembers,
   printString,
   printValue,
   reindent,

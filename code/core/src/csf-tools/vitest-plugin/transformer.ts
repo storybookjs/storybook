@@ -8,7 +8,7 @@ import { decode, encode } from '@jridgewell/sourcemap-codec';
 import { dedent } from 'ts-dedent';
 
 import { type CsfSourceMap, type StoryTest, loadCsf } from '../CsfFile.ts';
-import { type Node, locationOf, restoreLineEndings, staticKey } from '../estree/ast.ts';
+import { type Node, locationOf, staticKey } from '../estree/ast.ts';
 import { type SourceEditor, appendMembers, prependStatement } from '../estree/editor.ts';
 import { generateUid } from '../estree/scope.ts';
 
@@ -69,9 +69,9 @@ export class GeneratedTail {
   }
 }
 
-// Generated lines map to their target node, so Vitest reports each test at its story.
+// Generated lines map to their target node, so Vitest reports each test at its story. The output
+// is never written to disk, so it keeps the editor's `\n` line endings.
 export const printWithTail = (editor: SourceEditor, tail: GeneratedTail, fileName: string) => {
-  // The tail is joined with `\n`, so line endings are restored once over the whole output.
   const head = editor.edits.toString();
   const map = editor.generateMap({ source: fileName });
   const decoded = decode(map.mappings);
@@ -93,10 +93,7 @@ export const printWithTail = (editor: SourceEditor, tail: GeneratedTail, fileNam
   });
   map.mappings = encode(decoded);
   return {
-    code: restoreLineEndings(
-      `${head}${separator}${tail.lines.map(({ text }) => text).join('\n')}\n`,
-      editor._originalCode
-    ),
+    code: `${head}${separator}${tail.lines.map(({ text }) => text).join('\n')}\n`,
     map: map as CsfSourceMap,
   };
 };

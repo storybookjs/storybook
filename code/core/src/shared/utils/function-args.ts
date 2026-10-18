@@ -36,6 +36,8 @@ type PlainObject = Record<string, unknown>;
 
 type Path = (string | number)[];
 
+type RevivedArgs<T> = T extends undefined ? undefined : Args;
+
 function isPlainObject(value: unknown): value is PlainObject {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     return false;
@@ -98,7 +100,7 @@ function namedFunction(name: string): () => void {
  * fresh reviver and regain stability by resolving against the stored value at each path.
  */
 export function createArgFunctionReviver(): {
-  revive(value: unknown, current?: Args): Args;
+  revive<T>(value: T, current?: Args): RevivedArgs<T>;
 } {
   const resolvedByPath = new Map<string, () => void>();
 
@@ -170,8 +172,8 @@ export function createArgFunctionReviver(): {
   };
 
   return {
-    revive: (value: unknown, current?: Args): Args =>
-      reviveNode(value, current, [], false, new WeakSet()) as Args,
+    revive: <T>(value: T, current?: Args): RevivedArgs<T> =>
+      reviveNode(value, current, [], false, new WeakSet()) as RevivedArgs<T>,
   };
 }
 
@@ -180,6 +182,6 @@ export function createArgFunctionReviver(): {
  * against `current` (the value stored at the same path) when it is a function with the same
  * name. Returns a new structure; the input is never mutated.
  */
-export function reviveArgFunctions(value: unknown, current?: Args): Args {
+export function reviveArgFunctions<T>(value: T, current?: Args): RevivedArgs<T> {
   return createArgFunctionReviver().revive(value, current);
 }

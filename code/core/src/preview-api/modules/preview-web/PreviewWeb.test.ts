@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/client-logger';
 import {
   CONFIG_ERROR,
@@ -1037,6 +1038,50 @@ describe('PreviewWeb', () => {
         // @ts-expect-error Ignore protected property
         (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
       ).toEqual({ foo: 'a', one: 1, link: { href: 'https://example.com', onClick: onLinkClick } });
+    });
+
+    it('restores transported markers received through a real channel (#29207)', async () => {
+      document.location.search = '?id=component-one--a';
+      const transport: ChannelTransport = { setHandler: vi.fn(), send: vi.fn() };
+      const channel = new Channel({ transport });
+      addons.setChannel(channel);
+      const rendered = new Promise<void>((resolve) => channel.on(STORY_RENDERED, () => resolve()));
+      const preview = new PreviewWeb(importFn, getProjectAnnotations);
+      await preview.ready();
+      await rendered;
+      const onLinkClick = function onLinkClick() {};
+      await preview.onUpdateArgs({
+        storyId: 'component-one--a',
+        updatedArgs: { link: { href: '#', onClick: onLinkClick } },
+      });
+      const receive = vi.mocked(transport.setHandler).mock.calls[0][0];
+
+      receive({
+        type: UPDATE_STORY_ARGS,
+        from: 'manager',
+        args: [
+          {
+            storyId: 'component-one--a',
+            updatedArgs: {
+              link: {
+                href: 'https://example.com',
+                onClick: { __function__: { name: onLinkClick.name } },
+              },
+            },
+          },
+        ],
+      });
+
+      await vi.waitFor(() =>
+        expect(
+          // @ts-expect-error Ignore protected property
+          (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+        ).toEqual({
+          foo: 'a',
+          one: 1,
+          link: { href: 'https://example.com', onClick: onLinkClick },
+        })
+      );
     });
 
     it('keeps marker-shaped initial arg data when resetting controls', async () => {

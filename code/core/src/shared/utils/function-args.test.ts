@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import { parse, stringify } from 'telejson';
 import type { Args } from 'storybook/internal/types';
@@ -109,6 +109,12 @@ describe('serializeArgFunctions', () => {
 });
 
 describe('reviveArgFunctions', () => {
+  it('preserves undefined in its runtime and return type', () => {
+    const revived = reviveArgFunctions(undefined);
+
+    expect(revived).toBeUndefined();
+    expectTypeOf(revived).toEqualTypeOf<undefined>();
+  });
   it('restores markers as functions carrying their original name', () => {
     const revived = reviveArgFunctions({
       link: { onClick: { __function__: { name: 'handleLinkClick' } }, href: '#' },

@@ -1,4 +1,8 @@
-import { STORY_ARGS_UPDATED, STORY_PREPARED, UPDATE_STORY_ARGS } from '../core-events/index.ts';
+import {
+  STORY_ARGS_UPDATED,
+  STORY_PREPARED,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
 import { serializeArgFunctions } from '../shared/utils/function-args.ts';
 
 import type {
@@ -13,7 +17,8 @@ import type {
 } from './types.ts';
 const transportedValues = new WeakSet<object>();
 
-const argFieldsByEvent: Record<string, string[]> = {
+// Events with Args payloads must register their fields here to cross channel transports intact.
+const argFieldsByEvent: Record<string, readonly string[]> = {
   [STORY_PREPARED]: ['args', 'initialArgs'],
   [STORY_ARGS_UPDATED]: ['args'],
   [UPDATE_STORY_ARGS]: ['updatedArgs'],
@@ -28,7 +33,9 @@ const serializeEventArgs = (event: ChannelEvent): ChannelEvent => {
 
   const serialized = { ...payload };
   for (const field of fields) {
-    serialized[field] = serializeArgFunctions(payload[field]);
+    if (field in payload) {
+      serialized[field] = serializeArgFunctions(payload[field]);
+    }
   }
   return { ...event, args: [serialized, ...event.args.slice(1)] };
 };
@@ -90,11 +97,16 @@ export class Channel implements ChannelLike {
     }
 
     const handler = () => {
-      const transportedEvent = serializeEventArgs(event);
-      this.transports.forEach((transport) => {
-        transport.send(transportedEvent, options);
-      });
-      this.handleEvent(event);
+      try {
+        if (this.transports.length > 0) {
+          const transportedEvent = serializeEventArgs(event);
+          this.transports.forEach((transport) => {
+            transport.send(transportedEvent, options);
+          });
+        }
+      } finally {
+        this.handleEvent(event);
+      }
     };
 
     if (this.isAsync) {

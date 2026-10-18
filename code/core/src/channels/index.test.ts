@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { UPDATE_STORY_ARGS } from '../core-events/index.ts';
+import { STORY_PREPARED, UPDATE_STORY_ARGS } from '../core-events/index.ts';
 
 import type { ChannelEvent, ChannelTransport, Listener } from './index.ts';
 import { Channel, WebsocketTransport, isTransportedChannelValue } from './index.ts';
@@ -165,6 +165,28 @@ describe('Channel', () => {
         },
         {}
       );
+    });
+
+    it('preserves absent args fields in transported payloads', () => {
+      const payload = { id: 'example--story', args: {} };
+
+      channel.emit(STORY_PREPARED, payload);
+
+      const transportedPayload = vi.mocked(transport.send).mock.calls[0][0].args[0];
+      expect(transportedPayload).toEqual(payload);
+      expect(transportedPayload).not.toHaveProperty('initialArgs');
+    });
+
+    it('delivers locally when a transport fails', () => {
+      const payload = { storyId: 'example--story', updatedArgs: {} };
+      const listener = vi.fn();
+      vi.mocked(transport.send).mockImplementation(() => {
+        throw new Error('transport failed');
+      });
+      channel.on(UPDATE_STORY_ARGS, listener);
+
+      expect(() => channel.emit(UPDATE_STORY_ARGS, payload)).toThrow('transport failed');
+      expect(listener).toHaveBeenCalledWith(payload);
     });
 
     it('identifies values received from a transport', () => {

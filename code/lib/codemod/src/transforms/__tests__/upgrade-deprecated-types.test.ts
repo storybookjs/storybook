@@ -100,6 +100,33 @@ describe('upgrade-deprecated-types', () => {
       `);
     });
 
+    it('upgrades a file without a default export or with a dynamic title', async () => {
+      await expect(
+        tsTransform(dedent`
+          import type { ComponentStory } from '@storybook/react';
+          import { Cat } from './Cat';
+
+          export const A: ComponentStory<typeof Cat> = () => <Cat />;
+        `)
+      ).resolves.toBe(dedent`
+        import type { StoryFn } from "@storybook/react";
+        import { Cat } from "./Cat";
+
+        export const A: StoryFn<typeof Cat> = () => <Cat />;
+      `);
+      await expect(
+        tsTransform(dedent`
+          import type { ComponentMeta } from '@storybook/react';
+
+          export default { title: \`Cats/\${name}\` } satisfies ComponentMeta<typeof Cat>;
+        `)
+      ).resolves.toBe(dedent`
+        import type { Meta } from "@storybook/react";
+
+        export default { title: \`Cats/\${name}\` } satisfies Meta<typeof Cat>;
+      `);
+    });
+
     it('upgrade namespaces', async () => {
       await expect(
         tsTransform(dedent`

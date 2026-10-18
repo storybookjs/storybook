@@ -1,8 +1,6 @@
 import {
   type ESTree as E,
-  type SourceEditor,
-  loadCsf,
-  printCsf,
+  SourceEditor,
   removeFromList,
   specifierList,
   storyShapeError,
@@ -30,12 +28,11 @@ function migrateType(oldType: string) {
 }
 
 export default async function transform(info: TransformFile) {
-  // TODO what do I need to with the title?
-  const csf = loadCsf(info.source, { makeTitle: (title) => title, fileName: info.path });
+  const editor = new SourceEditor(info.source, info.path);
 
-  upgradeDeprecatedTypes(csf._editor);
+  upgradeDeprecatedTypes(editor);
 
-  let output = printCsf(csf).code;
+  let output = editor.toString();
 
   try {
     output = await prettier.format(output, {

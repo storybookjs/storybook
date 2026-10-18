@@ -93,9 +93,7 @@ const useCode = ({
   const sourceKind: 'service' | 'emitted' | 'original' = useSnippet
     ? serviceSnippet
       ? 'service'
-      : snippet
-        ? 'emitted'
-        : 'original'
+      : 'emitted'
     : 'original';
 
   const code =
@@ -107,10 +105,14 @@ const useCode = ({
 
   // The emitted snippet is already transformed by emitTransformCode,
   // so only transformFromProps applies to it.
-  const transformer =
-    transformFromProps ?? (sourceKind === 'emitted' ? undefined : sourceParameters.transform);
+  const hasTransformer = Boolean(transformFromProps ?? sourceParameters.transform);
+  const activeTransformer =
+    transformFromProps ??
+    (sourceKind === 'emitted' ? (rawCode: string) => rawCode : sourceParameters.transform);
 
-  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
+  const transformedCode = hasTransformer
+    ? useTransformCode(code, activeTransformer!, storyContext)
+    : code;
 
   if (sourceParameters.code !== undefined) {
     return sourceParameters.code;

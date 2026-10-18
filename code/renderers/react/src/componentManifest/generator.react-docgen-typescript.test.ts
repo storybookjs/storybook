@@ -282,12 +282,6 @@ function createLargePropSourceFixtures(tempDir: string) {
       propPrefix: 'smallLibraryProp',
       propCount: 1,
     },
-    {
-      directory: join(tempDir, 'node_modules', 'other-library'),
-      packageName: 'other-library',
-      interfaceName: 'OtherLibraryProps',
-      propPrefix: 'otherProp',
-    },
   ];
 
   for (const { directory, packageName, interfaceName, propPrefix, propCount = 34 } of typeSources) {
@@ -313,8 +307,15 @@ function createLargePropSourceFixtures(tempDir: string) {
     ).join('\n')}\n}`
   );
   writeFileSync(
+    join(tempDir, 'src', 'unlisted-large.d.ts'),
+    `export interface OtherLibraryProps {\n${Array.from(
+      { length: 34 },
+      (_, index) => `  otherProp${index}: string;`
+    ).join('\n')}\n}`
+  );
+  writeFileSync(
     join(tempDir, 'src', 'Select.tsx'),
-    `import type { HTMLAttributes } from 'react';\nimport type { WideLibraryProps } from 'wide-library';\nimport type { SmallLibraryProps } from 'small-library';\nimport type { OtherLibraryProps } from 'other-library';\nimport type { LocalLargeProps } from './large-local';\n\nexport interface SelectProps extends HTMLAttributes, WideLibraryProps, SmallLibraryProps, OtherLibraryProps, LocalLargeProps {\n  /** A documented local prop. */\n  localProp: string;\n}\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
+    `import type { HTMLAttributes } from 'react';\nimport type { WideLibraryProps } from 'wide-library';\nimport type { SmallLibraryProps } from 'small-library';\nimport type { OtherLibraryProps } from './unlisted-large';\nimport type { LocalLargeProps } from './large-local';\n\nexport interface SelectProps extends HTMLAttributes, WideLibraryProps, SmallLibraryProps, OtherLibraryProps, LocalLargeProps {\n  /** A documented local prop. */\n  localProp: string;\n}\n\nexport function Select(props: SelectProps) {\n  return null;\n}\n`
   );
   writeFileSync(
     join(tempDir, 'src', 'Select.stories.tsx'),

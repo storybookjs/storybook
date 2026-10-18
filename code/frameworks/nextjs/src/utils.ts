@@ -31,12 +31,16 @@ export const isNextVersionGte = (version: string): boolean => {
   return coercedVersion ? semver.gte(coercedVersion, version) : false;
 };
 
+// Next.js also looks for a Babel config in this folder.
+export const getNextConfigDir = (nextConfigPath?: string): string =>
+  nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
+
 export const resolveNextConfig = async ({
   nextConfigPath,
 }: {
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
-  const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
+  const dir = getNextConfigDir(nextConfigPath);
   const loadConfig = (nextJsLoadConfigModule as any).default ?? nextJsLoadConfigModule;
 
   // This hack is necessary to prevent Next.js override Node.js' module resolution

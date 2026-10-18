@@ -9,17 +9,11 @@ import type { LoaderOptions } from '../types.ts';
 
 type LocalFontSrc = string | Array<{ path: string; weight?: string; style?: string }>;
 
-export async function getFontFaceDeclarations(
-  options: LoaderOptions,
-  rootContext: string,
-  swcMode: boolean
-) {
+export async function getFontFaceDeclarations(options: LoaderOptions, rootContext: string) {
   const localFontSrc = options.props.src as LocalFontSrc;
 
   // Parent folder relative to the root context
-  const parentFolder = swcMode
-    ? dirname(join(getProjectRoot(), options.filename)).replace(rootContext, '')
-    : dirname(options.filename).replace(rootContext, '');
+  const parentFolder = dirname(join(getProjectRoot(), options.filename)).replace(rootContext, '');
 
   const {
     weight,

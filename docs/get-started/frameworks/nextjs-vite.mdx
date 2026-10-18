@@ -40,12 +40,12 @@ This Vite-based framework offers several advantages over the Webpack-based [`@st
 - ⚡ **Faster builds** - Vite's build system is significantly faster than Webpack
 - 🔧 **Modern tooling** - Uses the latest build tools and optimizations
 - 🧪 **Better test support** - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) and other testing features
-- 📦 **Simpler configuration** - No need for Babel or complex Webpack configurations
+- 📦 **Simpler configuration** - No complex Webpack configurations
 - 🎯 **Better development experience** - Faster Hot Module Replacement and dev server startup
 
-Storybook will automatically detect your project and select the `nextjs-vite` framework **unless** your project has custom Webpack or Babel configurations. If you have custom configurations, Storybook will ask you which framework to install.
+Storybook will automatically detect your project and select the `nextjs-vite` framework **unless** your `next.config.js` has a custom Webpack configuration. In that case, Storybook will ask you which framework to install.
 
-Choose `nextjs-vite` if you're willing to migrate existing Babel or Webpack configurations to Vite. Choose `nextjs` (Webpack 5) if you need to keep your existing Webpack/Babel setup.
+Choose `nextjs-vite` if you're willing to migrate existing Webpack configurations to Vite. Choose `nextjs` (Webpack 5) if you need to keep your existing Webpack setup. Both frameworks compile with SWC and ignore Babel configs (see [Babel](#babel)).
 
 ## Run Storybook
 
@@ -525,6 +525,12 @@ You can customize the [Vite configuration](../../builders/vite.mdx#configuration
 
 Not all Vite modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Vite config and on how [Vite works](https://vitejs.dev/guide/).
 
+### Babel
+
+This framework compiles your code with SWC and ignores `.babelrc` and `babel.config.*` files. When it finds one, it logs a warning naming the file. To hide the warning, set `experimental.forceSwcTransforms: true` in `next.config.js`, which makes your Next.js app compile with SWC too.
+
+Most Babel plugins used with Next.js have an SWC equivalent in `next.config.js`, and Storybook applies it: the [`compiler` options](https://nextjs.org/docs/architecture/nextjs-compiler) (`styledComponents`, `emotion`, `relay`, `reactRemoveProperties`, `removeConsole`) and `experimental.swcPlugins`. For a plugin without an equivalent, add the tool's Vite plugin in [`viteFinal`](../../builders/vite.mdx#configuration).
+
 ### Typescript
 
 Storybook handles most [Typescript](https://www.typescriptlang.org/) configurations, but this framework adds additional support for Next.js's support for [Absolute Imports and Module path aliases](https://nextjs.org/docs/pages/building-your-application/configuring/absolute-imports-and-module-aliases). In short, it takes into account your `tsconfig.json`'s [baseUrl](https://www.typescriptlang.org/tsconfig#baseUrl) and [paths](https://www.typescriptlang.org/tsconfig#paths). Thus, a `tsconfig.json` like the one below would work out of the box.
@@ -694,7 +700,7 @@ We recommend using `@storybook/nextjs-vite` (this framework) for most projects b
 
 - Faster builds and development server startup
 - Better support for modern testing features like the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx)
-- Simpler configuration without Babel
+- Simpler configuration
 - Better developer experience with faster HMR
 
 However, if your project has custom Webpack configurations that are incompatible with Vite, or you need specific Webpack features, you should use [`@storybook/nextjs`](./nextjs.mdx) (Webpack 5) instead.

@@ -39,6 +39,7 @@
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [Next.js: `@storybook/nextjs` always compiles with SWC](#nextjs-storybooknextjs-always-compiles-with-swc)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
@@ -1335,6 +1336,48 @@ Key changes:
 The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
 
 Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook automigrate nextjs-to-nextjs-vite` directly.
+
+### Next.js: `@storybook/nextjs` always compiles with SWC
+
+`@storybook/nextjs` no longer switches to Babel when your project has a Babel config file, and it no longer depends on `babel-loader` or Babel presets. Like `@storybook/nextjs-vite`, it compiles with SWC, and both frameworks log a warning that names the Babel config they ignore. Set `experimental.forceSwcTransforms: true` in `next.config.js` to hide it; your Next.js app then compiles with SWC too. The `babel` option in `.storybook/main.ts` has no effect for either framework. `storybook upgrade` reports a Babel config as the `nextjs-babel-config` notification.
+
+Storybook applies the SWC options in `next.config.js`: `compiler.styledComponents`, `emotion`, `relay`, `reactRemoveProperties`, `removeConsole` and `experimental.swcPlugins` (see the [Next.js Compiler](https://nextjs.org/docs/architecture/nextjs-compiler)). For a plugin with no SWC equivalent, such as StyleX or Babel macros, add a `babel-loader` rule in `webpackFinal` that runs only that plugin before SWC. Install `babel-loader`, `@babel/core` and the plugin (here `babel-plugin-macros`) in your project:
+
+```ts
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/nextjs';
+
+const config: StorybookConfig = {
+  framework: '@storybook/nextjs',
+  stories: ['../src/**/*.stories.@(ts|tsx)'],
+  webpackFinal: (config) => {
+    config.module?.rules?.push({
+      test: /\.[cm]?[jt]sx?$/,
+      exclude: /node_modules/,
+      enforce: 'pre',
+      loader: 'babel-loader',
+      options: {
+        babelrc: false,
+        configFile: false,
+        plugins: ['macros'],
+        // JSX only where allowed, so `<T>value` casts in .ts files parse
+        overrides: [
+          { test: /\.tsx$/, parserOpts: { plugins: ['typescript', 'jsx'] } },
+          { test: /\.[cm]?ts$/, parserOpts: { plugins: ['typescript'] } },
+          { test: /\.[cm]?jsx?$/, parserOpts: { plugins: ['jsx'] } },
+        ],
+      },
+    });
+    return config;
+  },
+};
+
+export default config;
+```
+
+If your code uses decorators, add `'decorators-legacy'` to the parser plugins.
+
+For StyleX, put `@stylexjs/babel-plugin` with your StyleX options in `plugins`, and generate the CSS with `@stylexjs/postcss-plugin` and an `@stylex;` directive in a CSS file your preview imports, as in [StyleX's Next.js guide](https://stylexjs.com/docs/learn/installation/nextjs). Give both plugins the same options so class names match. `@stylexjs/unplugin` does not work with `@storybook/nextjs`: its webpack plugin adds the CSS to an emitted `.css` file, and Storybook injects CSS with `style-loader` instead.
 
 ### Create React App support removed
 

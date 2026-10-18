@@ -12,6 +12,7 @@ import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors'
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
 import { NPMProxy } from './NPMProxy.ts';
+import type { PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -115,8 +116,17 @@ describe('NPM Proxy', () => {
       npmProxy = new NPMProxy();
       npmProxy.packageJsonPaths = [appPackageJsonPath, rootPackageJsonPath];
 
+      const rootPackageJson: PackageJsonWithDepsAndDevDeps = {
+        workspaces: ['packages/*'],
+        dependencies: {},
+        devDependencies: {},
+      };
+      const appPackageJson: PackageJsonWithDepsAndDevDeps = {
+        dependencies: {},
+        devDependencies: {},
+      };
       vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((path) =>
-        path === rootPackageJsonPath ? { workspaces: ['packages/*'] } : {}
+        path === rootPackageJsonPath ? rootPackageJson : appPackageJson
       );
       vi.mocked(globSync).mockReturnValueOnce(['d:/ws/packages/app/package.json']);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {

@@ -2,7 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { UserConfig } from 'vite';
 
-import { applyChunkedPreviewRuntime } from './vite-features.ts';
+import { applyChunkedPreviewRuntime, depOptimizerResolveOptions } from './vite-features.ts';
+
+const vite = vi.hoisted(() => ({ version: '7.0.0' }));
+vi.mock(import('vite'), async (importOriginal) => ({
+  ...(await importOriginal()),
+  get version() {
+    return vite.version;
+  },
+}));
 
 describe('applyChunkedPreviewRuntime', () => {
   it('does not add a second preview runtime alias', () => {
@@ -66,5 +74,33 @@ describe('applyChunkedPreviewRuntime', () => {
       ],
     });
     expect(output.manualChunks).toBeUndefined();
+  });
+});
+
+describe('depOptimizerResolveOptions', () => {
+  const resolve = (id: string) => (id === 'pkg' ? '/stubs/pkg.js' : undefined);
+
+  it('resolves with an esbuild plugin before Vite 8', async () => {
+    vite.version = '7.3.0';
+    const { esbuildOptions } = depOptimizerResolveOptions('test', /^pkg$/, resolve);
+    const onResolve = vi.fn();
+    await esbuildOptions?.plugins?.[0].setup({ onResolve } as never);
+
+    const [[options, callback]] = onResolve.mock.calls;
+    expect(options).toEqual({ filter: /^pkg$/ });
+    expect(callback({ path: 'pkg' })).toEqual({ path: '/stubs/pkg.js' });
+  });
+
+  it('resolves with a Rolldown plugin from Vite 8', () => {
+    vite.version = '8.0.0';
+    const options = depOptimizerResolveOptions('test', /^pkg$/, resolve) as {
+      rolldownOptions: {
+        plugins: Array<{ resolveId: { filter: unknown; handler: typeof resolve } }>;
+      };
+    };
+
+    const [{ resolveId }] = options.rolldownOptions.plugins;
+    expect(resolveId.filter).toEqual({ id: /^pkg$/ });
+    expect(resolveId.handler('pkg')).toBe('/stubs/pkg.js');
   });
 });

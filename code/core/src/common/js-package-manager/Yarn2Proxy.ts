@@ -221,7 +221,10 @@ export class Yarn2Proxy extends JsPackageManager {
     } catch (error) {
       const logs = getErrorLogs(error);
 
-      if (this.isMinimumAgeGateError(logs)) {
+      if (
+        this.isDeclaredAgeGateError(logs) ||
+        (this.isUnresolvedCandidateError(logs) && (await this.getMinimumAgeGate()) !== null)
+      ) {
         const handledError = new MinimumReleaseAgeHandledError({
           packageManagerName: 'yarn',
           minimumReleaseAgeConfigName: 'npmMinimalAgeGate',
@@ -372,6 +375,30 @@ export class Yarn2Proxy extends JsPackageManager {
     return url === 'undefined' ? undefined : url;
   }
 
+  private async getNpmAuthToken(): Promise<string | undefined> {
+    try {
+      const result = await this.runInternalCommand(
+        'config',
+        ['get', 'npmAuthToken'],
+        undefined,
+        'pipe'
+      );
+      const token = (typeof result?.stdout === 'string' ? result.stdout : '').trim();
+      if (
+        !token ||
+        token === 'undefined' ||
+        token === 'null' ||
+        /\s/.test(token) ||
+        token.startsWith('{')
+      ) {
+        return undefined;
+      }
+      return token;
+    } catch {
+      return undefined;
+    }
+  }
+
   protected async runGetVersions<T extends boolean>(
     packageName: string,
     fetchAllVersions: T
@@ -441,11 +468,13 @@ export class Yarn2Proxy extends JsPackageManager {
     };
   }
 
-  private isMinimumAgeGateError(logs: string) {
-    return (
-      (logs.includes('YN0016') && logs.includes('quarantined')) ||
-      logs.includes('No candidates found')
-    );
+  private isDeclaredAgeGateError(logs: string) {
+    return logs.includes('YN0016') && logs.includes('quarantined');
+  }
+
+  /** Yarn 6 prints this for an age gate and for any range that matches nothing. */
+  private isUnresolvedCandidateError(logs: string) {
+    return logs.includes('No candidates found');
   }
 
   private extractQuarantinedPackage(logs: string): string | null {
@@ -514,8 +543,13 @@ export class Yarn2Proxy extends JsPackageManager {
   ): Promise<Record<string, unknown> | null> {
     try {
       const registry = (await this.getRegistryURL()) ?? 'https://registry.yarnpkg.com';
+      const headers: Record<string, string> = { accept: 'application/json' };
+      const token = await this.getNpmAuthToken();
+      if (token) {
+        headers.authorization = `Bearer ${token}`;
+      }
       const response = await fetch(registryPackumentUrl(registry, packageName), {
-        headers: { accept: 'application/json' },
+        headers,
       });
       if (!response.ok) {
         return null;

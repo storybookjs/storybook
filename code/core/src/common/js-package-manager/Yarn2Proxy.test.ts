@@ -69,7 +69,9 @@ describe('Yarn 2 Proxy', () => {
         await Promise.resolve(fn());
       });
       const originalError = new Error('➤ · No candidates found for npm:10.4.0-alpha.17');
-      mockedExecuteCommand.mockRejectedValueOnce(originalError);
+      mockedExecuteCommand
+        .mockRejectedValueOnce(originalError)
+        .mockResolvedValueOnce({ stdout: '86400s\n' } as any);
 
       const error = await yarn2Proxy.installDependencies().then(
         () => null,
@@ -79,6 +81,24 @@ describe('Yarn 2 Proxy', () => {
       expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
       expect(error).toMatchObject({ cause: originalError });
       expect(error?.message).toContain('npmMinimalAgeGate');
+    });
+
+    it('does not treat a missing candidate as an age gate when the gate is off', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const originalError = new Error('➤ · No candidates found for npm:not-a-package');
+      mockedExecuteCommand
+        .mockRejectedValueOnce(originalError)
+        .mockResolvedValueOnce({ stdout: 'undefined\n' } as any);
+
+      const error = await yarn2Proxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
+      );
+
+      expect(error).toBe(originalError);
+      expect(error).not.toBeInstanceOf(MinimumReleaseAgeHandledError);
     });
 
     it('should rethrow minimum-age-gate install errors as handled errors', async () => {
@@ -226,6 +246,30 @@ describe('Yarn 2 Proxy', () => {
         'https://registry.npmjs.org/storybook',
         expect.objectContaining({ headers: { accept: 'application/json' } })
       );
+      vi.unstubAllGlobals();
+    });
+
+    it('sends the Yarn npm auth token when reading the packument', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({ name: 'storybook', version: '6.0.0' }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: 'https://registry.example\n' } as any)
+        .mockResolvedValueOnce({ stdout: 'secret-token\n' } as any);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => ({
+          ok: true,
+          json: async () => ({
+            versions: { '5.3.19': {} },
+          }),
+        }))
+      );
+
+      await expect(yarn2Proxy.latestVersion('storybook', '5.X')).resolves.toBe('5.3.19');
+      expect(fetch).toHaveBeenCalledWith('https://registry.example/storybook', {
+        headers: { accept: 'application/json', authorization: 'Bearer secret-token' },
+      });
       vi.unstubAllGlobals();
     });
 

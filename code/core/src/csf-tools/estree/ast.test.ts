@@ -2,7 +2,7 @@ import { inspect } from 'node:util';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { parseSync, rawTransferSupported } from 'oxc-parser';
+import { parseSync } from 'oxc-parser';
 
 import {
   type E,
@@ -12,6 +12,7 @@ import {
   outerSpan,
   parseModule,
   parsePrintable,
+  rawTransferAvailable,
   textOf,
   walk,
   withRawTransfer,
@@ -19,8 +20,8 @@ import {
 
 vi.mock('oxc-parser', { spy: true });
 
-// Raw transfer is only available on 64-bit Node 22+, where both ways of reading the tree run.
-const transfers = rawTransferSupported() ? [true, false] : [false];
+// Where raw transfer is in use, both ways of reading the tree run.
+const transfers = rawTransferAvailable ? [true, false] : [false];
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';

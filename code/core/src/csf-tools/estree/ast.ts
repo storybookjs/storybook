@@ -54,8 +54,11 @@ const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
 // resident. It is unsupported on 32-bit hosts, under the WASM binding and before Node 22. The
 // first raw parse also loads the deserializer with `require`; when that fails, for example under
 // a test that mocks `node:fs`, this process reads trees through JSON from then on.
-// Off on Windows until oxc PR #27566 lands: its 6 GiB reservation fails there (oxc issue #11834).
-let rawTransferEnabled = process.platform !== 'win32' && rawTransferSupported();
+// Off on Windows until oxc PR #27566 lands: the 6 GiB there is committed memory, not reserved
+// address space, and its allocation fails without that much RAM and pagefile (oxc issue #11834).
+export const rawTransferAvailable = process.platform !== 'win32' && rawTransferSupported();
+
+let rawTransferEnabled = rawTransferAvailable;
 
 // The option is missing from the `ParserOptions` type of oxc-parser 0.155.
 type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };

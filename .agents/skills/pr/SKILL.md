@@ -36,7 +36,9 @@ Add these labels to the PR:
 - `BREAKING CHANGE` - breaks compatibility
 - `other` - doesn't fit above
 
-**CI (required, pick one):**
+**CI (required once the PR is out of draft, pick one):**
+
+Draft PRs never get a `ci:*` label, and CircleCI does not run on drafts. Add the label when you mark the PR ready (see **Command** below).
 
 - `ci:normal` - standard sandbox set; default for most code changes
 - `ci:merged` - merged sandbox set
@@ -49,7 +51,7 @@ Only one `ci:*` label takes effect. The trigger workflow picks `ci:normal`, then
 
 Every push to a PR labelled `ci:daily` reruns the full daily set, which costs several times a `ci:normal` run. Don't use it while iterating; save it for the end, where it matters.
 
-Open the PR with `ci:normal` and work on it until it is ready. Then swap its `ci:*` label to `ci:daily` for the final check. Remove the current label (for example `ci:normal` or `ci:merged`) first, in its own command, so the trigger only sees `ci:daily`:
+Mark the PR ready with `ci:normal` and work on it until it is done. Then swap its `ci:*` label to `ci:daily` for the final check. Remove the current label (for example `ci:normal` or `ci:merged`) first, in its own command, so the trigger only sees `ci:daily`:
 
 ```bash
 gh pr edit <NUMBER> --remove-label "<current ci:* label>"
@@ -109,5 +111,12 @@ Replace `<branch>` with Chromatic's normalized slug (special chars → dashes, e
 Always create PRs in draft mode:
 
 ```bash
-gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<ci>,<qa>"
+gh pr create --draft --title "<Area>: <Description>" --body "<FILLED_TEMPLATE>" --label "<category>,<qa>"
+```
+
+When the PR is ready for CI, mark it ready, then add its `ci:*` label:
+
+```bash
+gh pr ready <NUMBER>
+gh pr edit <NUMBER> --add-label "ci:normal"
 ```

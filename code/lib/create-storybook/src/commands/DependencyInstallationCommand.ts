@@ -69,7 +69,8 @@ export class DependencyInstallationCommand {
 
     if (!skipInstall && this.dependencyCollector.hasPackages()) {
       try {
-        await this.packageManager.installDependencies();
+        // Same fresh-project install as the preflight step, so the same ERESOLVE fallback applies.
+        await this.packageManager.installDependencies({ allowLegacyPeerDepsFallback: true });
       } catch (err) {
         if (err instanceof MinimumReleaseAgeHandledError) {
           throw err;

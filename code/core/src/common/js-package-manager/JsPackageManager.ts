@@ -188,7 +188,15 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: {
+    force?: boolean;
+    /**
+     * Retry the install once with lenient peer resolution (npm --legacy-peer-deps) when it fails
+     * with ERESOLVE. Only create-storybook install points opt in; other callers keep strict peer
+     * resolution so real incompatibilities still surface as their typed conflict error.
+     */
+    allowLegacyPeerDepsFallback?: boolean;
+  }) {
     try {
       await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
         id: 'install-dependencies',

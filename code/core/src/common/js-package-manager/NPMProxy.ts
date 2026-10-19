@@ -5,6 +5,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   FindPackageVersionsError,
   MinimumReleaseAgeHandledError,
+  PackageInstallDependencyConflictError,
 } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
@@ -24,7 +25,6 @@ import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
   getAgeInMinutes,
   getErrorLogs,
-  getInstallErrorTail,
   getLatestStableVersionAdheringToMinimumAgeGate,
   getStorybookRerunCommand,
   getStorybookRerunInstruction,
@@ -208,7 +208,10 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall(options?: { force?: boolean; legacyPeerDeps?: boolean }) {
+  protected runInstall(options?: {
+    force?: boolean;
+    allowLegacyPeerDepsFallback?: boolean;
+  }): ResultPromise {
     const packageJsonPath = this.packageJsonPaths[0];
     const workspacePackageJsonPath = this.packageJsonPaths.find((ancestorPath) => {
       const workspaces = JsPackageManager.getPackageJson(ancestorPath).workspaces;
@@ -231,20 +234,60 @@ export class NPMProxy extends JsPackageManager {
       );
     });
 
-    return executeCommand({
-      command: 'npm',
-      args: [
-        'install',
-        ...this.getInstallArgs(),
-        ...(options?.force ? ['--force'] : []),
-        ...(options?.legacyPeerDeps ? ['--legacy-peer-deps'] : []),
-      ],
-      cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
-      stdio: prompt.getPreferredStdio(),
-    });
+    const install = (extraArgs: string[]): ResultPromise =>
+      executeCommand({
+        command: 'npm',
+        args: [
+          'install',
+          ...this.getInstallArgs(),
+          ...(options?.force ? ['--force'] : []),
+          ...extraArgs,
+        ],
+        cwd: workspacePackageJsonPath ? dirname(workspacePackageJsonPath) : this.cwd,
+        stdio: prompt.getPreferredStdio(),
+      });
+
+    const strictInstall = install([]);
+    if (!options?.allowLegacyPeerDepsFallback) {
+      return strictInstall;
+    }
+
+    // Opted-in fallback (create-storybook installs): retry once with --legacy-peer-deps when npm
+    // reports ERESOLVE. The retry settles the same promise the spinner awaits, so one spinner
+    // reports one outcome instead of flashing a failure before recovering. The chained promise is
+    // not a true ResultPromise, so the first attempt's stdout is forwarded for the task log; the
+    // retry's own output is captured by the base class's error tail if it fails too.
+    const fallbackInstall = strictInstall.then(
+      (result) => result,
+      (error: unknown) => {
+        // Only create-storybook install points opt in. Other callers keep strict peer resolution
+        // so real incompatibilities (e.g. an upgrade hitting a stale addon peer range) surface.
+        if (!(error instanceof PackageInstallDependencyConflictError)) {
+          throw error;
+        }
+
+        logger.warn(
+          'Peer dependency conflict detected, retrying the install with --legacy-peer-deps. Subsequent installs may also need --legacy-peer-deps (or `legacy-peer-deps=true` in .npmrc) until the upstream peer dependency ranges are fixed.'
+        );
+
+        return install(['--legacy-peer-deps']).then(
+          (retryResult) => retryResult,
+          (retryError: unknown) => {
+            // Keep the original conflict attached so the retry failure can be traced back to it.
+            if (retryError instanceof Error && retryError.cause == null) {
+              retryError.cause = error;
+            }
+            throw retryError;
+          }
+        );
+      }
+    ) as ResultPromise;
+
+    fallbackInstall.stdout = strictInstall.stdout;
+    return fallbackInstall;
   }
 
-  async installDependencies(options?: { force?: boolean }) {
+  async installDependencies(options?: { force?: boolean; allowLegacyPeerDepsFallback?: boolean }) {
     try {
       await super.installDependencies(options);
     } catch (error) {
@@ -267,46 +310,8 @@ export class NPMProxy extends JsPackageManager {
         throw handledError;
       }
 
-      // A peer-dependency conflict (npm ERESOLVE) is usually upstream metadata drift outside the
-      // user's project — e.g. a freshly released create-vite template whose typescript major
-      // outpaces a framework's optional peer range. npm's own ERESOLVE guidance is to retry with
-      // --legacy-peer-deps, so retry once instead of leaving the project without node_modules.
-      if (logs.match(/npm\s+(ERR!|error)\s+code\s+ERESOLVE/i)) {
-        await this.#retryInstallWithLegacyPeerDeps(options);
-        return;
-      }
-
       throw error;
     }
-  }
-
-  async #retryInstallWithLegacyPeerDeps(options?: { force?: boolean }) {
-    logger.warn('Peer dependency conflict detected, retrying the install with --legacy-peer-deps');
-
-    try {
-      await prompt.executeTaskWithSpinner(
-        () => this.runInstall({ ...options, legacyPeerDeps: true }),
-        {
-          id: 'install-dependencies-legacy-peer-deps',
-          intro: 'Retrying the install with --legacy-peer-deps...',
-          error: 'Installation of dependencies failed!',
-          success: 'Dependencies installed',
-        }
-      );
-    } catch (error) {
-      // Mirror the base class: surface the captured output tail so the package-manager error
-      // names itself instead of surfacing later as a missing binary.
-      const tail = getInstallErrorTail(error);
-      if (tail) {
-        logger.error(tail);
-        if (error instanceof Error && !error.message.includes(tail)) {
-          error.message = `${error.message}\n\n${tail}`;
-        }
-      }
-      throw error;
-    }
-
-    this.clearInstalledVersionCache();
   }
 
   async precheckStorybookPackageInstall({

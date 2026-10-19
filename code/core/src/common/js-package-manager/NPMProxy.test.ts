@@ -4,7 +4,10 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+import {
+  MinimumReleaseAgeHandledError,
+  PackageInstallDependencyConflictError,
+} from 'storybook/internal/server-errors';
 
 import { executeCommand } from '../utils/command.ts';
 import { JsPackageManager } from './JsPackageManager.ts';
@@ -158,33 +161,50 @@ describe('NPM Proxy', () => {
     });
 
     describe('ERESOLVE fallback', () => {
-      const eresolveError = new Error(
-        [
-          'npm error code ERESOLVE',
-          'npm error ERESOLVE could not resolve',
-          'npm error',
-          'npm error While resolving: proj@0.0.0',
-          'npm error Found: typescript@7.0.2',
-          'npm error',
-          'npm error Could not resolve dependency:',
-          'npm error   peerOptional typescript@"^5.9.0 || ^6.0.0" from @storybook/react-vite@11.0.0-alpha.6',
-          'npm error',
-          'npm error Fix the upstream dependency conflict, or retry',
-          'npm error this command with --force or --legacy-peer-deps',
-        ].join('\n')
-      );
+      const eresolveLogs = [
+        'npm error code ERESOLVE',
+        'npm error ERESOLVE could not resolve',
+        'npm error',
+        'npm error While resolving: proj@0.0.0',
+        'npm error Found: typescript@7.0.2',
+        'npm error',
+        'npm error Could not resolve dependency:',
+        'npm error   peerOptional typescript@"^5.9.0 || ^6.0.0" from @storybook/react-vite@11.0.0-alpha.6',
+        'npm error',
+        'npm error Fix the upstream dependency conflict, or retry',
+        'npm error this command with --force or --legacy-peer-deps',
+      ].join('\n');
 
-      it('retries the install once with --legacy-peer-deps when npm reports ERESOLVE', async () => {
+      const eresolveError = new PackageInstallDependencyConflictError({
+        command: 'npm',
+        args: ['install'],
+        logs: eresolveLogs,
+      });
+
+      beforeEach(() => {
         vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
           await Promise.resolve(fn());
         });
-        const executeCommandSpy = mockedExecuteCommand
+        vi.mocked(logger.warn).mockClear();
+        vi.mocked(logger.error).mockClear();
+      });
+
+      it('retries the install once with --legacy-peer-deps when opted in', async () => {
+        mockedExecuteCommand
           .mockRejectedValueOnce(eresolveError)
           .mockResolvedValueOnce({ stdout: '' } as any);
+        const clearCacheSpy = vi
+          .spyOn(npmProxy, 'clearInstalledVersionCache')
+          .mockImplementation(vi.fn());
 
-        await npmProxy.installDependencies();
+        await npmProxy.installDependencies({ allowLegacyPeerDepsFallback: true });
 
-        expect(executeCommandSpy).toHaveBeenCalledTimes(2);
+        // The first attempt is strict; only the retry carries the flag.
+        expect(mockedExecuteCommand).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({ command: 'npm', args: ['install'] })
+        );
+        expect(mockedExecuteCommand).toHaveBeenCalledTimes(2);
         expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
           expect.objectContaining({
             command: 'npm',
@@ -192,31 +212,13 @@ describe('NPM Proxy', () => {
           })
         );
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('--legacy-peer-deps'));
+        // A recovered install is not reported as a failure.
+        expect(logger.error).not.toHaveBeenCalled();
+        expect(clearCacheSpy).toHaveBeenCalledTimes(1);
       });
 
-      it('rethrows the fallback error when the legacy-peer-deps retry also fails', async () => {
-        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
-          await Promise.resolve(fn());
-        });
-        mockedExecuteCommand
-          .mockRejectedValueOnce(eresolveError)
-          .mockRejectedValueOnce(new Error('npm error code EACCES\nnpm error permission denied'));
-
-        const error = await npmProxy.installDependencies().then(
-          () => null,
-          (caughtError) => caughtError
-        );
-
-        expect(error?.message).toContain('EACCES');
-      });
-
-      it('rethrows unrelated install errors without retrying', async () => {
-        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(async (fn: any) => {
-          await Promise.resolve(fn());
-        });
-        const executeCommandSpy = mockedExecuteCommand.mockRejectedValueOnce(
-          new Error('npm error code EACCES\nnpm error permission denied')
-        );
+      it('keeps the typed conflict error for callers that do not opt in', async () => {
+        const executeCommandSpy = mockedExecuteCommand.mockRejectedValueOnce(eresolveError);
 
         const error = await npmProxy.installDependencies().then(
           () => null,
@@ -224,7 +226,44 @@ describe('NPM Proxy', () => {
         );
 
         expect(executeCommandSpy).toHaveBeenCalledTimes(1);
+        expect(error).toBeInstanceOf(PackageInstallDependencyConflictError);
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it('does not retry non-ERESOLVE failures even when opted in', async () => {
+        const executeCommandSpy = mockedExecuteCommand.mockRejectedValueOnce(
+          new Error('npm error code EACCES\nnpm error permission denied')
+        );
+
+        const error = await npmProxy
+          .installDependencies({ allowLegacyPeerDepsFallback: true })
+          .then(
+            () => null,
+            (caughtError) => caughtError
+          );
+
+        expect(executeCommandSpy).toHaveBeenCalledTimes(1);
         expect(error?.message).toContain('EACCES');
+        expect(logger.warn).not.toHaveBeenCalled();
+      });
+
+      it('surfaces the retry failure with the original conflict as its cause', async () => {
+        const retryError = new Error('Command failed: npm install');
+        (retryError as any).stderr = 'npm error code EACCES\nnpm error permission denied';
+        mockedExecuteCommand.mockRejectedValueOnce(eresolveError).mockRejectedValueOnce(retryError);
+
+        const error = await npmProxy
+          .installDependencies({ allowLegacyPeerDepsFallback: true })
+          .then(
+            () => null,
+            (caughtError) => caughtError
+          );
+
+        expect(error).toBe(retryError);
+        expect(error).toMatchObject({ cause: eresolveError });
+        expect(error?.message).toContain('EACCES');
+        // The base class surfaces the captured output tail of the failed retry.
+        expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('EACCES'));
       });
     });
   });

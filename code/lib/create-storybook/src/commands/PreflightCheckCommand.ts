@@ -84,7 +84,10 @@ export class PreflightCheckCommand {
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
-      await packageManager.installDependencies();
+      // A freshly scaffolded project can hit npm ERESOLVE from upstream peer drift (e.g. a
+      // new create-vite template whose typescript major outpaces our declared peer ranges);
+      // recover the install instead of leaving the project without node_modules.
+      await packageManager.installDependencies({ allowLegacyPeerDepsFallback: true });
     }
 
     this.checkPackageNameConflict(packageManager);

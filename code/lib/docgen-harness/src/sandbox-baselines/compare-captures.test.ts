@@ -89,15 +89,6 @@ describe('capture comparison', () => {
     expect(result.staleWaivers).toEqual([stale]);
     expect(result.passed).toBe(false);
   });
-  it('waives only the named argument', () => {
-    const options = setup();
-    const file = join(options.report, 'waivers.json');
-    writeFileSync(file, JSON.stringify(waivers.filter((waiver) => waiver.arg !== 'size')));
-    const result = compareCaptures({ ...options, waivers: file });
-    expect(result.unwaived.map((v) => [v.kind, v.arg])).toEqual([['lost-arg', 'size']]);
-    expect(result.staleWaivers).toEqual([]);
-    expect(result.passed).toBe(false);
-  });
 });
 
 it('round-trips Unicode component ids without permitting path traversal', async () => {
@@ -166,6 +157,104 @@ it('reads a legacy null component description as absent', async () => {
     JSON.stringify({ id: 'button', name: 'Button', description: null, argTypes: {}, stories: {} })
   );
   expect(readCapture(options.report).components.button.description).toBeUndefined();
+});
+
+it('preserves source evidence byte-for-byte across capture serialization', async () => {
+  const { readCapture, writeCapture } = await import('./capture/files.ts');
+  const { sourceDigest } = await import('./capture/story-source.ts');
+  const options = setup();
+  const text = '<script>import Button from "/project/Button.svelte";</script><Button/>';
+  const source = {
+    importPath: './Button.stories.svelte',
+    sha: 'abc123',
+    source: text,
+    digest: sourceDigest(text),
+  };
+  const directory = join(options.report, 'source-capture');
+  writeCapture(
+    directory,
+    {
+      button: {
+        id: 'button',
+        name: 'Button',
+        argTypes: {},
+        stories: { 'button--primary': { snippet: '<Button/>', source } },
+      },
+    },
+    {
+      engine: 'legacy',
+      storybookVersion: '10.3.2',
+      repo: 'fixture',
+      sha: 'abc123',
+      capturedAt: '2026-10-16T00:00:00.000Z',
+    },
+    '/project'
+  );
+  const saved = readCapture(directory).components.button.stories['button--primary'].source;
+  expect(saved).toEqual(source);
+});
+
+it('counts accepted sweep rules in both reports while preserving argument findings', async () => {
+  const { writeCapture } = await import('./capture/files.ts');
+  const { sourceDigest } = await import('./capture/story-source.ts');
+  const options = setup();
+  const text = '<script>import Button from "./Button.svelte";</script><Button/>';
+  const source = {
+    importPath: './Button.stories.svelte',
+    sha: 'abc123',
+    source: text,
+    digest: sourceDigest(text),
+  };
+  const metadata = {
+    engine: 'legacy' as const,
+    storybookVersion: '10.3.2',
+    repo: 'fixture',
+    sha: 'abc123',
+    capturedAt: '2026-10-16T00:00:00.000Z',
+  };
+  const before = join(options.report, 'before');
+  const after = join(options.report, 'after');
+  writeCapture(
+    before,
+    {
+      button: {
+        id: 'button',
+        name: 'Button',
+        argTypes: { onclick: { name: 'onclick', type: { name: 'other', value: '() => void' } } },
+        stories: {
+          'button--primary': { snippet: '<Button mode="default" title="hello"/>', source },
+        },
+      },
+    },
+    metadata,
+    '/project'
+  );
+  writeCapture(
+    after,
+    {
+      button: {
+        id: 'button',
+        name: 'Button',
+        argTypes: {
+          onclick: { name: 'onclick', type: { name: 'function', raw: '() => void' } },
+          mode: { name: 'mode', table: { defaultValue: { summary: '"default"' } } },
+        },
+        stories: { 'button--primary': { snippet: '<Button/>' } },
+      },
+    },
+    { ...metadata, engine: 'server' },
+    '/project'
+  );
+  const result = compareCaptures({ ...options, before, after });
+  expect(result.accepted['default-omitted']).toBe(1);
+  expect(result.accepted['callable-classification']).toBe(1);
+  expect(result.unwaived.map((v) => [v.kind, v.arg])).toEqual([['lost-representation', 'title']]);
+  expect(readFileSync(join(options.report, 'report.md'), 'utf8')).toContain(
+    'accepted: default-omitted 1'
+  );
+  expect(JSON.parse(readFileSync(join(options.report, 'report.json'), 'utf8')).accepted).toEqual(
+    result.accepted
+  );
 });
 
 it('keeps another argument loss unwaived and rejects unknown waiver fields', () => {

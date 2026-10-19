@@ -84,3 +84,30 @@ it.each([
 ])('rejects empty flags in the wrong mode %j', (...args) => {
   expect(() => parseBaselineRunOptions(args)).toThrow();
 });
+
+it('accepts source evidence only for capture runs', () => {
+  expect(
+    parseBaselineRunOptions([
+      '--capture',
+      'legacy',
+      '--static',
+      '/build',
+      '--out',
+      '/capture',
+      '--sources',
+      '/sources.json',
+    ])
+  ).toMatchObject({ sources: '/sources.json' });
+  expect(() =>
+    parseBaselineRunOptions([
+      '--compare',
+      '/before',
+      '/after',
+      '--framework',
+      'svelte',
+      '--sources',
+      '/sources.json',
+    ])
+  ).toThrow('invalid options');
+  expect(() => parseBaselineRunOptions(['--sources', '/sources.json'])).toThrow('invalid options');
+});

@@ -7,16 +7,16 @@ import type { CapturedComponents } from './types.ts';
 
 export function captureServer(staticDir: string): CapturedComponents {
   const docgen = readStaticDocgen({ staticDir, sandboxDir: dirname(staticDir) });
-  const { entries } = readCaptureIndex(staticDir);
+  const { entries, selected } = readCaptureIndex(staticDir);
   const storyDocs = readStaticStoryDocs(staticDir);
   return Object.fromEntries(
-    Object.entries(docgen).map(([id, component]) => [
+    Array.from(new Set([...Object.keys(docgen), ...selected.keys()])).map((id) => [
       id,
       {
         id,
-        name: component.name,
-        description: component.description,
-        argTypes: component.argTypes ?? {},
+        name: docgen[id]?.name ?? selected.get(id)?.title ?? id,
+        description: docgen[id]?.description,
+        argTypes: docgen[id]?.argTypes ?? {},
         stories: {
           ...Object.fromEntries(
             entries

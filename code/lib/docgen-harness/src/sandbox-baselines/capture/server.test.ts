@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 
 import { captureServer } from './server.ts';
 
-it('records indexed stories without static snippets as null and excludes test entries', () => {
+it('preserves indexed groups without docgen, records missing snippets and excludes tests', () => {
   const root = mkdtempSync(join(tmpdir(), 'server-capture-'));
   const staticDir = join(root, 'storybook-static');
   try {
@@ -25,6 +25,7 @@ it('records indexed stories without static snippets as null and excludes test en
           primary: { ...story, id: 'button--primary' },
           missing: { ...story, id: 'button--missing' },
           test: { ...story, id: 'button--test', subtype: 'test' },
+          template: { ...story, title: 'Template', id: 'template--primary' },
         },
       })
     );
@@ -45,6 +46,13 @@ it('records indexed stories without static snippets as null and excludes test en
       })
     );
     expect(captureServer(staticDir)).toEqual({
+      template: {
+        id: 'template',
+        name: 'Template',
+        description: undefined,
+        argTypes: {},
+        stories: { 'template--primary': { snippet: null } },
+      },
       button: {
         id: 'button',
         name: 'Button',

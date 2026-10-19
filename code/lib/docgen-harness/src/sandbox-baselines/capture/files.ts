@@ -11,6 +11,7 @@ import { stableStringify } from '../stable-stringify.ts';
 import type { CapturedComponents, CaptureMetadata } from './types.ts';
 
 import { argTypesSchema } from './arg-types-schema.ts';
+import { storySourceSchema } from './story-source.ts';
 const componentSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
@@ -19,7 +20,9 @@ const componentSchema = z.object({
     z.string().optional()
   ),
   argTypes: argTypesSchema,
-  stories: z.record(z.object({ snippet: z.string().nullable() })),
+  stories: z.record(
+    z.object({ snippet: z.string().nullable(), source: storySourceSchema.optional() })
+  ),
 });
 const metadataSchema = z.object({
   engine: z.enum(['legacy', 'server']),
@@ -70,8 +73,8 @@ export function writeCapture(
       join(directory, `${id}.json`),
       stableStringify(
         JSON.parse(
-          JSON.stringify(component, (_key, value: unknown) =>
-            typeof value === 'string'
+          JSON.stringify(component, (key, value: unknown) =>
+            typeof value === 'string' && key !== 'source'
               ? normalizePaths(value, root).replaceAll('<sandbox>', '<root>')
               : value
           )

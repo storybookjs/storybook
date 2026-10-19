@@ -10,6 +10,9 @@ import { readCapture } from './capture/files.ts';
 import type { CompareRunOptions } from './options.ts';
 import { stableStringify } from './stable-stringify.ts';
 
+import { compareSvelteCaptureSnippet, type AcceptedRule } from './svelte-rules.ts';
+import { isExactCallableClassification } from '../compare/argtypes.ts';
+
 const waiversSchema = z.array(
   z
     .object({
@@ -47,6 +50,18 @@ export function compareCaptures(options: CompareRunOptions) {
     throw new SandboxBaselineError('Comparison requires a legacy baseline and a server candidate');
   const coverage = { attempted: 0, compared: 0, incomplete: 0 };
   const violations: CaptureViolation[] = [];
+  const accepted: Record<AcceptedRule | 'callable-classification', number> = {
+    'text-equivalent': 0,
+    'native-mock-omitted': 0,
+    'snippet-child': 0,
+    'default-omitted': 0,
+    'event-omitted': 0,
+    'binding-represented': 0,
+    'callable-classification': 0,
+  };
+  const count = (rules: AcceptedRule[]) => {
+    for (const rule of rules) accepted[rule] = (accepted[rule] ?? 0) + 1;
+  };
   for (const [id, baseline] of Object.entries(before.components)) {
     const candidate = after.components[id];
     if (!candidate) {
@@ -73,6 +88,12 @@ export function compareCaptures(options: CompareRunOptions) {
         legacyBaseline: true,
       })
     );
+    if (options.framework === 'svelte') {
+      for (const [name, entry] of Object.entries(baseline.argTypes)) {
+        if (isExactCallableClassification(entry.type, candidate.argTypes[name]?.type))
+          accepted['callable-classification']++;
+      }
+    }
     if (baseline.description?.trim() && !candidate.description?.trim())
       add([
         {
@@ -112,15 +133,28 @@ export function compareCaptures(options: CompareRunOptions) {
         });
       } else {
         coverage.compared++;
-        add(
-          collectCurrentOrBetterViolations({
-            kind: 'snippet',
-            framework: options.framework,
+        if (options.framework === 'svelte') {
+          const result = compareSvelteCaptureSnippet({
             baseline: baselineResult.code,
             candidate: candidateResult.code,
-          }),
-          storyId
-        );
+            argTypes: candidate.argTypes,
+            source: story.source,
+            sha: before.metadata.sha,
+            storyId,
+          });
+          add(result.violations, storyId);
+          count(result.accepted);
+        } else {
+          add(
+            collectCurrentOrBetterViolations({
+              kind: 'snippet',
+              framework: options.framework,
+              baseline: baselineResult.code,
+              candidate: candidateResult.code,
+            }),
+            storyId
+          );
+        }
       }
     }
   }
@@ -157,6 +191,7 @@ export function compareCaptures(options: CompareRunOptions) {
     stories: { before: countStories(before), after: countStories(after) },
     timeouts: { before: countTimeouts(before), after: countTimeouts(after) },
     gains: Object.keys(after.components).filter((id) => !before.components[id]),
+    accepted,
     violations,
     waivers,
     staleWaivers,
@@ -180,6 +215,7 @@ export function compareCaptures(options: CompareRunOptions) {
       '',
       `Snippet coverage: ${coverage.compared} compared, ${coverage.incomplete} incomplete, ${coverage.attempted} attempted.`,
       '',
+      ...Object.entries(accepted).map(([rule, n]) => `accepted: ${rule} ${n}`),
       '',
       '| Component | Story | Violation | Arg | Detail |',
       '| --- | --- | --- | --- | --- |',

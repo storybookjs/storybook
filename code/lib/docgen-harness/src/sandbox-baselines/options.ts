@@ -14,6 +14,7 @@ const OPTIONS = {
   framework: { type: 'string' },
   waivers: { type: 'string' },
   report: { type: 'string' },
+  sources: { type: 'string' },
   'snippet-timeout': { type: 'string' },
 } as const;
 
@@ -28,6 +29,7 @@ const captureSchema = z.object({
   engine: z.enum(['legacy', 'server']),
   staticDir: nonempty,
   out: nonempty,
+  sources: nonempty.optional(),
   snippetTimeout: z.coerce.number().int().positive().default(1000),
 });
 const compareSchema = z.object({
@@ -74,6 +76,7 @@ export function parseBaselineRunOptions(
         engine: values.capture,
         staticDir: values.static,
         out: values.out,
+        sources: values.sources,
         snippetTimeout: values['snippet-timeout'],
       });
     }
@@ -81,6 +84,7 @@ export function parseBaselineRunOptions(
       positionals.length !== 2 ||
       values.static !== undefined ||
       values.out !== undefined ||
+      values.sources !== undefined ||
       values['snippet-timeout'] !== undefined
     )
       throw new SandboxBaselineError('invalid options: compare requires two capture directories');
@@ -100,6 +104,7 @@ export function parseBaselineRunOptions(
     values.framework !== undefined ||
     values.waivers !== undefined ||
     values.report !== undefined ||
+    values.sources !== undefined ||
     values['snippet-timeout'] !== undefined
   )
     throw new SandboxBaselineError('invalid options: capture or compare required');

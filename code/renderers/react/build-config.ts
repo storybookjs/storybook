@@ -1,7 +1,3 @@
-import { writeFile } from 'node:fs/promises';
-
-import { join } from 'pathe';
-
 import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
@@ -14,10 +10,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./preview'],
         entryPoint: './src/preview.tsx',
-      },
-      {
-        exportEntries: ['./theming'],
-        entryPoint: './src/theming.ts',
       },
       {
         exportEntries: ['./entry-preview'],
@@ -55,10 +47,6 @@ const config: BuildEntries = {
         dts: false,
       },
     ],
-  },
-  // Inlined declarations drop the Theme merge (`declare module '.'` in core theming).
-  postbuild: async (cwd) => {
-    await writeFile(join(cwd, 'dist/theming.d.ts'), "export * from 'storybook/theming';\n");
   },
 };
 

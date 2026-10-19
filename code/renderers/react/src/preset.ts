@@ -6,6 +6,7 @@ import type { ArgTypes } from 'storybook/internal/csf';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
+import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
 import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo.ts';
 import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type {
@@ -92,6 +93,34 @@ export const resolvedReact = async (existing: any) => {
     return existing;
   }
 };
+
+const readReactAliasTarget = async (options: Options) => {
+  const resolved = (await options.presets.apply('resolvedReact', {})) as {
+    react?: string;
+    reactDom?: string;
+  };
+  if (!resolved?.react || !resolved.reactDom) {
+    return null;
+  }
+  return { react: resolved.react, reactDom: resolved.reactDom };
+};
+
+export const viteFinal = async (config: { plugins?: unknown[] } = {}, options: Options) => {
+  const target = await readReactAliasTarget(options);
+  return target ? prependReactDedupePlugin(config, target) : config;
+};
+
+export async function webpack(
+  config: {
+    resolve?: {
+      alias?: Record<string, string> | Array<{ name: string; alias: string }>;
+    };
+  } = {},
+  options: Options
+) {
+  const target = await readReactAliasTarget(options);
+  return target ? aliasReactInWebpack(config, target) : config;
+}
 
 export async function internal_getArgTypesData(
   _input: unknown,

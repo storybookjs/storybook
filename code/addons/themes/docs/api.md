@@ -4,11 +4,10 @@
 
 ### `withThemeFromJSXProvider`
 
-Takes your provider component, global styles, and theme(s)to wrap your stories in. This decorator renders JSX, so it is exported by the React renderer and every React framework package rather than by this addon.
+Takes your provider component, global styles, and theme(s)to wrap your stories in.
 
 ```js
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import { withThemeFromJSXProvider } from '@storybook/your-framework';
+import { withThemeFromJSXProvider } from '@storybook/addon-themes';
 
 export const decorators = [
   withThemeFromJSXProvider({

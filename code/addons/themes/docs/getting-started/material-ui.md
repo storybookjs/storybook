@@ -43,7 +43,7 @@ export default {
 These can be imported into your `.storybook/preview.js` file.
 
 ```diff
-import { Preview } from '@storybook/your-framework';
+import { Preview } from '@storybook/your-renderer';
 
 +// Load Material UI fonts
 +import '@fontsource/roboto/300.css';
@@ -66,8 +66,9 @@ While Material UI comes with a default theme that works out of the box. You can 
 Make the following changes to your `.storybook/preview.js`:
 
 ```diff
--import { Preview } from '@storybook/your-framework';
-+import { Preview, Renderer, withThemeFromJSXProvider } from '@storybook/your-framework';
+-import { Preview } from '@storybook/your-renderer';
++import { Preview, Renderer } from '@storybook/your-renderer';
++import { withThemeFromJSXProvider } from '@storybook/addon-themes';
 +import { CssBaseline, ThemeProvider } from '@mui/material';
 +import { lightTheme, darkTheme } from '../src/themes'; // Import your custom theme configs
 

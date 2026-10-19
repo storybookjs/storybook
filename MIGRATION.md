@@ -7,7 +7,6 @@
   - [Tag filtering API](#tag-filtering-api)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
-  - [React preview code: `storybook/theming` and `withThemeFromJSXProvider` moved to the React renderer](#react-preview-code-storybooktheming-and-withthemefromjsxprovider-moved-to-the-react-renderer)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [`viewport.defaultViewport` parameter and `responsiveViewport` removed](#viewportdefaultviewport-parameter-and-responsiveviewport-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -15,6 +14,7 @@
   - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
@@ -765,26 +765,6 @@ See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-typ
 
 Keep any existing precedence between the theme parameters and your selected theme global. Rebuild your Storybook and check the decorator in both development and a served static build. See the [addon migration guide](docs/addons/addon-migration-guide.mdx#usethemeparameters-removal) for the replacement.
 
-### React preview code: `storybook/theming` and `withThemeFromJSXProvider` moved to the React renderer
-
-The `storybook` package and `@storybook/addon-themes` do not declare React as a dependency, so that non-React projects never install it. Their code that imports React (`storybook/theming` is built on Emotion, and `withThemeFromJSXProvider` renders JSX) therefore cannot be resolved from the preview under strict package layouts such as pnpm's global virtual store (`enableGlobalVirtualStore: true`), where the build fails with `Rollup failed to resolve import "react" from .../storybook/dist/theming/index.js`.
-
-Both are now published from the React renderer, which does declare React, and re-exported by every React framework package:
-
-```diff
-// .storybook/preview.tsx, *.stories.tsx
--import { withThemeFromJSXProvider } from '@storybook/addon-themes';
--import { ThemeProvider, themes } from 'storybook/theming';
-+import { withThemeFromJSXProvider } from '@storybook/react-vite'; // or your React framework package
-+import { ThemeProvider, themes } from '@storybook/react-vite/theming';
-```
-
-`@storybook/addon-themes` no longer exports `withThemeFromJSXProvider`. `withThemeByClassName`, `withThemeByDataAttribute` and `DecoratorHelpers` are unchanged.
-
-Keep `storybook/theming` in manager code (`.storybook/manager.ts`, addon panels) and in stories that render Storybook's own UI components, such as `@storybook/addon-docs/blocks`: those components read the theme from the Emotion instance inside `storybook`, which `@storybook/react/theming` does not share. For `parameters.docs.theme`, `storybook/theming/create` exports `themes` and `create` without React in any renderer.
-
-The `react-theming-imports` automigration rewrites these imports in your preview file and story files of React projects: `npx storybook automigrate react-theming-imports`.
-
 ### `storybook dev` no longer opens a browser by default
 
 Storybook now starts the development server without automatically opening it in a browser. The CLI
@@ -967,6 +947,28 @@ export const Primary: Story = {
 - In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
 
 Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
+
+### Deprecated CSF and manager type aliases removed
+
+The following deprecated type aliases and fields are removed. If your code imports any of them from `storybook` (via `storybook/internal/csf`, `storybook/internal/types`, or `storybook/manager-api`), switch to the supported replacement:
+
+| Deprecated               | Replacement             |
+| ------------------------ | ----------------------- |
+| `StoryKind`              | `ComponentTitle`        |
+| `StoryIdentifier.kind`   | `StoryIdentifier.title` |
+| `StoryIdentifier.story`  | `StoryIdentifier.name`  |
+| `AnyFramework`           | `Renderer`              |
+| `StoryContextForLoaders` | `StoryContext`          |
+| `PlayFunctionContext`    | `StoryContext`          |
+| `StoriesHash`            | `IndexHash`             |
+
+The deprecated `kind` and `story` fields are also gone from `Addon_AddStoryArgs`, `Addon_StoryApi`, and the legacy `setStories` payload type `SetStoriesStory` (the whole interface is removed). The `RenderContext` passed to `renderToCanvas` no longer contains `kind` or `story`; third-party renderers read `title` and `name` instead.
+
+`@storybook/addon-links`' deprecated `LinkTo` `kind` and `story` props are removed; use `title` and `name`. The `data-sb-kind` and `data-sb-story` HTML attributes are unchanged. The provider `StoryMapper` option is removed.
+
+Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`. The `extract()` output — the serialized stories that external tools such as the Chromatic CLI read — still includes the deprecated `kind` and `story` fields for compatibility, so tools reading the serialized output keep working.
+
+The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, and still accepts the deprecated `kind`/`story` payload that composed Storybooks built with Storybook 10.x or earlier send, so cross-story links inside those refs keep navigating. A payload without any of those keys is ignored with a warning. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
 
 ### `docgenServer` is stable and enabled by default
 

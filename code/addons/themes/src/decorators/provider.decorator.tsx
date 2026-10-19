@@ -4,11 +4,8 @@ import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
 
 import { useMemo } from 'storybook/preview-api';
 
-import { PARAM_KEY } from '../../../addons/themes/src/constants.ts';
-import {
-  initializeThemeState,
-  pluckThemeFromContext,
-} from '../../../addons/themes/src/decorators/helpers.ts';
+import { PARAM_KEY } from '../constants.ts';
+import { initializeThemeState, pluckThemeFromContext } from './helpers.ts';
 
 type Theme = Record<string, any>;
 type ThemeMap = Record<string, Theme>;
@@ -20,10 +17,9 @@ export interface ProviderStrategyConfiguration {
   themes?: ThemeMap;
 }
 
-/**
- * Wrap every story in a theme provider component and let `@storybook/addon-themes` switch the theme
- * from the toolbar.
- */
+const pluckThemeFromKeyPairTuple = ([_, themeConfig]: [string, Theme]): Theme => themeConfig;
+
+// TODO check with @kasperpeulen: change the types so they can be correctly inferred from context e.g. <Story extends (...args: any[]) => any>
 export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
   Provider,
   GlobalStyles,
@@ -43,7 +39,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
       const selectedThemeName = themeOverride || selected || initialTheme;
       const pairs = Object.entries(themes);
 
-      return pairs.length === 1 ? pairs[0][1] : themes[selectedThemeName];
+      return pairs.length === 1 ? pluckThemeFromKeyPairTuple(pairs[0]) : themes[selectedThemeName];
     }, [selected, themeOverride]);
 
     if (!Provider) {

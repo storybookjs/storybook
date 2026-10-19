@@ -181,7 +181,8 @@ export function extractStorySnippets(
         return {
           id: story.id,
           name,
-          snippet: recast.print(snippet.node).code,
+          // Recast defaults to `os.EOL`, which would carriage-return snippets built on Windows.
+          snippet: recast.print(snippet.node, { lineTerminator: '\n' }).code,
           description,
           summary,
           ...(warning ? { warning } : {}),

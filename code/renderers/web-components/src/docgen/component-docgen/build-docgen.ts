@@ -3,7 +3,7 @@ import type { JsDocTagMap } from 'storybook/internal/csf-tools';
 import { extractComponentDescription, extractDescription } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
-import { resolve } from 'node:path';
+import { resolve } from 'pathe';
 
 import { buildApiDescription } from './api-description.ts';
 import { mapArgTypes } from './arg-types/map-arg-types.ts';

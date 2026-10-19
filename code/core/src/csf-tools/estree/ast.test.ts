@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { type E, codeFrame, parseExpression, outerSpan, parseModule, textOf, walk } from './ast.ts';
+import {
+  type E,
+  codeFrame,
+  parseExpression,
+  outerSpan,
+  parseModule,
+  parsePrintable,
+  textOf,
+  walk,
+} from './ast.ts';
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -78,6 +87,13 @@ describe('parseModule', () => {
     const { code } = parseModule(['const a = 1;', 'const b = 2;', ''].join(eol));
     expect(code).toBe('const a = 1;\nconst b = 2;\n');
     expect(() => parseModule(['const a = 1;', 'const b = ;', ''].join(eol))).toThrow(/\(2:10\)$/);
+  });
+
+  it('serializes a printable parse like the parser output, with its text available', () => {
+    const code = 'export const a = (1);\n';
+    const { program } = parsePrintable(code, 'a.ts');
+    expect(textOf(program.body[0])).toBe('export const a = (1);');
+    expect(JSON.stringify(program)).toBe(JSON.stringify(parseModule(code, 'a.ts').program));
   });
 
   it('normalizes an expression nested deeper than the call stack allows recursion', () => {

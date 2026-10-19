@@ -69,14 +69,14 @@ function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
 }
 
 export function renderToCanvas(
-  { storyFn, kind, name, showMain, showError }: RenderContext<EmberRenderer>,
+  { storyFn, title, name, showMain, showError }: RenderContext<EmberRenderer>,
   canvasElement: EmberRenderer['canvasElement']
 ) {
   const element = storyFn();
 
   if (!element) {
     showError({
-      title: `Expecting a Ember element from the story: "${name}" of "${kind}".`,
+      title: `Expecting a Ember element from the story: "${name}" of "${title}".`,
       description: dedent`
         Did you forget to return the Ember element from the story?
         Use "() => hbs('{{component}}')" or "() => { return {

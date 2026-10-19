@@ -53,7 +53,10 @@ export class ComponentMetaManager<
   // Our own file watching layer
   private watching = false;
   private watchersByDir = new Map<string, FSWatcher>();
-  private pendingEvents = new Map<string, ReturnType<typeof setTimeout>>();
+  private pendingEvents = new Map<
+    string,
+    { timeout: ReturnType<typeof setTimeout>; renamed: boolean }
+  >();
 
   // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
   private readonly heapRecycleThresholdBytes: number;
@@ -492,15 +495,18 @@ export class ComponentMetaManager<
 
         const existing = this.pendingEvents.get(filePath);
         if (existing) {
-          clearTimeout(existing);
+          clearTimeout(existing.timeout);
         }
+        // Windows reports a new file as `rename` then `change`; a `rename` anywhere in the burst
+        // must survive, or the file is treated as an edit and projects never see it was created.
+        const renamed = eventType === 'rename' || (existing?.renamed ?? false);
 
-        this.pendingEvents.set(
-          filePath,
-          setTimeout(() => {
+        this.pendingEvents.set(filePath, {
+          renamed,
+          timeout: setTimeout(() => {
             this.pendingEvents.delete(filePath);
 
-            if (eventType === 'rename') {
+            if (renamed) {
               if (existsSync(filePath)) {
                 this.handleFileEvent(filePath, 'created');
               } else {
@@ -509,8 +515,8 @@ export class ComponentMetaManager<
             } else {
               this.handleFileEvent(filePath, 'changed');
             }
-          }, 50)
-        );
+          }, 50),
+        });
       });
       watcher.unref();
       this.watchersByDir.set(normalized, watcher);
@@ -520,7 +526,7 @@ export class ComponentMetaManager<
   }
 
   stopWatching(): void {
-    for (const timeout of this.pendingEvents.values()) {
+    for (const { timeout } of this.pendingEvents.values()) {
       clearTimeout(timeout);
     }
     this.pendingEvents.clear();

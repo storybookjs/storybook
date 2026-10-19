@@ -105,7 +105,7 @@ describe('experimental_docgenProvider', () => {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [],
-          previewFilePath: '/workspace/.storybook/preview.ts',
+          previewFilePath: resolve('/workspace/.storybook/preview.ts'),
         },
       },
     ]);

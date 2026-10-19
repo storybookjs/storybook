@@ -34,7 +34,7 @@ const packageDirs = glob.sync(['*/src', '*/*/src'], {
  * a mismatched tree there would hand it to all the others. Saving stays gated on a trusted author so
  * a fork PR cannot put a tree where the next run will find it.
  */
-export const installWithCache = (platform: CachePlatform = 'linux') => [
+const installWithCache = (platform: CachePlatform = 'linux') => [
   cache.attach([NODE_MODULES_CACHE_KEY(platform)]),
   npm.install('.'),
   ...(isTrustedAuthor()
@@ -507,6 +507,7 @@ export const benchmarkPackages = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      npm.installPinnedVersion(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

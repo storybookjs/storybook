@@ -24,12 +24,7 @@ import {
   testsUnit_linux,
 } from './common-jobs.ts';
 import { getInitEmpty, initEmptyNoOpJob } from './init-empty.ts';
-import {
-  defineFocusJob,
-  getChangedFiles,
-  selectChromaticSiblings,
-  selectFocusSandbox,
-} from './focus.ts';
+import { getChangedFiles, getFocusJobs } from './focus.ts';
 import { getSandboxes, sandboxesNoOpJob } from './sandboxes.ts';
 import { getTestStorybooks, testStorybooksNoOpJob } from './test-storybooks.ts';
 import { executors } from './utils/executors.ts';
@@ -55,9 +50,7 @@ const dirname = import.meta.dirname;
 function generateConfig(workflow: Workflow, baseRef: string) {
   const jobs: JobOrNoOpJob[] = [];
   if (workflow === 'focus') {
-    const changedFiles = getChangedFiles(baseRef);
-    const template = selectFocusSandbox(changedFiles);
-    jobs.push(defineFocusJob(template, selectChromaticSiblings(template, changedFiles)));
+    jobs.push(...getFocusJobs(getChangedFiles(baseRef)));
   } else if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
   } else {

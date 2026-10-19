@@ -342,6 +342,57 @@ export const knip = defineJob(
   [commonJobsNoOpJob]
 );
 
+/**
+ * One job, not a second sandbox matrix. The generated sandbox workflow is a job
+ * per template, so Node 26 only runs the unit suite plus one Vite build and one
+ * Webpack build. It installs on its own: the shared node_modules cache is keyed
+ * on `.nvmrc`, which is still Node 22.
+ */
+export const node26Smoke = defineJob('Node 26 smoke', () => ({
+  executor: {
+    name: 'sb_node_26',
+    class: 'xlarge',
+  },
+  steps: [
+    git.checkout(),
+    {
+      run: {
+        name: 'Install npm 12',
+        command: ['node --version', 'sudo npm install -g npm@12', 'npm --version'].join('\n'),
+      },
+    },
+    npm.install('.'),
+    {
+      run: {
+        name: 'Compile',
+        command: 'yarn task --task compile --start-from=auto --no-link',
+      },
+    },
+    {
+      run: {
+        name: 'Run unit tests',
+        // storybook-ui is the browser story project. The linux unit job never
+        // runs it; stories have their own Playwright job.
+        command: "yarn test --project '!storybook-ui'",
+      },
+    },
+    {
+      run: {
+        name: 'Build React Vite sandbox',
+        command:
+          'yarn task build --template react-vite/default-ts --start-from=auto --no-link',
+      },
+    },
+    {
+      run: {
+        name: 'Build React Webpack sandbox',
+        command:
+          'yarn task build --template react-webpack/18-ts --start-from=auto --no-link',
+      },
+    },
+  ],
+}));
+
 export const testsUnit_linux = defineJob(
   'Tests (linux)',
   (workflowName) => ({

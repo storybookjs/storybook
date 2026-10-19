@@ -219,7 +219,7 @@ One essential item to note is the `keywords` property as it maps to the catalog'
 
 Once you're ready to publish your addon to NPM, the Addon Kit comes pre-configured with the [Auto](https://github.com/intuit/auto) package for release management. It generates a changelog and uploads the package to NPM and GitHub automatically. Therefore, you need to configure access to both.
 
-1. Authenticate using [npm adduser](https://docs.npmjs.com/cli/v9/commands/npm-adduser)
+1. Authenticate using [npm login](https://docs.npmjs.com/cli/v12/commands/npm-login)
 2. Generate a [access token](https://docs.npmjs.com/creating-and-viewing-access-tokens#creating-access-tokens) with both `read` and `publish` permissions.
 3. Create a [personal access token](https://docs.github.com/en/github/authenticating-to-github/keeping-your-account-and-data-secure/creating-a-personal-access-token) with `repo` and `workflow` scoped permissions.
 4. Create a `.env` file in the root of your project and add the following:

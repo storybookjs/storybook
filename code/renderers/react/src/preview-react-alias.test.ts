@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   aliasReactInWebpack,
   prependReactDedupePlugin,
+  reactDedupeVitePlugin,
   reactResolveAlias,
 } from './preview-react-alias.ts';
 
@@ -29,8 +30,10 @@ describe('react preview alias', () => {
     const config = prependReactDedupePlugin({ plugins: [later] }, target);
     expect(config.plugins?.[0]).toMatchObject({ name: 'storybook:react-dedupe', enforce: 'pre' });
     expect(config.plugins?.[1]).toBe(later);
-    const plugin = config.plugins?.[0] as { config: () => { resolve: { alias: unknown } } };
-    expect(plugin.config().resolve.alias).toEqual(reactResolveAlias(target));
+  });
+
+  it('exposes the alias through the vite plugin config hook', () => {
+    expect(reactDedupeVitePlugin(target).config().resolve.alias).toEqual(reactResolveAlias(target));
   });
 
   it('sets the webpack alias without dropping an existing entry', () => {

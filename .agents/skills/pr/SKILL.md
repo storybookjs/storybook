@@ -49,10 +49,10 @@ Only one `ci:*` label takes effect. The trigger workflow picks `ci:normal`, then
 
 Every push to a PR labelled `ci:daily` reruns the full daily set, which costs several times a `ci:normal` run. Don't use it while iterating; save it for the end, where it matters.
 
-Open the PR with `ci:normal` and work on it until it is ready. Then swap the label to `ci:daily` for the final check. Use two commands and remove first, so the trigger only sees `ci:daily`:
+Open the PR with `ci:normal` and work on it until it is ready. Then swap its `ci:*` label to `ci:daily` for the final check. Remove the current label (for example `ci:normal` or `ci:merged`) first, in its own command, so the trigger only sees `ci:daily`:
 
 ```bash
-gh pr edit <NUMBER> --remove-label "ci:normal"
+gh pr edit <NUMBER> --remove-label "<current ci:* label>"
 gh pr edit <NUMBER> --add-label "ci:daily"
 ```
 

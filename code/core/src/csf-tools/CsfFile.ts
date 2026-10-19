@@ -593,6 +593,7 @@ export class CsfFile {
   }
 
   getStoryExport(key: string): Node {
+    this._assertIndexed();
     let node: Node | null = this._storyExports[key];
     node = node?.type === 'VariableDeclarator' ? node.init : node;
     if (isCanonicalCsf2BindCall(node)) {

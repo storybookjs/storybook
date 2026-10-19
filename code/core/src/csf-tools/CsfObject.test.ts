@@ -1003,6 +1003,8 @@ describe('CsfObject', () => {
       expect(() => csf.meta).toThrow(error);
       expect(() => csf.stories).toThrow(error);
       expect(() => csf.indexInputs).toThrow(error);
+      expect(() => csf.getStoryExport('A')).toThrow(error);
+      expect(() => csf.getStoryTests('A')).toThrow(error);
       expect(() => csf.objects()).toThrow(error);
     });
   });

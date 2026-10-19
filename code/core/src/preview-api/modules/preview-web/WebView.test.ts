@@ -229,3 +229,46 @@ describe('WebView body classes', () => {
     expect(document.body).not.toHaveClass('sb-show-main');
   });
 });
+
+describe('WebView for a story that owns the document', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="storybook-root"></div><div id="storybook-docs"></div>';
+    document.body.className = 'sb-show-main sb-main-padded';
+  });
+
+  it('renders it to the body, without a root of its own', () => {
+    const view = new WebView();
+
+    const root = view.prepareForStory(makeStory({ layout: 'document', htmlLang: 'ja' }));
+
+    expect(root).toBe(document.body);
+    expect(document.body).toBeEmptyDOMElement();
+    expect(document.body.classList).toHaveLength(0);
+    expect(document.body).not.toHaveAttribute('lang');
+  });
+
+  it('writes no class to the body in any mode', () => {
+    const view = new WebView();
+    view.prepareForStory(makeStory({ layout: 'document' }));
+
+    view.showMain();
+    view.showPreparingStory({ immediate: true });
+    view.showErrorDisplay({ message: 'Boom' });
+
+    expect(document.body.classList).toHaveLength(0);
+    expect(host()).toHaveTextContent('Boom');
+    expect(host().matches(':popover-open')).toBe(true);
+  });
+
+  it('projects the mode and the layout again for the next story', () => {
+    const view = new WebView();
+    view.prepareForStory(makeStory({ layout: 'document' }));
+    view.showMain();
+
+    view.prepareForStory(makeStory({ layout: 'centered' }));
+    view.showMain();
+
+    expect(document.body).toHaveClass('sb-show-main', 'sb-main-centered');
+    expect(document.getElementById('storybook-root')).not.toBeNull();
+  });
+});

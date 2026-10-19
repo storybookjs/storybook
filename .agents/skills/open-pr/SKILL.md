@@ -33,7 +33,7 @@ Use **AskQuestion** for three questions. Options from `.github/PULL_REQUEST_TEMP
 
 | Question   | Options                                                                                                                  |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------ |
-| CI label   | `ci:normal`, `ci:merged`, `ci:daily`                                                                                     |
+| CI label   | `ci:normal`, `ci:merged` (start `ci:daily` later, as the `pr` skill describes)                                           |
 | QA label   | `qa:needed`, `qa:skip`                                                                                                   |
 | Type label | `bug`, `maintenance`, `dependencies`, `build`, `cleanup`, `documentation`, `feature request`, `BREAKING CHANGE`, `other` |
 

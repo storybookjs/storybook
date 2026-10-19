@@ -40,8 +40,34 @@ Add these labels to the PR:
 
 - `ci:normal` - standard sandbox set; default for most code changes
 - `ci:merged` - merged sandbox set
-- `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
+- `ci:daily` - daily sandbox set; needed when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest. Never open a PR with it; follow [Running the daily sandbox set](#running-the-daily-sandbox-set)
 - `ci:docs` - documentation-only changes (use with `documentation` category)
+
+Only one `ci:*` label takes effect. The trigger workflow picks `ci:normal`, then `ci:docs`, then `ci:merged`, then `ci:daily`, so `ci:daily` next to another `ci:*` label never runs.
+
+### Running the daily sandbox set
+
+Every push to a PR labelled `ci:daily` reruns the full daily set, which costs several times a `ci:normal` run. Run it once on purpose instead of on every push:
+
+1. Open the PR with `ci:normal` and iterate until it is otherwise ready.
+2. Swap the labels to start one daily run on the current commit. Use two commands and remove first, so the `labeled` event only sees `ci:daily`:
+
+   ```bash
+   gh pr edit <NUMBER> --remove-label "ci:normal"
+   gh pr edit <NUMBER> --add-label "ci:daily"
+   ```
+
+3. Before pushing again, take `ci:daily` off, push, then put `ci:normal` back. The push runs nothing, and adding the label starts one normal run on the new commit:
+
+   ```bash
+   gh pr edit <NUMBER> --remove-label "ci:daily"
+   git push
+   gh pr edit <NUMBER> --add-label "ci:normal"
+   ```
+
+4. Repeat step 2 only if a later change needs the daily set again.
+
+Adding any other label also starts a run of whichever `ci:*` label is on the PR, so make other label changes before step 2.
 
 **Canary (optional):**
 

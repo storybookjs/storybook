@@ -5,6 +5,7 @@ import type { Options } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './plugins/storybook-project-annotations-plugin.ts';
+import { previewRuntimePath } from './utils/preview-runtime-path.ts';
 import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export async function generateModernIframeScriptCode(options: Options) {
@@ -51,7 +52,7 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
    * @todo Inline variable and remove `noinspection`
    */
   const code = dedent`
-  import { setup } from 'storybook/internal/preview/runtime';
+  import { setup } from '${previewRuntimePath}';
   
   import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
   

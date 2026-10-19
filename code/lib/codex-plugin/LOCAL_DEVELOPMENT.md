@@ -16,6 +16,8 @@ code/lib/codex-plugin/
 
 This matches the layout Codex expects for bundled marketplaces such as `openai-bundled`: the marketplace root contains `.agents/plugins/marketplace.json`, and each plugin lives under `plugins/<name>/`.
 
+The skills under `plugins/storybook/skills/` are rendered from the Claude plugin's `code/lib/claude-plugin/skills/` by `yarn nx compile claude-plugin`. Do not edit them here; edit the Claude plugin's skill and rerun the render.
+
 ## Local Testing
 
 Codex exposes marketplace lifecycle and plugin install commands in the CLI.
@@ -120,4 +122,4 @@ Then inspect the clean config:
 cat "$CODEX_HOME/config.toml"
 ```
 
-The config should include a `[marketplaces.storybook]` entry whose `source` points at this package directory. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should list the bundled skills (`init`, `setup`, `stories`, `upgrade`), which delegate to the `storybook skills` / `storybook tools` CLI.
+The config should include a `[marketplaces.storybook]` entry whose `source` points at this package directory. After restarting Codex with your normal config and installing the plugin from the `Storybook` marketplace, the plugin card should show `Build, preview, and test UI components` and the plugin details should list the bundled skills (`component-docs`, `init`, `setup`, `ui-workflow`, `upgrade`), which delegate to the `storybook skills` / `storybook tools` CLI.

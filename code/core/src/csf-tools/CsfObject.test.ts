@@ -42,6 +42,25 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('prints CRLF sources with LF output', async () => {
+    // Recast reads `os.EOL` at print time; simulate Windows so the default is
+    // observable on any platform.
+    const os = (await import('node:os')).default;
+    const original = os.EOL;
+    Object.defineProperty(os, 'EOL', { value: '\r\n' });
+    try {
+      const source = ['const tags = ["autodocs"];', '', 'export default { tags };'].join('\r\n');
+      const csf = parse(source);
+      const [meta] = csf.objects({ stories: false });
+      expect(meta.set(['tags'], ['autodocs', 'dev']).ok).toBe(true);
+
+      const result = printCsf(csf);
+      expect(result.code).not.toContain('\r');
+    } finally {
+      Object.defineProperty(os, 'EOL', { value: original });
+    }
+  });
+
   it('keeps local bindings readable after replacing a story expression', () => {
     const csf = parse(`
       const params = { a11y: { element: '#app' } };
@@ -349,6 +368,38 @@ describe('CsfObject', () => {
       changed: true,
     });
     expect(printCsf(csf).code).toContain(`Basic.parameters = { a11y: { context: '#root' } };`);
+  });
+
+  it('uses logical paths for CSF2 argTypes assignments', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Playground = () => null;
+      Playground.argTypes = { autoTruncateTokens: { defaultValue: false, control: 'boolean' } };
+    `);
+    const [argTypes] = csf.objects({ meta: false });
+
+    expect(argTypes.get(['argTypes'])).toMatchObject({ type: 'ObjectExpression' });
+    expect(argTypes.remove(['argTypes', 'autoTruncateTokens', 'defaultValue'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain("control: 'boolean'");
+    expect(printCsf(csf).code).not.toContain('defaultValue');
+  });
+
+  it('resolves local values in CSF2 annotation roots', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      const shared = { defaultValue: false };
+      export const Playground = () => null;
+      Playground.argTypes = { autoTruncateTokens: shared };
+    `);
+    const [argTypes] = csf.objects({ meta: false });
+
+    expect(argTypes.getValue(['argTypes'])).toEqual({
+      autoTruncateTokens: { defaultValue: false },
+    });
+    expect(csf.mutationDiagnostics).toEqual([]);
   });
 
   it('rejects repeated CSF2 annotations instead of exposing either object', () => {

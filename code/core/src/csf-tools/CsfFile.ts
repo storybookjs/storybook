@@ -380,7 +380,7 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories, including CSF2 parameter assignments. Unsupported
+   * Discover editors for the meta and stories, including CSF2 parameter and argTypes assignments. Unsupported
    * targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
@@ -816,19 +816,8 @@ export class CsfFile {
             const annotationKey = expression.left.property.name;
             const annotationValue = expression.right;
 
-            // v1-style annotation
-            // A.story = { parameters: ..., decorators: ... }
-
             if (self._storyAnnotations[exportName]) {
-              if (annotationKey === 'story' && t.isObjectExpression(annotationValue)) {
-                (annotationValue.properties as t.ObjectProperty[]).forEach((prop) => {
-                  if (t.isIdentifier(prop.key)) {
-                    self._storyAnnotations[exportName][prop.key.name] = prop.value;
-                  }
-                });
-              } else {
-                self._storyAnnotations[exportName][annotationKey] = annotationValue;
-              }
+              self._storyAnnotations[exportName][annotationKey] = annotationValue;
             }
 
             if (annotationKey === 'storyName' && t.isStringLiteral(annotationValue)) {
@@ -884,7 +873,7 @@ export class CsfFile {
             throw new Error(dedent`
               Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
 
-              SB8 does not support \`storiesOf\`.
+              \`storiesOf\` was removed in Storybook 8.0. Write stories in CSF instead.
             `);
           }
           if (
@@ -1169,7 +1158,11 @@ export const formatCsf = (
 
 /** Use this function, if you want to preserve styles. Uses recast under the hood. */
 export const printCsf = (csf: CsfFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(csf._ast, options);
+  return recast.print(csf._ast, {
+    // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+    lineTerminator: '\n',
+    ...options,
+  });
 };
 
 export const readCsf = async (fileName: string, options: CsfOptions) => {

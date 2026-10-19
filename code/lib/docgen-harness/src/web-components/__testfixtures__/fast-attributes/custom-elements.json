@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "fast-attributes.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "A FAST button with attribute and observable fields.",
+          "name": "FastAttributes",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Go'",
+              "description": "Visible label."
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "'small' | 'large'"
+              },
+              "default": "'small'",
+              "description": "Button size."
+            },
+            {
+              "kind": "field",
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Disables the button (boolean attribute)."
+            },
+            {
+              "kind": "field",
+              "name": "maxCount",
+              "type": {
+                "text": "number"
+              },
+              "default": "3",
+              "description": "Upper bound for the counter; attribute name differs from the field."
+            },
+            {
+              "kind": "field",
+              "name": "items",
+              "type": {
+                "text": "string[]"
+              },
+              "default": "[]",
+              "description": "Property only, never reflected."
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "description": "Current click count."
+            },
+            {
+              "kind": "method",
+              "name": "increment",
+              "return": {
+                "type": {
+                  "text": "void"
+                }
+              },
+              "description": "Increments the counter and fires `fast-count-change`."
+            }
+          ],
+          "events": [
+            {
+              "type": {
+                "text": "CustomEvent<number>"
+              },
+              "description": "Emitted after every click with the new count.",
+              "name": "fast-count-change"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Go'",
+              "description": "Visible label.",
+              "fieldName": "label"
+            },
+            {
+              "name": "size",
+              "type": {
+                "text": "'small' | 'large'"
+              },
+              "default": "'small'",
+              "description": "Button size.",
+              "fieldName": "size"
+            },
+            {
+              "name": "disabled",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Disables the button (boolean attribute).",
+              "fieldName": "disabled"
+            },
+            {
+              "name": "max-count",
+              "type": {
+                "text": "number"
+              },
+              "default": "3",
+              "description": "Upper bound for the counter; attribute name differs from the field.",
+              "fieldName": "maxCount"
+            }
+          ],
+          "superclass": {
+            "name": "FASTElement",
+            "package": "@microsoft/fast-element"
+          },
+          "tagName": "fast-attributes",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "FastAttributes",
+          "declaration": {
+            "name": "FastAttributes",
+            "module": "fast-attributes.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "fast-attributes",
+          "declaration": {
+            "name": "FastAttributes",
+            "module": "fast-attributes.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

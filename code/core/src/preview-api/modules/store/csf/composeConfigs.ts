@@ -62,7 +62,6 @@ export function composeConfigs<TRenderer extends Renderer>(
     afterEach: getArrayField(moduleExportList, 'afterEach'),
     render: getSingletonField(moduleExportList, 'render'),
     renderToCanvas: getSingletonField(moduleExportList, 'renderToCanvas'),
-    experimental_loadStoryFile: getSingletonField(moduleExportList, 'experimental_loadStoryFile'),
     applyDecorators: getSingletonField(moduleExportList, 'applyDecorators'),
     runStep: composeStepRunners<TRenderer>(stepRunners),
     tags: getArrayField(moduleExportList, 'tags'),

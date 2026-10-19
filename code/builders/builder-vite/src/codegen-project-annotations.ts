@@ -6,6 +6,8 @@ import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';
 import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
+import { toImportPath } from './utils/import-path.ts';
+import { getModuleLoader } from './utils/module-loader.ts';
 import { processPreviewAnnotation } from './utils/process-preview-annotation.ts';
 
 /** Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module. */
@@ -22,22 +24,28 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
     [],
     options
   );
+  const moduleLoader = await getModuleLoader(options);
 
   return generateProjectAnnotationsCodeFromPreviews({
     previewAnnotations: [...previewAnnotations, previewOrConfigFile],
     projectRoot,
     frameworkName,
     isCsf4,
+    moduleLoader,
   });
 }
 
 export function generateProjectAnnotationsCodeFromPreviews(options: {
+  /** The last one is the project's preview file, or `undefined` if the project has none. */
   previewAnnotations: (PreviewAnnotation | undefined)[];
   projectRoot: string;
   frameworkName: string;
   isCsf4: boolean;
+  /** A module whose `load(importPath, importFn)` loads the project's preview file. */
+  moduleLoader?: string;
 }) {
-  const { projectRoot } = options;
+  const { projectRoot, moduleLoader } = options;
+  const hasPreviewFile = options.previewAnnotations.at(-1) !== undefined;
   const previewAnnotationURLs = options.previewAnnotations
     .filter((path) => path !== undefined)
     .map((path) => processPreviewAnnotation(path, projectRoot));
@@ -57,12 +65,22 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   const previewFileVariable = variables[variables.length - 1];
   const previewFileImport = imports[imports.length - 1];
 
+  // Prefer the updated module from an HMR update, otherwise the original module
+  const moduleAt = (index: number, variable: string) =>
+    `hmrPreviewAnnotationModules[${index}] ?? ${variable}`;
+  const loadPreviewFile = (module: string) =>
+    moduleLoader
+      ? `await load(${JSON.stringify(toImportPath(previewFileURL))}, async () => ${module})`
+      : module;
+  const loaderImport = moduleLoader ? `${genImport(moduleLoader, ['load'])}\n` : '';
+  const maybeAsync = moduleLoader ? 'async ' : '';
+
   if (options.isCsf4) {
     return dedent`
-      ${previewFileImport}
+      ${loaderImport}${previewFileImport}
 
-      export function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = hmrPreviewAnnotationModules[0] ?? ${previewFileVariable};
+      export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
+        const preview = ${loadPreviewFile(moduleAt(0, previewFileVariable))};
         return preview.default.composed;
       }
 
@@ -79,15 +97,15 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
   return dedent`
     import { composeConfigs } from 'storybook/preview-api';
-
+    ${loaderImport}
     ${imports.join('\n')}
 
-    export function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
+    export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
       const configs = ${genArrayFromRaw(
-        variables.map(
-          (previewAnnotation, index) =>
-            // Prefer the updated module from an HMR update, otherwise the original module
-            `hmrPreviewAnnotationModules[${index}] ?? ${previewAnnotation}`
+        variables.map((variable, index) =>
+          hasPreviewFile && index === variables.length - 1
+            ? loadPreviewFile(moduleAt(index, variable))
+            : moduleAt(index, variable)
         ),
         '  '
       )};

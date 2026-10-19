@@ -288,13 +288,11 @@ describe('composeConfigs', () => {
         {
           render: 'render-1',
           renderToCanvas: 'renderToCanvas-1',
-          experimental_loadStoryFile: 'experimental_loadStoryFile-1',
           applyDecorators: 'applyDecorators-1',
         },
         {
           render: 'render-2',
           renderToCanvas: 'renderToCanvas-2',
-          experimental_loadStoryFile: 'experimental_loadStoryFile-2',
           applyDecorators: 'applyDecorators-2',
         },
       ])
@@ -313,7 +311,6 @@ describe('composeConfigs', () => {
       afterEach: [],
       render: 'render-2',
       renderToCanvas: 'renderToCanvas-2',
-      experimental_loadStoryFile: 'experimental_loadStoryFile-2',
       applyDecorators: 'applyDecorators-2',
       runStep: expect.any(Function),
       tags: [],

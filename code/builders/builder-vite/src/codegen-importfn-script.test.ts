@@ -1,6 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
 
 import { generateImportFnScriptCode } from './codegen-importfn-script.ts';
 
@@ -93,5 +99,71 @@ describe('generateImportFnScriptCode', () => {
         return await importers[path]();
       }"
     `);
+  });
+});
+
+describe('generateImportFnScriptCode with a module loader', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const index: StoryIndex = {
+    v: 5,
+    entries: {
+      'button--primary': {
+        id: 'button--primary',
+        title: 'Button',
+        name: 'Primary',
+        importPath: './Button.stories.js',
+        type: 'story',
+        subtype: 'story',
+      },
+    },
+  };
+
+  it('imports every file through the load function of the loader', async () => {
+    vi.spyOn(process, 'cwd').mockReturnValue('/absolute/path');
+
+    expect(generateImportFnScriptCode(index, '/absolute/loader.js')).toMatchInlineSnapshot(`
+      "import { load } from "/absolute/loader.js";
+
+      const importers = {
+        "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
+      };
+
+      export async function importFn(path) {
+        return await load(path, (path) => importers[path]());
+      }"
+    `);
+  });
+
+  it('importFn returns what load returns, asked with the path of the index', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-loader-')));
+    onTestFinished(() => rm(dir, { recursive: true }));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    await writeFile(join(dir, 'Button.stories.js'), 'export const Primary = {};');
+    await writeFile(
+      join(dir, 'loader.js'),
+      dedent`
+        export const paths = [];
+        export async function load(importPath, importFn) {
+          paths.push(importPath);
+          return { ...(await importFn(importPath)), loaded: true };
+        }
+      `
+    );
+    await writeFile(
+      join(dir, 'stories.js'),
+      generateImportFnScriptCode(index, join(dir, 'loader.js'))
+    );
+
+    const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
+    const { paths } = await import(/* @vite-ignore */ join(dir, 'loader.js'));
+
+    expect(await importFn('./Button.stories.js')).toEqual({
+      Primary: {},
+      loaded: true,
+    });
+    expect(paths).toEqual(['./Button.stories.js']);
   });
 });

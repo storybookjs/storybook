@@ -34,7 +34,6 @@ export type {
   Parameters,
   PartialStoryFn,
   PlayFunction,
-  PlayFunctionContext,
   Renderer,
   SBArrayType,
   SBEnumType,
@@ -52,13 +51,11 @@ export type {
   StoryAnnotationsOrFn,
   StoryContext,
   StoryContextForEnhancers,
-  StoryContextForLoaders,
   StoryContextForRender,
   StoryContextUpdate,
   StoryFn,
   StoryId,
   StoryIdentifier,
-  StoryKind,
   StoryName,
   StrictArgs,
   StrictArgTypes,
@@ -79,6 +76,10 @@ export interface StorybookParameters {
    * The layout property defines basic styles added to the preview body where the story is rendered.
    *
    * If you pass `none`, no styles are applied.
+   *
+   * If you pass `document`, the story renders the whole document: Storybook adds no layout, and its
+   * root is the `<body>` its render leaves, which Storybook marks `#storybook-root` and adds nothing
+   * else to.
    */
   layout?: Layout;
   /**

@@ -685,6 +685,19 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.a.play).toHaveBeenCalled();
       });
 
+      it('does not execute playFunction when the URL says autoplay=false', async () => {
+        document.location.search = '?id=component-one--a&autoplay=false';
+        window.history.replaceState({}, '', `/iframe.html${document.location.search}`);
+        try {
+          await createAndRenderPreview();
+        } finally {
+          window.history.replaceState({}, '', '/');
+        }
+
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalled();
+        expect(componentOneExports.a.play).not.toHaveBeenCalled();
+      });
+
       it('emits STORY_RENDERED', async () => {
         document.location.search = '?id=component-one--a';
         await createAndRenderPreview();
@@ -908,6 +921,173 @@ describe('PreviewWeb', () => {
     });
   });
 
+  describe('a story that owns the document', () => {
+    const documentImportFn = vi.fn(async (path: string) =>
+      path === './src/ComponentOne.stories.js'
+        ? {
+            ...componentOneExports,
+            a: { ...componentOneExports.a, parameters: { layout: 'document' } },
+          }
+        : importFn(path)
+    );
+    // The real document: the mocked global's has no body.
+    const realDocument = globalThis.document;
+
+    it('passes the body its render left to play, marked as the story root', async () => {
+      document.location.search = '?id=component-one--a';
+      const body = realDocument.createElement('body');
+      projectAnnotations.renderToCanvas.mockImplementationOnce(async () => {
+        realDocument.documentElement.replaceChild(body, realDocument.body);
+        return teardownrenderToCanvas;
+      });
+
+      await createAndRenderPreview({ importFn: documentImportFn });
+
+      expect(componentOneExports.a.play).toHaveBeenCalledWith(
+        expect.objectContaining({ canvasElement: body })
+      );
+      expect(body.id).toBe('storybook-root');
+    });
+
+    it('keeps the preparing block until its renderer shows main', async () => {
+      document.location.search = '?id=component-one--a';
+      const [gate, openGate] = createGate();
+      projectAnnotations.renderToCanvas.mockImplementationOnce(async ({ showMain }) => {
+        await gate;
+        showMain();
+        return teardownrenderToCanvas;
+      });
+
+      const preview = new PreviewWeb(documentImportFn, getProjectAnnotations);
+      await preview.ready();
+      await waitForRenderPhase('rendering');
+      expect(preview.view.showPreparingStory).toHaveBeenCalled();
+      expect(preview.view.showMain).not.toHaveBeenCalled();
+
+      openGate();
+      await waitForRender();
+      expect(preview.view.showMain).toHaveBeenCalledOnce();
+    });
+
+    describe('when another story is selected', () => {
+      const importLayouts = (layouts: { a?: string; b?: string }) =>
+        vi.fn(async (path: string) =>
+          path === './src/ComponentOne.stories.js'
+            ? toMerged(componentOneExports, {
+                a: { parameters: { layout: layouts.a } },
+                b: { parameters: { layout: layouts.b } },
+              })
+            : importFn(path)
+        );
+
+      // The preparing blocks, the teardown and the error display, in order, from selecting a story
+      // until it rendered.
+      const select = async (
+        preview: PreviewWeb<Renderer>,
+        storyId = 'component-one--b',
+        viewMode = 'story'
+      ) => {
+        const { showPreparingStory, showPreparingDocs, showErrorDisplay } = vi.mocked(preview.view);
+        [showPreparingStory, showPreparingDocs, showErrorDisplay].forEach((fn) => fn.mockClear());
+        mockChannel.emit.mockClear();
+
+        emitter.emit(SET_CURRENT_STORY, { storyId, viewMode });
+        await waitForRender();
+
+        const named = (
+          { mock }: { mock: { calls: unknown[][]; invocationCallOrder: number[] } },
+          name: (args: any[]) => string
+        ) =>
+          mock.calls.map((args, i): [number, string] => [mock.invocationCallOrder[i], name(args)]);
+        const delay = ([options]: any[]) => (options?.immediate ? 'at once' : 'after the delay');
+        return [
+          ...named(showPreparingStory, (args) => `preparing story ${delay(args)}`),
+          ...named(showPreparingDocs, (args) => `preparing docs ${delay(args)}`),
+          ...named(teardownrenderToCanvas, () => 'teardown'),
+          ...named(showErrorDisplay, () => 'error'),
+        ]
+          .sort(([x], [y]) => x - y)
+          .map(([, event]) => event);
+      };
+
+      it.each([
+        ['a page to a page', { a: 'document', b: 'document' }],
+        ['a component to a page', { b: 'document' }],
+        ['a page to a component', { a: 'document' }],
+      ])('shows the preparing block at once before the teardown, from %s', async (_, layouts) => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: importLayouts(layouts) });
+
+        expect(await select(preview)).toEqual([
+          'preparing story after the delay',
+          'preparing story at once',
+          'teardown',
+        ]);
+      });
+
+      it('keeps the delay from a component to a component', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({ importFn: importLayouts({}) });
+
+        expect(await select(preview)).toEqual(['preparing story after the delay', 'teardown']);
+      });
+
+      it('shows the docs block, not the story block, from a page to docs', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: importLayouts({ a: 'document' }),
+        });
+
+        expect(await select(preview, 'component-one--docs', 'docs')).toEqual([
+          'preparing docs at once',
+          'teardown',
+        ]);
+      });
+
+      it('ends on the error display when the page fails to render', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: importLayouts({ b: 'document' }),
+        });
+        projectAnnotations.renderToCanvas.mockRejectedValueOnce(new Error('render failed'));
+
+        expect(await select(preview)).toEqual([
+          'preparing story after the delay',
+          'preparing story at once',
+          'teardown',
+          'error',
+        ]);
+      });
+
+      it('shows no preparing block when the same story renders again', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview({
+          importFn: importLayouts({ a: 'document' }),
+        });
+        vi.mocked(preview.view.showPreparingStory).mockClear();
+        mockChannel.emit.mockClear();
+
+        preview.onStoriesChanged({ importFn: importLayouts({ a: 'document' }) });
+        await waitForRender();
+
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalledTimes(2);
+        expect(preview.view.showPreparingStory).not.toHaveBeenCalled();
+      });
+    });
+
+    it('takes the mark back when another story is selected', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview({ importFn: documentImportFn });
+      const { body } = realDocument;
+
+      mockChannel.emit.mockClear();
+      emitter.emit(SET_CURRENT_STORY, { storyId: 'component-one--b', viewMode: 'story' });
+      await waitForRender();
+
+      expect(body).not.toHaveAttribute('id');
+    });
+  });
+
   describe('onUpdateGlobals', () => {
     beforeEach(() => {
       mockChannel.emit.mockClear();
@@ -1037,9 +1217,30 @@ describe('PreviewWeb', () => {
         mockChannel.emit.mockClear();
         docsRenderer.render.mockClear();
         emitter.emit(UPDATE_GLOBALS, { globals: { a: 'd' } });
-        await waitForEvents([GLOBALS_UPDATED]);
+        await waitForEvents([DOCS_RENDERED]);
 
         expect(docsRenderer.render).toHaveBeenCalled();
+      });
+
+      it('waits for inline stories to rerender before rerendering the docs container', async () => {
+        document.location.search = '?id=component-one--docs&viewMode=docs';
+        const preview = await createAndRenderPreview();
+        const [inlineStoryRerender, finishInlineStoryRerender] = createGate();
+        const rerenderInlineStory = vi.fn(() => inlineStoryRerender);
+        preview.storyRenders.push({
+          rerender: rerenderInlineStory,
+        } as unknown as (typeof preview.storyRenders)[number]);
+        const rerenderDocs = vi.spyOn(preview.currentRender!, 'rerender');
+
+        const updateGlobals = preview.onUpdateGlobals({ globals: { a: 'd' } });
+        await vi.waitFor(() => expect(rerenderInlineStory).toHaveBeenCalled());
+
+        expect(rerenderDocs).not.toHaveBeenCalled();
+
+        finishInlineStoryRerender();
+        await updateGlobals;
+
+        expect(rerenderDocs).toHaveBeenCalledOnce();
       });
     });
   });
@@ -1912,7 +2113,7 @@ describe('PreviewWeb', () => {
             args: expect.objectContaining({ foo: 'edited' }),
           }),
         }),
-        'story-element'
+        globalThis.document.body
       );
       expect(history.replaceState).not.toHaveBeenCalled();
       expect(windowReplaceState).not.toHaveBeenCalled();
@@ -3660,6 +3861,26 @@ describe('PreviewWeb', () => {
         await waitForRender();
 
         expect(componentOneExports.a.play).toHaveBeenCalled();
+      });
+
+      it('does not execute playFunction when the preview was opened with autoplay=false', async () => {
+        document.location.search = '?id=component-one--a&autoplay=false';
+        window.history.replaceState({}, '', `/iframe.html${document.location.search}`);
+        try {
+          const preview = await createAndRenderPreview();
+          // A story that changes `location` does not turn play back on.
+          window.history.replaceState({}, '', '/elsewhere');
+
+          componentOneExports.a.play.mockClear();
+          mockChannel.emit.mockClear();
+          preview.onStoriesChanged({ importFn: newImportFn });
+          await waitForRender();
+        } finally {
+          window.history.replaceState({}, '', '/');
+        }
+
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+        expect(componentOneExports.a.play).not.toHaveBeenCalled();
       });
 
       it('emits STORY_RENDERED', async () => {

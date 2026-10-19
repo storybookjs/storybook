@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
+import { logger } from 'storybook/internal/client-logger';
 import {
   STORY_FINISHED,
   STORY_RENDERED,
@@ -13,6 +14,7 @@ import {
 } from 'storybook/internal/preview-errors';
 import type {
   PreparedStory,
+  RenderContext,
   Renderer,
   StoryContext,
   StoryIndexEntry,
@@ -58,6 +60,7 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
     title: 'title',
     name: 'name',
     tags: [],
+    parameters: {},
     applyLoaders: vi.fn(),
     applyBeforeEach: vi.fn(() => []),
     applyAfterEach: vi.fn(),
@@ -881,5 +884,186 @@ describe('StoryRender', () => {
         expect(store.cleanupStory).toHaveBeenCalledOnce();
       });
     });
+  });
+});
+
+describe('StoryRender of a story that owns the document', () => {
+  // A render that loads a new document leaves a new <body>, without the attributes of the old one.
+  const replaceBody = () => {
+    const body = document.createElement('body');
+    document.documentElement.replaceChild(body, document.body);
+    return body;
+  };
+
+  const buildDocumentRender = (
+    overrides: Partial<PreparedStory> = {},
+    callbacks: Record<string, unknown> = {},
+    viewMode: 'story' | 'docs' = 'story'
+  ) =>
+    new StoryRender(
+      new Channel({}),
+      buildStore(),
+      { showMain: vi.fn(), showException: vi.fn(), ...callbacks } as any,
+      entry.id,
+      viewMode,
+      { autoplay: true },
+      buildStory({ parameters: { layout: 'document' }, ...overrides })
+    );
+
+  beforeEach(() => {
+    replaceBody();
+  });
+
+  it('leaves showMain to its renderer', async () => {
+    const [renderGate, openRenderGate] = createGate();
+    const showMain = vi.fn();
+    const render = buildDocumentRender(
+      {
+        renderToCanvas: vi.fn(async (renderContext: RenderContext) => {
+          await renderGate;
+          renderContext.showMain();
+        }),
+      },
+      { showMain }
+    );
+
+    const rendered = render.renderToElement(document.body);
+    await vi.waitFor(() => expect(render.phase).toBe('rendering'));
+    expect(showMain).not.toHaveBeenCalled();
+
+    openRenderGate();
+    await rendered;
+    expect(showMain).toHaveBeenCalledOnce();
+  });
+
+  it('marks the body the render left as the story root and passes it to play', async () => {
+    let body: HTMLElement | undefined;
+    let canvasElement: unknown;
+    const render = buildDocumentRender({
+      renderToCanvas: vi.fn(async () => {
+        body = replaceBody();
+      }),
+      playFunction: vi.fn((context: StoryContext) => {
+        canvasElement = context.canvasElement;
+      }),
+    });
+
+    await render.renderToElement(document.body);
+
+    expect(body!.id).toBe('storybook-root');
+    expect(canvasElement).toBe(body);
+  });
+
+  it('passes the body the render left to a play that mounts', async () => {
+    let canvasElement: unknown;
+    const render = buildDocumentRender({
+      usesMount: true,
+      renderToCanvas: vi.fn(async () => void replaceBody()),
+      playFunction: vi.fn(async (context: StoryContext) => {
+        await context.mount();
+        canvasElement = context.canvasElement;
+      }),
+    });
+
+    await render.renderToElement(document.body);
+
+    expect(canvasElement).toBe(document.body);
+  });
+
+  it('marks the body again when a render strips its id', async () => {
+    const render = buildDocumentRender();
+    await render.renderToElement(document.body);
+
+    document.body.removeAttribute('id');
+    await tick();
+
+    expect(document.body.id).toBe('storybook-root');
+  });
+
+  it('marks the body of every render', async () => {
+    const renderToCanvas = vi.fn(async () => void replaceBody());
+    const render = buildDocumentRender({ renderToCanvas });
+    await render.renderToElement(document.body);
+    const firstBody = document.body;
+
+    await render.rerender();
+
+    expect(document.body).not.toBe(firstBody);
+    expect(document.body.id).toBe('storybook-root');
+    expect(firstBody).not.toHaveAttribute('id');
+  });
+
+  it('renders again to the body the previous render left', async () => {
+    const renderToCanvas = vi.fn(async (..._args: unknown[]) => void replaceBody());
+    const render = buildDocumentRender({ renderToCanvas });
+    await render.renderToElement(document.body);
+    const leftBody = document.body;
+
+    await render.rerender();
+
+    expect(renderToCanvas.mock.calls[1][1]).toBe(leftBody);
+  });
+
+  it('marks nothing when it is torn down before its render resolves', async () => {
+    const [renderGate, openRenderGate] = createGate();
+    const render = buildDocumentRender({ renderToCanvas: vi.fn(() => renderGate) as any });
+
+    render.renderToElement(document.body);
+    await vi.waitFor(() => expect(render.phase).toBe('rendering'));
+    render.teardown();
+    openRenderGate();
+    await tick();
+
+    expect(document.body).not.toHaveAttribute('id');
+  });
+
+  it('keeps the id of a body that has one of its own, and warns once', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const renderToCanvas = vi.fn(async () => {
+      document.body.id = 'app';
+    });
+    const render = buildDocumentRender({ renderToCanvas });
+
+    await render.renderToElement(document.body);
+    await render.rerender();
+
+    expect(document.body.id).toBe('app');
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0][0]).toContain('DocumentBodyHasIdError');
+  });
+
+  it('leaves the docs page alone when it renders to a block of it', async () => {
+    const block = document.createElement('div');
+    document.body.append(block);
+    let canvasElement: unknown;
+    const render = buildDocumentRender(
+      {
+        playFunction: vi.fn((context: StoryContext) => {
+          canvasElement = context.canvasElement;
+        }),
+      },
+      {},
+      'docs'
+    );
+
+    await render.renderToElement(block);
+
+    expect(document.body).not.toHaveAttribute('id');
+    expect(canvasElement).toBe(block);
+  });
+
+  it('takes its mark back at teardown', async () => {
+    const render = buildDocumentRender();
+    await render.renderToElement(document.body);
+
+    await render.teardown();
+
+    expect(document.body).not.toHaveAttribute('id');
+
+    document.body.id = 'app';
+    document.body.removeAttribute('id');
+    await tick();
+
+    expect(document.body).not.toHaveAttribute('id');
   });
 });

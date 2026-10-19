@@ -13,6 +13,7 @@ import { BlockOfAndIdPropsError, InvalidBlockOfPropError } from 'storybook/inter
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { rendersInline } from './rendersInline.ts';
 import { useStory } from './useStory';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -108,14 +109,18 @@ export const getStoryProps = <TFramework extends Renderer>(
     return null as any;
   }
 
+  // A story that owns the document would own the docs page's too, so it renders in its own
+  // iframe, by default as tall as a small phone's viewport.
+  const ownsDocument = parameters.layout === 'document';
+
   // prefer block props, then story parameters defined by the framework-specific settings
   // and optionally overridden by users
 
-  const inline = props.inline ?? storyParameters.inline ?? false;
+  const inline = rendersInline(story, props.inline);
+  const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
 
   if (inline) {
     const height = props.height ?? storyParameters.height;
-    const autoplay = props.autoplay ?? storyParameters.autoplay ?? false;
     return {
       story: story as any,
       inline: true,
@@ -127,12 +132,16 @@ export const getStoryProps = <TFramework extends Renderer>(
     };
   }
 
-  const height = props.height ?? storyParameters.height ?? storyParameters.iframeHeight ?? '100px';
+  const height =
+    props.height ??
+    storyParameters.height ??
+    storyParameters.iframeHeight ??
+    (ownsDocument ? '667px' : '100px');
   return {
     story: story as any,
     inline: false,
     height,
-
+    autoplay,
     primary: !!props.__primary,
   };
 };

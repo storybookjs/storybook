@@ -6,7 +6,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { PlayFunctionContext } from 'storybook/internal/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
@@ -60,8 +60,8 @@ export const Loading = {
 export const Inline: Story = {
   args: {
     inline: true,
-    // @ts-expect-error getting too complex with props
     autoplay: false,
+    // @ts-expect-error getting too complex with props
     forceInitialArgs: false,
     renderStoryToElement,
   },
@@ -71,8 +71,8 @@ export const InlineError: Story = {
   args: {
     storyExport: ButtonStories.ErrorStory,
     inline: true,
-    // @ts-expect-error getting too complex with props
     autoplay: false,
+    // @ts-expect-error getting too complex with props
     forceInitialArgs: false,
     renderStoryToElement,
   },
@@ -97,7 +97,7 @@ export const ForceInitialArgs = {
     chromatic: { disableSnapshot: true },
   },
   // test that it ignores updated args by emitting an arg update and assert that it isn't reflected in the DOM
-  play: async ({ args, canvasElement, loaded }: PlayFunctionContext<WebRenderer>) => {
+  play: async ({ args, canvasElement, loaded }: StoryContext<WebRenderer>) => {
     const docsContext = loaded.docsContext as DocsContextProps;
     const resolved = docsContext.resolveOf(args.storyExport, ['story']);
 
@@ -124,8 +124,8 @@ export const Autoplay: Story = {
   args: {
     storyExport: ButtonStories.Clicking,
     inline: true,
-    // @ts-expect-error getting too complex with props
     autoplay: true,
+    // @ts-expect-error getting too complex with props
     renderStoryToElement,
   },
 };

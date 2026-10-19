@@ -92,7 +92,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   private latestSelectionRequest = 0;
 
-  // `embed` is a param of the URL the preview loaded at; a story may move `location` later.
+  // Read from the URL the preview was opened with: a story may change `location` later.
   private autoplay = shouldAutoplay({ search: globalWindow.location?.search ?? '' });
 
   constructor(
@@ -275,7 +275,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   async onUpdateGlobals({ globals }: { globals: Globals }) {
     const currentStory =
       (this.currentRender instanceof StoryRender && this.currentRender.story) || undefined;
-    super.onUpdateGlobals({ globals, currentStory });
+    await super.onUpdateGlobals({ globals, currentStory });
     if (
       this.currentRender instanceof MdxDocsRender ||
       this.currentRender instanceof CsfDocsRender
@@ -446,6 +446,18 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
     if (lastRender) {
+      // The preparing block waits a short delay, so a fast switch does not flash it. Around a story
+      // that owns the document the whole document changes hands, which seldom happens within the
+      // delay, so the block shows at once, before the teardown. A change of view mode showed it at
+      // once already (above).
+      const ownsDocument = (r: PossibleRender<TRenderer>) => isStoryRender(r) && r.ownsDocument;
+      if (
+        storyIdChanged &&
+        !viewModeChanged &&
+        (ownsDocument(lastRender) || ownsDocument(render))
+      ) {
+        this.view.showPreparingStory({ immediate: true });
+      }
       await this.teardownRender(lastRender, {
         viewModeChanged,
         // On a same-story re-render, the previous DOM stays mounted until the new render
@@ -546,7 +558,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // UTILITIES
   mainStoryCallbacks(storyId: StoryId) {
     return {
-      showStoryDuringRender: () => this.view.showStoryDuringRender(),
       showMain: () => this.view.showMain(),
       showError: (err: { title: string; description: string }) => this.renderError(storyId, err),
       showException: (err: Error) => this.renderException(storyId, err),

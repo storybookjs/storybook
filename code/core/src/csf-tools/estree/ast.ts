@@ -444,7 +444,7 @@ export const parseFragment = (code: string): ParsedModule => parseModule(code);
  *
  * @example
  * ```ts
- * object.transform(['tags'], (value) => parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`));
+ * object.transform(['args', 'count'], (value) => parseExpression(`${placeableTextOf(value)} + 1`));
  * ```
  */
 export const parseExpression = (source: string): E.Expression => {

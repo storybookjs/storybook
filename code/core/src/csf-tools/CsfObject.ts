@@ -59,7 +59,8 @@ export type CsfMutationDiagnosticCode =
   | 'unsupported-member'
   | 'occupied-destination'
   | 'cyclic-move'
-  | 'evaluation-order';
+  | 'evaluation-order'
+  | 'invalid-csf';
 
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
@@ -69,9 +70,13 @@ export interface CsfMutationDiagnostic {
   loc?: SourceLocation;
 }
 
+/**
+ * Outcome of a mutation. `ok: false` with `changed: true` means the edit was applied but left a file
+ * the CSF indexer rejects, such as a meta `tags` that is no longer an array of string literals.
+ */
 export type CsfMutationResult =
   | { ok: true; changed: boolean }
-  | { ok: false; changed: false; diagnostic: CsfMutationDiagnostic };
+  | { ok: false; changed: boolean; diagnostic: CsfMutationDiagnostic };
 
 /**
  * An expression detached from any file, as returned by `get` and accepted by `set` and
@@ -146,11 +151,11 @@ export interface CsfObject {
    *
    * @example
    * ```ts
-   * const object = loadConfig("export default { tags: ['docs'] };").parse();
-   * object.transform(['tags'], (value) =>
-   *   parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`)
+   * const object = loadConfig('export default { args: { count: 1 } };').parse();
+   * object.transform(['args', 'count'], (value) =>
+   *   parseExpression(`${placeableTextOf(value)} + 1`)
    * ); // { ok: true, changed: true }
-   * object.getValue(['tags']); // ['docs', 'autodocs']
+   * object.getValue(['args', 'count']); // 2
    * ```
    */
   transform(
@@ -458,7 +463,7 @@ class CsfObjectEditor implements CsfObject {
         },
       ]);
     }
-    return this.success();
+    return this.commit(path);
   }
 
   transform(
@@ -483,7 +488,7 @@ class CsfObjectEditor implements CsfObject {
       return { ok: true, changed: false };
     }
     parent.root.replaceValue(property, placeableTextOf(derived));
-    return this.success();
+    return this.commit(path);
   }
 
   remove(path: readonly string[]): CsfMutationResult {
@@ -503,9 +508,11 @@ class CsfObjectEditor implements CsfObject {
       return this.failure(removal.code, path, removal.node);
     }
     inspected.parent.root.remove([inspected.property]);
-    this.editor.commit();
-    this.removeEmptyParents(logicalPath);
-    return this.success();
+    const removed = this.commit(path);
+    if (!removed.ok) {
+      return removed;
+    }
+    return this.removeEmptyParents(logicalPath, path) ?? removed;
   }
 
   rename(path: readonly string[], name: string): CsfMutationResult {
@@ -566,22 +573,27 @@ class CsfObjectEditor implements CsfObject {
       sourceParent.every((part, index) => destinationParent[index] === part)
     ) {
       source.parent.root.rename(source.property, key);
-      return this.success();
+      return this.commit(from);
     }
 
     const moved = source.parent.root.take(source.property, key);
     // Insert first: if that throws, nothing has been committed. The source is removed afterwards,
     // looked up again since the insertion moved its spans.
     this.insert(destinationPath, [{ ...moved, key }]);
-    this.editor.commit();
+    const inserted = this.commit(from);
+    if (!inserted.ok) {
+      return inserted;
+    }
     const remaining = this.inspect(sourcePath);
     if (remaining.ok === false || !remaining.property || !remaining.parent) {
       throw new Error(`CsfObject: ${sourcePath.join('.')} was not found again after moving it`);
     }
     remaining.parent.root.remove([remaining.property]);
-    this.editor.commit();
-    this.removeEmptyParents(sourcePath);
-    return this.success();
+    const removed = this.commit(from);
+    if (!removed.ok) {
+      return removed;
+    }
+    return this.removeEmptyParents(sourcePath, from) ?? removed;
   }
 
   group(path: readonly string[], names: readonly string[]): CsfMutationResult {
@@ -741,10 +753,14 @@ class CsfObjectEditor implements CsfObject {
       }
       parent.group(moved, group);
     }
-    return this.success();
+    return this.commit(path);
   }
 
-  private removeEmptyParents(path: readonly string[]) {
+  // Returns the result of a rejected commit, which ends the clean-up.
+  private removeEmptyParents(
+    path: readonly string[],
+    reported: readonly string[]
+  ): CsfMutationResult | undefined {
     for (let depth = path.length - 1; depth > 0; depth--) {
       const ancestor = this.inspect(path.slice(0, depth));
       if (
@@ -763,8 +779,12 @@ class CsfObjectEditor implements CsfObject {
         return;
       }
       ancestor.parent.root.remove([ancestor.property]);
-      this.editor.commit();
+      const committed = this.commit(reported);
+      if (!committed.ok) {
+        return committed;
+      }
     }
+    return undefined;
   }
 
   private normalizePath(path: readonly string[]) {
@@ -870,10 +890,23 @@ class CsfObjectEditor implements CsfObject {
     return { ok: false as const, changed: false as const, diagnostic };
   }
 
-  private success(): CsfMutationResult {
-    this.editor.commit();
+  // The edit stays applied when the file's indexer rejects the committed code: the file is valid
+  // JS, so that is a diagnostic rather than an error.
+  private commit(path: readonly string[]): CsfMutationResult {
     this.#changed = true;
     this.markChanged();
+    try {
+      this.editor.commit();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      const rejected = this.failure(
+        'invalid-csf',
+        path,
+        this.anchor(),
+        `Edited ${path.join('.')}, but the result is not valid CSF: ${reason}`
+      );
+      return { ...rejected, changed: true };
+    }
     return { ok: true, changed: true };
   }
 }

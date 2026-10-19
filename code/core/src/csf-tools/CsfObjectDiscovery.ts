@@ -395,6 +395,7 @@ const discover = (
   options: CsfObjectOptions,
   report: ReportDiagnostic
 ): Discovered[] => {
+  csf._assertIndexed();
   const includeStories = options.stories ?? true;
   const bindings = includeStories ? storyBindings(csf, report) : [];
   return [

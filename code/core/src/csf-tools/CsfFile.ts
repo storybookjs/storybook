@@ -383,11 +383,11 @@ export class CsfFile {
 
   _tests: StoryTest[] = [];
 
+  // Why the last commit left the index empty: its code is valid JS the CSF indexer rejects.
+  _indexError: unknown;
+
   constructor(code: string, options: CsfOptions) {
-    this._editor = new SourceEditor(code, options.fileName, () => {
-      this._reset();
-      this.parse();
-    });
+    this._editor = new SourceEditor(code, options.fileName, () => this._reindex());
     this._options = options;
     this.imports = [];
     mutationStates.set(this, { diagnostics: [], changed: false });
@@ -491,6 +491,24 @@ export class CsfFile {
     this._namedExportsOrder = undefined;
     this.imports = [];
     this._tests = [];
+    this._indexError = undefined;
+  }
+
+  _reindex() {
+    this._reset();
+    try {
+      this.parse();
+    } catch (error) {
+      this._reset();
+      this._indexError = error;
+      throw error;
+    }
+  }
+
+  _assertIndexed() {
+    if (this._indexError) {
+      throw this._indexError;
+    }
   }
 
   _parseTitle(value: Node) {
@@ -1108,14 +1126,17 @@ export class CsfFile {
   }
 
   public get meta() {
+    this._assertIndexed();
     return this._meta;
   }
 
   public get stories() {
+    this._assertIndexed();
     return Object.values(this._stories);
   }
 
   public getStoryTests(story: string | Node) {
+    this._assertIndexed();
     const storyNode = typeof story === 'string' ? this._storyStatements[story] : story;
     if (!storyNode) {
       return [];
@@ -1124,6 +1145,7 @@ export class CsfFile {
   }
 
   public get indexInputs(): IndexInput[] {
+    this._assertIndexed();
     const { fileName } = this._options;
     if (!fileName) {
       throw new Error(

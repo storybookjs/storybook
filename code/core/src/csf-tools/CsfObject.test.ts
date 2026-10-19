@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadCsf, printCsf } from './CsfFile.ts';
 import { loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfValue } from './CsfObject.ts';
-import { parseExpression, textOf } from './estree/ast.ts';
+import { parseExpression, placeableTextOf, textOf } from './estree/ast.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
@@ -898,5 +898,50 @@ describe('CsfObject', () => {
 
     expect(csf.objects({ meta: false, stories: true })).toHaveLength(0);
     expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  describe('an edit the CSF indexer rejects', () => {
+    const load = (code: string) =>
+      loadCsf(code, { fileName: 'B.stories.ts', makeTitle: (title) => title ?? 'B' }).parse();
+
+    it('keeps the edit and reports it instead of throwing', () => {
+      const csf = load("export default { title: 'B', tags: ['docs'] };\nexport const A = {};\n");
+      const [meta] = csf.objects({ stories: false });
+
+      const result = meta.transform(['tags'], (value) =>
+        parseExpression(`[...${placeableTextOf(value)}, 'autodocs']`)
+      );
+
+      expect(result).toEqual({
+        ok: false,
+        changed: true,
+        diagnostic: expect.objectContaining({
+          code: 'invalid-csf',
+          path: ['tags'],
+          message: expect.stringContaining('CSF: Expected tag to be string literal'),
+        }),
+      });
+      expect(printCsf(csf).code).toBe(
+        "export default { title: 'B', tags: [...['docs'], 'autodocs'] };\nexport const A = {};\n"
+      );
+      expect(csf.changed).toBe(true);
+      expect(meta.changed).toBe(true);
+      expect(csf.mutationDiagnostics).toEqual([result.diagnostic]);
+    });
+
+    it.each([
+      { path: ['title'], expression: '`B`', error: 'CSF: unexpected dynamic title' },
+      { path: ['includeStories'], expression: 'fn()', error: 'Unknown include/exclude' },
+    ])('throws for the index after setting $path to $expression', ({ path, expression, error }) => {
+      const csf = load("export default { title: 'B' };\nexport const A = {};\n");
+      const [meta] = csf.objects({ stories: false });
+
+      expect(meta.set(path, parseExpression(expression)).ok).toBe(false);
+      expect(printCsf(csf).code).toContain(`${path[0]}: ${expression}`);
+      expect(() => csf.meta).toThrow(error);
+      expect(() => csf.stories).toThrow(error);
+      expect(() => csf.indexInputs).toThrow(error);
+      expect(() => csf.objects()).toThrow(error);
+    });
   });
 });

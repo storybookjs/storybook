@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
-import { findTsconfigPathForPath, supportedExtensions } from 'storybook/internal/common';
+import {
+  findTsconfigPathForPath,
+  getTsconfigPathsBaseDir,
+  supportedExtensions,
+} from 'storybook/internal/common';
 import { extractJSDocInfo } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -41,6 +45,21 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
     return docgens[0];
   }
 
+  if (component.importName === 'default') {
+    const defaultExports = docgens.filter((docgen) => docgen.exportName === 'default');
+    if (defaultExports.length === 1) {
+      return defaultExports[0];
+    }
+    const names = new Set([component.localImportName, component.componentName].filter(Boolean));
+    const matchingName = docgens.find(
+      (docgen) =>
+        names.has(docgen.actualName) || (docgen.displayName && names.has(docgen.displayName))
+    );
+    if (matchingName) {
+      return matchingName;
+    }
+  }
+
   const matchingDocgen =
     docgens.find((docgen) =>
       [component.importName, component.localImportName].includes(docgen.exportName)
@@ -63,11 +82,11 @@ export function matchPath(id: string, importerPath?: string) {
   const tsconfig = getTsConfig(importerPath);
 
   if (tsconfig.resultType === 'success') {
-    const match = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-      'browser',
-      'module',
-      'main',
-    ]);
+    const match = TsconfigPaths.createMatchPath(
+      getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+      tsconfig.paths,
+      ['browser', 'module', 'main']
+    );
     return match(id, undefined, undefined, supportedExtensions) ?? id;
   }
   return id;

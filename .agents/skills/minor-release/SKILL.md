@@ -2,6 +2,8 @@
 name: minor-release
 description: Write the changelog entry for a new minor or major Storybook release. Use when preparing a CHANGELOG.md entry for a X.Y.0 version.
 allowed-tools: Bash, Read, Write, Edit
+metadata:
+  internal: true
 ---
 
 # Write Minor/Major Release Changelog

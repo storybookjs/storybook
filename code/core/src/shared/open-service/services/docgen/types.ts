@@ -29,7 +29,7 @@ export type DocgenJsDocTags = Record<string, string[]>;
  * Docgen payload returned by `core/docgen`'s `docgen` query.
  *
  * Component-only fields (props, descriptions, subcomponents). Story snippets and file-level
- * imports live in `core/story-docs` when `experimentalDocgenServer` is enabled.
+ * imports live in `core/story-docs` when `docgenServer` is enabled.
  */
 export interface DocgenPayload {
   id: string;
@@ -41,6 +41,14 @@ export interface DocgenPayload {
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
   argTypes?: StrictArgTypes;
+  /**
+   * Framework-authored API documentation in Markdown, rendered verbatim in place of the props
+   * section. Prefer `##` level headings for sections (Inputs, Outputs, Props, Events, Slots) and TS
+   * types for structured data.
+   */
+  apiDescription?: string;
+  /** Renderer id (e.g. `angular`), so a consumer knows which template syntax the component takes. */
+  renderer?: string;
   subcomponents?: Record<string, DocgenSubcomponent>;
   error?: DocgenError;
   [key: string]: unknown;
@@ -56,6 +64,10 @@ export interface DocgenSubcomponent {
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
   argTypes?: StrictArgTypes;
+  /** See {@link DocgenPayload.apiDescription}. */
+  apiDescription?: string;
+  /** See {@link DocgenPayload.renderer}. */
+  renderer?: string;
   error?: DocgenError;
   [key: string]: unknown;
 }

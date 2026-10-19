@@ -9,8 +9,8 @@ import { SignalModelComponent } from './signal-model.component.ts';
         [value]="'hello'"
         [checked]="true"
         (checkedChange)="checkedChange($event)"
-        (valueChange)="valueChange($event)">
-    </sb-signal-model>`,
+        (valueChange)="valueChange($event)"
+    />`,
 })
 export class DemoComponent {
   checkedChange(event: unknown) {}

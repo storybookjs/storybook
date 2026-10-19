@@ -6,6 +6,7 @@ import {
   formatComponentManifest,
   formatManifestsToLists,
   formatMultiSourceManifestsToLists,
+  formatStoryDocumentation,
 } from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
@@ -68,6 +69,259 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				ID: button"
 			`);
+    });
+  });
+
+  describe('JSDoc tags', () => {
+    it('renders top-level deprecation tags after the component ID', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          deprecated: ['Use NewButton instead.'],
+        },
+        reactDocgenTypescript: {
+          tags: {
+            deprecated: 'Use LegacyButton instead.',
+          },
+          props: {},
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated:** Use NewButton instead.
+
+        A button component"
+      `);
+    });
+
+    it('falls back to react-docgen-typescript component tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        reactDocgenTypescript: {
+          tags: {
+            deprecated: 'Use NewButton instead.',
+          },
+          props: {},
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated:** Use NewButton instead.
+
+        A button component"
+      `);
+    });
+
+    it('renders bare deprecation tags without a colon', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          deprecated: ['   '],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated**
+
+        A button component"
+      `);
+    });
+
+    it('forwards generic tags after the description in object order', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          since: ['1.2.3'],
+          see: ['ButtonGroup'],
+          customTag: ['alpha', ''],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3
+        > **See:** ButtonGroup
+        > **CustomTag:** alpha"
+      `);
+    });
+
+    it('does not render ignore or description-family tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          ignore: ['true'],
+          desc: ['Short text'],
+          description: ['Long text'],
+          describe: ['More text'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
+    it('does not render tags Storybook consumes as structured fields', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        import: "import { Button } from '@my-org/ui';",
+        summary: 'A customizable button.',
+        jsDocTags: {
+          import: ["import { Button } from '@my-org/ui';"],
+          summary: ['A customizable button.'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
+    it('renders examples as fenced code blocks after generic tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          since: ['1.2.3'],
+          example: ['<Button />', '<Button disabled />'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3
+
+        **Example:**
+        \`\`\`
+        <Button />
+        \`\`\`
+
+        **Example:**
+        \`\`\`
+        <Button disabled />
+        \`\`\`"
+      `);
+    });
+
+    it('renders subcomponent deprecation tags under the subcomponent heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'combo-box',
+        name: 'ComboBox',
+        path: 'src/components/ComboBox.tsx',
+        subcomponents: {
+          Item: {
+            name: 'ComboBoxItem',
+            path: 'src/components/ComboBoxItem.tsx',
+            summary: 'Use for individual list items.',
+            jsDocTags: {
+              deprecated: ['Use ListBoxItem instead.'],
+            },
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ComboBox
+
+        ID: combo-box
+
+        ## Subcomponents
+
+        ### ComboBoxItem
+
+        > **Deprecated:** Use ListBoxItem instead.
+
+        Use for individual list items."
+      `);
+    });
+
+    it('does not change untagged component and subcomponent output', () => {
+      const manifest: ComponentManifest = {
+        id: 'combo-box',
+        name: 'ComboBox',
+        path: 'src/components/ComboBox.tsx',
+        description: 'A combo box component',
+        subcomponents: {
+          Item: {
+            name: 'ComboBoxItem',
+            path: 'src/components/ComboBoxItem.tsx',
+            summary: 'Item summary.',
+            description: 'Item description.',
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ComboBox
+
+        ID: combo-box
+
+        A combo box component
+
+        ## Subcomponents
+
+        ### ComboBoxItem
+
+        Item summary.
+
+        Item description."
+      `);
     });
   });
 
@@ -348,49 +602,49 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Stories
+        ## Props
 
-				### Default
+        \`\`\`
+        export type Props = {
+          variant: string;
+        }
+        \`\`\`
 
-				\`\`\`
-				import { Button } from "@/components";
+        ## Stories
 
-				<Button>Default</Button>
-				\`\`\`
+        ### Default
 
-				### Primary
+        \`\`\`
+        import { Button } from "@/components";
 
-				\`\`\`
-				import { Button } from "@/components";
+        <Button>Default</Button>
+        \`\`\`
 
-				<Button variant="primary">Primary</Button>
-				\`\`\`
+        ### Primary
 
-				### Secondary
+        \`\`\`
+        import { Button } from "@/components";
 
-				\`\`\`
-				import { Button } from "@/components";
+        <Button variant="primary">Primary</Button>
+        \`\`\`
 
-				<Button variant="secondary">Secondary</Button>
-				\`\`\`
+        ### Secondary
 
-				### Other Stories
+        \`\`\`
+        import { Button } from "@/components";
 
-				- Disabled (button--disabled): Button in disabled state
-				- WithIcon (button--with-icon): Button with an icon
+        <Button variant="secondary">Secondary</Button>
+        \`\`\`
 
-				## Props
+        ### Other Stories
 
-				\`\`\`
-				export type Props = {
-				  variant: string;
-				}
-				\`\`\`"
-			`);
+        - Disabled (button--disabled): Button in disabled state
+        - WithIcon (button--with-icon): Button with an icon"
+      `);
     });
 
     it('should show all stories fully when component has no props', () => {
@@ -474,6 +728,68 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 				\`\`\`"
 			`);
     });
+
+    it('should list stories that carry no snippet instead of dropping them', () => {
+      const manifest: ComponentManifest = {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: [
+          { id: 'abstractions-billboard--default', name: 'Default' },
+          { id: 'abstractions-billboard--text', name: 'Text' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# abstractions-billboard
+
+				ID: abstractions-billboard
+
+				## Stories
+
+				- Default (abstractions-billboard--default)
+				- Text (abstractions-billboard--text)"
+			`);
+    });
+
+    it('should list snippet-less stories under the ones it shows in full', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        name: 'Button',
+        import: 'import { Button } from "@/components";',
+        stories: [
+          { id: 'button--default', name: 'Default', snippet: '<Button>Default</Button>' },
+          { id: 'button--primary', name: 'Primary' },
+          { id: 'button--secondary', name: 'Secondary', summary: 'The quiet one' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Default
+
+				Story ID: button--default
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button>Default</Button>
+				\`\`\`
+
+				### Other Stories
+
+				- Primary (button--primary)
+				- Secondary (button--secondary): The quiet one"
+			`);
+    });
   });
 
   describe('attached docs section', () => {
@@ -509,32 +825,32 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Stories
+        ## Props
 
-				### Primary
+        \`\`\`
+        export type Props = {
+          size: string;
+        }
+        \`\`\`
 
-				\`\`\`
-				<Button>Primary</Button>
-				\`\`\`
+        ## Stories
 
-				## Props
+        ### Primary
 
-				\`\`\`
-				export type Props = {
-				  size: string;
-				}
-				\`\`\`
+        \`\`\`
+        <Button>Primary</Button>
+        \`\`\`
 
-				## Docs
+        ## Docs
 
-				### Additional Information
+        ### Additional Information
 
-				Detailed docs content"
-			`);
+        Detailed docs content"
+      `);
 
       expect(result.indexOf('## Docs')).toBeGreaterThan(result.indexOf('## Stories'));
       expect(result.indexOf('## Docs')).toBeGreaterThan(result.indexOf('## Props'));
@@ -591,25 +907,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant?: union = primary;
-				  /**
-				    Whether the button is disabled
-				  */
-				  disabled?: bool = false;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant?: union = primary;
+          /** Whether the button is disabled */
+          disabled?: bool = false;
+        }
+        \`\`\`"
+      `);
     });
   });
 
@@ -654,29 +966,23 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant?: "primary" | "secondary" = primary;
-				  /**
-				    Whether the button is disabled
-				  */
-				  disabled?: boolean = false;
-				  /**
-				    Click handler
-				  */
-				  onClick: (event: MouseEvent) => void;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant?: "primary" | "secondary" = primary;
+          /** Whether the button is disabled */
+          disabled?: boolean = false;
+          /** Click handler */
+          onClick: (event: MouseEvent) => void;
+        }
+        \`\`\`"
+      `);
     });
 
     it('should format props from reactComponentMeta', () => {
@@ -711,25 +1017,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant?: "primary" | "secondary" = "primary";
-				  /**
-				    Click handler
-				  */
-				  onClick: (event: MouseEvent) => void;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant?: "primary" | "secondary" = "primary";
+          /** Click handler */
+          onClick: (event: MouseEvent) => void;
+        }
+        \`\`\`"
+      `);
     });
 
     it('should prefer reactDocgen over reactDocgenTypescript when both are present', () => {
@@ -968,25 +1270,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant: union;
-				  /**
-				    The size of the button
-				  */
-				  size: union;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant: union;
+          /** The size of the button */
+          size: union;
+        }
+        \`\`\`"
+      `);
     });
 
     it('should omit props section when reactDocgen is not present', () => {
@@ -1046,27 +1344,245 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
     const result = formatComponentManifest(manifest);
 
     expect(result).toMatchInlineSnapshot(`
-			"# Button
+      "# Button
 
-			ID: button
+      ID: button
 
-			## Props
+      ## Props
+
+      \`\`\`
+      export type Props = {
+        /** The button variant */
+        variant?: string = primary;
+        disabled: bool;
+        size: union = medium;
+      }
+      \`\`\`"
+    `);
+  });
+
+  describe('apiDescription section', () => {
+    const angularApiDescription = [
+      '## Inputs',
+      '',
+      '```',
+      'export type ColorPickerComponentInputs = {',
+      '  /**',
+      '   * The currently selected colour',
+      '   *',
+      "   * @default '#345F92'",
+      '   */',
+      '  color?: string; // two-way: [(color)]',
+      '}',
+      '```',
+      '',
+      '## Outputs',
+      '',
+      '```',
+      'export type ColorPickerComponentOutputs = {',
+      '  colorChange: (e: string) => void;',
+      '}',
+      '```',
+    ].join('\n');
+
+    it('renders the framework-authored markdown in place of the props section', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        ## Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+
+    it('wins over the react docgen fields, which then do not also render', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        reactDocgen: {
+          props: {
+            label: { type: { name: 'string' }, description: 'From react-docgen' },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('## Inputs');
+      expect(result).not.toContain('## Props');
+      expect(result).not.toContain('From react-docgen');
+    });
+
+    it('limits the stories shown in full, as a react props table does', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [
+          { name: 'Default', snippet: '<app-color-picker />' },
+          { name: 'Red', snippet: '<app-color-picker color="#f00" />' },
+          { name: 'Green', snippet: '<app-color-picker color="#0f0" />' },
+          { name: 'Blue', summary: 'A blue picker', snippet: '<app-color-picker color="#00f" />' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('### Other Stories');
+      expect(result).toContain('- Blue: A blue picker');
+    });
+
+    it('leads with the api sections, ahead of the stories that apply them', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [{ name: 'Default', snippet: '<app-color-picker />' }],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result.indexOf('## Inputs')).toBeLessThan(result.indexOf('## Stories'));
+      expect(result.indexOf('## Outputs')).toBeLessThan(result.indexOf('## Stories'));
+    });
+
+    it('nests a subcomponent`s own sections under its heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        subcomponents: {
+          swatch: { name: 'SwatchComponent', apiDescription: angularApiDescription },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Subcomponents
+
+        ### SwatchComponent
+
+        #### Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        #### Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+  });
+});
+
+describe('MarkdownFormatter - formatStoryDocumentation', () => {
+  it('renders a story that has a snippet', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      import: 'import { Button } from "@/components";',
+      stories: [
+        {
+          id: 'button--primary',
+          name: 'Primary',
+          description: 'The primary action',
+          snippet: '<Button variant="primary" />',
+        },
+      ],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Primary')).toMatchInlineSnapshot(`
+			"# Button - Primary
+
+			The primary action
 
 			\`\`\`
-			export type Props = {
-			  /**
-			    The button variant
-			  */
-			  variant?: string = primary;
-			  disabled: bool;
-			  size: union = medium;
-			}
+			import { Button } from "@/components";
+
+			<Button variant="primary" />
 			\`\`\`"
 		`);
+  });
+
+  it('names a story that has no snippet instead of returning nothing', () => {
+    const manifest: ComponentManifest = {
+      id: 'abstractions-billboard',
+      name: 'abstractions-billboard',
+      stories: [{ id: 'abstractions-billboard--default', name: 'Default' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Default')).toMatchInlineSnapshot(`
+			"# abstractions-billboard - Default
+
+			Story ID: abstractions-billboard--default
+
+			No code snippet was extracted for this story."
+		`);
+  });
+
+  it('returns nothing for a story the component does not have', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      stories: [{ id: 'button--primary', name: 'Primary' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Missing')).toBe('');
   });
 });
 
 describe('MarkdownFormatter - formatManifestsToLists', () => {
+  it('says the Storybook has no entries instead of printing empty sections', () => {
+    expect(formatManifestsToLists({ componentManifest: { v: 1, components: {} } })).toBe(
+      'No components or docs entries found. A component is listed here once it has a story.'
+    );
+  });
+
   it('formats the full manifest fixture', () => {
     const result = formatManifestsToLists({
       componentManifest: fullManifestFixture as ComponentManifestMap,
@@ -1488,6 +2004,35 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 });
 
 describe('MarkdownFormatter - formatMultiSourceManifestsToLists', () => {
+  it('says which source has no entries, while listing the others', () => {
+    const result = formatMultiSourceManifestsToLists([
+      {
+        source: { id: 'local', title: 'Local' },
+        manifests: { componentManifest: { v: 1, components: {} } },
+      },
+      {
+        source: { id: 'ds', title: 'Design System', url: 'https://ds.example.com' },
+        manifests: {
+          componentManifest: { v: 1, components: { button: { id: 'button', name: 'Button' } } },
+        },
+      },
+    ]);
+
+    expect(result).toMatchInlineSnapshot(`
+      "# Local
+      id: local
+
+      No components or docs entries found. A component is listed here once it has a story.
+
+      # Design System
+      id: ds
+
+      ## Components
+
+      - Button (button)"
+    `);
+  });
+
   it('formats requires-own-mcp source notices without an error prefix', () => {
     const result = formatMultiSourceManifestsToLists([
       {

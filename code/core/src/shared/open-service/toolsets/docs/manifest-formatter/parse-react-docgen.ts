@@ -5,6 +5,19 @@
  * actually read rather than those packages' own types.
  */
 
+export type ParsedDocgen = {
+  tags?: Record<string, string[]>;
+  props: Record<
+    string,
+    {
+      description?: string;
+      type?: string;
+      defaultValue?: string;
+      required?: boolean;
+    }
+  >;
+};
+
 /** Structural subset of react-docgen's `tsType` / `type` prop descriptor field. */
 type TsType = {
   name?: string;
@@ -37,32 +50,37 @@ type PropDescriptor = NonNullable<Documentation['props']>[string];
 
 /** Structural subset of react-docgen-typescript's `ComponentDoc` output. */
 type ComponentDoc = {
+  tags?: Record<string, unknown>;
   props?: Record<
     string,
     {
       description?: string;
       required?: boolean;
-      type?: { name?: string; raw?: string };
+      type?: { name?: string; raw?: string; value?: { value: string }[] };
       defaultValue?: { value?: string } | null;
     }
   >;
 };
 
-export type ParsedDocgen = {
-  props: Record<
-    string,
-    {
-      description?: string;
-      type?: string;
-      defaultValue?: string;
-      required?: boolean;
-    }
-  >;
+// RDT's enum payload carries both `raw` and a `value` array of literal members. For a
+// named-alias enum (`type Size = 'small' | 'medium' | 'large'`), `raw` holds only the alias
+// name ('Size'), so prefer the expanded members — for an inline union they join back to the
+// exact string `raw` already holds (issue #35778).
+const docgenTypeString = (propType?: {
+  name?: string;
+  raw?: string;
+  value?: { value: string }[];
+}): string | undefined => {
+  const members = (propType?.value ?? []).map((member) => member.value);
+  if (members.length > 0) {
+    return members.join(' | ');
+  }
+  return propType?.raw ?? propType?.name;
 };
 
 // Storybook's `reactComponentMeta` payload is not the same full schema as
 // `react-docgen-typescript`'s `ComponentDoc`, but `props` has the same type shape.
-type ComponentDocLike = Pick<ComponentDoc, 'props'>;
+type ComponentDocLike = Pick<ComponentDoc, 'props' | 'tags'>;
 
 // Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
 function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
@@ -144,23 +162,43 @@ export const parseReactDocgen = (reactDocgen: Documentation): ParsedDocgen => {
  * RDT uses flat type strings (prop.type.name / prop.type.raw) instead of react-docgen's
  * nested tsType structure, so no serialization is needed.
  */
+const tagValues = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap(tagValues);
+  }
+  if (value === null || value === undefined) {
+    return [''];
+  }
+  return [typeof value === 'object' ? JSON.stringify(value) : String(value)];
+};
+
 const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
   const props = componentDoc.props ?? {};
-  return {
+  const tags = Object.fromEntries(
+    Object.entries(componentDoc.tags ?? {}).map(([tagName, value]) => [tagName, tagValues(value)])
+  );
+  const parsedDocgen: ParsedDocgen = {
     props: Object.fromEntries(
       Object.entries(props).map(([propName, prop]) => [
         propName,
         {
           description: prop.description || undefined,
           // RDT uses prop.type.name as a flat string (e.g. "() => void", "{ id: string }")
-          // For enums, prefer prop.type.raw which has the full union
-          type: prop.type?.raw ?? prop.type?.name,
+          // For enums, prefer prop.type.raw which has the full union; for a named-alias enum
+          // raw only holds the alias name, so use the expanded members instead (issue #35778)
+          type: docgenTypeString(prop.type),
           defaultValue: prop.defaultValue?.value,
           required: prop.required,
         },
       ])
     ),
   };
+
+  if (Object.keys(tags).length > 0) {
+    parsedDocgen.tags = tags;
+  }
+
+  return parsedDocgen;
 };
 
 export const parseReactDocgenTypescript = (reactDocgenTypescript: ComponentDoc): ParsedDocgen =>

@@ -22,7 +22,7 @@ describe('loadNextConfig', () => {
   });
 
   it('uses Next.js config loading unchanged by default', async () => {
-    const config = { distDir: '.next' };
+    const config = { distDir: '.next', experimental: {}, configFileName: 'next.config.js' };
     loadConfigMock.mockResolvedValue(config);
 
     await expect(loadNextConfig(phase, dir)).resolves.toBe(config);
@@ -78,6 +78,59 @@ describe('loadNextConfig', () => {
     expect(normalizedConfig.experimental).toEqual({
       turbopackRustReactCompiler: true,
       typedEnv: true,
+    });
+  });
+
+  it('normalizes a cached raw config module that is missing Next.js defaults', async () => {
+    const cachedRawConfig = { distDir: '.next' };
+    const normalizedConfig = {
+      distDir: '.next',
+      experimental: {
+        turbopackRustReactCompiler: true,
+        typedEnv: true,
+      },
+    };
+    const resolvedConfig = {
+      distDir: '.next',
+      experimental: { typedEnv: true },
+    };
+
+    loadConfigMock.mockResolvedValueOnce(cachedRawConfig).mockResolvedValueOnce(resolvedConfig);
+    normalizeConfigMock.mockResolvedValue(normalizedConfig);
+
+    await expect(loadNextConfig(phase, dir)).resolves.toBe(resolvedConfig);
+    expect(loadConfigMock).toHaveBeenNthCalledWith(1, phase, dir);
+    expect(normalizeConfigMock).toHaveBeenCalledWith(phase, cachedRawConfig);
+    expect(loadConfigMock).toHaveBeenNthCalledWith(2, phase, dir, {
+      customConfig: {
+        distDir: '.next',
+        experimental: { typedEnv: true },
+      },
+    });
+  });
+
+  it('normalizes a cached raw config that already has a user experimental option', async () => {
+    const cachedRawConfig = { experimental: { typedEnv: true } };
+    const normalizedConfig = {
+      experimental: {
+        turbopackRustReactCompiler: true,
+        typedEnv: true,
+      },
+    };
+    const resolvedConfig = {
+      experimental: { typedEnv: true },
+      configFileName: 'next.config.js',
+    };
+
+    loadConfigMock.mockResolvedValueOnce(cachedRawConfig).mockResolvedValueOnce(resolvedConfig);
+    normalizeConfigMock.mockResolvedValue(normalizedConfig);
+
+    await expect(loadNextConfig(phase, dir)).resolves.toBe(resolvedConfig);
+    expect(normalizeConfigMock).toHaveBeenCalledWith(phase, cachedRawConfig);
+    expect(loadConfigMock).toHaveBeenNthCalledWith(2, phase, dir, {
+      customConfig: {
+        experimental: { typedEnv: true },
+      },
     });
   });
 });

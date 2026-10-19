@@ -93,6 +93,15 @@ describe('normalizeStoryDeclaration', () => {
     `);
   });
 
+  it('rejects zero-argument calls that are not CSF factories', () => {
+    expect(() =>
+      normalize(dedent`
+        export default { title: 'Button' };
+        export const A = makeStory();
+      `)
+    ).toThrow('Expected story to be csf factory, function or an object expression');
+  });
+
   it('resolves CSF2 Template.bind({}) to a local const arrow function', () => {
     expect(
       printedShape(dedent`
@@ -123,6 +132,34 @@ describe('normalizeStoryDeclaration', () => {
     });
   });
 
+  it('resolves CSF2 Template.bind() to its local template', () => {
+    expect(
+      printedShape(dedent`
+        export default { title: 'Button' };
+        const Template = (args) => args;
+        export const A = Template.bind();
+      `)
+    ).toMatchInlineSnapshot(`
+      {
+        "code": "(args) => args",
+        "type": "fn",
+      }
+    `);
+  });
+
+  it.each(["Template.bind({ role: 'button' })", "Template['bind']({})"])(
+    'rejects non-canonical CSF2 bind initializer %s',
+    (initializer) => {
+      expect(() =>
+        normalize(dedent`
+          export default { title: 'Button' };
+          const Template = (args) => args;
+          export const A = ${initializer};
+        `)
+      ).toThrow('Expected story to be csf factory, function or an object expression');
+    }
+  );
+
   it('normalizes plain arrow function story exports to fn', () => {
     const normalized = normalize(dedent`
       export default { title: 'Button' };
@@ -131,6 +168,43 @@ describe('normalizeStoryDeclaration', () => {
 
     expect(normalized.type).toBe('fn');
     expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
+  });
+
+  it('resolves a story export that references a local function', () => {
+    const normalized = normalize(
+      dedent`
+      export default { title: 'Paragraph' };
+      const ParagraphStory = ({ text }) => <p>{text}</p>;
+      export const Example = ParagraphStory;
+    `,
+      'Example'
+    );
+
+    expect(normalized.type).toBe('fn');
+    expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
+  });
+
+  it('resolves a typed chain of immutable local story aliases', () => {
+    expect(
+      printedShape(dedent`
+        type Story = unknown;
+        export default { title: 'Paragraph' };
+        const Impl = ({ text }) => <p>{text}</p>;
+        const Alias = Impl as Story;
+        export const A = Alias satisfies Story;
+      `)
+    ).toEqual({ code: '({ text }) => <p>{text}</p>', type: 'fn' });
+  });
+
+  it('does not use the initial value of a reassigned story helper', () => {
+    expect(() =>
+      normalize(dedent`
+        export default { title: 'Paragraph' };
+        let Helper = () => null;
+        Helper = { args: {} };
+        export const A = Helper;
+      `)
+    ).toThrow('Expected story to be csf factory, function or an object expression');
   });
 
   it('throws for factory calls with more than one argument', () => {

@@ -15,7 +15,7 @@ import TsEnumProps from './TsEnumProps.vue';
   <TsEnumProps :level="1" />
 </template>",
       "summary": undefined,
-      "warning": "Omitted args that cannot be resolved statically: severity: Severity.Warning",
+      "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
     },
   },
 }

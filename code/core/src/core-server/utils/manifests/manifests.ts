@@ -62,10 +62,17 @@ function mergeServicePayloads(
   return Object.fromEntries(
     componentIds.flatMap((id) => {
       const docgen = docgenPayloads[id];
+      const storyDocs = storyDocsPayloads[id];
       if (!docgen) {
-        return [];
+        // A componentless component (its story file names no `meta.component`, so no docgen
+        // provider claims it) still has stories to show. Without a stub row here it would disappear
+        // from components.html while still appearing in components.json, so the HTML debugger would
+        // contradict the index it exists to explain.
+        return storyDocs
+          ? [[id, mergeManifestPayloads(createDocsOnlyDocgenPayload(id), storyDocs)] as const]
+          : [];
       }
-      return [[id, mergeManifestPayloads(docgen, storyDocsPayloads[id])] as const];
+      return [[id, mergeManifestPayloads(docgen, storyDocs)] as const];
     })
   );
 }
@@ -83,10 +90,10 @@ function mergeServicePayloads(
  * cover, so it is deferred to its own change.
  */
 function isDocgenServerManifestMode(features: {
-  experimentalDocgenServer?: boolean;
+  docgenServer?: boolean;
   componentsManifest?: boolean;
 }): boolean {
-  return features.experimentalDocgenServer === true && features.componentsManifest === true;
+  return features.docgenServer === true && features.componentsManifest === true;
 }
 
 /** Narrows an unknown manifest value to the docs manifest shape used by the HTML debugger. */
@@ -155,7 +162,7 @@ function resolveDocgenMeta(manifests: Manifests, durationMs: number): Components
   const presetMeta = manifests.components?.meta;
   invariant(
     presetMeta?.docgen,
-    'experimental_manifests must supply components.meta.docgen when experimentalDocgenServer is enabled'
+    'experimental_manifests must supply components.meta.docgen when docgenServer is enabled'
   );
 
   return { docgen: presetMeta.docgen, durationMs };
@@ -232,7 +239,7 @@ async function writeManifestJsonFiles(
 }
 
 /**
- * Static build path when `features.experimentalDocgenServer` is enabled.
+ * Static build path when `features.docgenServer` is enabled.
  *
  * Writes a ref-based `components.json` (with MDX summaries layered in from the snapshots), other
  * manifests from `experimental_manifests`, and `components.html` rendered from the docgen,
@@ -367,7 +374,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 /**
  * Registers dev-server routes for manifest JSON and the components HTML debugger.
  *
- * When `experimentalDocgenServer` is enabled, `components.json` is not served (404) and
+ * When `docgenServer` is enabled, `components.json` is not served (404) and
  * `components.html` is rendered from the docgen service instead of the inline manifest.
  */
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
@@ -388,7 +395,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
       ) {
         res.statusCode = 404;
         res.end(
-          `Manifest "${req.params.name}" is not available in dev when experimentalDocgenServer is enabled`
+          `Manifest "${req.params.name}" is not available in dev when docgenServer is enabled`
         );
         return;
       }

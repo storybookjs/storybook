@@ -5,12 +5,7 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
 import { IMPORTED_TEMPLATE } from './templates.ts';
 import * as BaseStories from './base-args.stories.ts';
 
-// This file is only ever parsed, not executed; a declaration keeps the package's client tree out
-// of the harness type graph while the generator matches the call by name.
-declare function argsToTemplate(
-  args: unknown,
-  options?: { include?: readonly string[]; exclude?: readonly string[] }
-): string;
+import { argsToTemplate } from '@storybook/angular-vite';
 
 type LooseStory = {
   args?: Record<string, unknown>;
@@ -49,7 +44,7 @@ export const MethodRender = {
 };
 
 export const ArgsToTemplateWrapper = {
-  args: { label: 'Save', count: 7 },
+  args: { label: 'Save', count: 7, clicked: () => {} },
   render: (args: Record<string, unknown>) => ({
     props: args,
     template: `<div class="wrap"><sb-shape-button ${argsToTemplate(args)}></sb-shape-button></div>`,
@@ -131,5 +126,17 @@ MemberAssignedRender.render = () => ({
 export const ReassignedTemplate = { template: MUTABLE_TEMPLATE };
 
 export const SpreadStoryArgs = { args: { ...QuotedArgs.args, count: 9 } };
+
+// Values an Angular template expression cannot carry: `new` is not in the grammar at all, and
+// `Array` is not a name the host component resolves. Both are ordinary TypeScript in a class body.
+export const HoistedArgs = {
+  args: {
+    label: 'Save',
+    // The bare Error is the fixture: this file stands in for a user's story, not for repo code.
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    loadingError: new Error('Failed to load cards.'),
+    items: Array.from({ length: 3 }, (_, index) => index),
+  },
+};
 
 export const SpreadCrossFileArgs = { args: { ...BaseStories.Base.args, label: 'overridden' } };

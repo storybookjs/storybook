@@ -8,8 +8,8 @@ import { DecoratorIoBasicsComponent } from './decorator-io-basics.component.ts';
     <sb-decorator-io-basics
         [label]="'Save'"
         [count]="3"
-        (clicked)="clicked($event)">
-    </sb-decorator-io-basics>`,
+        (clicked)="clicked($event)"
+    />`,
 })
 export class DemoComponent {
   clicked(event: unknown) {}

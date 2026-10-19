@@ -63,7 +63,7 @@ describe('createBrowserStaticLoader', () => {
     expect(createBrowserStaticLoader()).toBeUndefined();
   });
 
-  it('fetches snapshots from /services/<logicalPath> in production', async () => {
+  it('fetches snapshots from ./services/<logicalPath> in production', async () => {
     globalThis.CONFIG_TYPE = 'PRODUCTION';
     const fetchMock = vi.fn(async () => ({
       ok: true,
@@ -74,8 +74,27 @@ describe('createBrowserStaticLoader', () => {
     const loader = createBrowserStaticLoader();
     const snapshot = await loader!('internal-fixture/static-fetch/alpha.json', staticLoaderContext);
 
-    expect(fetchMock).toHaveBeenCalledWith('/services/internal-fixture/static-fetch/alpha.json');
+    expect(fetchMock).toHaveBeenCalledWith('./services/internal-fixture/static-fetch/alpha.json');
     expect(snapshot).toEqual({ entries: { alpha: 'from-file' } });
+  });
+
+  // A Storybook deployed below the origin root - a GitHub Pages project site, a docs site mounted
+  // under a path - must still reach its own snapshots, and the manager and the preview iframe must
+  // agree on where those are. An origin-absolute request would leave the deployment entirely.
+  it('resolves under the deployment directory from both the manager and the preview iframe', async () => {
+    globalThis.CONFIG_TYPE = 'PRODUCTION';
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await createBrowserStaticLoader()!('core/story-docs/button.json', staticLoaderContext);
+    const [requested] = fetchMock.mock.calls[0] as unknown as [string];
+
+    const managerDocument = 'https://acme.github.io/design-system/';
+    const previewDocument = 'https://acme.github.io/design-system/iframe.html?id=button--primary';
+    const expected = 'https://acme.github.io/design-system/services/core/story-docs/button.json';
+
+    expect(new URL(requested, managerDocument).href).toBe(expected);
+    expect(new URL(requested, previewDocument).href).toBe(expected);
   });
 
   it('rejects when the response is not ok', async () => {
@@ -97,7 +116,7 @@ describe('createBrowserStaticLoader', () => {
         queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'missing.json',
-        url: '/services/missing.json',
+        url: './services/missing.json',
         cause: { status: 404, statusText: 'Not Found' },
         status: 404,
         statusText: 'Not Found',
@@ -123,7 +142,7 @@ describe('createBrowserStaticLoader', () => {
         queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'network.json',
-        url: '/services/network.json',
+        url: './services/network.json',
         cause,
       },
     });
@@ -150,7 +169,7 @@ describe('createBrowserStaticLoader', () => {
         queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'broken.json',
-        url: '/services/broken.json',
+        url: './services/broken.json',
         cause,
       },
     });
@@ -179,7 +198,7 @@ describe('createBrowserStaticLoader', () => {
         queryName: 'entry',
         input: { id: 'alpha' },
         logicalPath: 'invalid.json',
-        url: '/services/invalid.json',
+        url: './services/invalid.json',
         received,
       },
     });

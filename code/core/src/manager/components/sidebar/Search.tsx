@@ -44,15 +44,15 @@ const options = {
   maxPatternLength: 32,
   minMatchCharLength: 1,
   keys: [
-    { name: 'name', weight: 0.7 },
+    { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
+    { name: 'anchors.title', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
 const SearchBar = styled.div({
   display: 'flex',
   flexDirection: 'row',
-  columnGap: 6,
 });
 
 const ScreenReaderLabel = styled.label({
@@ -155,7 +155,14 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
+// Fill the remaining sidebar height. The virtualized tree inside scrolls itself.
+const FocusContainer = styled.div({
+  outline: 0,
+  flex: '1 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export type SearchProps = {
   children: SearchChildrenFn;
@@ -163,8 +170,8 @@ export type SearchProps = {
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
-  searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
+  belowSearchContent?: ReactNode;
 };
 
 export const Search = React.memo<SearchProps>(function Search({
@@ -173,39 +180,71 @@ export const Search = React.memo<SearchProps>(function Search({
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
-  searchBarContent,
   searchFieldContent,
+  belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
+  // The explorer's focus target (also focusableUIElements.storyListMenu).
+  const menuRef = useRef<HTMLDivElement>(null);
   const [inputPlaceholder, setPlaceholder] = useState('Find components');
   const [allComponents, showAllComponents] = useState(false);
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
-      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+    const list: SearchItem[] = [];
 
-      if (index) {
-        acc.push(
-          ...Object.values(index).map((item) => {
-            const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(
-                  Object.values(storyStatuses)
-                    .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                    .map((status) => status.value)
-                )
-              : null;
-            return {
-              ...searchItem(item, dataset.hash[refId]),
-              status: mostCriticalStatusValue ?? groupStatus[item.id] ?? null,
-            };
-          })
-        );
+    for (const [refId, { index, allStatuses }] of dataset.entries) {
+      if (!index) {
+        continue;
       }
-      return acc;
-    }, []);
+
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+      const datasetValues = Object.values(index);
+
+      for (const datasetValue of datasetValues) {
+        const storyStatuses = allStatuses?.[datasetValue.id];
+        const ownStatusValues = Object.values(storyStatuses ?? {})
+          .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+          .map((status) => status.value);
+        // A story can carry review statuses only. Such a story has no status of its own, so use
+        // the group status instead of the 'unknown' placeholder value.
+        const mostCriticalStatusValue = ownStatusValues.length
+          ? getMostCriticalStatusValue(ownStatusValues)
+          : null;
+
+        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+
+        if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
+          list.push({
+            ...searchItem(datasetValue, dataset.hash[refId]),
+            status,
+          });
+          continue;
+        }
+
+        const { anchors, ...baseSearchItem } = searchItem(datasetValue, dataset.hash[refId]);
+
+        list.push({
+          ...baseSearchItem,
+          status,
+        });
+
+        anchors?.forEach((anchor) => {
+          const namePostfix = baseSearchItem.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+
+          list.push({
+            ...baseSearchItem,
+            anchors: [anchor],
+            // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
+            id: `${datasetValue.id}#${anchor.id}`,
+            name: `${datasetValue.name}${namePostfix}`,
+            status,
+          });
+        });
+      }
+    }
+
     return new Fuse(list, options);
   }, [dataset]);
 
@@ -294,9 +333,15 @@ export const Search = React.memo<SearchProps>(function Search({
         return;
       }
       if (isSearchResult(selectedItem)) {
-        const { id, refId } = selectedItem.item;
-        // @ts-expect-error (non strict)
-        api?.selectStory(id, undefined, { ref: refId !== DEFAULT_REF_ID && refId });
+        const { id: rawId, refId } = selectedItem.item;
+        const [storyId, anchor] = rawId.split('#');
+
+        api?.selectStory(storyId, undefined, {
+          // @ts-expect-error (non strict)
+          ref: refId !== DEFAULT_REF_ID && refId,
+          scrollTo: anchor,
+        });
+
         // @ts-expect-error (non strict)
         inputRef.current.blur();
         showAllComponents(false);
@@ -394,16 +439,33 @@ export const Search = React.memo<SearchProps>(function Search({
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
           // @ts-expect-error (non strict)
-          results = lastViewed.reduce((acc, { storyId, refId }) => {
+          results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
             const data = dataset.hash[refId];
             if (data && data.index && data.index[storyId]) {
               const story = data.index[storyId];
               const item = story.type === 'story' ? data.index[story.parent] : story;
+              const entryId = anchor ? `${item.id}#${anchor}` : item.id;
               // prevent duplicates
               // @ts-expect-error (non strict)
-              if (!acc.some((res) => res.item.refId === refId && res.item.id === item.id)) {
+              if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
+                const baseItem = searchItem(item, dataset.hash[refId]);
+                let resultItem = baseItem;
+                if (anchor && item.type === 'docs') {
+                  const matchingAnchor = item.anchors?.find((a) => a.id === anchor);
+                  if (matchingAnchor) {
+                    const namePostfix =
+                      baseItem.path?.[0] === matchingAnchor.title
+                        ? ''
+                        : ` / ${matchingAnchor.title}`;
+                    resultItem = {
+                      ...baseItem,
+                      id: entryId,
+                      name: `${item.name}${namePostfix}`,
+                    };
+                  }
+                }
                 // @ts-expect-error (non strict)
-                acc.push({ item: searchItem(item, dataset.hash[refId]), matches: [], score: 0 });
+                acc.push({ item: resultItem, matches: [], score: 0 });
               }
             }
             return acc;
@@ -423,12 +485,19 @@ export const Search = React.memo<SearchProps>(function Search({
           },
           onBlur: () => setPlaceholder('Find components'),
           onKeyDown: (e) => {
+            if (e.key !== 'Escape') {
+              return;
+            }
+            // Escape never leaves the field. With a query it clears the query (see stateReducer).
+            // With an empty field it hands focus to the explorer: the stateReducer then returns
+            // to the tree view, and the next Escape, from the explorer, reaches the ancestors.
+            // The mobile menu drawer closes on any Escape that reaches it, so a press from the
+            // field would close it on the first press. A plain blur would not do either: the
+            // drawer's focus scope returns the focus to the field, which reopens the results.
+            e.stopPropagation();
             // @ts-expect-error (non strict)
-            if (e.key === 'Escape' && inputValue.length === 0) {
-              // When pressing escape while the input is empty, blur the input
-              // The stateReducer will handle returning to the tree view
-              // @ts-expect-error (non strict)
-              inputRef.current.blur();
+            if (inputValue.length === 0) {
+              menuRef.current?.focus();
             }
           },
         });
@@ -479,9 +548,10 @@ export const Search = React.memo<SearchProps>(function Search({
                   {searchFieldContent}
                 </Actions>
               </SearchField>
-              {searchBarContent}
             </SearchBar>
-            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
+            {!isOpen && belowSearchContent}
+            {/* Programmatically focusable (focusableUIElements.storyListMenu). */}
+            <FocusContainer tabIndex={-1} id="storybook-explorer-menu" ref={menuRef}>
               {children({
                 query: input,
                 results,

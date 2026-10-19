@@ -1,0 +1,6 @@
+<template>
+  <OptionsApiSlots heading="Entries">
+    Plain text content
+    <template #header>Header text</template>
+  </OptionsApiSlots>
+</template>

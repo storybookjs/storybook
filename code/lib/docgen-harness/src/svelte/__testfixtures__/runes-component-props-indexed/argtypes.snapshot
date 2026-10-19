@@ -1,0 +1,136 @@
+{
+  "confirmType": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Confirm button variant.",
+    "name": "confirmType",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""primary"",
+      },
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "any",
+      "required": false,
+    },
+  },
+  "content": {
+    "control": null,
+    "description": "Main content.",
+    "name": "content",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[]>",
+      "required": false,
+    },
+  },
+  "error": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Error message.",
+    "name": "error",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "footer": {
+    "control": null,
+    "description": "Footer content.",
+    "name": "footer",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[]>",
+      "required": false,
+    },
+  },
+  "id": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Dialog id.",
+    "name": "id",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "onCancelModal": {
+    "control": null,
+    "description": "Cancel callback.",
+    "name": "onCancelModal",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "() => void",
+      "required": false,
+    },
+  },
+  "open": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Open state.",
+    "name": "open",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+}

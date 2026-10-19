@@ -26,7 +26,6 @@ tsconfig.dts-tmp-*.json
 .env.local
 
 # https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
-.pnp.*
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -35,7 +34,6 @@ tsconfig.dts-tmp-*.json
 !.yarn/versions
 
 # For sandboxes
-/**/.pnp.*
 /**/.yarn/*
 !/**/.yarn/patches
 !/**/.yarn/plugins

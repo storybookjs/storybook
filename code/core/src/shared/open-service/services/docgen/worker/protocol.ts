@@ -7,6 +7,8 @@
  * `error` (mirroring `ModuleGraphStatus`), rather than an `ok` flag with nullable fields — a
  * response either carries its result or an error, never an ambiguous mix.
  */
+import type { LogLevel } from 'storybook/internal/node-logger';
+
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
@@ -15,6 +17,7 @@ import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
 export interface DocgenWorkerInitRequest {
   type: 'init';
   descriptors: DocgenProviderDescriptor[];
+  logLevel: LogLevel;
 }
 
 /** Sent per component to extract its docgen payload. `id` correlates the response. */

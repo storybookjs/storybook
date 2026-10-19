@@ -10,10 +10,29 @@ const importFreshModule = async () => {
   return import('./module.ts');
 };
 
-const hookRegistrations = (
-  register: ReturnType<typeof vi.spyOn>,
-  registerHooks: ReturnType<typeof vi.spyOn> | undefined
-) => register.mock.calls.length + (registerHooks?.mock.calls.length ?? 0);
+const stubHookRegistration = (refuses: boolean) => {
+  const register = vi.spyOn(nodeModule, 'register').mockImplementation(() => {
+    if (refuses) {
+      throw new Error('module.register() is not supported in Jest');
+    }
+  });
+  const registerHooks =
+    'registerHooks' in nodeModule
+      ? vi.spyOn(nodeModule, 'registerHooks').mockImplementation(() => {
+          if (refuses) {
+            throw new Error('module.registerHooks() is not supported in Jest');
+          }
+          return { deregister: () => {} };
+        })
+      : undefined;
+
+  return {
+    // All hook registration attempts across both APIs.
+    attempts: () => register.mock.calls.length + (registerHooks?.mock.calls.length ?? 0),
+    // register() attempts only — pins that a refused registration is never retried.
+    registerCalls: () => register.mock.calls.length,
+  };
+};
 
 describe('importModule', () => {
   afterEach(() => {
@@ -22,48 +41,35 @@ describe('importModule', () => {
   });
 
   it('still imports the module when the runtime forbids module hook registration', async () => {
-    // The throwing spies simulate a refusing runtime and keep real hooks out of this process.
-    vi.spyOn(nodeModule, 'register').mockImplementation(() => {
-      throw new Error('module.register() is not supported in Jest');
-    });
-    if ('registerHooks' in nodeModule) {
-      vi.spyOn(nodeModule, 'registerHooks').mockImplementation(() => {
-        throw new Error('module.registerHooks() is not supported in Jest');
-      });
+    const hooks = stubHookRegistration(true);
+    const { importModule } = await importFreshModule();
+
+    const mod = await importModule(new URL('./module.ts', import.meta.url).href);
+    // The refusal is cached: a runtime that refuses once is not retried on the next import.
+    await importModule(new URL('./module.ts', import.meta.url).href);
+
+    expect(mod).toBeDefined();
+    expect(hooks.registerCalls()).toBe(1);
+  });
+
+  it.each([
+    ['when the runtime allows them', false],
+    ['when JEST_WORKER_ID is inherited from the parent environment', true],
+  ])(
+    'registers the TypeScript loader hooks exactly once %s',
+    async (_condition, stubInheritedEnvironment) => {
+      if (stubInheritedEnvironment) {
+        vi.stubEnv('JEST_WORKER_ID', '1');
+      }
+      const hooks = stubHookRegistration(false);
+      const { importModule } = await importFreshModule();
+
+      const mod = await importModule(new URL('./module.ts', import.meta.url).href);
+      // Calling twice is what makes the toBe(1) below prove memoization.
+      await importModule(new URL('./module.ts', import.meta.url).href);
+
+      expect(hooks.attempts()).toBe(1);
+      expect(mod).toBeDefined();
     }
-    const { importModule } = await importFreshModule();
-
-    const mod = await importModule(new URL('./module.ts', import.meta.url).href);
-
-    expect(mod).toBeDefined();
-  });
-
-  it('registers the TypeScript loader hooks exactly once when the runtime allows them', async () => {
-    const register = vi.spyOn(nodeModule, 'register').mockImplementation(() => {});
-    const registerHooks =
-      'registerHooks' in nodeModule
-        ? vi.spyOn(nodeModule, 'registerHooks').mockImplementation(() => ({ deregister: () => {} }))
-        : undefined;
-    const { importModule } = await importFreshModule();
-
-    const mod = await importModule(new URL('./module.ts', import.meta.url).href);
-
-    expect(hookRegistrations(register, registerHooks)).toBe(1);
-    expect(mod).toBeDefined();
-  });
-
-  it('still registers the hooks when JEST_WORKER_ID is inherited from the parent environment', async () => {
-    const register = vi.spyOn(nodeModule, 'register').mockImplementation(() => {});
-    const registerHooks =
-      'registerHooks' in nodeModule
-        ? vi.spyOn(nodeModule, 'registerHooks').mockImplementation(() => ({ deregister: () => {} }))
-        : undefined;
-    vi.stubEnv('JEST_WORKER_ID', '1');
-    const { importModule } = await importFreshModule();
-
-    const mod = await importModule(new URL('./module.ts', import.meta.url).href);
-
-    expect(hookRegistrations(register, registerHooks)).toBe(1);
-    expect(mod).toBeDefined();
-  });
+  );
 });

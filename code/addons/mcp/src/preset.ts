@@ -6,8 +6,10 @@ import {
   createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
+  isValidHost,
   loadManifests,
 } from 'storybook/internal/core-server';
+import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
@@ -15,7 +17,6 @@ import { resolveCompositionSources } from './auth/resolve-composition-sources.ts
 import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
@@ -38,6 +39,58 @@ export const experimental_devServer: PresetPropertyFn<
 
   const origin = `http://localhost:${options.port}`;
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
+
+  const core = await options.presets.apply('core', {});
+  const hostValidation = {
+    host: options.host,
+    allowedHosts: core?.allowedHosts,
+    localAddress: options.localAddress,
+    networkAddress: options.networkAddress,
+  };
+
+  // Needed for e.g. StackBlitz. Not running on developer machines so skipping validation is ok.
+  const skipOriginValidation = isWebContainer();
+
+  // Request middleware rejecting invalid origin or host configuration.
+  const rejectDisallowedOrigin = (req: IncomingMessage, res: ServerResponse): boolean => {
+    if (skipOriginValidation) {
+      return false;
+    }
+
+    // MCP clients are not browsers and send no Origin header. We only need to check the Origin
+    // of Web clients for DNS rebinding attacks, which browsers will attach for us.
+    // See https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http.
+    const { origin: requestOrigin } = req.headers;
+    if (!requestOrigin) {
+      return false;
+    }
+
+    // Check host validity.
+    try {
+      if (isValidHost(new URL(requestOrigin).host, hostValidation)) {
+        return false;
+      }
+    } catch {}
+
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Invalid origin');
+    return true;
+  };
+
+  // When allowedHosts or --host relax origin validation, a web page can still reach this endpoint
+  // cross-origin. Requiring application/json makes the browser send a CORS preflight first, which
+  // this server never approves, so the request is never sent. Only the type before `;` counts:
+  // `text/plain; x=application/json` is still a safelisted type and needs no preflight.
+  const rejectNonJsonBody = (req: IncomingMessage, res: ServerResponse): boolean => {
+    const mediaType = req.headers['content-type']?.split(';')[0].trim().toLowerCase();
+    if (mediaType === 'application/json') {
+      return false;
+    }
+
+    res.writeHead(415, { 'Content-Type': 'text/plain' });
+    res.end('Unsupported Media Type: Content-Type must be application/json');
+    return true;
+  };
 
   const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
 
@@ -102,7 +155,9 @@ export const experimental_devServer: PresetPropertyFn<
   };
 
   app!.post(endpoint, (req, res) => {
+    if (rejectDisallowedOrigin(req, res)) return;
     if (requireAuth(req, res)) return;
+    if (rejectNonJsonBody(req, res)) return;
 
     return mcpServerHandler({
       req,
@@ -120,8 +175,6 @@ export const experimental_devServer: PresetPropertyFn<
   // claim a tool is available when it isn't (and vice versa).
   const {
     moduleGraphSupported,
-    changeDetectionEnabled,
-    reviewEnabled,
     docsEnabled,
     docsHasManifests,
     docsFeatureEnabled,
@@ -134,6 +187,7 @@ export const experimental_devServer: PresetPropertyFn<
   const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
   app!.get(endpoint, (req, res) => {
+    if (rejectDisallowedOrigin(req, res)) return;
     if (!req.headers['accept']?.includes('text/html')) {
       if (requireAuth(req, res)) return;
 
@@ -186,34 +240,25 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
-    // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
-    // graph, `stories-changed` and `review-create` need the `changeDetection` feature flag —
-    // so each shows its own badge.
+    // `stories-find-by-component` also needs the dependency graph, so it shows its own badge.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
-    // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
+    // disabled regardless of its own gate, so explain that instead of the per-tool reason.
     const devNoticeLines = !isDevEnabled
       ? [`The <code>dev</code> toolset is disabled via addon options.`]
       : [
           !moduleGraphSupported &&
             `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
-          !changeDetectionEnabled &&
-            `<code>stories-changed</code> and <code>review-create</code> require enabling the <code>changeDetection</code> feature flag.`,
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
       : '';
 
-    const statusWord = (enabled: boolean) => (enabled ? 'enabled' : 'disabled');
-
     const html = htmlTemplate
       .replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
       .replaceAll(
         '{{STORIES_BY_COMPONENT_STATUS}}',
-        statusWord(isDevEnabled && moduleGraphSupported)
+        isDevEnabled && moduleGraphSupported ? 'enabled' : 'disabled'
       )
-      .replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
-      .replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabled))
       .replace('{{DEV_NOTICE}}', devNotice)
       .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
       .replace('{{DOCS_NOTICE}}', docsNotice)
@@ -229,13 +274,6 @@ export const experimental_devServer: PresetPropertyFn<
     res.end(html);
   });
   return app;
-};
-
-export const experimental_storybookAi = async (
-  existingMetadata: StorybookAiMetadata | undefined,
-  options: Parameters<typeof buildStorybookAiMetadata>[0]
-): Promise<StorybookAiMetadata> => {
-  return buildStorybookAiMetadata(options, existingMetadata);
 };
 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {

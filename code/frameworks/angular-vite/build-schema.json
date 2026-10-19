@@ -72,7 +72,7 @@
       "x-deprecated": "Compodoc no longer runs. @storybook/angular-vite extracts Angular metadata in-process, so this option does nothing. Remove it from angular.json."
     },
     "statsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write stats JSON to disk",
       "default": false
     },

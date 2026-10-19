@@ -22,12 +22,12 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
   versions={[
     {
       name: 'SvelteKit',
-      range: '≥ 1.0',
+      range: '≥ 3',
       icon: '/images/logos/renderers/logo-svelte.svg',
     },
     {
       name: 'Vite',
-      range: '≥ 5',
+      range: '≥ 8',
       icon: '/images/logos/builders/vite.svg',
     },
   ]}
@@ -54,21 +54,27 @@ This section covers SvelteKit support and configuration options.
 All Svelte language features are supported out of the box, as the Storybook framework uses the Svelte compiler directly.
 However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/modules) that aren't supported. Here's a breakdown of what will and will not work within Storybook:
 
-| Module                                                                     | Status                 | Note                                                                                                                                    |
-| -------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| [`$app/environment`](https://svelte.dev/docs/kit/$app-environment)         | ✅ Supported           | `version` is always empty in Storybook.                                                                                                 |
-| [`$app/forms`](https://svelte.dev/docs/kit/$app-forms)                     | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                        |
-| [`$app/navigation`](https://svelte.dev/docs/kit/$app-navigation)           | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                        |
-| [`$app/paths`](https://svelte.dev/docs/kit/$app-paths)                     | ✅ Supported           | Requires SvelteKit 1.4.0 or newer.                                                                                                      |
-| [`$app/state`](https://svelte.dev/docs/kit/$app-state)                     | ⚠️ **Experimental**    | Requires SvelteKit `v2.12` or newer. See [How to mock](#how-to-mock).                                                                   |
-| [`$app/stores`](https://svelte.dev/docs/kit/$app-stores)                   | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                        |
-| [`$env/dynamic/public`](https://svelte.dev/docs/kit/$env-dynamic-public)   | 🚧 Partially supported | Only supported in development mode. Storybook is built as a static app with no server-side API, so it cannot dynamically serve content. |
-| [`$env/static/public`](https://svelte.dev/docs/kit/$env-static-public)     | ✅ Supported           |                                                                                                                                         |
-| [`$lib`](https://svelte.dev/docs/kit/$lib)                                 | ✅ Supported           |                                                                                                                                         |
-| [`@sveltejs/kit/*`](https://svelte.dev/docs/kit/@sveltejs-kit)             | ✅ Supported           |                                                                                                                                         |
-| [`$env/dynamic/private`](https://svelte.dev/docs/kit/$env-dynamic-private) | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client.                                                      |
-| [`$env/static/private`](https://svelte.dev/docs/kit/$env-static-private)   | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client.                                                      |
-| [`$service-worker`](https://svelte.dev/docs/kit/$service-worker)           | ⛔ Not supported       | This is a service worker feature, which does not apply to Storybook.                                                                    |
+| Module                                                                   | Status                 | Note                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`$app/env`](https://svelte.dev/docs/kit/$app-env)                       | ✅ Supported           | `version` is always empty in Storybook. The deprecated `$app/environment` works the same way.                                                                                                                                                                         |
+| [`$app/env/public`](https://svelte.dev/docs/kit/$app-env-public)         | 🚧 Partially supported | Static variables are supported. Dynamic variables are always `undefined`, because Storybook has no server to provide them.                                                                                                                                            |
+| [`$app/forms`](https://svelte.dev/docs/kit/$app-forms)                   | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                                                                                                                                                      |
+| [`$app/manifest`](https://svelte.dev/docs/kit/$app-manifest)             | 🚧 Partially supported | Only has values in development mode. In a built Storybook, every list is empty.                                                                                                                                                                                       |
+| [`$app/navigation`](https://svelte.dev/docs/kit/$app-navigation)         | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                                                                                                                                                      |
+| [`$app/paths`](https://svelte.dev/docs/kit/$app-paths)                   | ✅ Supported           |                                                                                                                                                                                                                                                                       |
+| [`$app/state`](https://svelte.dev/docs/kit/$app-state)                   | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                                                                                                                                                      |
+| [`$env/*/public`](https://svelte.dev/docs/kit/$env-static-public)        | 🚧 Partially supported | Deprecated by SvelteKit. Works the same way as `$app/env/public`.                                                                                                                                                                                                     |
+| `#lib`                                                                   | ✅ Supported           |                                                                                                                                                                                                                                                                       |
+| [`@sveltejs/kit/*`](https://svelte.dev/docs/kit/@sveltejs-kit)           | ✅ Supported           |                                                                                                                                                                                                                                                                       |
+| [`$app/env/private`](https://svelte.dev/docs/kit/$app-env-private)       | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client. Storybook fails to load stories that import it. Mock the module that imports it with a [mock file](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#mock-files). |
+| [`$app/server`](https://svelte.dev/docs/kit/$app-server)                 | ⛔ Not supported       | This is a server-side feature, and Storybook renders all components on the client. Storybook fails to load stories that import it. Mock the module that imports it with a [mock file](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#mock-files). |
+| [`$env/*/private`](https://svelte.dev/docs/kit/$env-static-private)      | ⛔ Not supported       | Deprecated by SvelteKit. Works the same way as `$app/env/private`.                                                                                                                                                                                                    |
+| [Remote functions](https://svelte.dev/docs/kit/remote-functions)         | ⛔ Not supported       | Storybook has no server to run them on, and building Storybook fails when a story imports one.                                                                                                                                                                        |
+| [`$app/service-worker`](https://svelte.dev/docs/kit/$app-service-worker) | ⛔ Not supported       | This is a service worker feature, which does not apply to Storybook.                                                                                                                                                                                                  |
+
+### Static assets
+
+Storybook serves the files in your SvelteKit `static` directory at the root, like SvelteKit does. If you set `files.assets` to another directory in your SvelteKit config, add that directory to [`staticDirs`](../../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) so that `storybook build` includes it.
 
 ### How to mock
 
@@ -260,35 +266,17 @@ Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-navigation#invalidat
 
 A callback that will be called whenever [`invalidateAll`](https://svelte.dev/docs/kit/$app-navigation#invalidateAll) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
 
+##### `navigation.refreshAll`
+
+Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-navigation#refreshAll)
+
+A callback that will be called whenever [`refreshAll`](https://svelte.dev/docs/kit/$app-navigation#refreshAll) is called. If no function is provided, an action will be logged to the [Actions panel](../../essentials/actions.mdx).
+
 ##### `navigation.afterNavigate`
 
 Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-navigation#afterNavigate)
 
-An object that will be passed to the [`afterNavigate`](https://svelte.dev/docs/kit/$app-navigation#afterNavigate) function, which will be invoked when the `onMount` event fires.
-
-#### `stores`
-
-Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-stores)
-
-Provides mocks for the [`$app/stores`](https://svelte.dev/docs/kit/$app-stores) module.
-
-##### `stores.navigating`
-
-Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-stores#navigating)
-
-A partial version of the [`navigating`](https://svelte.dev/docs/kit/$app-stores#navigating) store.
-
-##### `stores.page`
-
-Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-stores#page)
-
-A partial version of the [`page`](https://svelte.dev/docs/kit/$app-stores#page) store.
-
-##### `stores.updated`
-
-Type: boolean
-
-A boolean representing the value of [`updated`](https://svelte.dev/docs/kit/$app-stores#updated) (you can also access `updated.check()` which will be a no-op).
+An object that will be passed to the [`afterNavigate`](https://svelte.dev/docs/kit/$app-navigation#afterNavigate) function, which will be invoked when the `onMount` event fires. Storybook merges it into a navigation with `type: 'enter'` and `shallow: false`, so the callback always gets a full navigation object.
 
 #### `state`
 

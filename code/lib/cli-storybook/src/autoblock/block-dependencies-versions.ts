@@ -5,13 +5,14 @@ import { findOutdatedPackage } from './utils.ts';
 
 const minimalVersionsMap = {
   '@angular/core': '21.0.0',
+  '@sveltejs/kit': '3.0.0',
   next: '15.0.0',
   preact: '10.8.0',
   react: '18.0.0',
   'react-dom': '18.0.0',
   svelte: '5.0.0',
   vue: '3.0.0',
-  vite: '5.0.0',
+  vite: '6.3.0',
 } as const;
 
 const conditionalVersionsMap = {
@@ -82,6 +83,16 @@ export const blocker = createBlocker({
           `,
           link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up',
         };
+      case '@sveltejs/kit':
+        return {
+          title: 'Require SvelteKit v3 and up',
+          message: dedent`
+            Support for SvelteKit < 3 has been removed.
+            Run \`npx sv migrate sveltekit-3\` to upgrade SvelteKit first, then upgrade Storybook.
+            Please see the migration guide for more information:
+          `,
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up',
+        };
       case 'vitest':
         return {
           title: 'Vitest 4 required by @storybook/addon-vitest',
@@ -103,6 +114,15 @@ export const blocker = createBlocker({
             Please see the migration guide for more information:
           `,
           link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up',
+        };
+      case 'vite':
+        return {
+          title: 'Vite 6.3 or newer required',
+          message: dedent`
+            Support for Vite < 6.3.0 has been removed.
+            Please see the migration guide for more information:
+          `,
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher',
         };
       default:
         return {

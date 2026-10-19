@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
@@ -74,6 +74,7 @@ function createMockStore(initialState: Partial<State> = {}) {
 interface ResponseResult {
   ok?: boolean;
   status?: number;
+  url?: string;
   err?: Error;
   response?: () => never | object | Promise<object>;
 }
@@ -87,7 +88,7 @@ type ResponseKeys =
   | 'metadata';
 
 function respond(result: ResponseResult): Promise<Response> {
-  const { err, ok, status, response } = result;
+  const { err, ok, status, url, response } = result;
   if (err) {
     return Promise.reject(err);
   }
@@ -95,6 +96,7 @@ function respond(result: ResponseResult): Promise<Response> {
   return Promise.resolve({
     ok: ok ?? !!response,
     status: status ?? (ok ? 200 : 500),
+    url,
     json: response,
   } as Response);
 }
@@ -623,6 +625,55 @@ describe('Refs API', () => {
           },
         }
       `);
+    });
+
+    describe('when the index is served from another URL after a redirect', () => {
+      const initialConfigType = global.CONFIG_TYPE;
+
+      afterEach(() => {
+        global.CONFIG_TYPE = initialConfigType;
+      });
+
+      const checkRedirectedRef = async (indexUrl: string) => {
+        const { api } = initRefs({ provider, store } as any, { runCheck: false });
+        setupResponses({
+          indexPrivate: {
+            ok: true,
+            url: indexUrl,
+            response: async () => ({ v: 5, entries: {} }),
+          },
+          storiesPrivate: { ok: false },
+          metadata: { ok: true, response: async () => ({}) },
+        });
+
+        await api.checkRef({ id: 'fake', url: 'https://example.com', title: 'Fake' });
+
+        return store.setState.mock.calls[0][0].refs.fake.url;
+      };
+
+      it('composes the ref from the origin that served its index in dev mode', async () => {
+        global.CONFIG_TYPE = 'DEVELOPMENT';
+
+        await expect(
+          checkRedirectedRef('https://www.example.com/storybook/index.json')
+        ).resolves.toBe('https://www.example.com/storybook');
+      });
+
+      it('keeps the configured URL when the index is served from the same origin', async () => {
+        global.CONFIG_TYPE = 'DEVELOPMENT';
+
+        await expect(checkRedirectedRef('https://example.com/storybook/index.json')).resolves.toBe(
+          'https://example.com'
+        );
+      });
+
+      it('keeps the configured URL in a built Storybook', async () => {
+        global.CONFIG_TYPE = 'PRODUCTION';
+
+        await expect(
+          checkRedirectedRef('https://www.example.com/storybook/index.json')
+        ).resolves.toBe('https://example.com');
+      });
     });
 
     it('checks refs (not replace versions)', async () => {

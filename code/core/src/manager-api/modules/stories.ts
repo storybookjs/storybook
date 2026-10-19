@@ -10,7 +10,6 @@ import {
   SET_CURRENT_STORY,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
@@ -38,11 +37,10 @@ import type {
   Args,
   ComponentTitle,
   DocsPreparedPayload,
-  SetStoriesPayload,
+  SelectStoryPayload,
   StatusValue,
   StoryId,
   StoryIndex,
-  StoryKind,
   StoryName,
   StoryPreparedPayload,
   Tag,
@@ -58,7 +56,6 @@ import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
   addPreparedStories,
-  denormalizeStoryParameters,
   getComponentLookupList,
   getStoriesLookupList,
   transformStoryIndexToStoriesHash,
@@ -75,6 +72,34 @@ import {
   parseTagsParam,
   serializeTagsParam,
 } from './tags.ts';
+
+/** Sent by composed Storybooks built with 10.x or earlier (their addon-links). */
+type LegacySelectStoryPayload = {
+  /** @deprecated Use `title`. */
+  kind?: ComponentTitle;
+  /** @deprecated Use `name`. */
+  story?: StoryName;
+  viewMode?: API_ViewMode;
+  scrollTo?: string;
+};
+
+/**
+ * Accepts the deprecated `kind`/`story` keys so cross-story links inside composed
+ * Storybooks built with 10.x or earlier keep navigating; everything downstream is modern-only.
+ */
+type SelectStoryEvent = SelectStoryPayload | LegacySelectStoryPayload;
+
+const normalizeSelectStoryPayload = (payload: SelectStoryEvent): SelectStoryPayload => {
+  if ('storyId' in payload) {
+    return payload;
+  }
+  const { viewMode, scrollTo } = payload;
+  const title =
+    ('title' in payload && payload.title) || ('kind' in payload ? payload.kind : undefined);
+  const name =
+    ('name' in payload && payload.name) || ('story' in payload ? payload.story : undefined);
+  return { title, name, viewMode, scrollTo };
+};
 
 const { fetch } = global;
 const STORY_INDEX_PATH = './index.json';
@@ -471,9 +496,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     const includedTags = (state.includedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
     const excludedTags = (state.excludedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
 
-    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
-    const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];
-    const excludedStatuses = changeDetectionEnabled ? (state.excludedStatusFilters ?? []) : [];
+    const includedStatuses = state.includedStatusFilters ?? [];
+    const excludedStatuses = state.excludedStatusFilters ?? [];
 
     const storyCounts: Record<string, number> = {};
     const entries = state.internal_index ? Object.values(state.internal_index.entries) : [];
@@ -778,12 +802,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
 
         const storyIndex = (await result.json()) as StoryIndex;
-
-        // We can only do this if the stories.json is a proper storyIndex
-        if (storyIndex.v < 3) {
-          logger.warn(`Skipping story index with version v${storyIndex.v}, awaiting SET_STORIES.`);
-          return;
-        }
 
         await api.setIndex(storyIndex);
       } catch (err: any) {
@@ -1255,47 +1273,20 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   });
 
-  // For composition back-compatibilty
-  provider.channel?.on(SET_STORIES, function handler(this: any, data: SetStoriesPayload) {
+  provider.channel?.on(SELECT_STORY, function handler(this: any, rawPayload: SelectStoryEvent) {
     const { ref } = getEventMetadata(this, fullAPI)!;
-    const setStoriesData = data.v ? denormalizeStoryParameters(data) : data.stories;
+    const payload = normalizeSelectStoryPayload(rawPayload);
 
-    if (!ref) {
-      throw new Error('Cannot call SET_STORIES for local frame');
+    if ('storyId' in payload) {
+      const { storyId, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(storyId, undefined, { viewMode, scrollTo, ref: ref?.id });
+    } else if (payload.title || payload.name) {
+      const { title, name, viewMode, scrollTo } = payload;
+      fullAPI.selectStory(title, name, { viewMode, scrollTo, ref: ref?.id });
     } else {
-      fullAPI.setRef(ref.id, { ...ref, setStoriesData }, true);
+      logger.warn('Received a SELECT_STORY event without storyId, title or name; ignoring it.');
     }
   });
-
-  provider.channel?.on(
-    SELECT_STORY,
-    function handler(
-      this: any,
-      {
-        kind,
-        title = kind,
-        story,
-        name = story,
-        storyId,
-        ...rest
-      }: {
-        kind?: StoryKind;
-        title?: ComponentTitle;
-        story?: StoryName;
-        name?: StoryName;
-        storyId: string;
-        viewMode: API_ViewMode;
-      }
-    ) {
-      const { ref } = getEventMetadata(this, fullAPI)!;
-
-      if (!ref) {
-        fullAPI.selectStory(storyId || title, name, rest);
-      } else {
-        fullAPI.selectStory(storyId || title, name, { ...rest, ref: ref.id });
-      }
-    }
-  );
 
   provider.channel?.on(
     STORY_ARGS_UPDATED,
@@ -1390,10 +1381,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const hasBuiltInTagFilters =
         initialIncluded.some((id) => BUILT_IN_TAG_IDS.has(id)) ||
         initialExcluded.some((id) => BUILT_IN_TAG_IDS.has(id));
-      const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const hasStatusFilters =
-        changeDetectionEnabled &&
-        (initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0);
+        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
 
       if (hasBuiltInTagFilters || hasStatusFilters) {
         emitFilterTelemetry('url');

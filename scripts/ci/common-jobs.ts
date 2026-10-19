@@ -111,6 +111,7 @@ export const fmt = defineJob('Format check', () => ({
         command: 'yarn fmt:check',
       },
     },
+    ...workflow.cancelOnFailure(),
   ],
 }));
 
@@ -506,6 +507,7 @@ export const benchmarkPackages = defineJob(
     },
     steps: [
       ...workflow.restoreLinux(),
+      npm.installPinnedVersion(),
       verdaccio.start(),
       server.wait([...verdaccio.ports]),
       {

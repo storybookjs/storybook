@@ -1,0 +1,12 @@
+{
+  "id": "webcomponentsfixtures-lit-schema-warning",
+  "name": "lit-schema-warning",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-schema-warning--args-default-render": {
+      "id": "webcomponentsfixtures-lit-schema-warning--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-schema-warning label="Hello" count="2"></lit-schema-warning>",
+    },
+  },
+}

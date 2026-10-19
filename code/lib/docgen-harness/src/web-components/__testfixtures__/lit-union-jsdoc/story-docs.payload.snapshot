@@ -1,0 +1,23 @@
+{
+  "id": "webcomponentsfixtures-lit-union-jsdoc",
+  "name": "lit-union-jsdoc",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-union-jsdoc--args-default-render": {
+      "id": "webcomponentsfixtures-lit-union-jsdoc--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-union-jsdoc variant="ghost" old-label="Legacy" label="Default render"></lit-union-jsdoc>",
+    },
+    "webcomponentsfixtures-lit-union-jsdoc--dom-node": {
+      "id": "webcomponentsfixtures-lit-union-jsdoc--dom-node",
+      "name": "Dom Node",
+      "snippet": "<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-union-jsdoc'); el.setAttribute('variant', String(args.variant)); el.setAttribute('old-label', String(args.oldLabel)); el.setAttribute('label', String(args.label)); return el; }` could not be resolved statically.",
+    },
+    "webcomponentsfixtures-lit-union-jsdoc--lit-template": {
+      "id": "webcomponentsfixtures-lit-union-jsdoc--lit-template",
+      "name": "Lit Template",
+      "snippet": "<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>",
+    },
+  },
+}

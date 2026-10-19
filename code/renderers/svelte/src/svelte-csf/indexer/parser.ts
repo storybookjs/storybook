@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 
 import { findDefineMetaImport } from '../utils/import-source.ts';
-import { preprocess } from 'svelte/compiler';
-import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
 
 import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
@@ -33,44 +31,30 @@ interface Results {
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
 }
 
-/**
- * The indexer runs once per `*.stories.svelte` file, while the Svelte config is per-project state.
- * Cache the lookup so the config-file scan runs once per process instead of once per story file —
- * without this, projects without a `svelte.config.js` get one
- * "no Svelte config found ... using default configuration" log line per story file.
- * Trade-off: adding or changing a svelte.config file while `storybook dev` runs requires a restart to be picked up.
- */
-let svelteConfigPromise: Promise<Partial<SvelteConfig> | undefined> | undefined;
+// Script blocks and comments are matched first, as they can contain "<style"
+const styleBlocks =
+  /<script(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>[\s\S]*?<\/script\s*>|<!--[\s\S]*?-->|(<style(?:\s(?:"[^"]*"|'[^']*'|[^>"'])*)?>)([\s\S]*?)(<\/style\s*>)/g;
 
-async function loadCachedSvelteConfig(): Promise<Partial<SvelteConfig> | undefined> {
-  svelteConfigPromise ??= import('@sveltejs/vite-plugin-svelte')
-    .then(({ loadSvelteConfig }) => loadSvelteConfig())
-    .catch((error) => {
-      // Don't cache failures (e.g. a broken svelte.config.js), so the next indexing run retries.
-      svelteConfigPromise = undefined;
-      throw error;
-    });
-  return svelteConfigPromise;
+// Preprocessors don't run here, so a style block in SCSS and similar fails to compile. Then the
+// style content is blanked. Newlines stay, so error positions stay correct.
+function getIndexableAST(code: string, filename: string) {
+  try {
+    return getSvelteAST({ code, filename });
+  } catch {
+    const blanked = code.replace(styleBlocks, (match, open?: string, content = '', close = '') =>
+      open === undefined ? match : open + content.replace(/[^\r\n]/g, ' ') + close
+    );
+    return getSvelteAST({ code: blanked, filename });
+  }
 }
 
 export async function parseForIndexer(filename: string): Promise<Results> {
-  const [rawCode, { walk }, svelteConfig] = await Promise.all([
+  const [code, { walk }] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
-    loadCachedSvelteConfig(),
   ]);
 
-  let code = rawCode;
-
-  if (svelteConfig?.preprocess) {
-    code = (
-      await preprocess(code, svelteConfig.preprocess, {
-        filename: filename,
-      })
-    ).code;
-  }
-
-  const svelteAST = getSvelteAST({ code, filename });
+  const svelteAST = getIndexableAST(code, filename);
   const results: Results & {
     defineMetaImport?: ESTreeAST.ImportSpecifier;
     defineMetaStory?: ESTreeAST.Identifier;

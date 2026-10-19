@@ -188,7 +188,6 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
-          changeDetection: true,
         },
       },
       extraDevDependencies: ['server-only', 'prop-types'],
@@ -272,7 +271,6 @@ export const baseTemplates = {
           experimentalRSC: true,
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
-          changeDetection: true,
         },
       },
       extraDevDependencies: ['server-only', 'vite', 'prop-types'],
@@ -315,7 +313,6 @@ export const baseTemplates = {
         features: {
           developmentModeForBuild: true,
           experimentalTestSyntax: true,
-          changeDetection: true,
         },
       },
     },
@@ -324,15 +321,12 @@ export const baseTemplates = {
   },
   'react-vite/prerelease-ts': {
     name: 'React Prerelease (Vite | TypeScript)',
-    /**
-     * Create a Vite project with the React template. The beta React, React-DOM and @types packages,
-     * see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     */
     script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
-    // Beta React is applied after scaffold (extraDependencies / resolutions). The allowlist
+    // Canary React is applied after scaffold (extraDependencies / resolutions). The allowlist
     // still has to live on before-storybook so later installs under the 7-day gate can
-    // resolve those packages. `scheduler` ships in lockstep with React releases.
-    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
+    // resolve those packages. `@types/react` has no canary dist-tag, so types stay on
+    // `@latest`. `scheduler` ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
@@ -340,17 +334,13 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['react@beta', 'react-dom@beta'],
-      extraDevDependencies: [
-        'prop-types',
-        '@types/react@npm:types-react@beta',
-        '@types/react-dom@npm:types-react-dom@beta',
-      ],
+      extraDependencies: ['react@canary', 'react-dom@canary'],
+      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
       resolutions: {
-        '@types/react': 'npm:types-react@beta',
-        '@types/react-dom': 'npm:types-react-dom@beta',
-        react: 'npm:react@beta',
-        'react-dom': 'npm:react-dom@beta',
+        '@types/react': 'npm:@types/react@latest',
+        '@types/react-dom': 'npm:@types/react-dom@latest',
+        react: 'npm:react@canary',
+        'react-dom': 'npm:react-dom@canary',
       },
       mainConfig: {
         features: {
@@ -383,17 +373,12 @@ export const baseTemplates = {
   },
   'react-webpack/prerelease-ts': {
     name: 'React Prerelease (Webpack | TypeScript)',
-    /**
-     * Create a Webpack project with React beta versions.
-     * See https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
-     */
     script:
-      'npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta"',
-    // create-webpack5-react pins react@beta at scaffold time, so refresh must allow the
-    // React beta family or the 7-day gate quarantines them. `types-react*` are the
-    // packages behind the `@types/react@npm:types-react@beta` aliases; `scheduler`
-    // ships in lockstep with React releases.
-    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
+      'npx create-webpack5-react {{beforeDir}} --version-react="canary" --version-react-dom="canary"',
+    // create-webpack5-react pins react@canary at scaffold time, so refresh must allow the
+    // React canary family or the 7-day gate quarantines them. `@types/react` has no canary
+    // dist-tag, so types stay on `@latest`. `scheduler` ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -401,14 +386,10 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: [
-        'prop-types',
-        '@types/react@npm:types-react@beta',
-        '@types/react-dom@npm:types-react-dom@beta',
-      ],
+      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
       resolutions: {
-        '@types/react': 'npm:types-react@beta',
-        '@types/react-dom': 'npm:types-react-dom@beta',
+        '@types/react': 'npm:@types/react@latest',
+        '@types/react-dom': 'npm:@types/react-dom@latest',
       },
       mainConfig: {
         swc: { swcrc: false },
@@ -721,6 +702,8 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    // TODO: remove after oct 21 2026
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -728,6 +711,16 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      mainConfig: {
+        framework: {
+          name: '@storybook/web-components-vite',
+          options: {
+            customElementsManifest: [
+              '../src/stories/renderers/web-components/custom-elements.json',
+            ],
+          },
+        },
+      },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
@@ -736,6 +729,7 @@ export const baseTemplates = {
     name: 'Lit Latest (Vite | TypeScript)',
     script:
       'npm create vite --yes {{beforeDir}} -- --template lit-ts && cd {{beforeDir}} && echo "export default {}" > vite.config.js',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: '@storybook/web-components-vite',
       renderer: '@storybook/web-components',
@@ -743,6 +737,22 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      // The renderer turns the docgen server on by default; the components manifest brings this
+      // template into docgen baseline coverage, see `docgenServerTemplates`.
+      mainConfig: {
+        framework: {
+          name: '@storybook/web-components-vite',
+          options: {
+            customElementsManifest: [
+              '../src/stories/renderers/web-components/custom-elements.json',
+              '../src/stories/renderers/web-components_lit-vite-default-ts/custom-elements.json',
+            ],
+          },
+        },
+        features: {
+          componentsManifest: true,
+        },
+      },
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
     skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
@@ -750,6 +760,7 @@ export const baseTemplates = {
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
     script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    minAgeGateExemptions: ['@wc-toolkit/*'],
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',
@@ -1092,6 +1103,7 @@ export const enablesDocgenServer = (key: string, template: Template): boolean =>
   const supported =
     template.expected.renderer === '@storybook/react' ||
     template.expected.renderer === '@storybook/vue3' ||
+    template.expected.renderer === '@storybook/web-components' ||
     template.expected.framework === '@storybook/angular-vite';
   return supported && features?.componentsManifest === true && features.docgenServer !== false;
 };

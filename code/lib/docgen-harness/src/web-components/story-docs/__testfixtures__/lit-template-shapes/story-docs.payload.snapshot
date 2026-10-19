@@ -1,0 +1,114 @@
+{
+  "id": "webcomponentsstorydocs-lit-template-shapes",
+  "name": "lit-template-shapes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-lit-template-shapes--aliased": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--aliased",
+      "name": "Aliased",
+      "snippet": "<lit-template-shapes label="Aliased" count="7" heading="Head">
+  <b>Aliased</b>
+</lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--attributes": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--attributes",
+      "name": "Attributes",
+      "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--class-map": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--class-map",
+      "name": "Class Map",
+      "snippet": "<lit-template-shapes></lit-template-shapes>",
+      "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--destructured": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--destructured",
+      "name": "Destructured",
+      "snippet": "<lit-template-shapes label="Destructured" count="6"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--disabled-false": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--disabled-false",
+      "name": "Disabled False",
+      "snippet": "<lit-template-shapes label="Beta" count="3"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--if-defined": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--if-defined",
+      "name": "If Defined",
+      "snippet": "<lit-template-shapes count="4"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--listener": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--listener",
+      "name": "Listener",
+      "snippet": "<lit-template-shapes></lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--member-path": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--member-path",
+      "name": "Member Path",
+      "snippet": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--nested": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--nested",
+      "name": "Nested",
+      "snippet": "<lit-template-shapes>
+  <span>Nested</span>
+</lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--nested-listener": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--nested-listener",
+      "name": "Nested Listener",
+      "snippet": "<lit-template-shapes>
+  <button>Go</button>
+</lit-template-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
+      "warning": "Incomplete snippet: listeners not shown: `@click`.",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--nothing": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--nothing",
+      "name": "Nothing",
+      "snippet": "<lit-template-shapes label="Set"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--prefixed-class": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--prefixed-class",
+      "name": "Prefixed Class",
+      "snippet": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--property-only": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--property-only",
+      "name": "Property Only",
+      "snippet": "<lit-template-shapes></lit-template-shapes>",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--property-paired": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--property-paired",
+      "name": "Property Paired",
+      "snippet": "<lit-template-shapes heading="Heading" open></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--property-paired-false": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--property-paired-false",
+      "name": "Property Paired False",
+      "snippet": "<lit-template-shapes heading="Closed"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole",
+      "name": "Quoted And Multi Hole",
+      "snippet": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--unbound-arg": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--unbound-arg",
+      "name": "Unbound Arg",
+      "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",
+      "warning": "Incomplete snippet: args not bound by the render template: `count`.",
+    },
+  },
+}

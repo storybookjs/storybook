@@ -6,10 +6,10 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SELECT_STORY,
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
-  SET_STORIES,
   STORY_ARGS_UPDATED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
@@ -47,6 +47,8 @@ const fetch = vi.mocked(global.fetch);
 const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+vi.mock('../stores/status.ts');
 
 vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
@@ -1470,71 +1472,78 @@ describe('stories API', () => {
       });
     });
   });
-  describe('v2 SET_STORIES event', () => {
-    it('normalizes parameters and calls setRef for external stories', () => {
+  describe('SELECT_STORY event', () => {
+    const setup = () => {
       const fullAPI = {
         findRef: vi.fn(),
         setRef: vi.fn(),
+        selectStory: vi.fn(),
       };
       const moduleArgs = createMockModuleArgs({ fullAPI });
       initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
+      return { provider: moduleArgs.provider, fullAPI };
+    };
+
+    it('resolves the story from title and name', () => {
+      const { provider, fullAPI } = setup();
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        title: 'a',
+        name: '1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', { viewMode: 'story' });
+    });
+
+    it('resolves the story from storyId when provided', () => {
+      const { provider, fullAPI } = setup();
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {
+        storyId: 'a--1',
+        viewMode: 'story',
+      });
+
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a--1', undefined, { viewMode: 'story' });
+    });
+
+    it('resolves the story from the legacy kind/story payload sent by older composed Storybooks', () => {
+      const { provider, fullAPI } = setup();
 
       getEventMetadata.mockReturnValueOnce({
         sourceType: 'external',
         ref: { id: 'ref' },
       } as any);
-      const setStoriesPayload = {
-        v: 2,
-        globalParameters: { global: 'global' },
-        kindParameters: { a: { kind: 'kind' } },
-        stories: { 'a--1': { kind: 'a', parameters: { story: 'story' } } },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': { kind: 'a', parameters: { global: 'global', kind: 'kind', story: 'story' } },
-          },
-        },
-        true
-      );
-    });
-  });
-  describe('legacy (v1) SET_STORIES event', () => {
-    it('calls setRef with stories', () => {
-      const fullAPI = {
-        findRef: vi.fn(),
-        setRef: vi.fn(),
-      };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
-      initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider, store } = moduleArgs;
+      provider.channel.emit(SELECT_STORY, {
+        kind: 'a',
+        story: '1',
+        viewMode: 'story',
+      });
 
-      getEventMetadata.mockReturnValueOnce({
-        sourceType: 'external',
-        ref: { id: 'ref' },
-      } as any);
-      const setStoriesPayload = {
-        stories: { 'a--1': {} },
-      };
-      provider.channel.emit(SET_STORIES, setStoriesPayload);
-      expect(store.getState().index).toBeUndefined();
-      expect(fullAPI.setRef).toHaveBeenCalledWith(
-        'ref',
-        {
-          id: 'ref',
-          setStoriesData: {
-            'a--1': {},
-          },
-        },
-        true
+      expect(fullAPI.selectStory).toHaveBeenCalledWith('a', '1', {
+        viewMode: 'story',
+        ref: 'ref',
+      });
+    });
+
+    it('warns and does not navigate on a payload without storyId, title or name', () => {
+      const { provider, fullAPI } = setup();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
+      getEventMetadata.mockReturnValueOnce({ sourceType: 'local' } as any);
+      provider.channel.emit(SELECT_STORY, {});
+
+      expect(fullAPI.selectStory).not.toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('without storyId, title or name')
       );
+
+      warnSpy.mockRestore();
     });
   });
+
   describe('SET_CONFIG', () => {
     it('ignores sidebar.filters when config arrives after the index', async () => {
       const moduleArgs = createMockModuleArgs({
@@ -1726,7 +1735,6 @@ describe('stories API', () => {
     });
 
     it('can filter on status', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2086,7 +2094,6 @@ describe('stories API', () => {
 
   describe('computeStatusFilterFn (via setFilter)', () => {
     it('passes through all stories when both included and excluded are empty', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2099,7 +2106,6 @@ describe('stories API', () => {
     });
 
     it('applies OR logic within included status filters', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2134,7 +2140,6 @@ describe('stories API', () => {
     });
 
     it('re-applies active filters on status changes without re-registering the status filter', async () => {
-      vi.mock('../stores/status');
       fullStatusStore.unset();
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -2168,7 +2173,6 @@ describe('stories API', () => {
     });
 
     it('a stream of status updates triggers a bounded number of index rebuilds', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2206,7 +2210,6 @@ describe('stories API', () => {
     });
 
     it('applies the last status update after a burst (trailing edge of the throttle)', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2246,7 +2249,6 @@ describe('stories API', () => {
     });
 
     it('does not overlap status-driven index rebuilds when a rebuild outlasts the throttle', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2306,7 +2308,6 @@ describe('stories API', () => {
     });
 
     it('keeps rebuilding the status-filtered index after a rebuild rejection', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       try {
@@ -2358,7 +2359,6 @@ describe('stories API', () => {
     });
 
     it('applies exclude logic: story with excluded status is hidden', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2393,7 +2393,6 @@ describe('stories API', () => {
     });
 
     it('story with no statuses is hidden when included filters are active', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;

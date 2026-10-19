@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FC } from 'react';
-import React, { useState } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 
 import type { RenderContext } from 'storybook/internal/types';
 
@@ -160,6 +160,36 @@ describe('renderToCanvas', () => {
 
       teardown = await renderToCanvas(makeRenderContext(Story, { parameters }), canvasElement);
       expect(canvasElement.textContent).toBe('instance 2');
+    });
+  });
+
+  describe('teardown', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('keeps the act environment enabled while a lazy chunk resolves during teardown', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const chunk = Promise.withResolvers<{ default: FC }>();
+      const LazyContent = lazy(() => chunk.promise);
+      const Story: FC = () => (
+        <Suspense fallback="loading">
+          <LazyContent />
+        </Suspense>
+      );
+
+      teardown = await renderToCanvas(makeRenderContext(Story), canvasElement);
+      expect(canvasElement.textContent).toBe('loading');
+
+      const tearingDown = teardown();
+      // React reopens its act queue in the microtask after the teardown awaits act.
+      // The chunk must resolve then.
+      await Promise.resolve();
+      chunk.resolve({ default: () => null });
+      await tearingDown;
+
+      const messages = consoleError.mock.calls.map(([message]) => String(message));
+      expect(messages).not.toContainEqual(expect.stringContaining('not configured to support act'));
     });
   });
 });

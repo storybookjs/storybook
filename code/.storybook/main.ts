@@ -157,13 +157,11 @@ const config = defineMain({
   },
   core: {
     disableTelemetry: true,
-    changeDetection: true,
   },
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
     experimentalReactComponentMeta: true,
-    changeDetection: true,
     experimentalSearchDocsHeadings: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],

@@ -1,9 +1,10 @@
 import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { storyNameFromExport } from 'storybook/internal/csf';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
+  authoredSource,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
@@ -32,7 +33,6 @@ import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
-import { authoredSource } from './story-docs-source.ts';
 import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
 import {
   buildComponentOutletTemplate,
@@ -193,7 +193,12 @@ const renderedSnippet = async (
   shape: StoryShape,
   deps: StoryDocDeps
 ): Promise<HostComponentSnippet | undefined> => {
-  const authored = authoredSource(shape, deps.resolveStoryArgs.ctx);
+  const authoredShape = {
+    storyMembers: shape.members,
+    members: shape.members,
+    metaMembers: shape.metaMembers,
+  };
+  const authored = authoredSource(authoredShape, deps.resolveStoryArgs.ctx);
   if (authored.kind === 'code') {
     return { snippet: authored.code };
   }

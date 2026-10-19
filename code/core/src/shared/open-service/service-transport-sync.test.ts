@@ -91,6 +91,20 @@ describe('connectRuntimeToChannel request policy', () => {
     expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
   });
 
+  it('does not keep the process alive while it waits for sync replies', () => {
+    const { channel, emitted } = connect();
+    vi.advanceTimersByTime(1000);
+    channel.emit.mockClear();
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+    channel.emitExternal(SERVICE_ENTRY, entry('w', 1, '/missing/y'));
+
+    expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
+    const timers = setTimeoutSpy.mock.results.map(({ value }) => value as NodeJS.Timeout);
+    expect(timers).toHaveLength(1);
+    expect(timers[0].hasRef()).toBe(false);
+  });
+
   it('keeps one request outstanding, queues the next repair, and sends it after 1 s of silence', () => {
     const { channel, reconciler, emitted } = connect();
     vi.advanceTimersByTime(1000);

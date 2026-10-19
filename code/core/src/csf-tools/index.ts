@@ -29,7 +29,7 @@ export {
   unwrapExpression,
   walk,
 } from './estree/ast.ts';
-export { SourceEditor } from './estree/editor.ts';
+export { SourceEditor, type GeneratedMap, type SourceEdits } from './estree/editor.ts';
 export { generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
 export {
   appendStatement,

@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -58,6 +59,9 @@ const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 /** `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0). */
 const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
 
+/** pnpm 11 dropped the legacy build lists, so `allowBuilds` no longer conflicts with them. */
+const PNPM_LEGACY_BUILD_LISTS_REMOVED = '11.0.0';
+
 /** Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved. */
 const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
 
@@ -84,9 +88,14 @@ const matchesPackage = (matcher: unknown, pkg: string): boolean =>
  * pnpm 10 list settings it replaced, or by allowing every build. A pinned `allowBuilds` matcher
  * counts whatever its value, since adding a bare `esbuild: true` next to it would widen the user's
  * choice; the bare key only counts once it holds a boolean, so pnpm's own placeholder still gets
- * resolved.
+ * resolved. On pnpm 10, pass `anyNeverBuiltDependencies`: that version rewrites `allowBuilds` into
+ * `onlyBuiltDependencies`, and any `neverBuiltDependencies` list conflicts with it.
  */
-function hasBuildScriptDecision(settings: unknown, pkg: string): boolean {
+function hasBuildScriptDecision(
+  settings: unknown,
+  pkg: string,
+  { anyNeverBuiltDependencies = false }: { anyNeverBuiltDependencies?: boolean } = {}
+): boolean {
   if (!isRecord(settings)) {
     return false;
   }
@@ -104,8 +113,30 @@ function hasBuildScriptDecision(settings: unknown, pkg: string): boolean {
   }
   return LEGACY_BUILD_SCRIPT_LISTS.some((key) => {
     const list = settings[key];
-    return Array.isArray(list) && list.some((matcher) => matchesPackage(matcher, pkg));
+    if (!Array.isArray(list)) {
+      return false;
+    }
+    if (anyNeverBuiltDependencies && key === 'neverBuiltDependencies') {
+      return true;
+    }
+    return list.some((matcher) => matchesPackage(matcher, pkg));
   });
+}
+
+// Same-directory rename so a crash cannot truncate the user's workspace file.
+function writeFileAtomically(filePath: string, contents: string): void {
+  const tempPath = `${filePath}.${randomBytes(8).toString('hex')}.tmp`;
+  try {
+    writeFileSync(tempPath, contents, 'utf8');
+    renameSync(tempPath, filePath);
+  } catch (error) {
+    try {
+      unlinkSync(tempPath);
+    } catch {
+      // The temp file was never created, or rename already consumed it.
+    }
+    throw error;
+  }
 }
 
 /**
@@ -425,10 +456,12 @@ export class PNPMProxy extends JsPackageManager {
       const settings = doc.toJS();
       const decisions = [settings, this.primaryPackageJson.packageJson.pnpm];
       const trustedDependencies = readOnlyBuiltDependenciesFile(settings, dirname(path));
+      const anyNeverBuiltDependencies = !this.#pnpmGte(PNPM_LEGACY_BUILD_LISTS_REMOVED);
       for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
         const decided =
-          decisions.some((candidate) => hasBuildScriptDecision(candidate, pkg)) ||
-          trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
+          decisions.some((candidate) =>
+            hasBuildScriptDecision(candidate, pkg, { anyNeverBuiltDependencies })
+          ) || trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
         if (!decided) {
           doc.setIn(['allowBuilds', pkg], true);
           changed = true;
@@ -437,7 +470,7 @@ export class PNPMProxy extends JsPackageManager {
 
       // Write file back only if changes were needed.
       if (changed) {
-        writeFileSync(path, doc.toString(), 'utf8');
+        writeFileAtomically(path, doc.toString());
       }
     } catch (e) {
       logger.warn(

@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,10 +32,14 @@ describe('PNPMProxy catalogs', () => {
     // Restore the real fs so the proxy can be constructed, then redirect fs to memfs.
     vi.mocked(readFileSync).mockReset();
     vi.mocked(writeFileSync).mockReset();
+    vi.mocked(renameSync).mockReset();
+    vi.mocked(unlinkSync).mockReset();
     pnpmProxy = new PNPMProxy();
     vol.reset();
     vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
     vi.mocked(writeFileSync).mockImplementation(memfs.writeFileSync as typeof writeFileSync);
+    vi.mocked(renameSync).mockImplementation(memfs.renameSync as typeof renameSync);
+    vi.mocked(unlinkSync).mockImplementation(memfs.unlinkSync as typeof unlinkSync);
     vi.mocked(getProjectRoot).mockReturnValue('/root');
     vi.mocked(find.up).mockReturnValue(WORKSPACE_YAML);
     // Drive the version resolution through controllable inputs.

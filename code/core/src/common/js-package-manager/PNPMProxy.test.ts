@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -69,12 +69,16 @@ describe('PNPM Proxy', () => {
     // Construct against the real fs, then redirect fs to memfs for everything the tests do.
     vi.mocked(readFileSync).mockReset();
     vi.mocked(writeFileSync).mockReset();
+    vi.mocked(renameSync).mockReset();
+    vi.mocked(unlinkSync).mockReset();
     mockPnpmVersion('11.18.0');
     pnpmProxy = new PNPMProxy();
     vol.reset();
     vol.mkdirSync(PROJECT_DIR, { recursive: true });
     vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
     vi.mocked(writeFileSync).mockImplementation(memfs.writeFileSync as typeof writeFileSync);
+    vi.mocked(renameSync).mockImplementation(memfs.renameSync as typeof renameSync);
+    vi.mocked(unlinkSync).mockImplementation(memfs.unlinkSync as typeof unlinkSync);
     useMemfsProject(pnpmProxy);
     JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
@@ -167,6 +171,16 @@ describe('PNPM Proxy', () => {
       await install();
 
       expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
+      expect(writeFileSync).toHaveBeenCalledWith(
+        expect.stringMatching(/\/project\/pnpm-workspace\.yaml\.[0-9a-f]+\.tmp$/),
+        'allowBuilds:\n  esbuild: true\n',
+        'utf8'
+      );
+      expect(renameSync).toHaveBeenCalledWith(
+        expect.stringMatching(/\/project\/pnpm-workspace\.yaml\.[0-9a-f]+\.tmp$/),
+        WORKSPACE_YAML
+      );
+      expect(Object.keys(vol.toJSON()).some((filePath) => filePath.endsWith('.tmp'))).toBe(false);
       expect(mockedExecuteCommand).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
@@ -269,6 +283,73 @@ describe('PNPM Proxy', () => {
       expect(workspaceYaml()).toBe(
         'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n  esbuild: true\nonlyBuiltDependencies:\n  - fsevents\n'
       );
+    });
+
+    it('still allows esbuild on pnpm 11 when neverBuiltDependencies lists other packages', async () => {
+      vol.fromJSON({ [WORKSPACE_YAML]: 'neverBuiltDependencies:\n  - fsevents\n' });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(
+        'neverBuiltDependencies:\n  - fsevents\nallowBuilds:\n  esbuild: true\n'
+      );
+    });
+
+    describe('on pnpm 10', () => {
+      beforeEach(() => {
+        mockPnpmVersion('10.28.0');
+        pnpmProxy = new PNPMProxy();
+        useMemfsProject(pnpmProxy);
+      });
+
+      it.each([
+        ['neverBuiltDependencies lists another package', 'neverBuiltDependencies:\n  - fsevents\n'],
+        ['neverBuiltDependencies is an empty list', 'neverBuiltDependencies: []\n'],
+      ])('does not write allowBuilds when %s', async (_, yaml) => {
+        vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(yaml);
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('does not write allowBuilds when package.json neverBuiltDependencies lists other packages', async () => {
+        useMemfsProject(pnpmProxy, { pnpm: { neverBuiltDependencies: ['fsevents'] } });
+
+        await install();
+
+        expect(workspaceYaml()).toBeUndefined();
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('preserves an explicit esbuild denial', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild: false\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: false\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('preserves a version-pinned esbuild approval', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'allowBuilds:\n  esbuild@0.25.0: true\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild@0.25.0: true\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('still allows esbuild when onlyBuiltDependencies lists other packages', async () => {
+        vol.fromJSON({ [WORKSPACE_YAML]: 'onlyBuiltDependencies:\n  - fsevents\n' });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(
+          'onlyBuiltDependencies:\n  - fsevents\nallowBuilds:\n  esbuild: true\n'
+        );
+      });
     });
 
     it('still runs the install, with a warning, when pnpm-workspace.yaml is malformed', async () => {

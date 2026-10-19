@@ -183,4 +183,35 @@ describe('docs parameters', () => {
       expect.anything()
     );
   });
+
+  it("falls back to the project's docs renderer when the attached story's docs have none", async () => {
+    const renderPage = vi.fn();
+    const projectRenderer = vi.fn(async () => ({ render: renderPage }));
+    const { story, csfFile, moduleExports } = csfFileParts();
+    // A CSF Next file whose own preview does not register the docs addon.
+    const attachedStory = { ...story, parameters: { docs: { story: { inline: false } } } };
+    const store = {
+      loadEntry: () => ({
+        entryExports: { ...moduleExports, default: () => null },
+        csfFiles: [csfFile],
+      }),
+      componentStoriesFromCSFFile: () => [attachedStory],
+      storyFromCSFFile: () => attachedStory,
+      projectAnnotations: {
+        parameters: { docs: { renderer: projectRenderer, theme: 'project-theme' } },
+      },
+    } as unknown as StoryStore<Renderer>;
+
+    const render = new MdxDocsRender(new Channel({}), store, attachedEntry, {
+      showException: vi.fn(),
+    } as unknown as RenderContextCallbacks<Renderer>);
+    await render.prepare();
+    await render.renderToElement({} as Renderer['canvasElement'], vi.fn());
+
+    expect(renderPage).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ theme: 'project-theme', story: { inline: false } }),
+      expect.anything()
+    );
+  });
 });

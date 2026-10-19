@@ -317,7 +317,7 @@ export const printString = (value: string, quote: string) => {
 export const printMembers = (members: string[], indent: string) =>
   members.length === 0
     ? '{}'
-    : `{\n${members.map((member) => `${indent}${reindent(member, '', indent)},`).join('\n')}\n}`;
+    : `{\n${members.map((member) => `${indent}${withComma(reindent(member, '', indent))}`).join('\n')}\n}`;
 
 /** Print a JS value as source. With an `indent`, objects are laid out one member per line. */
 export const printValue = (
@@ -579,17 +579,42 @@ const FRAGMENTS = [
   ['(async function* () ', '\n)'],
 ] as const;
 
-const parsedLiteralSpans = (text: string): Span[] | undefined => {
+// The parse of a text as one of the fragments, with the offset of the text in it.
+const parsedFragment = (text: string) => {
   for (const [before, after] of FRAGMENTS) {
-    let program: E.Program;
     try {
-      program = parseModule(`${before}${text}${after}`).program;
+      return { ...parseModule(`${before}${text}${after}`), offset: before.length };
     } catch {
       continue;
     }
-    return literalSpans(program, { start: before.length, end: before.length + text.length });
   }
   return undefined;
+};
+
+const parsedLiteralSpans = (text: string): Span[] | undefined => {
+  const fragment = parsedFragment(text);
+  return (
+    fragment &&
+    literalSpans(fragment.program, { start: fragment.offset, end: fragment.offset + text.length })
+  );
+};
+
+// A text ending in a line comment, which `placeableTextOf` ends with a line break, takes its comma
+// before the comment. A text that does not parse keeps the comma after the line break.
+const withComma = (text: string, comma = ',') => {
+  const body = text.trimEnd();
+  if (body === text) {
+    return `${text}${comma}`;
+  }
+  const fragment = comma ? parsedFragment(body) : undefined;
+  const comment = fragment?.comments.findLast(
+    (candidate) => candidate.type === 'Line' && candidate.end === fragment.offset + body.length
+  );
+  if (!comment) {
+    return comma ? `${text}${comma}` : body;
+  }
+  const at = comment.start - fragment!.offset;
+  return `${body.slice(0, at).trimEnd()}${comma} ${body.slice(at)}`;
 };
 
 const reindentLines = (text: string, from: string, to: string, literals: readonly Span[]) => {
@@ -650,21 +675,18 @@ const itemEnd = (editor: SourceEditor, list: List, index: number) => {
 const itemStart = (editor: SourceEditor, list: List, index: number) =>
   index === 0 ? list.open : itemEnd(editor, list, index - 1);
 
-// `itemText` with the text from the start of the leading comments printed by `print`.
-const itemTextWith = (
-  editor: SourceEditor,
-  list: List,
-  index: number,
-  print: (start: number) => string
-) => {
+// `itemText` with the item itself printed by `print`, below the comments that lead it and, after
+// those, the ones that trailed it on its line.
+const itemTextWith = (editor: SourceEditor, list: List, index: number, print: () => string) => {
   const { code } = editor;
   const item = list.items[index];
   const from = itemStart(editor, list, index);
-  const text = print(from + /^\s*/.exec(code.slice(from, item.start))![0].length);
+  const leadStart = from + /^\s*/.exec(code.slice(from, item.start))![0].length;
+  const lead = dedentSource(editor, leadStart, item.start, lineIndent(code, item.start));
   const trailing = trailingComments(editor, separatorAfter(editor, item) ?? item.end);
-  return trailing.length > 0
-    ? `${code.slice(trailing[0].start, trailing.at(-1)!.end)}\n${text}`
-    : text;
+  const moved =
+    trailing.length > 0 ? `${code.slice(trailing[0].start, trailing.at(-1)!.end)}\n` : '';
+  return `${lead}${moved}${print()}`;
 };
 
 /**
@@ -674,8 +696,8 @@ const itemTextWith = (
 export const itemText = (editor: SourceEditor, list: List, item: Span) => {
   editor.assertCurrent(list);
   editor.assertCurrent(item);
-  return itemTextWith(editor, list, list.items.indexOf(item), (start) =>
-    dedentSource(editor, start, item.end, lineIndent(editor.code, item.start))
+  return itemTextWith(editor, list, list.items.indexOf(item), () =>
+    dedentSource(editor, item.start, item.end, lineIndent(editor.code, item.start))
   );
 };
 
@@ -713,7 +735,7 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
       }
       edits.appendLeft(
         end,
-        `\n${texts.map((text) => `${indent}${reindent(text, '', indent)},`).join('\n')}\n${outer}`
+        `\n${texts.map((text) => `${indent}${withComma(reindent(text, '', indent))}`).join('\n')}\n${outer}`
       );
     } else if (end > list.open) {
       edits.appendLeft(end, ` ${texts.join(', ')}${end === list.close ? padding : ''}`);
@@ -730,11 +752,16 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
   const trailingComma = comma === undefined || isHole(last) ? '' : ',';
   if (isMultiline(code, list)) {
     const indent = lineIndent(code, last.start);
-    const block = texts.map((text) => `${indent}${reindent(text, '', indent)}`).join(',\n');
+    const block = texts
+      .map((text, index) => {
+        const separator = index < texts.length - 1 ? ',' : trailingComma;
+        return `${indent}${withComma(reindent(text, '', indent), separator)}`;
+      })
+      .join('\n');
     if (comma === undefined) {
       edits.appendLeft(last.end, ',');
     }
-    edits.appendLeft(itemEnd(editor, list, items.length - 1), `\n${block}${trailingComma}`);
+    edits.appendLeft(itemEnd(editor, list, items.length - 1), `\n${block}`);
     return;
   }
   if (comma !== undefined) {
@@ -756,7 +783,7 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[])
     const indent = lineIndent(code, first.start);
     edits.appendRight(
       list.open,
-      `\n${texts.map((text) => `${indent}${reindent(text, '', indent)},`).join('\n')}`
+      `\n${texts.map((text) => `${indent}${withComma(reindent(text, '', indent))}`).join('\n')}`
     );
     return;
   }
@@ -971,30 +998,40 @@ const leadingComments = (editor: SourceEditor, statement: Span): E.Comment[] => 
 
 /**
  * Insert a statement as the first statement after the directives, above the comments it owns. A file
- * header stays above it.
+ * header stays above it, as does everything in a file without statements.
  */
 export const prependStatement = (editor: SourceEditor, text: string) => {
   const { body } = editor.program;
-  const directives = leadingDirectives(editor);
-  const first = body[directives.length];
+  const first = body[leadingDirectives(editor).length];
   if (!first) {
-    const after =
-      directives.at(-1)?.end ?? (editor.code.startsWith('#!') ? editor.code.indexOf('\n') + 1 : 0);
-    editor.edits.appendLeft(after, `${after > 0 ? '\n' : ''}${text}\n`);
+    appendStatement(editor, text);
     return;
   }
   editor.edits.appendRight((leadingComments(editor, first)[0] ?? first).start, `${text}\n`);
 };
 
+// Whether pending edits removed a span; one cutting through either end of it counts as that.
+const isRemoved = (editor: SourceEditor, span: Span) => {
+  try {
+    return editor.edits.slice(span.start, span.end) === '';
+  } catch {
+    return true;
+  }
+};
+
+/**
+ * Insert a statement after the last statement that pending edits did not remove. A blank line
+ * sets it apart when it or that statement spans lines.
+ */
 export const appendStatement = (editor: SourceEditor, text: string) => {
-  const last = editor.program.body.at(-1);
+  const last = editor.program.body.findLast((statement) => !isRemoved(editor, statement));
   if (!last) {
-    editor.edits.append(
-      `${editor.code.length > 0 && !editor.code.endsWith('\n') ? '\n' : ''}${text}\n`
-    );
+    const output = editor.edits.toString();
+    editor.edits.append(`${output && !output.endsWith('\n') ? '\n' : ''}${text}\n`);
     return;
   }
-  insertStatementAfter(editor, last, text);
+  const multiline = text.includes('\n') || editor.source(last).includes('\n');
+  insertStatementAfter(editor, last, `${multiline ? '\n' : ''}${text}`);
 };
 
 /** The span of a statement with the comments it owns. */
@@ -1157,12 +1194,12 @@ export const renamedMemberText = (
   const list = objectList(editor, object);
   const indent = lineIndent(editor.code, member.start);
   const dedent = (start: number, end: number) => dedentSource(editor, start, end, indent);
-  return itemTextWith(editor, list, list.items.indexOf(member), (start) => {
+  return itemTextWith(editor, list, list.items.indexOf(member), () => {
     if (member.shorthand) {
-      return `${dedent(start, member.start)}${key}: ${editor.source(member.value)}`;
+      return `${key}: ${editor.source(member.value)}`;
     }
     const range = keyRange(editor, member);
-    return `${dedent(start, range.start)}${key}${dedent(range.end, member.end)}`;
+    return `${dedent(member.start, range.start)}${key}${dedent(range.end, member.end)}`;
   });
 };
 

@@ -403,6 +403,17 @@ describe('ConfigFile mutations', () => {
     expect(output.getValue(['parameters', 'a11y', 'context'])).toBe('#app');
   });
 
+  it('groups named exports into one declaration at the end of the file', () => {
+    const config = loadConfig(
+      'export const showNav = false;\nexport const showPanel = true;\n'
+    ).parse();
+
+    expect(config.group(['layout'], ['showNav', 'showPanel'])).toEqual({ ok: true, changed: true });
+    expect(printConfig(config).code).toBe(
+      'export const layout = { showNav: false, showPanel: true };\n'
+    );
+  });
+
   it.each(['local', 'custom-field'])(
     'avoids binding collisions when renaming an export to %s',
     (name) => {

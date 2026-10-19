@@ -526,6 +526,12 @@ describe('prependStatement', () => {
     prependStatement(editor, `import b from 'b';`);
     expect(editor.toString()).toBe(`/** @license MIT */\nimport b from 'b';\nconst a = 1;`);
   });
+
+  it('inserts below the BOM and the comments of a file without statements', () => {
+    const editor = new SourceEditor('\uFEFF// @ts-nocheck\n');
+    prependStatement(editor, `import a from 'a';`);
+    expect(editor.toString()).toBe(`\uFEFF// @ts-nocheck\nimport a from 'a';\n`);
+  });
 });
 
 describe('insertAfterImports', () => {
@@ -585,6 +591,20 @@ describe('appendStatement', () => {
     const editor = new SourceEditor(`export const a = 1; /* a */ // a`);
     appendStatement(editor, `export const b = 2;`);
     expect(editor.toString()).toBe(`export const a = 1; /* a */ // a\nexport const b = 2;`);
+  });
+
+  it('appends below the last statement that is not removed', () => {
+    const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
+    removeStatement(editor, editor.program.body[1]);
+    appendStatement(editor, `const c = 3;`);
+    expect(editor.toString()).toBe(`const a = 1;\nconst c = 3;\n`);
+  });
+
+  it('appends to the end of a file whose statements are all removed', () => {
+    const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
+    removeStatements(editor, new Set(editor.program.body));
+    appendStatement(editor, `const c = 3;`);
+    expect(editor.toString()).toBe(`const c = 3;\n`);
   });
 });
 
@@ -683,6 +703,29 @@ describe('trailing comments', () => {
           docs: {}, // no docs
         },
         globals: {
+          // center it
+          layout: 'centered',
+        },
+      };
+    `);
+  });
+
+  it('moves the comment that trails a member below the comments that lead it', () => {
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          // where it goes
+          layout: 'centered', // center it
+        },
+        globals: {},
+      };
+    `);
+    const [meta] = csf.objects({ stories: false });
+    meta.move(['parameters', 'layout'], ['globals', 'layout']);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        globals: {
+          // where it goes
           // center it
           layout: 'centered',
         },
@@ -800,8 +843,8 @@ describe('line endings', () => {
   });
 
   it.each([
-    ['a CRLF file with CRLF', 'a;\r\n', 'a;\r\nc;\r\nd;\r\n'],
-    ['an LF file with LF', 'a;\n', 'a;\nc;\nd;\n'],
+    ['a CRLF file with CRLF', 'a;\r\n', 'a;\r\n\r\nc;\r\nd;\r\n'],
+    ['an LF file with LF', 'a;\n', 'a;\n\nc;\nd;\n'],
   ])('writes inserted CRLF text into %s', (_, code, expected) => {
     const editor = new SourceEditor(code);
     appendStatement(editor, 'c;\r\nd;');

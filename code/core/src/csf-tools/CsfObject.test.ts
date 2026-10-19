@@ -201,6 +201,33 @@ describe('CsfObject', () => {
     expect(loadConfig(output).parse().getValue(['b'])).toBe(2);
   });
 
+  it.each([
+    {
+      object: 'export default {\n  a: 1,\n};',
+      path: ['b'],
+      output: 'export default {\n  a: 1,\n  b: 2, // note\n};',
+    },
+    {
+      object: 'export default {\n  a: 1\n};',
+      path: ['b'],
+      output: 'export default {\n  a: 1,\n  b: 2 // note\n};',
+    },
+    {
+      object: 'export default {\n  a: 1,\n};',
+      path: ['b', 'c'],
+      output: 'export default {\n  a: 1,\n  b: {\n    c: 2, // note\n  },\n};',
+    },
+  ])(
+    'places the comma of $path before the line comment ending its value',
+    ({ object, path, output }) => {
+      const config = loadConfig(object).parse();
+
+      expect(config.set(path, parseExpression('2 // note'))).toEqual({ ok: true, changed: true });
+      expect(printConfig(config).code).toBe(output);
+      expect(loadConfig(output).parse().getValue(path)).toBe(2);
+    }
+  );
+
   it('edits a local object referenced by a story and cleans up the empty parent', () => {
     const csf = parse(
       `const a11y = { element: '#root' }; export default {}; export const Story = { parameters: { a11y } };`

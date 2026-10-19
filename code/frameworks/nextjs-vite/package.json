@@ -107,6 +107,7 @@
     "@types/react-dom": "^18.0.0 || ^19.0.0",
     "next": "^15.0.0 || ^16.0.0",
     "react": "^18.0.0 || ^19.0.0",
+    "react-docgen": "^8.0.2",
     "react-dom": "^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
@@ -116,6 +117,9 @@
       "optional": true
     },
     "@types/react-dom": {
+      "optional": true
+    },
+    "react-docgen": {
       "optional": true
     },
     "typescript": {

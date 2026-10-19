@@ -10633,6 +10633,7 @@ __metadata:
     "@types/react-dom": ^18.0.0 || ^19.0.0
     next: ^15.0.0 || ^16.0.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
@@ -10640,6 +10641,8 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    react-docgen:
       optional: true
     typescript:
       optional: true
@@ -10704,6 +10707,7 @@ __metadata:
     "@types/react-dom": ^18.0.0 || ^19.0.0
     next: ^15.0.0 || ^16.0.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     webpack: ^5.0.0
@@ -10711,6 +10715,8 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    react-docgen:
       optional: true
     typescript:
       optional: true
@@ -10823,6 +10829,7 @@ __metadata:
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
@@ -10830,6 +10837,8 @@ __metadata:
     typescript: ">= 5.9.x"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    react-docgen:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -10876,10 +10885,13 @@ __metadata:
     "@types/node": "npm:^22.19.1"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
+    react-docgen:
+      optional: true
     typescript:
       optional: true
   languageName: unknown
@@ -11203,6 +11215,7 @@ __metadata:
     "@tanstack/router-core": ^1.168.9
     "@tanstack/start-client-core": ^1.167.9
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
@@ -11210,6 +11223,8 @@ __metadata:
     "@tanstack/react-start":
       optional: true
     "@tanstack/start-client-core":
+      optional: true
+    react-docgen:
       optional: true
   languageName: unknown
   linkType: soft

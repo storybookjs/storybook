@@ -94,6 +94,7 @@
     "@tanstack/router-core": "^1.168.9",
     "@tanstack/start-client-core": "^1.167.9",
     "react": "^18.0.0 || ^19.0.0",
+    "react-docgen": "^8.0.2",
     "react-dom": "^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
@@ -103,6 +104,9 @@
       "optional": true
     },
     "@tanstack/start-client-core": {
+      "optional": true
+    },
+    "react-docgen": {
       "optional": true
     }
   },

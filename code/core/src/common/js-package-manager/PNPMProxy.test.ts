@@ -234,13 +234,6 @@ describe('PNPM Proxy', () => {
         'a pinned allowBuilds matcher pnpm has not resolved yet',
         'allowBuilds:\n  esbuild@0.28.2: set this to true or false\n',
       ],
-      ['pnpm 10 onlyBuiltDependencies', 'onlyBuiltDependencies:\n  - esbuild\n'],
-      [
-        'a version-pinned pnpm 10 onlyBuiltDependencies entry',
-        'onlyBuiltDependencies:\n  - esbuild@0.28.2\n',
-      ],
-      ['pnpm 10 ignoredBuiltDependencies', 'ignoredBuiltDependencies:\n  - esbuild\n'],
-      ['pnpm 10 neverBuiltDependencies', 'neverBuiltDependencies:\n  - esbuild\n'],
       ['dangerouslyAllowAllBuilds', 'dangerouslyAllowAllBuilds: true\n'],
     ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {
       vol.fromJSON({ [WORKSPACE_YAML]: yaml });
@@ -251,48 +244,52 @@ describe('PNPM Proxy', () => {
       expect(writeFileSync).not.toHaveBeenCalled();
     });
 
-    it('honors a decision recorded in the `pnpm` field of package.json', async () => {
-      useMemfsProject(pnpmProxy, { pnpm: { neverBuiltDependencies: ['esbuild'] } });
+    it('still adds esbuild when the existing allowBuilds decisions concern other packages', async () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n',
+      });
 
       await install();
 
-      expect(workspaceYaml()).toBeUndefined();
-      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(workspaceYaml()).toBe(
+        'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n  esbuild: true\n'
+      );
     });
 
-    it('honors a trusted-dependencies file named by pnpm 10 onlyBuiltDependenciesFile', async () => {
+    // pnpm 11 dropped these lists and stopped reading package.json's `pnpm` field, so leftovers
+    // there no longer govern builds: esbuild still needs its allowBuilds entry.
+    it.each([
+      ['onlyBuiltDependencies names esbuild', 'onlyBuiltDependencies:\n  - esbuild\n'],
+      ['ignoredBuiltDependencies names esbuild', 'ignoredBuiltDependencies:\n  - esbuild\n'],
+      ['neverBuiltDependencies names esbuild', 'neverBuiltDependencies:\n  - esbuild\n'],
+      ['neverBuiltDependencies lists other packages', 'neverBuiltDependencies:\n  - fsevents\n'],
+    ])('still allows esbuild on pnpm 11 when a leftover pnpm 10 %s', async (_, yaml) => {
+      vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+      await install();
+
+      expect(workspaceYaml()).toBe(`${yaml}allowBuilds:\n  esbuild: true\n`);
+    });
+
+    it('still allows esbuild on pnpm 11 when a leftover onlyBuiltDependenciesFile names it', async () => {
       vol.fromJSON({
         [WORKSPACE_YAML]: 'onlyBuiltDependenciesFile: trusted/allow.json\n',
-        [`${PROJECT_DIR}/trusted/allow.json`]: '["@swc/core", "esbuild"]',
-      });
-
-      await install();
-
-      expect(workspaceYaml()).toBe('onlyBuiltDependenciesFile: trusted/allow.json\n');
-      expect(writeFileSync).not.toHaveBeenCalled();
-    });
-
-    it('still adds esbuild when the existing decisions concern other packages', async () => {
-      vol.fromJSON({
-        [WORKSPACE_YAML]:
-          'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\nonlyBuiltDependencies:\n  - fsevents\n',
+        [`${PROJECT_DIR}/trusted/allow.json`]: '["esbuild"]',
       });
 
       await install();
 
       expect(workspaceYaml()).toBe(
-        'allowBuilds:\n  sharp: true\n  esbuild-wasm@1.0.0: true\n  esbuild: true\nonlyBuiltDependencies:\n  - fsevents\n'
+        'onlyBuiltDependenciesFile: trusted/allow.json\nallowBuilds:\n  esbuild: true\n'
       );
     });
 
-    it('still allows esbuild on pnpm 11 when neverBuiltDependencies lists other packages', async () => {
-      vol.fromJSON({ [WORKSPACE_YAML]: 'neverBuiltDependencies:\n  - fsevents\n' });
+    it('still allows esbuild on pnpm 11 when only the ignored `pnpm` field of package.json names it', async () => {
+      useMemfsProject(pnpmProxy, { pnpm: { allowBuilds: { esbuild: false } } });
 
       await install();
 
-      expect(workspaceYaml()).toBe(
-        'neverBuiltDependencies:\n  - fsevents\nallowBuilds:\n  esbuild: true\n'
-      );
+      expect(workspaceYaml()).toBe('allowBuilds:\n  esbuild: true\n');
     });
 
     describe('on pnpm 10', () => {
@@ -300,6 +297,44 @@ describe('PNPM Proxy', () => {
         mockPnpmVersion('10.28.0');
         pnpmProxy = new PNPMProxy();
         useMemfsProject(pnpmProxy);
+      });
+
+      it.each([
+        ['onlyBuiltDependencies', 'onlyBuiltDependencies:\n  - esbuild\n'],
+        [
+          'a version-pinned onlyBuiltDependencies entry',
+          'onlyBuiltDependencies:\n  - esbuild@0.28.2\n',
+        ],
+        ['ignoredBuiltDependencies', 'ignoredBuiltDependencies:\n  - esbuild\n'],
+        ['neverBuiltDependencies', 'neverBuiltDependencies:\n  - esbuild\n'],
+      ])('does not add a bare esbuild key when %s already covers it', async (_, yaml) => {
+        vol.fromJSON({ [WORKSPACE_YAML]: yaml });
+
+        await install();
+
+        expect(workspaceYaml()).toBe(yaml);
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('honors a decision recorded in the `pnpm` field of package.json', async () => {
+        useMemfsProject(pnpmProxy, { pnpm: { ignoredBuiltDependencies: ['esbuild'] } });
+
+        await install();
+
+        expect(workspaceYaml()).toBeUndefined();
+        expect(writeFileSync).not.toHaveBeenCalled();
+      });
+
+      it('honors a trusted-dependencies file named by onlyBuiltDependenciesFile', async () => {
+        vol.fromJSON({
+          [WORKSPACE_YAML]: 'onlyBuiltDependenciesFile: trusted/allow.json\n',
+          [`${PROJECT_DIR}/trusted/allow.json`]: '["@swc/core", "esbuild"]',
+        });
+
+        await install();
+
+        expect(workspaceYaml()).toBe('onlyBuiltDependenciesFile: trusted/allow.json\n');
+        expect(writeFileSync).not.toHaveBeenCalled();
       });
 
       it.each([

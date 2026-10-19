@@ -59,7 +59,10 @@ const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 /** `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0). */
 const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
 
-/** pnpm 11 dropped the legacy build lists, so `allowBuilds` no longer conflicts with them. */
+/**
+ * pnpm 11 dropped the legacy build lists and stopped reading package.json's `pnpm` field. From
+ * there on, those settings are leftovers that neither govern builds nor conflict with `allowBuilds`.
+ */
 const PNPM_LEGACY_BUILD_LISTS_REMOVED = '11.0.0';
 
 /** Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved. */
@@ -88,13 +91,14 @@ const matchesPackage = (matcher: unknown, pkg: string): boolean =>
  * pnpm 10 list settings it replaced, or by allowing every build. A pinned `allowBuilds` matcher
  * counts whatever its value, since adding a bare `esbuild: true` next to it would widen the user's
  * choice; the bare key only counts once it holds a boolean, so pnpm's own placeholder still gets
- * resolved. On pnpm 10, pass `anyNeverBuiltDependencies`: that version rewrites `allowBuilds` into
- * `onlyBuiltDependencies`, and any `neverBuiltDependencies` list conflicts with it.
+ * resolved. The pnpm 10 lists only count when `legacyLists` is set, i.e. on pnpm 10 itself. There,
+ * any `neverBuiltDependencies` list counts as a decision for every package: pnpm 10 rewrites
+ * `allowBuilds` into `onlyBuiltDependencies`, which it refuses to combine with that list.
  */
 function hasBuildScriptDecision(
   settings: unknown,
   pkg: string,
-  { anyNeverBuiltDependencies = false }: { anyNeverBuiltDependencies?: boolean } = {}
+  { legacyLists = false }: { legacyLists?: boolean } = {}
 ): boolean {
   if (!isRecord(settings)) {
     return false;
@@ -111,15 +115,15 @@ function hasBuildScriptDecision(
   ) {
     return true;
   }
+  if (!legacyLists) {
+    return false;
+  }
   return LEGACY_BUILD_SCRIPT_LISTS.some((key) => {
     const list = settings[key];
     if (!Array.isArray(list)) {
       return false;
     }
-    if (anyNeverBuiltDependencies && key === 'neverBuiltDependencies') {
-      return true;
-    }
-    return list.some((matcher) => matchesPackage(matcher, pkg));
+    return key === 'neverBuiltDependencies' || list.some((matcher) => matchesPackage(matcher, pkg));
   });
 }
 
@@ -452,16 +456,21 @@ export class PNPMProxy extends JsPackageManager {
       }
 
       // Add dependencies that need a build approval, unless the user already decided on them in the
-      // workspace file, in package.json's `pnpm` field, or in a trusted-dependencies file.
+      // workspace file. On pnpm 10 the decision may also live in package.json's `pnpm` field or in a
+      // trusted-dependencies file; pnpm 11+ ignores both, so there they must not keep esbuild
+      // unapproved.
       const settings = doc.toJS();
-      const decisions = [settings, this.primaryPackageJson.packageJson.pnpm];
-      const trustedDependencies = readOnlyBuiltDependenciesFile(settings, dirname(path));
-      const anyNeverBuiltDependencies = !this.#pnpmGte(PNPM_LEGACY_BUILD_LISTS_REMOVED);
+      const legacyLists = !this.#pnpmGte(PNPM_LEGACY_BUILD_LISTS_REMOVED);
+      const decisions = legacyLists
+        ? [settings, this.primaryPackageJson.packageJson.pnpm]
+        : [settings];
+      const trustedDependencies = legacyLists
+        ? readOnlyBuiltDependenciesFile(settings, dirname(path))
+        : [];
       for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
         const decided =
-          decisions.some((candidate) =>
-            hasBuildScriptDecision(candidate, pkg, { anyNeverBuiltDependencies })
-          ) || trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
+          decisions.some((candidate) => hasBuildScriptDecision(candidate, pkg, { legacyLists })) ||
+          trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
         if (!decided) {
           doc.setIn(['allowBuilds', pkg], true);
           changed = true;

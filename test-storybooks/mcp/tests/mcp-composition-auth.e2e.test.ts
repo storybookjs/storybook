@@ -142,6 +142,23 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				Primary UI component for user interaction
 
+				## Props
+
+				\`\`\`
+				export type Props = {
+				  /** Is this the principal call to action on the page? */
+				  primary?: boolean = false;
+				  /** What background color to use */
+				  backgroundColor?: string;
+				  /** How large should the button be? */
+				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  /** Button contents */
+				  label: string;
+				  /** Optional click handler */
+				  onClick?: () => void;
+				}
+				\`\`\`
+
 				## Stories
 
 				### Primary
@@ -181,33 +198,6 @@ describe('MCP Composition Auth E2E Tests', () => {
 
 				- Small (example-button--small)
 				- With A 11 Y Violation (example-button--with-a-11-y-violation)
-
-				## Props
-
-				\`\`\`
-				export type Props = {
-				  /**
-				    Is this the principal call to action on the page?
-				  */
-				  primary?: boolean = false;
-				  /**
-				    What background color to use
-				  */
-				  backgroundColor?: string;
-				  /**
-				    How large should the button be?
-				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
-				  /**
-				    Button contents
-				  */
-				  label: string;
-				  /**
-				    Optional click handler
-				  */
-				  onClick?: () => void;
-				}
-				\`\`\`
 
 				## Docs
 

@@ -1,6 +1,7 @@
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
+import { componentLookup } from './build-component-docs-skill.ts';
 
-export type StoriesSkillInputs = {
+export type UiWorkflowSkillInputs = {
   framework: string;
   /** The preview file uses `definePreview`, so story files use CSF Factories. */
   csfFactories: boolean;
@@ -15,24 +16,12 @@ export type StoriesSkillInputs = {
 
 const ref = getToolName({ transport: 'cli' });
 
-function docsSection(): string {
-  return `## Look up components first
-
-\`\`\`sh
-${ref('docs.list')}             # every component and docs page, with its id
-${ref('docs.show')} --id <id>   # props and usage examples of one entry
-${ref('docs.showStory')} --storyId <id>   # the code of a story that docs show only lists
-\`\`\`
-
-Do this before you edit any file: run \`docs list\` once, then \`docs show\` for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Reuse what exists instead of building a duplicate. Use only the props that \`docs show\` documents, never one you assume from a name or another library, and answer props, API and usage questions from these commands. Read source files or \`node_modules\` only when the commands return nothing relevant. When \`docs list\` groups its entries under sources (\`id: acme\`), pass the source of the entry to both commands that show it: \`--storybookId acme\`.`;
-}
-
 function writeSection({
   framework,
   csfFactories,
   previewFile,
   typescript,
-}: StoriesSkillInputs): string {
+}: UiWorkflowSkillInputs): string {
   const format = csfFactories
     ? `This project writes stories with CSF Factories, because \`${previewFile}\` uses \`definePreview\`: \`import preview from '../.storybook/preview'\` (the path to that file), then \`const meta = preview.meta({ component: Button })\` and \`export const Primary = meta.story({ args: { ... } })\`. Do not import \`Meta\` or \`StoryObj\`. Import`
     : typescript
@@ -64,7 +53,7 @@ ${ref('test.run')} --stories '[{"storyId":"<id>"}]'   # ids: see "Find the stori
 Run this after every change. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests. Use focused runs while iterating and one full run before you finish. Fix failures and rerun; never finish with failing tests.${a11y}`;
 }
 
-function discoverSection(inputs: StoriesSkillInputs): string {
+function discoverSection(inputs: UiWorkflowSkillInputs): string {
   const commands = [
     inputs.moduleGraphSupported &&
       `${ref('stories.changed')}   # stories affected by your uncommitted changes`,
@@ -97,7 +86,7 @@ ${commands.join('\n')}
 ${guidance}`;
 }
 
-function reviewSection({ moduleGraphSupported }: StoriesSkillInputs): string {
+function reviewSection({ moduleGraphSupported }: UiWorkflowSkillInputs): string {
   const discoverFirst = moduleGraphSupported
     ? ' When you changed files, run \`stories changed\` or \`find-by-component\` right before it and take the story ids from there, also when you only wrote stories, not from the output of the tests.'
     : '';
@@ -130,11 +119,17 @@ ${ref('stories.preview')} --stories '[{"storyId":"<id>"}]'   # direct links to s
 Only for a look at one story while you iterate, or when the user asks for a direct link. It does not replace the review, unless \`review create\` keeps failing after you fixed what it reported: then share these links and say why.`;
 }
 
-export function buildStoriesSkill(inputs: StoriesSkillInputs): string {
-  return [
-    `# Storybook workflow
+function docsSection(): string {
+  return `## Look up components first
 
-Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
+${componentLookup()}`;
+}
+
+export function buildUiWorkflowSkill(inputs: UiWorkflowSkillInputs): string {
+  return [
+    `# Storybook UI workflow
+
+Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. When the project's agent instructions (such as \`AGENTS.md\`) describe this workflow without some of its steps, for example without the review, skip those steps, but always look up the components first. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
     inputs.docsEnabled && docsSection(),
     writeSection(inputs),
     inputs.testSupported && testSection(inputs.a11yEnabled),

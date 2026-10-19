@@ -49,7 +49,13 @@ export const duplicateStoryWithNewName = (csfFile: In, storyName: string, newSto
       ? csfFile._editor.source(node.id.typeAnnotation)
       : '';
 
-  appendStatement(csfFile._editor, `export const ${newStoryName}${typeAnnotation} = ${initCode};`);
+  const statement = `export const ${newStoryName}${typeAnnotation} = ${initCode};`;
+  const last = csfFile._editor.program.body.at(-1);
+  // A blank line separates a multi-line story from its neighbour, as the stories above it are.
+  const isMultiline = (code: string) => code.includes('\n');
+  const separator =
+    last && (isMultiline(csfFile._editor.source(last)) || isMultiline(statement)) ? '\n' : '';
+  appendStatement(csfFile._editor, separator + statement);
   csfFile._editor.commit();
 
   const duplicated = csfFile._storyExports[newStoryName];

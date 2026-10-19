@@ -47,23 +47,31 @@ describe('success', () => {
           },
         } satisfies Story;
         
+      + 
       + export const EmptyDuplicated = {} satisfies Story;
+      + 
       + export const EmptyWithCommentDuplicated = {
       +   // this is a useless comment, to test that it is preserved
       + } satisfies Story;
+      + 
       + export const OnlyArgsDuplicated = {} satisfies Story;
+      + 
       + export const RenderNoArgsDuplicated = {
       +   render: (args) => <MyComponent {...args} />,
       + } satisfies Story;
+      + 
       + export const RenderArgsDuplicated = {
       +   render: (args) => <MyComponent {...args} />,
       + } satisfies Story;
+      + 
       + export const RenderExistingArgsDuplicated = {
       +   render: (args) => <MyComponent {...args} />,
       + } satisfies Story;
+      + 
       + export const OrderedArgsDuplicated = {
       +   render: (args) => <MyComponent {...args} />,
       + } satisfies Story;
+      + 
       + export const HasPlayFunctionDuplicated = {
       +   play: async ({ canvasElement }) => {
       +     console.log("play");
@@ -101,6 +109,7 @@ describe('success', () => {
           },
         });
         
+      + 
       + export const EmptyDuplicated = meta.story({});
       + export const WithArgsDuplicated = meta.story({});
       + export const TypedDuplicated = meta
@@ -146,6 +155,7 @@ describe('success', () => {
           },
         };
         
+      + 
       + export const CastDuplicated: Story = {};
       + export const AsDuplicated = {} as Story;
       + export const SatisfiesDuplicated = {} satisfies Story;

@@ -244,6 +244,14 @@ export function buildSnippetImportBlock(
       program.names.add(name);
       return;
     }
+    if (
+      binding?.path.isImportSpecifier() ||
+      binding?.path.isImportDefaultSpecifier() ||
+      binding?.path.isImportNamespaceSpecifier()
+    ) {
+      program.declarations.add(binding.path.node);
+      return;
+    }
     const declaration = binding?.path.isVariableDeclarator()
       ? binding.path
       : binding?.path.isFunctionDeclaration() || binding?.path.isClassDeclaration()
@@ -285,6 +293,15 @@ export function buildSnippetImportBlock(
     const declarations = program.ast.program.body.flatMap<t.Statement>((item) => {
       const statement =
         t.isExportNamedDeclaration(item) && item.declaration ? item.declaration : item;
+      if (t.isImportDeclaration(statement)) {
+        const selected = statement.specifiers.filter((specifier) =>
+          program.declarations.has(specifier)
+        );
+        if (!selected.length) return [];
+        const imported = t.cloneNode(statement);
+        imported.specifiers = selected;
+        return [imported];
+      }
       if (t.isVariableDeclaration(statement)) {
         const selected = statement.declarations.filter((declaration) =>
           program.declarations.has(declaration)

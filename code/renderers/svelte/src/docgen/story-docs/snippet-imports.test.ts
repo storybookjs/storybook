@@ -253,3 +253,16 @@ it('copies exported bindings at declarator granularity', () => {
   expect(result.block).not.toContain('loadSecret');
   expect(result.unresolvedIdentifiers).toBeUndefined();
 });
+
+it('selects type imports without copying unrelated value specifiers', () => {
+  const result = buildSnippetImportBlock('<Badge>{label}</Badge>', {
+    bindings: bindings("import { Badge } from './ui';"),
+    instanceScript: {
+      code: "import { Badge, type Label } from './ui'; const label: Label = 'ok';",
+      typescript: true,
+    },
+  });
+  expect(result.block?.match(/\bBadge\b/g)).toHaveLength(1);
+  expect(result.block).toContain('type Label');
+  expect(() => parse(result.block + '\n<Badge>{label}</Badge>', { modern: true })).not.toThrow();
+});

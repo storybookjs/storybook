@@ -121,3 +121,25 @@ it.each([
   expect(snippet).toBe(expected);
   expect(() => parse(snippet, { modern: true })).not.toThrow();
 });
+
+it.each([
+  '{#await promise then args}<Button label="Local" {...args}>{args.label}</Button>{/await}',
+  '<Provider let:args><Button label="Local" {...args}>{args.label}</Button></Provider>',
+  '<Provider let:value={args}><Button>{args.label}</Button></Provider>',
+  '{#each items as item, args}<Button>{args.label}</Button>{/each}',
+])('keeps block-local args separate from story args in %s', (code) => {
+  const snippet = printSvelteCsfSnippet({ code, args: { label: 'Story' }, argTypes: {} });
+  expect(snippet).toBe(code);
+  expect(() => parse(snippet, { modern: true })).not.toThrow();
+});
+
+it('uses original source offsets in expressions indented with tabs', () => {
+  const snippet = printSvelteCsfSnippet({
+    code: '<Markdown\n\t{...wrapProps({\n\t\theight: args.height,\n\t\t...args\n\t})}\n/>',
+    args: { height: 20 },
+    argTypes: {},
+  });
+  expect(snippet).toContain('height: 20,');
+  expect(snippet).toContain('...args\n\t})}');
+  expect(() => parse(snippet, { modern: true })).not.toThrow();
+});

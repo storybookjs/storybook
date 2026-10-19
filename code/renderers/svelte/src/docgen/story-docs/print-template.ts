@@ -1,4 +1,4 @@
-import { babelParse, traverse, types as t } from 'storybook/internal/babel';
+import { babelParse, babelParseExpression, traverse, types as t } from 'storybook/internal/babel';
 import { isEqual } from 'es-toolkit/compat';
 import { parse } from 'svelte/compiler';
 import { walk } from 'zimmerframe';
@@ -53,7 +53,7 @@ export function printTemplate({
   const escapeAttribute = (value: string) =>
     value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
   const replaceExpression = (expressionCode: string) => {
-    const parsed = babelParse(`(${expressionCode})`);
+    const parsed = t.file(t.program([t.expressionStatement(babelParseExpression(expressionCode))]));
     const replacements: { start: number; end: number; value: string; raw?: unknown }[] = [];
     traverse(parsed, {
       'MemberExpression|OptionalMemberExpression'(reference) {
@@ -75,8 +75,8 @@ export function printTemplate({
           printed = printValue(value);
         }
         replacements.push({
-          start: position(reference.node).start - 1,
-          end: position(reference.node).end - 1,
+          start: position(reference.node).start,
+          end: position(reference.node).end,
           value: printed,
           ...(!(key in expressions) ? { raw: value } : {}),
         });
@@ -90,19 +90,55 @@ export function printTemplate({
   };
   const shadowsArgs = (path: SvelteAST.SvelteNode[]) =>
     path.some((ancestor) => {
+      if (
+        ancestor.type === 'EachBlock' &&
+        ancestor.index === 'args' &&
+        path.some((node) => Object.is(node, ancestor.body))
+      )
+        return true;
+      const slotPatterns: SvelteAST.Component['attributes'] =
+        'fragment' in ancestor &&
+        path.some((node) => Object.is(node, ancestor.fragment)) &&
+        'attributes' in ancestor
+          ? ancestor.attributes.filter(
+              (attribute: SvelteAST.Component['attributes'][number]) =>
+                attribute.type === 'LetDirective'
+            )
+          : [];
+      if (
+        slotPatterns.some(
+          (attribute: SvelteAST.Component['attributes'][number]) =>
+            attribute.type === 'LetDirective' && attribute.name === 'args' && !attribute.expression
+        )
+      )
+        return true;
       const patterns =
         ancestor.type === 'SnippetBlock'
           ? ancestor.parameters
           : ancestor.type === 'EachBlock' && path.some((node) => Object.is(node, ancestor.body))
             ? [ancestor.context]
-            : ancestor.type === 'Fragment'
-              ? ancestor.nodes.flatMap((child) =>
-                  child.type === 'ConstTag'
-                    ? child.declaration.declarations.map((declaration) => declaration.id)
-                    : []
-                )
-              : [];
-      return patterns.some((pattern) => {
+            : ancestor.type === 'AwaitBlock'
+              ? [
+                  ...(ancestor.then && path.some((node) => Object.is(node, ancestor.then))
+                    ? [ancestor.value]
+                    : []),
+                  ...(ancestor.catch && path.some((node) => Object.is(node, ancestor.catch))
+                    ? [ancestor.error]
+                    : []),
+                ]
+              : ancestor.type === 'Fragment'
+                ? ancestor.nodes.flatMap((child) =>
+                    child.type === 'ConstTag'
+                      ? child.declaration.declarations.map((declaration) => declaration.id)
+                      : []
+                  )
+                : [];
+      return [
+        ...patterns,
+        ...slotPatterns.flatMap((attribute: SvelteAST.Component['attributes'][number]) =>
+          attribute.type === 'LetDirective' && attribute.expression ? [attribute.expression] : []
+        ),
+      ].some((pattern) => {
         if (!pattern) return false;
         const range = position(pattern);
         const parsed = babelParse(`(${code.slice(range.start, range.end)}) => {}`);
@@ -149,6 +185,7 @@ export function printTemplate({
     Attribute(node, { path, next }) {
       const parent = path.at(-1);
       if (
+        !shadowsArgs(path) &&
         parent &&
         'attributes' in parent &&
         argNames.has(node.name) &&

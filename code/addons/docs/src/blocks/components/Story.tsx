@@ -97,32 +97,37 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({
   story,
   height = '500px',
   autoplay,
-}) => (
-  <div style={{ width: '100%', height }}>
-    <ZoomContext.Consumer>
-      {({ scale }) => {
-        return (
-          <IFrame
-            key="iframe"
-            id={`iframe--${story.id}`}
-            title={story.name}
-            src={getStoryHref(story.id, {
-              viewMode: 'story',
-              ...(!autoplay && { autoplay: 'false' }),
-            })}
-            allowFullScreen
-            scale={scale}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '0 none',
-            }}
-          />
-        );
-      }}
-    </ZoomContext.Consumer>
-  </div>
-);
+}) => {
+  // The preview in the iframe decides whether to play before its first render, so the URL says it.
+  const src = getStoryHref(story.id, {
+    viewMode: 'story',
+    ...(!autoplay && { autoplay: 'false' }),
+  });
+  return (
+    <div style={{ width: '100%', height }}>
+      <ZoomContext.Consumer>
+        {({ scale }) => {
+          return (
+            <IFrame
+              // `IFrame` never updates, so a new URL is a new iframe.
+              key={src}
+              id={`iframe--${story.id}`}
+              title={story.name}
+              src={src}
+              allowFullScreen
+              scale={scale}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: '0 none',
+              }}
+            />
+          );
+        }}
+      </ZoomContext.Consumer>
+    </div>
+  );
+};
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 

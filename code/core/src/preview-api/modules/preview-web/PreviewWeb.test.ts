@@ -3425,6 +3425,26 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.a.play).toHaveBeenCalled();
       });
 
+      it('does not execute playFunction when the preview was opened with autoplay=false', async () => {
+        document.location.search = '?id=component-one--a&autoplay=false';
+        window.history.replaceState({}, '', `/iframe.html${document.location.search}`);
+        try {
+          const preview = await createAndRenderPreview();
+          // A story that changes `location` does not turn play back on.
+          window.history.replaceState({}, '', '/elsewhere');
+
+          componentOneExports.a.play.mockClear();
+          mockChannel.emit.mockClear();
+          preview.onStoriesChanged({ importFn: newImportFn });
+          await waitForRender();
+        } finally {
+          window.history.replaceState({}, '', '/');
+        }
+
+        expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+        expect(componentOneExports.a.play).not.toHaveBeenCalled();
+      });
+
       it('emits STORY_RENDERED', async () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();

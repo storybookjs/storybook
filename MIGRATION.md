@@ -13,6 +13,7 @@
   - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
+  - [Docs: a story in an iframe runs its play only with `autoplay`](#docs-a-story-in-an-iframe-runs-its-play-only-with-autoplay)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
@@ -914,6 +915,23 @@ export default {
 You can also set this parameter at the component or story level. An explicit `true` enables the panel when a broader configuration disables it.
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
+
+### Docs: a story in an iframe runs its play only with `autoplay`
+
+A docs page runs a story's play function only when `autoplay` is `true` (the `Story` block prop, or `parameters.docs.story.autoplay`). This was already the case for stories rendered inline; it now also holds for stories rendered in an iframe (`parameters.docs.story.inline: false`, and the default for renderers that do not render inline, such as `@storybook/server`). A docs page opens such an iframe with `autoplay=false` in its URL.
+
+A story in an iframe that mounts inside its play function now shows the same "set autoplay" message as an inline one, instead of an empty iframe.
+
+To keep running a play function in docs, set `autoplay`:
+
+```ts
+export const Filled = {
+  play: async ({ canvas, userEvent }) => {
+    /* ... */
+  },
+  parameters: { docs: { story: { autoplay: true } } },
+};
+```
 
 ### `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
 

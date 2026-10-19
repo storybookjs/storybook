@@ -142,7 +142,7 @@ describe('a story in an iframe', () => {
 
   it('tells the preview in the iframe not to play unless autoplay is set', () => {
     // Parsed into a template, whose iframe does not load.
-    const iframeSrc = (autoplay: boolean) => {
+    const iframeAutoplay = (autoplay: boolean) => {
       const template = document.createElement('template');
       template.innerHTML = renderToStaticMarkup(
         <PureStory
@@ -153,12 +153,11 @@ describe('a story in an iframe', () => {
           primary={false}
         />
       );
-      return template.content.querySelector('iframe')?.getAttribute('src');
+      const src = template.content.querySelector('iframe')!.getAttribute('src')!;
+      return new URLSearchParams(src.split('?')[1]).get('autoplay');
     };
 
-    expect(iframeSrc(false)).toBe(
-      'iframe.html?viewMode=story&autoplay=false&id=other-package--story'
-    );
-    expect(iframeSrc(true)).toBe('iframe.html?viewMode=story&id=other-package--story');
+    expect(iframeAutoplay(false)).toBe('false');
+    expect(iframeAutoplay(true)).toBe(null);
   });
 });

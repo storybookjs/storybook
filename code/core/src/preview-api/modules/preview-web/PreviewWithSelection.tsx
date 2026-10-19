@@ -92,6 +92,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   private latestSelectionRequest = 0;
 
+  // Read from the URL the preview was opened with: a story may change `location` later.
+  private autoplay = shouldAutoplay({ search: globalWindow.location?.search ?? '' });
+
   constructor(
     public importFn: ModuleImportFn,
 
@@ -375,7 +378,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         this.mainStoryCallbacks(storyId),
         storyId,
         'story',
-        { autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }) }
+        { autoplay: this.autoplay }
       );
     } else if (isMdxEntry(entry)) {
       render = new MdxDocsRender<TRenderer>(

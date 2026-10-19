@@ -204,15 +204,18 @@ export const IFrameWithDefaultInteractions: Story = {
     inline: false,
     height: '120px',
   },
-  parameters: {
-    chromatic: { delay: 3000 },
-  },
   play: async ({ canvasElement }) => {
     const iframe = canvasElement.querySelector('iframe')!;
-    await expect(iframe.getAttribute('src')).toContain('autoplay=false');
-    await waitFor(() => expect(iframe.contentDocument!.body).toHaveTextContent('Click count: 0'), {
-      timeout: 10000,
-    });
+    await expect(new URL(iframe.src).searchParams.get('autoplay')).toBe('false');
+    // Once the story in the iframe has finished, a play that ran would have clicked.
+    await waitFor(
+      () =>
+        expect((iframe.contentWindow as any)?.__STORYBOOK_PREVIEW__?.currentRender?.phase).toBe(
+          'finished'
+        ),
+      { timeout: 10000 }
+    );
+    await expect(iframe.contentDocument!.body).toHaveTextContent('Click count: 0');
   },
 };
 
@@ -223,9 +226,6 @@ export const IFrameWithInteractionsAutoplayInProps: Story = {
     inline: false,
     height: '120px',
     autoplay: true,
-  },
-  parameters: {
-    chromatic: { delay: 3000 },
   },
   play: async ({ canvasElement }) => {
     const iframe = canvasElement.querySelector('iframe')!;

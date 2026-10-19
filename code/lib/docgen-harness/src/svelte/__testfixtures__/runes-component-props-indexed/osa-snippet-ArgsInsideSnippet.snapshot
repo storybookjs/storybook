@@ -1,1 +1,9 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Modal from './Modal.svelte';
+</script>
+
+<Modal id="modal-args-inside" open error="Inline error">
+  {#snippet content()}
+    <p>Inline error</p>
+  {/snippet}
+</Modal>

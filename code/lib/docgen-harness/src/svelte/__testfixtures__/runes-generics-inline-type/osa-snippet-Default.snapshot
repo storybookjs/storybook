@@ -1,1 +1,9 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import RadioGroup from './RadioGroup.svelte';
+</script>
+
+<RadioGroup
+  label="Choice"
+  values={[ [  "a",  "Alpha" ], [  "b",  "Beta",  "icon" ] ]}
+  value="a"
+ />

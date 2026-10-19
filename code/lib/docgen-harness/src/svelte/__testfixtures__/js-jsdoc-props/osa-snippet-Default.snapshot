@@ -1,1 +1,5 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import JsJsdocProps from './JsJsdocProps.svelte';
+</script>
+
+<JsJsdocProps label="JS props" count={2} />

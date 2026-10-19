@@ -1,1 +1,10 @@
-(no snippet: the Code panel falls back to the story source)
+<script>
+  import Panel from './Panel.svelte';
+</script>
+
+<Panel
+  label="All values"
+  count={3}
+  primary
+  title="Panel title"
+ />

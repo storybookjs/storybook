@@ -24,8 +24,10 @@ import {
   printMembers,
   reindent,
   removeFromList,
+  removeMembers,
   removeStatement,
   removeStatements,
+  replaceValue,
   setImportSpecifiers,
 } from './editor.ts';
 
@@ -382,6 +384,52 @@ describe('removeFromList', () => {
       expect(editor.toString()).toBe(`export default [1, /* k */ // k${eol} 4,${eol}];`);
     }
   );
+});
+
+describe('replaceValue', () => {
+  const firstMember = (editor: SourceEditor) => {
+    const statement = editor.program.body[0] as E.ExportDefaultDeclaration;
+    const object = statement.declaration as E.ObjectExpression;
+    return { object, members: object.properties as E.ObjectProperty[] };
+  };
+
+  it.each([
+    ['one line', `export default { a: 1, b: 2 };`, `export default { a: 9 };`],
+    ['on lines', `export default {\n  a: 1,\n  b: 2,\n};`, `export default {\n  a: 9,\n};`],
+  ])('leaves the comma after the value to a removal of the next member, %s', (_, code, result) => {
+    const replacedFirst = new SourceEditor(code);
+    const first = firstMember(replacedFirst);
+    replaceValue(replacedFirst, first.members[0], '9');
+    removeMembers(replacedFirst, first.object, [first.members[1]]);
+    expect(replacedFirst.toString()).toBe(result);
+
+    const removedFirst = new SourceEditor(code);
+    const second = firstMember(removedFirst);
+    removeMembers(removedFirst, second.object, [second.members[1]]);
+    replaceValue(removedFirst, second.members[0], '9');
+    expect(removedFirst.toString()).toBe(result);
+  });
+
+  it('takes the comma after the value before a line comment that ends the text', () => {
+    const editor = new SourceEditor(`export default { a: 1, b: 2 };`);
+    replaceValue(editor, firstMember(editor).members[0], 'x // c\n');
+    expect(editor.toString()).toBe(`export default { a: x, // c\n b: 2 };`);
+  });
+
+  it('ends a line comment before the member it is appended after on one line', () => {
+    const trailingComma = new SourceEditor(`export default { a: 1, };`);
+    appendToList(trailingComma, objectList(trailingComma, firstMember(trailingComma).object), [
+      'b: x // c\n',
+    ]);
+    expect(trailingComma.toString()).toBe(`export default { a: 1, b: x, // c\n };`);
+
+    const noComma = new SourceEditor(`export default { a: 1 };`);
+    appendToList(noComma, objectList(noComma, firstMember(noComma).object), [
+      'b: x // c\n',
+      'd: 2',
+    ]);
+    expect(noComma.toString()).toBe(`export default { a: 1, b: x, // c\nd: 2 };`);
+  });
 });
 
 describe('removeStatement', () => {

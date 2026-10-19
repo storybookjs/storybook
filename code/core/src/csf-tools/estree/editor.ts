@@ -601,25 +601,33 @@ const parsedLiteralSpans = (text: string): Span[] | undefined => {
 
 const lineBreakAt = (code: string, index: number) => index === code.length || code[index] === '\n';
 
-// `text` with `comma` after it. A text ending in a line comment, which `placeableTextOf` ends with
-// a line break, takes the comma before the comment and keeps the line break, unless the code's own
-// follows where the text goes. A text that does not parse keeps the comma after the line break.
-const withComma = (text: string, comma: string, lineBreakFollows: boolean) => {
+// `text` without the whitespace ending it, and where the line comment that ends it starts, if one
+// does. A text that does not parse keeps its whitespace.
+const trailingLineComment = (text: string): { body: string; at: number | undefined } => {
   const body = text.trimEnd();
   if (body === text) {
-    return `${text}${comma}`;
+    return { body, at: undefined };
   }
   const fragment = parsedFragment(body);
   if (!fragment) {
-    return `${text}${comma}`;
+    return { body: text, at: undefined };
   }
   const comment = fragment.comments.findLast(
     (candidate) => candidate.type === 'Line' && candidate.end === fragment.offset + body.length
   );
-  if (!comment) {
+  return { body, at: comment && comment.start - fragment.offset };
+};
+
+const endsInLineComment = (text: string) => trailingLineComment(text).at !== undefined;
+
+// `text` with `comma` after it. A text ending in a line comment, which `placeableTextOf` ends with
+// a line break, takes the comma before the comment and keeps the line break, unless the code's own
+// follows where the text goes.
+const withComma = (text: string, comma: string, lineBreakFollows: boolean) => {
+  const { body, at } = trailingLineComment(text);
+  if (at === undefined) {
     return `${body}${comma}`;
   }
-  const at = comment.start - fragment.offset;
   return `${body.slice(0, at).trimEnd()}${comma} ${body.slice(at)}${lineBreakFollows ? '' : '\n'}`;
 };
 
@@ -719,10 +727,27 @@ export const memberText = (
   member: E.ObjectPropertyKind
 ) => itemText(editor, objectList(editor, object), member);
 
-// Items joined on the line of a one-line list, their continuation lines indented like it.
-const inline = (editor: SourceEditor, list: List, texts: string[]) => {
+// Items with their commas on the line of a one-line list, their continuation lines indented like
+// it. A line comment ending an item takes the line break where a space would join the next.
+const inline = (
+  editor: SourceEditor,
+  list: List,
+  texts: string[],
+  lastComma: string,
+  lineBreakFollows: boolean
+) => {
   const indent = lineIndent(editor.code, list.open);
-  return texts.map((text) => reindent(text, '', indent)).join(', ');
+  let joined = '';
+  texts.forEach((text, index) => {
+    const isLast = index === texts.length - 1;
+    const item = withComma(
+      reindent(text, '', indent),
+      isLast ? lastComma : ',',
+      isLast && lineBreakFollows
+    );
+    joined += `${joined === '' || joined.endsWith('\n') ? '' : ' '}${item}`;
+  });
+  return joined;
 };
 
 export const appendToList = (editor: SourceEditor, list: List, texts: string[]) => {
@@ -780,9 +805,12 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
     return;
   }
   if (comma !== undefined) {
-    edits.appendLeft(comma, ` ${inline(editor, list, texts)}${trailingComma}`);
+    edits.appendLeft(
+      comma,
+      ` ${inline(editor, list, texts, trailingComma, lineBreakAt(code, comma))}`
+    );
   } else {
-    edits.appendLeft(last.end, `, ${inline(editor, list, texts)}`);
+    edits.appendLeft(last.end, `, ${inline(editor, list, texts, '', lineBreakAt(code, last.end))}`);
   }
 };
 
@@ -809,7 +837,8 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[])
     edits.appendRight(list.open, `\n${block}`);
     return;
   }
-  edits.appendRight(first.start, `${inline(editor, list, texts)}, `);
+  const items = inline(editor, list, texts, ',', false);
+  edits.appendRight(first.start, items.endsWith('\n') ? items : `${items} `);
 };
 
 /** Remove items with their separators and the comments that lead and trail them from a list. */
@@ -1175,15 +1204,15 @@ export const replaceValue = (editor: SourceEditor, member: Property, text: strin
       methodFromFunction(text, keySource(editor, member)) ??
       `${keySource(editor, member)}: ${text}`;
   }
-  // The comma after the replaced code on its line is written with the text, so it can go before a
-  // line comment that ends the text.
+  // A text ending in a line comment is written with the comma after the replaced code on its
+  // line, so the comma can go before the comment. Any other text leaves the comma to other edits.
   const { comments, end } = triviaAfter(editor, span.end, SPACE_ON_LINE);
   const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
-  const to = comma ?? span.end;
+  const to = comma !== undefined && endsInLineComment(replacement) ? comma : span.end;
   editor.edits.overwrite(
     span.start,
     to,
-    withComma(replacement, comma ? ',' : '', lineBreakAt(code, to))
+    withComma(replacement, to === comma ? ',' : '', lineBreakAt(code, to))
   );
 };
 

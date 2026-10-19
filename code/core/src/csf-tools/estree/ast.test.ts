@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { rawTransferSupported } from 'oxc-parser';
+
 import {
   type E,
   codeFrame,
@@ -10,6 +12,9 @@ import {
   textOf,
   walk,
 } from './ast.ts';
+
+// Raw transfer is only available on 64-bit Node 22+, where both ways of reading the tree run.
+const transfers = rawTransferSupported() ? [true, false] : [false];
 
 describe('parseModule', () => {
   const flowBody = 'const x: { +readOnly: number } = {};';
@@ -96,9 +101,36 @@ describe('parseModule', () => {
     expect(JSON.stringify(program)).toBe(JSON.stringify(parseModule(code, 'a.ts').program));
   });
 
-  it('normalizes an expression nested deeper than the call stack allows recursion', () => {
-    const { program } = parseModule(`x = ${Array(20_000).fill('(a)').join(' + ')};`);
-    expect(program.body).toHaveLength(1);
+  it.each(transfers)(
+    'normalizes an expression nested deeper than the call stack allows recursion, rawTransfer %s',
+    (rawTransfer) => {
+      const code = `x = ${Array(20_000).fill('(a)').join(' + ')};`;
+      const { program } = parseModule(code, undefined, { rawTransfer });
+      expect(program.body).toHaveLength(1);
+    }
+  );
+
+  it.runIf(transfers.length === 2)(
+    'reads the same tree through raw transfer as through JSON',
+    () => {
+      const code = [
+        '#!/usr/bin/env node',
+        '/** Doc */',
+        'export const a = <T,>(x: T) => (x as any)!;',
+        'const j = <div a="1">{(1, 2)}</div>;',
+        'const r = /a+/gu, b = 10n, n = 0x1f, s = `${b}`;',
+        "export default { title: 'A' } satisfies Meta; // end",
+      ].join('\n');
+      const raw = parseModule(code, 'a.tsx', { rawTransfer: true });
+      const json = parseModule(code, 'a.tsx', { rawTransfer: false });
+      expect(raw).toEqual(json);
+    }
+  );
+
+  it.each(transfers)('reports a parse error at its position with rawTransfer %s', (rawTransfer) => {
+    expect(() => parseModule('const a = 1;\nconst = ;\n', 'a.ts', { rawTransfer })).toThrow(
+      'Unexpected token (2:6) in a.ts'
+    );
   });
 });
 

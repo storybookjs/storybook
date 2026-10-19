@@ -1,5 +1,5 @@
 import type * as E from 'oxc-parser';
-import { parseSync, visitorKeys } from 'oxc-parser';
+import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 
 export type { E };
 
@@ -49,17 +49,47 @@ type ParseAttempt = { module: ParsedModule } | { error: EstreeParseError; offset
 
 const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
 
-const parseWith = (code: string, fileName: string | undefined, lang: Lang): ParseAttempt => {
+// Raw transfer reads the tree out of the parser's memory instead of through JSON, into a buffer
+// that reserves 6 GiB of virtual address space, of which only the pages written are ever
+// resident. It is unsupported on 32-bit hosts, under the WASM binding and before Node 22.
+const RAW_TRANSFER = rawTransferSupported();
+
+// The option is missing from the `ParserOptions` type of oxc-parser 0.153.
+type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
+
+/** Whether a parse reads its tree through raw transfer, as it does wherever that is supported. */
+export interface TransferOptions {
+  rawTransfer?: boolean;
+}
+
+const parseWith = (
+  code: string,
+  fileName: string | undefined,
+  lang: Lang,
+  rawTransfer: boolean
+): ParseAttempt => {
   const name = fileName ?? `file.${lang}`;
-  const options = {
+  const options: ParseOptions = {
     lang,
     sourceType: 'module',
     preserveParens: true,
     // Duplicate declarations and legacy octals are reported like Babel did, instead of parsing
     // into a program that silently keeps the last declaration.
     showSemanticErrors: true,
-  } as const;
-  const result = parseSync(name, code, options);
+    experimentalRawTransfer: rawTransfer,
+  };
+  let result: E.ParseResult;
+  try {
+    result = parseSync(name, code, options);
+  } catch (error) {
+    // The raw transfer deserializer recurses, so a tree nested deeper than the call stack allows
+    // comes through JSON, which does not.
+    if (!(rawTransfer && error instanceof RangeError)) {
+      throw error;
+    }
+    const json: ParseOptions = { ...options, experimentalRawTransfer: false };
+    result = parseSync(name, code, json);
+  }
   const [error] = result.errors.filter((diagnostic) => diagnostic.severity === 'Error');
   if (error) {
     const offset = labelStart(error) ?? 0;
@@ -100,8 +130,12 @@ export const restoreLineEndings = (code: string, original: string) => {
  *
  * The tree has no parenthesized nodes: `outerSpan` gives the span of the parentheses around one.
  */
-export const parseModule = (code: string, fileName?: string): ParsedModule => {
-  const module = parseWithParentheses(code, fileName);
+export const parseModule = (
+  code: string,
+  fileName?: string,
+  options: TransferOptions = {}
+): ParsedModule => {
+  const module = parseWithParentheses(code, fileName, options.rawTransfer ?? RAW_TRANSFER);
   normalize(module.program, undefined);
   return module;
 };
@@ -113,10 +147,16 @@ export const parsePrintable = (code: string, fileName?: string): ParsedModule =>
   return module;
 };
 
-const parseWithParentheses = (source: string, fileName: string | undefined): ParsedModule => {
+const parseWithParentheses = (
+  source: string,
+  fileName: string | undefined,
+  rawTransfer = RAW_TRANSFER
+): ParsedModule => {
   const code = normalizeLineEndings(source);
   const lang = fileName === undefined ? undefined : langFor(fileName);
-  const attempt = lang ? parseWith(code, fileName, lang) : parseEither(code, fileName);
+  const attempt = lang
+    ? parseWith(code, fileName, lang, rawTransfer)
+    : parseEither(code, fileName, rawTransfer);
   if ('module' in attempt) {
     return attempt.module;
   }
@@ -135,12 +175,16 @@ const LEADING_COMMENTS = /^(?:\s*(?:\/\/[^\n]*|\/\*[\s\S]*?\*\/))*/;
 // Flow reads its pragma from any comment in the file's header, including `/** @flow */` docblocks.
 const hasFlowPragma = (code: string) => /@flow\b/.test(LEADING_COMMENTS.exec(code)?.[0] ?? '');
 
-const parseEither = (code: string, fileName: string | undefined): ParseAttempt => {
-  const tsx = parseWith(code, fileName, 'tsx');
+const parseEither = (
+  code: string,
+  fileName: string | undefined,
+  rawTransfer: boolean
+): ParseAttempt => {
+  const tsx = parseWith(code, fileName, 'tsx', rawTransfer);
   if ('module' in tsx) {
     return tsx;
   }
-  const ts = parseWith(code, fileName, 'ts');
+  const ts = parseWith(code, fileName, 'ts', rawTransfer);
   return 'module' in ts || ts.offset > tsx.offset ? ts : tsx;
 };
 

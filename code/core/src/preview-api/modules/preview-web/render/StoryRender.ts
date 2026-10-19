@@ -8,6 +8,7 @@ import {
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 import {
+  MissingRenderToCanvasError,
   MountMustBeDestructuredError,
   NoStoryMountedError,
 } from 'storybook/internal/preview-errors';
@@ -16,7 +17,6 @@ import type {
   PreparedStory,
   RenderContext,
   RenderContextCallbacks,
-  RenderToCanvas,
   Renderer,
   StoryContext,
   StoryContextForRender,
@@ -85,7 +85,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   constructor(
     public channel: Channel,
     public store: StoryStore<TRenderer>,
-    private renderToScreen: RenderToCanvas<TRenderer>,
     private callbacks: RenderContextCallbacks<TRenderer> & {
       showStoryDuringRender?: () => void;
       storyUrl?: () => string | undefined;
@@ -217,6 +216,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       unboundStoryFn,
       playFunction,
       runStep,
+      renderToCanvas,
     } = story;
 
     if (forceRemount && !initial) {
@@ -246,8 +246,13 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         context: null!,
         canvas: {} as Canvas,
         userEvent: {} as UserEventObject,
+        // The story's own project annotations decide how it renders: a CSF Next file carries the
+        // annotations of the preview it was defined with.
         renderToCanvas: async () => {
-          const teardown = await this.renderToScreen(renderContext, canvasElement);
+          if (!renderToCanvas) {
+            throw new MissingRenderToCanvasError();
+          }
+          const teardown = await renderToCanvas(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
           mounted = true;
         },

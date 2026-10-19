@@ -61,10 +61,10 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   // Prefer the updated module from an HMR update, otherwise the original module
   const moduleAt = (index: number, variable: string) =>
     `hmrPreviewAnnotationModules[${index}] ?? ${variable}`;
-  const loadPreviewFile = (url: string, module: string) =>
+  const loadPreviewFile = ({ url, variable }: ReturnType<typeof toModule>, index: number) =>
     moduleLoader
-      ? `await load(${JSON.stringify(toImportPath(url))}, async () => ${module})`
-      : module;
+      ? `await load(${JSON.stringify(toImportPath(url))}, async () => ${moduleAt(index, variable)})`
+      : moduleAt(index, variable);
   const loaderImport = moduleLoader ? `${genImport(moduleLoader, ['load'])}\n` : '';
   const maybeAsync = moduleLoader ? 'async ' : '';
 
@@ -73,7 +73,7 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
       ${loaderImport}${previewFile.import}
 
       export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = ${loadPreviewFile(previewFile.url, moduleAt(0, previewFile.variable))};
+        const preview = ${loadPreviewFile(previewFile, 0)};
         return preview.default.composed;
       }
 
@@ -91,9 +91,7 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   const modules = previewFile ? [...annotations, previewFile] : annotations;
   const configs = annotations.map(({ variable }, index) => moduleAt(index, variable));
   if (previewFile) {
-    configs.push(
-      loadPreviewFile(previewFile.url, moduleAt(annotations.length, previewFile.variable))
-    );
+    configs.push(loadPreviewFile(previewFile, annotations.length));
   }
 
   return dedent`

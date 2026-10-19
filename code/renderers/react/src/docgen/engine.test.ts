@@ -9,7 +9,6 @@ import {
   type ReactDocgenPlanInput,
   getReactDocgenPlan,
   planReactDocgen,
-  readReactDocgenPlan,
 } from './engine.ts';
 
 beforeEach(() => {
@@ -136,15 +135,18 @@ const presetsWith = (typescript: object, features: object = {}) =>
     apply: async (extension: string) => (extension === 'typescript' ? typescript : features),
   }) as Options['presets'];
 
-describe('readReactDocgenPlan', () => {
+describe('getReactDocgenPlan', () => {
   it('warns about a missing react-docgen, without the deprecation', async () => {
-    await readReactDocgenPlan(presetsWith({ reactDocgen: 'react-docgen' }), () => false);
+    await getReactDocgenPlan(
+      { presets: presetsWith({ reactDocgen: 'react-docgen' }) },
+      () => false
+    );
 
     expect(vi.mocked(once.warn).mock.calls).toEqual([[MISSING_REACT_DOCGEN]]);
   });
 
   it('prints only the deprecation when builder docgen runs', async () => {
-    await readReactDocgenPlan(presetsWith({ reactDocgen: 'react-docgen' }), () => true);
+    await getReactDocgenPlan({ presets: presetsWith({ reactDocgen: 'react-docgen' }) }, () => true);
 
     expect(once.warn).toHaveBeenCalledOnce();
     expect(vi.mocked(once.warn).mock.calls[0][0]).toContain('Builder docgen');
@@ -154,21 +156,20 @@ describe('readReactDocgenPlan', () => {
     ['reactDocgen is false', presetsWith({ reactDocgen: false })],
     ['docgen server is on', presetsWith({ reactDocgen: 'react-docgen' }, { docgenServer: true })],
   ])('stays silent when %s', async (_name, presets) => {
-    await readReactDocgenPlan(presets, (pkg) => pkg === 'typescript');
+    await getReactDocgenPlan({ presets }, (pkg) => pkg === 'typescript');
 
     expect(once.warn).not.toHaveBeenCalled();
   });
-});
 
-describe('getReactDocgenPlan', () => {
-  it('reads presets once per preset list', async () => {
+  it('reads presets and warns once per preset list', async () => {
     const presets = presetsWith({});
     const apply = vi.spyOn(presets, 'apply');
     const presetsList: NonNullable<Options['presetsList']> = [];
 
-    await getReactDocgenPlan({ presets, presetsList });
-    await getReactDocgenPlan({ presets: { ...presets }, presetsList });
+    await getReactDocgenPlan({ presets, presetsList }, () => false);
+    await getReactDocgenPlan({ presets: { ...presets }, presetsList }, () => false);
 
     expect(apply).toHaveBeenCalledTimes(2);
+    expect(once.warn).toHaveBeenCalledOnce();
   });
 });

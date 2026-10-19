@@ -10,9 +10,9 @@ export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | fal
 export type ReactDocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 // Why a consumer documents no props.
-export type ReactDocgenOff = 'disabled' | 'react-docgen-missing';
+export type DocgenOffReason = 'disabled' | 'react-docgen-missing';
 
-export type DocgenEngine = ReactDocgenEngine | ReactDocgenOff;
+export type DocgenEngine = ReactDocgenEngine | DocgenOffReason;
 
 export interface ReactDocgenPlan {
   // What the Vite plugins or webpack loaders inject as `__docgenInfo`.
@@ -85,7 +85,7 @@ export const MISSING_REACT_DOCGEN = dedent`
   https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-react-docgen-is-an-optional-peer-dependency
 `;
 
-export async function readReactDocgenPlan(
+async function readReactDocgenPlan(
   presets: Options['presets'],
   installed = isInstalled
 ): Promise<ReactDocgenPlan> {
@@ -116,17 +116,17 @@ export async function readReactDocgenPlan(
 
 const plans = new WeakMap<NonNullable<Options['presetsList']>, Promise<ReactDocgenPlan>>();
 
-// `options.presets` is a new object on every preset call, `presetsList` one per Storybook process.
-export function getReactDocgenPlan({
-  presets,
-  presetsList,
-}: Pick<Options, 'presets' | 'presetsList'>): Promise<ReactDocgenPlan> {
-  if (!presetsList) {
-    return readReactDocgenPlan(presets);
+// `options.presets` is a new object on every preset call, `presetsList` one per preset load.
+export function getReactDocgenPlan(
+  { presets, presetsList }: Pick<Options, 'presets' | 'presetsList'>,
+  installed = isInstalled
+): Promise<ReactDocgenPlan> {
+  const cached = presetsList && plans.get(presetsList);
+  if (cached) {
+    return cached;
   }
-  let plan = plans.get(presetsList);
-  if (!plan) {
-    plan = readReactDocgenPlan(presets);
+  const plan = readReactDocgenPlan(presets, installed);
+  if (presetsList) {
     plans.set(presetsList, plan);
   }
   return plan;

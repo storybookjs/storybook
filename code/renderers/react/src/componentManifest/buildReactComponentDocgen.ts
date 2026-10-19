@@ -14,7 +14,7 @@ import type {
 
 import path from 'pathe';
 
-import type { DocgenEngine, ReactDocgenOff } from '../docgen/engine.ts';
+import type { DocgenEngine, DocgenOffReason } from '../docgen/engine.ts';
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
 import type { DocObj } from './reactDocgen.ts';
@@ -131,7 +131,7 @@ function relativizeComponentMetaPaths(doc: ComponentDoc): ComponentDoc {
   };
 }
 
-const DOCGEN_OFF_ERRORS: Record<ReactDocgenOff, { name: string; message: string }> = {
+const DOCGEN_OFF_ERRORS: Record<DocgenOffReason, { name: string; message: string }> = {
   disabled: {
     name: 'Docgen disabled',
     message: 'Props are not documented because `typescript.reactDocgen` is `false`.',

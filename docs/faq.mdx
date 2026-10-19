@@ -84,12 +84,13 @@ It is advisable to add a `.storybook/tsconfig.json` file so that you apply chang
 
 A common error is that an addon tries to access the "channel", but the channel is not set. It can happen in a few different cases:
 
-1. You're trying to access addon channel (e.g., by calling `setOptions`) in a non-browser environment like Jest. You may need to add a channel mock:
+1. You're trying to access addon channel (e.g., by calling `setOptions`) in a non-browser environment like Jest. You may need to add a transport-less channel:
 
    ```js
-   import { addons, mockChannel } from 'storybook/preview-api';
+   import { addons } from 'storybook/preview-api';
+   import { Channel } from 'storybook/internal/channels';
 
-   addons.setChannel(mockChannel());
+   addons.setChannel(new Channel({}));
    ```
 
 2. In React Native, it's a special case documented in [#1192](https://github.com/storybookjs/storybook/issues/1192)
@@ -355,10 +356,6 @@ Storybook allows you to use most characters while naming your stories. Still, sp
 ## Why is Storybook's source loader returning undefined with curried functions?
 
 This is a known issue with Storybook. If you're interested in getting it fixed, open an issue with a [working reproduction](./contribute/how-to-reproduce.mdx) so that it can be triaged and fixed in future releases.
-
-## Why isn't Storybook's test runner working?
-
-There's an issue with Storybook's test runner and the latest version of Jest (i.e., version 28), which prevents it from running effectively. As a workaround, you can downgrade Jest to the previous stable version (i.e., version 27), and you'll be able to run it. See the following [issue](https://github.com/storybookjs/test-runner/issues/99) for more information.
 
 ## How does Storybook handle environment variables?
 

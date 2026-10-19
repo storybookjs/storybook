@@ -1,6 +1,6 @@
 import { Component, Input, Output } from '@angular/core';
-import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
-import { describe, expect, it } from 'vitest';
+import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
+import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
 import decorateStory from './decorateStory.ts';
@@ -214,7 +214,7 @@ describe('decorateStory', () => {
 
     it('passes every arg to the story, including ones carrying no control', () => {
       const decorated = decorateStory(
-        (context: StoryContext) => ({
+        (context: StoryContextForRender<AngularRenderer>) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
         }),
         []
@@ -248,14 +248,17 @@ describe('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 1] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 2] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 3] } };
         },
       ];
@@ -268,18 +271,24 @@ describe('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 2 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 3 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
       ];
-      const decorated = decorateStory((c: StoryContext) => ({ props: { a: [c.k] } }), decorators);
+      const decorated = decorateStory(
+        (c: StoryContextForRender<AngularRenderer>) => ({ props: { a: [c.k] } }),
+        decorators
+      );
 
       expect(decorated(makeContext({ k: 0 }))).toEqual({ props: { a: [1, 2, 3, 0] } });
     });
@@ -288,6 +297,7 @@ describe('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1, parameters: { p: 1 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -295,6 +305,7 @@ describe('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 2, parameters: { p: 2 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -302,6 +313,7 @@ describe('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 3, parameters: { p: 3 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -309,7 +321,9 @@ describe('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContext) => ({ props: { a: [c.k], p: [c.parameters.p] } }),
+        (c: StoryContextForRender<AngularRenderer>) => ({
+          props: { a: [c.k], p: [c.parameters.p] },
+        }),
         decorators
       );
 
@@ -320,7 +334,7 @@ describe('decorateStory', () => {
   });
 });
 
-function makeContext(input: Record<string, unknown>): StoryContext<AngularRenderer> {
+function makeContext(input: Record<string, unknown>): StoryContextForRender<AngularRenderer> {
   return {
     id: 'id',
     kind: 'kind',
@@ -328,26 +342,22 @@ function makeContext(input: Record<string, unknown>): StoryContext<AngularRender
     viewMode: 'story',
     parameters: {},
     ...input,
-  } as StoryContext<AngularRenderer>;
+  } as StoryContextForRender<AngularRenderer>;
 }
 
 @Component({
   selector: 'foo',
-  template: `
-    foo
-  `,
+  template: ` foo `,
 })
 class FooComponent {}
 
 @Component({
   selector: 'parent',
-  template: `
-    <ng-content></ng-content>
-  `,
+  template: ` <ng-content></ng-content> `,
 })
 class ParentComponent {
   @Input()
-  parentInput: string;
+  parentInput?: string;
 
   @Output()
   parentOutput: any;

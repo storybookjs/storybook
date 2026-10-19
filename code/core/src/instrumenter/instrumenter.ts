@@ -712,7 +712,7 @@ export class Instrumenter {
           next: false,
           end: false,
         };
-        const payload: SyncPayload = { controlStates, logItems };
+        const payload: SyncPayload = { storyId, controlStates, logItems };
         this.channel?.emit(EVENTS.SYNC, payload);
         return;
       }
@@ -729,7 +729,7 @@ export class Instrumenter {
         end: isPlaying,
       };
 
-      const payload: SyncPayload = { controlStates, logItems, pausedAt };
+      const payload: SyncPayload = { storyId, controlStates, logItems, pausedAt };
       this.channel?.emit(EVENTS.SYNC, payload);
     };
 

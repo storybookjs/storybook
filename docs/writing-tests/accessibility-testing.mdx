@@ -110,7 +110,7 @@ You can also enable, disable, or configure individual rules. This can be done in
 
 ### Test behavior
 
-You can configure accessibility tests with the `parameters.a11y.test` [parameter](../writing-stories/parameters.mdx), which determines the behavior of accessibility tests for a story when run with either the [Vitest addon](./integrations/vitest-addon/index.mdx) or the [test-runner](./integrations/test-runner.mdx). The parameter accepts three values:
+You can configure accessibility tests with the `parameters.a11y.test` [parameter](../writing-stories/parameters.mdx), which determines the behavior of accessibility tests for a story when run with the [Vitest addon](./integrations/vitest-addon/index.mdx). The parameter accepts three values:
 
 | Value     | Description                                                                              |
 | --------- | ---------------------------------------------------------------------------------------- |
@@ -177,12 +177,6 @@ If any of your tests have warnings or failures, the testing widget will show the
 
 In CI, accessibility tests are run automatically for stories with [`parameters.a11y.test = 'error'`](#test-behavior) when you run the Vitest tests.
 
-### With the test-runner
-
-If you're using the [test-runner](./integrations/test-runner.mdx), you can run your accessibility tests in the terminal or in CI environments.
-
-Accessibility tests are included in your test run when you have the Accessibility addon installed and [`parameters.a11y.test`](#test-behavior) is set to a value other than `'off'`.
-
 ## Debug accessibility violations
 
 When you run accessibility tests, the results are reported in the Storybook UI. You can click on a violation to see more details about it, including the rule that was violated and suggestions for how to fix it.
@@ -201,7 +195,7 @@ Accessibility tests will only produce errors in CI if you have set [`parameters.
 
 </Callout>
 
-If you cannot use the Vitest addon, you can still run your tests in CI using the [test-runner](./integrations/test-runner.mdx).
+The Vitest addon requires a Vite-based framework. If your project uses Webpack, [migrate to Vite](./integrations/vitest-addon/migration-guide.mdx#what-if-i-am-using-storybook-with-webpack-or-rspack) first.
 
 ## Recommended workflow
 
@@ -247,4 +241,3 @@ To enable this feature flag, add the following configuration to your `.storybook
 - [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
 - [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 - [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-- [Test runner](./integrations/test-runner.mdx) to automate test execution

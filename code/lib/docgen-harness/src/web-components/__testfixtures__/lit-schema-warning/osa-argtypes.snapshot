@@ -1,0 +1,34 @@
+{
+  "count": {
+    "description": undefined,
+    "name": "count",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "label": {
+    "description": undefined,
+    "name": "label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Label'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

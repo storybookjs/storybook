@@ -1,0 +1,28 @@
+{
+  "id": "webcomponentsstorydocs-meta-render",
+  "name": "meta-render",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-meta-render--csf-2-function": {
+      "id": "webcomponentsstorydocs-meta-render--csf-2-function",
+      "name": "Csf 2 Function",
+      "snippet": "<meta-render label="csf2"></meta-render>",
+    },
+    "webcomponentsstorydocs-meta-render--dom-override": {
+      "id": "webcomponentsstorydocs-meta-render--dom-override",
+      "name": "Dom Override",
+      "snippet": "<meta-render label="dom"></meta-render>",
+      "warning": "Incomplete snippet: `() => document.createElement('meta-render')` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-meta-render--from-meta": {
+      "id": "webcomponentsstorydocs-meta-render--from-meta",
+      "name": "From Meta",
+      "snippet": "<meta-render label="from-meta"></meta-render>",
+    },
+    "webcomponentsstorydocs-meta-render--override": {
+      "id": "webcomponentsstorydocs-meta-render--override",
+      "name": "Override",
+      "snippet": "<meta-render label="override" class="override"></meta-render>",
+    },
+  },
+}

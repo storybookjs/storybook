@@ -1,6 +1,5 @@
 {
   "big": {
-    "defaultValue": undefined,
     "description": "",
     "name": "big",
     "table": {
@@ -17,7 +16,6 @@
     },
   },
   "builtin": {
-    "defaultValue": undefined,
     "description": "",
     "name": "builtin",
     "table": {
@@ -40,7 +38,6 @@
         "red": "Color.Red",
       },
     },
-    "defaultValue": undefined,
     "description": "",
     "name": "color",
     "options": [
@@ -64,7 +61,6 @@
     },
   },
   "cyclic": {
-    "defaultValue": undefined,
     "description": "",
     "name": "cyclic",
     "table": {
@@ -81,7 +77,6 @@
     },
   },
   "dict": {
-    "defaultValue": undefined,
     "description": "",
     "name": "dict",
     "table": {
@@ -98,7 +93,6 @@
     },
   },
   "inlined": {
-    "defaultValue": undefined,
     "description": "",
     "name": "inlined",
     "table": {
@@ -121,7 +115,6 @@
         "1": "Level.High",
       },
     },
-    "defaultValue": undefined,
     "description": "",
     "name": "level",
     "options": [
@@ -145,7 +138,6 @@
     },
   },
   "localDate": {
-    "defaultValue": undefined,
     "description": "",
     "name": "localDate",
     "table": {
@@ -162,7 +154,6 @@
     },
   },
   "namespaced": {
-    "defaultValue": undefined,
     "description": "",
     "name": "namespaced",
     "table": {
@@ -179,7 +170,6 @@
     },
   },
   "partialed": {
-    "defaultValue": undefined,
     "description": "",
     "name": "partialed",
     "table": {
@@ -196,7 +186,6 @@
     },
   },
   "picked": {
-    "defaultValue": undefined,
     "description": "",
     "name": "picked",
     "table": {
@@ -213,7 +202,6 @@
     },
   },
   "prefs": {
-    "defaultValue": undefined,
     "description": "",
     "name": "prefs",
     "table": {
@@ -230,7 +218,6 @@
     },
   },
   "scalarAlias": {
-    "defaultValue": undefined,
     "description": "",
     "name": "scalarAlias",
     "table": {
@@ -246,7 +233,6 @@
     },
   },
   "shapes": {
-    "defaultValue": undefined,
     "description": "",
     "name": "shapes",
     "table": {
@@ -266,7 +252,6 @@
     },
   },
   "user": {
-    "defaultValue": undefined,
     "description": "The user to greet.",
     "name": "user",
     "table": {

@@ -169,7 +169,6 @@ export const getDefaultLayoutState: () => SubState = () => {
       panelPosition: 'bottom',
       showNav: true,
       showPanel: true,
-      showTabs: true,
       showToolbar: true,
       showMobileNavigation: false,
     },

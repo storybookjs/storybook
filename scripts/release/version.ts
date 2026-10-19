@@ -77,7 +77,7 @@ const optionsSchema = z
           'Combining --exact with --release-type is invalid, but having one of them is required',
       });
     }
-    if (schema.preId && !schema.releaseType.startsWith('pre')) {
+    if (schema.preId && !schema.releaseType?.startsWith('pre')) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
@@ -105,7 +105,7 @@ type Options = BumpOptions | ExactOptions | ApplyOptions;
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
-const validateOptions = (options: { [key: string]: any }): options is Options => {
+const validateOptions = (options: unknown): options is Options => {
   optionsSchema.parse(options);
   return true;
 };
@@ -270,7 +270,13 @@ export const run = async (options: unknown) => {
       console.log(`🆔 Version prerelease identifier selected: ${picocolors.yellow(preId)}`);
     }
 
-    nextVersion = semver.inc(currentVersion, releaseType, preId);
+    const incrementedVersion = semver.inc(currentVersion, releaseType, undefined, preId);
+    if (incrementedVersion === null) {
+      throw new Error(
+        `Could not bump version ${currentVersion} with release type ${releaseType}${preId ? ` and prerelease identifier ${preId}` : ''}`
+      );
+    }
+    nextVersion = incrementedVersion;
 
     console.log(
       `⏭ Bumping version ${picocolors.blue(currentVersion)} with release type ${picocolors.green(

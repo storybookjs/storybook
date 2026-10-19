@@ -57,7 +57,7 @@ const labelStart = (diagnostic: E.OxcError) => diagnostic.labels?.[0]?.start;
 // Off on Windows until oxc PR #27566 lands: its 6 GiB reservation fails there (oxc issue #11834).
 let rawTransferEnabled = process.platform !== 'win32' && rawTransferSupported();
 
-// The option is missing from the `ParserOptions` type of oxc-parser 0.153.
+// The option is missing from the `ParserOptions` type of oxc-parser 0.155.
 type ParseOptions = E.ParserOptions & { experimentalRawTransfer: boolean };
 
 /**

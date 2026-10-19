@@ -56,50 +56,28 @@ export type PnpmListOutput = PnpmListItem[];
 /** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
 const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
 
-/** `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0). */
+// `allowBuilds` in pnpm-workspace.yaml (docs: Added in v10.26.0).
 const PNPM_ALLOW_BUILDS_MIN = '10.26.0';
 
-/**
- * pnpm 11 dropped the legacy build lists and stopped reading package.json's `pnpm` field. From
- * there on, those settings are leftovers that neither govern builds nor conflict with `allowBuilds`.
- */
+// pnpm 11 removed the pnpm 10 build lists and stopped reading package.json's `pnpm` field.
 const PNPM_LEGACY_BUILD_LISTS_REMOVED = '11.0.0';
 
-/** Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved. */
+// Storybook dependencies with a build script that pnpm 10+ refuses to run until it is approved.
 const STORYBOOK_BUILD_SCRIPT_PACKAGES = ['esbuild'];
-
-/** pnpm 10 build-script list settings that `allowBuilds` replaced in pnpm 11. */
-const LEGACY_BUILD_SCRIPT_LISTS = [
-  'onlyBuiltDependencies',
-  'ignoredBuiltDependencies',
-  'neverBuiltDependencies',
-] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/**
- * Whether a build-script matcher names `pkg`. A matcher is a bare package name, or a name pinned to
- * versions (`esbuild@0.25.0 || 0.25.1`) or to a git/tarball source (`foo@git+ssh://...`).
- */
+// A matcher is a bare name, or a name pinned to versions or a source: `esbuild@0.25.0 || 0.25.1`.
 const matchesPackage = (matcher: unknown, pkg: string): boolean =>
   typeof matcher === 'string' && (matcher === pkg || matcher.startsWith(`${pkg}@`));
 
-/**
- * Whether the user already allowed or denied `pkg`'s build scripts in a block of pnpm settings
- * (`pnpm-workspace.yaml`, or the `pnpm` field of package.json): through `allowBuilds`, through the
- * pnpm 10 list settings it replaced, or by allowing every build. A pinned `allowBuilds` matcher
- * counts whatever its value, since adding a bare `esbuild: true` next to it would widen the user's
- * choice; the bare key only counts once it holds a boolean, so pnpm's own placeholder still gets
- * resolved. The pnpm 10 lists only count when `legacyLists` is set, i.e. on pnpm 10 itself. There,
- * any `neverBuiltDependencies` list counts as a decision for every package: pnpm 10 rewrites
- * `allowBuilds` into `onlyBuiltDependencies`, which it refuses to combine with that list.
- */
-function hasBuildScriptDecision(
-  settings: unknown,
-  pkg: string,
-  { legacyLists = false }: { legacyLists?: boolean } = {}
-): boolean {
+const listsPackage = (list: unknown, pkg: string): boolean =>
+  Array.isArray(list) && list.some((matcher) => matchesPackage(matcher, pkg));
+
+// The bare key only counts once it holds a boolean, so the placeholder pnpm 12 writes still gets
+// resolved; a pinned matcher counts whatever its value, as a bare entry would widen it.
+function hasAllowBuildsDecision(settings: unknown, pkg: string): boolean {
   if (!isRecord(settings)) {
     return false;
   }
@@ -107,24 +85,38 @@ function hasBuildScriptDecision(
     return true;
   }
   const { allowBuilds } = settings;
-  if (
+  return (
     isRecord(allowBuilds) &&
     Object.entries(allowBuilds).some(([matcher, value]) =>
       matcher === pkg ? typeof value === 'boolean' : matchesPackage(matcher, pkg)
     )
-  ) {
-    return true;
+  );
+}
+
+function readOnlyBuiltDependenciesFile(file: unknown, dir: string): unknown[] {
+  if (typeof file !== 'string') {
+    return [];
   }
-  if (!legacyLists) {
+  try {
+    const list = JSON.parse(readFileSync(resolve(dir, file), 'utf8'));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+// pnpm 10 refuses to combine `neverBuiltDependencies` with any allow list, so its presence alone
+// is a decision.
+function hasPnpm10ListDecision(settings: unknown, pkg: string, dir: string): boolean {
+  if (!isRecord(settings)) {
     return false;
   }
-  return LEGACY_BUILD_SCRIPT_LISTS.some((key) => {
-    const list = settings[key];
-    if (!Array.isArray(list)) {
-      return false;
-    }
-    return key === 'neverBuiltDependencies' || list.some((matcher) => matchesPackage(matcher, pkg));
-  });
+  return (
+    Array.isArray(settings.neverBuiltDependencies) ||
+    listsPackage(settings.onlyBuiltDependencies, pkg) ||
+    listsPackage(settings.ignoredBuiltDependencies, pkg) ||
+    listsPackage(readOnlyBuiltDependenciesFile(settings.onlyBuiltDependenciesFile, dir), pkg)
+  );
 }
 
 // Same-directory rename so a crash cannot truncate the user's workspace file.
@@ -140,25 +132,6 @@ function writeFileAtomically(filePath: string, contents: string): void {
       // The temp file was never created, or rename already consumed it.
     }
     throw error;
-  }
-}
-
-/**
- * The package matchers listed in the JSON file that pnpm 10's `onlyBuiltDependenciesFile` points
- * to, resolved against the directory of the workspace file. An unreadable or malformed file counts
- * as listing nothing.
- */
-function readOnlyBuiltDependenciesFile(settings: unknown, workspaceDir: string): unknown[] {
-  if (!isRecord(settings) || typeof settings.onlyBuiltDependenciesFile !== 'string') {
-    return [];
-  }
-  try {
-    const list = JSON.parse(
-      readFileSync(resolve(workspaceDir, settings.onlyBuiltDependenciesFile), 'utf8')
-    );
-    return Array.isArray(list) ? list : [];
-  } catch {
-    return [];
   }
 }
 
@@ -424,18 +397,12 @@ export class PNPMProxy extends JsPackageManager {
     });
   }
 
-  /**
-   * pnpm 10+ refuses to run dependency build scripts until the user approves them, and from pnpm 11
-   * an unreviewed script fails a non-interactive install (`ERR_PNPM_IGNORED_BUILDS`). pnpm install
-   * has no `--allow-builds` flag, so we need to pre-approve builds. The only way to do this is to
-   * record the allowed builds in the `pnpm-workspace.yaml` like pnpm approve-builds does.
-   */
+  // From pnpm 11, an unreviewed build script fails a non-interactive install outright, and
+  // `pnpm install` has no flag to approve one, so record the approval like `pnpm approve-builds`.
   protected allowStorybookBuildScripts(): void {
     if (!this.#pnpmGte(PNPM_ALLOW_BUILDS_MIN)) {
       return;
     }
-
-    // Find workspace file, create one if needed.
     const workspace = this.#readWorkspaceYaml({ createIfMissing: true });
     if (!workspace) {
       logger.warn(
@@ -443,44 +410,35 @@ export class PNPMProxy extends JsPackageManager {
       );
       return;
     }
-
     const { path, doc } = workspace;
-    let changed = false;
+    const { packageJson, operationDir } = this.primaryPackageJson;
 
     try {
-      // An `allowBuilds:` key left empty (e.g. after its last entry was removed) is a null, which
-      // `setIn` cannot descend into; start a map there. Other non-map values are user errors pnpm
-      // rejects too, so just let the update fail below.
+      const settings = doc.toJS();
+      const pnpm10Settings: [settings: unknown, dir: string][] = this.#pnpmGte(
+        PNPM_LEGACY_BUILD_LISTS_REMOVED
+      )
+        ? []
+        : [
+            [settings, dirname(path)],
+            [packageJson.pnpm, operationDir],
+          ];
+      const pending = STORYBOOK_BUILD_SCRIPT_PACKAGES.filter(
+        (pkg) =>
+          !hasAllowBuildsDecision(settings, pkg) &&
+          !pnpm10Settings.some(([source, dir]) => hasPnpm10ListDecision(source, pkg, dir))
+      );
+      if (pending.length === 0) {
+        return;
+      }
+      // `setIn` cannot descend into an `allowBuilds:` key that was left empty.
       if (doc.getIn(['allowBuilds']) == null) {
         doc.setIn(['allowBuilds'], doc.createNode({}));
       }
-
-      // Add dependencies that need a build approval, unless the user already decided on them in the
-      // workspace file. On pnpm 10 the decision may also live in package.json's `pnpm` field or in a
-      // trusted-dependencies file; pnpm 11+ ignores both, so there they must not keep esbuild
-      // unapproved.
-      const settings = doc.toJS();
-      const legacyLists = !this.#pnpmGte(PNPM_LEGACY_BUILD_LISTS_REMOVED);
-      const decisions = legacyLists
-        ? [settings, this.primaryPackageJson.packageJson.pnpm]
-        : [settings];
-      const trustedDependencies = legacyLists
-        ? readOnlyBuiltDependenciesFile(settings, dirname(path))
-        : [];
-      for (const pkg of STORYBOOK_BUILD_SCRIPT_PACKAGES) {
-        const decided =
-          decisions.some((candidate) => hasBuildScriptDecision(candidate, pkg, { legacyLists })) ||
-          trustedDependencies.some((matcher) => matchesPackage(matcher, pkg));
-        if (!decided) {
-          doc.setIn(['allowBuilds', pkg], true);
-          changed = true;
-        }
+      for (const pkg of pending) {
+        doc.setIn(['allowBuilds', pkg], true);
       }
-
-      // Write file back only if changes were needed.
-      if (changed) {
-        writeFileAtomically(path, doc.toString());
-      }
+      writeFileAtomically(path, doc.toString());
     } catch (e) {
       logger.warn(
         `Could not allow build scripts of ${STORYBOOK_BUILD_SCRIPT_PACKAGES.join(', ')} in ${path}: ${String(e)}`
@@ -488,12 +446,8 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  /**
-   * Locate and parse the `pnpm-workspace.yaml` that governs this project, walking up from the
-   * package.json we operate on. Returns null when the file is malformed, or when it is missing
-   * and `createIfMissing` is unset. If `createIfMissing` is set, an empty document is returned
-   * with the location to which it can be written (next to `package.json`).
-   */
+  // Null when the file is malformed, or missing without `createIfMissing`; with it, a missing file
+  // yields an empty document addressed next to the package.json we operate on.
   #readWorkspaceYaml(options?: {
     createIfMissing: boolean;
   }): { path: string; doc: Document } | null {

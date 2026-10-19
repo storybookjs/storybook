@@ -50,7 +50,6 @@ const expectedMinimumReleaseAgeExcludePackages = [
 describe('PNPM Proxy', () => {
   let pnpmProxy: PNPMProxy;
 
-  /** The in-memory project the proxy operates on, so `allowBuilds` writes never touch the repo. */
   const PROJECT_DIR = '/project';
   const WORKSPACE_YAML = `${PROJECT_DIR}/pnpm-workspace.yaml`;
   const workspaceYaml = () => vol.toJSON()[WORKSPACE_YAML];
@@ -66,7 +65,6 @@ describe('PNPM Proxy', () => {
   };
 
   beforeEach(() => {
-    // Construct against the real fs, then redirect fs to memfs for everything the tests do.
     vi.mocked(readFileSync).mockReset();
     vi.mocked(writeFileSync).mockReset();
     vi.mocked(renameSync).mockReset();
@@ -256,8 +254,6 @@ describe('PNPM Proxy', () => {
       );
     });
 
-    // pnpm 11 dropped these lists and stopped reading package.json's `pnpm` field, so leftovers
-    // there no longer govern builds: esbuild still needs its allowBuilds entry.
     it.each([
       ['onlyBuiltDependencies names esbuild', 'onlyBuiltDependencies:\n  - esbuild\n'],
       ['ignoredBuiltDependencies names esbuild', 'ignoredBuiltDependencies:\n  - esbuild\n'],

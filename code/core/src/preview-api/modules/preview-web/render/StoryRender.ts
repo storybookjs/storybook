@@ -109,6 +109,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
+  // Only the story the preview shows owns the document; in a docs page it renders to its block.
+  get ownsDocument() {
+    return this.viewMode === 'story' && this.story?.parameters.layout === 'document';
+  }
+
   private async runPhase(signal: AbortSignal, phase: RenderPhase, phaseFn?: () => Promise<void>) {
     this.phase = phase;
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
@@ -200,8 +205,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
     const story = this.story;
 
-    // Only the story the preview shows owns the document; in a docs page it renders to its block.
-    const ownsDocument = this.viewMode === 'story' && story.parameters.layout === 'document';
+    const { ownsDocument } = this;
     // Such a story renders to the <body> the document has now, which an earlier render may have left.
     if (ownsDocument && this.canvasElement) {
       this.canvasElement = document.body as TRenderer['canvasElement'];
@@ -261,10 +265,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         renderToCanvas: async () => {
           if (!renderStory) {
             throw new MissingRenderToCanvasError();
-          }
-          if (ownsDocument) {
-            // The document's own loading is the story's to show, not Storybook's preparing block.
-            this.callbacks.showMain();
           }
           const teardown = await renderStory(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});

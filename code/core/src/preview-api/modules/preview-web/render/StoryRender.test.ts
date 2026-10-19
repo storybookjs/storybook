@@ -14,6 +14,7 @@ import {
 } from 'storybook/internal/preview-errors';
 import type {
   PreparedStory,
+  RenderContext,
   Renderer,
   StoryContext,
   StoryIndexEntry,
@@ -860,16 +861,26 @@ describe('StoryRender of a story that owns the document', () => {
     replaceBody();
   });
 
-  it('shows the story before its render, so the document shows its own loading', async () => {
-    const calls: string[] = [];
+  it('leaves showMain to its renderer', async () => {
+    const [renderGate, openRenderGate] = createGate();
+    const showMain = vi.fn();
     const render = buildDocumentRender(
-      { renderToCanvas: vi.fn(async () => void calls.push('renderToCanvas')) },
-      { showMain: vi.fn(() => calls.push('showMain')) }
+      {
+        renderToCanvas: vi.fn(async (renderContext: RenderContext) => {
+          await renderGate;
+          renderContext.showMain();
+        }),
+      },
+      { showMain }
     );
 
-    await render.renderToElement(document.body);
+    const rendered = render.renderToElement(document.body);
+    await vi.waitFor(() => expect(render.phase).toBe('rendering'));
+    expect(showMain).not.toHaveBeenCalled();
 
-    expect(calls).toEqual(['showMain', 'renderToCanvas']);
+    openRenderGate();
+    await rendered;
+    expect(showMain).toHaveBeenCalledOnce();
   });
 
   it('marks the body the render left as the story root and passes it to play', async () => {
@@ -972,14 +983,13 @@ describe('StoryRender of a story that owns the document', () => {
     const block = document.createElement('div');
     document.body.append(block);
     let canvasElement: unknown;
-    const showMain = vi.fn();
     const render = buildDocumentRender(
       {
         playFunction: vi.fn((context: StoryContext) => {
           canvasElement = context.canvasElement;
         }),
       },
-      { showMain },
+      {},
       'docs'
     );
 
@@ -987,7 +997,6 @@ describe('StoryRender of a story that owns the document', () => {
 
     expect(document.body).not.toHaveAttribute('id');
     expect(canvasElement).toBe(block);
-    expect(showMain).not.toHaveBeenCalled();
   });
 
   it('takes its mark back at teardown', async () => {

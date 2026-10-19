@@ -141,6 +141,17 @@ describe('WebView in a document whose body a story replaced', () => {
     expect(isOpen(host())).toBe(true);
   });
 
+  it('leaves the block that is shown in place when it is shown again', () => {
+    view.showPreparingStory({ immediate: true });
+    const observer = new MutationObserver(() => {});
+    observer.observe(host(), { childList: true });
+
+    view.showPreparingStory({ immediate: true });
+
+    expect(observer.takeRecords()).toHaveLength(0);
+    observer.disconnect();
+  });
+
   it('takes its host out of the document when the story is shown again', () => {
     view.showErrorDisplay({ message: 'Boom' });
     const shown = host();
@@ -258,6 +269,20 @@ describe('WebView for a story that owns the document', () => {
     expect(document.body.classList).toHaveLength(0);
     expect(host()).toHaveTextContent('Boom');
     expect(host().matches(':popover-open')).toBe(true);
+  });
+
+  it('shows the preparing block over the render until main is shown', () => {
+    const view = new WebView();
+    view.prepareForStory(makeStory({ layout: 'document' }));
+    view.showPreparingStory({ immediate: true });
+    const shown = host();
+    document.documentElement.replaceChild(document.createElement('body'), document.body);
+
+    expect(isOpen(shown)).toBe(true);
+
+    view.showMain();
+
+    expect(document.querySelector('sb-preview')).toBeNull();
   });
 
   it('projects the mode and the layout again for the next story', () => {

@@ -1,18 +1,13 @@
 import { getService } from '../../shared/open-service/server.ts';
-import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import type { Options } from '../../types/index.ts';
 
 import { isAddonA11yEnabled } from './addon-a11y.ts';
 import { isAddonVitestEnabled } from './addon-vitest.ts';
-import { getManifestStatus, type ManifestFeatures } from './manifest-status.ts';
+import { getManifestStatus } from './manifest-status.ts';
 
 export interface ToolAvailability {
   /** The `core/module-graph` open service is registered/resolvable. Gates `stories-find-by-component`. */
   moduleGraphSupported: boolean;
-  /** The `changeDetection` feature flag is enabled. Gates `stories-changed`. */
-  changeDetectionEnabled: boolean;
-  /** The `changeDetection` feature flag is enabled, which review builds on. Gates `review-create`. */
-  reviewEnabled: boolean;
   /** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
   docsEnabled: boolean;
   /**
@@ -33,14 +28,6 @@ export interface ToolAvailability {
   a11yEnabled: boolean;
   /** `docgenServer` mode: read manifest data in-process from the open services. */
   docgenServer: boolean;
-}
-
-export interface GetToolAvailabilityOptions {
-  /**
-   * Pre-resolved `features` preset. Pass it to avoid re-applying the preset and
-   * risking a different snapshot than the caller already resolved.
-   */
-  features?: (ManifestFeatures & { changeDetection?: boolean }) | undefined;
 }
 
 /**
@@ -84,22 +71,13 @@ export async function isModuleGraphSupported(): Promise<boolean> {
  * Single source of truth for the runtime gates that decide whether each tool is
  * registered (and how the landing page badges it).
  *
- * Every dynamic gate lives here — the dependency graph, the change-detection
- * pipeline, review, the component manifest (docs), addon-vitest (test) and the
- * accessibility sub-feature — so the MCP server (which registers the tools) and
- * the browser landing page (which shows enabled/disabled badges) can never drift
- * apart. Add new gates here rather than computing them ad-hoc at a call site.
+ * Every dynamic gate lives here — the dependency graph, the component manifest
+ * (docs), addon-vitest (test) and the accessibility sub-feature — so the MCP
+ * server (which registers the tools) and the browser landing page (which shows
+ * enabled/disabled badges) can never drift apart. Add new gates here rather
+ * than computing them ad-hoc at a call site.
  */
-export async function getToolAvailability(
-  options: Options,
-  { features }: GetToolAvailabilityOptions = {}
-): Promise<ToolAvailability> {
-  const resolvedFeatures =
-    features ??
-    ((await options.presets.apply('features', {})) as
-      | (ManifestFeatures & { changeDetection?: boolean })
-      | undefined);
-
+export async function getToolAvailability(options: Options): Promise<ToolAvailability> {
   const [moduleGraphSupported, manifestStatus, addonVitestEnabled, a11yEnabled] = await Promise.all(
     [
       isModuleGraphSupported(),
@@ -111,8 +89,6 @@ export async function getToolAvailability(
 
   return {
     moduleGraphSupported,
-    changeDetectionEnabled: resolvedFeatures?.changeDetection ?? false,
-    reviewEnabled: isReviewFeatureEnabled(resolvedFeatures),
     docsEnabled: manifestStatus.available,
     docsEnabledForCli: manifestStatus.hasManifests,
     docsHasManifests: manifestStatus.hasManifests,

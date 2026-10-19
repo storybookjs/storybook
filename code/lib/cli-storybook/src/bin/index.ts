@@ -12,4 +12,4 @@ if (!isNodeVersionSupported(process.versions.node)) {
   process.exit(1);
 }
 
-import('./run.ts');
+import('./run.ts').then(({ run }) => run());

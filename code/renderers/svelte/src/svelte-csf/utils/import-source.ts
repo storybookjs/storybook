@@ -10,7 +10,7 @@ import {
   PreviewNotImportedError,
 } from './error/parser/extract/svelte.ts';
 
-export function isSvelteCsfImportSource(source: unknown): boolean {
+function isSvelteCsfImportSource(source: unknown): boolean {
   return typeof source === 'string' && isOneOf(SVELTE_CSF_IMPORT_SOURCES, source);
 }
 

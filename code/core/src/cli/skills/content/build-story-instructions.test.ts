@@ -4,8 +4,6 @@ import { buildStoryInstructions } from './build-story-instructions.ts';
 
 const baseInputs = {
   framework: '@storybook/react-vite',
-  changeDetectionEnabled: true,
-  reviewEnabled: true,
   testSupported: true,
   a11yEnabled: false,
   docsEnabled: false,
@@ -83,12 +81,12 @@ describe('buildStoryInstructions placeholder resolution', () => {
   });
 });
 
-describe('buildStoryInstructions review-aware link guidance', () => {
+describe('buildStoryInstructions link guidance', () => {
   // Regression: the story-instructions output must agree with the server
   // instructions about how to present links. It previously told the agent to
   // list the review page AND the preview URLs together, contradicting the
   // "show one set of links — never both" server rule.
-  it('tells the agent to show only the review section when review is enabled', () => {
+  it('tells the agent to show only the review section', () => {
     const instructions = buildStoryInstructions({ ...baseInputs, transport: 'mcp' });
 
     expect(instructions).toContain('show one set of links — never both');
@@ -104,30 +102,6 @@ describe('buildStoryInstructions review-aware link guidance', () => {
     expect(instructions).toContain('never construct them from file names');
     expect(instructions).toContain('Feed the discovered IDs into **review-create**');
     expect(instructions).not.toContain('first, then use `stories-preview`');
-  });
-
-  it('tells the agent to include preview URLs when review is disabled', () => {
-    const instructions = buildStoryInstructions({
-      ...baseInputs,
-      transport: 'mcp',
-      reviewEnabled: false,
-    });
-
-    expect(instructions).toContain('include every returned preview URL');
-    expect(instructions).not.toContain('## 👀 Review your changes');
-    expect(instructions).not.toContain('present links in this order');
-  });
-
-  it('should not mention changed stories workflow when change detection is disabled', () => {
-    const instructions = buildStoryInstructions({
-      ...baseInputs,
-      transport: 'mcp',
-      changeDetectionEnabled: false,
-      reviewEnabled: false,
-    });
-
-    expect(instructions).toContain('stories-preview');
-    expect(instructions).not.toContain('stories-changed');
   });
 });
 

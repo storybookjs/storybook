@@ -470,9 +470,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     const includedTags = (state.includedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
     const excludedTags = (state.excludedTagFilters ?? []).filter((id) => BUILT_IN_TAG_IDS.has(id));
 
-    const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
-    const includedStatuses = changeDetectionEnabled ? (state.includedStatusFilters ?? []) : [];
-    const excludedStatuses = changeDetectionEnabled ? (state.excludedStatusFilters ?? []) : [];
+    const includedStatuses = state.includedStatusFilters ?? [];
+    const excludedStatuses = state.excludedStatusFilters ?? [];
 
     const storyCounts: Record<string, number> = {};
     const entries = state.internal_index ? Object.values(state.internal_index.entries) : [];
@@ -1382,10 +1381,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const hasBuiltInTagFilters =
         initialIncluded.some((id) => BUILT_IN_TAG_IDS.has(id)) ||
         initialExcluded.some((id) => BUILT_IN_TAG_IDS.has(id));
-      const changeDetectionEnabled = !!globalThis?.FEATURES?.changeDetection;
       const hasStatusFilters =
-        changeDetectionEnabled &&
-        (initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0);
+        initialIncludedStatuses.length > 0 || initialExcludedStatuses.length > 0;
 
       if (hasBuiltInTagFilters || hasStatusFilters) {
         emitFilterTelemetry('url');

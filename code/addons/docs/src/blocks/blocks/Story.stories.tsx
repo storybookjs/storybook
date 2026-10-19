@@ -197,6 +197,44 @@ export const WithInteractionsAutoplayInParameters: Story = {
   },
 };
 
+export const IFrameWithDefaultInteractions: Story = {
+  name: 'IFrame With Default Interactions',
+  args: {
+    of: ButtonStories.Clicking,
+    inline: false,
+    height: '120px',
+  },
+  parameters: {
+    chromatic: { delay: 3000 },
+  },
+  play: async ({ canvasElement }) => {
+    const iframe = canvasElement.querySelector('iframe')!;
+    await expect(iframe.getAttribute('src')).toContain('autoplay=false');
+    await waitFor(() => expect(iframe.contentDocument!.body).toHaveTextContent('Click count: 0'), {
+      timeout: 10000,
+    });
+  },
+};
+
+export const IFrameWithInteractionsAutoplayInProps: Story = {
+  name: 'IFrame With Interactions Autoplay In Props',
+  args: {
+    of: ButtonStories.Clicking,
+    inline: false,
+    height: '120px',
+    autoplay: true,
+  },
+  parameters: {
+    chromatic: { delay: 3000 },
+  },
+  play: async ({ canvasElement }) => {
+    const iframe = canvasElement.querySelector('iframe')!;
+    await waitFor(() => expect(iframe.contentDocument!.body).toHaveTextContent('Click count: 1'), {
+      timeout: 10000,
+    });
+  },
+};
+
 export const ForceInitialArgs: Story = {
   ...StoryComponentStories.ForceInitialArgs,
   parameters: {

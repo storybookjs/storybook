@@ -1,16 +1,19 @@
 // @vitest-environment happy-dom
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import { Channel } from 'storybook/internal/channels';
 import type { CSFFile, PreparedStory, Renderer } from 'storybook/internal/types';
 
 import { DocsContext as DocsContextImpl } from 'storybook/preview-api';
 
+import { Story as PureStory } from '../components/Story.tsx';
+import type { DocsContextProps } from './DocsContext.ts';
 import { DocsContext } from './DocsContext.ts';
-import { Story } from './Story.tsx';
+import { Story, getStoryProps } from './Story.tsx';
 
 type Store = ConstructorParameters<typeof DocsContextImpl<Renderer>>[1];
 const storyExport = {};
@@ -112,4 +115,50 @@ it('throws the load error of an id that names no story', async () => {
   );
 
   await waitFor(() => expect(onError).toHaveBeenCalledWith(notFound));
+});
+
+describe('a story in an iframe', () => {
+  const iframeStory = {
+    ...story,
+    parameters: { docs: { story: { inline: false } } },
+  } as unknown as PreparedStory;
+  const context = {} as DocsContextProps;
+
+  it('runs its play only with autoplay, like an inline story', () => {
+    expect(getStoryProps({}, iframeStory, context)).toMatchObject({
+      inline: false,
+      autoplay: false,
+    });
+    expect(getStoryProps({ autoplay: true }, iframeStory, context)).toMatchObject({
+      inline: false,
+      autoplay: true,
+    });
+    const autoplayStory = {
+      ...iframeStory,
+      parameters: { docs: { story: { inline: false, autoplay: true } } },
+    } as unknown as PreparedStory;
+    expect(getStoryProps({}, autoplayStory, context)).toMatchObject({ autoplay: true });
+  });
+
+  it('tells the preview in the iframe not to play unless autoplay is set', () => {
+    // Parsed into a template, whose iframe does not load.
+    const iframeSrc = (autoplay: boolean) => {
+      const template = document.createElement('template');
+      template.innerHTML = renderToStaticMarkup(
+        <PureStory
+          story={iframeStory}
+          inline={false}
+          height="1px"
+          autoplay={autoplay}
+          primary={false}
+        />
+      );
+      return template.content.querySelector('iframe')?.getAttribute('src');
+    };
+
+    expect(iframeSrc(false)).toBe(
+      'iframe.html?viewMode=story&autoplay=false&id=other-package--story'
+    );
+    expect(iframeSrc(true)).toBe('iframe.html?viewMode=story&id=other-package--story');
+  });
 });

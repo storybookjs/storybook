@@ -14,13 +14,13 @@ import { ZoomContext } from './ZoomContext';
 interface CommonProps {
   story: PreparedStory;
   inline: boolean;
+  autoplay: boolean;
   primary: boolean;
 }
 
 interface InlineStoryProps extends CommonProps {
   inline: true;
   height?: string;
-  autoplay: boolean;
   forceInitialArgs: boolean;
   renderStoryToElement: DocsContextProps['renderStoryToElement'];
 }
@@ -92,7 +92,12 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => (
+// The preview in the iframe decides whether to play before its first render, so the URL says it.
+const IFrameStory: FunctionComponent<IFrameStoryProps> = ({
+  story,
+  height = '500px',
+  autoplay,
+}) => (
   <div style={{ width: '100%', height }}>
     <ZoomContext.Consumer>
       {({ scale }) => {
@@ -101,7 +106,10 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
             key="iframe"
             id={`iframe--${story.id}`}
             title={story.name}
-            src={getStoryHref(story.id, { viewMode: 'story' })}
+            src={getStoryHref(story.id, {
+              viewMode: 'story',
+              ...(!autoplay && { autoplay: 'false' }),
+            })}
             allowFullScreen
             scale={scale}
             style={{
@@ -125,7 +133,7 @@ const ErrorMessage = styled.strong(({ theme }) => ({
 const Story: FunctionComponent<StoryProps> = (props) => {
   const { inline, story } = props;
 
-  if (inline && !props.autoplay && story.usesMount) {
+  if (!props.autoplay && story.usesMount) {
     return (
       <ErrorMessage>
         This story mounts inside of play. Set{' '}

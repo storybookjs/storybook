@@ -684,6 +684,19 @@ describe('PreviewWeb', () => {
         expect(componentOneExports.a.play).toHaveBeenCalled();
       });
 
+      it('does not execute playFunction when the URL says autoplay=false', async () => {
+        document.location.search = '?id=component-one--a&autoplay=false';
+        window.history.replaceState({}, '', `/iframe.html${document.location.search}`);
+        try {
+          await createAndRenderPreview();
+        } finally {
+          window.history.replaceState({}, '', '/');
+        }
+
+        expect(projectAnnotations.renderToCanvas).toHaveBeenCalled();
+        expect(componentOneExports.a.play).not.toHaveBeenCalled();
+      });
+
       it('emits STORY_RENDERED', async () => {
         document.location.search = '?id=component-one--a';
         await createAndRenderPreview();

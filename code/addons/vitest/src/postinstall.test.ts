@@ -102,7 +102,7 @@ describe('postinstall helpers', () => {
 describe('Angular bridge wiring (postinstall integration)', () => {
   it('fresh-create v4: co-locates the bridge in the template plugins array (case 5)', async () => {
     const template = await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' });
-    const out = injectAngularVitestIntoConfig(template);
+    const out = injectAngularVitestIntoConfig(template, 'vitest.config.ts');
     expect(out).not.toBeNull();
     expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
     // Template comment survives the reprint (probe-locked path).
@@ -156,7 +156,7 @@ describe('Angular bridge wiring (postinstall integration)', () => {
         test: { projects: [{ extends: true, plugins: [storybookTest({ configDir: '.storybook' })] }] },
       };
     `;
-    const out = injectAngularVitestIntoConfig(existing);
+    const out = injectAngularVitestIntoConfig(existing, 'vitest.config.ts');
     expect(out).not.toBeNull();
     expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
   });

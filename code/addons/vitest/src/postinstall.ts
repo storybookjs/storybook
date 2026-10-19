@@ -10,7 +10,13 @@ import {
   getStorybookInfo,
   versions,
 } from 'storybook/internal/common';
-import { type ESTree as E, SourceEditor, parseModule, walk } from 'storybook/internal/csf-tools';
+import {
+  type ESTree as E,
+  SourceEditor,
+  parseModule,
+  restoreLineEndings,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import type { StorybookError } from 'storybook/internal/server-errors';
 import {
@@ -196,7 +202,7 @@ export default async function postInstall(options: PostinstallOptions) {
       return;
     }
 
-    const injected = injectAngularVitestIntoConfig(content);
+    const injected = injectAngularVitestIntoConfig(content, filePath);
     if (injected === null) {
       logger.error(dedent`
         We configured @storybook/addon-vitest, but could not automatically add the
@@ -274,7 +280,10 @@ export default async function postInstall(options: PostinstallOptions) {
       await writeFile(
         rootConfig,
         shouldAddReference
-          ? '/// <reference types="vitest/config" />\n' + formattedContent
+          ? restoreLineEndings(
+              '/// <reference types="vitest/config" />\n' + formattedContent,
+              formattedContent
+            )
           : formattedContent
       );
     } else {
@@ -303,7 +312,7 @@ export default async function postInstall(options: PostinstallOptions) {
     // array. The template always has a locatable array, so the injector never returns null here.
     let configContent = configTemplate;
     if (isAngularVite) {
-      const injected = injectAngularVitestIntoConfig(configTemplate);
+      const injected = injectAngularVitestIntoConfig(configTemplate, newConfigFile);
       if (injected !== null) {
         configContent = injected;
         logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');

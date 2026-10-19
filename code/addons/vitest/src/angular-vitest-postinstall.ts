@@ -117,10 +117,10 @@ export function injectAngularVitestIntoEditor(editor: SourceEditor): boolean {
  * and re-read paths. Returns `null` when the content cannot be parsed or no locatable plugins array
  * is found.
  */
-export function injectAngularVitestIntoConfig(content: string): string | null {
+export function injectAngularVitestIntoConfig(content: string, fileName: string): string | null {
   let editor: SourceEditor;
   try {
-    editor = new SourceEditor(content);
+    editor = new SourceEditor(content, fileName);
   } catch {
     return null;
   }

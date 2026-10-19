@@ -109,7 +109,7 @@ describe('collectStorybookTestLocalNames', () => {
 
 describe('injectAngularVitestIntoConfig', () => {
   it('co-locates the bridge in the same plugins array as storybookTest (case 1)', () => {
-    const out = injectAngularVitestIntoConfig(FRESH_V4);
+    const out = injectAngularVitestIntoConfig(FRESH_V4, 'vitest.config.ts');
     expect(out).not.toBeNull();
     const callees = pluginCalleesInSameArray(out!);
     expect(callees).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
@@ -119,7 +119,7 @@ describe('injectAngularVitestIntoConfig', () => {
   });
 
   it('adds the scaffold comment (case 20: comments preserved)', () => {
-    const out = injectAngularVitestIntoConfig(FRESH_V4)!;
+    const out = injectAngularVitestIntoConfig(FRESH_V4, 'vitest.config.ts')!;
     expect(out).toContain('Forwards Angular build options');
     // The template's own comment must also survive.
     expect(out).toContain('The plugin will run tests for the stories');
@@ -131,7 +131,7 @@ describe('injectAngularVitestIntoConfig', () => {
       `import { storybookTest as sbTest } from '@storybook/addon-vitest/vitest-plugin';`
     ).replace('storybookTest({ configDir', 'sbTest({ configDir');
 
-    const out = injectAngularVitestIntoConfig(aliased);
+    const out = injectAngularVitestIntoConfig(aliased, 'vitest.config.ts');
     expect(out).not.toBeNull();
     const callees = pluginCalleesInSameArray(out!, 'sbTest');
     expect(callees).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'sbTest']);
@@ -142,7 +142,7 @@ describe('injectAngularVitestIntoConfig', () => {
       import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
       export default { test: { projects: [{ plugins: [...storybookTest()] }] } };
     `;
-    expect(injectAngularVitestIntoConfig(spread)).toBeNull();
+    expect(injectAngularVitestIntoConfig(spread, 'vitest.config.ts')).toBeNull();
   });
 
   it('returns null when storybookTest is not in any array (exotic)', () => {
@@ -151,16 +151,18 @@ describe('injectAngularVitestIntoConfig', () => {
       const p = storybookTest();
       export default { test: { projects: [{ plugins: p }] } };
     `;
-    expect(injectAngularVitestIntoConfig(exotic)).toBeNull();
+    expect(injectAngularVitestIntoConfig(exotic, 'vitest.config.ts')).toBeNull();
   });
 
   it('returns null on unparsable content', () => {
-    expect(injectAngularVitestIntoConfig('this is ::: not valid <<< ts')).toBeNull();
+    expect(
+      injectAngularVitestIntoConfig('this is ::: not valid <<< ts', 'vitest.config.ts')
+    ).toBeNull();
   });
 
   it('is idempotent: a second pass adds no duplicate import or call (case 8)', () => {
-    const once = injectAngularVitestIntoConfig(FRESH_V4)!;
-    const twice = injectAngularVitestIntoConfig(once);
+    const once = injectAngularVitestIntoConfig(FRESH_V4, 'vitest.config.ts')!;
+    const twice = injectAngularVitestIntoConfig(once, 'vitest.config.ts');
     // Already wired by the import source — the string path short-circuits via callers, but the
     // injector itself must also not duplicate when re-run on already-injected content.
     expect(twice).not.toBeNull();
@@ -173,14 +175,14 @@ describe('injectAngularVitestIntoConfig', () => {
       'plugins: [',
       'plugins: [\n          storybookAngularVitest({}),'
     );
-    const out = injectAngularVitestIntoConfig(callOnly)!;
+    const out = injectAngularVitestIntoConfig(callOnly, 'vitest.config.ts')!;
     expect(countOccurrences(out, `${ANGULAR_VITEST_PLUGIN_CALL}(`)).toBe(1);
     expect(countOccurrences(out, ANGULAR_VITEST_IMPORT_SOURCE)).toBe(1);
   });
 
   it('partial wiring: import already present, adds call without duplicating the import (case 10b)', () => {
     const importOnly = `import { storybookAngularVitest } from '${ANGULAR_VITEST_IMPORT_SOURCE}';\n${FRESH_V4}`;
-    const out = injectAngularVitestIntoConfig(importOnly)!;
+    const out = injectAngularVitestIntoConfig(importOnly, 'vitest.config.ts')!;
     expect(countOccurrences(out, ANGULAR_VITEST_IMPORT_SOURCE)).toBe(1);
     expect(countOccurrences(out, `${ANGULAR_VITEST_PLUGIN_CALL}(`)).toBe(1);
     const callees = pluginCalleesInSameArray(out);
@@ -214,7 +216,7 @@ describe('injectAngularVitestIntoEditor', () => {
         },
       ]);
     `;
-    const out = injectAngularVitestIntoConfig(workspace);
+    const out = injectAngularVitestIntoConfig(workspace, 'vitest.config.ts');
     expect(out).not.toBeNull();
     const callees = pluginCalleesInSameArray(out!);
     expect(callees).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
@@ -225,6 +227,6 @@ describe('injectAngularVitestIntoEditor', () => {
       import { defineWorkspace } from 'vitest/config';
       export default defineWorkspace(['./vite.config.ts', './vitest.storybook.config.ts']);
     `;
-    expect(injectAngularVitestIntoConfig(referenced)).toBeNull();
+    expect(injectAngularVitestIntoConfig(referenced, 'vitest.config.ts')).toBeNull();
   });
 });

@@ -218,6 +218,14 @@ describe('lists', () => {
     expect(editor.toString()).toBe('const a = {\n  b: [1, {\n    c: 2,\n  }],\n};');
   });
 
+  it('keeps the line break of a prepended item ending in a line comment when code follows it', () => {
+    const { editor, statement } = firstStatement('({ a: 1,\n  b: 2,\n});');
+    const object = expressionOf(statement) as E.ObjectExpression;
+    prependToList(editor, objectList(editor, object), ['x: 0 // note\n']);
+    expect(editor.toString()).toBe('({\n  x: 0, // note\n a: 1,\n  b: 2,\n});');
+    expect(() => parseModule(editor.toString())).not.toThrow();
+  });
+
   it('removes a declarator with its comma', () => {
     const { editor, statement } = firstStatement('const a = 1, b = 2, c = 3;');
     const declaration = statement as E.VariableDeclaration;

@@ -317,7 +317,7 @@ export const printString = (value: string, quote: string) => {
 export const printMembers = (members: string[], indent: string) =>
   members.length === 0
     ? '{}'
-    : `{\n${members.map((member) => `${indent}${withComma(reindent(member, '', indent))}`).join('\n')}\n}`;
+    : `{\n${members.map((member) => `${indent}${withComma(reindent(member, '', indent), ',', true)}`).join('\n')}\n}`;
 
 /** Print a JS value as source. With an `indent`, objects are laid out one member per line. */
 export const printValue = (
@@ -599,22 +599,28 @@ const parsedLiteralSpans = (text: string): Span[] | undefined => {
   );
 };
 
-// A text ending in a line comment, which `placeableTextOf` ends with a line break, takes its comma
-// before the comment. A text that does not parse keeps the comma after the line break.
-const withComma = (text: string, comma = ',') => {
+const lineBreakAt = (code: string, index: number) => index === code.length || code[index] === '\n';
+
+// `text` with `comma` after it. A text ending in a line comment, which `placeableTextOf` ends with
+// a line break, takes the comma before the comment and keeps the line break, unless the code's own
+// follows where the text goes. A text that does not parse keeps the comma after the line break.
+const withComma = (text: string, comma: string, lineBreakFollows: boolean) => {
   const body = text.trimEnd();
   if (body === text) {
     return `${text}${comma}`;
   }
-  const fragment = comma ? parsedFragment(body) : undefined;
-  const comment = fragment?.comments.findLast(
+  const fragment = parsedFragment(body);
+  if (!fragment) {
+    return `${text}${comma}`;
+  }
+  const comment = fragment.comments.findLast(
     (candidate) => candidate.type === 'Line' && candidate.end === fragment.offset + body.length
   );
   if (!comment) {
-    return comma ? `${text}${comma}` : body;
+    return `${body}${comma}`;
   }
-  const at = comment.start - fragment!.offset;
-  return `${body.slice(0, at).trimEnd()}${comma} ${body.slice(at)}`;
+  const at = comment.start - fragment.offset;
+  return `${body.slice(0, at).trimEnd()}${comma} ${body.slice(at)}${lineBreakFollows ? '' : '\n'}`;
 };
 
 const reindentLines = (text: string, from: string, to: string, literals: readonly Span[]) => {
@@ -735,7 +741,7 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
       }
       edits.appendLeft(
         end,
-        `\n${texts.map((text) => `${indent}${withComma(reindent(text, '', indent))}`).join('\n')}\n${outer}`
+        `\n${texts.map((text) => `${indent}${withComma(reindent(text, '', indent), ',', true)}`).join('\n')}\n${outer}`
       );
     } else if (end > list.open) {
       edits.appendLeft(end, ` ${texts.join(', ')}${end === list.close ? padding : ''}`);
@@ -752,16 +758,19 @@ export const appendToList = (editor: SourceEditor, list: List, texts: string[]) 
   const trailingComma = comma === undefined || isHole(last) ? '' : ',';
   if (isMultiline(code, list)) {
     const indent = lineIndent(code, last.start);
+    const at = itemEnd(editor, list, items.length - 1);
     const block = texts
       .map((text, index) => {
-        const separator = index < texts.length - 1 ? ',' : trailingComma;
-        return `${indent}${withComma(reindent(text, '', indent), separator)}`;
+        const isLast = index === texts.length - 1;
+        const separator = isLast ? trailingComma : ',';
+        const lineBreakFollows = !isLast || lineBreakAt(code, at);
+        return `${indent}${withComma(reindent(text, '', indent), separator, lineBreakFollows)}`;
       })
       .join('\n');
     if (comma === undefined) {
       edits.appendLeft(last.end, ',');
     }
-    edits.appendLeft(itemEnd(editor, list, items.length - 1), `\n${block}`);
+    edits.appendLeft(at, `\n${block}`);
     return;
   }
   if (comma !== undefined) {
@@ -780,11 +789,18 @@ export const prependToList = (editor: SourceEditor, list: List, texts: string[])
     return;
   }
   if (isMultiline(code, list)) {
-    const indent = lineIndent(code, first.start);
-    edits.appendRight(
-      list.open,
-      `\n${texts.map((text) => `${indent}${withComma(reindent(text, '', indent))}`).join('\n')}`
+    // Lined up with the first item that starts a line, as the first item may share the open token's.
+    const lined = list.items.find(
+      (item) => !code.slice(lineStart(code, item.start), item.start).trim()
     );
+    const indent = lineIndent(code, (lined ?? first).start);
+    const block = texts
+      .map((text, index) => {
+        const lineBreakFollows = index < texts.length - 1 || lineBreakAt(code, list.open);
+        return `${indent}${withComma(reindent(text, '', indent), ',', lineBreakFollows)}`;
+      })
+      .join('\n');
+    edits.appendRight(list.open, `\n${block}`);
     return;
   }
   edits.appendRight(first.start, `${inline(editor, list, texts)}, `);
@@ -1133,21 +1149,28 @@ export const setImportSpecifiers = (
 
 export const replaceValue = (editor: SourceEditor, member: Property, text: string) => {
   editor.assertCurrent(member);
+  const { code } = editor;
+  let span: Span = outerSpan(member.value);
+  let replacement = text;
   if (member.shorthand) {
-    editor.edits.overwrite(member.start, member.end, `${editor.source(member.key)}: ${text}`);
-    return;
+    span = member;
+    replacement = `${editor.source(member.key)}: ${text}`;
+  } else if (member.method || member.kind !== 'init') {
+    span = member;
+    replacement =
+      methodFromFunction(text, keySource(editor, member)) ??
+      `${keySource(editor, member)}: ${text}`;
   }
-  if (member.method || member.kind !== 'init') {
-    const method = methodFromFunction(text, keySource(editor, member));
-    editor.edits.overwrite(
-      member.start,
-      member.end,
-      method ?? `${keySource(editor, member)}: ${text}`
-    );
-    return;
-  }
-  const value = outerSpan(member.value);
-  editor.edits.overwrite(value.start, value.end, text);
+  // The comma after the replaced code on its line is written with the text, so it can go before a
+  // line comment that ends the text.
+  const { comments, end } = triviaAfter(editor, span.end, SPACE_ON_LINE);
+  const comma = comments.length === 0 && code[end] === ',' ? end + 1 : undefined;
+  const to = comma ?? span.end;
+  editor.edits.overwrite(
+    span.start,
+    to,
+    withComma(replacement, comma ? ',' : '', lineBreakAt(code, to))
+  );
 };
 
 /** Write `before` and `after` around an expression and the parentheses written around it. */

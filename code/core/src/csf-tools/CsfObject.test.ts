@@ -176,7 +176,7 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    { expression: '1 // x', output: 'export default { a: 1 // x\n, b: 2 };' },
+    { expression: '1 // x', output: 'export default { a: 1, // x\n b: 2 };' },
     { expression: 'x, y // x', output: 'export default { a: (x, y // x\n), b: 2 };' },
   ])('ends the line of $expression before the member after it', ({ expression, output }) => {
     const csf = parse('export default { a: 0, b: 2 };');
@@ -188,7 +188,7 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    { expression: '1 // note', output: 'export default {\n  a: 1 // note\n, b: 2,\n};' },
+    { expression: '1 // note', output: 'export default {\n  a: 1, // note\n b: 2,\n};' },
     { expression: 'x, y', output: 'export default {\n  a: (x, y), b: 2,\n};' },
   ])('places a transformed $expression so the code after it survives', ({ expression, output }) => {
     const config = loadConfig('export default {\n  a: 0, b: 2,\n};').parse();
@@ -217,8 +217,28 @@ describe('CsfObject', () => {
       path: ['b', 'c'],
       output: 'export default {\n  a: 1,\n  b: {\n    c: 2, // note\n  },\n};',
     },
+    {
+      object: 'export default {\n  a: 1 };',
+      path: ['b'],
+      output: 'export default {\n  a: 1,\n  b: 2 // note\n };',
+    },
+    {
+      object: 'export default {\n  a: 1,\n};',
+      path: ['a'],
+      output: 'export default {\n  a: 2, // note\n};',
+    },
+    {
+      object: 'export default {\n  a: 1\n};',
+      path: ['a'],
+      output: 'export default {\n  a: 2 // note\n};',
+    },
+    {
+      object: 'export default {\r\n  a: 1,\r\n};',
+      path: ['b'],
+      output: 'export default {\r\n  a: 1,\r\n  b: 2, // note\r\n};',
+    },
   ])(
-    'places the comma of $path before the line comment ending its value',
+    'places the comma of $path before the line comment ending its value in $object',
     ({ object, path, output }) => {
       const config = loadConfig(object).parse();
 

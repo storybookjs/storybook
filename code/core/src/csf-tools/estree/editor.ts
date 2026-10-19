@@ -50,6 +50,13 @@ export interface SourceEdits {
   remove(start: number, end: number): this;
   /** The content of a span as edited so far; throws when an edit cuts through its ends. */
   slice(start: number, end: number): string;
+  hasChanged(): boolean;
+  generateMap(options?: {
+    hires?: boolean | 'boundary';
+    includeContent?: boolean;
+    source?: string;
+    file?: string;
+  }): GeneratedMap;
   toString(): string;
 }
 
@@ -75,39 +82,25 @@ export type InputSourceMap =
  * text too.
  */
 export class SourceEditor {
-  /** @internal */
   _module: ParsedModule;
 
-  /** @internal */
   _scopes: ScopeInfo | undefined;
 
-  /** @internal */
   _parents: Map<Node, Node | null> | undefined;
 
-  /** @internal */
-  _edits: MagicString;
+  _edits: SourceEdits;
 
-  /**
-   * Maps of the edits applied by earlier commits, oldest first, so the output still maps to the
-   * code the editor was created with.
-   *
-   * @internal
-   */
-  _committed: SourceMap[] = [];
+  // Maps of the edits applied by earlier commits, oldest first, so the output still maps to the
+  // code the editor was created with.
+  _committed: GeneratedMap[] = [];
 
-  /**
-   * The code the editor was created with, line endings included: the content its maps name.
-   *
-   * @internal
-   */
+  // The code the editor was created with, line endings included: the content its maps name.
   readonly _originalCode: string;
 
   readonly fileName: string | undefined;
 
-  /** @internal */
   readonly _onCommit: (() => void) | undefined;
 
-  /** @internal */
   _style: Style | undefined;
 
   constructor(code: string, fileName?: string, onCommit?: () => void) {
@@ -157,7 +150,7 @@ export class SourceEditor {
     return undefined;
   }
 
-  get edits(): SourceEdits {
+  get edits() {
     return this._edits;
   }
 

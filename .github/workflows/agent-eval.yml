@@ -241,12 +241,14 @@ jobs:
             echo "target=preview" >> "$GITHUB_OUTPUT"
           fi
 
-      # The CLI is installed here rather than as an agent-eval dependency:
+      # The CLI has its own lockfile instead of being an agent-eval dependency:
       # from v58 it ships a ~160 MB native binary that every local install
       # would otherwise download.
       - name: Install Vercel CLI
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
-        run: npm install --global vercel@63.1.2
+        run: |
+          npm ci --prefix .github/vercel-cli --ignore-scripts
+          echo "$GITHUB_WORKSPACE/.github/vercel-cli/node_modules/.bin" >> "$GITHUB_PATH"
 
       # Vercel CLI commands run from the repository root: the storybook-evals
       # project's Root Directory setting is agent-eval, and in a monorepo

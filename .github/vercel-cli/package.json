@@ -1,0 +1,8 @@
+{
+  "name": "storybook-vercel-cli",
+  "private": true,
+  "description": "Vercel CLI for the agent-eval playground deploy, installed with npm ci so CI uses a lockfile",
+  "dependencies": {
+    "vercel": "63.1.2"
+  }
+}

@@ -30,33 +30,11 @@ export function onDevicePeerAllowsCli(cliVersion: string, peerRange: string): bo
   return satisfies(cliVersion, peerRange);
 }
 
-const readStorybookPeer = async (
-  registry: string,
-  packageName: string,
-  version: string
-): Promise<string | undefined> => {
-  try {
-    const response = await fetch(`${registry}/${packageName}/${version}`);
-    if (!response.ok) {
-      return undefined;
-    }
-    const body = (await response.json()) as { peerDependencies?: { storybook?: unknown } };
-    const peer = body.peerDependencies?.storybook;
-    return typeof peer === 'string' ? peer : undefined;
-  } catch {
-    // A private registry or a custom CA can reject this lookup. Skip the check
-    // and let the package manager, which has the user's auth and certs, install.
-    return undefined;
-  }
-};
-
 export async function assertReactNativeOnDevicePeers(
   packageManager: JsPackageManager,
   cliVersion: string
 ): Promise<void> {
   const tag = reactNativeOnDeviceDistTag(cliVersion);
-  const registry =
-    (await packageManager.getRegistryURL())?.replace(/\/$/, '') || 'https://registry.npmjs.org';
 
   const mismatches = (
     await Promise.all(
@@ -66,7 +44,9 @@ export async function assertReactNativeOnDevicePeers(
         if (!version) {
           return null;
         }
-        const storybookPeer = await readStorybookPeer(registry, packageName, version);
+        // A failed lookup skips the check and leaves the outcome to the install itself.
+        const peers = await packageManager.getPublishedPeerDependencies(packageName, version);
+        const storybookPeer = peers?.storybook;
         if (!storybookPeer || onDevicePeerAllowsCli(cliVersion, storybookPeer)) {
           return null;
         }

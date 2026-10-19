@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -59,59 +59,57 @@ describe('onDevicePeerAllowsCli', () => {
 
 describe('assertReactNativeOnDevicePeers', () => {
   const packageManager = {
-    getRegistryURL: vi.fn(async () => 'https://registry.npmjs.org'),
-    latestVersion: vi.fn(async () => '11.0.0-next.0'),
-  } as unknown as JsPackageManager;
+    latestVersion: vi.fn<JsPackageManager['latestVersion']>(),
+    getPublishedPeerDependencies: vi.fn<JsPackageManager['getPublishedPeerDependencies']>(),
+  };
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('names the package and storybook peer when the resolved release does not allow the CLI', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ peerDependencies: { storybook: '^10.5.4' } }),
-      }))
-    );
+    packageManager.latestVersion.mockResolvedValue('11.0.0-next.0');
     vi.mocked(logger.error).mockImplementation(() => {});
-
-    await expect(assertReactNativeOnDevicePeers(packageManager, '11.0.0-alpha.6')).rejects.toThrow(
-      /@storybook\/react-native@11\.0\.0-next\.0 peers storybook@\^10\.5\.4/
-    );
-
-    expect(logger.error).toHaveBeenCalledWith(
-      expect.stringContaining('@storybook/react-native@11.0.0-next.0 peers storybook@^10.5.4')
-    );
-    expect(packageManager.latestVersion).toHaveBeenCalledWith('@storybook/react-native@next');
   });
 
-  it('allows install when the resolved peer accepts the CLI', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        json: async () => ({ peerDependencies: { storybook: '>=11.0.0-0' } }),
-      }))
-    );
+  const assertPeers = () =>
+    assertReactNativeOnDevicePeers(packageManager as unknown as JsPackageManager, '11.0.0-alpha.6');
 
-    await expect(
-      assertReactNativeOnDevicePeers(packageManager, '11.0.0-alpha.6')
-    ).resolves.toBeUndefined();
+  describe('when the resolved release peers Storybook 10', () => {
+    beforeEach(() => {
+      packageManager.getPublishedPeerDependencies.mockResolvedValue({ storybook: '^10.5.4' });
+    });
+
+    it('names the package and storybook peer', async () => {
+      await expect(assertPeers()).rejects.toThrow(
+        /@storybook\/react-native@11\.0\.0-next\.0 peers storybook@\^10\.5\.4/
+      );
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('@storybook/react-native@11.0.0-next.0 peers storybook@^10.5.4')
+      );
+      expect(packageManager.latestVersion).toHaveBeenCalledWith('@storybook/react-native@next');
+      expect(packageManager.getPublishedPeerDependencies).toHaveBeenCalledWith(
+        '@storybook/react-native',
+        '11.0.0-next.0'
+      );
+    });
   });
 
-  it('skips the peer check when the registry lookup fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => {
-        throw new Error('self-signed certificate');
-      })
-    );
+  describe('when the resolved release allows the CLI', () => {
+    beforeEach(() => {
+      packageManager.getPublishedPeerDependencies.mockResolvedValue({ storybook: '>=11.0.0-0' });
+    });
 
-    await expect(
-      assertReactNativeOnDevicePeers(packageManager, '11.0.0-alpha.6')
-    ).resolves.toBeUndefined();
+    it('allows install', async () => {
+      await expect(assertPeers()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('when the peer lookup fails', () => {
+    beforeEach(() => {
+      packageManager.getPublishedPeerDependencies.mockResolvedValue(null);
+    });
+
+    it('skips the peer check', async () => {
+      await expect(assertPeers()).resolves.toBeUndefined();
+    });
   });
 });

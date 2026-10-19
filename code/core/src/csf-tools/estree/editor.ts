@@ -162,13 +162,24 @@ export class SourceEditor {
     return sourceOf(this.code, node);
   }
 
-  /** Throw for a node or list of another parse, such as one from before a commit. */
+  /**
+   * Throw for a node or list of another parse, such as one from before a commit, and for a node
+   * of no parse at all, such as a copy, which would pass for a current one otherwise.
+   */
   assertCurrent(value: object) {
     const module = moduleOf(value);
-    if (module && module !== this._module) {
-      const what = 'type' in value ? `${value.type} node` : 'list';
+    if (module === this._module) {
+      return;
+    }
+    const what = 'type' in value ? `${value.type} node` : 'list';
+    if (module) {
       throw new Error(
         `Cannot edit a ${what} of another parse: stale after \`commit()\`, or from \`parseExpression\`/\`get()\`; use \`textOf\` for those`
+      );
+    }
+    if ('type' in value) {
+      throw new Error(
+        `Cannot edit a ${what} of no parse: a copy, or built by hand; pass a node of the editor's program`
       );
     }
   }

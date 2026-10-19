@@ -153,10 +153,14 @@ export const parseModule = (code: string, fileName?: string): ParsedModule => {
   return module;
 };
 
-// `parseModule`, but `textOf` can print every node of the tree and `moduleOf` finds its parse.
+// `parseModule`, but `textOf` can print every node of the tree and `moduleOf` finds its parse,
+// also for its comments.
 export const parsePrintable = (code: string, fileName?: string): ParsedModule => {
   const module = parseWithParentheses(code, fileName);
   normalize(module.program, module);
+  for (const comment of module.comments) {
+    Tag.set(comment, 'module', module);
+  }
   return module;
 };
 
@@ -404,8 +408,8 @@ class Stamp {
 }
 
 // The tags of a node live in a private field, which `JSON.stringify`, `walk`, spread,
-// `structuredClone`, `util.inspect` and deep equality all skip, and which a frozen node accepts.
-// One field, as stamping each costs per node, about as much as a symbol property.
+// `structuredClone`, `util.inspect` and deep equality all skip. One field, as stamping each costs
+// per node, about as much as a symbol property.
 class Tag extends Stamp {
   #tags?: ParsedModule | Extra;
 

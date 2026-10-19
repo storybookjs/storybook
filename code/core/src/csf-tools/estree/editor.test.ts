@@ -135,6 +135,16 @@ describe('commit', () => {
     expect(() => appendToList(editor, stale, ['b'])).toThrow('Cannot edit a list of another parse');
   });
 
+  it('throws for a copy of a node, which carries no parse', () => {
+    const editor = new SourceEditor('const a = (1 + 2);\nconst b = 3;\n');
+    const copy = { ...editor.program.body[0] };
+    expect(() => removeStatement(editor, copy)).toThrow(
+      'Cannot edit a VariableDeclaration node of no parse'
+    );
+    expect(() => editor.source(copy)).toThrow('a copy, or built by hand');
+    expect(editor.source({ start: 0, end: 5 })).toBe('const');
+  });
+
   it('leaves the editor as it was when the result does not parse', () => {
     const editor = new SourceEditor('const a = 1;\n');
     const [statement] = editor.program.body;

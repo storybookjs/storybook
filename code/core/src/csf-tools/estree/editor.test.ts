@@ -690,6 +690,16 @@ describe('appendStatement', () => {
     );
   });
 
+  it('sets a statement apart from a multi-line append, after an insert elsewhere in the batch', () => {
+    const editor = new SourceEditor(`import a from 'a';\nconst q = 1;\n`);
+    appendStatement(editor, `const x = {\n  y: 1,\n};`);
+    insertAfterImports(editor, `const b = 1;`);
+    appendStatement(editor, `const c = 2;`);
+    expect(editor.toString()).toBe(
+      `import a from 'a';\nconst b = 1;\nconst q = 1;\n\nconst x = {\n  y: 1,\n};\n\nconst c = 2;\n`
+    );
+  });
+
   it('appends to the end of a file whose statements are all removed', () => {
     const editor = new SourceEditor(`const a = 1;\nconst b = 2;\n`);
     removeStatements(editor, new Set(editor.program.body));

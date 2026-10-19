@@ -13,7 +13,7 @@ import {
   expectNoStaleSnippets,
   NO_SNIPPET_SENTINEL,
   recordServerSnippet,
-} from './story-docs/snippet-recorder.ts';
+} from '../compare/server-snippet-recorder.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const storyDocsFixturesDir = join(
@@ -81,6 +81,8 @@ describe('web-components story-docs server snippets', () => {
         ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
       ].join('\n\n');
       await recordServerSnippet({
+        framework: 'web-components',
+        prefix: 'server-snippet-',
         testDir,
         exportName,
         snippet: storyDoc?.snippet,

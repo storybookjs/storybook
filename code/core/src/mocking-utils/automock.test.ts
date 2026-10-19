@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAutomockCode } from './automock.ts';
 import { parseModule } from '../csf-tools/estree/ast.ts';
+import { getAutomockCode } from './automock.ts';
+import { babelParser } from './extract.ts';
 
 describe('getAutomockCode', () => {
   it('mocks destructured exports, including ones with defaults', () => {
@@ -38,6 +39,17 @@ describe('getAutomockCode', () => {
     expect(mocked).toContain('["b"]: b,');
     expect(mocked).toContain('["__vitest_default"]: __vitest_default,');
     expect(() => parseModule(mocked, '/mod.ts')).not.toThrow();
+  });
+
+  // storybook-builder-rsbuild 3.6 calls `getAutomockCode(source, isSpy, babelParser)`.
+  it('accepts the parse function Storybook 10 builders pass instead of a file name', () => {
+    const code = 'export const a = 1;\nexport default (x);\n';
+
+    const mocked = getAutomockCode(code, false, babelParser).toString();
+
+    expect(mocked).toBe(getAutomockCode(code, false).toString());
+    expect(mocked).toContain('["a"]: a,');
+    expect(mocked).toContain('const __vitest_default = (x);');
   });
 
   it('mocks a .ts module with generic arrows under a Vite id with a query', () => {

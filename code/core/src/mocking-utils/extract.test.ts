@@ -40,6 +40,18 @@ vi.mock('storybook/internal/telemetry', () => ({
   telemetry: vi.fn(),
 }));
 
+describe('babelParser', () => {
+  it('parses a module into an ESTree program', () => {
+    const program = extractModule.babelParser('export const a = <T,>(v: T) => v;', '/mod.ts') as {
+      type: string;
+      body: unknown[];
+    };
+
+    expect(program.type).toBe('Program');
+    expect(program.body).toHaveLength(1);
+  });
+});
+
 describe('isModuleDirectory', () => {
   it('returns true for node_modules path', () => {
     expect(extractModule.isModuleDirectory('/foo/node_modules/bar')).toBe(true);
@@ -70,6 +82,28 @@ describe('extractMockCalls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     findMockRedirect.mockReturnValue(null);
+  });
+
+  // storybook-builder-rsbuild 3.6 calls `extractMockCalls(options, babelParser, root, findMockRedirect)`.
+  it('accepts the parse function Storybook 10 builders pass before the root', () => {
+    vi.mocked(readFileSync).mockReturnValue("sb.mock('foo', { spy: true });");
+
+    const result = extractModule.extractMockCalls(
+      { previewConfigPath, configDir, coreOptions },
+      extractModule.babelParser,
+      root,
+      findMockRedirect
+    );
+
+    expect(result).toEqual([
+      { path: 'foo', absolutePath: '/abs/path', redirectPath: null, spy: true },
+    ]);
+    expect(resolveModule.resolveMock).toHaveBeenCalledWith(
+      'foo',
+      root,
+      previewConfigPath,
+      findMockRedirect
+    );
   });
 
   it('returns empty array if readFileSync throws', () => {

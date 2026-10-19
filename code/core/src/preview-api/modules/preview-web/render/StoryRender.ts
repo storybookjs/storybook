@@ -8,6 +8,7 @@ import {
   UNHANDLED_ERRORS_WHILE_PLAYING,
 } from 'storybook/internal/core-events';
 import {
+  MissingRenderToCanvasError,
   MountMustBeDestructuredError,
   NoStoryMountedError,
 } from 'storybook/internal/preview-errors';
@@ -16,7 +17,6 @@ import type {
   PreparedStory,
   RenderContext,
   RenderContextCallbacks,
-  RenderToCanvas,
   Renderer,
   StoryContext,
   StoryContextForRender,
@@ -85,7 +85,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   constructor(
     public channel: Channel,
     public store: StoryStore<TRenderer>,
-    private renderToScreen: RenderToCanvas<TRenderer>,
     private callbacks: RenderContextCallbacks<TRenderer> & {
       showStoryDuringRender?: () => void;
       storyUrl?: () => string | undefined;
@@ -219,6 +218,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       runStep,
     } = story;
 
+    // A story renders with the project annotations it was prepared with: a CSF Next file carries
+    // the annotations of its own preview. A preview without a renderToCanvas leaves it to the
+    // project's, as the store does for every annotation a file does not carry.
+    const renderStory = story.renderToCanvas ?? this.store.projectAnnotations.renderToCanvas;
+
     if (forceRemount && !initial) {
       // NOTE: we don't check the cancel actually worked here, so the previous
       // render could conceivably still be running after this call.
@@ -247,7 +251,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         canvas: {} as Canvas,
         userEvent: {} as UserEventObject,
         renderToCanvas: async () => {
-          const teardown = await this.renderToScreen(renderContext, canvasElement);
+          if (!renderStory) {
+            throw new MissingRenderToCanvasError();
+          }
+          const teardown = await renderStory(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
           mounted = true;
         },

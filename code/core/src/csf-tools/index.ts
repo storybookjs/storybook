@@ -1,6 +1,5 @@
 export * from './CsfFile.ts';
 export type {
-  CsfExpression,
   CsfMutationDiagnostic,
   CsfMutationDiagnosticCode,
   CsfMutationResult,
@@ -19,7 +18,6 @@ export type { E as ESTree, Node as ESTreeNode } from './estree/ast.ts';
 export {
   isStringLiteral,
   isTSWrapper,
-  isValidIdentifier,
   normalizeLineEndings,
   outerSpan,
   parseExpression,
@@ -34,13 +32,11 @@ export {
 export { SourceEditor } from './estree/editor.ts';
 export { generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
 export {
-  type List,
   appendStatement,
   appendToList,
   argumentList,
   arrayList,
   declaratorList,
-  headerComments,
   insertAfterImports,
   itemText,
   lineIndent,
@@ -49,7 +45,6 @@ export {
   prependToList,
   printMembers,
   printString,
-  printValue,
   reindent,
   removeFromList,
   removeStatement,

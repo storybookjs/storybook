@@ -85,12 +85,19 @@ describe('extractMockCalls', () => {
   });
 
   // storybook-builder-rsbuild 3.6 calls `extractMockCalls(options, babelParser, root, findMockRedirect)`.
-  it('accepts the parse function Storybook 10 builders pass before the root', () => {
+  it.each([
+    ['the deprecated babelParser', extractModule.babelParser],
+    [
+      // Babel's `parse(input, options?)`, as Storybook 10 exported it.
+      "Storybook 10's parse function",
+      (input: string, options?: { sourceType?: 'module' }) => ({ input, options }),
+    ],
+  ])('accepts %s before the root', (_, parser) => {
     vi.mocked(readFileSync).mockReturnValue("sb.mock('foo', { spy: true });");
 
     const result = extractModule.extractMockCalls(
       { previewConfigPath, configDir, coreOptions },
-      extractModule.babelParser,
+      parser,
       root,
       findMockRedirect
     );

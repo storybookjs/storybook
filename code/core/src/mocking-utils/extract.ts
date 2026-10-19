@@ -36,10 +36,10 @@ interface ExtractMockCallsOptions {
 }
 
 /**
- * The parse function Storybook 10 builders passed to `getAutomockCode` and `extractMockCalls`.
- * Removed in Storybook 12.
+ * The parse function Storybook 10 builders passed to `getAutomockCode` and `extractMockCalls`:
+ * Babel's parser, whose second parameter is its options. Removed in Storybook 12.
  */
-export type LegacyParser = (code: string, fileName?: string) => unknown;
+export type LegacyParser = (code: string, ...rest: any[]) => unknown;
 
 /**
  * @deprecated Storybook 10 builders passed this to `getAutomockCode` and `extractMockCalls`, which

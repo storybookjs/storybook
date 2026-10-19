@@ -9,7 +9,6 @@ import { expectCurrentOrBetter } from './expect-current-or-better.ts';
 
 const NO_SNIPPET_PREFIX = '(no snippet:';
 export const NO_SNIPPET_SENTINEL = `${NO_SNIPPET_PREFIX} the Code panel falls back to the story source)`;
-const STYLE_BLOCK_REGEXP = /^<style>[\s\S]*?<\/style>\n/;
 
 const readCommitted = (path: string): string | undefined =>
   existsSync(path) ? readFileSync(path, 'utf8') : undefined;
@@ -24,6 +23,7 @@ export async function recordServerSnippet({
   recorded,
   legacyParity,
   declaredOmissions,
+  normalize = (snippet) => snippet,
 }: {
   testDir: string;
   framework: Framework;
@@ -34,9 +34,8 @@ export async function recordServerSnippet({
   recorded: string;
   legacyParity: boolean;
   declaredOmissions?: readonly string[];
+  normalize?: (snippet: string) => string;
 }): Promise<void> {
-  const comparable = (text: string): string =>
-    framework === 'web-components' ? text.replace(STYLE_BLOCK_REGEXP, '') : text;
   const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
   const committedSnippet = readCommitted(snippetPath);
 
@@ -48,8 +47,8 @@ export async function recordServerSnippet({
     expectCurrentOrBetter({
       kind: 'snippet',
       framework,
-      baseline: comparable(committedSnippet),
-      candidate: comparable(snippet),
+      baseline: normalize(committedSnippet),
+      candidate: normalize(snippet),
     });
   }
 
@@ -67,8 +66,8 @@ export async function recordServerSnippet({
     expectCurrentOrBetter({
       kind: 'snippet',
       framework,
-      baseline: comparable(committedLegacySnippet),
-      candidate: comparable(snippet),
+      baseline: normalize(committedLegacySnippet),
+      candidate: normalize(snippet),
       declaredOmissions,
     });
   }

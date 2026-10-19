@@ -25,14 +25,12 @@ let a11yEnabled: boolean | undefined;
 
 const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
   const core = await options.presets.apply('core', {});
-  const features = await options.presets.apply('features', {});
   disableTelemetry = core?.disableTelemetry ?? false;
 
   // Determine tool availability before creating server so instructions can be tailored.
   // Shares one source of truth with the browser landing page (core's `getToolAvailability`)
-  // so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
-  // already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
-  const rawAvailability = await getToolAvailability(options, { features });
+  // so the registered tools and the page's enabled/disabled badges can't drift.
+  const rawAvailability = await getToolAvailability(options);
   const availability = getEffectiveToolAvailability(rawAvailability, { multiSource });
   a11yEnabled = availability.a11yEnabled;
 
@@ -47,9 +45,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
         testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
-        changeDetectionEnabled: availability.changeDetectionEnabled,
         moduleGraphSupported: availability.moduleGraphSupported,
-        reviewEnabled: availability.reviewEnabled,
       });
     },
     capabilities: {

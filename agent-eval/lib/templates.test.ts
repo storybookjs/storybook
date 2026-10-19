@@ -3,44 +3,20 @@ import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   addMcpAddon,
   pointStorybookAtCheckout,
-  isReviewEnabledFor,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
   type WorkspacePackage,
   writeClaudeInAppBrowserMock,
+  writeStorybookAgentInstructions,
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
-
-describe('isReviewEnabledFor', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
-  it('is on for the plugin and mcp integrations on the checkout', () => {
-    vi.stubEnv('EVAL_STORYBOOK_LATEST', '');
-
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-    expect(isReviewEnabledFor('mcp')).toBe(true);
-  });
-
-  it('is off for the mcp integration on the stable release', () => {
-    vi.stubEnv('EVAL_STORYBOOK_LATEST', '1');
-
-    expect(isReviewEnabledFor('plugin')).toBe(true);
-    expect(isReviewEnabledFor('mcp')).toBe(false);
-  });
-
-  it('is off for the bare sandbox', () => {
-    expect(isReviewEnabledFor('none')).toBe(false);
-  });
-});
 
 describe('addMcpAddon', () => {
   it('registers the addon in every template and fixture Storybook', () => {
@@ -90,9 +66,7 @@ describe('Codex AGENTS.md instructions', () => {
         devEnabled: true,
         testSupported: true,
         docsEnabled: true,
-        changeDetectionEnabled: true,
         moduleGraphSupported: true,
-        reviewEnabled: true,
       }).trim()
     );
   });
@@ -124,6 +98,10 @@ describe('readTemplateCheckoutPackages', () => {
         '@storybook/react-vite',
         '@storybook/builder-vite',
         '@storybook/addon-mcp',
+        // Served by the lifecycle evals' checkout registry.
+        'create-storybook',
+        '@storybook/cli',
+        '@storybook/codemod',
       ])
     );
   });
@@ -229,22 +207,33 @@ describe('pointStorybookAtCheckout', () => {
   });
 });
 
-describe('writeClaudeInAppBrowserMock', () => {
-  function createSandbox(files: Record<string, string>): Sandbox {
-    return {
-      writeFiles: async (written: Record<string, string>) => {
-        Object.assign(files, written);
-      },
-      readFile: async (filePath: string) => {
-        const content = files[filePath];
-        if (content === undefined) {
-          throw new Error(`ENOENT: ${filePath}`);
-        }
-        return content;
-      },
-    } as unknown as Sandbox;
-  }
+function createSandbox(files: Record<string, string>): Sandbox {
+  return {
+    writeFiles: async (written: Record<string, string>) => {
+      Object.assign(files, written);
+    },
+    runCommand: async (command: string, [flag, filePath]: string[] = []) => ({
+      stdout: '',
+      stderr: '',
+      exitCode:
+        command === 'test' &&
+        flag === '-f' &&
+        filePath !== undefined &&
+        files[filePath] !== undefined
+          ? 0
+          : 1,
+    }),
+    readFile: async (filePath: string) => {
+      const content = files[filePath];
+      if (content === undefined) {
+        throw new Error(`ENOENT: ${filePath}`);
+      }
+      return content;
+    },
+  } as unknown as Sandbox;
+}
 
+describe('writeClaudeInAppBrowserMock', () => {
   it('registers the Browser server next to existing servers and writes the prompt block', async () => {
     const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
     const files: Record<string, string> = {
@@ -259,16 +248,47 @@ describe('writeClaudeInAppBrowserMock', () => {
         Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
       },
     });
-    expect(files['CLAUDE.md']).toContain('<built_in_browser>');
+    expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
+    expect(files['CLAUDE.md']).toBeUndefined();
     expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
   });
+});
 
-  it('keeps an existing CLAUDE.md and appends the prompt block', async () => {
-    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules' };
+describe('writeStorybookAgentInstructions', () => {
+  let STORYBOOK_AGENT_INSTRUCTIONS: string;
 
+  beforeAll(async () => {
+    ({ STORYBOOK_AGENT_INSTRUCTIONS } = await import(
+      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/agentInstructions.ts')
+    ));
+  });
+
+  it('writes the section of create storybook to AGENTS.md, next to the browser rule', async () => {
+    const files: Record<string, string> = {};
     await writeClaudeInAppBrowserMock(createSandbox(files));
 
-    expect(files['CLAUDE.md']).toMatch(/^# Project rules\n\n[\s\S]*<built_in_browser>/);
+    await writeStorybookAgentInstructions(createSandbox(files));
+
+    expect(files['AGENTS.md']).toBe(STORYBOOK_AGENT_INSTRUCTIONS);
+    expect(files['CLAUDE.md']).toBeUndefined();
+  });
+
+  it('also writes it to a CLAUDE.md of the template', async () => {
+    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules\n' };
+
+    await writeStorybookAgentInstructions(createSandbox(files));
+
+    expect(files['CLAUDE.md']).toBe(`# Project rules\n\n${STORYBOOK_AGENT_INSTRUCTIONS}`);
+  });
+
+  it('writes nothing when it cannot tell whether a file exists', async () => {
+    const files: Record<string, string> = { 'AGENTS.md': '# Project rules\n' };
+    const sandbox = createSandbox(files);
+    sandbox.runCommand = async () => ({ stdout: '', stderr: 'test: I/O error', exitCode: 2 });
+
+    await expect(writeStorybookAgentInstructions(sandbox)).rejects.toThrow('I/O error');
+
+    expect(files).toEqual({ 'AGENTS.md': '# Project rules\n' });
   });
 });
 

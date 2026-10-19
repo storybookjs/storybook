@@ -1,4 +1,4 @@
 ## Validation Workflow
 
-- After editing anything that changes how the UI looks, run **{{RUN_STORY_TESTS}}** — never a package.json test script.{{FOCUSED_RUNS_STEP}}
+- After editing anything that changes how the UI looks, run **{{RUN_STORY_TESTS}}** — never a package.json test script.
 - Never report completion while story tests are failing.

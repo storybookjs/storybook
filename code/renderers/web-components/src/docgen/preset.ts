@@ -1,3 +1,4 @@
+import { loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
@@ -10,7 +11,6 @@ import { fileURLToPath } from 'node:url';
 
 import type { WebComponentsFrameworkOptions } from '../types.ts';
 import type { WebComponentsDocgenOptions } from './component-docgen/build-docgen.ts';
-import { DEFAULT_TYPE_PROPERTY } from './component-docgen/arg-types/alt-type.ts';
 import { resolveManifestPaths } from './component-docgen/config/resolve-manifest-paths.ts';
 import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
 
@@ -27,7 +27,7 @@ export const experimental_docgenProvider = async (
     moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
     options: {
       manifestPaths: resolveManifestPaths(options.configDir, frameworkOptions),
-      typeProperty: frameworkOptions.docgen?.typeProperty ?? DEFAULT_TYPE_PROPERTY,
+      previewFilePath: loadPreviewOrConfigFile({ configDir: options.configDir }),
     },
   };
 

@@ -53,8 +53,6 @@ function registerTestToolsetThrowing(error: Error) {
 function availabilityWith(overrides: Partial<ToolAvailability> = {}): ToolAvailability {
   return {
     moduleGraphSupported: false,
-    changeDetectionEnabled: false,
-    reviewEnabled: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,

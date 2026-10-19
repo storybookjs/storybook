@@ -8,6 +8,13 @@ When `docgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emi
 snippets to the manager Code panel via `SNIPPET_RENDERED`, replacing renderer `jsxDecorator` while
 preserving `parameters.docs.source.transform` handling in preview.
 
+## Providers
+
+Renderers contribute payloads through the `experimental_storyDocsProvider` preset chain.
+A renderer whose snippets depend on its own docgen worker builds that preset with `createWorkerGatedStoryDocsProvider` from `storybook/internal/core-server`.
+The helper skips the renderer when its worker is not registered, reads only matching story files, logs a file it cannot read at debug level and hands it to the next provider, and merges its payload over the next provider's.
+Vue, Svelte and Web Components use it; React and Angular have no worker gate and keep their own presets.
+
 ## Components spread over several story files
 
 CSF files that share a `title` share a component id. The service extracts each of those files

@@ -1,13 +1,20 @@
 import type { IncomingMessage } from 'node:http';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
-import { Channel, HEARTBEAT_INTERVAL, setChannel } from 'storybook/internal/channels';
+import {
+  Channel,
+  HEARTBEAT_INTERVAL,
+  SERVER_CHANNEL_PATH,
+  setChannel,
+} from 'storybook/internal/channels';
 
 import { isJSON, parse, stringify } from 'telejson';
-import WebSocket, { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 
+import type events from '../../core-events/index.ts';
 import { logger } from '../../node-logger/index.ts';
 import { UniversalStore } from '../../shared/universal-store/index.ts';
+import { CORE_EVENT_SENDERS } from './event-senders.ts';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware.ts';
 import { isValidToken } from './validate-token.ts';
 
@@ -17,6 +24,11 @@ type ServerChannelTransportOptions = HostValidationOptions & {
   skipValidation?: boolean;
   token: string;
 };
+
+// A browser client declares its role through the `page` query parameter on the channel URL.
+// Non-browser clients (the tools SDK among them) send no `page` parameter and are `server`: they
+// authenticate with the token alone and may send the events the dev server itself sends.
+type ChannelClientRole = 'manager' | 'preview' | 'server';
 
 /**
  * This class represents a channel transport that allows for a one-to-many relationship between the
@@ -29,44 +41,63 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
+  private closed = false;
+
+  private readonly onSigterm = () => {
+    this.socket.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.close(1001, 'Server is shutting down');
+      }
+    });
+    this.socket.close(() => process.exit(0));
+  };
+
   constructor(server: Server, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
       try {
         const url = request.url && new URL(request.url, options.localAddress);
-        if (!url || url.pathname !== '/storybook-server-channel') {
+        if (!url || url.pathname !== SERVER_CHANNEL_PATH) {
           return;
         }
 
         if (!options.skipValidation) {
-          const originHost = request.headers.origin && new URL(request.headers.origin).host;
-          if (!isValidHost(originHost, options)) {
-            throw new Error('Invalid websocket origin');
+          // Browsers always send Origin on upgrades, so an absent one means a non-browser client,
+          // which the token alone authenticates.
+          const { origin } = request.headers;
+          if (origin && !isValidHost(new URL(origin).host, options)) {
+            socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+            return;
           }
 
           const requestToken = url.searchParams.get('token');
           if (!isValidToken(requestToken, options.token)) {
-            throw new Error('Invalid websocket token');
+            socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+            return;
           }
         }
 
+        const page = url.searchParams.get('page');
+        if (page !== null && page !== 'manager' && page !== 'preview') {
+          socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+          return;
+        }
+        // Every browser client Storybook ships declares a page, so a browser without one is
+        // malformed, and letting it through would hand it the server role.
+        if (page === null && request.headers.origin !== undefined) {
+          socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+          return;
+        }
+        const role: ChannelClientRole = page ?? 'server';
+
         this.socket.handleUpgrade(request, socket, head, (ws) => {
-          this.socket.emit('connection', ws, request);
+          this.addClient(ws, role);
         });
       } catch (error) {
         logger.warn(`Rejecting WebSocket connection: ${error}`);
-        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-        socket.destroy();
+        socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
       }
-    });
-
-    this.socket.on('connection', (wss) => {
-      wss.on('message', (raw) => {
-        const data = raw.toString();
-        const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
-        this.handler?.(event);
-      });
     });
 
     const interval = setInterval(() => {
@@ -77,21 +108,60 @@ export class ServerChannelTransport {
       clearInterval(interval);
     });
 
-    process.on('SIGTERM', () => {
-      this.socket.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.close(1001, 'Server is shutting down');
-        }
-      });
-      this.socket.close(() => process.exit(0));
-    });
+    process.on('SIGTERM', this.onSigterm);
+  }
+
+  close() {
+    if (this.closed) {
+      return;
+    }
+    this.closed = true;
+    process.removeListener('SIGTERM', this.onSigterm);
+    this.socket.close();
   }
 
   setHandler(handler: ChannelHandler) {
     this.handler = handler;
   }
 
-  send(event: any) {
+  private addClient(ws: WebSocket, role: ChannelClientRole) {
+    ws.on('error', (error) => {
+      // Without a listener, Node crashes on 'error' (e.g. oversized frame). ws closes the socket itself.
+      logger.warn(`WebSocket error on server channel: ${error}`);
+    });
+
+    ws.on('message', (raw) => {
+      const data = raw.toString();
+      const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
+      if (!this.isEventAllowedFrom(event, role)) {
+        return;
+      }
+      this.handler?.(event);
+    });
+  }
+
+  private readonly rejectedEvents = new Set<string>();
+
+  private isEventAllowedFrom(event: unknown, role: ChannelClientRole): boolean {
+    const type = typeof event === 'object' && event && 'type' in event ? event?.type : null;
+    if (typeof type !== 'string') {
+      return true;
+    }
+    const sender = CORE_EVENT_SENDERS[type as events];
+    if (sender === undefined || sender === 'any' || sender === role) {
+      return true;
+    }
+    const key = `${role}:${type}`;
+    if (!this.rejectedEvents.has(key)) {
+      this.rejectedEvents.add(key);
+      logger.warn(
+        `Ignored "${type}" event from a ${role} connection: only the ${sender} sends this event.`
+      );
+    }
+    return false;
+  }
+
+  send(event: unknown) {
     const data = stringify(event, { maxDepth: 15 });
 
     Array.from(this.socket.clients)

@@ -175,7 +175,7 @@ describe('generic inheritance', () => {
       description: 'Child-facing value.',
       type: { name: 'string' },
       table: {
-        type: { summary: 'string', required: false },
+        type: { summary: 'string' },
         defaultValue: { summary: 'base' },
       },
     });

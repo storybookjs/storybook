@@ -1,7 +1,7 @@
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
 import { type Meta, type StoryObj, applicationConfig } from '@storybook/angular-vite';
 
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideHttpClient } from '@angular/common/http';
 
 import { ChipsModule } from './angular-src/chips.module';
 
@@ -14,7 +14,7 @@ const meta: Meta<ChipsModule> = {
       providers: [
         // ...
         // Register application-wide providers with provide-style functions, e.g.
-        provideAnimationsAsync(),
+        provideHttpClient(),
         // You can also pull providers in from an NgModule with importProvidersFrom(SomeModule)
       ],
     }),
@@ -29,9 +29,7 @@ export const WithCustomApplicationProvider: Story = {
     // Apply application config to a specific story
     applicationConfig: {
       // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [
-        /* ... */
-      ],
+      providers: [/* ... */],
     },
   }),
 };
@@ -40,7 +38,7 @@ export const WithCustomApplicationProvider: Story = {
 ```ts filename="ChipsModule.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
 import { applicationConfig } from '@storybook/angular-vite';
 
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideHttpClient } from '@angular/common/http';
 
 import preview from '../.storybook/preview';
 
@@ -55,7 +53,7 @@ const meta = preview.type<{ args: ChipsModule }>().meta({
       providers: [
         // ...
         // Register application-wide providers with provide-style functions, e.g.
-        provideAnimationsAsync(),
+        provideHttpClient(),
         // You can also pull providers in from an NgModule with importProvidersFrom(SomeModule)
       ],
     }),
@@ -67,9 +65,7 @@ export const WithCustomApplicationProvider = meta.story({
     // Apply application config to a specific story
     applicationConfig: {
       // The providers will be merged with the ones defined in the applicationConfig decorator's providers array of the global meta object
-      providers: [
-        /* ... */
-      ],
+      providers: [/* ... */],
     },
   }),
 });

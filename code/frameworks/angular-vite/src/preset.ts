@@ -7,30 +7,35 @@ import {
   getRealPath,
 } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
-import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
-import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
+import {
+  AngularMissingStylePreprocessorError,
+  AngularUnresolvedStyleError,
+} from 'storybook/internal/server-errors';
+import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { readFileSync, statSync } from 'node:fs';
-import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
 import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
+import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`.
+export const isDocgenProviderEnabled = true;
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 
-// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
-// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
-// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
-  experimentalDocgenServer: true,
+  componentsManifest: true,
 });
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -70,19 +75,15 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
+export function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
   return angularBuilderOptions?.zoneless ?? true;
 }
 
-export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
+export const viteFinal = async (config: UserConfig, options: Options & StandaloneOptions) => {
   // Hydrate angularBuilderOptions from the env var set by the parent
   // storybook dev/build process when this preset runs in the addon-vitest
   // child (where no BuilderContext is available).
-  if (
-    options &&
-    !options.angularBuilderOptions &&
-    process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON
-  ) {
+  if (!options.angularBuilderOptions && process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON) {
     try {
       options.angularBuilderOptions = JSON.parse(
         process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON
@@ -105,20 +106,22 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const { mergeConfig, normalizePath } = await import('vite');
   const { default: angular } = await import('@analogjs/vite-plugin-angular');
 
-  // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
+  const frameworkOptions: FrameworkOptions | undefined =
+    typeof framework === 'string' ? undefined : framework.options;
 
-  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
   const resolvedFeatures: StorybookConfigRaw['features'] = await options.presets.apply(
     'features',
     {}
   );
-  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+  const docgenServer = !!resolvedFeatures?.docgenServer;
+  // Test builds turn `docgenServer` off to skip docgen entirely, not to fall back to Compodoc.
+  const skipDocgen = !!options.build?.test?.disableDocgen;
 
   // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
   // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled && !docgenServer) {
+  if (compodocConfig.enabled && !docgenServer && !skipDocgen) {
     await ensureCompodocDocumentation({
       compodocArgs: compodocConfig.compodocArgs,
       tsconfig: compodocConfig.tsconfig,
@@ -127,29 +130,31 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
-  const propsTable = resolvePropsTable(framework.options, resolvedFeatures);
-  warnAboutPropsTable(framework.options, resolvedFeatures);
+  const propsTable = resolvePropsTable(frameworkOptions, resolvedFeatures);
+  if (!skipDocgen) {
+    warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  }
 
-  if (resolvedFeatures?.componentsManifest && !docgenServer) {
+  if (resolvedFeatures?.componentsManifest && !docgenServer && !skipDocgen) {
     logger.warn(
-      `The \`componentsManifest\` feature needs the \`experimentalDocgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
+      `The \`componentsManifest\` feature needs the \`docgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
         `and MCP clients get no component API from it. ` +
-        `Turn the docgen server on with \`features: { experimentalDocgenServer: true }\` in your \`main.ts\`.`
+        `Turn the docgen server on with \`features: { docgenServer: true }\` in your \`main.ts\`.`
     );
   }
 
-  const zoneless = resolveZoneless(options?.angularBuilderOptions);
+  const zoneless = resolveZoneless(options.angularBuilderOptions);
   const angularPlugins = angular({
-    jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
+    jit: typeof frameworkOptions?.jit !== 'undefined' ? frameworkOptions?.jit : true,
     liveReload:
-      typeof framework.options?.liveReload !== 'undefined' ? framework.options?.liveReload : false,
+      typeof frameworkOptions?.liveReload !== 'undefined' ? frameworkOptions?.liveReload : false,
     tsconfig:
-      typeof framework.options?.tsconfig !== 'undefined'
-        ? framework.options?.tsconfig
-        : (options?.tsConfig ?? './.storybook/tsconfig.json'),
+      typeof frameworkOptions?.tsconfig !== 'undefined'
+        ? frameworkOptions?.tsconfig
+        : (options.tsConfig ?? './.storybook/tsconfig.json'),
     inlineStylesExtension:
-      typeof framework.options?.inlineStylesExtension !== 'undefined'
-        ? framework.options?.inlineStylesExtension
+      typeof frameworkOptions?.inlineStylesExtension !== 'undefined'
+        ? frameworkOptions?.inlineStylesExtension
         : 'css',
   });
 
@@ -187,7 +192,6 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         '@storybook/angular-vite',
         '@angular/compiler',
         '@angular/platform-browser',
-        '@angular/platform-browser/animations',
         '@angular/common/http',
         'tslib',
         ...(zoneless ? [] : ['zone.js']),
@@ -227,8 +231,11 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       ...pluginsToInject,
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
+      stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
-      ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
+      ...((docgenServer || skipDocgen) && options.configDir
+        ? [compodocJsonStubPlugin(options.configDir)]
+        : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -328,6 +335,107 @@ function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
   }
 
   return stylePath;
+}
+
+const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: string }> = {
+  scss: { install: 'sass', alternative: 'sass-embedded' },
+  sass: { install: 'sass', alternative: 'sass-embedded' },
+  less: { install: 'less' },
+};
+
+const STYLE_PREPROCESSOR_ID = /\.(scss|sass|less)(?:$|\?)/;
+
+// Vite's own css plugins exclude these queries from their transform, so a `.scss?raw` import is
+// read as an asset and never reaches a preprocessor. Aborting the build for one would refuse a
+// project that compiles.
+const SPECIAL_QUERY_ID = /[?&](?:worker|sharedworker|raw|url)\b/;
+
+// Asks whether the package is present, not whether its entry point resolves: this check aborts the
+// build, and Vite loads preprocessors with its own conditions, so an `exports` map without a
+// `require` condition resolves for Vite and throws here. When the manual `node_modules` walk
+// finds nothing, fall back to Node's own resolver via `createRequire`; `import.meta.resolve`
+// cannot replace it, because its `parent` argument is silently ignored without
+// `--experimental-import-meta-resolve`.
+const isPackagePresentFrom = (pkg: string, fromDir: string) => {
+  let dir = resolve(fromDir);
+  while (true) {
+    if (existsSync(join(dir, 'node_modules', pkg, 'package.json'))) {
+      return true;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+
+  try {
+    createRequire(join(fromDir, 'noop.js')).resolve(pkg);
+    return true;
+  } catch (error) {
+    // Node found the package and refused only its entry point, because the `exports` map has no
+    // `require` condition. Vite resolves with its own conditions, so that is present, not missing.
+    return (error as NodeJS.ErrnoException)?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED';
+  }
+};
+
+const viteInstallDir = () => {
+  try {
+    return dirname(fileURLToPath(import.meta.resolve('vite')));
+  } catch {
+    return undefined;
+  }
+};
+
+const isInstalledNear = (pkg: string, root: string) =>
+  [root, viteInstallDir()]
+    .filter((dir): dir is string => !!dir)
+    .some((dir) => isPackagePresentFrom(pkg, dir));
+
+export function stylePreprocessorCheckPlugin(): Plugin {
+  // Same two directories and same order as `loadPreprocessorPath`, so a preprocessor reported
+  // missing here is one Vite is about to fail on too.
+  let root = process.cwd();
+  const installed = new Map<string, boolean>();
+
+  return {
+    name: 'storybook-angular-vite-style-preprocessor-check',
+    // Ahead of the core `vite:css` transform, so the actionable error replaces Vite's instead of
+    // arriving after it.
+    enforce: 'pre',
+    configResolved(config) {
+      root = config.root;
+      installed.clear();
+    },
+    transform: {
+      filter: { id: { include: STYLE_PREPROCESSOR_ID, exclude: SPECIAL_QUERY_ID } },
+      handler(_code, id) {
+        const lang = SPECIAL_QUERY_ID.test(id) ? undefined : STYLE_PREPROCESSOR_ID.exec(id)?.[1];
+        const preprocessor = lang ? STYLE_PREPROCESSORS[lang] : undefined;
+        if (!lang || !preprocessor) {
+          return;
+        }
+
+        if (!installed.has(lang)) {
+          const candidates = [preprocessor.install, preprocessor.alternative].filter(
+            (pkg): pkg is string => !!pkg
+          );
+          installed.set(
+            lang,
+            candidates.some((pkg) => isInstalledNear(pkg, root))
+          );
+        }
+
+        if (!installed.get(lang)) {
+          throw new AngularMissingStylePreprocessorError({
+            stylePath: id.split('?')[0],
+            install: preprocessor.install,
+            alternative: preprocessor.alternative,
+          });
+        }
+      },
+    },
+  };
 }
 
 export function angularOptionsPlugin(

@@ -123,12 +123,11 @@ export class ChangeDetectionService {
   private rerunAfterCurrentScan = false;
   private readinessResolved = false;
   private statusPipelineStarted = false;
-  private changeDetectionEnabled = false;
   private previousStatuses = new Map<string, Status>();
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
   private unsubscribeModuleGraphStatus: (() => void) | undefined;
-  private unsubscribeModuleGraphRevision: (() => void) | undefined;
+  private unsubscribeFileActivity: (() => void) | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -157,13 +156,8 @@ export class ChangeDetectionService {
     return getService('core/module-graph-index', { internal: true });
   }
 
-  /** True while the service is live and change-detection status publishing is enabled. */
-  private isActive(): boolean {
-    return !this.disposed && this.changeDetectionEnabled;
-  }
-
   private onGraphReady(): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -171,7 +165,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphChange(): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -179,7 +173,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphError(error: Error): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -188,7 +182,7 @@ export class ChangeDetectionService {
   }
 
   private onGraphUnavailable(reason: string, error?: Error): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -198,7 +192,7 @@ export class ChangeDetectionService {
   }
 
   private onModuleGraphStatus(status: ModuleGraphStatus): void {
-    if (!this.isActive()) {
+    if (this.disposed) {
       return;
     }
 
@@ -220,19 +214,7 @@ export class ChangeDetectionService {
     }
   }
 
-  start(enabled: boolean | undefined): void {
-    if (enabled === false) {
-      logger.debug('Change detection disabled.');
-      this.resolveReadiness({
-        status: 'unavailable',
-        reason: 'disabled',
-      });
-      return;
-    }
-
-    logger.debug('Change detection enabled.');
-    this.changeDetectionEnabled = true;
-
+  start(): void {
     const moduleGraph = this.getModuleGraph();
     this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(
       undefined,
@@ -242,7 +224,9 @@ export class ChangeDetectionService {
         }
       }
     );
-    this.unsubscribeModuleGraphRevision = moduleGraph.queries.graphRevision.subscribe(
+    // Watch file activity (not graphRevision): out-of-graph / path-mismatched edits still need a
+    // git rescan, while graphRevision stays in-graph-only for review staleness.
+    this.unsubscribeFileActivity = moduleGraph.queries.fileActivityRevision.subscribe(
       undefined,
       ({ data }) => {
         if ((data ?? 0) > 0) {
@@ -303,8 +287,8 @@ export class ChangeDetectionService {
     this.gitDiffProvider?.dispose();
     this.unsubscribeModuleGraphStatus?.();
     this.unsubscribeModuleGraphStatus = undefined;
-    this.unsubscribeModuleGraphRevision?.();
-    this.unsubscribeModuleGraphRevision = undefined;
+    this.unsubscribeFileActivity?.();
+    this.unsubscribeFileActivity = undefined;
   }
 
   private scheduleScan(delayMs: number): void {

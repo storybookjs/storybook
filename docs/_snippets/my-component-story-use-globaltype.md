@@ -411,9 +411,6 @@ const getCaptionForLocale = (locale) => {
   }
 };
 
-export default meta;
-type Story = StoryObj<typeof MyComponent>;
-
 export const MyStory: Story = {
   render: (args, { globals: { locale } }) => {
     const caption = getCaptionForLocale(locale);

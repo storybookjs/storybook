@@ -1,14 +1,22 @@
 /**
  * IMPORTANT: This file has unique constraints due to how Danger.js executes it.
  *
- * Danger transpiles this file and its local TypeScript imports inside its Docker image. Repository
- * dependencies are not installed in CI, so imported utilities must not rely on package dependencies.
+ * Restrictions:
+ *
+ * - NO external dependencies: Scripts dependencies are not installed in CI
+ * - NO Node.js built-ins: Even `fs` and other core modules don't work in Danger's runtime
+ * - Local dependencies must not import any package dependency themselves
+ *
+ * Can be done:
+ * - TypeScript usage; Danger transpiles to JS internally
+ * - Importing local scripts and helpers provided they don't have dependencies on external packages
+ *
+ * Why: We want Danger to run as fast as possible in CI without installing dependencies or running
+ * build processes.
  */
-import { danger, fail, schedule, warn } from 'danger';
+import { danger, fail, warn } from 'danger';
 
 import pkg from '../code/package.json';
-import { getLatestOpinionatedReviews } from './utils/github/reviews.ts';
-import { isMemberOfAnyTeam } from './utils/github/teams.ts';
 
 function intersection<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): T[] {
   return a.filter((v) => b.includes(v));
@@ -22,16 +30,18 @@ const Versions = {
 
 const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 const qaLabels = ['qa:needed', 'qa:skip', 'qa:success'];
-const trustedReviewerTeams = {
-  org: 'storybookjs',
-  slugs: ['core', 'developer-experience'],
-} as const;
 
 const { labels } = danger.github.issue;
 
 const prLogConfig = pkg['pr-log'];
 
-const branchVersion = Versions.MINOR;
+const isPrerelease = pkg.version.includes('-');
+const isFirstOfMajor = /^\d+\.0\.0(-|$)/.test(pkg.version);
+const branchVersion = !isPrerelease
+  ? Versions.PATCH
+  : isFirstOfMajor
+    ? Versions.MAJOR
+    : Versions.MINOR;
 const targetBranch = danger.github.pr.base.ref;
 const isReleasePr = ['latest-release', 'next-release'].includes(targetBranch);
 const author = danger.github.pr.user;
@@ -197,65 +207,6 @@ const checkTargetBranch = () => {
   }
 };
 
-/**
- * Require at least one approving review from Core or Developer Experience.
- * Drafts are skipped; membership API failures warn and allow (fail open).
- */
-const checkCoreDxApproval = async () => {
-  if (danger.github.pr.draft) {
-    return;
-  }
-
-  const failMessage =
-    'This PR needs an approving review from a Storybook Core or Developer Experience team member before it can be merged.';
-  const warningMessage =
-    'Could not verify whether an approving reviewer is on the Core or Developer Experience team. Merging is allowed, but please confirm manually.';
-
-  let reviews;
-  try {
-    reviews = await getLatestOpinionatedReviews(danger.github.api.graphql.bind(danger.github.api), {
-      owner: danger.github.thisPR.owner,
-      repo: danger.github.thisPR.repo,
-      number: danger.github.thisPR.pull_number,
-    });
-  } catch {
-    warn(warningMessage);
-    return;
-  }
-
-  const authorLogin = danger.github.pr.user.login.toLowerCase();
-  const approvedLogins = reviews.flatMap((review) =>
-    review.state === 'APPROVED' && review.authorLogin.toLowerCase() !== authorLogin
-      ? [review.authorLogin]
-      : []
-  );
-
-  if (approvedLogins.length === 0) {
-    fail(failMessage);
-    return;
-  }
-
-  const token = process.env.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN || process.env.GITHUB_TOKEN;
-  if (!token || typeof fetch !== 'function') {
-    warn(warningMessage);
-    return;
-  }
-
-  try {
-    const trusted = await Promise.all(
-      approvedLogins.map((login) => isMemberOfAnyTeam(login, trustedReviewerTeams, token))
-    );
-    if (trusted.some(Boolean)) {
-      return;
-    }
-  } catch {
-    warn(warningMessage);
-    return;
-  }
-
-  fail(failMessage);
-};
-
 checkTargetBranch();
 checkReleaseChecklist(danger.github.pr.body);
 
@@ -264,5 +215,3 @@ if (prLogConfig) {
   checkPrTitle(danger.github.pr.title);
   checkManualTestingSection(danger.github.pr.body);
 }
-
-schedule(checkCoreDxApproval);

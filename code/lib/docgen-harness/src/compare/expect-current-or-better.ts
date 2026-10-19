@@ -14,7 +14,9 @@ export type ArgTypesComparisonOptions =
   | (CompareArgTypesOptions & { declaredDefaultOmissions?: undefined })
   | {
       legacyBaseline: true;
+      legacyManifestRuntime?: boolean;
       strictTable?: boolean;
+      waivedArgs?: ReadonlySet<string>;
       /**
        * Args whose legacy default recordings are known initializer source rather than displayable
        * values. Each declaration must match a `lost-default` violation and is checked for staleness.
@@ -46,7 +48,9 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
   if (input.kind === 'argTypes') {
     const violations = compareArgTypes(input.baseline, input.candidate, {
       legacyBaseline: input.legacyBaseline,
+      legacyManifestRuntime: input.legacyManifestRuntime,
       strictTable: input.strictTable,
+      waivedArgs: input.waivedArgs,
     });
     const declaredDefaultOmissions = input.declaredDefaultOmissions ?? [];
     if (input.declaredDefaultOmissions !== undefined && input.legacyBaseline !== true) {

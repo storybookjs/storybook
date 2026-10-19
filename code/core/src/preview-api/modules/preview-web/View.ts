@@ -2,7 +2,7 @@ import type { PreparedStory } from 'storybook/internal/types';
 
 export interface View<TStorybookRoot> {
   // Get ready to render a story, returning the element to render to
-  prepareForStory(story: PreparedStory<any>): TStorybookRoot;
+  prepareForStory(story: PreparedStory<any>, options?: { scrollReset?: boolean }): TStorybookRoot;
 
   prepareForDocs(options?: { scrollReset?: boolean }): TStorybookRoot;
 

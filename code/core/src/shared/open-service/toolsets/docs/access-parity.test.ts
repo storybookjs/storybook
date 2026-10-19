@@ -99,7 +99,7 @@ const mdxPayload = {
 
 /** The same project as the open services expose it (docgen-server mode). */
 function serviceToolset() {
-  const services: Record<string, unknown> = {
+  const services: Record<string, object> = {
     'core/docgen': {
       queries: {
         docgenForAllComponents: { loaded: async () => ({ button: docgenPayload }) },
@@ -173,7 +173,7 @@ function manifestToolset() {
 }
 
 async function renderList(toolset: ReturnType<typeof createDocsToolset>, withStoryIds: boolean) {
-  return (await toolset.methods.list.handler({ withStoryIds }, ctx)).markdown;
+  return (await toolset.methods.list.handler({ withStoryIds })).markdown;
 }
 
 async function renderShow(toolset: ReturnType<typeof createDocsToolset>, id: string) {
@@ -199,16 +199,24 @@ describe('docs tools render the same text in both docgen modes', () => {
     }
   });
 
-  it('showStory', async () => {
-    const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
-      (
-        await toolset.methods.showStory.handler(
-          { componentId: 'button', storyName: 'Primary' },
-          ctx
-        )
-      ).markdown;
+  it.each([{ componentId: 'button', storyName: 'Primary' }, { storyId: 'button--primary' }])(
+    'showStory %o',
+    async (input) => {
+      const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
+        (await toolset.methods.showStory.handler(input, ctx)).markdown;
 
-    expect(await render(serviceToolset())).toBe(await render(manifestToolset()));
+      expect(await render(serviceToolset())).toBe(await render(manifestToolset()));
+    }
+  );
+
+  it('showStory answers a story id and the matching name pair identically', async () => {
+    const toolset = manifestToolset();
+    const render = async (input: Record<string, string>) =>
+      (await toolset.methods.showStory.handler(input, ctx)).markdown;
+
+    expect(await render({ storyId: 'button--primary' })).toBe(
+      await render({ componentId: 'button', storyName: 'Primary' })
+    );
   });
 });
 
@@ -259,7 +267,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
   /** The project as the dev server's open services expose it: no docgen, stories with no snippet. */
   function devAccess() {
-    const services: Record<string, unknown> = {
+    const services: Record<string, object> = {
       'core/docgen': {
         queries: {
           docgenForAllComponents: { loaded: async () => ({}) },
@@ -291,7 +299,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
   /** The same project as a static build writes it, served back over a manifest provider. */
   function staticAccess() {
-    const files: Record<string, unknown> = {
+    const files: Record<string, object> = {
       './manifests/components.json': buildComponentsRefManifest(
         toComponentManifestIndexEntries(
           [componentId],
@@ -334,16 +342,18 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
     expect(await renderShow(staticToolset(), componentId)).toBe(dev);
   });
 
-  it('showStory answers for a story with no snippet in both', async () => {
-    const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
-      (await toolset.methods.showStory.handler({ componentId, storyName: 'Default' }, ctx))
-        .markdown;
+  it.each([{ componentId, storyName: 'Default' }, { storyId: `${componentId}--default` }])(
+    'showStory answers for a story with no snippet in both (%o)',
+    async (input) => {
+      const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
+        (await toolset.methods.showStory.handler(input, ctx)).markdown;
 
-    const dev = await render(devToolset());
+      const dev = await render(devToolset());
 
-    expect(dev).toContain(`Story ID: ${componentId}--default`);
-    expect(await render(staticToolset())).toBe(dev);
-  });
+      expect(dev).toContain(`Story ID: ${componentId}--default`);
+      expect(await render(staticToolset())).toBe(dev);
+    }
+  );
 
   it('lists the real stories when asked for one that does not exist', async () => {
     const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
@@ -351,7 +361,9 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
     const dev = await render(devToolset());
 
-    expect(dev).toContain('Available stories: Default, Text');
+    expect(dev).toContain(
+      `Available stories: Default (${componentId}--default), Text (${componentId}--text)`
+    );
     expect(await render(staticToolset())).toBe(dev);
   });
 });

@@ -11,7 +11,6 @@ describe('normalizeInputType', () => {
           type: { name: 'string' },
           control: { type: 'text' },
           description: 'description',
-          defaultValue: 'defaultValue',
         },
         'arg'
       )
@@ -20,7 +19,6 @@ describe('normalizeInputType', () => {
       type: { name: 'string' },
       control: { type: 'text', disable: false },
       description: 'description',
-      defaultValue: 'defaultValue',
     });
   });
 
@@ -48,7 +46,6 @@ describe('normalizeInputType', () => {
           type: 'string',
           control: 'text',
           description: 'description',
-          defaultValue: 'defaultValue',
         },
         'arg'
       )
@@ -57,7 +54,6 @@ describe('normalizeInputType', () => {
       type: { name: 'string' },
       control: { type: 'text', disable: false },
       description: 'description',
-      defaultValue: 'defaultValue',
     });
   });
 
@@ -96,7 +92,6 @@ describe('normalizeInputType', () => {
           type: 'string',
           control: false,
           description: 'description',
-          defaultValue: 'defaultValue',
         },
         'arg'
       )
@@ -105,7 +100,6 @@ describe('normalizeInputType', () => {
       type: { name: 'string' },
       control: { disable: true },
       description: 'description',
-      defaultValue: 'defaultValue',
     });
   });
 });

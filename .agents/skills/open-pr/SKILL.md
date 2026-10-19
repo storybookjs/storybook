@@ -2,6 +2,8 @@
 name: open-pr
 description: Opens a pull request from the current branch using the PR template. Use when the user asks to open a PR, create a pull request, or invokes /open-pr.
 allowed-tools: Bash, Read, AskQuestion
+metadata:
+  internal: true
 ---
 
 # Open Pull Request
@@ -29,10 +31,10 @@ Detects base in order: tracked upstream → reflog checkout source → closest `
 
 Use **AskQuestion** for three questions. Options from `.github/PULL_REQUEST_TEMPLATE.md`:
 
-| Question | Options |
-| -------- | ------- |
-| CI label | `ci:normal`, `ci:merged`, `ci:daily` |
-| QA label | `qa:needed`, `qa:skip` |
+| Question   | Options                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| CI label   | `ci:normal`, `ci:merged`, `ci:daily`                                                                                     |
+| QA label   | `qa:needed`, `qa:skip`                                                                                                   |
 | Type label | `bug`, `maintenance`, `dependencies`, `build`, `cleanup`, `documentation`, `feature request`, `BREAKING CHANGE`, `other` |
 
 Verify the available labels with the PR template.
@@ -68,7 +70,7 @@ EOF
 
 Share the PR URL. Then **AskQuestion**: "Do you want to create a canary release for this PR?"
 
-- **Yes** — run `/canary <PR_NUMBER>` and report workflow status
+- **Yes** — follow the `canary` skill
 - **No** — stop
 
 ## Notes

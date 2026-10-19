@@ -27,9 +27,9 @@ How the component API is extracted depends on your framework.
 
 <If renderer="react">
 
-For prop type extraction, the manifest generation will use whatever is specified in the [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen) option, or `react-docgen` by default. We recommend using `react-docgen-typescript` for most projects, because it provides more accurate and comprehensive information about your components' props. If manifest generation seems too slow, you can switch to `react-docgen`, which is faster but less detailed.
+Prop type extraction runs server-side via React Component Meta by default, and manifests use a ref-based format with per-component JSON snapshots when combined with [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest).
 
-When [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver) is enabled, prop type extraction runs server-side via React Component Meta instead, and manifests use a ref-based format with per-component JSON snapshots when combined with [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest).
+If you turn [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) off, manifest generation uses the builder-based parser selected by [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen), or `react-docgen` by default.
 
 </If>
 
@@ -44,15 +44,15 @@ The Webpack-based `@storybook/angular` does not generate a components manifest.
 
 <If renderer="vue">
 
-On `@storybook/vue3-vite`, the components manifest requires both [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest) and [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver), which uses `vue-component-meta` to read your component API.
+On `@storybook/vue3-vite`, the components manifest requires both [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest) and the default [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver), which uses `vue-component-meta` to read your component API.
 
 </If>
 
 <If renderer="solid">
 
 On [`storybook-solidjs-vite`](https://github.com/solidjs-community/storybook), the components manifest requires [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest), which the framework preset enables by default.
-Prop types come from **solid-component-meta** on the docgen server ([`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver) is also on by default), aligned with Storybook's `react-component-meta` format.
-Set `experimentalDocgenServer: false` to inject `__docgenInfo` into the preview instead.
+Prop types come from **solid-component-meta** on the docgen server ([`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) is also on by default), aligned with Storybook's `react-component-meta` format.
+Set `docgenServer: false` to inject `__docgenInfo` into the preview instead.
 
 </If>
 
@@ -168,9 +168,9 @@ The raw JSON components manifest can be accessed at `http://localhost:6006/manif
 
 <Callout variant="info" icon="💡">
 
-With [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver) enabled, the dev server returns a 404 for both JSON routes.
+With [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) enabled, the dev server returns a 404 for both JSON routes.
 The manifest is assembled on demand from the docgen service rather than written to disk, so read it from a built Storybook, or use the [debugger](#debugging), which works in both modes.
-This affects `@storybook/angular-vite` and `storybook-solidjs-vite` by default, and React or `@storybook/vue3-vite` projects that enable `experimentalDocgenServer`.
+This affects every React framework, `@storybook/angular-vite`, `@storybook/vue3-vite`, and `storybook-solidjs-vite` by default.
 
 </Callout>
 

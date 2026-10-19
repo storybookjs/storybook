@@ -2,7 +2,6 @@ import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { API_Provider } from 'storybook/internal/types';
-import * as clientLogger from 'storybook/internal/client-logger';
 
 import EventEmitter from 'events';
 import { themes } from 'storybook/theming';
@@ -537,51 +536,20 @@ describe('layout API', () => {
       expect(currentState.layout.rightPanelWidth).toBe(260);
     });
 
-    it('should prioritize options.layout over top-level layout keys', () => {
-      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
-
+    it('should ignore top-level layout keys', () => {
       layoutApi.setOptions({
-        showNav: true,
-        showPanel: true,
-        layout: { showNav: false, showPanel: false },
+        showNav: false,
+        showPanel: false,
       });
 
-      expect(currentState.layout.navSize).toBe(0);
-      expect(currentState.layout.bottomPanelHeight).toBe(0);
-      expect(currentState.layout.rightPanelWidth).toBe(0);
-      expect(deprecateSpy).toHaveBeenCalled();
+      expect(currentState.layout.navSize).toBe(300);
+      expect(currentState.layout.bottomPanelHeight).toBe(300);
+      expect(currentState.layout.rightPanelWidth).toBe(400);
     });
 
-    it('should deprecate top-level layout keys in setOptions', () => {
-      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
-
-      layoutApi.setOptions({ showNav: false, panelPosition: 'right' });
-
-      expect(deprecateSpy).toHaveBeenCalledWith(
-        'Calling `setConfig({ showNav: ... })` is deprecated. Please call `setConfig({ layout: { showNav: ... } })` instead.'
-      );
-      expect(deprecateSpy).toHaveBeenCalledWith(
-        'Calling `setConfig({ panelPosition: ... })` is deprecated. Please call `setConfig({ layout: { panelPosition: ... } })` instead.'
-      );
-    });
-
-    it('should prioritize options.ui over top-level ui keys', () => {
-      layoutApi.setOptions({
-        enableShortcuts: false,
-        ui: { enableShortcuts: true },
-      });
-
-      expect(currentState.ui.enableShortcuts).toBe(true);
-    });
-
-    it('should deprecate top-level ui keys in setOptions', () => {
-      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
-
+    it('should ignore top-level ui keys', () => {
       layoutApi.setOptions({ enableShortcuts: false });
-
-      expect(deprecateSpy).toHaveBeenCalledWith(
-        'Calling `setConfig({ enableShortcuts: ... })` is deprecated. Please call `setConfig({ ui: { enableShortcuts: ... } })` instead.'
-      );
+      expect(currentState.ui.enableShortcuts).toBe(true);
     });
   });
 
@@ -628,12 +596,10 @@ describe('layout API', () => {
       expect(state.layout.recentVisibleSizes.navSize).toBe(300);
     });
 
-    it('should prioritize layout over top-level config keys', () => {
-      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+    it('should ignore top-level layout config keys', () => {
       (provider.getConfig as Mock).mockReturnValue({
-        showPanel: true,
-        showNav: true,
-        layout: { showPanel: false, showNav: false },
+        showPanel: false,
+        showNav: false,
       });
 
       const storeWithoutPersistedLayout = {
@@ -647,22 +613,14 @@ describe('layout API', () => {
         singleStory: false,
       } as unknown as ModuleArgs);
 
-      expect(state.layout.navSize).toBe(0);
-      expect(state.layout.bottomPanelHeight).toBe(0);
-      expect(state.layout.rightPanelWidth).toBe(0);
-      expect(deprecateSpy).toHaveBeenCalledWith(
-        'Calling `setConfig({ showPanel: ... })` is deprecated. Please call `setConfig({ layout: { showPanel: ... } })` instead.'
-      );
-      expect(deprecateSpy).toHaveBeenCalledWith(
-        'Calling `setConfig({ showNav: ... })` is deprecated. Please call `setConfig({ layout: { showNav: ... } })` instead.'
-      );
+      expect(state.layout.navSize).toBe(300);
+      expect(state.layout.bottomPanelHeight).toBe(300);
+      expect(state.layout.rightPanelWidth).toBe(400);
     });
 
-    it('should prioritize ui over top-level config keys', () => {
-      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+    it('should ignore top-level ui config keys', () => {
       (provider.getConfig as Mock).mockReturnValue({
         enableShortcuts: false,
-        ui: { enableShortcuts: true },
       });
 
       const storeWithoutPersistedLayout = {
@@ -677,9 +635,6 @@ describe('layout API', () => {
       } as unknown as ModuleArgs);
 
       expect(state.ui.enableShortcuts).toBe(true);
-      expect(deprecateSpy).toHaveBeenCalledWith(
-        'Calling `setConfig({ enableShortcuts: ... })` is deprecated. Please call `setConfig({ ui: { enableShortcuts: ... } })` instead.'
-      );
     });
   });
 

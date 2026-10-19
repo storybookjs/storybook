@@ -1,10 +1,5 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type {
-  DocgenJsDocTags,
-  DocgenPayload,
-  DocgenProviderInput,
-  StrictArgTypes,
-} from 'storybook/internal/types';
+import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -32,8 +27,8 @@ export interface SnippetEnum {
 export interface AngularComponentSnippetMeta {
   name: string;
   selector: string | undefined;
-  // `false` only for an explicit `standalone: false`; anything else is the language default.
-  standalone: boolean;
+  // `true`/`false` for a resolvable decorator value, `undefined` when metadata couldn't be read.
+  standalone: boolean | undefined;
   inputs: string[];
   // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
   outputs: string[];
@@ -98,7 +93,7 @@ export const metaToSnippetMeta = (
   return {
     name: entry.name,
     selector: entry.selector,
-    standalone: entry.standalone !== false,
+    standalone: entry.standalone,
     inputs,
     outputs,
     enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({
@@ -220,18 +215,22 @@ export const buildDocgenPayload = (
     metadataJson: meta.json,
     propsTable: options.propsTable,
     logger,
-  }) as StrictArgTypes;
+    // Named-type table detail resolves against the analyzer's live context; absent for stubbed
+    // analyzers, which keeps those payloads flat.
+    context: meta.context,
+  });
 
   // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
   // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
   const apiArgTypes =
     options.propsTable === 'api'
       ? argTypes
-      : (extractArgTypesFromData(meta.entry, {
+      : extractArgTypesFromData(meta.entry, {
           metadataJson: meta.json,
           propsTable: 'api',
           logger,
-        }) as StrictArgTypes);
+          context: meta.context,
+        });
 
   const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
   const description =
